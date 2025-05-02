@@ -14,6 +14,7 @@ interface KeywordProps {
   secondaryKeywords: string[];
   semanticTerms: string[];
   longTailKeywords: string[];
+  onUse?: (keyword: string) => void;
 }
 
 export function KeywordCluster({ 
@@ -24,9 +25,11 @@ export function KeywordCluster({
   intent,
   secondaryKeywords,
   semanticTerms,
-  longTailKeywords
+  longTailKeywords,
+  onUse
 }: KeywordProps) {
   const [expanded, setExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Map difficulty to color
   const difficultyColor = {
@@ -44,7 +47,11 @@ export function KeywordCluster({
   };
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 neon-border">
+    <Card 
+      className={`overflow-hidden transition-all duration-300 neon-border ${expanded ? 'shadow-neon' : ''} ${isHovered ? 'scale-[1.01]' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-gradient font-bold">
@@ -53,10 +60,10 @@ export function KeywordCluster({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-accent/30 transition-colors"
             onClick={() => setExpanded(!expanded)}
           >
-            {expanded ? <ChevronUp /> : <ChevronDown />}
+            {expanded ? <ChevronUp className="transition-transform duration-200" /> : <ChevronDown className="transition-transform duration-200" />}
           </Button>
         </div>
         <CardDescription className="flex flex-wrap gap-2 pt-2">
@@ -76,12 +83,16 @@ export function KeywordCluster({
       </CardHeader>
 
       {expanded && (
-        <CardContent className="pb-2 space-y-4">
+        <CardContent className={`pb-2 space-y-4 animate-fade-in`}>
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">Secondary Keywords</h4>
             <div className="flex flex-wrap gap-2">
               {secondaryKeywords.map((keyword, i) => (
-                <Badge key={i} className="bg-primary/10 text-primary hover:bg-primary/20">
+                <Badge 
+                  key={i} 
+                  className="bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer hover:scale-105"
+                  onClick={() => onUse && onUse(keyword)}
+                >
                   {keyword}
                 </Badge>
               ))}
@@ -92,7 +103,12 @@ export function KeywordCluster({
             <h4 className="text-sm font-medium text-muted-foreground mb-2">Semantic Terms</h4>
             <div className="flex flex-wrap gap-2">
               {semanticTerms.map((term, i) => (
-                <Badge key={i} variant="outline" className="border-neon-blue/30 text-neon-blue">
+                <Badge 
+                  key={i} 
+                  variant="outline" 
+                  className="border-neon-blue/30 text-neon-blue hover:border-neon-blue/60 transition-colors cursor-pointer hover:scale-105"
+                  onClick={() => onUse && onUse(term)}
+                >
                   {term}
                 </Badge>
               ))}
@@ -103,7 +119,12 @@ export function KeywordCluster({
             <h4 className="text-sm font-medium text-muted-foreground mb-2">Long-tail Variations</h4>
             <div className="flex flex-wrap gap-2">
               {longTailKeywords.map((keyword, i) => (
-                <Badge key={i} variant="outline" className="border-neon-purple/30 text-neon-purple">
+                <Badge 
+                  key={i} 
+                  variant="outline" 
+                  className="border-neon-purple/30 text-neon-purple hover:border-neon-purple/60 transition-colors cursor-pointer hover:scale-105"
+                  onClick={() => onUse && onUse(keyword)}
+                >
                   {keyword}
                 </Badge>
               ))}
@@ -113,7 +134,12 @@ export function KeywordCluster({
       )}
 
       <CardFooter className="pt-2">
-        <Button variant="ghost" size="sm" className="ml-auto gap-1 hover:text-primary">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="ml-auto gap-1 hover:text-primary transition-colors"
+          onClick={() => onUse && onUse(primary)}
+        >
           <PlusCircle className="h-4 w-4" />
           <span>Use Keyword</span>
         </Button>
