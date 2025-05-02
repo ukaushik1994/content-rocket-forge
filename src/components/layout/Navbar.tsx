@@ -1,162 +1,135 @@
 
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Home,
-  BarChart3,
-  Search,
-  FileText,
+import { useAuth } from '@/contexts/AuthContext';
+import { 
   Settings,
+  LogOut,
   User,
+  FileText,
+  Search,
+  Layout,
+  BarChart3,
+  Bell,
   Menu,
   X,
-  PanelRight,
-  Rocket,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-
-const navItems = [
-  { name: 'Dashboard', path: '/', icon: Home },
-  { name: 'Keywords', path: '/keywords', icon: Search },
-  { name: 'Content', path: '/content', icon: FileText },
-  { name: 'Solutions', path: '/solutions', icon: Rocket },
-  { name: 'Analytics', path: '/analytics', icon: BarChart3 },
-  { name: 'Settings', path: '/settings', icon: Settings },
-];
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const Navbar = () => {
-  const location = useLocation();
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setShowMobileMenu(!showMobileMenu);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
-
+  
   return (
-    <div className="relative z-10 bg-background/80 backdrop-blur-md">
-      <header className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <div className="mr-4 hidden lg:flex">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
-                <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
-                  <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
-                </div>
-              </div>
-              <span className="font-bold text-gradient">ContentRocketForge</span>
-            </Link>
-          </div>
+    <header className="w-full border-b border-white/10 backdrop-blur-lg bg-background/70 sticky top-0 z-40">
+      <div className="container flex justify-between items-center h-16">
+        <div className="flex items-center">
+          <Link to="/" className="text-xl font-bold text-gradient">ContentRocketForge</Link>
+        </div>
+        
+        <nav className="hidden md:flex items-center space-x-1">
+          <Link to="/content" className="px-3 py-2 text-sm rounded-md hover:bg-white/5 flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Content
+          </Link>
+          <Link to="/settings" className="px-3 py-2 text-sm rounded-md hover:bg-white/5 flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+        </nav>
+        
+        <div className="hidden md:flex items-center gap-2">
+          <Button variant="outline" size="icon" className="rounded-full">
+            <Bell className="h-4 w-4" />
+          </Button>
           
-          <Button
-            variant="outline"
-            size="icon"
-            className="lg:hidden"
-            onClick={toggleMobileMenu}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
-
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
-              return (
-                <Link key={item.path} to={item.path}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "flex items-center gap-1 px-3",
-                      isActive && "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Button>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full overflow-hidden border border-border"
-            asChild
-          >
-            <Link to="/settings">
-              <User className="h-5 w-5" />
-            </Link>
-          </Button>
-        </div>
-      </header>
-
-      {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
-          <div className="fixed inset-y-0 left-0 z-50 w-3/4 bg-background p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-8">
-              <Link to="/" className="flex items-center gap-2" onClick={() => setShowMobileMenu(false)}>
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
-                  <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
-                    <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
-                  </div>
-                </div>
-                <span className="font-bold text-gradient">ContentRocketForge</span>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMobileMenu}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                className="rounded-full w-8 h-8 p-0 bg-neon-purple/20" 
+                onClick={() => navigate('/settings')}
               >
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close Menu</span>
+                <User className="h-4 w-4" />
+              </Button>
+              <Button onClick={handleSignOut} variant="ghost" size="sm">
+                <LogOut className="h-4 w-4 mr-1" />
+                Sign Out
               </Button>
             </div>
-
-            <nav className="flex flex-col space-y-4">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                
-                return (
-                  <Link 
-                    key={item.path} 
-                    to={item.path}
-                    onClick={() => setShowMobileMenu(false)} 
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-2 rounded-md",
-                      isActive 
-                        ? "bg-accent text-accent-foreground" 
-                        : "hover:bg-accent/50 hover:text-accent-foreground"
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+          ) : (
+            <Button 
+              className="bg-gradient-to-r from-neon-purple to-neon-blue" 
+              size="sm"
+              onClick={() => navigate('/login')}
+            >
+              Sign In
+            </Button>
+          )}
+        </div>
+        
+        {/* Mobile menu button */}
+        <div className="md:hidden">
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+      </div>
+      
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden py-3 border-t border-white/5 bg-background">
+          <div className="container space-y-1">
+            <Link 
+              to="/content" 
+              className="block px-3 py-2 rounded-md hover:bg-white/5 flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FileText className="h-4 w-4" />
+              Content
+            </Link>
+            
+            <Link 
+              to="/settings" 
+              className="block px-3 py-2 rounded-md hover:bg-white/5 flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
+            
+            {user ? (
+              <Button 
+                onClick={handleSignOut} 
+                variant="ghost" 
+                className="w-full justify-start px-3 py-2"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            ) : (
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue w-full mt-2" 
+                onClick={() => {
+                  navigate('/login');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       )}
-    </div>
+    </header>
   );
 };
 

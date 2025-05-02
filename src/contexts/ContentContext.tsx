@@ -1,18 +1,15 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 
-// Define content item type
-export interface ContentItem {
+interface ContentItem {
   id: string;
   title: string;
   content: string;
-  status: 'draft' | 'published' | 'archived';
   created_at: string;
   updated_at: string;
-  user_id: string;
+  status: 'draft' | 'published' | 'archived';
   seo_score?: number;
   keywords?: string[];
 }
@@ -20,10 +17,9 @@ export interface ContentItem {
 interface ContentContextType {
   contentItems: ContentItem[];
   loading: boolean;
-  createContent: (content: Partial<ContentItem>, selectedKeywords?: string[]) => Promise<string | null>;
-  updateContent: (id: string, content: Partial<ContentItem>, selectedKeywords?: string[]) => Promise<boolean>;
+  createContent: (contentData: Partial<ContentItem>, keywords?: string[]) => Promise<string | null>;
+  updateContent: (id: string, contentData: Partial<ContentItem>, keywords?: string[]) => Promise<boolean>;
   deleteContent: (id: string) => Promise<boolean>;
-  getContentById: (id: string) => Promise<ContentItem | null>;
   refreshContentItems: () => Promise<void>;
 }
 
@@ -33,421 +29,314 @@ const ContentContext = createContext<ContentContextType>({
   createContent: async () => null,
   updateContent: async () => false,
   deleteContent: async () => false,
-  getContentById: async () => null,
   refreshContentItems: async () => {},
 });
 
-export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const useContent = () => useContext(ContentContext);
+
+export const ContentProvider = ({ children }: { children: React.ReactNode }) => {
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  
-  const refreshContentItems = async () => {
-    if (!user) {
-      setContentItems([]);
-      setLoading(false);
-      return;
-    }
 
+  const fetchContentItems = async () => {
     try {
       setLoading(true);
       
-      // Fetch content items
       const { data: items, error } = await supabase
         .from('content_items')
         .select('*')
-        .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
-      // For each content item, fetch associated keywords
-      const itemsWithKeywords = await Promise.all(
+      // Fetch keywords for each content item
+      const contentWithKeywords = await Promise.all(
         items.map(async (item) => {
-          // Ensure status is one of the valid types
-          const validStatus = (item.status as string) === 'draft' || 
-                              (item.status as string) === 'published' || 
-                              (item.status as string) === 'archived' 
-                              ? (item.status as 'draft' | 'published' | 'archived') 
-                              : 'draft';
-                              
-          const { data: keywordLinks, error: keywordError } = await supabase
+          const { data: keywordLinks, error: linkError } = await supabase
             .from('content_keywords')
             .select('keyword_id')
             .eq('content_id', item.id);
-            
-          if (keywordError) {
-            console.error('Error fetching keyword links:', keywordError);
-            return { 
-              ...item, 
-              keywords: [],
-              status: validStatus
-            } as ContentItem;
+          
+          if (linkError) {
+            console.error('Error fetching keyword links:', linkError);
+            return { ...item, keywords: [] };
           }
           
           if (keywordLinks && keywordLinks.length > 0) {
-            // Get all keyword IDs
             const keywordIds = keywordLinks.map(link => link.keyword_id);
             
-            // Fetch the keywords
-            const { data: keywords, error: keywordDataError } = await supabase
+            const { data: keywords, error: keywordError } = await supabase
               .from('keywords')
               .select('keyword')
               .in('id', keywordIds);
-              
-            if (keywordDataError) {
-              console.error('Error fetching keywords:', keywordDataError);
-              return { 
-                ...item, 
-                keywords: [],
-                status: validStatus
-              } as ContentItem;
+            
+            if (keywordError) {
+              console.error('Error fetching keywords:', keywordError);
+              return { ...item, keywords: [] };
             }
             
-            return { 
-              ...item, 
-              keywords: keywords.map(k => k.keyword),
-              status: validStatus
-            } as ContentItem;
+            return {
+              ...item,
+              keywords: keywords.map(k => k.keyword)
+            };
           }
           
-          return { 
-            ...item, 
-            keywords: [],
-            status: validStatus
-          } as ContentItem;
+          return { ...item, keywords: [] };
         })
       );
       
-      setContentItems(itemsWithKeywords);
-    } catch (err) {
-      console.error('Error fetching content items:', err);
+      setContentItems(contentWithKeywords);
+    } catch (error) {
+      console.error('Error fetching content items:', error);
       toast.error('Failed to load content items');
     } finally {
       setLoading(false);
     }
   };
-
+  
+  // Fetch content items on mount
   useEffect(() => {
-    refreshContentItems();
-  }, [user]);
-
-  const createContent = async (content: Partial<ContentItem>, selectedKeywords?: string[]): Promise<string | null> => {
-    if (!user) {
-      toast.error('You must be logged in to create content');
-      return null;
-    }
-    
+    fetchContentItems();
+  }, []);
+  
+  const createContent = async (contentData: Partial<ContentItem>, keywords?: string[]) => {
     try {
-      // Ensure status is a valid type
-      const validStatus = (content.status as string) === 'draft' || 
-                          (content.status as string) === 'published' || 
-                          (content.status as string) === 'archived' 
-                          ? content.status 
-                          : 'draft';
-    
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('You must be logged in to create content');
+        return null;
+      }
+      
       // Insert the content item
       const { data, error } = await supabase
         .from('content_items')
         .insert({
-          title: content.title || 'Untitled Content',
-          content: content.content || '',
-          status: validStatus,
+          ...contentData,
           user_id: user.id,
-          seo_score: content.seo_score || 0,
         })
         .select()
         .single();
-        
-      if (error) throw error;
       
-      // If keywords are provided, link them to the content
-      if (selectedKeywords && selectedKeywords.length > 0 && data) {
-        // First, lookup keyword IDs
-        for (const keyword of selectedKeywords) {
-          // Check if the keyword exists
-          const { data: existingKeyword, error: lookupError } = await supabase
-            .from('keywords')
-            .select('id')
-            .eq('keyword', keyword)
-            .eq('user_id', user.id)
-            .single();
-            
-          if (lookupError && lookupError.code !== 'PGRST116') { // Not found error
-            console.error('Error looking up keyword:', lookupError);
-            continue;
-          }
-          
-          let keywordId;
-          
-          if (!existingKeyword) {
-            // Keyword doesn't exist, create it
-            const { data: newKeyword, error: insertError } = await supabase
+      if (error) {
+        throw error;
+      }
+      
+      // If keywords were provided, create the keyword-content relationships
+      if (keywords && keywords.length > 0 && data) {
+        // First get existing keywords or create new ones
+        const keywordIds = await Promise.all(
+          keywords.map(async (keyword) => {
+            // Check if the keyword already exists
+            const { data: existingKeywords } = await supabase
               .from('keywords')
-              .insert({
-                keyword,
-                user_id: user.id
-              })
-              .select()
-              .single();
-              
-            if (insertError) {
-              console.error('Error creating keyword:', insertError);
-              continue;
-            }
+              .select('id')
+              .eq('keyword', keyword)
+              .limit(1);
             
-            keywordId = newKeyword.id;
-          } else {
-            keywordId = existingKeyword.id;
-          }
+            if (existingKeywords && existingKeywords.length > 0) {
+              return existingKeywords[0].id;
+            } else {
+              // Create a new keyword
+              const { data: newKeyword, error: keywordError } = await supabase
+                .from('keywords')
+                .insert({
+                  keyword,
+                  user_id: user.id,
+                })
+                .select()
+                .single();
+              
+              if (keywordError) {
+                console.error('Error creating keyword:', keywordError);
+                return null;
+              }
+              
+              return newKeyword?.id;
+            }
+          })
+        );
+        
+        // Filter out any null values
+        const validKeywordIds = keywordIds.filter(id => id !== null) as string[];
+        
+        // Create content_keywords entries
+        if (validKeywordIds.length > 0) {
+          const contentKeywords = validKeywordIds.map(keywordId => ({
+            content_id: data.id,
+            keyword_id: keywordId,
+          }));
           
-          // Now link the keyword to the content
           const { error: linkError } = await supabase
             .from('content_keywords')
-            .insert({
-              content_id: data.id,
-              keyword_id: keywordId
-            });
-            
+            .insert(contentKeywords);
+          
           if (linkError) {
-            console.error('Error linking keyword to content:', linkError);
+            console.error('Error linking keywords to content:', linkError);
           }
         }
       }
       
-      // Refresh the content list
-      await refreshContentItems();
+      // Update the local state with the new content item
+      const newContentItem = {
+        ...data,
+        keywords: keywords || [],
+      };
+      
+      setContentItems(prev => [newContentItem, ...prev]);
       toast.success('Content created successfully');
       return data.id;
-    } catch (err) {
-      console.error('Error creating content:', err);
+    } catch (error) {
+      console.error('Error creating content:', error);
       toast.error('Failed to create content');
       return null;
     }
   };
-
-  const updateContent = async (id: string, content: Partial<ContentItem>, selectedKeywords?: string[]): Promise<boolean> => {
-    if (!user) {
-      toast.error('You must be logged in to update content');
-      return false;
-    }
-
+  
+  const updateContent = async (id: string, contentData: Partial<ContentItem>, keywords?: string[]) => {
     try {
-      // Ensure status is a valid type
-      const validStatus = (content.status as string) === 'draft' || 
-                          (content.status as string) === 'published' || 
-                          (content.status as string) === 'archived' 
-                          ? content.status 
-                          : 'draft';
-    
       // Update the content item
       const { error } = await supabase
         .from('content_items')
-        .update({
-          title: content.title,
-          content: content.content,
-          status: validStatus,
-          seo_score: content.seo_score,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('user_id', user.id);
-        
-      if (error) throw error;
+        .update(contentData)
+        .eq('id', id);
       
-      // If keywords are provided, update the links
-      if (selectedKeywords !== undefined) {
-        // First, remove all existing links
+      if (error) {
+        throw error;
+      }
+      
+      // Update keywords if provided
+      if (keywords !== undefined) {
+        // First, get the current user for creating new keywords if needed
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast.error('You must be logged in to update keywords');
+          return false;
+        }
+        
+        // Delete existing content_keywords relationships
         const { error: deleteError } = await supabase
           .from('content_keywords')
           .delete()
           .eq('content_id', id);
-          
+        
         if (deleteError) {
-          console.error('Error removing existing keyword links:', deleteError);
+          console.error('Error deleting existing keyword links:', deleteError);
         }
         
-        // Then add the new links
-        if (selectedKeywords && selectedKeywords.length > 0) {
-          for (const keyword of selectedKeywords) {
-            // Check if the keyword exists
-            const { data: existingKeyword, error: lookupError } = await supabase
-              .from('keywords')
-              .select('id')
-              .eq('keyword', keyword)
-              .eq('user_id', user.id)
-              .single();
-              
-            if (lookupError && lookupError.code !== 'PGRST116') { // Not found error
-              console.error('Error looking up keyword:', lookupError);
-              continue;
-            }
-            
-            let keywordId;
-            
-            if (!existingKeyword) {
-              // Keyword doesn't exist, create it
-              const { data: newKeyword, error: insertError } = await supabase
+        // Create new relationships if keywords were provided
+        if (keywords.length > 0) {
+          // Get or create keywords
+          const keywordIds = await Promise.all(
+            keywords.map(async (keyword) => {
+              // Check if the keyword already exists
+              const { data: existingKeywords } = await supabase
                 .from('keywords')
-                .insert({
-                  keyword,
-                  user_id: user.id
-                })
-                .select()
-                .single();
-                
-              if (insertError) {
-                console.error('Error creating keyword:', insertError);
-                continue;
-              }
+                .select('id')
+                .eq('keyword', keyword)
+                .limit(1);
               
-              keywordId = newKeyword.id;
-            } else {
-              keywordId = existingKeyword.id;
-            }
+              if (existingKeywords && existingKeywords.length > 0) {
+                return existingKeywords[0].id;
+              } else {
+                // Create a new keyword
+                const { data: newKeyword, error: keywordError } = await supabase
+                  .from('keywords')
+                  .insert({
+                    keyword,
+                    user_id: user.id,
+                  })
+                  .select()
+                  .single();
+                
+                if (keywordError) {
+                  console.error('Error creating keyword:', keywordError);
+                  return null;
+                }
+                
+                return newKeyword?.id;
+              }
+            })
+          );
+          
+          // Filter out any null values
+          const validKeywordIds = keywordIds.filter(id => id !== null) as string[];
+          
+          // Create content_keywords entries
+          if (validKeywordIds.length > 0) {
+            const contentKeywords = validKeywordIds.map(keywordId => ({
+              content_id: id,
+              keyword_id: keywordId,
+            }));
             
-            // Now link the keyword to the content
             const { error: linkError } = await supabase
               .from('content_keywords')
-              .insert({
-                content_id: id,
-                keyword_id: keywordId
-              });
-              
+              .insert(contentKeywords);
+            
             if (linkError) {
-              console.error('Error linking keyword to content:', linkError);
+              console.error('Error linking keywords to content:', linkError);
             }
           }
         }
       }
       
-      // Refresh the content list
-      await refreshContentItems();
+      // Refresh content items to get the updated data
+      await fetchContentItems();
       toast.success('Content updated successfully');
       return true;
-    } catch (err) {
-      console.error('Error updating content:', err);
+    } catch (error) {
+      console.error('Error updating content:', error);
       toast.error('Failed to update content');
       return false;
     }
   };
-
-  const deleteContent = async (id: string): Promise<boolean> => {
-    if (!user) {
-      toast.error('You must be logged in to delete content');
-      return false;
-    }
-    
+  
+  const deleteContent = async (id: string) => {
     try {
-      // First delete all keyword links
-      const { error: linkDeleteError } = await supabase
+      // First, delete keyword relationships to prevent foreign key constraints
+      const { error: keywordLinkError } = await supabase
         .from('content_keywords')
         .delete()
         .eq('content_id', id);
-        
-      if (linkDeleteError) {
-        console.error('Error deleting keyword links:', linkDeleteError);
+      
+      if (keywordLinkError) {
+        console.error('Error deleting keyword links:', keywordLinkError);
       }
       
       // Then delete the content item
       const { error } = await supabase
         .from('content_items')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-        
-      if (error) throw error;
+        .eq('id', id);
       
-      // Refresh the content list
-      await refreshContentItems();
+      if (error) {
+        throw error;
+      }
+      
+      // Update the local state
+      setContentItems(prev => prev.filter(item => item.id !== id));
       toast.success('Content deleted successfully');
       return true;
-    } catch (err) {
-      console.error('Error deleting content:', err);
+    } catch (error) {
+      console.error('Error deleting content:', error);
       toast.error('Failed to delete content');
       return false;
     }
   };
-
-  const getContentById = async (id: string): Promise<ContentItem | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('content_items')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (error) throw error;
-      
-      // Ensure status is a valid type
-      const validStatus = (data.status as string) === 'draft' || 
-                          (data.status as string) === 'published' || 
-                          (data.status as string) === 'archived' 
-                          ? (data.status as 'draft' | 'published' | 'archived') 
-                          : 'draft';
-      
-      // Get associated keywords
-      const { data: keywordLinks, error: keywordError } = await supabase
-        .from('content_keywords')
-        .select('keyword_id')
-        .eq('content_id', id);
-        
-      if (keywordError) {
-        console.error('Error fetching keyword links:', keywordError);
-        return {
-          ...data,
-          status: validStatus
-        } as ContentItem;
-      }
-      
-      if (keywordLinks && keywordLinks.length > 0) {
-        // Get all keyword IDs
-        const keywordIds = keywordLinks.map(link => link.keyword_id);
-        
-        // Fetch the keywords
-        const { data: keywords, error: keywordDataError } = await supabase
-          .from('keywords')
-          .select('keyword')
-          .in('id', keywordIds);
-          
-        if (keywordDataError) {
-          console.error('Error fetching keywords:', keywordDataError);
-          return {
-            ...data,
-            status: validStatus
-          } as ContentItem;
-        }
-        
-        return { 
-          ...data, 
-          keywords: keywords.map(k => k.keyword),
-          status: validStatus
-        } as ContentItem;
-      }
-      
-      return {
-        ...data,
-        status: validStatus
-      } as ContentItem;
-    } catch (err) {
-      console.error('Error fetching content by id:', err);
-      return null;
-    }
+  
+  const refreshContentItems = async () => {
+    await fetchContentItems();
   };
-
-  const value = {
-    contentItems,
-    loading,
-    createContent,
-    updateContent,
-    deleteContent,
-    getContentById,
-    refreshContentItems,
-  };
-
-  return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
+  
+  return (
+    <ContentContext.Provider value={{ contentItems, loading, createContent, updateContent, deleteContent, refreshContentItems }}>
+      {children}
+    </ContentContext.Provider>
+  );
 };
-
-export const useContent = () => useContext(ContentContext);
 
 export default ContentContext;

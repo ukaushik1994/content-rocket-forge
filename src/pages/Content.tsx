@@ -20,6 +20,7 @@ import {
   Library,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const Content = () => {
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,20 @@ const Content = () => {
   const [contentKeywords, setContentKeywords] = useState<string[]>([]);
   const [seoScore, setSeoScore] = useState<number>(0);
   
-  const { createContent, updateContent, refreshContentItems } = useContent();
+  const { createContent, updateContent, refreshContentItems, contentItems } = useContent();
+
+  // Load content when content ID changes
+  useEffect(() => {
+    if (currentContentId) {
+      const contentItem = contentItems.find(item => item.id === currentContentId);
+      if (contentItem) {
+        setContentTitle(contentItem.title || '');
+        setContentBody(contentItem.content || '');
+        setContentKeywords(contentItem.keywords || []);
+        setSeoScore(contentItem.seo_score || 0);
+      }
+    }
+  }, [currentContentId, contentItems]);
 
   const handleGenerate = () => {
     setLoading(true);
@@ -110,8 +124,6 @@ const Content = () => {
           toast.success('Content saved successfully!');
           // Refresh content items to update the repository view
           await refreshContentItems();
-          // Switch to published tab to show the saved content
-          setActiveTab("published");
         }
       }
     } catch (error) {
@@ -138,6 +150,18 @@ const Content = () => {
     }, 1000);
   };
   
+  // Clear content form for creating new content
+  const handleNewContent = () => {
+    setCurrentContentId(null);
+    setContentTitle('');
+    setContentBody('');
+    setContentKeywords([]);
+    setSeoScore(0);
+    setContentGenerated(false);
+    setAnalysisComplete(false);
+    setActiveTab("editor");
+  };
+  
   // Update from content editor
   const handleContentUpdate = (data: { 
     title?: string; 
@@ -160,6 +184,14 @@ const Content = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gradient">Content Builder</h1>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-1 neon-border"
+                onClick={handleNewContent}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>New</span>
+              </Button>
               <Button 
                 variant="outline" 
                 className="gap-1 neon-border"
@@ -323,7 +355,6 @@ const Content = () => {
             <TabsContent value="repository" className="mt-4">
               <ContentRepository onSelectContent={(contentId) => {
                 setCurrentContentId(contentId);
-                // TODO: Load the content into editor when a repository item is selected
                 setActiveTab("editor");
               }} />
             </TabsContent>

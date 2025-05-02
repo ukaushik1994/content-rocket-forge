@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ContentProvider } from '@/contexts/ContentContext';
 import { Toaster } from 'sonner';
 import Content from '@/pages/Content';
+import Settings from '@/pages/Settings';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Content />} />
           <Route path="/content" element={<Content />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </ContentProvider>
     </AuthProvider>
