@@ -25,23 +25,21 @@ export type ApiKeyType = {
   updated_at: string;
 };
 
+// Default user ID to use for all API keys
+const DEFAULT_USER_ID = 'default-user-id';
+
+// Option 1: Use Supabase with a default user ID
 export async function saveApiKey(service: string, key: string): Promise<boolean> {
   try {
     if (!key.trim()) {
       throw new Error('API key cannot be empty');
     }
 
-    // Get the current authenticated user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('You must be logged in to save API keys');
-    }
-
     const { data: existingKey, error: fetchError } = await supabase
       .from('api_keys')
       .select('*')
       .eq('service', service)
-      .eq('user_id', user.id)
+      .eq('user_id', DEFAULT_USER_ID)
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -70,7 +68,7 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
           service, 
           encrypted_key, 
           is_active: true,
-          user_id: user.id  // Add the user_id
+          user_id: DEFAULT_USER_ID  // Use default user ID
         });
 
       if (error) throw error;
@@ -87,10 +85,12 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
 
 export async function getApiKey(service: string): Promise<string | null> {
   try {
+    // Option 1: Use Supabase
     const { data, error } = await supabase
       .from('api_keys')
       .select('encrypted_key')
       .eq('service', service)
+      .eq('user_id', DEFAULT_USER_ID)
       .eq('is_active', true)
       .single();
 
@@ -104,10 +104,12 @@ export async function getApiKey(service: string): Promise<string | null> {
 
 export async function deleteApiKey(service: string): Promise<boolean> {
   try {
+    // Option 1: Use Supabase
     const { error } = await supabase
       .from('api_keys')
       .delete()
-      .eq('service', service);
+      .eq('service', service)
+      .eq('user_id', DEFAULT_USER_ID);
 
     if (error) throw error;
     

@@ -31,6 +31,7 @@ const App = () => (
               <Route path="/solutions" element={<Solutions />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/analytics" element={<Analytics />} />
+              {/* Auth route is removed since we don't need authentication anymore */}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
