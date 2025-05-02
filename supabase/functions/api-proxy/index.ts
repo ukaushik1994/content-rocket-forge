@@ -46,6 +46,110 @@ const mockSerpService = {
       ],
       timestamp: new Date().toISOString()
     };
+  },
+  'analyze-keyword': (params: any) => {
+    const keyword = params.keyword || 'default keyword';
+    return {
+      keywords: [keyword, `${keyword} best practices`, `how to use ${keyword}`, `${keyword} examples`],
+      searchVolume: Math.floor(Math.random() * 10000) + 1000,
+      competitionScore: Math.random().toFixed(2),
+      keywordDifficulty: Math.floor(Math.random() * 100),
+      recommendations: [
+        'Create comprehensive guides with step-by-step instructions',
+        'Include real-world case studies and examples',
+        'Add expert quotes or interviews for credibility',
+        'Use data visualization to explain complex concepts'
+      ],
+      peopleAlsoAsk: [
+        {
+          question: `What is the best ${keyword}?`,
+          answer: `The best ${keyword} depends on your specific needs and goals. Many experts recommend starting with...`,
+          source: 'https://example.com/best-options'
+        },
+        {
+          question: `How much does ${keyword} cost?`,
+          answer: `Pricing for ${keyword} typically ranges from $50-500 per month depending on features and scale...`,
+          source: 'https://example.com/pricing'
+        },
+        {
+          question: `Is ${keyword} worth it for small businesses?`,
+          answer: `Small businesses can benefit from ${keyword} by focusing on core features that drive ROI...`,
+          source: 'https://example.com/small-business'
+        },
+        {
+          question: `What are alternatives to ${keyword}?`,
+          answer: `Popular alternatives include ProductX, ServiceY, and PlatformZ, each with unique strengths...`,
+          source: 'https://example.com/alternatives'
+        },
+        {
+          question: `How to get started with ${keyword}?`,
+          answer: `Getting started with ${keyword} involves setting up your account, configuring basic settings...`,
+          source: 'https://example.com/getting-started'
+        }
+      ],
+      relatedSearches: [
+        { query: `best ${keyword} tools`, volume: 850 },
+        { query: `${keyword} vs competition`, volume: 720 },
+        { query: `${keyword} tutorial`, volume: 1500 },
+        { query: `free ${keyword} alternatives`, volume: 950 },
+        { query: `${keyword} pricing comparison`, volume: 600 },
+        { query: `${keyword} for beginners`, volume: 1200 }
+      ],
+      topResults: [
+        { 
+          title: `10 Best ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Tools in 2025`, 
+          link: 'https://example.com/best-tools',
+          snippet: `Looking for the best ${keyword} options? Our expert team has tested over 30 different solutions to bring you the definitive ranking...`,
+          position: 1
+        },
+        { 
+          title: `${keyword.charAt(0).toUpperCase() + keyword.slice(1)}: The Complete Guide (Updated for 2025)`, 
+          link: 'https://example.com/complete-guide',
+          snippet: `Everything you need to know about ${keyword}, from basic concepts to advanced techniques. Updated with the latest trends and tools for 2025.`,
+          position: 2
+        },
+        { 
+          title: `How to Choose the Right ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} for Your Business`, 
+          link: 'https://example.com/how-to-choose',
+          snippet: `Confused about which ${keyword} solution is right for you? This step-by-step guide will help you make the perfect choice based on your specific needs.`,
+          position: 3
+        }
+      ],
+      featuredSnippets: [
+        {
+          type: 'definition',
+          content: `${keyword.charAt(0).toUpperCase() + keyword.slice(1)} is a systematic process that helps businesses optimize their online content to improve visibility, drive traffic, and increase conversions.`,
+          source: 'https://example.com/definition'
+        },
+        {
+          type: 'list',
+          content: `1. Research your audience and competitors\n2. Analyze keyword opportunities\n3. Create high-quality content\n4. Optimize for search engines\n5. Build quality backlinks\n6. Monitor and adjust your strategy`,
+          source: 'https://example.com/steps'
+        }
+      ],
+      imagePacks: [
+        {
+          title: `${keyword} infographic`,
+          url: 'https://example.com/images/infographic',
+          thumbnailUrl: 'https://example.com/thumbnails/infographic.jpg'
+        },
+        {
+          title: `${keyword} comparison chart`,
+          url: 'https://example.com/images/chart',
+          thumbnailUrl: 'https://example.com/thumbnails/chart.jpg'
+        }
+      ],
+      knowledgeGraph: {
+        title: keyword.charAt(0).toUpperCase() + keyword.slice(1),
+        description: `A systematic approach to improving online visibility and reaching a target audience through search engines.`,
+        entityType: 'Concept',
+        attributes: {
+          'Key components': 'Keywords, Content, Technical SEO, Link building',
+          'Related fields': 'Digital marketing, Content marketing, Web development'
+        }
+      },
+      timestamp: new Date().toISOString()
+    };
   }
 };
 
@@ -126,6 +230,8 @@ Deno.serve(async (req) => {
           responseData = mockSerpService.search(params);
         } else if (endpoint === 'analyze') {
           responseData = mockSerpService.analyze(params);
+        } else if (endpoint === 'analyze-keyword') {
+          responseData = mockSerpService['analyze-keyword'](params);
         } else {
           throw new Error(`Unknown SERP endpoint: ${endpoint}`);
         }

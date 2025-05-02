@@ -1,5 +1,5 @@
 
-import { analyzeContent as analyzeSerpContent } from './serpApiService';
+import { analyzeContent as analyzeSerpContent, analyzeKeywordSerp } from './serpApiService';
 import { callApiProxy } from './apiProxyService';
 
 export interface ContentAnalysis {
@@ -8,6 +8,7 @@ export interface ContentAnalysis {
   recommendations: string[];
   readabilityScore?: number;
   competitionScore?: number;
+  serp?: any; // Full SERP data
 }
 
 export async function analyzeContent(content: string, targetKeywords: string[] = []): Promise<ContentAnalysis> {
@@ -30,10 +31,33 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
       keywords: serpAnalysis.keywords,
       recommendations: serpAnalysis.recommendations,
       readabilityScore: aiAnalysis?.score ? Math.round(aiAnalysis.score * 10) : undefined,
-      competitionScore: serpAnalysis.competitionScore
+      competitionScore: serpAnalysis.competitionScore,
+      serp: serpAnalysis
     };
   } catch (error) {
     console.error('Content analysis error:', error);
+    return {
+      seoScore: 0,
+      keywords: [],
+      recommendations: [],
+    };
+  }
+}
+
+export async function analyzeKeyword(keyword: string): Promise<ContentAnalysis> {
+  try {
+    // Get comprehensive SERP data for the keyword
+    const serpData = await analyzeKeywordSerp(keyword);
+    
+    return {
+      seoScore: Math.round((serpData.competitionScore || 0.5) * 100),
+      keywords: serpData.keywords || [],
+      recommendations: serpData.recommendations || [],
+      competitionScore: serpData.competitionScore,
+      serp: serpData
+    };
+  } catch (error) {
+    console.error('Keyword analysis error:', error);
     return {
       seoScore: 0,
       keywords: [],
