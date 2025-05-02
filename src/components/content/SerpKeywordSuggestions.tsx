@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { analyzeKeyword } from '@/services/contentAnalysisService';
 import { toast } from 'sonner';
 import { Search, Plus, ArrowRight } from 'lucide-react';
@@ -23,6 +23,8 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [relatedKeywords, setRelatedKeywords] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [searchVolume, setSearchVolume] = useState<number | undefined>();
+  const [keywordDifficulty, setKeywordDifficulty] = useState<number | undefined>();
   
   const handleSearch = async () => {
     if (!primaryKeyword.trim()) {
@@ -34,6 +36,8 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
     try {
       const result = await analyzeKeyword(primaryKeyword.trim());
       setRelatedKeywords(result.keywords || []);
+      setSearchVolume(result.searchVolume);
+      setKeywordDifficulty(result.keywordDifficulty);
       onKeywordSelect(primaryKeyword.trim());
       toast.success(`Found ${result.keywords?.length || 0} related keywords`);
     } catch (error) {
@@ -61,6 +65,20 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
     }
   };
   
+  const getDifficultyLabel = (difficulty?: number) => {
+    if (!difficulty) return 'Unknown';
+    if (difficulty < 30) return 'Easy';
+    if (difficulty < 60) return 'Medium';
+    return 'Hard';
+  }
+  
+  const getDifficultyColor = (difficulty?: number) => {
+    if (!difficulty) return 'text-gray-400';
+    if (difficulty < 30) return 'text-green-400';
+    if (difficulty < 60) return 'text-amber-400';
+    return 'text-rose-400';
+  }
+  
   return (
     <div className={className}>
       <div className="space-y-4">
@@ -71,6 +89,11 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
             value={primaryKeyword}
             onChange={(e) => setPrimaryKeyword(e.target.value)}
             className="flex-1 bg-glass border border-white/10"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
+              }
+            }}
           />
           <Button 
             onClick={handleSearch} 
@@ -86,11 +109,38 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
           </Button>
         </div>
         
-        {relatedKeywords.length > 0 && (
+        {isLoading && (
           <Card className="glass-panel">
             <CardContent className="pt-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-medium">Related Keywords</h4>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-8 w-32" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({length: 8}).map((_, idx) => (
+                  <Skeleton key={idx} className="h-8 w-24" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {relatedKeywords.length > 0 && !isLoading && (
+          <Card className="glass-panel">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium">Related Keywords</h4>
+                  {searchVolume && (
+                    <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                      <span>Search Volume: {searchVolume.toLocaleString()}</span>
+                      <span>•</span>
+                      <span>Difficulty: <span className={getDifficultyColor(keywordDifficulty)}>
+                        {getDifficultyLabel(keywordDifficulty)}
+                      </span></span>
+                    </div>
+                  )}
+                </div>
                 {selectedKeywords.length > 0 && (
                   <Button 
                     size="sm" 

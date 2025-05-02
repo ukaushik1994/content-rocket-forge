@@ -1,5 +1,6 @@
 
 import { callApiProxy } from './apiProxyService';
+import { toast } from 'sonner';
 
 export interface SerpSearchParams {
   query: string;
@@ -71,6 +72,7 @@ export async function searchKeywords(params: SerpSearchParams): Promise<SerpSear
     return data?.results || [];
   } catch (error) {
     console.error('SERP search error:', error);
+    toast.error('Failed to search keywords. Please try again.');
     return [];
   }
 }
@@ -89,6 +91,7 @@ export async function analyzeContent(content: string, keywords: string[]): Promi
     };
   } catch (error) {
     console.error('SERP analysis error:', error);
+    toast.error('Failed to analyze content. Please try again.');
     return {
       keywords: [],
       recommendations: [],
@@ -98,18 +101,21 @@ export async function analyzeContent(content: string, keywords: string[]): Promi
 
 export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisResult> {
   try {
+    console.log(`Calling SERP API for keyword: ${keyword}`);
     const data = await callApiProxy<SerpAnalysisResult>({
       service: 'serp',
       endpoint: 'analyze-keyword',
       params: { keyword }
     });
     
-    return data || {
-      keywords: [],
-      recommendations: [],
-    };
+    if (!data) {
+      throw new Error('No data returned from SERP API');
+    }
+    
+    return data;
   } catch (error) {
     console.error('SERP keyword analysis error:', error);
+    toast.error('Failed to analyze keyword. Please try again.');
     return {
       keywords: [],
       recommendations: [],
