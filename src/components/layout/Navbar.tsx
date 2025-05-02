@@ -1,61 +1,209 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { RocketIcon, Search, BarChart3, Settings, Users, Activity, MessageCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Home,
+  BarChart3,
+  Search,
+  FileText,
+  Settings,
+  User,
+  LogOut,
+  Menu,
+  X,
+  PanelRight,
+  Rocket,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+
+const navItems = [
+  { name: 'Dashboard', path: '/', icon: Home },
+  { name: 'Keywords', path: '/keywords', icon: Search },
+  { name: 'Content', path: '/content', icon: FileText },
+  { name: 'Solutions', path: '/solutions', icon: Rocket },
+  { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+  { name: 'Settings', path: '/settings', icon: Settings },
+];
 
 const Navbar = () => {
   const location = useLocation();
-  
-  const links = [
-    { name: 'Dashboard', href: '/', icon: <RocketIcon className="h-4 w-4 mr-2" /> },
-    { name: 'Keywords', href: '/keywords', icon: <Search className="h-4 w-4 mr-2" /> },
-    { name: 'Content', href: '/content', icon: <BarChart3 className="h-4 w-4 mr-2" /> },
-    { name: 'Solutions', href: '/solutions', icon: <Users className="h-4 w-4 mr-2" /> },
-    { name: 'Analytics', href: '/analytics', icon: <Activity className="h-4 w-4 mr-2" /> },
-    { name: 'Settings', href: '/settings', icon: <Settings className="h-4 w-4 mr-2" /> },
-  ];
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setShowMobileMenu(!showMobileMenu);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md border-b border-white/10 bg-background/80">
-      <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center animate-pulse-glow">
-            <RocketIcon className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-gradient">ContentRocketForge</span>
-        </Link>
-        
-        <nav className="hidden md:flex items-center space-x-6">
-          {links.map((link) => (
-            <Link
-              key={link.name}
-              to={link.href}
-              className={cn(
-                "text-sm font-medium transition-colors flex items-center",
-                location.pathname === link.href 
-                  ? "text-foreground" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {link.icon}
-              {link.name}
+    <div className="relative z-10 bg-background/80 backdrop-blur-md">
+      <header className="container flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="mr-4 hidden lg:flex">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="relative">
+                <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
+                <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
+                  <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
+                </div>
+              </div>
+              <span className="font-bold text-gradient">ContentRocketForge</span>
             </Link>
-          ))}
-        </nav>
-        
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="neon-border gap-1">
-            <MessageCircle className="h-4 w-4" />
-            Feedback
+          </div>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            className="lg:hidden"
+            onClick={toggleMobileMenu}
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle Menu</span>
           </Button>
-          <Button size="sm" className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white">
-            New Project
-          </Button>
+
+          <nav className="hidden lg:flex items-center space-x-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              
+              return (
+                <Link key={item.path} to={item.path}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "flex items-center gap-1 px-3",
+                      isActive && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-      </div>
-    </header>
+
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full overflow-hidden border border-border"
+              >
+                {user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col">
+                  <span className="text-sm font-normal text-muted-foreground">Signed in as</span>
+                  <span className="font-medium">{user?.email}</span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link to="/settings">
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* Mobile Menu */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
+          <div className="fixed inset-y-0 left-0 z-50 w-3/4 bg-background p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-8">
+              <Link to="/" className="flex items-center gap-2" onClick={() => setShowMobileMenu(false)}>
+                <div className="relative">
+                  <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
+                  <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
+                    <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
+                  </div>
+                </div>
+                <span className="font-bold text-gradient">ContentRocketForge</span>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMobileMenu}
+              >
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close Menu</span>
+              </Button>
+            </div>
+
+            <nav className="flex flex-col space-y-4">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                return (
+                  <Link 
+                    key={item.path} 
+                    to={item.path}
+                    onClick={() => setShowMobileMenu(false)} 
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-2 rounded-md",
+                      isActive 
+                        ? "bg-accent text-accent-foreground" 
+                        : "hover:bg-accent/50 hover:text-accent-foreground"
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+              
+              <div className="pt-4 mt-4 border-t border-border">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start gap-3" 
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span>Log out</span>
+                </Button>
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

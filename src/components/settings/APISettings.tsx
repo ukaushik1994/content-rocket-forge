@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +13,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Eye, EyeOff, CheckCircle2, Info } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Info, Loader2 } from 'lucide-react';
+import { saveApiKey, getApiKey, testApiKey, deleteApiKey } from '@/services/apiKeyService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const APISettings = () => {
   const [serpAPIKey, setSerpAPIKey] = useState('');
@@ -22,18 +24,73 @@ export const APISettings = () => {
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [enableRealTimeData, setEnableRealTimeData] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [loadingSerpKey, setLoadingSerpKey] = useState(false);
+  const [loadingOpenAIKey, setLoadingOpenAIKey] = useState(false);
+  const [testingSerpAPI, setTestingSerpAPI] = useState(false);
+  const [testingOpenAI, setTestingOpenAI] = useState(false);
+  const { user } = useAuth();
   
-  const handleSaveAPI = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchAPIKeys = async () => {
+      if (!user) return;
+      
+      // Fetch SERP API key
+      setLoadingSerpKey(true);
+      const serpKey = await getApiKey('serp');
+      if (serpKey) setSerpAPIKey(serpKey);
+      setLoadingSerpKey(false);
+      
+      // Fetch OpenAI key
+      setLoadingOpenAIKey(true);
+      const openaiKey = await getApiKey('openai');
+      if (openaiKey) setOpenAIKey(openaiKey);
+      setLoadingOpenAIKey(false);
+    };
+    
+    fetchAPIKeys();
+  }, [user]);
+  
+  const handleSaveAPI = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('API settings saved successfully!');
+    
+    if (serpAPIKey) {
+      const success = await saveApiKey('serp', serpAPIKey);
+      if (success) {
+        toast.success('SERP API key saved successfully!');
+      }
+    }
+    
+    if (openAIKey) {
+      const success = await saveApiKey('openai', openAIKey);
+      if (success) {
+        toast.success('OpenAI API key saved successfully!');
+      }
+    }
   };
   
-  const handleTestConnection = (api: string) => {
-    toast.loading(`Testing connection to ${api} API...`);
-    
-    setTimeout(() => {
-      toast.success(`Successfully connected to ${api} API!`);
-    }, 1500);
+  const handleTestConnection = async (api: string) => {
+    try {
+      if (api === 'SERP') {
+        setTestingSerpAPI(true);
+        if (!serpAPIKey) {
+          toast.error('Please enter a SERP API key first');
+          return;
+        }
+        await testApiKey('SERP', serpAPIKey);
+      } else if (api === 'OpenAI') {
+        setTestingOpenAI(true);
+        if (!openAIKey) {
+          toast.error('Please enter an OpenAI API key first');
+          return;
+        }
+        await testApiKey('OpenAI', openAIKey);
+      }
+    } catch (error: any) {
+      toast.error(`Failed to test ${api} connection: ${error.message}`);
+    } finally {
+      setTestingSerpAPI(false);
+      setTestingOpenAI(false);
+    }
   };
 
   return (
@@ -57,6 +114,7 @@ export const APISettings = () => {
                     size="sm"
                     className="h-6 px-2 text-xs"
                     onClick={() => setShowSerpKey(!showSerpKey)}
+                    disabled={loadingSerpKey}
                   >
                     {showSerpKey ? (
                       <><EyeOff className="h-3 w-3 mr-1" /> Hide</>
@@ -69,10 +127,11 @@ export const APISettings = () => {
                   <Input
                     id="serpapi-key"
                     type={showSerpKey ? 'text' : 'password'}
-                    placeholder="Enter your SERP API key"
+                    placeholder={loadingSerpKey ? 'Loading...' : 'Enter your SERP API key'}
                     value={serpAPIKey}
                     onChange={(e) => setSerpAPIKey(e.target.value)}
                     className="bg-glass border-border pr-24"
+                    disabled={loadingSerpKey}
                   />
                   <Button
                     type="button"
@@ -80,8 +139,13 @@ export const APISettings = () => {
                     size="sm"
                     className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-xs"
                     onClick={() => handleTestConnection('SERP')}
+                    disabled={testingSerpAPI || !serpAPIKey || loadingSerpKey}
                   >
-                    Test Connection
+                    {testingSerpAPI ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Testing</>
+                    ) : (
+                      'Test Connection'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -129,6 +193,7 @@ export const APISettings = () => {
                     size="sm"
                     className="h-6 px-2 text-xs"
                     onClick={() => setShowOpenAIKey(!showOpenAIKey)}
+                    disabled={loadingOpenAIKey}
                   >
                     {showOpenAIKey ? (
                       <><EyeOff className="h-3 w-3 mr-1" /> Hide</>
@@ -141,10 +206,11 @@ export const APISettings = () => {
                   <Input
                     id="openai-key"
                     type={showOpenAIKey ? 'text' : 'password'}
-                    placeholder="Enter your OpenAI API key"
+                    placeholder={loadingOpenAIKey ? 'Loading...' : 'Enter your OpenAI API key'}
                     value={openAIKey}
                     onChange={(e) => setOpenAIKey(e.target.value)}
                     className="bg-glass border-border pr-24"
+                    disabled={loadingOpenAIKey}
                   />
                   <Button
                     type="button"
@@ -152,8 +218,13 @@ export const APISettings = () => {
                     size="sm"
                     className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-xs"
                     onClick={() => handleTestConnection('OpenAI')}
+                    disabled={testingOpenAI || !openAIKey || loadingOpenAIKey}
                   >
-                    Test Connection
+                    {testingOpenAI ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Testing</>
+                    ) : (
+                      'Test Connection'
+                    )}
                   </Button>
                 </div>
               </div>
