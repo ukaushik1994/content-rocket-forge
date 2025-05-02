@@ -118,16 +118,18 @@ export function AppearanceSettings() {
             </motion.div>
             
             <motion.div variants={item}>
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple w-full"
-                onClick={handleSaveAppearance}
+              <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                as={motion.button}
               >
-                Save Appearance Settings
-              </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple w-full"
+                  onClick={handleSaveAppearance}
+                >
+                  Save Appearance Settings
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         </CardContent>
