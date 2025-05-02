@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
 import ResearchTabContent from './tabs/ResearchTabContent';
 import ClustersTabContent from './tabs/ClustersTabContent'; 
 import TrendsTabContent from './tabs/TrendsTabContent';
@@ -37,8 +36,6 @@ const KeywordsTabs = ({
   onExport,
   onUseKeyword
 }: KeywordsTabsProps) => {
-  const navigate = useNavigate();
-
   return (
     <Tabs defaultValue={activeTab} onValueChange={onTabChange}>
       <TabsList className="bg-secondary/30">
@@ -72,7 +69,7 @@ const KeywordsTabs = ({
       </TabsContent>
       
       <TabsContent value="serp" className={`mt-6 ${animateTabs ? 'animate-fade-in' : ''}`}>
-        <SerpTabContent onUseKeyword={onUseKeyword} navigate={navigate} />
+        <SerpTabContent onUseKeyword={onUseKeyword} navigate={useNavigate()} />
       </TabsContent>
 
       <TabsContent value="competitors" className={`mt-6 ${animateTabs ? 'animate-fade-in' : ''}`}>
