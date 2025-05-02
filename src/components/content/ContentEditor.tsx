@@ -48,6 +48,7 @@ export function ContentEditor() {
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [availableSolutions, setAvailableSolutions] = useState<Solution[]>([]);
   const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
+  const [mainKeyword, setMainKeyword] = useState("best project management software");
   
   // Fetch the available solutions when the component mounts
   useEffect(() => {
@@ -105,10 +106,10 @@ export function ContentEditor() {
     setSeoScore(Math.floor(newScore));
   };
 
-  // Updated steps to include solution selection
+  // Updated steps with keyword research first, then solution selection
   const steps = [
-    { name: "Select Solution", icon: <Briefcase className="h-5 w-5" /> },
     { name: "Keyword Research", icon: <Search className="h-5 w-5" /> },
+    { name: "Select Solution", icon: <Briefcase className="h-5 w-5" /> },
     { name: "SERP Analysis", icon: <Database className="h-5 w-5" /> },
     { name: "Content Structure", icon: <LayoutTemplate className="h-5 w-5" /> },
     { name: "Content Writing", icon: <Pencil className="h-5 w-5" /> },
@@ -141,7 +142,84 @@ export function ContentEditor() {
 
   const getStepContent = () => {
     switch(currentStep) {
-      case 0: // Solution selection step
+      case 0: // Now this is the Keyword Research step
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">Keyword Research</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="glass-panel">
+                <CardContent className="pt-6 space-y-4">
+                  <h4 className="text-lg font-medium">Primary Keyword</h4>
+                  <div className="space-y-2">
+                    <input 
+                      type="text" 
+                      className="w-full bg-glass border border-white/10 p-3 rounded-md" 
+                      placeholder="Enter your main keyword..." 
+                      value={mainKeyword}
+                      onChange={(e) => setMainKeyword(e.target.value)}
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Search Volume: 12,000</span>
+                      <span>Keyword Difficulty: Medium</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 pt-4">
+                    <h5 className="font-medium">Related Keywords</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {["project management tools", "task management software", "team collaboration tools"].map((kw, i) => (
+                        <Badge key={i} className="bg-glass border border-white/10">
+                          {kw}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel">
+                <CardContent className="pt-6 space-y-4">
+                  <h4 className="text-lg font-medium">Keyword Clusters</h4>
+                  <div className="space-y-4">
+                    <div className="border border-white/10 rounded-md p-3 space-y-2">
+                      <h5 className="font-medium text-primary">Features Cluster</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
+                          <Badge key={i} variant="outline" className="border-primary/30">
+                            {term}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="border border-white/10 rounded-md p-3 space-y-2">
+                      <h5 className="font-medium text-neon-blue">Pain Points Cluster</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
+                          <Badge key={i} variant="outline" className="border-neon-blue/30">
+                            {term}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                onClick={() => setCurrentStep(1)}
+              >
+                Select Solution
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 1: // Now this is the Solution selection step
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Select a Solution</h3>
@@ -215,115 +293,24 @@ export function ContentEditor() {
                   </div>
                 </RadioGroup>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={() => setCurrentStep(0)}>
+                    Back
+                  </Button>
                   <Button 
                     className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                    onClick={() => setCurrentStep(1)}
+                    onClick={() => {
+                      setCurrentStep(2);
+                      fetchSerpData();
+                    }}
                     disabled={!selectedSolution}
                   >
-                    Continue to Keyword Research
+                    Analyze SERP
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </div>
             )}
-          </div>
-        );
-      case 1: // Now this is the Keyword Research step
-        return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-medium">Keyword Research</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="glass-panel">
-                <CardContent className="pt-6 space-y-4">
-                  <h4 className="text-lg font-medium">Primary Keyword</h4>
-                  <div className="space-y-2">
-                    <input 
-                      type="text" 
-                      className="w-full bg-glass border border-white/10 p-3 rounded-md" 
-                      placeholder="Enter your main keyword..." 
-                      defaultValue={selectedSolution ? `best ${selectedSolution.name.toLowerCase()} alternatives` : "best project management software"}
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Search Volume: 12,000</span>
-                      <span>Keyword Difficulty: Medium</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2 pt-4">
-                    <h5 className="font-medium">Related Keywords</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedSolution ? [
-                        `${selectedSolution.name.toLowerCase()} pricing`, 
-                        `${selectedSolution.name.toLowerCase()} vs competitors`, 
-                        `${selectedSolution.name.toLowerCase()} features`
-                      ].map((kw, i) => (
-                        <Badge key={i} className="bg-glass border border-white/10">
-                          {kw}
-                        </Badge>
-                      )) : ["project management tools", "task management software", "team collaboration tools"].map((kw, i) => (
-                        <Badge key={i} className="bg-glass border border-white/10">
-                          {kw}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="glass-panel">
-                <CardContent className="pt-6 space-y-4">
-                  <h4 className="text-lg font-medium">Keyword Clusters</h4>
-                  <div className="space-y-4">
-                    <div className="border border-white/10 rounded-md p-3 space-y-2">
-                      <h5 className="font-medium text-primary">Features Cluster</h5>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSolution ? selectedSolution.features.map((feature, i) => (
-                          <Badge key={i} variant="outline" className="border-primary/30">
-                            {feature}
-                          </Badge>
-                        )) : ["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
-                          <Badge key={i} variant="outline" className="border-primary/30">
-                            {term}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="border border-white/10 rounded-md p-3 space-y-2">
-                      <h5 className="font-medium text-neon-blue">Pain Points Cluster</h5>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSolution ? selectedSolution.painPoints.map((painPoint, i) => (
-                          <Badge key={i} variant="outline" className="border-neon-blue/30">
-                            {painPoint}
-                          </Badge>
-                        )) : ["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
-                          <Badge key={i} variant="outline" className="border-neon-blue/30">
-                            {term}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setCurrentStep(0)}>
-                Back
-              </Button>
-              <Button 
-                className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                onClick={() => {
-                  setCurrentStep(2);
-                  fetchSerpData();
-                }}
-              >
-                Analyze SERP
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
           </div>
         );
         
