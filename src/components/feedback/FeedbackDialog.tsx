@@ -1,12 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ThumbsUp, ThumbsDown, Lightbulb, Bug, MessageCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Lightbulb, Bug, MessageCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -14,10 +16,45 @@ interface FeedbackDialogProps {
 }
 
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
-  const handleSubmit = (e: React.FormEvent) => {
+  const { user } = useAuth();
+  const [message, setMessage] = useState('');
+  const [sentiment, setSentiment] = useState<'positive' | 'negative'>('positive');
+  const [type, setType] = useState<'suggestion' | 'bug' | 'other'>('suggestion');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Thank you for your feedback!');
-    onOpenChange(false);
+    
+    if (!message.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('feedback')
+        .insert({
+          message,
+          sentiment,
+          type,
+          user_id: user?.id || null,
+          status: 'unread'
+        });
+      
+      if (error) throw error;
+      
+      toast.success('Thank you for your feedback!');
+      onOpenChange(false);
+      setMessage('');
+      setSentiment('positive');
+      setType('suggestion');
+    } catch (error: any) {
+      console.error('Error submitting feedback:', error);
+      toast.error(error.message || 'Failed to submit feedback');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -37,16 +74,18 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               <div className="flex space-x-4">
                 <Button 
                   type="button" 
-                  variant="outline" 
-                  className="flex-1 space-x-2 hover:border-neon-purple hover:text-neon-purple"
+                  variant={sentiment === 'positive' ? 'default' : 'outline'}
+                  className={`flex-1 space-x-2 ${sentiment === 'positive' ? 'bg-green-500 hover:bg-green-600' : 'hover:border-neon-purple hover:text-neon-purple'}`}
+                  onClick={() => setSentiment('positive')}
                 >
                   <ThumbsUp className="h-4 w-4" />
                   <span>Positive</span>
                 </Button>
                 <Button 
                   type="button" 
-                  variant="outline" 
-                  className="flex-1 space-x-2 hover:border-neon-orange hover:text-neon-orange"
+                  variant={sentiment === 'negative' ? 'default' : 'outline'}
+                  className={`flex-1 space-x-2 ${sentiment === 'negative' ? 'bg-orange-500 hover:bg-orange-600' : 'hover:border-neon-orange hover:text-neon-orange'}`}
+                  onClick={() => setSentiment('negative')}
                 >
                   <ThumbsDown className="h-4 w-4" />
                   <span>Negative</span>
@@ -56,7 +95,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             
             <div>
               <div className="text-sm font-medium mb-2">Feedback type</div>
-              <RadioGroup defaultValue="suggestion" className="grid grid-cols-3 gap-2">
+              <RadioGroup value={type} onValueChange={(value) => setType(value as 'suggestion' | 'bug' | 'other')} className="grid grid-cols-3 gap-2">
                 <div>
                   <RadioGroupItem 
                     value="suggestion" 
@@ -108,6 +147,9 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 id="feedback-message" 
                 placeholder="Tell us what you think..." 
                 className="min-h-[120px] bg-glass border-white/10"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -117,14 +159,23 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               type="button" 
               variant="ghost" 
               onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+              disabled={isSubmitting}
             >
-              Submit Feedback
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Feedback'
+              )}
             </Button>
           </DialogFooter>
         </form>

@@ -12,6 +12,65 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Mock SERP API service for development
+const mockSerpService = {
+  search: (params: any) => {
+    return {
+      results: [
+        { 
+          title: `Search results for: ${params.query}`, 
+          link: 'https://example.com/1',
+          snippet: 'This is a mock search result for your query.',
+          position: 1
+        },
+        { 
+          title: `More about: ${params.query}`, 
+          link: 'https://example.com/2',
+          snippet: 'Another mock result with some different content.',
+          position: 2
+        }
+      ],
+      timestamp: new Date().toISOString()
+    };
+  },
+  analyze: (params: any) => {
+    return {
+      keywords: params.keywords || ['content', 'marketing', 'seo'],
+      searchVolume: 1200,
+      competitionScore: 0.65,
+      recommendations: [
+        'Add more specific details about your target audience',
+        'Include more statistics to back up your claims',
+        'Consider adding a section about recent trends',
+        'Your content readability score is good, keep paragraphs short'
+      ],
+      timestamp: new Date().toISOString()
+    };
+  }
+};
+
+// Mock OpenAI service for development
+const mockOpenAIService = {
+  complete: (params: any) => {
+    return {
+      completion: `This is a mock completion for your prompt: ${params.prompt.substring(0, 50)}...`,
+      usage: {
+        prompt_tokens: 10,
+        completion_tokens: 50,
+        total_tokens: 60
+      },
+      timestamp: new Date().toISOString()
+    };
+  },
+  analyze: (params: any) => {
+    return {
+      analysis: `Content analysis: This is a well-structured piece of content with good keyword usage. Consider adding more specific examples to support your main points. The target audience seems to be business professionals.`,
+      score: 8.5,
+      timestamp: new Date().toISOString()
+    };
+  }
+};
+
 // Handle CORS preflight requests
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -57,23 +116,38 @@ Deno.serve(async (req) => {
       throw new Error(`No valid API key found for ${service}`);
     }
     
-    // For demonstration purposes - in a real app, we would call the actual API here
-    // This is a mockup response
-    const mockResponse = {
-      status: 'success',
-      service: service,
-      endpoint: endpoint,
-      data: {
-        results: [
-          { title: 'Example result 1', snippet: 'This is an example result from the proxy API.' },
-          { title: 'Example result 2', snippet: 'This would be real data from the actual API in production.' }
-        ],
-        timestamp: new Date().toISOString()
-      }
-    };
+    let responseData;
+    
+    // Handle different service types
+    switch(service.toLowerCase()) {
+      case 'serp':
+        // Use mock SERP service in development
+        if (endpoint === 'search') {
+          responseData = mockSerpService.search(params);
+        } else if (endpoint === 'analyze') {
+          responseData = mockSerpService.analyze(params);
+        } else {
+          throw new Error(`Unknown SERP endpoint: ${endpoint}`);
+        }
+        break;
+        
+      case 'openai':
+        // Use mock OpenAI service in development
+        if (endpoint === 'complete') {
+          responseData = mockOpenAIService.complete(params);
+        } else if (endpoint === 'analyze') {
+          responseData = mockOpenAIService.analyze(params);
+        } else {
+          throw new Error(`Unknown OpenAI endpoint: ${endpoint}`);
+        }
+        break;
+        
+      default:
+        throw new Error(`Unsupported service: ${service}`);
+    }
     
     return new Response(
-      JSON.stringify(mockResponse),
+      JSON.stringify(responseData),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

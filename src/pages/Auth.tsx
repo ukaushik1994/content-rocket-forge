@@ -1,180 +1,237 @@
 
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { ChevronLeft, Loader2, Info } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDemoCredentials, loginWithDemoAccount } from '@/services/demoAccountService';
 
 const Auth = () => {
-  const { user, loading, signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Redirect if already logged in
-  if (user && !loading) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    setLoading(true);
     
     try {
-      setIsSubmitting(true);
-      await signIn(email, password);
-    } catch (error) {
-      console.error('Login error:', error);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Sign up successful! Check your email for confirmation.', {
+        duration: 6000,
+      });
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      toast.error(error.message);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    setLoading(true);
     
     try {
-      setIsSubmitting(true);
-      await signUp(email, password, firstName, lastName);
-      setActiveTab('login');
-    } catch (error) {
-      console.error('Signup error:', error);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Welcome back!');
+      navigate('/');
+    } catch (error: any) {
+      console.error('Error signing in:', error);
+      toast.error(error.message);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
+
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    const success = await loginWithDemoAccount();
+    if (success) {
+      navigate('/');
+    }
+    setLoading(false);
+  };
+
+  const demoCredentials = getDemoCredentials();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neon-purple via-neon-blue to-neon-pink opacity-20 blur-xl absolute" />
-              <div className="w-14 h-14 rounded-full bg-glass flex items-center justify-center relative z-10">
-                <Sparkles className="h-6 w-6 text-primary animate-pulse-glow" />
-              </div>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-gradient">Content Rocket Forge</h1>
-          <p className="text-muted-foreground mt-2">Sign in to access your dashboard</p>
-        </div>
-
-        <Card className="glass-panel">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}>
-            <CardHeader>
-              <TabsList className="grid w-full grid-cols-2 bg-secondary/30">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-            </CardHeader>
-
-            <CardContent>
-              <TabsContent value="login" className="space-y-4">
-                <form onSubmit={handleLogin}>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                    </div>
-                    <Input 
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full mt-6 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignup}>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input 
-                        id="firstName"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input 
-                        id="lastName"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input 
-                      id="signup-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input 
-                      id="signup-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full mt-6 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Creating Account...' : 'Create Account'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </CardContent>
-            
-            <CardFooter className="flex justify-center pt-4">
-              <p className="text-xs text-muted-foreground">
-                {activeTab === 'login' 
-                  ? "Don't have an account? Click Sign Up above." 
-                  : "Already have an account? Click Login above."}
-              </p>
-            </CardFooter>
-          </Tabs>
-        </Card>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-black to-slate-900">
+      <div className="absolute top-4 left-4">
+        <Button variant="ghost" asChild>
+          <Link to="/">
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
       </div>
+      
+      <div className="text-center mb-8 space-y-2">
+        <h1 className="text-3xl font-bold text-gradient">ContentRocketForge</h1>
+        <p className="text-muted-foreground">Your AI-powered content creation platform</p>
+      </div>
+      
+      <Card className="w-full max-w-md bg-black/60 backdrop-blur border-white/10">
+        <Tabs defaultValue="login" className="w-full">
+          <CardHeader>
+            <TabsList className="grid grid-cols-2 bg-secondary/30">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+          </CardHeader>
+          
+          <CardContent>
+            <TabsContent value="login">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-background/50"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-background/50"
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    'Login'
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-px flex-1 bg-white/10"></div>
+                  <span className="px-4 text-sm text-muted-foreground">OR</span>
+                  <div className="h-px flex-1 bg-white/10"></div>
+                </div>
+                
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleDemoLogin}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading demo...
+                    </>
+                  ) : (
+                    'Use Demo Account'
+                  )}
+                </Button>
+                
+                <div className="mt-4 p-3 bg-blue-950/30 border border-blue-300/20 rounded-md flex items-start text-sm">
+                  <Info className="h-4 w-4 text-blue-300 mr-2 mt-0.5 flex-shrink-0" />
+                  <p className="text-blue-100">
+                    Demo credentials: <br />
+                    Email: <span className="font-mono text-blue-200">{demoCredentials.email}</span><br />
+                    Password: <span className="font-mono text-blue-200">{demoCredentials.password}</span>
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input 
+                    id="signup-email" 
+                    type="email" 
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-background/50"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input 
+                    id="signup-password" 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-background/50"
+                    required
+                  />
+                  <p className="text-sm text-muted-foreground">Password must be at least 6 characters</p>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing up...
+                    </>
+                  ) : (
+                    'Sign Up'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </CardContent>
+        </Tabs>
+        
+        <CardFooter className="flex flex-col space-y-2 text-center text-sm text-muted-foreground">
+          <p>By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
