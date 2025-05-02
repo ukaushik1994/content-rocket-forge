@@ -149,17 +149,24 @@ export function SerpAnalysisPanel({
       </div>
       
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid grid-cols-5 mb-4">
+        <TabsList className="grid grid-cols-4 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="organic">Top Results</TabsTrigger>
-          <TabsTrigger value="questions">Questions</TabsTrigger>
-          <TabsTrigger value="features">SERP Features</TabsTrigger>
-          <TabsTrigger value="related">Related</TabsTrigger>
+          <TabsTrigger value="related">Related Keywords</TabsTrigger>
+          <TabsTrigger value="questions">People Also Ask</TabsTrigger>
+          <TabsTrigger value="competitors">Competitor Analysis</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
           <div className="space-y-4">
-            <SerpFeature title="Content Strategy" icon={<FileText className="h-4 w-4" />}>
+            <SerpFeature 
+              title="Content Strategy" 
+              icon={<FileText className="h-4 w-4" />}
+              onAddToContent={() => {
+                const recommendationsText = serpData.recommendations?.join('\n- ') || '';
+                onAddToContent(`## Content Strategy\n- ${recommendationsText}\n\n`, 'contentStrategy');
+                toast.success('Added content strategy recommendations');
+              }}
+            >
               <div className="space-y-3">
                 {serpData.recommendations?.map((recommendation, index) => (
                   <div key={index} className="flex items-start gap-2">
@@ -171,7 +178,15 @@ export function SerpAnalysisPanel({
             </SerpFeature>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SerpFeature title="Top Keywords" icon={<Search className="h-4 w-4" />}>
+              <SerpFeature 
+                title="Top Keywords" 
+                icon={<Search className="h-4 w-4" />}
+                onAddToContent={() => {
+                  const keywordsText = serpData.keywords?.join('\n- ') || '';
+                  onAddToContent(`## Top Keywords\n- ${keywordsText}\n\n`, 'topKeywords');
+                  toast.success('Added top keywords to your content');
+                }}
+              >
                 <div className="flex flex-wrap gap-2">
                   {serpData.keywords?.map((keyword, index) => (
                     <Badge 
@@ -185,7 +200,22 @@ export function SerpAnalysisPanel({
                 </div>
               </SerpFeature>
               
-              <SerpFeature title="Common Structure" icon={<List className="h-4 w-4" />}>
+              <SerpFeature 
+                title="Common Structure" 
+                icon={<List className="h-4 w-4" />}
+                onAddToContent={() => {
+                  const structureText = `
+## Recommended Content Structure
+- H1: Use numbers (e.g., "10 Best ${mainKeyword} in 2025")
+- Include definitions in the intro
+- Use H2 for main categories
+- Include a comparison table
+- End with FAQ section
+                  `;
+                  onAddToContent(structureText, 'contentStructure');
+                  toast.success('Added content structure recommendations');
+                }}
+              >
                 <div className="text-sm space-y-2">
                   <p>Based on top-ranking content:</p>
                   <ul className="list-disc pl-5 space-y-1">
@@ -201,252 +231,17 @@ export function SerpAnalysisPanel({
           </div>
         </TabsContent>
         
-        <TabsContent value="organic">
-          {serpData.topResults && serpData.topResults.length > 0 ? (
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium mb-2">Top Ranking Content</h4>
-              <Accordion type="single" collapsible className="w-full">
-                {serpData.topResults.map((result, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center">
-                          {result.position}
-                        </span>
-                        <span className="truncate">{result.title}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="text-sm space-y-2">
-                        <p className="text-muted-foreground">{result.snippet}</p>
-                        <a 
-                          href={result.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary flex items-center gap-1 hover:underline"
-                        >
-                          <Link className="h-3 w-3" />
-                          {result.link}
-                        </a>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => {
-                            onAddToContent(`### Based on [${result.title}](${result.link})\n\n`, 'competitorInsight');
-                            toast.success('Added competitor insight section');
-                          }}
-                        >
-                          <PlusCircle className="h-3 w-3 mr-1" />
-                          Add insight from this result
-                        </Button>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">No top results data available</p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="questions">
-          {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 ? (
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium mb-2">People Also Ask</h4>
-              <Accordion type="single" collapsible className="w-full">
-                {serpData.peopleAlsoAsk.map((item, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-sm">
-                      <div className="flex items-center gap-2">
-                        <HelpCircle className="h-4 w-4 text-primary" />
-                        <span>{item.question}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="text-sm space-y-2">
-                        <p className="text-muted-foreground">{item.answer || 'No answer available'}</p>
-                        {item.source && (
-                          <a 
-                            href={item.source} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary flex items-center gap-1 hover:underline text-xs"
-                          >
-                            <Link className="h-3 w-3" />
-                            Source
-                          </a>
-                        )}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => addPeopleAlsoAsk(item.question, item.answer)}
-                        >
-                          <PlusCircle className="h-3 w-3 mr-1" />
-                          Add to FAQs
-                        </Button>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-              <Button
-                className="w-full mt-4"
-                onClick={() => {
-                  const allQuestions = serpData.peopleAlsoAsk?.map(item => 
-                    `### ${item.question}\n${item.answer || 'No answer available'}\n\n`
-                  ).join('');
-                  onAddToContent(`## Frequently Asked Questions\n\n${allQuestions}`, 'faqSection');
-                  toast.success('Added complete FAQ section');
-                }}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Complete FAQ Section
-              </Button>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">No questions data available</p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="features">
-          <div className="space-y-6">
-            {serpData.featuredSnippets && serpData.featuredSnippets.length > 0 && (
-              <SerpFeature 
-                title="Featured Snippets" 
-                icon={<FileText className="h-4 w-4" />}
-              >
-                <div className="space-y-4">
-                  {serpData.featuredSnippets.map((snippet, index) => {
-                    let icon;
-                    switch (snippet.type) {
-                      case 'list': icon = <List className="h-4 w-4 text-primary" />; break;
-                      case 'table': icon = <Table className="h-4 w-4 text-primary" />; break;
-                      default: icon = <FileText className="h-4 w-4 text-primary" />;
-                    }
-                    
-                    return (
-                      <div key={index} className="border border-primary/20 rounded-md p-3 bg-primary/5">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {icon}
-                            <span className="font-medium capitalize">{snippet.type} Snippet</span>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => addFeaturedSnippet(snippet)}
-                          >
-                            <PlusCircle className="h-3 w-3 mr-1" />
-                            Add to Content
-                          </Button>
-                        </div>
-                        <div className="text-sm whitespace-pre-line">{snippet.content}</div>
-                        {snippet.source && (
-                          <a 
-                            href={snippet.source} 
-                            className="text-xs text-primary flex items-center gap-1 mt-2 hover:underline"
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            <Link className="h-3 w-3" />
-                            Source
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </SerpFeature>
-            )}
-            
-            {serpData.knowledgeGraph && (
-              <SerpFeature 
-                title="Knowledge Graph" 
-                icon={<Circle className="h-4 w-4" />}
-                onAddToContent={() => {
-                  if (serpData.knowledgeGraph) {
-                    const content = `## ${serpData.knowledgeGraph.title || mainKeyword}\n${serpData.knowledgeGraph.description || ''}\n\n`;
-                    onAddToContent(content, 'knowledgeGraph');
-                    toast.success('Added knowledge graph information');
-                  }
-                }}
-              >
-                <div className="space-y-2">
-                  {serpData.knowledgeGraph.entityType && (
-                    <div className="text-xs text-muted-foreground">
-                      Entity Type: {serpData.knowledgeGraph.entityType}
-                    </div>
-                  )}
-                  {serpData.knowledgeGraph.description && (
-                    <p className="text-sm">{serpData.knowledgeGraph.description}</p>
-                  )}
-                  {serpData.knowledgeGraph.attributes && Object.entries(serpData.knowledgeGraph.attributes).length > 0 && (
-                    <div className="mt-3">
-                      <h5 className="text-xs font-medium mb-2">Attributes:</h5>
-                      <div className="space-y-1">
-                        {Object.entries(serpData.knowledgeGraph.attributes).map(([key, value], idx) => (
-                          <div key={idx} className="grid grid-cols-2 text-xs">
-                            <div className="text-muted-foreground">{key}:</div>
-                            <div>{value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </SerpFeature>
-            )}
-            
-            {serpData.imagePacks && serpData.imagePacks.length > 0 && (
-              <SerpFeature 
-                title="Image Packs" 
-                icon={<Image className="h-4 w-4" />}
-              >
-                <div>
-                  <p className="text-sm mb-3">
-                    Images are showing in search results. Consider adding visual elements to improve engagement.
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {serpData.imagePacks.map((image, idx) => (
-                      <div key={idx} className="text-center">
-                        <div className="h-20 bg-secondary/30 rounded-md flex items-center justify-center">
-                          <Image className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <p className="text-xs mt-1 truncate">{image.title}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-3 w-full"
-                    onClick={() => {
-                      onAddToContent(`\n\n> **Note:** Consider adding images or infographics about ${mainKeyword} to improve engagement.\n\n`, 'imageRecommendation');
-                      toast.success('Added image recommendation note');
-                    }}
-                  >
-                    <PlusCircle className="h-3 w-3 mr-1" />
-                    Add Image Recommendation
-                  </Button>
-                </div>
-              </SerpFeature>
-            )}
-          </div>
-        </TabsContent>
-        
         <TabsContent value="related">
           {serpData.relatedSearches && serpData.relatedSearches.length > 0 ? (
             <div className="space-y-4">
               <SerpFeature 
                 title="Related Searches" 
                 icon={<Search className="h-4 w-4" />}
+                onAddToContent={() => {
+                  const relatedSearchesText = serpData.relatedSearches?.map(item => `- ${item.query}${item.volume ? ` (${item.volume} searches/month)` : ''}`).join('\n') || '';
+                  onAddToContent(`## Related Searches\n${relatedSearchesText}\n\n`, 'relatedSearches');
+                  toast.success('Added all related searches');
+                }}
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
@@ -529,6 +324,134 @@ export function SerpAnalysisPanel({
           ) : (
             <div className="py-8 text-center">
               <p className="text-muted-foreground">No related searches data available</p>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="questions">
+          {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 ? (
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium mb-2">People Also Ask</h4>
+              <Accordion type="single" collapsible className="w-full">
+                {serpData.peopleAlsoAsk.map((item, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="text-sm">
+                      <div className="flex items-center gap-2">
+                        <HelpCircle className="h-4 w-4 text-primary" />
+                        <span>{item.question}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="text-sm space-y-2">
+                        <p className="text-muted-foreground">{item.answer || 'No answer available'}</p>
+                        {item.source && (
+                          <a 
+                            href={item.source} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary flex items-center gap-1 hover:underline text-xs"
+                          >
+                            <Link className="h-3 w-3" />
+                            Source
+                          </a>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => addPeopleAlsoAsk(item.question, item.answer)}
+                        >
+                          <PlusCircle className="h-3 w-3 mr-1" />
+                          Add to FAQs
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+              <Button
+                className="w-full mt-4"
+                onClick={() => {
+                  const allQuestions = serpData.peopleAlsoAsk?.map(item => 
+                    `### ${item.question}\n${item.answer || 'No answer available'}\n\n`
+                  ).join('');
+                  onAddToContent(`## Frequently Asked Questions\n\n${allQuestions}`, 'faqSection');
+                  toast.success('Added complete FAQ section');
+                }}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Complete FAQ Section
+              </Button>
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">No questions data available</p>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="competitors">
+          {serpData.topResults && serpData.topResults.length > 0 ? (
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium mb-2">Top Ranking Content</h4>
+              <Accordion type="single" collapsible className="w-full">
+                {serpData.topResults.map((result, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center">
+                          {result.position}
+                        </span>
+                        <span className="truncate">{result.title}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="text-sm space-y-2">
+                        <p className="text-muted-foreground">{result.snippet}</p>
+                        <a 
+                          href={result.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary flex items-center gap-1 hover:underline"
+                        >
+                          <Link className="h-3 w-3" />
+                          {result.link}
+                        </a>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => {
+                            onAddToContent(`### Based on [${result.title}](${result.link})\n\n`, 'competitorInsight');
+                            toast.success('Added competitor insight section');
+                          }}
+                        >
+                          <PlusCircle className="h-3 w-3 mr-1" />
+                          Add insight from this result
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+              <Button
+                className="w-full mt-4"
+                onClick={() => {
+                  let competitorInsightsContent = `## Competitor Research Analysis\n\n`;
+                  serpData.topResults?.slice(0, 3).forEach(result => {
+                    competitorInsightsContent += `### ${result.title}\n${result.snippet}\n[Source](${result.link})\n\n`;
+                  });
+                  onAddToContent(competitorInsightsContent, 'competitorAnalysis');
+                  toast.success('Added competitor analysis section');
+                }}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Complete Competitor Analysis
+              </Button>
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">No top results data available</p>
             </div>
           )}
         </TabsContent>
