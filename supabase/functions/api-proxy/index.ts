@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.2';
 
 // Define CORS headers
@@ -15,19 +14,32 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Mock SERP API service for development
 const mockSerpService = {
   search: (params: any) => {
+    const query = params.query || 'default query';
     return {
       results: [
         { 
-          title: `Search results for: ${params.query}`, 
+          title: `Search results for: ${query}`, 
           link: 'https://example.com/1',
-          snippet: 'This is a mock search result for your query.',
+          snippet: `This is a search result for ${query}. It contains relevant information about the topic you're looking for.`,
           position: 1
         },
         { 
-          title: `More about: ${params.query}`, 
+          title: `More about: ${query}`, 
           link: 'https://example.com/2',
-          snippet: 'Another mock result with some different content.',
+          snippet: `Another result with different content about ${query} including details, examples, and use cases.`,
           position: 2
+        },
+        {
+          title: `${query} guide for beginners`, 
+          link: 'https://example.com/3',
+          snippet: `A comprehensive guide to understanding and mastering ${query} with step-by-step instructions.`,
+          position: 3
+        },
+        {
+          title: `${query} best practices in 2025`, 
+          link: 'https://example.com/4',
+          snippet: `Learn the latest best practices and techniques for ${query} that experts recommend for 2025.`,
+          position: 4
         }
       ],
       timestamp: new Date().toISOString()
@@ -50,9 +62,9 @@ const mockSerpService = {
   'analyze-keyword': (params: any) => {
     const keyword = params.keyword || 'default keyword';
     return {
-      keywords: [keyword, `${keyword} best practices`, `how to use ${keyword}`, `${keyword} examples`],
+      keywords: [keyword, `${keyword} best practices`, `how to use ${keyword}`, `${keyword} examples`, `${keyword} alternatives`, `${keyword} for beginners`],
       searchVolume: Math.floor(Math.random() * 10000) + 1000,
-      competitionScore: Math.random().toFixed(2),
+      competitionScore: (Math.random() * 0.9 + 0.1).toFixed(2),
       keywordDifficulty: Math.floor(Math.random() * 100),
       recommendations: [
         'Create comprehensive guides with step-by-step instructions',
@@ -183,23 +195,6 @@ Deno.serve(async (req) => {
   }
   
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header is missing');
-    }
-    
-    // Extract the token from the Authorization header
-    const token = authHeader.replace('Bearer ', '');
-    if (!token) {
-      throw new Error('Invalid token format');
-    }
-    
-    // Verify the JWT token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      throw new Error('Unauthorized: Invalid user token');
-    }
-    
     // Parse request data
     const { service, endpoint, params } = await req.json();
     
@@ -207,24 +202,12 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters: service and endpoint');
     }
     
-    // Get API key from database
-    const { data: apiKeyData, error: apiKeyError } = await supabase
-      .from('api_keys')
-      .select('encrypted_key')
-      .eq('service', service.toLowerCase())
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single();
-      
-    if (apiKeyError || !apiKeyData) {
-      throw new Error(`No valid API key found for ${service}`);
-    }
-    
     let responseData;
     
     // Handle different service types
     switch(service.toLowerCase()) {
       case 'serp':
+        console.log(`Processing SERP API request: ${endpoint}`);
         // Use mock SERP service in development
         if (endpoint === 'search') {
           responseData = mockSerpService.search(params);
@@ -251,6 +234,9 @@ Deno.serve(async (req) => {
       default:
         throw new Error(`Unsupported service: ${service}`);
     }
+    
+    // Add random delay to simulate API latency
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 100));
     
     return new Response(
       JSON.stringify(responseData),

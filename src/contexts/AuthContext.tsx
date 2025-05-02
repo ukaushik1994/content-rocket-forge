@@ -2,6 +2,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type AuthContextType = {
   user: User | null;
@@ -30,7 +31,7 @@ const defaultUser: User = {
 };
 
 const defaultSession: Session = {
-  access_token: 'default-access-token',
+  access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA',
   refresh_token: 'default-refresh-token',
   expires_in: 3600,
   expires_at: new Date().getTime() + 3600000,
@@ -43,6 +44,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Simply provide the default values - no state needed as we're removing authentication
   const loading = false;
+
+  // Set the session in Supabase client to ensure all API calls use the token
+  supabase.auth.setSession({
+    access_token: defaultSession.access_token,
+    refresh_token: defaultSession.refresh_token
+  });
 
   const signIn = async () => {
     toast.success('No authentication required!');

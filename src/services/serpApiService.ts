@@ -63,13 +63,18 @@ export interface SerpAnalysisResult {
 
 export async function searchKeywords(params: SerpSearchParams): Promise<SerpSearchResult[]> {
   try {
+    console.log('Calling SERP API to search keywords:', params);
     const data = await callApiProxy<{ results: SerpSearchResult[] }>({
       service: 'serp',
       endpoint: 'search',
       params
     });
     
-    return data?.results || [];
+    if (!data?.results) {
+      throw new Error('No results returned from SERP API');
+    }
+    
+    return data.results;
   } catch (error) {
     console.error('SERP search error:', error);
     toast.error('Failed to search keywords. Please try again.');
@@ -79,16 +84,18 @@ export async function searchKeywords(params: SerpSearchParams): Promise<SerpSear
 
 export async function analyzeContent(content: string, keywords: string[]): Promise<SerpAnalysisResult> {
   try {
+    console.log('Calling SERP API to analyze content:', { content: content.substring(0, 50) + '...', keywords });
     const data = await callApiProxy<SerpAnalysisResult>({
       service: 'serp',
       endpoint: 'analyze',
       params: { content, keywords }
     });
     
-    return data || {
-      keywords: [],
-      recommendations: [],
-    };
+    if (!data) {
+      throw new Error('No data returned from SERP API');
+    }
+    
+    return data;
   } catch (error) {
     console.error('SERP analysis error:', error);
     toast.error('Failed to analyze content. Please try again.');
@@ -112,6 +119,7 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
       throw new Error('No data returned from SERP API');
     }
     
+    console.log('SERP API response:', data);
     return data;
   } catch (error) {
     console.error('SERP keyword analysis error:', error);

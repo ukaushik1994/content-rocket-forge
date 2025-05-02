@@ -7,11 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { KeywordResearchResult, researchKeyword } from '@/services/keywordResearchService';
 import { BarChart, LineChart } from '@/components/ui/chart';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function KeywordResearchTool() {
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [researchResult, setResearchResult] = useState<KeywordResearchResult | null>(null);
 
   const handleResearch = async () => {
@@ -21,12 +24,15 @@ export function KeywordResearchTool() {
     }
 
     setLoading(true);
+    setError(null);
     try {
+      console.log('Researching keyword:', keyword);
       const result = await researchKeyword(keyword.trim());
       setResearchResult(result);
       toast.success(`Research completed for: ${keyword}`);
     } catch (error) {
       console.error('Keyword research error:', error);
+      setError('Failed to research keyword. Please try again.');
       toast.error('Failed to research keyword. Please try again.');
     } finally {
       setLoading(false);
@@ -49,11 +55,12 @@ export function KeywordResearchTool() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleResearch()}
+            disabled={loading}
           />
         </div>
         <Button 
           onClick={handleResearch}
-          disabled={loading}
+          disabled={loading || !keyword.trim()}
           className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
         >
           {loading ? (
@@ -70,7 +77,25 @@ export function KeywordResearchTool() {
         </Button>
       </div>
 
-      {researchResult && (
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {loading && (
+        <div className="space-y-4">
+          <Skeleton className="h-[300px] w-full rounded-md" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-md" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {researchResult && !loading && (
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="bg-secondary/30">
             <TabsTrigger value="overview">Overview</TabsTrigger>
