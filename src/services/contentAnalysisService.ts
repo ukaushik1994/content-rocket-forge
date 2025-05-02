@@ -9,6 +9,8 @@ export interface ContentAnalysis {
   readabilityScore?: number;
   competitionScore?: number;
   serp?: any; // Full SERP data
+  searchVolume?: number;
+  keywordDifficulty?: number;
 }
 
 export async function analyzeContent(content: string, targetKeywords: string[] = []): Promise<ContentAnalysis> {
@@ -32,7 +34,9 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
       recommendations: serpAnalysis.recommendations,
       readabilityScore: aiAnalysis?.score ? Math.round(aiAnalysis.score * 10) : undefined,
       competitionScore: serpAnalysis.competitionScore,
-      serp: serpAnalysis
+      serp: serpAnalysis,
+      searchVolume: serpAnalysis.searchVolume,
+      keywordDifficulty: serpAnalysis.keywordDifficulty
     };
   } catch (error) {
     console.error('Content analysis error:', error);
@@ -46,15 +50,22 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
 
 export async function analyzeKeyword(keyword: string): Promise<ContentAnalysis> {
   try {
+    // Show toast notification that we're analyzing the keyword
+    console.log(`Analyzing keyword: ${keyword}`);
+    
     // Get comprehensive SERP data for the keyword
     const serpData = await analyzeKeywordSerp(keyword);
+    
+    console.log('SERP data received:', serpData);
     
     return {
       seoScore: Math.round((serpData.competitionScore || 0.5) * 100),
       keywords: serpData.keywords || [],
       recommendations: serpData.recommendations || [],
       competitionScore: serpData.competitionScore,
-      serp: serpData
+      serp: serpData,
+      searchVolume: serpData.searchVolume,
+      keywordDifficulty: serpData.keywordDifficulty
     };
   } catch (error) {
     console.error('Keyword analysis error:', error);
