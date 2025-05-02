@@ -167,67 +167,6 @@ export function ContentEditor() {
               className="mb-6"
             />
             
-            {mainKeyword && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="glass-panel">
-                  <CardContent className="pt-6 space-y-4">
-                    <h4 className="text-lg font-medium">Primary Keyword</h4>
-                    <div className="space-y-2">
-                      <div className="w-full bg-glass border border-white/10 p-3 rounded-md">
-                        {mainKeyword}
-                      </div>
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Search Volume: 12,000</span>
-                        <span>Keyword Difficulty: Medium</span>
-                      </div>
-                    </div>
-                    
-                    {relatedKeywords.length > 0 && (
-                      <div className="space-y-2 pt-4">
-                        <h5 className="font-medium">Selected Keywords</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {relatedKeywords.map((kw, i) => (
-                            <Badge key={i} className="bg-primary/20 text-primary border border-primary/30">
-                              {kw}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                <Card className="glass-panel">
-                  <CardContent className="pt-6 space-y-4">
-                    <h4 className="text-lg font-medium">Keyword Clusters</h4>
-                    <div className="space-y-4">
-                      <div className="border border-white/10 rounded-md p-3 space-y-2">
-                        <h5 className="font-medium text-primary">Features Cluster</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
-                            <Badge key={i} variant="outline" className="border-primary/30">
-                              {term}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-md p-3 space-y-2">
-                        <h5 className="font-medium text-neon-blue">Pain Points Cluster</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
-                            <Badge key={i} variant="outline" className="border-neon-blue/30">
-                              {term}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-            
             <div className="flex justify-end">
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
