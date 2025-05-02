@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CreditCard,
@@ -10,17 +10,31 @@ import {
   Download,
   Settings as SettingsIcon
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface SettingsLayoutProps {
   defaultTab?: string;
   children: React.ReactNode;
+  onTabChange?: (tab: string) => void;
+  activeTab: string;
 }
 
-export function SettingsLayout({ defaultTab = "profile", children }: SettingsLayoutProps) {
+export function SettingsLayout({ defaultTab = "profile", children, onTabChange, activeTab }: SettingsLayoutProps) {
+  const handleValueChange = (value: string) => {
+    if (onTabChange) {
+      onTabChange(value);
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-6">
       <div className="md:w-64 space-y-6">
-        <Tabs defaultValue={defaultTab} orientation="vertical" className="w-full">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={handleValueChange} 
+          orientation="vertical" 
+          className="w-full"
+        >
           <TabsList className="bg-secondary/30 flex flex-col h-auto space-y-1 rounded-xl p-2">
             <TabsTrigger value="profile" className="justify-start gap-2 px-3">
               <User className="h-4 w-4" />
@@ -55,7 +69,15 @@ export function SettingsLayout({ defaultTab = "profile", children }: SettingsLay
       </div>
       
       <div className="flex-1 space-y-6">
-        {children}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+          className="w-full"
+        >
+          {children}
+        </motion.div>
       </div>
     </div>
   );
