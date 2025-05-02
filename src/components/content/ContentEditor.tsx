@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -441,10 +440,16 @@ export function ContentEditor() {
                           <div className="flex items-center gap-2 p-2 rounded-lg">
                             <Progress 
                               value={seoScore} 
-                              className="w-32 h-2"
-                              indicatorStyle={`${seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              className={cn(
+                                "w-32 h-2", 
+                                seoScore > 70 ? "bg-secondary [&>div]:bg-green-500" : 
+                                seoScore > 50 ? "bg-secondary [&>div]:bg-yellow-500" : 
+                                "bg-secondary [&>div]:bg-red-500"
+                              )}
                             />
-                            <Badge className={`${seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}>
+                            <Badge className={cn(
+                              seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'
+                            )}>
                               {seoScore}/100
                             </Badge>
                             <HelpCircle className="h-4 w-4 text-muted-foreground" />
@@ -576,9 +581,16 @@ export function ContentEditor() {
                   <span>SEO Score:</span>
                   <Progress 
                     value={seoScore} 
-                    className="w-32 h-2" 
+                    className={cn(
+                      "w-32 h-2", 
+                      seoScore > 70 ? "bg-secondary [&>div]:bg-green-500" : 
+                      seoScore > 50 ? "bg-secondary [&>div]:bg-yellow-500" : 
+                      "bg-secondary [&>div]:bg-red-500"
+                    )}
                   />
-                  <Badge className={cn(seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500')}>
+                  <Badge className={cn(
+                    seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'
+                  )}>
                     {seoScore}/100
                   </Badge>
                   <HelpCircle className="h-4 w-4 text-muted-foreground" />

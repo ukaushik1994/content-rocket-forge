@@ -28,7 +28,10 @@ const Content = () => {
       loading: 'Generating optimized content...',
       success: 'Content generated successfully!',
       error: 'Failed to generate content',
-    }).then(() => {
+    });
+    
+    // Use the promise to set loading state after it resolves
+    promise.then(() => {
       setLoading(false);
     });
   };
