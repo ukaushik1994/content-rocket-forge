@@ -18,6 +18,13 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const demoCredentials = getDemoCredentials();
+
+  // Pre-fill demo credentials for easier testing
+  useEffect(() => {
+    setEmail(demoCredentials.email);
+    setPassword(demoCredentials.password);
+  }, []);
 
   useEffect(() => {
     // If user is already logged in, redirect to home
@@ -79,8 +86,6 @@ const Auth = () => {
     }
     setLoading(false);
   };
-
-  const demoCredentials = getDemoCredentials();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-black to-slate-900">

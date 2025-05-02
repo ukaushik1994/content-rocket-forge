@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Demo credentials
-const DEMO_EMAIL = "demo@contentrocketforge.com";
+const DEMO_EMAIL = "demo@example.com"; // Changed to a valid domain
 const DEMO_PASSWORD = "demo123456"; // In real apps, never expose passwords in code
 
 export async function createDemoAccountIfNeeded(): Promise<boolean> {
@@ -48,10 +48,15 @@ export async function createDemoAccountIfNeeded(): Promise<boolean> {
 export async function loginWithDemoAccount(): Promise<boolean> {
   try {
     // Ensure the demo account exists
-    await createDemoAccountIfNeeded();
+    const accountCreated = await createDemoAccountIfNeeded();
+    
+    if (!accountCreated) {
+      toast.error("Could not create demo account. Please try again.");
+      return false;
+    }
     
     // Log in with the demo account
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: DEMO_EMAIL,
       password: DEMO_PASSWORD,
     });
@@ -60,8 +65,12 @@ export async function loginWithDemoAccount(): Promise<boolean> {
       throw error;
     }
 
-    toast.success("Logged in with demo account");
-    return true;
+    if (data?.user) {
+      toast.success("Logged in with demo account");
+      return true;
+    } else {
+      throw new Error("No user data returned from login");
+    }
   } catch (error: any) {
     console.error("Error logging in with demo account:", error);
     toast.error(error.message || "Failed to log in with demo account");
