@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   LayoutTemplate, 
@@ -29,8 +31,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { SerpAnalysisPanel } from './SerpAnalysisPanel';
-import { SerpContentGenerator } from './SerpContentGenerator';
 import { SerpKeywordSuggestions } from './SerpKeywordSuggestions';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 
 // Define Solution type
 interface Solution {
@@ -42,17 +44,63 @@ interface Solution {
   targetAudience: string[];
 }
 
-export function ContentEditor() {
-  const [editorContent, setEditorContent] = useState('# Best Project Management Software for Remote Teams in 2024\n\nRemote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.\n\n## Top Project Management Tools for 2024\n\n### 1. TaskMaster Pro\n- **Key Features:** Gantt charts, AI analytics, real-time collaboration\n- **Best For:** Enterprise teams with complex workflows\n- **Pricing:** Starts at $29/mo per user');
+interface ContentEditorProps {
+  onContentUpdate?: (data: { 
+    title?: string; 
+    content?: string;
+    keywords?: string[];
+    seoScore?: number;
+  }) => void;
+  initialContent?: string;
+  initialTitle?: string;
+  initialKeywords?: string[];
+}
 
+export function ContentEditor({
+  onContentUpdate,
+  initialContent = '',
+  initialTitle = '',
+  initialKeywords = []
+}: ContentEditorProps) {
+  const [editorContent, setEditorContent] = useState(initialContent || '# Best Project Management Software for Remote Teams in 2024\n\nRemote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.\n\n## Top Project Management Tools for 2024\n\n### 1. TaskMaster Pro\n- **Key Features:** Gantt charts, AI analytics, real-time collaboration\n- **Best For:** Enterprise teams with complex workflows\n- **Pricing:** Starts at $29/mo per user');
+
+  const [contentTitle, setContentTitle] = useState(initialTitle || '');
   const [seoScore, setSeoScore] = useState(78);
   const [currentStep, setCurrentStep] = useState(0);
   const [serpData, setSerpData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [availableSolutions, setAvailableSolutions] = useState<Solution[]>([]);
   const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
   const [mainKeyword, setMainKeyword] = useState("best project management software");
-  const [relatedKeywords, setRelatedKeywords] = useState<string[]>([]);
+  const [relatedKeywords, setRelatedKeywords] = useState<string[]>(initialKeywords || []);
+  const [contentSections, setContentSections] = useState<{ title: string; complete: boolean; description: string }[]>([]);
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [urlSlug, setUrlSlug] = useState('');
+  
+  // Monitor editor content changes and update parent component
+  useEffect(() => {
+    if (onContentUpdate) {
+      onContentUpdate({
+        title: contentTitle,
+        content: editorContent,
+        keywords: relatedKeywords,
+        seoScore
+      });
+    }
+  }, [contentTitle, editorContent, relatedKeywords, seoScore, onContentUpdate]);
+  
+  // Update title based on H1 heading in the markdown when content changes
+  useEffect(() => {
+    // Extract H1 heading from the markdown if no title is set yet
+    if (!contentTitle && editorContent) {
+      const h1Match = editorContent.match(/^#\s+(.+)$/m);
+      if (h1Match && h1Match[1]) {
+        setContentTitle(h1Match[1]);
+      }
+    }
+  }, [editorContent, contentTitle]);
   
   // Fetch the available solutions when the component mounts
   useEffect(() => {
@@ -113,6 +161,12 @@ export function ContentEditor() {
   // Handle keyword selection from SerpKeywordSuggestions
   const handleKeywordSelect = (keyword: string) => {
     setMainKeyword(keyword);
+    setContentTitle(`Best ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} for 2025`);
+    
+    // Generate meta tags based on keyword
+    setMetaTitle(`Top 10 ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} – 2025 Expert Picks`);
+    setMetaDescription(`Discover the best ${keyword} in 2025, with detailed comparisons of features, pricing, and real user reviews.`);
+    setUrlSlug(`best-${keyword.toLowerCase().replace(/\s+/g, '-')}-2025`);
   };
 
   // Handle related keywords selection
@@ -131,9 +185,61 @@ export function ContentEditor() {
     { name: "Publish", icon: <BookOpen className="h-5 w-5" /> },
   ];
 
-  const fetchSerpData = () => {
-    // Simulate SERP API call
-    setTimeout(() => {
+  const fetchSerpData = async () => {
+    setIsLoading(true);
+    
+    try {
+      const result = await analyzeKeywordSerp(mainKeyword);
+      setSerpData(result);
+      
+      // Create content sections based on the SERP data
+      const recommendedSections = [
+        { 
+          title: "Introduction", 
+          complete: true, 
+          description: "Include primary keyword, define the problem" 
+        },
+        { 
+          title: selectedSolution 
+            ? `Top Alternatives to ${selectedSolution.name}` 
+            : "Top 10 Options", 
+          complete: true, 
+          description: "List the best options with key features" 
+        },
+        { 
+          title: "Features Comparison", 
+          complete: false, 
+          description: "Create a table comparing top features" 
+        },
+        { 
+          title: "Use Case Examples", 
+          complete: false, 
+          description: "Real-world examples from different industries" 
+        },
+        { 
+          title: "Pricing Analysis", 
+          complete: false, 
+          description: "Compare pricing tiers and value" 
+        },
+        { 
+          title: "FAQ Section", 
+          complete: false, 
+          description: "Answer common questions from SERP" 
+        },
+        { 
+          title: "Conclusion", 
+          complete: false, 
+          description: "Summarize findings with final recommendation" 
+        },
+      ];
+      
+      setContentSections(recommendedSections);
+      toast.success("SERP analysis complete!");
+    } catch (error) {
+      console.error("Error fetching SERP data:", error);
+      toast.error("Failed to analyze SERP data. Using fallback data.");
+      
+      // Use fallback data
       setSerpData({
         avgWordCount: 2500,
         commonH1Pattern: "[Number] Best [Keyword] for [Target] in [Year]",
@@ -146,17 +252,70 @@ export function ContentEditor() {
           "What's better than Asana for project management?"
         ],
         serpFeatures: ["Featured Snippet", "Reviews Rich Snippet", "People Also Ask"],
-        topCompetitors: [
+        topResults: [
           { title: "10 Best Project Management Tools in 2024", domain: "example.com", wordCount: 2650 },
           { title: "Top Project Management Software for Remote Teams", domain: "competitor.com", wordCount: 2300 },
         ]
       });
-    }, 1000);
+      
+      // Create default content sections
+      setContentSections([
+        { title: "Introduction", complete: true, description: "Include primary keyword, define the problem" },
+        { title: "Top 10 Options", complete: true, description: "List the best options with key features" },
+        { title: "Features Comparison", complete: false, description: "Create a table comparing top features" },
+        { title: "Use Case Examples", complete: false, description: "Real-world examples from different industries" },
+        { title: "Pricing Analysis", complete: false, description: "Compare pricing tiers and value" },
+        { title: "FAQ Section", complete: false, description: "Answer common questions from SERP" },
+        { title: "Conclusion", complete: false, description: "Summarize findings with final recommendation" },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generateContentOutline = () => {
+    // Generate a content outline based on the current data
+    const outline = `# ${contentTitle || `Best ${mainKeyword.charAt(0).toUpperCase() + mainKeyword.slice(1)} for 2025`}
+
+## Introduction
+${mainKeyword} is essential for modern businesses looking to optimize their operations. According to recent studies, organizations using the right tools see a 30% increase in productivity.
+
+## Top ${selectedSolution ? `Alternatives to ${selectedSolution.name}` : 'Solutions'} in 2025
+
+${contentSections.slice(1, 4).map((section, index) => 
+`### ${index + 1}. Solution Name
+- **Key Features:** Feature 1, Feature 2, Feature 3
+- **Best For:** ${selectedSolution?.targetAudience[0] || 'Small teams'}
+- **Pricing:** Starts at $X/mo per user
+
+`).join('')}
+## Features Comparison
+
+| Feature | Solution 1 | Solution 2 | Solution 3 |
+|---------|------------|------------|------------|
+| Feature 1 | ✅ | ✅ | ❌ |
+| Feature 2 | ✅ | ❌ | ✅ |
+| Feature 3 | ❌ | ✅ | ✅ |
+
+## FAQ
+
+${(serpData?.peopleAlsoAsk || []).slice(0, 3).map((question: string) => 
+`### ${question}
+Answer goes here.
+
+`).join('')}
+
+## Conclusion
+Based on our analysis, the best ${mainKeyword} for most users is Solution 1, followed closely by Solution 2 for more specialized needs.
+`;
+
+    setEditorContent(outline);
+    toast.success("Content outline generated!");
   };
 
   const getStepContent = () => {
     switch(currentStep) {
-      case 0: // Now this is the Keyword Research step
+      case 0: // Keyword Research step
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Keyword Research</h3>
@@ -199,27 +358,42 @@ export function ContentEditor() {
                 
                 <Card className="glass-panel">
                   <CardContent className="pt-6 space-y-4">
-                    <h4 className="text-lg font-medium">Keyword Clusters</h4>
-                    <div className="space-y-4">
-                      <div className="border border-white/10 rounded-md p-3 space-y-2">
-                        <h5 className="font-medium text-primary">Features Cluster</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
-                            <Badge key={i} variant="outline" className="border-primary/30">
-                              {term}
-                            </Badge>
-                          ))}
+                    <h4 className="text-lg font-medium">Content Title</h4>
+                    <div className="space-y-2">
+                      <Input
+                        value={contentTitle}
+                        onChange={(e) => setContentTitle(e.target.value)}
+                        placeholder="Enter content title..."
+                        className="bg-glass border border-white/10"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your title should include your primary keyword and be compelling
+                      </p>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h5 className="font-medium mb-2">Keyword Clusters</h5>
+                      <div className="space-y-4">
+                        <div className="border border-white/10 rounded-md p-3 space-y-2">
+                          <h5 className="font-medium text-primary">Features Cluster</h5>
+                          <div className="flex flex-wrap gap-2">
+                            {["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
+                              <Badge key={i} variant="outline" className="border-primary/30">
+                                {term}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-md p-3 space-y-2">
-                        <h5 className="font-medium text-neon-blue">Pain Points Cluster</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
-                            <Badge key={i} variant="outline" className="border-neon-blue/30">
-                              {term}
-                            </Badge>
-                          ))}
+                        
+                        <div className="border border-white/10 rounded-md p-3 space-y-2">
+                          <h5 className="font-medium text-neon-blue">Pain Points Cluster</h5>
+                          <div className="flex flex-wrap gap-2">
+                            {["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
+                              <Badge key={i} variant="outline" className="border-neon-blue/30">
+                                {term}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -241,7 +415,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 1: // Now this is the Solution selection step
+      case 1: // Solution selection step
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Select a Solution</h3>
@@ -336,62 +510,37 @@ export function ContentEditor() {
           </div>
         );
         
-      // The rest of the steps remain largely unchanged
-      case 2:
+      case 2: // SERP Analysis Step
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">SERP Analysis</h3>
             
-            {!serpData ? (
+            {isLoading ? (
               <div className="flex flex-col items-center justify-center py-10">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
                 <p className="mt-4 text-muted-foreground">Analyzing search results...</p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="glass-panel">
-                  <CardContent className="pt-6 space-y-4">
-                    <h4 className="text-lg font-medium">Content Structure</h4>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <h5 className="text-sm font-medium">Common H1 Pattern</h5>
-                        <p className="text-sm bg-glass p-2 rounded-md border border-white/10">
-                          {serpData.commonH1Pattern}
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <h5 className="text-sm font-medium">Average Word Count</h5>
-                        <p className="text-sm bg-glass p-2 rounded-md border border-white/10">
-                          {serpData.avgWordCount} words
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <h5 className="text-sm font-medium">Common Sections</h5>
-                        <div className="text-sm bg-glass p-2 rounded-md border border-white/10">
-                          {serpData.commonSections.join(', ')}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="glass-panel">
-                  <CardContent className="pt-6 space-y-4">
-                    <h4 className="text-lg font-medium">People Also Ask</h4>
-                    <div className="space-y-2">
-                      {serpData.peopleAlsoAsk.map((question: string, i: number) => (
-                        <div key={i} className="p-2 bg-glass rounded-md border border-white/10">
-                          <p className="text-sm">
-                            <span className="text-primary font-medium">Q:</span> {question}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+            ) : !serpData ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <Search className="h-16 w-16 text-muted-foreground" />
+                <p className="mt-4 text-muted-foreground">No SERP data available. Start the analysis.</p>
+                <Button 
+                  className="mt-4 bg-gradient-to-r from-neon-purple to-neon-blue"
+                  onClick={fetchSerpData}
+                >
+                  Analyze SERP
+                </Button>
               </div>
+            ) : (
+              <SerpAnalysisPanel 
+                serpData={serpData}
+                isLoading={isLoading}
+                mainKeyword={mainKeyword}
+                onAddToContent={(content, type) => {
+                  setEditorContent(editorContent + '\n\n' + content);
+                  toast.success(`Added ${type} to your content`);
+                }}
+              />
             )}
             
             <div className="flex justify-between">
@@ -404,7 +553,7 @@ export function ContentEditor() {
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
                 onClick={() => setCurrentStep(3)}
-                disabled={!serpData}
+                disabled={!serpData && !isLoading}
               >
                 Plan Content Structure
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -413,28 +562,26 @@ export function ContentEditor() {
           </div>
         );
         
-      case 3:
+      case 3: // Content Structure
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Content Structure</h3>
             
             <Card className="glass-panel">
               <CardContent className="pt-6 space-y-4">
-                <h4 className="text-lg font-medium">Recommended Structure</h4>
+                <div className="flex justify-between items-center">
+                  <h4 className="text-lg font-medium">Recommended Structure</h4>
+                  <Button 
+                    onClick={generateContentOutline}
+                    className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Generate Outline
+                  </Button>
+                </div>
+                
                 <div className="space-y-4">
-                  {[
-                    { title: "Introduction", complete: true, description: "Include primary keyword, define the problem" },
-                    { 
-                      title: selectedSolution ? `Top Alternatives to ${selectedSolution.name}` : "Top 10 Project Management Tools", 
-                      complete: true, 
-                      description: "List the best options with key features" 
-                    },
-                    { title: "Features Comparison", complete: false, description: "Create a table comparing top features" },
-                    { title: "Use Case Examples", complete: false, description: "Real-world examples from different industries" },
-                    { title: "Pricing Analysis", complete: false, description: "Compare pricing tiers and value" },
-                    { title: "FAQ Section", complete: false, description: "Answer common questions from SERP" },
-                    { title: "Conclusion", complete: false, description: "Summarize findings with final recommendation" },
-                  ].map((section, index) => (
+                  {contentSections.map((section, index) => (
                     <div 
                       key={index}
                       className={`flex items-start p-3 rounded-md border ${section.complete ? 'border-primary/30 bg-primary/5' : 'border-white/10'}`}
@@ -454,6 +601,28 @@ export function ContentEditor() {
                     </div>
                   ))}
                 </div>
+                
+                <div className="mt-6 border-t pt-4 border-white/10">
+                  <h5 className="font-medium mb-3">Content Goals</h5>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Word Count Target</span>
+                      <span className="font-medium">{serpData?.avgWordCount || 2500} words</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Sections</span>
+                      <span className="font-medium">{contentSections.length}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Target Keywords</span>
+                      <span className="font-medium">{1 + relatedKeywords.length} keywords</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Keyword Density</span>
+                      <span className="font-medium text-green-400">1.2-2.0%</span>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
@@ -472,13 +641,16 @@ export function ContentEditor() {
           </div>
         );
         
-      case 4:
+      case 4: // Content Writing
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Content Writing</h3>
             
             <div className="flex items-center justify-end mb-4">
-              <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                onClick={generateContentOutline}
+              >
                 <Play className="mr-2 h-4 w-4" />
                 Generate Content
               </Button>
@@ -514,12 +686,12 @@ export function ContentEditor() {
                 
                 <TabsContent value="preview" className="p-8 m-0 h-full overflow-auto">
                   <div className="prose prose-invert max-w-none">
-                    <h1 className="text-3xl font-bold mb-4">{selectedSolution 
-                      ? `Best ${selectedSolution.name} Alternatives for ${selectedSolution.targetAudience[0] || 'Teams'} in 2024`
-                      : 'Best Project Management Software for Remote Teams in 2024'
+                    <h1 className="text-3xl font-bold mb-4">{contentTitle || (selectedSolution 
+                      ? `Best ${selectedSolution.name} Alternatives for ${selectedSolution.targetAudience[0] || 'Teams'} in 2025`
+                      : 'Best Project Management Software for Remote Teams in 2025')
                     }</h1>
                     <p className="mb-4">Remote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.</p>
-                    <h2 className="text-2xl font-bold mb-3">Top Project Management Tools for 2024</h2>
+                    <h2 className="text-2xl font-bold mb-3">Top Project Management Tools for 2025</h2>
                     <h3 className="text-xl font-bold mb-2">1. TaskMaster Pro</h3>
                     <ul className="list-disc ml-6 mb-4">
                       <li><strong>Key Features:</strong> Gantt charts, AI analytics, real-time collaboration</li>
@@ -575,7 +747,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 5:
+      case 5: // SEO Optimization
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">SEO Optimization</h3>
@@ -592,14 +764,12 @@ export function ContentEditor() {
                         type="text" 
                         className="w-full bg-glass border border-white/10 p-2 rounded-md" 
                         placeholder="Enter meta title"
-                        defaultValue={selectedSolution 
-                          ? `Top 10 ${selectedSolution.name} Alternatives – 2024 Expert Picks`
-                          : "Top 10 Project Management Tools – 2024 Expert Picks"
-                        }
+                        value={metaTitle}
+                        onChange={(e) => setMetaTitle(e.target.value)}
                       />
                       <div className="flex justify-between">
                         <p className="text-xs text-muted-foreground">60 characters maximum</p>
-                        <p className="text-xs">52/60</p>
+                        <p className="text-xs">{metaTitle.length}/60</p>
                       </div>
                     </div>
                     
@@ -608,14 +778,12 @@ export function ContentEditor() {
                       <textarea 
                         className="w-full bg-glass border border-white/10 p-2 rounded-md resize-none h-20" 
                         placeholder="Enter meta description"
-                        defaultValue={selectedSolution 
-                          ? `Discover the best alternatives to ${selectedSolution.name} in 2024, with detailed comparisons of features, pricing, and real user reviews.` 
-                          : "Discover 2024's best project management software for remote teams, with AI analytics, pricing, and real-user reviews."
-                        }
+                        value={metaDescription}
+                        onChange={(e) => setMetaDescription(e.target.value)}
                       />
                       <div className="flex justify-between">
                         <p className="text-xs text-muted-foreground">160 characters maximum</p>
-                        <p className="text-xs">118/160</p>
+                        <p className="text-xs">{metaDescription.length}/160</p>
                       </div>
                     </div>
                     
@@ -625,10 +793,8 @@ export function ContentEditor() {
                         type="text" 
                         className="w-full bg-glass border border-white/10 p-2 rounded-md" 
                         placeholder="Enter URL slug"
-                        defaultValue={selectedSolution 
-                          ? `best-${selectedSolution.name.toLowerCase().replace(/\s+/g, '-')}-alternatives-2024`
-                          : "best-project-management-software-2024"
-                        }
+                        value={urlSlug}
+                        onChange={(e) => setUrlSlug(e.target.value)}
                       />
                     </div>
                   </div>
@@ -691,11 +857,30 @@ export function ContentEditor() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <h5 className="text-sm font-medium">Content Length</h5>
-                        <Badge className="bg-yellow-500/20 text-yellow-500">
-                          850 words (Need ~1650 more)
+                        <Badge className={editorContent.length > 1500 ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-500"}>
+                          {editorContent.length} chars ({editorContent.length > 1500 ? 'Good' : 'Needs more'})
                         </Badge>
                       </div>
-                      <Progress value={35} className="h-1" />
+                      <Progress value={Math.min(100, (editorContent.length / 2500) * 100)} className="h-1" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-medium">Keywords Used</h5>
+                        <Badge className={relatedKeywords.length > 2 ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-500"}>
+                          {relatedKeywords.length} keywords
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge className="bg-primary/20 text-primary border border-primary/30">
+                          {mainKeyword}
+                        </Badge>
+                        {relatedKeywords.map((kw, i) => (
+                          <Badge key={i} variant="outline" className="border-primary/30">
+                            {kw}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -717,7 +902,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 6:
+      case 6: // Publish
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Publish Content</h3>
@@ -737,9 +922,9 @@ export function ContentEditor() {
                   <div className="bg-glass border border-white/10 rounded-lg p-4 max-w-lg mx-auto">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Title:</span>
-                      <span>{selectedSolution 
-                        ? `Best ${selectedSolution.name} Alternatives for ${selectedSolution.targetAudience[0] || 'Teams'} in 2024`
-                        : 'Best Project Management Software for Remote Teams in 2024'}</span>
+                      <span>{contentTitle || (selectedSolution 
+                        ? `Best ${selectedSolution.name} Alternatives for ${selectedSolution.targetAudience[0] || 'Teams'} in 2025`
+                        : 'Best Project Management Software for Remote Teams in 2025')}</span>
                     </div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Solution:</span>
@@ -747,13 +932,15 @@ export function ContentEditor() {
                     </div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">URL:</span>
-                      <span>{selectedSolution 
-                        ? `best-${selectedSolution.name.toLowerCase().replace(/\s+/g, '-')}-alternatives-2024`
-                        : "best-project-management-software-2024"}</span>
+                      <span>{urlSlug || 'best-project-management-software-2025'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">SEO Score:</span>
                       <span className="text-green-500 font-medium">{seoScore}/100</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2">
+                      <span className="text-muted-foreground">Keywords:</span>
+                      <span>{mainKeyword} + {relatedKeywords.length} more</span>
                     </div>
                   </div>
                   
@@ -761,7 +948,20 @@ export function ContentEditor() {
                     <Button variant="outline">
                       Save as Draft
                     </Button>
-                    <Button className="bg-gradient-to-r from-neon-purple to-neon-blue px-8">
+                    <Button 
+                      className="bg-gradient-to-r from-neon-purple to-neon-blue px-8"
+                      onClick={() => {
+                        if (onContentUpdate) {
+                          onContentUpdate({
+                            title: contentTitle,
+                            content: editorContent,
+                            keywords: [mainKeyword, ...relatedKeywords],
+                            seoScore: seoScore
+                          });
+                        }
+                        toast.success("Content ready to publish!");
+                      }}
+                    >
                       Publish Now
                     </Button>
                   </div>

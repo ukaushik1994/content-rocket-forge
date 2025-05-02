@@ -1,294 +1,321 @@
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
-type ContentItemType = {
+// Define content item type
+export interface ContentItem {
   id: string;
   title: string;
   content: string;
   status: 'draft' | 'published' | 'archived';
   created_at: string;
   updated_at: string;
-  seo_score: number;
-  keywords: string[];
   user_id: string;
-};
+  seo_score?: number;
+  keywords?: string[];
+}
 
-type ContentContextType = {
-  contentItems: ContentItemType[];
+interface ContentContextType {
+  contentItems: ContentItem[];
   loading: boolean;
-  addContentItem: (item: Omit<ContentItemType, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
-  updateContentItem: (id: string, updates: Partial<ContentItemType>) => Promise<void>;
-  deleteContentItem: (id: string) => Promise<void>;
-  getContentItem: (id: string) => ContentItemType | undefined;
-  publishContent: (id: string) => Promise<void>;
-};
+  createContent: (content: Partial<ContentItem>, selectedKeywords?: string[]) => Promise<string | null>;
+  updateContent: (id: string, content: Partial<ContentItem>, selectedKeywords?: string[]) => Promise<boolean>;
+  deleteContent: (id: string) => Promise<boolean>;
+  getContentById: (id: string) => Promise<ContentItem | null>;
+  refreshContentItems: () => Promise<void>;
+}
 
-// Sample data for fallback
-const initialContent: ContentItemType[] = [
-  {
-    id: '1',
-    title: 'Top 10 Project Management Tools for Remote Teams',
-    content: 'Content about project management tools...',
-    status: 'published',
-    created_at: new Date(2025, 3, 28).toISOString(),
-    updated_at: new Date(2025, 3, 28).toISOString(),
-    seo_score: 87,
-    keywords: ['project management', 'remote work', 'productivity tools'],
-    user_id: 'placeholder-user-id',
-  },
-  {
-    id: '2',
-    title: 'Email Marketing Best Practices in 2025',
-    content: 'Content about email marketing...',
-    status: 'draft',
-    created_at: new Date(2025, 3, 25).toISOString(),
-    updated_at: new Date(2025, 3, 27).toISOString(),
-    seo_score: 74,
-    keywords: ['email marketing', 'digital marketing', 'marketing automation'],
-    user_id: 'placeholder-user-id',
-  },
-  {
-    id: '3',
-    title: 'How to Choose the Best CRM for Your Business',
-    content: 'Content about selecting a CRM system...',
-    status: 'published',
-    created_at: new Date(2025, 4, 1).toISOString(),
-    updated_at: new Date(2025, 4, 1).toISOString(),
-    seo_score: 91,
-    keywords: ['crm', 'sales software', 'customer relationship'],
-    user_id: 'placeholder-user-id',
-  },
-];
+const ContentContext = createContext<ContentContextType>({
+  contentItems: [],
+  loading: false,
+  createContent: async () => null,
+  updateContent: async () => false,
+  deleteContent: async () => false,
+  getContentById: async () => null,
+  refreshContentItems: async () => {},
+});
 
-const ContentContext = createContext<ContentContextType | undefined>(undefined);
-
-export const ContentProvider = ({ children }: { children: ReactNode }) => {
-  const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
+export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchContentItems = async () => {
-      if (!user) {
-        setContentItems([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('content_items')
-          .select('*')
-          .order('updated_at', { ascending: false });
-        
-        if (error) throw error;
-
-        if (data) {
-          // Map database items to ContentItemType format
-          const mappedData: ContentItemType[] = data.map(item => ({
-            id: item.id,
-            title: item.title,
-            content: item.content || '',
-            status: item.status as 'draft' | 'published' | 'archived',
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            seo_score: item.seo_score || 0,
-            keywords: [], // We'll need to fetch keywords separately in a real implementation
-            user_id: item.user_id,
-          }));
-          
-          setContentItems(mappedData);
-        } else {
-          // If no data, use fallback only in development
-          if (process.env.NODE_ENV === 'development') {
-            setContentItems(initialContent);
-          } else {
-            setContentItems([]);
-          }
-        }
-      } catch (error: any) {
-        console.error('Error fetching content items:', error);
-        toast.error('Failed to load content items');
-        
-        // Use fallback data in development mode if fetch fails
-        if (process.env.NODE_ENV === 'development') {
-          setContentItems(initialContent);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContentItems();
-
-    // Set up realtime subscription
-    if (user) {
-      const channel = supabase
-        .channel('content-changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'content_items' },
-          (payload) => {
-            // Handle the change based on the event type
-            if (payload.eventType === 'INSERT') {
-              const newItem = payload.new as ContentItemType;
-              if (newItem.user_id === user.id) {
-                setContentItems(prev => [newItem, ...prev]);
-              }
-            } else if (payload.eventType === 'UPDATE') {
-              const updatedItem = payload.new as ContentItemType;
-              if (updatedItem.user_id === user.id) {
-                setContentItems(prev => prev.map(item => 
-                  item.id === updatedItem.id ? updatedItem : item
-                ));
-              }
-            } else if (payload.eventType === 'DELETE') {
-              const deletedItem = payload.old as ContentItemType;
-              setContentItems(prev => prev.filter(item => item.id !== deletedItem.id));
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user]);
-
-  const addContentItem = async (item: Omit<ContentItemType, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+  
+  const refreshContentItems = async () => {
     if (!user) {
-      toast.error('You must be logged in to create content');
+      setContentItems([]);
+      setLoading(false);
       return;
     }
 
     try {
-      const newItem = {
-        title: item.title,
-        content: item.content,
-        status: item.status,
-        seo_score: item.seo_score,
-        user_id: user.id // Add user_id to the insert
-      };
+      setLoading(true);
       
+      // Fetch content items
+      const { data: items, error } = await supabase
+        .from('content_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // For each content item, fetch associated keywords
+      const itemsWithKeywords = await Promise.all(
+        items.map(async (item) => {
+          const { data: keywordLinks, error: keywordError } = await supabase
+            .from('content_keywords')
+            .select('keyword_id')
+            .eq('content_id', item.id);
+            
+          if (keywordError) {
+            console.error('Error fetching keyword links:', keywordError);
+            return { ...item, keywords: [] };
+          }
+          
+          if (keywordLinks && keywordLinks.length > 0) {
+            // Get all keyword IDs
+            const keywordIds = keywordLinks.map(link => link.keyword_id);
+            
+            // Fetch the keywords
+            const { data: keywords, error: keywordDataError } = await supabase
+              .from('keywords')
+              .select('keyword')
+              .in('id', keywordIds);
+              
+            if (keywordDataError) {
+              console.error('Error fetching keywords:', keywordDataError);
+              return { ...item, keywords: [] };
+            }
+            
+            return { 
+              ...item, 
+              keywords: keywords.map(k => k.keyword) 
+            };
+          }
+          
+          return { ...item, keywords: [] };
+        })
+      );
+      
+      setContentItems(itemsWithKeywords);
+    } catch (err) {
+      console.error('Error fetching content items:', err);
+      toast.error('Failed to load content items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshContentItems();
+  }, [user]);
+
+  const createContent = async (content: Partial<ContentItem>, selectedKeywords?: string[]): Promise<string | null> => {
+    if (!user) {
+      toast.error('You must be logged in to create content');
+      return null;
+    }
+    
+    try {
+      // Insert the content item
       const { data, error } = await supabase
         .from('content_items')
-        .insert(newItem)
+        .insert({
+          title: content.title || 'Untitled Content',
+          content: content.content || '',
+          status: content.status || 'draft',
+          user_id: user.id,
+          seo_score: content.seo_score || 0,
+        })
         .select()
         .single();
         
       if (error) throw error;
       
-      if (data) {
-        toast.success('Content item created successfully');
-        
-        // Add to local state (realtime subscription should handle this, but for safety)
-        const createdItem: ContentItemType = {
-          ...data,
-          keywords: item.keywords,
-          status: data.status as 'draft' | 'published' | 'archived'
-        };
-        
-        setContentItems(prev => [createdItem, ...prev]);
+      // If keywords are provided, link them to the content
+      if (selectedKeywords && selectedKeywords.length > 0 && data) {
+        // First, lookup keyword IDs
+        for (const keyword of selectedKeywords) {
+          // Check if the keyword exists
+          const { data: existingKeyword, error: lookupError } = await supabase
+            .from('keywords')
+            .select('id')
+            .eq('keyword', keyword)
+            .eq('user_id', user.id)
+            .single();
+            
+          if (lookupError && lookupError.code !== 'PGRST116') { // Not found error
+            console.error('Error looking up keyword:', lookupError);
+            continue;
+          }
+          
+          let keywordId;
+          
+          if (!existingKeyword) {
+            // Keyword doesn't exist, create it
+            const { data: newKeyword, error: insertError } = await supabase
+              .from('keywords')
+              .insert({
+                keyword,
+                user_id: user.id
+              })
+              .select()
+              .single();
+              
+            if (insertError) {
+              console.error('Error creating keyword:', insertError);
+              continue;
+            }
+            
+            keywordId = newKeyword.id;
+          } else {
+            keywordId = existingKeyword.id;
+          }
+          
+          // Now link the keyword to the content
+          const { error: linkError } = await supabase
+            .from('content_keywords')
+            .insert({
+              content_id: data.id,
+              keyword_id: keywordId
+            });
+            
+          if (linkError) {
+            console.error('Error linking keyword to content:', linkError);
+          }
+        }
       }
-    } catch (error: any) {
-      console.error('Error adding content item:', error);
-      toast.error(error.message || 'Error creating content item');
       
-      // Fallback for development: Create in memory if database fails
-      if (process.env.NODE_ENV === 'development') {
-        const now = new Date().toISOString();
-        const newItem: ContentItemType = {
-          ...item,
-          id: uuidv4(),
-          created_at: now,
-          updated_at: now,
-          user_id: user.id
-        };
-        setContentItems(prev => [newItem, ...prev]);
-        toast.info('Created content in memory (development mode)');
-      }
+      // Refresh the content list
+      await refreshContentItems();
+      toast.success('Content created successfully');
+      return data.id;
+    } catch (err) {
+      console.error('Error creating content:', err);
+      toast.error('Failed to create content');
+      return null;
     }
   };
 
-  const updateContentItem = async (id: string, updates: Partial<ContentItemType>) => {
+  const updateContent = async (id: string, content: Partial<ContentItem>, selectedKeywords?: string[]): Promise<boolean> => {
     if (!user) {
       toast.error('You must be logged in to update content');
-      return;
+      return false;
     }
-
-    // Get the existing item
-    const existingItem = contentItems.find(item => item.id === id);
-    if (!existingItem) {
-      toast.error('Content item not found');
-      return;
-    }
-
+    
     try {
-      // Prepare updates for the database
-      const dbUpdates = {
-        ...updates,
-        updated_at: new Date().toISOString(),
-        // Remove id and user_id from updates if present
-        id: undefined,
-        user_id: undefined,
-        keywords: undefined, // Handle keywords separately
-      };
-      
-      // Filter out undefined values
-      Object.keys(dbUpdates).forEach(key => {
-        if (dbUpdates[key as keyof typeof dbUpdates] === undefined) {
-          delete dbUpdates[key as keyof typeof dbUpdates];
-        }
-      });
-      
+      // Update the content item
       const { error } = await supabase
         .from('content_items')
-        .update(dbUpdates)
+        .update({
+          title: content.title,
+          content: content.content,
+          status: content.status,
+          seo_score: content.seo_score,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id)
         .eq('user_id', user.id);
         
       if (error) throw error;
       
-      toast.success('Content updated successfully');
-      
-      // Update local state (realtime subscription should handle this, but for safety)
-      setContentItems(prev => 
-        prev.map(item => item.id === id ? { 
-          ...item, 
-          ...updates, 
-          updated_at: new Date().toISOString() 
-        } : item)
-      );
-    } catch (error: any) {
-      console.error('Error updating content item:', error);
-      toast.error(error.message || 'Error updating content');
-      
-      // Fallback for development: Update in memory if database fails
-      if (process.env.NODE_ENV === 'development') {
-        setContentItems(prev => 
-          prev.map(item => item.id === id ? { 
-            ...item, 
-            ...updates, 
-            updated_at: new Date().toISOString() 
-          } : item)
-        );
-        toast.info('Updated content in memory (development mode)');
+      // If keywords are provided, update the links
+      if (selectedKeywords !== undefined) {
+        // First, remove all existing links
+        const { error: deleteError } = await supabase
+          .from('content_keywords')
+          .delete()
+          .eq('content_id', id);
+          
+        if (deleteError) {
+          console.error('Error removing existing keyword links:', deleteError);
+        }
+        
+        // Then add the new links
+        if (selectedKeywords && selectedKeywords.length > 0) {
+          for (const keyword of selectedKeywords) {
+            // Check if the keyword exists
+            const { data: existingKeyword, error: lookupError } = await supabase
+              .from('keywords')
+              .select('id')
+              .eq('keyword', keyword)
+              .eq('user_id', user.id)
+              .single();
+              
+            if (lookupError && lookupError.code !== 'PGRST116') { // Not found error
+              console.error('Error looking up keyword:', lookupError);
+              continue;
+            }
+            
+            let keywordId;
+            
+            if (!existingKeyword) {
+              // Keyword doesn't exist, create it
+              const { data: newKeyword, error: insertError } = await supabase
+                .from('keywords')
+                .insert({
+                  keyword,
+                  user_id: user.id
+                })
+                .select()
+                .single();
+                
+              if (insertError) {
+                console.error('Error creating keyword:', insertError);
+                continue;
+              }
+              
+              keywordId = newKeyword.id;
+            } else {
+              keywordId = existingKeyword.id;
+            }
+            
+            // Now link the keyword to the content
+            const { error: linkError } = await supabase
+              .from('content_keywords')
+              .insert({
+                content_id: id,
+                keyword_id: keywordId
+              });
+              
+            if (linkError) {
+              console.error('Error linking keyword to content:', linkError);
+            }
+          }
+        }
       }
+      
+      // Refresh the content list
+      await refreshContentItems();
+      toast.success('Content updated successfully');
+      return true;
+    } catch (err) {
+      console.error('Error updating content:', err);
+      toast.error('Failed to update content');
+      return false;
     }
   };
 
-  const deleteContentItem = async (id: string) => {
+  const deleteContent = async (id: string): Promise<boolean> => {
     if (!user) {
       toast.error('You must be logged in to delete content');
-      return;
+      return false;
     }
-
+    
     try {
+      // First delete all keyword links
+      const { error: linkDeleteError } = await supabase
+        .from('content_keywords')
+        .delete()
+        .eq('content_id', id);
+        
+      if (linkDeleteError) {
+        console.error('Error deleting keyword links:', linkDeleteError);
+      }
+      
+      // Then delete the content item
       const { error } = await supabase
         .from('content_items')
         .delete()
@@ -297,54 +324,76 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         
       if (error) throw error;
       
+      // Refresh the content list
+      await refreshContentItems();
       toast.success('Content deleted successfully');
-      
-      // Update local state (realtime subscription should handle this, but for safety)
-      setContentItems(prev => prev.filter(item => item.id !== id));
-    } catch (error: any) {
-      console.error('Error deleting content item:', error);
-      toast.error(error.message || 'Error deleting content');
-      
-      // Fallback for development: Delete from memory if database fails
-      if (process.env.NODE_ENV === 'development') {
-        setContentItems(prev => prev.filter(item => item.id !== id));
-        toast.info('Deleted content from memory (development mode)');
-      }
+      return true;
+    } catch (err) {
+      console.error('Error deleting content:', err);
+      toast.error('Failed to delete content');
+      return false;
     }
   };
 
-  const getContentItem = (id: string) => {
-    return contentItems.find(item => item.id === id);
+  const getContentById = async (id: string): Promise<ContentItem | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('content_items')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      // Get associated keywords
+      const { data: keywordLinks, error: keywordError } = await supabase
+        .from('content_keywords')
+        .select('keyword_id')
+        .eq('content_id', id);
+        
+      if (keywordError) {
+        console.error('Error fetching keyword links:', keywordError);
+        return data;
+      }
+      
+      if (keywordLinks && keywordLinks.length > 0) {
+        // Get all keyword IDs
+        const keywordIds = keywordLinks.map(link => link.keyword_id);
+        
+        // Fetch the keywords
+        const { data: keywords, error: keywordDataError } = await supabase
+          .from('keywords')
+          .select('keyword')
+          .in('id', keywordIds);
+          
+        if (keywordDataError) {
+          console.error('Error fetching keywords:', keywordDataError);
+          return data;
+        }
+        
+        return { ...data, keywords: keywords.map(k => k.keyword) };
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Error fetching content by id:', err);
+      return null;
+    }
   };
 
-  const publishContent = async (id: string) => {
-    return updateContentItem(id, { 
-      status: 'published',
-      updated_at: new Date().toISOString()
-    });
+  const value = {
+    contentItems,
+    loading,
+    createContent,
+    updateContent,
+    deleteContent,
+    getContentById,
+    refreshContentItems,
   };
 
-  return (
-    <ContentContext.Provider 
-      value={{ 
-        contentItems, 
-        loading,
-        addContentItem, 
-        updateContentItem, 
-        deleteContentItem, 
-        getContentItem,
-        publishContent
-      }}
-    >
-      {children}
-    </ContentContext.Provider>
-  );
+  return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
 };
 
-export const useContent = () => {
-  const context = useContext(ContentContext);
-  if (context === undefined) {
-    throw new Error('useContent must be used within a ContentProvider');
-  }
-  return context;
-};
+export const useContent = () => useContext(ContentContext);
+
+export default ContentContext;

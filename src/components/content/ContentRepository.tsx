@@ -16,16 +16,33 @@ import {
   Filter,
   ArrowUpRight,
   Tag,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export function ContentRepository() {
+interface ContentRepositoryProps {
+  onSelectContent?: (contentId: string) => void;
+}
+
+export function ContentRepository({ onSelectContent }: ContentRepositoryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [filterStatus, setFilterStatus] = useState('all');
-  const { contentItems, loading } = useContent();
+  const { contentItems, loading, deleteContent, refreshContentItems } = useContent();
   const [filteredItems, setFilteredItems] = useState(contentItems);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contentToDelete, setContentToDelete] = useState<string | null>(null);
   
   useEffect(() => {
     let filtered = [...contentItems];
@@ -33,7 +50,8 @@ export function ContentRepository() {
     // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(item => 
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.keywords && item.keywords.some(kw => kw.toLowerCase().includes(searchQuery.toLowerCase())))
       );
     }
     
@@ -49,13 +67,18 @@ export function ContentRepository() {
       } else if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       } else if (sortBy === 'score') {
-        return b.seo_score - a.seo_score;
+        return (b.seo_score || 0) - (a.seo_score || 0);
       }
       return 0;
     });
     
     setFilteredItems(filtered);
   }, [contentItems, searchQuery, sortBy, filterStatus]);
+  
+  // Force refresh when component mounts
+  useEffect(() => {
+    refreshContentItems();
+  }, []);
 
   // Format the date to be more readable
   const formatDate = (dateString: string) => {
@@ -68,15 +91,35 @@ export function ContentRepository() {
   };
 
   const handleViewContent = (id: string) => {
-    toast.info(`Viewing content: ${id}`);
+    if (onSelectContent) {
+      onSelectContent(id);
+    } else {
+      toast.info(`Viewing content: ${id}`);
+    }
   };
 
   const handleEditContent = (id: string) => {
-    toast.info(`Editing content: ${id}`);
+    if (onSelectContent) {
+      onSelectContent(id);
+    } else {
+      toast.info(`Editing content: ${id}`);
+    }
   };
 
   const handleAnalyzeContent = (id: string) => {
     toast.info(`Analyzing content: ${id}`);
+  };
+  
+  const handleDeleteContent = async () => {
+    if (contentToDelete) {
+      const success = await deleteContent(contentToDelete);
+      if (success) {
+        toast.success("Content deleted successfully");
+        // Close the dialog
+        setDeleteDialogOpen(false);
+        setContentToDelete(null);
+      }
+    }
   };
 
   return (
@@ -152,7 +195,7 @@ export function ContentRepository() {
                 </div>
                 
                 <div className="flex flex-wrap gap-1 my-3">
-                  {item.keywords.map((keyword, idx) => (
+                  {item.keywords && item.keywords.map((keyword, idx) => (
                     <Badge key={idx} variant="outline" className="bg-white/5 text-xs">
                       <Tag className="h-2.5 w-2.5 mr-1" />
                       {keyword}
@@ -164,8 +207,8 @@ export function ContentRepository() {
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">SEO Score</div>
                     <div className="flex items-center gap-1">
-                      <ScoreBadge score={item.seo_score} />
-                      <span className="text-xs font-medium">{item.seo_score}/100</span>
+                      <ScoreBadge score={item.seo_score || 0} />
+                      <span className="text-xs font-medium">{item.seo_score || 0}/100</span>
                     </div>
                   </div>
                   
@@ -187,6 +230,18 @@ export function ContentRepository() {
                     >
                       <ExternalLink className="h-4 w-4" />
                       <span className="sr-only">View</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                      onClick={() => {
+                        setContentToDelete(item.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
                     </Button>
                     <Button 
                       size="sm" 
@@ -216,6 +271,24 @@ export function ContentRepository() {
           </p>
         </div>
       )}
+      
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-glass">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the content
+              and remove it from your repository.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteContent} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

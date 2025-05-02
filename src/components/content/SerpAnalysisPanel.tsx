@@ -125,14 +125,13 @@ export function SerpAnalysisPanel({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-medium">SERP Analysis</h3>
       <div className="bg-glass p-4 rounded-md mb-4">
         <div className="flex items-center gap-2 mb-2">
           <Search className="text-primary h-5 w-5" />
           <h4 className="font-medium">Analyzing: <span className="text-primary">{mainKeyword}</span></h4>
         </div>
         
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <div className="bg-glass border border-white/10 rounded-md p-3 text-center">
             <div className="text-sm text-muted-foreground">Search Volume</div>
             <div className="text-xl font-semibold">{serpData.searchVolume?.toLocaleString() || 'N/A'}</div>
@@ -287,250 +286,151 @@ export function SerpAnalysisPanel({
                           onClick={() => addPeopleAlsoAsk(item.question, item.answer)}
                         >
                           <PlusCircle className="h-3 w-3 mr-1" />
-                          Add to FAQs
+                          Add to FAQ Section
                         </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
-              <Button
-                className="w-full mt-4"
-                onClick={() => {
-                  const allQuestions = serpData.peopleAlsoAsk?.map(item => 
-                    `### ${item.question}\n${item.answer || 'No answer available'}\n\n`
-                  ).join('');
-                  onAddToContent(`## Frequently Asked Questions\n\n${allQuestions}`, 'faqSection');
-                  toast.success('Added complete FAQ section');
-                }}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Complete FAQ Section
-              </Button>
             </div>
           ) : (
             <div className="py-8 text-center">
-              <p className="text-muted-foreground">No questions data available</p>
+              <p className="text-muted-foreground">No "People Also Ask" questions available</p>
             </div>
           )}
         </TabsContent>
         
         <TabsContent value="features">
           <div className="space-y-6">
-            {serpData.featuredSnippets && serpData.featuredSnippets.length > 0 && (
-              <SerpFeature 
-                title="Featured Snippets" 
-                icon={<FileText className="h-4 w-4" />}
-              >
-                <div className="space-y-4">
-                  {serpData.featuredSnippets.map((snippet, index) => {
-                    let icon;
-                    switch (snippet.type) {
-                      case 'list': icon = <List className="h-4 w-4 text-primary" />; break;
-                      case 'table': icon = <Table className="h-4 w-4 text-primary" />; break;
-                      default: icon = <FileText className="h-4 w-4 text-primary" />;
-                    }
-                    
-                    return (
-                      <div key={index} className="border border-primary/20 rounded-md p-3 bg-primary/5">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {icon}
-                            <span className="font-medium capitalize">{snippet.type} Snippet</span>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => addFeaturedSnippet(snippet)}
-                          >
-                            <PlusCircle className="h-3 w-3 mr-1" />
-                            Add to Content
-                          </Button>
+            {serpData.featuredSnippets && serpData.featuredSnippets.length > 0 ? (
+              <div>
+                <h4 className="text-sm font-medium mb-3">Featured Snippets</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  {serpData.featuredSnippets.map((snippet, index) => (
+                    <div key={index} className="p-4 bg-glass border border-white/10 rounded-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {snippet.type === 'paragraph' && <FileText className="h-4 w-4 text-primary" />}
+                          {snippet.type === 'list' && <List className="h-4 w-4 text-primary" />}
+                          {snippet.type === 'table' && <Table className="h-4 w-4 text-primary" />}
+                          <span className="font-medium capitalize">{snippet.type} Snippet</span>
                         </div>
-                        <div className="text-sm whitespace-pre-line">{snippet.content}</div>
-                        {snippet.source && (
-                          <a 
-                            href={snippet.source} 
-                            className="text-xs text-primary flex items-center gap-1 mt-2 hover:underline"
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            <Link className="h-3 w-3" />
-                            Source
-                          </a>
-                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => addFeaturedSnippet(snippet)}
+                        >
+                          <PlusCircle className="h-3 w-3 mr-1" />
+                          Add to Content
+                        </Button>
                       </div>
-                    );
-                  })}
+                      <div className="text-sm text-muted-foreground">
+                        {snippet.content.length > 150 
+                          ? snippet.content.substring(0, 150) + '...' 
+                          : snippet.content}
+                      </div>
+                      <div className="mt-2 text-xs">
+                        <span className="text-muted-foreground">Source: </span>
+                        <a href={snippet.source} target="_blank" rel="noreferrer" className="text-primary hover:underline">{snippet.source}</a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </SerpFeature>
+              </div>
+            ) : (
+              <div className="py-4">
+                <p className="text-muted-foreground text-center">No featured snippets available</p>
+              </div>
             )}
             
             {serpData.knowledgeGraph && (
-              <SerpFeature 
-                title="Knowledge Graph" 
-                icon={<Circle className="h-4 w-4" />}
-                onAddToContent={() => {
-                  if (serpData.knowledgeGraph) {
-                    const content = `## ${serpData.knowledgeGraph.title || mainKeyword}\n${serpData.knowledgeGraph.description || ''}\n\n`;
-                    onAddToContent(content, 'knowledgeGraph');
-                    toast.success('Added knowledge graph information');
-                  }
-                }}
-              >
-                <div className="space-y-2">
-                  {serpData.knowledgeGraph.entityType && (
-                    <div className="text-xs text-muted-foreground">
-                      Entity Type: {serpData.knowledgeGraph.entityType}
-                    </div>
-                  )}
-                  {serpData.knowledgeGraph.description && (
-                    <p className="text-sm">{serpData.knowledgeGraph.description}</p>
-                  )}
-                  {serpData.knowledgeGraph.attributes && Object.entries(serpData.knowledgeGraph.attributes).length > 0 && (
-                    <div className="mt-3">
-                      <h5 className="text-xs font-medium mb-2">Attributes:</h5>
-                      <div className="space-y-1">
-                        {Object.entries(serpData.knowledgeGraph.attributes).map(([key, value], idx) => (
-                          <div key={idx} className="grid grid-cols-2 text-xs">
-                            <div className="text-muted-foreground">{key}:</div>
-                            <div>{value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </SerpFeature>
-            )}
-            
-            {serpData.imagePacks && serpData.imagePacks.length > 0 && (
-              <SerpFeature 
-                title="Image Packs" 
-                icon={<Image className="h-4 w-4" />}
-              >
-                <div>
-                  <p className="text-sm mb-3">
-                    Images are showing in search results. Consider adding visual elements to improve engagement.
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {serpData.imagePacks.map((image, idx) => (
-                      <div key={idx} className="text-center">
-                        <div className="h-20 bg-secondary/30 rounded-md flex items-center justify-center">
-                          <Image className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <p className="text-xs mt-1 truncate">{image.title}</p>
-                      </div>
-                    ))}
+              <div>
+                <h4 className="text-sm font-medium mb-3">Knowledge Graph</h4>
+                <div className="p-4 bg-glass border border-white/10 rounded-md">
+                  <div className="flex justify-between mb-2">
+                    <span className="font-medium">{serpData.knowledgeGraph.title || mainKeyword}</span>
+                    <Badge variant="outline">{serpData.knowledgeGraph.entityType || 'Entity'}</Badge>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-3 w-full"
-                    onClick={() => {
-                      onAddToContent(`\n\n> **Note:** Consider adding images or infographics about ${mainKeyword} to improve engagement.\n\n`, 'imageRecommendation');
-                      toast.success('Added image recommendation note');
-                    }}
-                  >
-                    <PlusCircle className="h-3 w-3 mr-1" />
-                    Add Image Recommendation
-                  </Button>
+                  {serpData.knowledgeGraph.description && (
+                    <p className="text-sm text-muted-foreground mb-3">{serpData.knowledgeGraph.description}</p>
+                  )}
+                  {serpData.knowledgeGraph.attributes && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(serpData.knowledgeGraph.attributes).map(([key, value], index) => (
+                        <div key={index} className="text-sm">
+                          <span className="text-muted-foreground">{key}: </span>
+                          <span>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </SerpFeature>
+              </div>
             )}
           </div>
         </TabsContent>
         
         <TabsContent value="related">
-          {serpData.relatedSearches && serpData.relatedSearches.length > 0 ? (
-            <div className="space-y-4">
-              <SerpFeature 
-                title="Related Searches" 
-                icon={<Search className="h-4 w-4" />}
-              >
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {serpData.relatedSearches.map((item, index) => (
-                      <Badge 
-                        key={index} 
-                        className="bg-secondary flex items-center gap-2 cursor-pointer"
-                        onClick={() => {
-                          onAddToContent(item.query, 'relatedKeyword');
-                          toast.success(`Added "${item.query}" to your content`);
-                        }}
-                      >
-                        {item.query}
-                        {item.volume && (
-                          <span className="text-xs bg-secondary/80 px-1 rounded-sm">{item.volume}</span>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                  
-                  <div className="pt-2 border-t border-border">
-                    <h5 className="text-sm font-medium mb-2">Related Topics Strategy</h5>
-                    <p className="text-sm text-muted-foreground">
-                      Consider including these related searches in your content or creating separate pieces 
-                      of content targeting these keywords for a comprehensive content strategy.
-                    </p>
-                    <Button 
-                      className="mt-3 w-full"
-                      variant="outline"
-                      onClick={() => {
-                        const relatedContent = serpData.relatedSearches
-                          ?.slice(0, 3)
-                          .map(item => `- **${item.query}**: Consider covering this topic in your content.\n`)
-                          .join('');
-                        
-                        onAddToContent(`## Related Topics to Cover\n\n${relatedContent}\n`, 'relatedTopics');
-                        toast.success('Added related topics section');
-                      }}
+          <div className="space-y-6">
+            {serpData.relatedSearches && serpData.relatedSearches.length > 0 ? (
+              <div>
+                <h4 className="text-sm font-medium mb-3">Related Searches</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {serpData.relatedSearches.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="p-2 bg-glass hover:bg-opacity-80 border border-white/10 rounded-md flex items-center justify-between cursor-pointer"
+                      onClick={() => onAddToContent(item.query, 'relatedSearch')}
                     >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Related Topics Section
-                    </Button>
-                  </div>
-                </div>
-              </SerpFeature>
-              
-              <Card className="glass-panel">
-                <CardHeader>
-                  <CardTitle className="text-md font-medium flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Content Gap Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm mb-4">
-                    Based on related searches, these topics are missing from top-ranking content but have search demand:
-                  </p>
-                  <div className="space-y-3">
-                    {serpData.relatedSearches.slice(0, 3).map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-3 w-3 text-muted-foreground" />
                         <span className="text-sm">{item.query}</span>
+                      </div>
+                      {item.volume && (
+                        <Badge variant="outline">{item.volume.toLocaleString()} m/o</Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="py-4">
+                <p className="text-muted-foreground text-center">No related searches available</p>
+              </div>
+            )}
+            
+            {serpData.imagePacks && serpData.imagePacks.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-3">Image Results</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {serpData.imagePacks.map((image, index) => (
+                    <div key={index} className="relative aspect-video group rounded-md overflow-hidden">
+                      <img 
+                        src={image.thumbnailUrl} 
+                        alt={image.title} 
+                        className="w-full h-full object-cover" 
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                         <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8"
+                          size="sm"
+                          variant="ghost"
+                          className="text-white border border-white/30 hover:bg-white/20"
                           onClick={() => {
-                            onAddToContent(`## ${item.query.charAt(0).toUpperCase() + item.query.slice(1)}\n\nThis section addresses the common questions about ${item.query}...\n\n`, 'contentGap');
-                            toast.success(`Added section for "${item.query}"`);
+                            onAddToContent(`![${image.title}](${image.url})`, 'image');
+                            toast.success('Image reference added to content');
                           }}
                         >
                           <PlusCircle className="h-3 w-3 mr-1" />
-                          Add Section
+                          Add Image
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">No related searches data available</p>
-            </div>
-          )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

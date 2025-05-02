@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { ContentRepository } from '@/components/content/ContentRepository';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
+import { useContent } from '@/contexts/ContentContext';
 import {
   PlusCircle,
   Save,
@@ -26,7 +28,13 @@ const Content = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [activeTab, setActiveTab] = useState("editor");
-  const [savedContent, setSavedContent] = useState<string | null>(null);
+  const [contentTitle, setContentTitle] = useState<string>('');
+  const [contentBody, setContentBody] = useState<string>('');
+  const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [contentKeywords, setContentKeywords] = useState<string[]>([]);
+  const [seoScore, setSeoScore] = useState<number>(0);
+  
+  const { createContent, updateContent, refreshContentItems } = useContent();
 
   const handleGenerate = () => {
     setLoading(true);
@@ -60,9 +68,56 @@ const Content = () => {
     }, 1500);
   };
   
-  const handleSave = () => {
-    toast.success('Content saved successfully!');
-    setSavedContent("Your content has been saved");
+  const handleSave = async () => {
+    if (!contentTitle.trim()) {
+      toast.error('Please add a title for your content');
+      return;
+    }
+    
+    try {
+      if (currentContentId) {
+        // Update existing content
+        const success = await updateContent(
+          currentContentId, 
+          {
+            title: contentTitle,
+            content: contentBody,
+            status: 'draft',
+            seo_score: seoScore
+          },
+          contentKeywords
+        );
+        
+        if (success) {
+          toast.success('Content updated successfully!');
+          // Refresh content items to update the repository view
+          await refreshContentItems();
+        }
+      } else {
+        // Create new content
+        const id = await createContent(
+          {
+            title: contentTitle,
+            content: contentBody,
+            status: 'draft',
+            seo_score: seoScore
+          },
+          contentKeywords
+        );
+        
+        if (id) {
+          setCurrentContentId(id);
+          toast.success('Content saved successfully!');
+          // Refresh content items to update the repository view
+          await refreshContentItems();
+          // Switch to published tab to show the saved content
+          setActiveTab("published");
+        }
+      }
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast.error('Failed to save content');
+    }
   };
   
   const handleShare = () => {
@@ -82,6 +137,19 @@ const Content = () => {
       document.body.removeChild(link);
     }, 1000);
   };
+  
+  // Update from content editor
+  const handleContentUpdate = (data: { 
+    title?: string; 
+    content?: string; 
+    keywords?: string[];
+    seoScore?: number;
+  }) => {
+    if (data.title !== undefined) setContentTitle(data.title);
+    if (data.content !== undefined) setContentBody(data.content);
+    if (data.keywords !== undefined) setContentKeywords(data.keywords);
+    if (data.seoScore !== undefined) setSeoScore(data.seoScore);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -96,7 +164,6 @@ const Content = () => {
                 variant="outline" 
                 className="gap-1 neon-border"
                 onClick={handleSave}
-                disabled={!contentGenerated}
               >
                 <Save className="h-4 w-4" />
                 <span>Save</span>
@@ -105,7 +172,7 @@ const Content = () => {
                 variant="outline" 
                 className="gap-1 neon-border"
                 onClick={handleShare}
-                disabled={!contentGenerated}
+                disabled={!contentGenerated && !contentTitle}
               >
                 <Share2 className="h-4 w-4" />
                 <span>Share</span>
@@ -167,20 +234,25 @@ const Content = () => {
             </TabsList>
             
             <TabsContent value="editor" className="mt-4">
-              <ContentEditor />
+              <ContentEditor 
+                onContentUpdate={handleContentUpdate} 
+                initialContent={contentBody}
+                initialTitle={contentTitle}
+                initialKeywords={contentKeywords}
+              />
             </TabsContent>
             
             <TabsContent value="published" className="mt-4">
-              {savedContent ? (
+              {currentContentId ? (
                 <div className="flex flex-col space-y-4">
                   <div className="rounded-lg bg-glass p-6">
-                    <h2 className="text-xl font-medium mb-4">Published Content</h2>
+                    <h2 className="text-xl font-medium mb-4">{contentTitle || 'Published Content'}</h2>
                     <p>Your content has been published successfully and is now live.</p>
                     
                     <div className="flex items-center justify-between mt-6 border-t pt-4 border-border">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">Content ID:</span>
-                        <span className="text-sm font-medium">CONTENT-12345</span>
+                        <span className="text-sm font-medium">{currentContentId.slice(0, 8).toUpperCase()}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">Published:</span>
@@ -228,7 +300,7 @@ const Content = () => {
                       </div>
                       <div className="bg-background/50 p-4 rounded-lg">
                         <div className="text-sm text-muted-foreground">SEO Score</div>
-                        <div className="text-2xl font-bold">87/100</div>
+                        <div className="text-2xl font-bold">{seoScore}/100</div>
                         <div className="text-xs text-green-400">+2 this week</div>
                       </div>
                     </div>
@@ -249,7 +321,11 @@ const Content = () => {
             </TabsContent>
             
             <TabsContent value="repository" className="mt-4">
-              <ContentRepository />
+              <ContentRepository onSelectContent={(contentId) => {
+                setCurrentContentId(contentId);
+                // TODO: Load the content into editor when a repository item is selected
+                setActiveTab("editor");
+              }} />
             </TabsContent>
             
             <TabsContent value="performance" className="mt-4">
@@ -297,10 +373,10 @@ const Content = () => {
                         <div>
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-sm font-medium">Overall Score</span>
-                            <span className="text-sm">87/100</span>
+                            <span className="text-sm">{seoScore}/100</span>
                           </div>
                           <div className="w-full bg-secondary/50 rounded-full h-2">
-                            <div className="bg-neon-purple rounded-full h-2" style={{ width: '87%' }}></div>
+                            <div className="bg-neon-purple rounded-full h-2" style={{ width: `${seoScore}%` }}></div>
                           </div>
                         </div>
                       </div>
@@ -330,14 +406,14 @@ const Content = () => {
                 <input 
                   type="text" 
                   className="flex-1 px-3 py-2 bg-glass border-r-0 border border-border rounded-l-md text-sm" 
-                  value="https://contentrocketforge.app/content/abc123" 
+                  value={`https://contentrocketforge.app/content/${currentContentId || 'preview'}`} 
                   readOnly
                 />
                 <Button 
                   variant="outline" 
                   className="rounded-l-none border border-border"
                   onClick={() => {
-                    navigator.clipboard.writeText("https://contentrocketforge.app/content/abc123");
+                    navigator.clipboard.writeText(`https://contentrocketforge.app/content/${currentContentId || 'preview'}`);
                     toast.success("Link copied to clipboard!");
                   }}
                 >
@@ -369,7 +445,7 @@ const Content = () => {
                 </Button>
                 <Button variant="outline" className="gap-2">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M21.629 8.65c-.18-1.874-1.283-3.351-2.479-3.671-.598-.135-1.254.057-1.701.366-.416.288-.911.866-1.457 2.266-.158.405-.323.866-.485 1.323.119.405.235.809.346 1.186.651 2.213.986 2.83 1.23 3.058.242.225.569.437 1.31.437s1.067-.212 1.311-.437c.245-.228.581-.843 1.232-3.058.213-.721.408-1.546.576-2.266.151-.652.229-1.207.229-1.696.001-.47-.06-.842-.112-1.058zm-1.817 1.709c-.164.707-.349 1.484-.542 2.149-.496 1.696-.757 2.371-.794 2.426v.002c-.038-.057-.297-.729-.794-2.426-.098-.332-.2-.681-.294-1.042-.285-1.063-.424-1.6-.471-1.814-.066-.302-.074-.511-.075-.621v-.044c.001-.062.006-.183.057-.279.036-.066.113-.143.3-.183.409-.087 1.194.167 1.351 1.139.016.098.028.213.038.332.058.62.125 1.424.224 2.361zm-5.812 4.908c.149 0 .27-.121.27-.27v-6.754h1.523c.149 0 .271-.121.271-.271s-.122-.27-.271-.271h-3.587c-.149 0-.27.12-.27.27s.121.27.27.27h1.524v6.754c0 .149.121.27.27.27zm-4-1.048c-.705 0-1.279-.575-1.279-1.281v-5.236c0-.705.574-1.28 1.279-1.28s1.279.575 1.279 1.28v5.236c0 .705-.574 1.281-1.279 1.281zm0-7.256c-.407 0-.738.332-.738.739v5.236c0 .407.331.74.738.74s.738-.333.738-.74v-5.236c0-.407-.331-.739-.738-.739zm-2-.002c-.149 0-.27.12-.27.271v6.754h-.854c-.149 0-.27.12-.27.27s.121.27.27.27h2.248c.149 0 .27-.12.27-.27s-.121-.27-.27-.27h-.853v-6.754c0-.15-.121-.271-.271-.271z" />
+                    <path d="M21.629 8.65c-.18-1.874-1.283-3.351-2.479-3.671-.598-.135-1.254.057-1.701.366-.416.288-.911.866-1.457 2.266-.158.405-.323.866-.485 1.323.119.405.235.809.346 1.186.651 2.213.986 2.83 1.23 3.058.242.225.569.437 1.31.437s1.067-.212 1.311-.437c.245-.228.581-.843 1.232-3.058.213-.721.408-1.546.576-2.266.151-.652.229-1.207.229-1.696.001-.47-.06-.842-.112-1.058zm-1.817 1.709c-.164.707-.349 1.484-.542 2.149-.496 1.696-.757 2.371-.794 2.426v.002c-.038-.057-.297-.729-.794-2.426-.098-.332-.2-.681-.294-1.042-.285-1.063-.424-1.6-.471-1.814-.066-.302-.074-.511-.075-.621v-.044c.001-.062.006-.183.057-.279.036-.066.113-.143.3-.183.409-.087 1.194.167 1.351 1.139.016.098.028.213.038.332.058.62.125 1.424.224 2.361zm-5.812 4.908c.149 0 .27-.121.27-.27v-6.754h1.523c.149 0 .271-.121.271-.271s-.122-.27-.271-.27h-3.587c-.149 0-.27.12-.27.27s.121.27.27.27h1.524v6.754c0 .149.121.27.27.27zm-4-1.048c-.705 0-1.279-.575-1.279-1.281v-5.236c0-.705.574-1.28 1.279-1.28s1.279.575 1.279 1.28v5.236c0 .705-.574 1.281-1.279 1.281zm0-7.256c-.407 0-.738.332-.738.739v5.236c0 .407.331.74.738.74s.738-.333.738-.74v-5.236c0-.407-.331-.739-.738-.739zm-2-.002c-.149 0-.27.12-.27.271v6.754h-.854c-.149 0-.27.12-.27.27s.121.27.27.27h2.248c.149 0 .27-.12.27-.27s-.121-.27-.27-.27h-.853v-6.754c0-.15-.121-.271-.271-.271z" />
                   </svg>
                   Email
                 </Button>
