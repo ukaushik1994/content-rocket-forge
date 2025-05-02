@@ -25,8 +25,8 @@ export type ApiKeyType = {
   updated_at: string;
 };
 
-// Default user ID to use for all API keys
-const DEFAULT_USER_ID = 'default-user-id';
+// Default user ID to use for all API keys - using the same UUID as in AuthContext
+const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 // Option 1: Use Supabase with a default user ID
 export async function saveApiKey(service: string, key: string): Promise<boolean> {

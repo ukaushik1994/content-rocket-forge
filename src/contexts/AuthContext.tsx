@@ -14,8 +14,9 @@ type AuthContextType = {
 };
 
 // Create a fixed default user and session that will always be provided
+// Using a proper UUID format for the user ID
 const defaultUser: User = {
-  id: 'default-user-id',
+  id: '00000000-0000-0000-0000-000000000000',
   app_metadata: {},
   user_metadata: {
     first_name: 'Default',
