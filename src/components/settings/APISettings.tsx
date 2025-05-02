@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Eye, EyeOff, CheckCircle2, Info, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Info, Loader2, Settings, ArrowDown } from 'lucide-react';
 import { saveApiKey, getApiKey, testApiKey, deleteApiKey } from '@/services/apiKeyService';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -197,8 +196,17 @@ export const APISettings = () => {
     }
   };
   
-  const getProviderLogo = (providerId: string) => {
-    return aiProviders.find(p => p.id === providerId)?.logo || 'openai';
+  const getProviderIcon = (providerId: string) => {
+    switch(providerId) {
+      case 'openai':
+        return <Settings className="h-4 w-4" />;
+      case 'google':
+        return <Info className="h-4 w-4" />;
+      case 'deepseek':
+        return <ArrowDown className="h-4 w-4" />;
+      default:
+        return <Settings className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -298,9 +306,7 @@ export const APISettings = () => {
                   value={provider.id} 
                   className="flex items-center gap-2"
                 >
-                  {provider.logo === 'openai' && <openai className="h-4 w-4" />}
-                  {provider.logo === 'google' && <google className="h-4 w-4" />}
-                  {provider.logo === 'deepseek' && <deepseek className="h-4 w-4" />}
+                  {getProviderIcon(provider.id)}
                   {provider.name}
                 </TabsTrigger>
               ))}
