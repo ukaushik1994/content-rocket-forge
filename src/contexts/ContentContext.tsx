@@ -64,6 +64,13 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // For each content item, fetch associated keywords
       const itemsWithKeywords = await Promise.all(
         items.map(async (item) => {
+          // Ensure status is one of the valid types
+          const validStatus = (item.status as string) === 'draft' || 
+                              (item.status as string) === 'published' || 
+                              (item.status as string) === 'archived' 
+                              ? (item.status as 'draft' | 'published' | 'archived') 
+                              : 'draft';
+                              
           const { data: keywordLinks, error: keywordError } = await supabase
             .from('content_keywords')
             .select('keyword_id')
@@ -71,7 +78,11 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             
           if (keywordError) {
             console.error('Error fetching keyword links:', keywordError);
-            return { ...item, keywords: [] };
+            return { 
+              ...item, 
+              keywords: [],
+              status: validStatus
+            } as ContentItem;
           }
           
           if (keywordLinks && keywordLinks.length > 0) {
@@ -86,16 +97,25 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               
             if (keywordDataError) {
               console.error('Error fetching keywords:', keywordDataError);
-              return { ...item, keywords: [] };
+              return { 
+                ...item, 
+                keywords: [],
+                status: validStatus
+              } as ContentItem;
             }
             
             return { 
               ...item, 
-              keywords: keywords.map(k => k.keyword) 
-            };
+              keywords: keywords.map(k => k.keyword),
+              status: validStatus
+            } as ContentItem;
           }
           
-          return { ...item, keywords: [] };
+          return { 
+            ...item, 
+            keywords: [],
+            status: validStatus
+          } as ContentItem;
         })
       );
       
@@ -119,13 +139,20 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     
     try {
+      // Ensure status is a valid type
+      const validStatus = (content.status as string) === 'draft' || 
+                          (content.status as string) === 'published' || 
+                          (content.status as string) === 'archived' 
+                          ? content.status 
+                          : 'draft';
+    
       // Insert the content item
       const { data, error } = await supabase
         .from('content_items')
         .insert({
           title: content.title || 'Untitled Content',
           content: content.content || '',
-          status: content.status || 'draft',
+          status: validStatus,
           user_id: user.id,
           seo_score: content.seo_score || 0,
         })
@@ -204,15 +231,22 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       toast.error('You must be logged in to update content');
       return false;
     }
-    
+
     try {
+      // Ensure status is a valid type
+      const validStatus = (content.status as string) === 'draft' || 
+                          (content.status as string) === 'published' || 
+                          (content.status as string) === 'archived' 
+                          ? content.status 
+                          : 'draft';
+    
       // Update the content item
       const { error } = await supabase
         .from('content_items')
         .update({
           title: content.title,
           content: content.content,
-          status: content.status,
+          status: validStatus,
           seo_score: content.seo_score,
           updated_at: new Date().toISOString(),
         })
@@ -345,6 +379,13 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
+      // Ensure status is a valid type
+      const validStatus = (data.status as string) === 'draft' || 
+                          (data.status as string) === 'published' || 
+                          (data.status as string) === 'archived' 
+                          ? (data.status as 'draft' | 'published' | 'archived') 
+                          : 'draft';
+      
       // Get associated keywords
       const { data: keywordLinks, error: keywordError } = await supabase
         .from('content_keywords')
@@ -353,7 +394,10 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (keywordError) {
         console.error('Error fetching keyword links:', keywordError);
-        return data;
+        return {
+          ...data,
+          status: validStatus
+        } as ContentItem;
       }
       
       if (keywordLinks && keywordLinks.length > 0) {
@@ -368,13 +412,23 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           
         if (keywordDataError) {
           console.error('Error fetching keywords:', keywordDataError);
-          return data;
+          return {
+            ...data,
+            status: validStatus
+          } as ContentItem;
         }
         
-        return { ...data, keywords: keywords.map(k => k.keyword) };
+        return { 
+          ...data, 
+          keywords: keywords.map(k => k.keyword),
+          status: validStatus
+        } as ContentItem;
       }
       
-      return data;
+      return {
+        ...data,
+        status: validStatus
+      } as ContentItem;
     } catch (err) {
       console.error('Error fetching content by id:', err);
       return null;
