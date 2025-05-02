@@ -28,7 +28,7 @@ export type ApiKeyType = {
 // Default user ID to use for all API keys - using the same UUID as in AuthContext
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
-// Option 1: Use Supabase with a default user ID
+// Use Supabase with a default user ID
 export async function saveApiKey(service: string, key: string): Promise<boolean> {
   try {
     if (!key.trim()) {
@@ -59,7 +59,10 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
         })
         .eq('id', existingKey.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating API key:', error);
+        throw error;
+      }
     } else {
       // Insert new key
       const { error } = await supabase
@@ -68,10 +71,13 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
           service, 
           encrypted_key, 
           is_active: true,
-          user_id: DEFAULT_USER_ID  // Use default user ID
+          user_id: DEFAULT_USER_ID
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting API key:', error);
+        throw error;
+      }
     }
 
     toast.success(`${service} API key saved successfully`);
@@ -85,7 +91,6 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
 
 export async function getApiKey(service: string): Promise<string | null> {
   try {
-    // Option 1: Use Supabase
     const { data, error } = await supabase
       .from('api_keys')
       .select('encrypted_key')
@@ -94,7 +99,11 @@ export async function getApiKey(service: string): Promise<string | null> {
       .eq('is_active', true)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error fetching ${service} API key:`, error);
+      return null;
+    }
+    
     return data ? decryptKey(data.encrypted_key) : null;
   } catch (error) {
     console.error(`Error fetching ${service} API key:`, error);
@@ -104,14 +113,16 @@ export async function getApiKey(service: string): Promise<string | null> {
 
 export async function deleteApiKey(service: string): Promise<boolean> {
   try {
-    // Option 1: Use Supabase
     const { error } = await supabase
       .from('api_keys')
       .delete()
       .eq('service', service)
       .eq('user_id', DEFAULT_USER_ID);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting API key:', error);
+      throw error;
+    }
     
     toast.success(`${service} API key deleted successfully`);
     return true;
