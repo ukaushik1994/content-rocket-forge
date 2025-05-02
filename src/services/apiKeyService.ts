@@ -31,10 +31,17 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
       throw new Error('API key cannot be empty');
     }
 
+    // Get the current authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('You must be logged in to save API keys');
+    }
+
     const { data: existingKey, error: fetchError } = await supabase
       .from('api_keys')
       .select('*')
       .eq('service', service)
+      .eq('user_id', user.id)
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -59,7 +66,12 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
       // Insert new key
       const { error } = await supabase
         .from('api_keys')
-        .insert({ service, encrypted_key, is_active: true });
+        .insert({ 
+          service, 
+          encrypted_key, 
+          is_active: true,
+          user_id: user.id  // Add the user_id
+        });
 
       if (error) throw error;
     }

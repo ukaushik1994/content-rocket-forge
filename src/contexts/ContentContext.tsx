@@ -172,7 +172,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         content: item.content,
         status: item.status,
         seo_score: item.seo_score,
-        // Keywords are handled separately in a real implementation
+        user_id: user.id // Add user_id to the insert
       };
       
       const { data, error } = await supabase
@@ -190,6 +190,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         const createdItem: ContentItemType = {
           ...data,
           keywords: item.keywords,
+          status: data.status as 'draft' | 'published' | 'archived'
         };
         
         setContentItems(prev => [createdItem, ...prev]);
