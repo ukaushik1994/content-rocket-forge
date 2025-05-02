@@ -1,16 +1,19 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { RocketIcon, Search, BarChart3, Settings, Users } from 'lucide-react';
+import { RocketIcon, Search, BarChart3, Settings, Users, Activity, MessageCircle } from 'lucide-react';
 
 const Navbar = () => {
+  const location = useLocation();
+  
   const links = [
     { name: 'Dashboard', href: '/', icon: <RocketIcon className="h-4 w-4 mr-2" /> },
     { name: 'Keywords', href: '/keywords', icon: <Search className="h-4 w-4 mr-2" /> },
     { name: 'Content', href: '/content', icon: <BarChart3 className="h-4 w-4 mr-2" /> },
     { name: 'Solutions', href: '/solutions', icon: <Users className="h-4 w-4 mr-2" /> },
+    { name: 'Analytics', href: '/analytics', icon: <Activity className="h-4 w-4 mr-2" /> },
     { name: 'Settings', href: '/settings', icon: <Settings className="h-4 w-4 mr-2" /> },
   ];
 
@@ -29,7 +32,12 @@ const Navbar = () => {
             <Link
               key={link.name}
               to={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center"
+              className={cn(
+                "text-sm font-medium transition-colors flex items-center",
+                location.pathname === link.href 
+                  ? "text-foreground" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
               {link.icon}
               {link.name}
@@ -38,7 +46,8 @@ const Navbar = () => {
         </nav>
         
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="neon-border">
+          <Button variant="ghost" size="sm" className="neon-border gap-1">
+            <MessageCircle className="h-4 w-4" />
             Feedback
           </Button>
           <Button size="sm" className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white">
