@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,7 +17,6 @@ import {
   FileText,
   Settings,
   User,
-  LogOut,
   Menu,
   X,
   PanelRight,
@@ -37,17 +36,11 @@ const navItems = [
 
 const Navbar = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/auth');
   };
 
   return (
@@ -122,7 +115,7 @@ const Navbar = () => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="text-sm font-normal text-muted-foreground">Signed in as</span>
+                  <span className="text-sm font-normal text-muted-foreground">Demo User</span>
                   <span className="font-medium">{user?.email}</span>
                 </div>
               </DropdownMenuLabel>
@@ -133,10 +126,6 @@ const Navbar = () => {
                   <span>Profile</span>
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -188,17 +177,6 @@ const Navbar = () => {
                   </Link>
                 );
               })}
-              
-              <div className="pt-4 mt-4 border-t border-border">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start gap-3" 
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span>Log out</span>
-                </Button>
-              </div>
             </nav>
           </div>
         </div>

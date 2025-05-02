@@ -17,116 +17,49 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Set up auth listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [user, setUser] = useState<User | null>({
+    id: 'demo-user-id',
+    app_metadata: {},
+    user_metadata: {
+      first_name: 'Demo',
+      last_name: 'User',
+      avatar_url: null
+    },
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+    role: 'authenticated',
+    email: 'demo@example.com'
+  } as User);
+  
+  const [session, setSession] = useState<Session | null>({
+    access_token: 'demo-access-token',
+    refresh_token: 'demo-refresh-token',
+    expires_in: 3600,
+    expires_at: new Date().getTime() + 3600000,
+    token_type: 'bearer',
+    user: user
+  } as Session);
+  
+  const [loading, setLoading] = useState(false);
 
   const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        throw error;
-      }
-      toast.success('Signed in successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Error signing in');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    toast.success('Signed in successfully!');
+    return Promise.resolve();
   };
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName
-          }
-        }
-      });
-      if (error) {
-        throw error;
-      }
-      toast.success('Account created successfully! Please check your email for confirmation.');
-    } catch (error: any) {
-      toast.error(error.message || 'Error creating account');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    toast.success('Account created successfully!');
+    return Promise.resolve();
   };
 
   const signOut = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
-      toast.success('Signed out successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Error signing out');
-    } finally {
-      setLoading(false);
-    }
+    toast.success('Signed out successfully!');
+    return Promise.resolve();
   };
 
   const updateProfile = async (data: { firstName?: string; lastName?: string; avatarUrl?: string }) => {
-    try {
-      const { firstName, lastName, avatarUrl } = data;
-      const updates = {
-        first_name: firstName,
-        last_name: lastName,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString(),
-      };
-      
-      // Filter out undefined values
-      Object.keys(updates).forEach(key => {
-        if (updates[key as keyof typeof updates] === undefined) {
-          delete updates[key as keyof typeof updates];
-        }
-      });
-      
-      if (!user) throw new Error('Not authenticated');
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-        
-      if (error) throw error;
-      
-      toast.success('Profile updated!');
-    } catch (error: any) {
-      toast.error(error.message || 'Error updating profile');
-    }
+    toast.success('Profile updated!');
+    return Promise.resolve();
   };
 
   return (
