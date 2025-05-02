@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { KeywordCluster } from '@/components/keywords/KeywordCluster';
@@ -16,8 +15,10 @@ import {
   Plus,
   RefreshCcw,
   Search,
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 const Keywords = () => {
   const [activeTab, setActiveTab] = useState('research');
@@ -53,13 +54,23 @@ const Keywords = () => {
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gradient">Keyword Research</h1>
-            <Button 
-              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-              onClick={handleCreateCluster}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Keyword Cluster
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                onClick={handleCreateCluster}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Keyword Cluster
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                as={Link}
+                to="/content-builder"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Create Content
+              </Button>
+            </div>
           </div>
           
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>

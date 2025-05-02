@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Keywords from "./pages/Keywords";
 import Content from "./pages/Content";
+import ContentBuilder from "./pages/ContentBuilder";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
@@ -28,10 +29,10 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/keywords" element={<Keywords />} />
               <Route path="/content" element={<Content />} />
+              <Route path="/content-builder" element={<ContentBuilder />} />
               <Route path="/solutions" element={<Solutions />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/analytics" element={<Analytics />} />
-              {/* Auth route is removed since we don't need authentication anymore */}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
