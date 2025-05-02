@@ -1,11 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Keywords from "./pages/Keywords";
+import Keywords from './pages/keywords';
 import Content from "./pages/Content";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
