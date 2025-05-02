@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
@@ -351,6 +352,134 @@ function getPayloadConfigFromPayload(
   return configLabelKey in config
     ? config[configLabelKey]
     : config[key as keyof typeof config]
+}
+
+// Create and export LineChart component
+export const LineChart = ({ 
+  data, 
+  index = "name",
+  categories,
+  colors = ["#2563eb", "#8b5cf6", "#e11d48"],
+  valueFormatter,
+  ...props 
+}: {
+  data: any[];
+  index?: string;
+  categories: string[];
+  colors?: string[];
+  valueFormatter?: (value: number) => string;
+} & Omit<React.ComponentProps<typeof ChartContainer>, "config" | "children">) => {
+  const config: ChartConfig = {}
+  
+  categories.forEach((category, i) => {
+    config[category] = {
+      color: colors[i % colors.length]
+    }
+  })
+  
+  return (
+    <ChartContainer config={config} {...props}>
+      <RechartsPrimitive.LineChart data={data}>
+        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <RechartsPrimitive.XAxis 
+          dataKey={index} 
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+        />
+        <RechartsPrimitive.YAxis 
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          tickFormatter={(value) => valueFormatter ? valueFormatter(value) : value.toLocaleString()}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, name) => 
+                [valueFormatter ? valueFormatter(value as number) : value, name]
+              }
+            />
+          }
+        />
+        <ChartLegend content={<ChartLegendContent />} />
+        {categories.map((category, i) => (
+          <RechartsPrimitive.Line
+            key={category}
+            type="monotone"
+            dataKey={category}
+            stroke={colors[i % colors.length]}
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        ))}
+      </RechartsPrimitive.LineChart>
+    </ChartContainer>
+  )
+}
+
+// Create and export BarChart component
+export const BarChart = ({ 
+  data, 
+  index = "name",
+  categories,
+  colors = ["#2563eb", "#8b5cf6", "#e11d48"],
+  valueFormatter,
+  ...props 
+}: {
+  data: any[];
+  index?: string;
+  categories: string[];
+  colors?: string[];
+  valueFormatter?: (value: number) => string;
+} & Omit<React.ComponentProps<typeof ChartContainer>, "config" | "children">) => {
+  const config: ChartConfig = {}
+  
+  categories.forEach((category, i) => {
+    config[category] = {
+      color: colors[i % colors.length]
+    }
+  })
+  
+  return (
+    <ChartContainer config={config} {...props}>
+      <RechartsPrimitive.BarChart data={data}>
+        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <RechartsPrimitive.XAxis 
+          dataKey={index} 
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+        />
+        <RechartsPrimitive.YAxis 
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          tickFormatter={(value) => valueFormatter ? valueFormatter(value) : value.toLocaleString()}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, name) => 
+                [valueFormatter ? valueFormatter(value as number) : value, name]
+              }
+            />
+          }
+        />
+        <ChartLegend content={<ChartLegendContent />} />
+        {categories.map((category, i) => (
+          <RechartsPrimitive.Bar
+            key={category}
+            dataKey={category}
+            fill={colors[i % colors.length]}
+            radius={[4, 4, 0, 0]}
+            barSize={30}
+          />
+        ))}
+      </RechartsPrimitive.BarChart>
+    </ChartContainer>
+  )
 }
 
 export {
