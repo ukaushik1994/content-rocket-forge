@@ -54,12 +54,20 @@ export async function getKeywords(): Promise<Keyword[]> {
 
 export async function addKeyword(keyword: string, volume?: number, difficulty?: number): Promise<Keyword | null> {
   try {
+    // Get the current user ID from the auth context
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("You must be logged in to add keywords");
+    }
+    
     const { data, error } = await supabase
       .from("keywords")
       .insert({
         keyword,
         search_volume: volume || null,
-        difficulty: difficulty || null
+        difficulty: difficulty || null,
+        user_id: user.id  // Add the user ID to the insert
       })
       .select()
       .single();
