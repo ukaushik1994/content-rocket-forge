@@ -18,18 +18,19 @@ const Content = () => {
 
   const handleGenerate = () => {
     setLoading(true);
-    toast.promise(
-      new Promise<void>((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 2000);
-      }),
-      {
-        loading: 'Generating optimized content...',
-        success: 'Content generated successfully!',
-        error: 'Failed to generate content',
-      }
-    ).finally(() => setLoading(false));
+    const promise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 2000);
+    });
+    
+    toast.promise(promise, {
+      loading: 'Generating optimized content...',
+      success: 'Content generated successfully!',
+      error: 'Failed to generate content',
+    }).then(() => {
+      setLoading(false);
+    });
   };
 
   return (

@@ -14,16 +14,24 @@ import {
   Plus, 
   Info,
   HelpCircle,
-  BarChart3
+  BarChart3,
+  ArrowRight,
+  Search,
+  Check,
+  Database,
+  BookOpen
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 export function ContentEditor() {
   const [editorContent, setEditorContent] = useState('# Best Project Management Software for Remote Teams in 2024\n\nRemote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.\n\n## Top Project Management Tools for 2024\n\n### 1. TaskMaster Pro\n- **Key Features:** Gantt charts, AI analytics, real-time collaboration\n- **Best For:** Enterprise teams with complex workflows\n- **Pricing:** Starts at $29/mo per user');
 
   const [seoScore, setSeoScore] = useState(78);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [serpData, setSerpData] = useState<any>(null);
   
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditorContent(e.target.value);
@@ -35,10 +43,531 @@ export function ContentEditor() {
     setSeoScore(Math.floor(newScore));
   };
 
+  const steps = [
+    { name: "Keyword Research", icon: <Search className="h-5 w-5" /> },
+    { name: "SERP Analysis", icon: <Database className="h-5 w-5" /> },
+    { name: "Content Structure", icon: <LayoutTemplate className="h-5 w-5" /> },
+    { name: "Content Writing", icon: <Pencil className="h-5 w-5" /> },
+    { name: "SEO Optimization", icon: <BarChart3 className="h-5 w-5" /> },
+    { name: "Publish", icon: <BookOpen className="h-5 w-5" /> },
+  ];
+
+  const fetchSerpData = () => {
+    // Simulate SERP API call
+    setTimeout(() => {
+      setSerpData({
+        avgWordCount: 2500,
+        commonH1Pattern: "[Number] Best [Keyword] for [Target] in [Year]",
+        commonSections: ["Introduction", "Top Products", "Comparison Table", "Features", "Pricing", "FAQ"],
+        peopleAlsoAsk: [
+          "What is the easiest project management tool for beginners?",
+          "Which project management software is best for remote teams?",
+          "Is there a free project management tool?",
+          "How much does project management software cost?",
+          "What's better than Asana for project management?"
+        ],
+        serpFeatures: ["Featured Snippet", "Reviews Rich Snippet", "People Also Ask"],
+        topCompetitors: [
+          { title: "10 Best Project Management Tools in 2024", domain: "example.com", wordCount: 2650 },
+          { title: "Top Project Management Software for Remote Teams", domain: "competitor.com", wordCount: 2300 },
+        ]
+      });
+    }, 1000);
+  };
+
+  const getStepContent = () => {
+    switch(currentStep) {
+      case 0:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">Keyword Research</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="glass-panel">
+                <CardContent className="pt-6 space-y-4">
+                  <h4 className="text-lg font-medium">Primary Keyword</h4>
+                  <div className="space-y-2">
+                    <input 
+                      type="text" 
+                      className="w-full bg-glass border border-white/10 p-3 rounded-md" 
+                      placeholder="Enter your main keyword..." 
+                      defaultValue="best project management software"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Search Volume: 12,000</span>
+                      <span>Keyword Difficulty: Medium</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 pt-4">
+                    <h5 className="font-medium">Related Keywords</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {["project management tools", "task management software", "team collaboration tools"].map((kw, i) => (
+                        <Badge key={i} className="bg-glass border border-white/10">
+                          {kw}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel">
+                <CardContent className="pt-6 space-y-4">
+                  <h4 className="text-lg font-medium">Keyword Clusters</h4>
+                  <div className="space-y-4">
+                    <div className="border border-white/10 rounded-md p-3 space-y-2">
+                      <h5 className="font-medium text-primary">Features Cluster</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
+                          <Badge key={i} variant="outline" className="border-primary/30">
+                            {term}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="border border-white/10 rounded-md p-3 space-y-2">
+                      <h5 className="font-medium text-neon-blue">Pricing Cluster</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
+                          <Badge key={i} variant="outline" className="border-neon-blue/30">
+                            {term}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                onClick={() => {
+                  setCurrentStep(1);
+                  fetchSerpData();
+                }}
+              >
+                Analyze SERP
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 1:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">SERP Analysis</h3>
+            
+            {!serpData ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <p className="mt-4 text-muted-foreground">Analyzing search results...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glass-panel">
+                  <CardContent className="pt-6 space-y-4">
+                    <h4 className="text-lg font-medium">Content Structure</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <h5 className="text-sm font-medium">Common H1 Pattern</h5>
+                        <p className="text-sm bg-glass p-2 rounded-md border border-white/10">
+                          {serpData.commonH1Pattern}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <h5 className="text-sm font-medium">Average Word Count</h5>
+                        <p className="text-sm bg-glass p-2 rounded-md border border-white/10">
+                          {serpData.avgWordCount} words
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <h5 className="text-sm font-medium">Common Sections</h5>
+                        <div className="text-sm bg-glass p-2 rounded-md border border-white/10">
+                          {serpData.commonSections.join(', ')}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="glass-panel">
+                  <CardContent className="pt-6 space-y-4">
+                    <h4 className="text-lg font-medium">People Also Ask</h4>
+                    <div className="space-y-2">
+                      {serpData.peopleAlsoAsk.map((question: string, i: number) => (
+                        <div key={i} className="p-2 bg-glass rounded-md border border-white/10">
+                          <p className="text-sm">
+                            <span className="text-primary font-medium">Q:</span> {question}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            <div className="flex justify-between">
+              <Button 
+                variant="ghost" 
+                onClick={() => setCurrentStep(0)}
+              >
+                Back
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                onClick={() => setCurrentStep(2)}
+                disabled={!serpData}
+              >
+                Plan Content Structure
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 2:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">Content Structure</h3>
+            
+            <Card className="glass-panel">
+              <CardContent className="pt-6 space-y-4">
+                <h4 className="text-lg font-medium">Recommended Structure</h4>
+                <div className="space-y-4">
+                  {[
+                    { title: "Introduction", complete: true, description: "Include primary keyword, define the problem" },
+                    { title: "Top 10 Project Management Tools", complete: true, description: "List the best tools with key features" },
+                    { title: "Features Comparison", complete: false, description: "Create a table comparing top features" },
+                    { title: "Use Case Examples", complete: false, description: "Real-world examples from different industries" },
+                    { title: "Pricing Analysis", complete: false, description: "Compare pricing tiers and value" },
+                    { title: "FAQ Section", complete: false, description: "Answer common questions from SERP" },
+                    { title: "Conclusion", complete: false, description: "Summarize findings with final recommendation" },
+                  ].map((section, index) => (
+                    <div 
+                      key={index}
+                      className={`flex items-start p-3 rounded-md border ${section.complete ? 'border-primary/30 bg-primary/5' : 'border-white/10'}`}
+                    >
+                      <div className={`h-6 w-6 rounded-full flex items-center justify-center mr-3 ${section.complete ? 'bg-primary text-white' : 'border border-white/30'}`}>
+                        {section.complete ? <Check className="h-4 w-4" /> : index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-medium">{section.title}</h5>
+                          {section.complete && (
+                            <Badge className="bg-primary/20 text-primary">Complete</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{section.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => setCurrentStep(1)}>
+                Back
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                onClick={() => setCurrentStep(3)}
+              >
+                Write Content
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 3:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">Content Writing</h3>
+            
+            <Card className="glass-panel flex-1 overflow-hidden flex flex-col">
+              <Tabs defaultValue="edit" className="flex-1 flex flex-col">
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
+                  <TabsList className="grid grid-cols-3">
+                    <TabsTrigger value="edit" className="flex items-center gap-1">
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </TabsTrigger>
+                    <TabsTrigger value="preview" className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      Preview
+                    </TabsTrigger>
+                    <TabsTrigger value="suggestions" className="flex items-center gap-1">
+                      <Info className="h-4 w-4" />
+                      Suggestions
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="edit" className="flex-1 flex flex-col p-0 m-0">
+                  <Textarea
+                    className="flex-1 resize-none border-0 rounded-none focus-visible:ring-0 bg-transparent p-4"
+                    value={editorContent}
+                    onChange={handleContentChange}
+                    placeholder="Start writing or use the generator..."
+                  />
+                </TabsContent>
+                
+                <TabsContent value="preview" className="p-8 m-0 h-full overflow-auto">
+                  <div className="prose prose-invert max-w-none">
+                    <h1 className="text-3xl font-bold mb-4">Best Project Management Software for Remote Teams in 2024</h1>
+                    <p className="mb-4">Remote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.</p>
+                    <h2 className="text-2xl font-bold mb-3">Top Project Management Tools for 2024</h2>
+                    <h3 className="text-xl font-bold mb-2">1. TaskMaster Pro</h3>
+                    <ul className="list-disc ml-6 mb-4">
+                      <li><strong>Key Features:</strong> Gantt charts, AI analytics, real-time collaboration</li>
+                      <li><strong>Best For:</strong> Enterprise teams with complex workflows</li>
+                      <li><strong>Pricing:</strong> Starts at $29/mo per user</li>
+                    </ul>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="suggestions" className="p-4 m-0 h-full overflow-auto">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">AI Content Suggestions</h4>
+                    
+                    <div className="space-y-3">
+                      <div className="p-3 border border-neon-blue/30 bg-neon-blue/5 rounded-md">
+                        <h5 className="font-medium text-neon-blue">Introduction Improvement</h5>
+                        <p className="text-sm mt-1">
+                          Try adding more specific statistics: "A 2023 McKinsey study found that 78% of remote teams cite visibility as their #1 challenge."
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 border border-green-500/30 bg-green-500/5 rounded-md">
+                        <h5 className="font-medium text-green-500">Competitor Pattern</h5>
+                        <p className="text-sm mt-1">
+                          Top-ranking content includes comparison tables with pricing, features, and user ratings in a easy-to-scan format.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 border border-neon-purple/30 bg-neon-purple/5 rounded-md">
+                        <h5 className="font-medium text-neon-purple">FAQ Opportunity</h5>
+                        <p className="text-sm mt-1">
+                          Adding the "People Also Ask" questions from SERP with concise answers can help gain featured snippets.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </Card>
+            
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => setCurrentStep(2)}>
+                Back
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                onClick={() => setCurrentStep(4)}
+              >
+                Optimize SEO
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 4:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">SEO Optimization</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="glass-panel">
+                <CardContent className="pt-6 space-y-4">
+                  <h4 className="text-lg font-medium">On-Page SEO</h4>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium">Meta Title</h5>
+                      <input 
+                        type="text" 
+                        className="w-full bg-glass border border-white/10 p-2 rounded-md" 
+                        placeholder="Enter meta title"
+                        defaultValue="Top 10 Project Management Tools – 2024 Expert Picks"
+                      />
+                      <div className="flex justify-between">
+                        <p className="text-xs text-muted-foreground">60 characters maximum</p>
+                        <p className="text-xs">52/60</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium">Meta Description</h5>
+                      <textarea 
+                        className="w-full bg-glass border border-white/10 p-2 rounded-md resize-none h-20" 
+                        placeholder="Enter meta description"
+                        defaultValue="Discover 2024's best project management software for remote teams, with AI analytics, pricing, and real-user reviews."
+                      />
+                      <div className="flex justify-between">
+                        <p className="text-xs text-muted-foreground">160 characters maximum</p>
+                        <p className="text-xs">118/160</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium">URL Slug</h5>
+                      <input 
+                        type="text" 
+                        className="w-full bg-glass border border-white/10 p-2 rounded-md" 
+                        placeholder="Enter URL slug"
+                        defaultValue="best-project-management-software-2024"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-medium">SEO Score</h4>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded-lg">
+                            <Progress 
+                              value={seoScore} 
+                              className="w-32 h-2"
+                              indicatorStyle={`${seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            />
+                            <Badge className={`${seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}>
+                              {seoScore}/100
+                            </Badge>
+                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Your content's overall optimization score</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-medium">Keyword Density</h5>
+                        <Badge className="bg-green-500/20 text-green-500">
+                          1.2% (Good)
+                        </Badge>
+                      </div>
+                      <Progress value={90} className="h-1" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-medium">Readability</h5>
+                        <Badge className="bg-green-500/20 text-green-500">
+                          Grade 8 (Good)
+                        </Badge>
+                      </div>
+                      <Progress value={85} className="h-1" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-sm font-medium">Content Length</h5>
+                        <Badge className="bg-yellow-500/20 text-yellow-500">
+                          850 words (Need ~1650 more)
+                        </Badge>
+                      </div>
+                      <Progress value={35} className="h-1" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => setCurrentStep(3)}>
+                Back
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                onClick={() => setCurrentStep(5)}
+              >
+                Finalize & Publish
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 5:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">Publish Content</h3>
+            
+            <Card className="glass-panel">
+              <CardContent className="pt-6">
+                <div className="text-center py-8 space-y-6">
+                  <div className="h-20 w-20 bg-gradient-to-br from-neon-purple to-neon-blue rounded-full mx-auto flex items-center justify-center">
+                    <Check className="h-10 w-10 text-white" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="text-2xl font-bold">Ready to Publish</h4>
+                    <p className="text-muted-foreground">Your optimized content is ready to go live!</p>
+                  </div>
+                  
+                  <div className="bg-glass border border-white/10 rounded-lg p-4 max-w-lg mx-auto">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Title:</span>
+                      <span>Best Project Management Software for Remote Teams in 2024</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">URL:</span>
+                      <span>best-project-management-software-2024</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">SEO Score:</span>
+                      <span className="text-green-500 font-medium">{seoScore}/100</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center gap-4">
+                    <Button variant="outline">
+                      Save as Draft
+                    </Button>
+                    <Button className="bg-gradient-to-r from-neon-purple to-neon-blue px-8">
+                      Publish Now
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-start">
+              <Button variant="ghost" onClick={() => setCurrentStep(4)}>
+                Back to Optimization
+              </Button>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Content Editor</h2>
+      <div className="flex flex-wrap items-center justify-between">
+        <h2 className="text-2xl font-bold">Content Builder</h2>
         <div className="flex items-center gap-2">
           <TooltipProvider>
             <Tooltip>
@@ -48,9 +577,8 @@ export function ContentEditor() {
                   <Progress 
                     value={seoScore} 
                     className="w-32 h-2" 
-                    indicatorClassName={`${seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
                   />
-                  <Badge className={`${seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'}`}>
+                  <Badge className={cn(seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500')}>
                     {seoScore}/100
                   </Badge>
                   <HelpCircle className="h-4 w-4 text-muted-foreground" />
@@ -69,186 +597,29 @@ export function ContentEditor() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <Card className="glass-panel flex-1 overflow-hidden flex flex-col">
-            <Tabs defaultValue="edit" className="flex-1 flex flex-col">
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
-                <TabsList className="grid grid-cols-3">
-                  <TabsTrigger value="edit" className="flex items-center gap-1">
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </TabsTrigger>
-                  <TabsTrigger value="preview" className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    Preview
-                  </TabsTrigger>
-                  <TabsTrigger value="settings" className="flex items-center gap-1">
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </TabsTrigger>
-                </TabsList>
-                
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    <FileText className="mr-2 h-3 w-3" />
-                    Save Draft
-                  </Button>
+      <div className="flex items-center justify-between bg-glass rounded-lg p-3 mb-2">
+        <div className="flex items-center space-x-1 overflow-x-auto">
+          {steps.map((step, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && (
+                <div className={`h-px w-4 ${index <= currentStep ? 'bg-primary' : 'bg-white/10'}`}></div>
+              )}
+              <div 
+                className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-all ${index === currentStep ? 'bg-primary/20 text-primary' : index < currentStep ? 'text-primary' : 'text-muted-foreground'}`}
+                onClick={() => index <= currentStep && setCurrentStep(index)}
+              >
+                <div className={`h-6 w-6 rounded-full flex items-center justify-center ${index === currentStep ? 'bg-primary text-white' : index < currentStep ? 'bg-primary/20 text-primary' : 'bg-white/10 text-muted-foreground'}`}>
+                  {index < currentStep ? <Check className="h-3 w-3" /> : step.icon}
                 </div>
+                <span className="text-sm font-medium hidden sm:inline">{step.name}</span>
               </div>
-              
-              <TabsContent value="edit" className="flex-1 flex flex-col p-0 m-0">
-                <Textarea
-                  className="flex-1 resize-none border-0 rounded-none focus-visible:ring-0 bg-transparent"
-                  value={editorContent}
-                  onChange={handleContentChange}
-                  placeholder="Start writing or use the generator..."
-                />
-              </TabsContent>
-              
-              <TabsContent value="preview" className="p-8 m-0 h-full overflow-auto">
-                <div className="prose prose-invert max-w-none">
-                  <h1 className="text-3xl font-bold mb-4">Best Project Management Software for Remote Teams in 2024</h1>
-                  <p className="mb-4">Remote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.</p>
-                  <h2 className="text-2xl font-bold mb-3">Top Project Management Tools for 2024</h2>
-                  <h3 className="text-xl font-bold mb-2">1. TaskMaster Pro</h3>
-                  <ul className="list-disc ml-6 mb-4">
-                    <li><strong>Key Features:</strong> Gantt charts, AI analytics, real-time collaboration</li>
-                    <li><strong>Best For:</strong> Enterprise teams with complex workflows</li>
-                    <li><strong>Pricing:</strong> Starts at $29/mo per user</li>
-                  </ul>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="settings" className="p-4 m-0 h-full overflow-auto">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">SEO Settings</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Meta Title</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-glass border border-white/10 p-2 rounded-md" 
-                        placeholder="Enter meta title"
-                        defaultValue="Top 10 Project Management Tools – 2024 Expert Picks"
-                      />
-                      <p className="text-xs text-muted-foreground">60 characters maximum</p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">URL Slug</label>
-                      <input 
-                        type="text" 
-                        className="w-full bg-glass border border-white/10 p-2 rounded-md" 
-                        placeholder="Enter URL slug"
-                        defaultValue="best-project-management-software-2024"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
+            </React.Fragment>
+          ))}
         </div>
-        
-        <div className="space-y-4">
-          <Card className="glass-panel">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Content Structure</h3>
-                <Button variant="ghost" size="sm">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                {[
-                  { title: 'Introduction', complete: true },
-                  { title: 'Top 10 Tools', complete: true },
-                  { title: 'Features Comparison', complete: false },
-                  { title: 'Use Case Examples', complete: false },
-                  { title: 'Pricing Analysis', complete: false },
-                  { title: 'FAQ Section', complete: false },
-                  { title: 'Conclusion', complete: false },
-                ].map((section, index) => (
-                  <div 
-                    key={index}
-                    className={`flex items-center justify-between p-2 rounded-md border ${section.complete ? 'border-primary/30 bg-primary/5' : 'border-white/10'}`}
-                  >
-                    <span className="text-sm">{section.title}</span>
-                    {section.complete && (
-                      <Badge className="bg-primary/20 text-primary">Complete</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-panel">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Keyword Optimization</h3>
-                <Info className="h-4 w-4 text-muted-foreground" />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Primary Keyword</span>
-                  <Badge className="bg-green-500/20 text-green-500">
-                    Optimized
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Secondary Keywords</span>
-                  <Badge className="bg-yellow-500/20 text-yellow-500">
-                    3/5 Used
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Keyword Density</span>
-                  <Badge className="bg-green-500/20 text-green-500">
-                    1.2% (Good)
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-panel">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Readability</h3>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </div>
-              
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Reading Level</span>
-                    <span className="text-sm font-medium">Grade 8</span>
-                  </div>
-                  <Progress value={75} className="h-1" />
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Sentence Length</span>
-                    <span className="text-sm font-medium">Good</span>
-                  </div>
-                  <Progress value={90} className="h-1" />
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Paragraph Length</span>
-                    <span className="text-sm font-medium">Excellent</span>
-                  </div>
-                  <Progress value={95} className="h-1" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 flex-1 overflow-y-auto">
+        {getStepContent()}
       </div>
     </div>
   );
