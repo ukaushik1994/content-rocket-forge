@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,12 +18,26 @@ import {
   Search,
   Check,
   Database,
-  BookOpen
+  BookOpen,
+  Briefcase
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+
+// Define Solution type
+interface Solution {
+  id: string;
+  name: string;
+  features: string[];
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
+}
 
 export function ContentEditor() {
   const [editorContent, setEditorContent] = useState('# Best Project Management Software for Remote Teams in 2024\n\nRemote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.\n\n## Top Project Management Tools for 2024\n\n### 1. TaskMaster Pro\n- **Key Features:** Gantt charts, AI analytics, real-time collaboration\n- **Best For:** Enterprise teams with complex workflows\n- **Pricing:** Starts at $29/mo per user');
@@ -32,6 +45,55 @@ export function ContentEditor() {
   const [seoScore, setSeoScore] = useState(78);
   const [currentStep, setCurrentStep] = useState(0);
   const [serpData, setSerpData] = useState<any>(null);
+  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
+  const [availableSolutions, setAvailableSolutions] = useState<Solution[]>([]);
+  const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
+  
+  // Fetch the available solutions when the component mounts
+  useEffect(() => {
+    const fetchSolutions = async () => {
+      setIsLoadingSolutions(true);
+      try {
+        // In a real implementation, this would fetch from the database
+        // For now, we'll use mock data
+        setTimeout(() => {
+          setAvailableSolutions([
+            {
+              id: '1',
+              name: 'TaskMaster Pro',
+              features: ["Gantt charts", "Team collaboration", "AI analytics"],
+              useCases: ["Remote teams", "Agile workflows"],
+              painPoints: ["Missed deadlines", "Poor task visibility"],
+              targetAudience: ["Project managers", "IT teams"],
+            },
+            {
+              id: '2',
+              name: 'EmailPro Marketing',
+              features: ["Drip campaigns", "A/B testing", "Audience segmentation"],
+              useCases: ["Newsletter management", "Customer retention"],
+              painPoints: ["Low open rates", "Poor deliverability"],
+              targetAudience: ["Marketers", "Small businesses"],
+            },
+            {
+              id: '3',
+              name: 'SalesForce CRM+',
+              features: ["Pipeline management", "Lead scoring", "Analytics dashboard"],
+              useCases: ["Sales teams", "Account management"],
+              painPoints: ["Lost leads", "Disorganized contacts"],
+              targetAudience: ["Sales representatives", "Account managers"],
+            }
+          ]);
+          setIsLoadingSolutions(false);
+        }, 1000);
+      } catch (error) {
+        console.error('Error fetching solutions:', error);
+        setIsLoadingSolutions(false);
+        toast.error("Failed to load solutions. Please try again later.");
+      }
+    };
+
+    fetchSolutions();
+  }, []);
   
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditorContent(e.target.value);
@@ -43,7 +105,9 @@ export function ContentEditor() {
     setSeoScore(Math.floor(newScore));
   };
 
+  // Updated steps to include solution selection
   const steps = [
+    { name: "Select Solution", icon: <Briefcase className="h-5 w-5" /> },
     { name: "Keyword Research", icon: <Search className="h-5 w-5" /> },
     { name: "SERP Analysis", icon: <Database className="h-5 w-5" /> },
     { name: "Content Structure", icon: <LayoutTemplate className="h-5 w-5" /> },
@@ -77,7 +141,95 @@ export function ContentEditor() {
 
   const getStepContent = () => {
     switch(currentStep) {
-      case 0:
+      case 0: // Solution selection step
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium">Select a Solution</h3>
+            <p className="text-muted-foreground">Choose the business solution you want to create content for</p>
+            
+            {isLoadingSolutions ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <p className="mt-4 text-muted-foreground">Loading your solutions...</p>
+              </div>
+            ) : availableSolutions.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">You don't have any solutions yet. Create one in the Solutions section first.</p>
+                <Button 
+                  className="mt-4 bg-gradient-to-r from-neon-purple to-neon-blue" 
+                  onClick={() => window.location.href = '/solutions'}
+                >
+                  Create a Solution
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <RadioGroup 
+                  value={selectedSolution?.id || ""} 
+                  onValueChange={(value) => {
+                    const solution = availableSolutions.find(s => s.id === value);
+                    setSelectedSolution(solution || null);
+                  }}
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {availableSolutions.map((solution) => (
+                      <div key={solution.id} className="relative">
+                        <RadioGroupItem 
+                          value={solution.id} 
+                          id={`solution-${solution.id}`} 
+                          className="peer sr-only" 
+                        />
+                        <Label
+                          htmlFor={`solution-${solution.id}`}
+                          className="flex flex-col border rounded-lg p-4 cursor-pointer bg-glass hover:bg-card peer-data-[state=checked]:border-primary peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-primary"
+                        >
+                          <div className="font-semibold text-gradient">{solution.name}</div>
+                          {solution.features.length > 0 && (
+                            <div className="mt-2">
+                              <span className="text-xs text-muted-foreground">Features:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {solution.features.slice(0, 3).map((feature, idx) => (
+                                  <Badge key={idx} variant="outline" className="border-neon-purple/30">
+                                    {feature}
+                                  </Badge>
+                                ))}
+                                {solution.features.length > 3 && (
+                                  <Badge variant="outline">+{solution.features.length - 3}</Badge>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          <div className="mt-2">
+                            <span className="text-xs text-muted-foreground">Target:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {solution.targetAudience.map((audience, idx) => (
+                                <Badge key={idx} variant="secondary" className="bg-secondary/60">
+                                  {audience}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
+
+                <div className="flex justify-end">
+                  <Button 
+                    className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                    onClick={() => setCurrentStep(1)}
+                    disabled={!selectedSolution}
+                  >
+                    Continue to Keyword Research
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 1: // Now this is the Keyword Research step
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Keyword Research</h3>
@@ -90,7 +242,7 @@ export function ContentEditor() {
                       type="text" 
                       className="w-full bg-glass border border-white/10 p-3 rounded-md" 
                       placeholder="Enter your main keyword..." 
-                      defaultValue="best project management software"
+                      defaultValue={selectedSolution ? `best ${selectedSolution.name.toLowerCase()} alternatives` : "best project management software"}
                     />
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Search Volume: 12,000</span>
@@ -101,7 +253,15 @@ export function ContentEditor() {
                   <div className="space-y-2 pt-4">
                     <h5 className="font-medium">Related Keywords</h5>
                     <div className="flex flex-wrap gap-2">
-                      {["project management tools", "task management software", "team collaboration tools"].map((kw, i) => (
+                      {selectedSolution ? [
+                        `${selectedSolution.name.toLowerCase()} pricing`, 
+                        `${selectedSolution.name.toLowerCase()} vs competitors`, 
+                        `${selectedSolution.name.toLowerCase()} features`
+                      ].map((kw, i) => (
+                        <Badge key={i} className="bg-glass border border-white/10">
+                          {kw}
+                        </Badge>
+                      )) : ["project management tools", "task management software", "team collaboration tools"].map((kw, i) => (
                         <Badge key={i} className="bg-glass border border-white/10">
                           {kw}
                         </Badge>
@@ -118,7 +278,11 @@ export function ContentEditor() {
                     <div className="border border-white/10 rounded-md p-3 space-y-2">
                       <h5 className="font-medium text-primary">Features Cluster</h5>
                       <div className="flex flex-wrap gap-2">
-                        {["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
+                        {selectedSolution ? selectedSolution.features.map((feature, i) => (
+                          <Badge key={i} variant="outline" className="border-primary/30">
+                            {feature}
+                          </Badge>
+                        )) : ["gantt charts", "time tracking", "task dependencies", "collaboration features"].map((term, i) => (
                           <Badge key={i} variant="outline" className="border-primary/30">
                             {term}
                           </Badge>
@@ -127,9 +291,13 @@ export function ContentEditor() {
                     </div>
                     
                     <div className="border border-white/10 rounded-md p-3 space-y-2">
-                      <h5 className="font-medium text-neon-blue">Pricing Cluster</h5>
+                      <h5 className="font-medium text-neon-blue">Pain Points Cluster</h5>
                       <div className="flex flex-wrap gap-2">
-                        {["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
+                        {selectedSolution ? selectedSolution.painPoints.map((painPoint, i) => (
+                          <Badge key={i} variant="outline" className="border-neon-blue/30">
+                            {painPoint}
+                          </Badge>
+                        )) : ["free project management", "affordable PM tools", "project management pricing", "cost comparison"].map((term, i) => (
                           <Badge key={i} variant="outline" className="border-neon-blue/30">
                             {term}
                           </Badge>
@@ -141,11 +309,14 @@ export function ContentEditor() {
               </Card>
             </div>
             
-            <div className="flex justify-end">
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => setCurrentStep(0)}>
+                Back
+              </Button>
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
                 onClick={() => {
-                  setCurrentStep(1);
+                  setCurrentStep(2);
                   fetchSerpData();
                 }}
               >
@@ -156,7 +327,8 @@ export function ContentEditor() {
           </div>
         );
         
-      case 1:
+      // The rest of the steps remain largely unchanged
+      case 2:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">SERP Analysis</h3>
@@ -216,13 +388,13 @@ export function ContentEditor() {
             <div className="flex justify-between">
               <Button 
                 variant="ghost" 
-                onClick={() => setCurrentStep(0)}
+                onClick={() => setCurrentStep(1)}
               >
                 Back
               </Button>
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                onClick={() => setCurrentStep(2)}
+                onClick={() => setCurrentStep(3)}
                 disabled={!serpData}
               >
                 Plan Content Structure
@@ -232,7 +404,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 2:
+      case 3:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Content Structure</h3>
@@ -243,7 +415,11 @@ export function ContentEditor() {
                 <div className="space-y-4">
                   {[
                     { title: "Introduction", complete: true, description: "Include primary keyword, define the problem" },
-                    { title: "Top 10 Project Management Tools", complete: true, description: "List the best tools with key features" },
+                    { 
+                      title: selectedSolution ? `Top Alternatives to ${selectedSolution.name}` : "Top 10 Project Management Tools", 
+                      complete: true, 
+                      description: "List the best options with key features" 
+                    },
                     { title: "Features Comparison", complete: false, description: "Create a table comparing top features" },
                     { title: "Use Case Examples", complete: false, description: "Real-world examples from different industries" },
                     { title: "Pricing Analysis", complete: false, description: "Compare pricing tiers and value" },
@@ -273,12 +449,12 @@ export function ContentEditor() {
             </Card>
             
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setCurrentStep(1)}>
+              <Button variant="ghost" onClick={() => setCurrentStep(2)}>
                 Back
               </Button>
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                onClick={() => setCurrentStep(3)}
+                onClick={() => setCurrentStep(4)}
               >
                 Write Content
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -287,7 +463,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 3:
+      case 4:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Content Writing</h3>
@@ -329,7 +505,10 @@ export function ContentEditor() {
                 
                 <TabsContent value="preview" className="p-8 m-0 h-full overflow-auto">
                   <div className="prose prose-invert max-w-none">
-                    <h1 className="text-3xl font-bold mb-4">Best Project Management Software for Remote Teams in 2024</h1>
+                    <h1 className="text-3xl font-bold mb-4">{selectedSolution 
+                      ? `Best ${selectedSolution.name} Alternatives for ${selectedSolution.targetAudience[0] || 'Teams'} in 2024`
+                      : 'Best Project Management Software for Remote Teams in 2024'
+                    }</h1>
                     <p className="mb-4">Remote work is here to stay, but managing dispersed teams comes with unique challenges. According to recent studies, 67% of remote teams struggle with task visibility and coordination.</p>
                     <h2 className="text-2xl font-bold mb-3">Top Project Management Tools for 2024</h2>
                     <h3 className="text-xl font-bold mb-2">1. TaskMaster Pro</h3>
@@ -373,12 +552,12 @@ export function ContentEditor() {
             </Card>
             
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setCurrentStep(2)}>
+              <Button variant="ghost" onClick={() => setCurrentStep(3)}>
                 Back
               </Button>
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                onClick={() => setCurrentStep(4)}
+                onClick={() => setCurrentStep(5)}
               >
                 Optimize SEO
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -387,7 +566,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">SEO Optimization</h3>
@@ -404,7 +583,10 @@ export function ContentEditor() {
                         type="text" 
                         className="w-full bg-glass border border-white/10 p-2 rounded-md" 
                         placeholder="Enter meta title"
-                        defaultValue="Top 10 Project Management Tools – 2024 Expert Picks"
+                        defaultValue={selectedSolution 
+                          ? `Top 10 ${selectedSolution.name} Alternatives – 2024 Expert Picks`
+                          : "Top 10 Project Management Tools – 2024 Expert Picks"
+                        }
                       />
                       <div className="flex justify-between">
                         <p className="text-xs text-muted-foreground">60 characters maximum</p>
@@ -417,7 +599,10 @@ export function ContentEditor() {
                       <textarea 
                         className="w-full bg-glass border border-white/10 p-2 rounded-md resize-none h-20" 
                         placeholder="Enter meta description"
-                        defaultValue="Discover 2024's best project management software for remote teams, with AI analytics, pricing, and real-user reviews."
+                        defaultValue={selectedSolution 
+                          ? `Discover the best alternatives to ${selectedSolution.name} in 2024, with detailed comparisons of features, pricing, and real user reviews.` 
+                          : "Discover 2024's best project management software for remote teams, with AI analytics, pricing, and real-user reviews."
+                        }
                       />
                       <div className="flex justify-between">
                         <p className="text-xs text-muted-foreground">160 characters maximum</p>
@@ -431,7 +616,10 @@ export function ContentEditor() {
                         type="text" 
                         className="w-full bg-glass border border-white/10 p-2 rounded-md" 
                         placeholder="Enter URL slug"
-                        defaultValue="best-project-management-software-2024"
+                        defaultValue={selectedSolution 
+                          ? `best-${selectedSolution.name.toLowerCase().replace(/\s+/g, '-')}-alternatives-2024`
+                          : "best-project-management-software-2024"
+                        }
                       />
                     </div>
                   </div>
@@ -506,12 +694,12 @@ export function ContentEditor() {
             </div>
             
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setCurrentStep(3)}>
+              <Button variant="ghost" onClick={() => setCurrentStep(4)}>
                 Back
               </Button>
               <Button 
                 className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                onClick={() => setCurrentStep(5)}
+                onClick={() => setCurrentStep(6)}
               >
                 Finalize & Publish
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -520,7 +708,7 @@ export function ContentEditor() {
           </div>
         );
         
-      case 5:
+      case 6:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Publish Content</h3>
@@ -540,11 +728,19 @@ export function ContentEditor() {
                   <div className="bg-glass border border-white/10 rounded-lg p-4 max-w-lg mx-auto">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">Title:</span>
-                      <span>Best Project Management Software for Remote Teams in 2024</span>
+                      <span>{selectedSolution 
+                        ? `Best ${selectedSolution.name} Alternatives for ${selectedSolution.targetAudience[0] || 'Teams'} in 2024`
+                        : 'Best Project Management Software for Remote Teams in 2024'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Solution:</span>
+                      <span>{selectedSolution ? selectedSolution.name : 'None selected'}</span>
                     </div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">URL:</span>
-                      <span>best-project-management-software-2024</span>
+                      <span>{selectedSolution 
+                        ? `best-${selectedSolution.name.toLowerCase().replace(/\s+/g, '-')}-alternatives-2024`
+                        : "best-project-management-software-2024"}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">SEO Score:</span>
@@ -565,7 +761,7 @@ export function ContentEditor() {
             </Card>
             
             <div className="flex justify-start">
-              <Button variant="ghost" onClick={() => setCurrentStep(4)}>
+              <Button variant="ghost" onClick={() => setCurrentStep(5)}>
                 Back to Optimization
               </Button>
             </div>

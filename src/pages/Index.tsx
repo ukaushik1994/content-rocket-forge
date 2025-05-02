@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import {
 
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -41,7 +43,10 @@ const Index = () => {
                   keyword clusters, and business solutions.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
+                  <Button 
+                    className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                    onClick={() => navigate('/content')}
+                  >
                     New Project
                     <RocketIcon className="ml-2 h-4 w-4" />
                   </Button>
@@ -104,7 +109,11 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Discover high-value keywords and group them into strategic clusters.
                 </p>
-                <Button variant="outline" className="w-full justify-between group">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between group"
+                  onClick={() => navigate('/keywords')}
+                >
                   <span>Start Research</span>
                   <Search className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -119,7 +128,11 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Generate optimized content with AI that ranks well on search engines.
                 </p>
-                <Button variant="outline" className="w-full justify-between group">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between group"
+                  onClick={() => navigate('/content')}
+                >
                   <span>Create Content</span>
                   <FileText className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -134,7 +147,11 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Upload your products and services to include in generated content.
                 </p>
-                <Button variant="outline" className="w-full justify-between group">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between group"
+                  onClick={() => navigate('/solutions')}
+                >
                   <span>Upload Solutions</span>
                   <FileUp className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -146,7 +163,7 @@ const Index = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Recent Projects</h2>
-              <Button variant="link" className="text-primary">
+              <Button variant="link" className="text-primary" onClick={() => navigate('/content')}>
                 View all
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -226,6 +243,7 @@ const Index = () => {
                       variant="outline" 
                       size="sm" 
                       className="w-full mt-2"
+                      onClick={() => navigate('/content')}
                     >
                       {project.status === 'Published' ? 'View Stats' : 'Continue Editing'}
                     </Button>
