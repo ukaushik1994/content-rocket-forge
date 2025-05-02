@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface KeywordProps {
   primary: string;
@@ -27,6 +29,7 @@ export function KeywordCluster({
   longTailKeywords
 }: KeywordProps) {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   // Map difficulty to color
   const difficultyColor = {
@@ -43,8 +46,28 @@ export function KeywordCluster({
     'Transactional': 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
   };
 
+  // Function to handle using a keyword
+  const handleUseKeyword = () => {
+    // Display a success toast
+    toast.success(`Keyword "${primary}" added to your content`, {
+      description: "You can now use this keyword in your content editor."
+    });
+    
+    // Store the keyword for use in content creation
+    const selectedKeywords = JSON.parse(localStorage.getItem('selectedKeywords') || '[]');
+    if (!selectedKeywords.includes(primary)) {
+      selectedKeywords.push(primary);
+      localStorage.setItem('selectedKeywords', JSON.stringify(selectedKeywords));
+    }
+    
+    // Navigate to content page after a brief delay
+    setTimeout(() => {
+      navigate('/content');
+    }, 1000);
+  };
+
   return (
-    <Card className="overflow-hidden transition-all duration-300 neon-border">
+    <Card className="overflow-hidden transition-all duration-300 neon-border hover:shadow-lg">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-gradient font-bold">
@@ -76,7 +99,7 @@ export function KeywordCluster({
       </CardHeader>
 
       {expanded && (
-        <CardContent className="pb-2 space-y-4">
+        <CardContent className="pb-2 space-y-4 animate-fade-in">
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">Secondary Keywords</h4>
             <div className="flex flex-wrap gap-2">
@@ -113,7 +136,12 @@ export function KeywordCluster({
       )}
 
       <CardFooter className="pt-2">
-        <Button variant="ghost" size="sm" className="ml-auto gap-1 hover:text-primary">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="ml-auto gap-1 hover:text-primary hover:bg-primary/10 transition-colors"
+          onClick={handleUseKeyword}
+        >
           <PlusCircle className="h-4 w-4" />
           <span>Use Keyword</span>
         </Button>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { ContentEditor } from '@/components/content/ContentEditor';
+import { ContentRepository } from '@/components/content/ContentRepository';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -15,33 +16,9 @@ import {
   Download,
   Copy,
   BarChart3,
+  Library,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-// Mock data for SERP results
-const serpResults = [
-  {
-    title: "Top 10 Project Management Tools for Remote Teams",
-    url: "https://example.com/top-project-management-tools",
-    snippet: "Discover the best project management tools that help remote teams collaborate effectively and deliver projects on time...",
-    position: 1,
-    pageScore: 87
-  },
-  {
-    title: "How to Choose the Right Project Management Software in 2025",
-    url: "https://example.com/choose-project-management-software",
-    snippet: "A comprehensive guide to selecting project management software that fits your team's specific needs and workflow requirements...",
-    position: 2,
-    pageScore: 83
-  },
-  {
-    title: "Project Management Software Comparison: Top 5 Solutions",
-    url: "https://example.com/project-management-comparison",
-    snippet: "We compare the top project management solutions based on features, pricing, and user experience to help you make an informed decision...",
-    position: 3, 
-    pageScore: 79
-  }
-];
 
 const Content = () => {
   const [loading, setLoading] = useState(false);
@@ -178,10 +155,14 @@ const Content = () => {
                 <FileText className="h-4 w-4" />
                 Published
               </TabsTrigger>
+              <TabsTrigger value="repository" className="gap-2">
+                <Library className="h-4 w-4" />
+                Repository
+              </TabsTrigger>
               {analysisComplete && (
-                <TabsTrigger value="serp" className="gap-2">
+                <TabsTrigger value="performance" className="gap-2">
                   <BarChart3 className="h-4 w-4" />
-                  SERP Analysis
+                  Performance
                 </TabsTrigger>
               )}
             </TabsList>
@@ -268,99 +249,61 @@ const Content = () => {
               )}
             </TabsContent>
             
-            <TabsContent value="serp" className="mt-4">
+            <TabsContent value="repository" className="mt-4">
+              <ContentRepository />
+            </TabsContent>
+            
+            <TabsContent value="performance" className="mt-4">
               <div className="space-y-6">
                 <div className="rounded-lg bg-glass p-6">
-                  <h2 className="text-xl font-medium mb-4">SERP Analysis</h2>
+                  <h2 className="text-xl font-medium mb-4">Content Performance Analysis</h2>
                   <p className="text-muted-foreground mb-6">
-                    Based on your target keywords, here are the top-ranking pages with content insights.
+                    Review your content's performance metrics and optimization recommendations.
                   </p>
                   
                   <div className="space-y-4">
-                    {serpResults.map((result, index) => (
-                      <div key={index} className="border border-border rounded-lg p-4 bg-background/50">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="bg-secondary/80 text-foreground px-2 py-0.5 rounded text-sm font-medium">
-                                #{result.position}
-                              </span>
-                              <h3 className="font-medium">{result.title}</h3>
-                            </div>
-                            <a href={result.url} className="text-xs text-neon-blue hover:underline" target="_blank" rel="noopener noreferrer">
-                              {result.url}
-                            </a>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              {result.snippet}
-                            </p>
+                    <div className="border border-border rounded-lg p-4 bg-background/50">
+                      <h3 className="text-lg font-medium mb-3">SEO Performance</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Keyword Optimization</span>
+                            <span className="text-sm">85%</span>
                           </div>
-                          <div className="bg-glass px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                            <span>Score:</span>
-                            <span className="text-neon-purple">{result.pageScore}</span>
+                          <div className="w-full bg-secondary/50 rounded-full h-2">
+                            <div className="bg-neon-purple rounded-full h-2" style={{ width: '85%' }}></div>
                           </div>
                         </div>
                         
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Button size="sm" variant="outline" className="text-xs h-7">Content Structure</Button>
-                          <Button size="sm" variant="outline" className="text-xs h-7">Word Count</Button>
-                          <Button size="sm" variant="outline" className="text-xs h-7">Keywords</Button>
-                          <Button size="sm" variant="outline" className="text-xs h-7">Headings</Button>
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Content Structure</span>
+                            <span className="text-sm">92%</span>
+                          </div>
+                          <div className="w-full bg-secondary/50 rounded-full h-2">
+                            <div className="bg-neon-purple rounded-full h-2" style={{ width: '92%' }}></div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="rounded-lg bg-glass p-6">
-                  <h2 className="text-xl font-medium mb-4">Content Recommendations</h2>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-green-500 text-xs font-bold">✓</span>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium">Include at least 5 headings in your content</h3>
-                        <p className="text-xs text-muted-foreground">Top ranking pages have structured content with 5-7 headings</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-green-500 text-xs font-bold">✓</span>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium">Aim for 1,800-2,200 words</h3>
-                        <p className="text-xs text-muted-foreground">Top ranking content averages 1,950 words for this keyword</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-yellow-500 text-xs font-bold">!</span>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium">Include more statistical data</h3>
-                        <p className="text-xs text-muted-foreground">Top ranking pages cite 8-12 statistics to support claims</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-yellow-500 text-xs font-bold">!</span>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium">Add more practical examples</h3>
-                        <p className="text-xs text-muted-foreground">Top ranking pages include 3-5 practical examples or case studies</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-red-500 text-xs font-bold">×</span>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium">Missing FAQ section</h3>
-                        <p className="text-xs text-muted-foreground">80% of top ranking pages include FAQ sections with 5+ questions</p>
+                        
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Readability</span>
+                            <span className="text-sm">78%</span>
+                          </div>
+                          <div className="w-full bg-secondary/50 rounded-full h-2">
+                            <div className="bg-neon-purple rounded-full h-2" style={{ width: '78%' }}></div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium">Overall Score</span>
+                            <span className="text-sm">87/100</span>
+                          </div>
+                          <div className="w-full bg-secondary/50 rounded-full h-2">
+                            <div className="bg-neon-purple rounded-full h-2" style={{ width: '87%' }}></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

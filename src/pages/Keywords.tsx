@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { KeywordCluster } from '@/components/keywords/KeywordCluster';
 import { KeywordResearchTool } from '@/components/keywords/KeywordResearchTool';
-import { KeywordTrends } from '@/components/keywords/KeywordTrends';
 import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
+import { KeywordsList } from '@/components/keywords/KeywordsList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +16,6 @@ import {
   Plus,
   RefreshCcw,
   Search,
-  SlidersHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -67,8 +66,7 @@ const Keywords = () => {
             <TabsList className="bg-secondary/30">
               <TabsTrigger value="research">Research</TabsTrigger>
               <TabsTrigger value="clusters">My Clusters</TabsTrigger>
-              <TabsTrigger value="trends">Trends</TabsTrigger>
-              <TabsTrigger value="serp">SERP Analysis</TabsTrigger>
+              <TabsTrigger value="keywordsList">Keywords List</TabsTrigger>
               <TabsTrigger value="competitors">Competitors</TabsTrigger>
             </TabsList>
 
@@ -223,69 +221,17 @@ const Keywords = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="trends" className="mt-6">
+            <TabsContent value="keywordsList" className="mt-6">
               <Card className="glass-panel">
                 <CardHeader className="pb-2">
-                  <CardTitle>Keyword Trends Analysis</CardTitle>
+                  <CardTitle>Keywords List</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <KeywordTrends />
+                  <KeywordsList />
                 </CardContent>
               </Card>
             </TabsContent>
             
-            <TabsContent value="serp" className="mt-6">
-              <Card className="glass-panel">
-                <CardHeader className="pb-2 flex justify-between items-center">
-                  <CardTitle>SERP Analysis</CardTitle>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filter Results
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Top Competitor Content Structure</h3>
-                      <div className="space-y-4">
-                        {[
-                          { title: "Common H1 Pattern", content: "[Number] Best [Keyword] for [Target] in [Year]" },
-                          { title: "Average Word Count", content: "2,500 words" },
-                          { title: "Common Sections", content: "Introduction, Top Products, Comparison Table, Features, Pricing, FAQ" }
-                        ].map((item, i) => (
-                          <div key={i} className="space-y-1">
-                            <h4 className="text-sm font-medium">{item.title}</h4>
-                            <p className="text-sm text-muted-foreground bg-glass p-2 rounded-md border border-white/10">
-                              {item.content}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">People Also Ask Questions</h3>
-                      <div className="space-y-2">
-                        {[
-                          "What is the easiest project management tool for beginners?",
-                          "Which project management software is best for remote teams?",
-                          "Is there a free project management tool?",
-                          "How much does project management software cost?",
-                          "What's better than Asana for project management?"
-                        ].map((question, i) => (
-                          <div key={i} className="p-3 bg-glass rounded-md border border-white/10">
-                            <p className="text-sm">
-                              <span className="text-primary font-medium">Q:</span> {question}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="competitors" className="mt-6">
               <Card className="glass-panel">
                 <CardHeader className="pb-2">
