@@ -1,21 +1,50 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { KeywordCluster } from '@/components/keywords/KeywordCluster';
 import { KeywordResearchTool } from '@/components/keywords/KeywordResearchTool';
+import { KeywordTrends } from '@/components/keywords/KeywordTrends';
+import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { 
   Filter, 
   DownloadCloud,
   Plus,
   RefreshCcw,
+  Search,
+  SlidersHorizontal
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Keywords = () => {
   const [activeTab, setActiveTab] = useState('research');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterValue, setFilterValue] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreateCluster = () => {
+    toast.info("Creating a new keyword cluster", {
+      description: "This feature will be available soon!"
+    });
+  };
+
+  const handleExport = () => {
+    toast.info("Exporting keyword data", {
+      description: "Your data will be exported shortly."
+    });
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success("Keywords refreshed successfully!");
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -25,7 +54,10 @@ const Keywords = () => {
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gradient">Keyword Research</h1>
-            <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
+            <Button 
+              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+              onClick={handleCreateCluster}
+            >
               <Plus className="mr-2 h-4 w-4" />
               New Keyword Cluster
             </Button>
@@ -35,7 +67,9 @@ const Keywords = () => {
             <TabsList className="bg-secondary/30">
               <TabsTrigger value="research">Research</TabsTrigger>
               <TabsTrigger value="clusters">My Clusters</TabsTrigger>
+              <TabsTrigger value="trends">Trends</TabsTrigger>
               <TabsTrigger value="serp">SERP Analysis</TabsTrigger>
+              <TabsTrigger value="competitors">Competitors</TabsTrigger>
             </TabsList>
 
             <TabsContent value="research" className="mt-6">
@@ -54,25 +88,40 @@ const Keywords = () => {
                 <CardHeader className="pb-2 flex justify-between items-center">
                   <CardTitle>Keyword Clusters</CardTitle>
                   <div className="flex items-center gap-2">
-                    <Select>
+                    <div className="relative w-64">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search clusters..."
+                        className="pl-9 bg-glass border-white/10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <Select value={filterValue} onValueChange={setFilterValue}>
                       <SelectTrigger className="bg-glass border-white/10 w-[160px]">
                         <SelectValue placeholder="All Clusters" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-glass border-white/10">
                         <SelectItem value="all">All Clusters</SelectItem>
                         <SelectItem value="recent">Recently Updated</SelectItem>
                         <SelectItem value="high-volume">High Volume</SelectItem>
                         <SelectItem value="low-diff">Low Difficulty</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={() => toast.info("Advanced filters")}>
                       <Filter className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={handleExport}>
                       <DownloadCloud className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <RefreshCcw className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8" 
+                      onClick={handleRefresh}
+                      disabled={isLoading}
+                    >
+                      <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                     </Button>
                   </div>
                 </CardHeader>
@@ -173,11 +222,26 @@ const Keywords = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="trends" className="mt-6">
+              <Card className="glass-panel">
+                <CardHeader className="pb-2">
+                  <CardTitle>Keyword Trends Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <KeywordTrends />
+                </CardContent>
+              </Card>
+            </TabsContent>
             
             <TabsContent value="serp" className="mt-6">
               <Card className="glass-panel">
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 flex justify-between items-center">
                   <CardTitle>SERP Analysis</CardTitle>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filter Results
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -218,6 +282,17 @@ const Keywords = () => {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="competitors" className="mt-6">
+              <Card className="glass-panel">
+                <CardHeader className="pb-2">
+                  <CardTitle>Competitor Keyword Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <KeywordCompetitors />
                 </CardContent>
               </Card>
             </TabsContent>
