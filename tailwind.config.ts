@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Futuristic colors
+				neon: {
+					purple: '#9b87f5',
+					blue: '#33C3F0',
+					pink: '#D946EF',
+					orange: '#F97316',
+				},
+				glass: {
+					DEFAULT: 'rgba(255, 255, 255, 0.1)',
+					dark: 'rgba(0, 0, 0, 0.1)',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -70,25 +82,52 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'pulse-glow': {
+					'0%, 100%': { 
+						opacity: '1',
+						filter: 'brightness(1)',
 					},
-					to: {
-						height: '0'
+					'50%': { 
+						opacity: '0.8',
+						filter: 'brightness(1.2)',
 					}
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
+				},
+				'gradient-shift': {
+					'0%': { backgroundPosition: '0% 50%' },
+					'50%': { backgroundPosition: '100% 50%' },
+					'100%': { backgroundPosition: '0% 50%' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
+				'float': 'float 6s ease-in-out infinite',
+				'gradient-shift': 'gradient-shift 15s ease infinite'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'futuristic-grid': 'linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)',
+				'glow-purple': 'linear-gradient(45deg, rgba(155, 135, 245, 0.5), rgba(217, 70, 239, 0.2))',
+				'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+			},
+			backgroundSize: {
+				'grid': '40px 40px',
+			},
+			boxShadow: {
+				'neon': '0 0 20px rgba(155, 135, 245, 0.5)',
+				'neon-strong': '0 0 30px rgba(155, 135, 245, 0.8)',
 			}
 		}
 	},
