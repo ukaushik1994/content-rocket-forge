@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -291,6 +292,13 @@ export function ContentEditor() {
           <div className="space-y-6">
             <h3 className="text-xl font-medium">Content Writing</h3>
             
+            <div className="flex items-center justify-end mb-4">
+              <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
+                <Play className="mr-2 h-4 w-4" />
+                Generate Content
+              </Button>
+            </div>
+            
             <Card className="glass-panel flex-1 overflow-hidden flex flex-col">
               <Tabs defaultValue="edit" className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
@@ -573,40 +581,6 @@ export function ContentEditor() {
     <div className="flex flex-col h-[calc(100vh-10rem)] gap-4">
       <div className="flex flex-wrap items-center justify-between">
         <h2 className="text-2xl font-bold">Content Builder</h2>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 bg-glass p-2 rounded-lg">
-                  <span>SEO Score:</span>
-                  <Progress 
-                    value={seoScore} 
-                    className={cn(
-                      "w-32 h-2", 
-                      seoScore > 70 ? "bg-secondary [&>div]:bg-green-500" : 
-                      seoScore > 50 ? "bg-secondary [&>div]:bg-yellow-500" : 
-                      "bg-secondary [&>div]:bg-red-500"
-                    )}
-                  />
-                  <Badge className={cn(
-                    seoScore > 70 ? 'bg-green-500' : seoScore > 50 ? 'bg-yellow-500' : 'bg-red-500'
-                  )}>
-                    {seoScore}/100
-                  </Badge>
-                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Your content's overall optimization score</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
-            <Play className="mr-2 h-4 w-4" />
-            Generate Content
-          </Button>
-        </div>
       </div>
       
       <div className="flex items-center justify-between bg-glass rounded-lg p-3 mb-2">
