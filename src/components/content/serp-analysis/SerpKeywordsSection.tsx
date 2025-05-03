@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, PlusCircle, Filter } from 'lucide-react';
@@ -182,10 +181,11 @@ export function SerpKeywordsSection({
       <div className="flex flex-col gap-2">
         <SerpActionButton
           onClick={addSelectedKeywords}
-          className={`${selectedKeywords.length === 0 ? 'opacity-50' : ''} bg-gradient-to-r from-blue-600/20 to-blue-900/10 border-blue-500/20 hover:border-blue-500/40`}
+          className={`${selectedKeywords.length === 0 ? 'opacity-50' : ''}`}
           variant="outline"
           icon={<PlusCircle className="h-4 w-4 mr-2" />}
           disabled={selectedKeywords.length === 0}
+          actionType="add"
         >
           Add {selectedKeywords.length} Selected Keywords
         </SerpActionButton>
@@ -199,8 +199,9 @@ export function SerpKeywordsSection({
             onAddToContent(`## Related Searches\n${relatedSearchesText}\n\n`, 'relatedSearches');
             toast.success('Added all related searches');
           }}
-          className="bg-gradient-to-r from-purple-600/20 to-purple-900/10 border-purple-500/20 hover:border-purple-500/40 mt-2"
+          className="mt-2"
           icon={<Search className="h-4 w-4 mr-2" />}
+          actionType="add"
         >
           Add All Related Searches
         </SerpActionButton>

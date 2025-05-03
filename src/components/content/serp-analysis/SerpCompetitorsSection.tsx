@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, PlusCircle, Award, ExternalLink, Star, Filter, Heart } from 'lucide-react';
@@ -214,10 +213,11 @@ export function SerpCompetitorsSection({
       <div className="flex flex-col gap-2 pt-2">
         <SerpActionButton
           onClick={addSelectedCompetitors}
-          className={`${selectedCompetitors.length === 0 ? 'opacity-50' : ''} bg-gradient-to-r from-blue-600/20 to-blue-900/10 border-blue-500/20 hover:border-blue-500/40`}
+          className={`${selectedCompetitors.length === 0 ? 'opacity-50' : ''}`}
           variant="outline"
           icon={<Star className="h-4 w-4 mr-2" />}
           disabled={selectedCompetitors.length === 0}
+          actionType="add"
         >
           Add {selectedCompetitors.length} Selected Competitors
         </SerpActionButton>
@@ -232,8 +232,9 @@ export function SerpCompetitorsSection({
             onAddToContent(competitorInsightsContent, 'competitorAnalysis');
             toast.success('Added competitor analysis section');
           }}
-          className="bg-gradient-to-r from-indigo-600/20 to-indigo-900/10 border-indigo-500/20 hover:border-indigo-500/40 mt-2"
+          className="mt-2"
           icon={<Award className="h-4 w-4 mr-2" />}
+          actionType="add"
         >
           Add Complete Competitor Analysis
         </SerpActionButton>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, Link, PlusCircle, Filter, MessageCircle, Check } from 'lucide-react';
@@ -184,10 +183,11 @@ export function SerpQuestionsSection({
       <div className="flex flex-col gap-2">
         <SerpActionButton
           onClick={addSelectedQuestions}
-          className={`${selectedQuestions.length === 0 ? 'opacity-50' : ''} bg-gradient-to-r from-purple-600/20 to-purple-900/10 border-purple-500/20 hover:border-purple-500/40`}
+          className={`${selectedQuestions.length === 0 ? 'opacity-50' : ''}`}
           variant="outline"
           icon={<MessageCircle className="h-4 w-4 mr-2" />}
           disabled={selectedQuestions.length === 0}
+          actionType="add"
         >
           Add {selectedQuestions.length} Selected Questions
         </SerpActionButton>
@@ -201,8 +201,9 @@ export function SerpQuestionsSection({
             onAddToContent(`## Frequently Asked Questions\n\n${allQuestions}`, 'faqSection');
             toast.success('Added complete FAQ section');
           }}
-          className="bg-gradient-to-r from-indigo-600/20 to-indigo-900/10 border-indigo-500/20 hover:border-indigo-500/40 mt-2"
+          className="mt-2"
           icon={<HelpCircle className="h-4 w-4 mr-2" />}
+          actionType="add"
         >
           Add Complete FAQ Section
         </SerpActionButton>
