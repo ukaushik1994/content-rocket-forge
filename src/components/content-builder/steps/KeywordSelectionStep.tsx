@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -26,7 +25,6 @@ const mockClusters: ContentCluster[] = [{
   name: 'Social Media',
   keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
 }];
-
 export const KeywordSelectionStep = () => {
   const {
     state,
@@ -35,7 +33,6 @@ export const KeywordSelectionStep = () => {
     addContentFromSerp,
     generateOutlineFromSelections
   } = useContentBuilder();
-  
   const {
     mainKeyword,
     selectedKeywords,
@@ -43,11 +40,9 @@ export const KeywordSelectionStep = () => {
     serpData,
     isAnalyzing
   } = state;
-  
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
-
   useEffect(() => {
     // Check if we have completed the requirements to move forward
     if (mainKeyword && selectedKeywords.length > 0) {
@@ -55,7 +50,7 @@ export const KeywordSelectionStep = () => {
         type: 'MARK_STEP_COMPLETED',
         payload: 0
       });
-      
+
       // Also mark SERP analysis step as completed
       dispatch({
         type: 'MARK_STEP_COMPLETED',
@@ -63,7 +58,6 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
-
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
 
@@ -80,45 +74,40 @@ export const KeywordSelectionStep = () => {
         payload: keyword
       });
     }
-    
+
     // Automatically start SERP analysis when a keyword is entered
     await analyzeKeyword(keyword);
   };
-
   const handleAddKeyword = (kw: string) => {
     dispatch({
       type: 'ADD_KEYWORD',
       payload: kw
     });
   };
-
   const handleRemoveKeyword = (kw: string) => {
     dispatch({
       type: 'REMOVE_KEYWORD',
       payload: kw
     });
   };
-
   const handleSelectCluster = (cluster: ContentCluster) => {
     dispatch({
       type: 'SELECT_CLUSTER',
       payload: cluster
     });
   };
-
   const handleClearCluster = () => {
     dispatch({
       type: 'SELECT_CLUSTER',
       payload: null
     });
   };
-
   return <div className="space-y-6">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="research">Keyword Research</TabsTrigger>
-          <TabsTrigger value="clusters">Keyword Clusters</TabsTrigger>
-          <TabsTrigger value="saved">Saved Keywords</TabsTrigger>
+          
+          
         </TabsList>
 
         <TabsContent value="research" className="space-y-6 pt-4">
@@ -132,27 +121,15 @@ export const KeywordSelectionStep = () => {
 
             <SelectedKeywords keywords={selectedKeywords} onRemoveKeyword={handleRemoveKeyword} />
             
-            {mainKeyword && (
-              <div className="mt-8 border-t pt-6">
+            {mainKeyword && <div className="mt-8 border-t pt-6">
                 <h3 className="text-xl font-semibold mb-4">SERP Analysis Results</h3>
-                <SerpAnalysisPanel 
-                  serpData={serpData} 
-                  isLoading={isAnalyzing} 
-                  mainKeyword={mainKeyword}
-                  onAddToContent={addContentFromSerp}
-                />
-              </div>
-            )}
+                <SerpAnalysisPanel serpData={serpData} isLoading={isAnalyzing} mainKeyword={mainKeyword} onAddToContent={addContentFromSerp} />
+              </div>}
           </div>
         </TabsContent>
 
         <TabsContent value="clusters" className="space-y-6 pt-4">
-          <ClusterSelection 
-            clusters={clusters} 
-            selectedCluster={selectedCluster} 
-            onSelectCluster={handleSelectCluster} 
-            onClearCluster={handleClearCluster} 
-          />
+          <ClusterSelection clusters={clusters} selectedCluster={selectedCluster} onSelectCluster={handleSelectCluster} onClearCluster={handleClearCluster} />
         </TabsContent>
 
         <TabsContent value="saved" className="pt-4">
