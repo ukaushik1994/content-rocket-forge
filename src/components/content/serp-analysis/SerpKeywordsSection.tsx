@@ -43,11 +43,17 @@ export function SerpKeywordsSection({
     toast.success(`Added ${selectedKeywords.length} keywords to your content`);
   };
   
+  // Ensure relatedSearches have volume property
+  const relatedSearchesWithVolume = serpData.relatedSearches?.map(item => ({
+    ...item,
+    volume: item.volume !== undefined ? item.volume : 0
+  })) || [];
+  
   // Filter keywords based on volume (if available)
   const getFilteredKeywords = () => {
-    if (filter === 'all') return serpData.relatedSearches || [];
+    if (filter === 'all') return relatedSearchesWithVolume;
     
-    return (serpData.relatedSearches || []).filter(item => {
+    return relatedSearchesWithVolume.filter(item => {
       const volume = item.volume || 0;
       
       if (filter === 'high') return volume > 1000;
@@ -156,15 +162,14 @@ export function SerpKeywordsSection({
               >
                 <div className="flex items-center gap-2">
                   {item.query}
-                  {item.volume && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      selectedKeywords.includes(item.query) 
-                        ? 'bg-white/20' 
-                        : 'bg-white/10'
-                    }`}>
-                      {item.volume}
-                    </span>
-                  )}
+                  {/* Use the guaranteed volume property */}
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    selectedKeywords.includes(item.query) 
+                      ? 'bg-white/20' 
+                      : 'bg-white/10'
+                  }`}>
+                    {item.volume}
+                  </span>
                 </div>
               </Badge>
             </motion.div>
@@ -193,7 +198,7 @@ export function SerpKeywordsSection({
         <SerpActionButton
           variant="outline"
           onClick={() => {
-            const relatedSearchesText = serpData.relatedSearches?.map(item => 
+            const relatedSearchesText = relatedSearchesWithVolume.map(item => 
               `- ${item.query}${item.volume ? ` (${item.volume} searches/month)` : ''}`
             ).join('\n') || '';
             onAddToContent(`## Related Searches\n${relatedSearchesText}\n\n`, 'relatedSearches');

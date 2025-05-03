@@ -7,7 +7,7 @@ export interface ContentOutlineSection {
 }
 
 export interface SerpSelection {
-  type: 'keyword' | 'question' | 'snippet' | 'competitor';
+  type: 'keyword' | 'question' | 'snippet' | 'competitor' | 'recommendation' | 'structure';
   content: string;
   source?: string;
   selected: boolean;
@@ -20,18 +20,21 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  description?: string; // Added missing description property
+  description?: string; // Added description property
 }
 
-// Add the missing ContentCluster interface
+// Content cluster interface
 export interface ContentCluster {
   id: string;
   name: string;
   keywords: string[];
 }
 
-// Add the missing ContentType interface
-export interface ContentType {
+// Content type as a string literal type
+export type ContentType = 'blog' | 'landingPage' | 'productDescription' | 'article' | 'email' | 'social';
+
+// ContentType interface
+export interface ContentTypeOption {
   id: string;
   name: string;
   description: string;
@@ -78,7 +81,7 @@ export type ContentBuilderAction =
   | { type: 'ADD_SECONDARY_KEYWORD'; payload: string }
   | { type: 'REMOVE_SECONDARY_KEYWORD'; payload: string }
   | { type: 'SET_KEYWORD_CLUSTERS'; payload: { [key: string]: string[] } }
-  | { type: 'SET_CONTENT_TYPE'; payload: string }
+  | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SET_CONTENT_FORMAT'; payload: string }
   | { type: 'SET_OUTLINE_TITLE'; payload: string }
   | { type: 'SET_OUTLINE_SECTIONS'; payload: { id: string; heading: string; content: string }[] }

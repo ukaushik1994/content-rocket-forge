@@ -40,13 +40,20 @@ export function SerpQuestionsSection({
     }
   };
 
+  // Ensure peopleAlsoAsk entries have answer property
+  const questionsWithAnswers = serpData.peopleAlsoAsk?.map(item => ({
+    ...item,
+    answer: item.answer !== undefined ? item.answer : 'No answer available'
+  })) || [];
+
   const addSelectedQuestions = () => {
     if (selectedQuestions.length === 0) {
       toast.error("No questions selected");
       return;
     }
     
-    const selectedQuestionsData = serpData.peopleAlsoAsk?.filter(
+    // Use questionsWithAnswers to safely access answer property
+    const selectedQuestionsData = questionsWithAnswers.filter(
       item => selectedQuestions.includes(item.question)
     ) || [];
     
@@ -93,7 +100,7 @@ export function SerpQuestionsSection({
       
       <div className="space-y-4 bg-gradient-to-br from-purple-900/10 via-blue-900/10 to-purple-900/10 p-4 rounded-xl border border-white/10">
         <AnimatePresence mode="popLayout">
-          {serpData.peopleAlsoAsk.map((item, index) => (
+          {questionsWithAnswers.map((item, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 10 }}
@@ -150,7 +157,7 @@ export function SerpQuestionsSection({
                     className="bg-white/5 p-4"
                   >
                     <div className="text-sm space-y-3">
-                      <p className="text-muted-foreground">{item.answer || 'No answer available'}</p>
+                      <p className="text-muted-foreground">{item.answer}</p>
                       
                       <div className="flex items-center justify-between pt-2">
                         {item.source && (
@@ -195,8 +202,8 @@ export function SerpQuestionsSection({
         <SerpActionButton
           variant="outline"
           onClick={() => {
-            const allQuestions = serpData.peopleAlsoAsk?.map(item => 
-              `### ${item.question}\n${item.answer || 'No answer available'}\n\n`
+            const allQuestions = questionsWithAnswers.map(item => 
+              `### ${item.question}\n${item.answer}\n\n`
             ).join('');
             onAddToContent(`## Frequently Asked Questions\n\n${allQuestions}`, 'faqSection');
             toast.success('Added complete FAQ section');

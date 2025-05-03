@@ -52,6 +52,13 @@ export function SerpCompetitorsSection({
     toast.success(`Added ${selectedCompetitors.length} competitor insights`);
   };
 
+  // Check if topResults have position property, if not use index+1
+  const competitorsWithPosition = serpData.topResults?.map((result, index) => ({
+    ...result,
+    position: result.position !== undefined ? result.position : index + 1
+  })) || [];
+
+  // Use our enhanced competitors with guaranteed position
   if (!serpData.topResults || serpData.topResults.length === 0) {
     return (
       <div className="py-8 text-center bg-white/5 rounded-lg border border-white/10">
@@ -136,7 +143,7 @@ export function SerpCompetitorsSection({
           animate="visible"
           className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"}
         >
-          {serpData.topResults.map((result, index) => (
+          {competitorsWithPosition.map((result, index) => (
             <motion.div 
               key={result.position}
               variants={itemVariants}

@@ -141,6 +141,7 @@ export function SerpContentGenerator({
     
     let template = `# The Ultimate Guide to ${mainKeyword}\n\n`;
     
+    // Use optional chaining for the type property
     if (snippet.type === 'definition') {
       template += `## What is ${mainKeyword}?\n\n${snippet.content}\n\n`;
       template += `## Why ${mainKeyword} Matters\n\n[Explain why this topic is important...]\n\n`;

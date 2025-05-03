@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -74,10 +73,10 @@ export function SerpAnalysisPanel({
     }));
   };
   
-  // Helper function to convert serpData to SerpSelection objects
+  // Helper function to convert serpData to SerpSelection objects with proper type casting
   const convertToSerpSelections = (
     items: string[] | undefined, 
-    type: string, 
+    type: 'keyword' | 'question' | 'snippet' | 'competitor' | 'recommendation' | 'structure', 
     sourceField?: string
   ): SerpSelection[] => {
     if (!items || items.length === 0) return [];
@@ -131,28 +130,28 @@ export function SerpAnalysisPanel({
     toast.success(`Deselected all ${type}s`);
   };
   
-  // Get items by type
+  // Get items by type with proper type safety
   const getItemsByType = (type: string): SerpSelection[] => {
     switch(type) {
       case 'keyword':
         return convertToSerpSelections(serpData?.keywords, 'keyword');
       case 'question':
         return serpData?.peopleAlsoAsk?.map(item => ({
-          type: 'question',
+          type: 'question' as const,
           content: item.question,
           source: item.source,
           selected: !!selectedItems['question']?.[item.question]
         })) || [];
       case 'snippet':
         return serpData?.featuredSnippets?.map(item => ({
-          type: 'snippet',
+          type: 'snippet' as const,
           content: item.content,
           source: item.source,
           selected: !!selectedItems['snippet']?.[item.content]
         })) || [];
       case 'competitor':
         return serpData?.topResults?.map(item => ({
-          type: 'competitor',
+          type: 'competitor' as const,
           content: item.snippet,
           source: item.link,
           selected: !!selectedItems['competitor']?.[item.snippet]
@@ -160,7 +159,7 @@ export function SerpAnalysisPanel({
       case 'recommendation':
         return convertToSerpSelections(serpData?.recommendations, 'recommendation');
       case 'structure':
-        // Create a structure array from common patterns
+        // Create a structure array from common patterns with proper type
         const structures = [
           "H1 with numbers for higher CTR",
           "Define key terms in intro",
@@ -169,7 +168,7 @@ export function SerpAnalysisPanel({
           "End with FAQ section"
         ];
         return structures.map(item => ({
-          type: 'structure',
+          type: 'structure' as const,
           content: item,
           source: undefined,
           selected: !!selectedItems['structure']?.[item]
@@ -243,11 +242,16 @@ export function SerpAnalysisPanel({
     // Add questions if selected
     const selectedQuestions = getItemsByType('question').filter(item => selectedItems['question']?.[item.content]);
     if (selectedQuestions.length > 0) {
-      contentToAdd += '## Frequently Asked Questions\n\n';
-      selectedQuestions.forEach(item => {
-        const answer = serpData?.peopleAlsoAsk?.find(q => q.question === item.content)?.answer || 'No answer available';
-        contentToAdd += `### ${item.content}\n${answer}\n\n`;
-      });
+      // Add questions with proper access to the answer property
+      const selectedQuestionsContent = '## Frequently Asked Questions\n\n' +
+        selectedQuestions.map(item => {
+          const question = item.content;
+          const questionObject = serpData?.peopleAlsoAsk?.find(q => q.question === question);
+          const answer = questionObject?.answer || 'No answer available';
+          return `### ${question}\n${answer}\n\n`;
+        }).join('');
+      
+      contentToAdd += selectedQuestionsContent;
     }
     
     // Add snippets if selected
