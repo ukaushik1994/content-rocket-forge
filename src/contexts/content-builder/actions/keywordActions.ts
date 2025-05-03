@@ -19,14 +19,29 @@ export const createKeywordActions = (
 
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     try {
+      // Call API to analyze keyword
       const data = await analyzeKeywordSerp(keyword);
-      dispatch({ type: 'SET_SERP_DATA', payload: data });
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
-      toast.success(`Analysis completed for: ${keyword}`);
-    } catch (error) {
+      
+      // Always ensure we have data, even if it's mock data
+      if (data) {
+        dispatch({ type: 'SET_SERP_DATA', payload: data });
+        dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+        
+        // Show different toast messages based on whether we're using mock or real data
+        if (data.isMockData) {
+          toast.info(`Analysis completed for: ${keyword} (using mock data)`);
+        } else {
+          toast.success(`Analysis completed for: ${keyword}`);
+        }
+      } else {
+        // If for some reason we don't get data back, show an error
+        toast.error('Failed to analyze keyword. Please try again.');
+      }
+    } catch (error: any) {
       console.error('Error analyzing keyword:', error);
-      toast.error('Failed to analyze keyword. Please try again.');
+      toast.error(`Analysis error: ${error.message || 'Failed to analyze keyword'}`);
     } finally {
+      // Always set analyzing state to false to ensure UI is updated
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
   };

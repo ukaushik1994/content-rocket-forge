@@ -5,18 +5,26 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { saveApiKey, getApiKey, testApiKey, deleteApiKey } from "@/services/apiKeyService";
 import { toast } from "sonner";
-import { Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Check, X, Loader2, AlertCircle, Info } from 'lucide-react';
 
 interface ApiKeyInputProps {
   serviceName: string;
   serviceKey: string;
   serviceDescription: string;
   serviceLink: string;
+  required?: boolean;
 }
 
-const ApiKeyInput = ({ serviceName, serviceKey, serviceDescription, serviceLink }: ApiKeyInputProps) => {
+const ApiKeyInput = ({ 
+  serviceName, 
+  serviceKey, 
+  serviceDescription, 
+  serviceLink, 
+  required = false 
+}: ApiKeyInputProps) => {
   const [apiKey, setApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -118,10 +126,15 @@ const ApiKeyInput = ({ serviceName, serviceKey, serviceDescription, serviceLink 
   }
 
   return (
-    <Card className="p-6 space-y-4 bg-glass border-white/10">
+    <Card className={`p-6 space-y-4 bg-glass ${required && !keyExists ? 'border-red-500/40' : 'border-white/10'}`}>
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">{serviceName} API</h3>
+          <h3 className="text-lg font-medium flex items-center gap-2">
+            {serviceName} API
+            {required && !keyExists && (
+              <span className="bg-red-500/20 text-red-300 text-xs px-2 py-0.5 rounded-full">Required</span>
+            )}
+          </h3>
           <p className="text-sm text-muted-foreground">{serviceDescription}</p>
         </div>
         <div className="flex items-center space-x-2">
@@ -139,6 +152,17 @@ const ApiKeyInput = ({ serviceName, serviceKey, serviceDescription, serviceLink 
         </div>
       </div>
       
+      {required && !keyExists && (
+        <Alert variant="destructive" className="bg-red-900/20 border-red-500/30">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>API Key Required</AlertTitle>
+          <AlertDescription>
+            This API key is required for the content analysis features to work properly. 
+            Without it, the application will use mock data instead.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-2">
         <Label htmlFor={`${serviceKey}-api-key`} className="flex justify-between">
           <span>API Key</span>
@@ -146,8 +170,9 @@ const ApiKeyInput = ({ serviceName, serviceKey, serviceDescription, serviceLink 
             href={serviceLink} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-xs text-blue-400 hover:text-blue-300"
+            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
           >
+            <Info className="h-3 w-3" />
             Get API key
           </a>
         </Label>
@@ -158,7 +183,7 @@ const ApiKeyInput = ({ serviceName, serviceKey, serviceDescription, serviceLink 
             onChange={(e) => setApiKey(e.target.value)}
             type={showApiKey ? "text" : "password"}
             placeholder={`Enter your ${serviceName} API key`}
-            className="pr-10"
+            className={`pr-10 ${required && !keyExists ? 'border-red-500/50 focus:border-red-500' : ''}`}
           />
           <button
             className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
@@ -212,7 +237,7 @@ const ApiKeyInput = ({ serviceName, serviceKey, serviceDescription, serviceLink 
         ) : (
           <Button 
             onClick={handleSaveKey} 
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            className={`bg-gradient-to-r ${required ? 'from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600' : 'from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple'}`}
             disabled={isSaving || !apiKey}
           >
             {isSaving ? (
@@ -240,6 +265,14 @@ export function APISettings() {
         </p>
       </div>
 
+      <Alert className="bg-blue-900/20 border-blue-500/30">
+        <Info className="h-4 w-4" />
+        <AlertTitle>Missing API Keys?</AlertTitle>
+        <AlertDescription>
+          The application will use mock data when API keys are not configured. Add your API keys below for real-time data.
+        </AlertDescription>
+      </Alert>
+
       <div className="space-y-4">
         <ApiKeyInput
           serviceName="OpenAI"
@@ -253,6 +286,7 @@ export function APISettings() {
           serviceKey="serp"
           serviceDescription="Access competitor content analysis, keyword data, and search volume metrics."
           serviceLink="https://serpapi.com/dashboard"
+          required={true}
         />
       </div>
     </div>
