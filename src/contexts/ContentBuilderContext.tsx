@@ -33,6 +33,13 @@ export interface ContentOutlineSection {
   subsections?: ContentOutlineSection[];
 }
 
+export interface SerpSelection {
+  type: 'question' | 'keyword' | 'snippet' | 'competitor';
+  content: string;
+  source?: string;
+  selected: boolean;
+}
+
 export interface ContentBuilderState {
   activeStep: number;
   steps: ContentStep[];
@@ -42,10 +49,12 @@ export interface ContentBuilderState {
   contentType: ContentType | null;
   selectedSolution: Solution | null;
   serpData: SerpAnalysisResult | null;
+  serpSelections: SerpSelection[];
   isAnalyzing: boolean;
   outline: ContentOutlineSection[];
   content: string;
   seoScore: number;
+  additionalInstructions: string;
 }
 
 // Define actions for our reducer
@@ -60,13 +69,16 @@ type ContentBuilderAction =
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_SERP_DATA'; payload: SerpAnalysisResult }
+  | { type: 'ADD_SERP_SELECTION'; payload: SerpSelection }
+  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
   | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'SET_OUTLINE'; payload: ContentOutlineSection[] }
   | { type: 'ADD_OUTLINE_SECTION'; payload: ContentOutlineSection }
   | { type: 'UPDATE_OUTLINE_SECTION'; payload: { id: string; section: Partial<ContentOutlineSection> } }
   | { type: 'REMOVE_OUTLINE_SECTION'; payload: string }
   | { type: 'SET_CONTENT'; payload: string }
-  | { type: 'SET_SEO_SCORE'; payload: number };
+  | { type: 'SET_SEO_SCORE'; payload: number }
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
 
 // Initial state for our context
 const initialState: ContentBuilderState = {
@@ -86,10 +98,12 @@ const initialState: ContentBuilderState = {
   contentType: null,
   selectedSolution: null,
   serpData: null,
+  serpSelections: [],
   isAnalyzing: false,
   outline: [],
   content: '',
   seoScore: 0,
+  additionalInstructions: '',
 };
 
 // Reducer function to handle state updates
@@ -133,7 +147,73 @@ const contentBuilderReducer = (state: ContentBuilderState, action: ContentBuilde
     case 'SELECT_SOLUTION':
       return { ...state, selectedSolution: action.payload };
     case 'SET_SERP_DATA':
-      return { ...state, serpData: action.payload };
+      const newSelections: SerpSelection[] = [];
+      
+      // Convert SERP data to selectable items
+      if (action.payload.peopleAlsoAsk) {
+        action.payload.peopleAlsoAsk.forEach(item => {
+          newSelections.push({
+            type: 'question',
+            content: item.question,
+            source: item.source,
+            selected: false
+          });
+        });
+      }
+      
+      if (action.payload.relatedSearches) {
+        action.payload.relatedSearches.forEach(item => {
+          newSelections.push({
+            type: 'keyword',
+            content: item.query,
+            selected: false
+          });
+        });
+      }
+      
+      if (action.payload.featuredSnippets) {
+        action.payload.featuredSnippets.forEach(item => {
+          newSelections.push({
+            type: 'snippet',
+            content: item.content,
+            source: item.source,
+            selected: false
+          });
+        });
+      }
+
+      if (action.payload.topResults) {
+        action.payload.topResults.forEach(item => {
+          if (item.snippet) {
+            newSelections.push({
+              type: 'competitor',
+              content: item.snippet,
+              source: item.link,
+              selected: false
+            });
+          }
+        });
+      }
+      
+      return { 
+        ...state, 
+        serpData: action.payload,
+        serpSelections: newSelections
+      };
+    case 'ADD_SERP_SELECTION':
+      return {
+        ...state,
+        serpSelections: [...state.serpSelections, action.payload]
+      };
+    case 'TOGGLE_SERP_SELECTION':
+      return {
+        ...state,
+        serpSelections: state.serpSelections.map(item => 
+          item.type === action.payload.type && item.content === action.payload.content
+            ? { ...item, selected: !item.selected }
+            : item
+        )
+      };
     case 'SET_IS_ANALYZING':
       return { ...state, isAnalyzing: action.payload };
     case 'SET_OUTLINE':
@@ -161,6 +241,8 @@ const contentBuilderReducer = (state: ContentBuilderState, action: ContentBuilde
       return { ...state, content: action.payload };
     case 'SET_SEO_SCORE':
       return { ...state, seoScore: action.payload };
+    case 'SET_ADDITIONAL_INSTRUCTIONS':
+      return { ...state, additionalInstructions: action.payload };
     default:
       return state;
   }
@@ -173,6 +255,7 @@ interface ContentBuilderContextType {
   analyzeKeyword: (keyword: string) => Promise<void>;
   navigateToStep: (step: number) => void;
   addContentFromSerp: (content: string, type: string) => void;
+  generateOutlineFromSelections: () => void;
 }
 
 const ContentBuilderContext = createContext<ContentBuilderContextType | undefined>(undefined);
@@ -213,9 +296,66 @@ export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = (
     toast.success(`Added ${type} to your content draft`);
   };
 
+  const generateOutlineFromSelections = () => {
+    // Generate outline based on selected SERP items
+    const selectedItems = state.serpSelections.filter(item => item.selected);
+    
+    if (selectedItems.length === 0) {
+      toast.warning('Please select some items from the SERP analysis first');
+      return;
+    }
+    
+    // Group selected items by type
+    const questionItems = selectedItems.filter(item => item.type === 'question');
+    const keywordItems = selectedItems.filter(item => item.type === 'keyword');
+    const snippetItems = selectedItems.filter(item => item.type === 'snippet');
+    
+    // Create outline sections based on selected items
+    const outlineSections: ContentOutlineSection[] = [
+      { id: crypto.randomUUID(), title: `Introduction to ${state.mainKeyword}` }
+    ];
+    
+    // Add sections for keywords
+    if (keywordItems.length > 0) {
+      keywordItems.forEach(item => {
+        outlineSections.push({
+          id: crypto.randomUUID(),
+          title: item.content.charAt(0).toUpperCase() + item.content.slice(1)
+        });
+      });
+    }
+    
+    // Add FAQ section if questions exist
+    if (questionItems.length > 0) {
+      outlineSections.push({
+        id: crypto.randomUUID(),
+        title: 'Frequently Asked Questions',
+        subsections: questionItems.map(item => ({
+          id: crypto.randomUUID(),
+          title: item.content
+        }))
+      });
+    }
+    
+    // Add conclusion
+    outlineSections.push({ 
+      id: crypto.randomUUID(), 
+      title: 'Conclusion' 
+    });
+    
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
+    toast.success('Outline generated from selected items');
+    
+    // Mark outline step as completed
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
+    
+    // Navigate to the outline step
+    navigateToStep(3);
+  };
+
   return (
     <ContentBuilderContext.Provider
-      value={{ state, dispatch, analyzeKeyword, navigateToStep, addContentFromSerp }}
+      value={{ state, dispatch, analyzeKeyword, navigateToStep, addContentFromSerp, generateOutlineFromSelections }}
     >
       {children}
     </ContentBuilderContext.Provider>

@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Search, X, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { searchKeywords } from '@/services/serpApiService';
-import { KeywordsList } from '@/components/keywords/KeywordsList';
 import { ContentCluster } from '@/contexts/ContentBuilderContext';
 
 // Mock data for clusters until we integrate with backend
@@ -247,7 +246,18 @@ export const KeywordSelectionStep = () => {
         </TabsContent>
 
         <TabsContent value="saved" className="pt-4">
-          <KeywordsList selectMode={true} onSelect={handleAddKeyword} />
+          <div className="text-center p-4 border rounded-md">
+            <p className="text-muted-foreground">
+              Saved keywords from your account will appear here.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-2"
+              onClick={() => toast.info("This would load your saved keywords from the database")}
+            >
+              Load Saved Keywords
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -62,27 +62,29 @@ export const ContentBuilder = () => {
       </div>
 
       {/* Step Navigation */}
-      <Tabs 
-        value={activeStep.toString()} 
-        onValueChange={(value) => navigateToStep(parseInt(value))}
-        className="w-full overflow-x-auto"
-      >
-        <TabsList className="w-full justify-start">
-          {steps.map((step) => (
-            <TabsTrigger 
-              key={step.id} 
-              value={step.id.toString()} 
-              disabled={!step.completed && step.id !== activeStep}
-              className="gap-1.5"
-            >
-              {step.completed ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : null}
-              {step.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="w-full overflow-x-auto">
+        <Tabs 
+          value={activeStep.toString()} 
+          onValueChange={(value) => navigateToStep(parseInt(value))}
+          className="w-full"
+        >
+          <TabsList className="w-full justify-start">
+            {steps.map((step) => (
+              <TabsTrigger 
+                key={step.id} 
+                value={step.id.toString()} 
+                disabled={!step.completed && step.id !== activeStep}
+                className="gap-1.5"
+              >
+                {step.completed ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : null}
+                {step.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Step Content */}
       <div className="bg-glass rounded-lg border border-white/10 p-6">

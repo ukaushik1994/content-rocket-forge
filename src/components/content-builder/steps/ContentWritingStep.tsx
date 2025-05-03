@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { ContentEditor } from '@/components/content/ContentEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ContentEditor } from '@/components/content/ContentEditor';
 
 export const ContentWritingStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -92,9 +92,10 @@ export const ContentWritingStep = () => {
             
             <TabsContent value="write" className="p-0">
               <Card className="border-0 shadow-none">
+                {/* Modified to pass props based on what ContentEditor actually accepts */}
                 <ContentEditor 
-                  initialContent={content}
-                  onChange={handleContentChange}
+                  content={content} 
+                  onContentChange={handleContentChange}
                 />
               </Card>
             </TabsContent>
