@@ -1,4 +1,3 @@
-
 export interface ContentOutlineSection {
   id: string;
   title: string;
@@ -20,7 +19,7 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  description?: string; // Added description property
+  description?: string;
 }
 
 // Content cluster interface
@@ -30,8 +29,8 @@ export interface ContentCluster {
   keywords: string[];
 }
 
-// Content type as a string literal type
-export type ContentType = 'blog' | 'landingPage' | 'productDescription' | 'article' | 'email' | 'social';
+// Modified: Make ContentType a broader string type for better compatibility
+export type ContentType = string;
 
 // ContentType interface
 export interface ContentTypeOption {

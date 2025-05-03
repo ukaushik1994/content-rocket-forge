@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from './types';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,8 +52,8 @@ export const createContentBuilderActions = (state: ContentBuilderState, dispatch
     dispatch({ type: 'SET_KEYWORD_CLUSTERS', payload: clusters });
   };
 
-  // Helper function to set content type
-  const setContentType = (contentType: string) => {
+  // Helper function to set content type - Fixed type to match ContentType
+  const setContentType = (contentType: ContentType) => {
     dispatch({ type: 'SET_CONTENT_TYPE', payload: contentType });
   };
 
