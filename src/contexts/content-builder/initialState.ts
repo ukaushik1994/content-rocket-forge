@@ -6,61 +6,68 @@ export const initialState: ContentBuilderState = {
   steps: [
     {
       id: 0,
-      name: 'SERP Analysis',
-      description: 'Research keywords and analyze search results to optimize your content.',
-      completed: false
+      name: 'Keywords',
+      description: 'Select target keywords for your content',
+      completed: false,
     },
     {
       id: 1,
       name: 'Content Type',
-      description: 'Choose the type of content you want to create.',
-      completed: false
+      description: 'Choose the type of content you want to create',
+      completed: false,
     },
     {
       id: 2,
-      name: 'Outline',
-      description: 'Create a structured outline for your content.',
-      completed: false
+      name: 'SERP Analysis',
+      description: 'Analyze search results for your keywords',
+      completed: false,
     },
     {
       id: 3,
-      name: 'Content',
-      description: 'Write your content with AI assistance.',
-      completed: false
+      name: 'Outline',
+      description: 'Create an outline for your content',
+      completed: false,
     },
     {
       id: 4,
-      name: 'Optimize',
-      description: 'Optimize your content for search engines.',
-      completed: false
+      name: 'Write',
+      description: 'Write your content using AI assistance',
+      completed: false,
     },
     {
       id: 5,
+      name: 'Optimize',
+      description: 'Optimize your content for search engines',
+      completed: false,
+    },
+    {
+      id: 6,
       name: 'Publish',
-      description: 'Prepare your content for publication.',
-      completed: false
-    }
+      description: 'Publish or schedule your content',
+      completed: false,
+    },
   ],
   primaryKeyword: '',
   secondaryKeywords: [],
   keywordClusters: {},
-  contentType: null,
-  contentFormat: '',
-  outline: [],
+  contentType: 'article',
+  contentFormat: 'blog',
+  contentTitle: '',
+  outlineSections: [],
   serpAnalysisResults: null,
   serpKeywordsSelected: [],
   serpQuestionsSelected: [],
   isAnalyzing: false,
+  isSaving: false,
+  isPublishing: false,
   content: '',
-  
-  // Additional properties
   mainKeyword: '',
   selectedKeywords: [],
   selectedCluster: null,
+  selectedSolution: null,
   serpData: null,
   serpSelections: [],
-  selectedSolution: null,
-  contentTitle: '',
+  outline: [],
   seoScore: 0,
-  additionalInstructions: ''
+  additionalInstructions: '',
 };

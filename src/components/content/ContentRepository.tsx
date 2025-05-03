@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useContent } from '@/contexts/ContentContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Edit, 
@@ -14,9 +15,9 @@ import {
   BarChart3, 
   Calendar, 
   Filter,
-  ArrowUpRight,
   Tag,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,8 +25,9 @@ export function ContentRepository() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [filterStatus, setFilterStatus] = useState('all');
-  const { contentItems, loading } = useContent();
+  const { contentItems, loading, updateContentItem } = useContent();
   const [filteredItems, setFilteredItems] = useState(contentItems);
+  const navigate = useNavigate();
   
   useEffect(() => {
     let filtered = [...contentItems];
@@ -68,15 +70,36 @@ export function ContentRepository() {
   };
 
   const handleViewContent = (id: string) => {
+    // In a real app, navigate to content view page
     toast.info(`Viewing content: ${id}`);
   };
 
   const handleEditContent = (id: string) => {
-    toast.info(`Editing content: ${id}`);
+    // In a real app, navigate to content editor with the content loaded
+    navigate(`/content-builder?edit=${id}`);
   };
 
   const handleAnalyzeContent = (id: string) => {
-    toast.info(`Analyzing content: ${id}`);
+    // In a real app, navigate to content analytics page
+    navigate(`/analytics?content=${id}`);
+  };
+
+  const handlePublishContent = async (id: string) => {
+    try {
+      await updateContentItem(id, { status: 'published' });
+      toast.success('Content published successfully');
+    } catch (error) {
+      toast.error('Failed to publish content');
+    }
+  };
+
+  const handleArchiveContent = async (id: string) => {
+    try {
+      await updateContentItem(id, { status: 'archived' });
+      toast.success('Content archived successfully');
+    } catch (error) {
+      toast.error('Failed to archive content');
+    }
   };
 
   return (
@@ -133,7 +156,10 @@ export function ContentRepository() {
       
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin h-8 w-8 border-t-2 border-primary rounded-full"></div>
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading content...</p>
+          </div>
         </div>
       ) : filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -152,7 +178,7 @@ export function ContentRepository() {
                 </div>
                 
                 <div className="flex flex-wrap gap-1 my-3">
-                  {item.keywords.map((keyword, idx) => (
+                  {item.keywords && item.keywords.map((keyword, idx) => (
                     <Badge key={idx} variant="outline" className="bg-white/5 text-xs">
                       <Tag className="h-2.5 w-2.5 mr-1" />
                       {keyword}
@@ -199,6 +225,32 @@ export function ContentRepository() {
                     </Button>
                   </div>
                 </div>
+                
+                {/* Status Action Buttons */}
+                {item.status === 'draft' && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                      onClick={() => handlePublishContent(item.id)}
+                    >
+                      Publish
+                    </Button>
+                  </div>
+                )}
+                
+                {item.status === 'published' && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleArchiveContent(item.id)}
+                    >
+                      Archive
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           ))}

@@ -1,132 +1,124 @@
 
-import { callApiProxy } from './apiProxyService';
+import { callApiProxy } from '@/services/apiProxyService';
 import { toast } from 'sonner';
 
-export interface SerpSearchParams {
-  query: string;
-  gl?: string;
-  hl?: string;
-  num?: number;
-}
+const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
+const serpCache: Record<string, { data: any; timestamp: number }> = {};
 
-export interface SerpSearchResult {
-  title: string;
-  link: string;
-  snippet: string;
-  position: number;
-}
-
-export interface SerpFeaturedSnippet {
-  type: 'paragraph' | 'list' | 'table' | 'definition';
-  content: string;
-  source: string;
-}
-
-export interface SerpPeopleAlsoAsk {
-  question: string;
-  answer?: string;
-  source?: string;
-}
-
-export interface SerpRelatedSearch {
-  query: string;
-  volume?: number;
-}
-
-export interface SerpImagePack {
-  title: string;
-  url: string;
-  thumbnailUrl: string;
-}
-
-export interface SerpAnalysisResult {
-  keywords: string[];
-  searchVolume?: number;
-  competitionScore?: number;
-  keywordDifficulty?: number;
-  recommendations: string[];
-  peopleAlsoAsk?: SerpPeopleAlsoAsk[];
-  relatedSearches?: SerpRelatedSearch[];
-  topResults?: SerpSearchResult[];
-  featuredSnippets?: SerpFeaturedSnippet[];
-  imagePacks?: SerpImagePack[];
-  knowledgeGraph?: {
-    title?: string;
-    description?: string;
-    entityType?: string;
-    attributes?: Record<string, string>;
-  };
-  localPack?: {
-    businesses: { name: string; rating: number; address: string }[];
-  };
-}
-
-export async function searchKeywords(params: SerpSearchParams): Promise<SerpSearchResult[]> {
+/**
+ * Analyze a keyword using the SERP API with caching
+ */
+export async function analyzeKeywordSerp(keyword: string) {
+  const cacheKey = `serp_${keyword.toLowerCase().trim()}`;
+  
+  // Check cache first
+  const cachedResult = serpCache[cacheKey];
+  if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_EXPIRY) {
+    console.log(`Using cached SERP data for "${keyword}"`);
+    return cachedResult.data;
+  }
+  
   try {
-    console.log('Calling SERP API to search keywords:', params);
-    const data = await callApiProxy<{ results: SerpSearchResult[] }>({
+    console.log(`Fetching SERP data for "${keyword}"`);
+    const response = await callApiProxy({
       service: 'serp',
       endpoint: 'search',
-      params
+      params: { keyword, country: 'us' }
     });
     
-    if (!data?.results) {
-      throw new Error('No results returned from SERP API');
+    if (!response) {
+      throw new Error('No response from SERP API');
     }
     
-    return data.results;
-  } catch (error) {
-    console.error('SERP search error:', error);
-    toast.error('Failed to search keywords. Please try again.');
-    return [];
+    // Process data to ensure it has the expected structure
+    const processedData = processSerpResponse(response);
+    
+    // Cache the result
+    serpCache[cacheKey] = {
+      data: processedData,
+      timestamp: Date.now()
+    };
+    
+    return processedData;
+  } catch (error: any) {
+    console.error('Error analyzing keyword:', error);
+    
+    // For development/demo purposes, return mock data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using mock SERP data due to API error');
+      const mockData = getMockSerpData(keyword);
+      
+      // Cache the mock result too
+      serpCache[cacheKey] = {
+        data: mockData,
+        timestamp: Date.now()
+      };
+      
+      return mockData;
+    }
+    
+    toast.error(`API Error: ${error.message}`);
+    throw error;
   }
 }
 
-export async function analyzeContent(content: string, keywords: string[]): Promise<SerpAnalysisResult> {
-  try {
-    console.log('Calling SERP API to analyze content:', { content: content.substring(0, 50) + '...', keywords });
-    const data = await callApiProxy<SerpAnalysisResult>({
-      service: 'serp',
-      endpoint: 'analyze',
-      params: { content, keywords }
-    });
-    
-    if (!data) {
-      throw new Error('No data returned from SERP API');
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('SERP analysis error:', error);
-    toast.error('Failed to analyze content. Please try again.');
-    return {
-      keywords: [],
-      recommendations: [],
-    };
-  }
+// Function to process and normalize API response
+function processSerpResponse(response: any) {
+  // Ensure response has expected structure
+  const processedData = {
+    keyword: response.keyword || '',
+    searchVolume: response.searchVolume || 0,
+    competitionScore: response.competitionScore || 0,
+    topResults: response.topResults || [],
+    relatedSearches: response.relatedSearches || [],
+    peopleAlsoAsk: response.peopleAlsoAsk || [],
+    featuredSnippets: response.featuredSnippets || []
+  };
+  
+  return processedData;
 }
 
-export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisResult> {
-  try {
-    console.log(`Calling SERP API for keyword: ${keyword}`);
-    const data = await callApiProxy<SerpAnalysisResult>({
-      service: 'serp',
-      endpoint: 'analyze-keyword',
-      params: { keyword }
-    });
-    
-    if (!data) {
-      throw new Error('No data returned from SERP API');
-    }
-    
-    console.log('SERP API response:', data);
-    return data;
-  } catch (error) {
-    console.error('SERP keyword analysis error:', error);
-    toast.error('Failed to analyze keyword. Please try again.');
-    return {
-      keywords: [],
-      recommendations: [],
-    };
-  }
+// Mock SERP data for development/demo purposes
+function getMockSerpData(keyword: string) {
+  return {
+    keyword,
+    searchVolume: Math.floor(Math.random() * 10000) + 1000,
+    competitionScore: Math.floor(Math.random() * 100),
+    topResults: [
+      {
+        title: `${keyword} - Complete Guide`,
+        link: 'https://example.com/complete-guide',
+        snippet: `This complete guide covers everything you need to know about ${keyword}. Learn practical tips and strategies.`
+      },
+      {
+        title: `${keyword} Explained in Simple Terms`,
+        link: 'https://example.com/explained',
+        snippet: `Understanding ${keyword} doesn't have to be complicated. Here's a simplified explanation.`
+      },
+      {
+        title: `How to Master ${keyword} in 2025`,
+        link: 'https://example.com/mastering',
+        snippet: `Learn how to master ${keyword} with our step-by-step guide. Perfect for beginners and experts alike.`
+      }
+    ],
+    relatedSearches: [
+      { query: `best ${keyword} tools` },
+      { query: `${keyword} vs competition` },
+      { query: `how to learn ${keyword}` },
+      { query: `${keyword} for beginners` },
+      { query: `advanced ${keyword} techniques` }
+    ],
+    peopleAlsoAsk: [
+      { question: `What is ${keyword}?`, source: 'https://example.com/what-is' },
+      { question: `Why is ${keyword} important?`, source: 'https://example.com/importance' },
+      { question: `How to get started with ${keyword}?`, source: 'https://example.com/getting-started' },
+      { question: `What are the best practices for ${keyword}?`, source: 'https://example.com/best-practices' }
+    ],
+    featuredSnippets: [
+      {
+        content: `${keyword} is an essential aspect of modern business strategy. It involves analyzing data patterns to predict market trends and consumer behavior.`,
+        source: 'https://example.com/featured'
+      }
+    ]
+  };
 }

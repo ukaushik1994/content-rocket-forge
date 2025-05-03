@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   Clock, 
@@ -18,12 +19,14 @@ import {
   Twitter, 
   Facebook, 
   Linkedin, 
-  Mail 
+  Mail,
+  Loader2
 } from 'lucide-react';
 
 export const PublishStep = () => {
-  const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, contentType, seoScore, selectedSolution } = state;
+  const { state, saveContentAsDraft, publishContent } = useContentBuilder();
+  const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving, isPublishing } = state;
+  const navigate = useNavigate();
   
   const [title, setTitle] = useState(`${mainKeyword} - Complete Guide`);
   const [description, setDescription] = useState(`A comprehensive guide about ${mainKeyword}`);
@@ -31,17 +34,25 @@ export const PublishStep = () => {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [socialShare, setSocialShare] = useState(true);
-  const [publishing, setPublishing] = useState(false);
   
-  const handlePublish = () => {
-    setPublishing(true);
-    
-    // Simulate publishing process
-    setTimeout(() => {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
-      toast.success('Content published successfully!');
-      setPublishing(false);
-    }, 2000);
+  const handleSaveDraft = async () => {
+    const contentId = await saveContentAsDraft();
+    if (contentId) {
+      // Navigate to content library after successful save
+      setTimeout(() => {
+        navigate('/content');
+      }, 1500);
+    }
+  };
+  
+  const handlePublish = async () => {
+    const contentId = await publishContent();
+    if (contentId) {
+      // Navigate to content library after successful publish
+      setTimeout(() => {
+        navigate('/content');
+      }, 1500);
+    }
   };
   
   const handleDownload = (format: 'pdf' | 'docx' | 'html') => {
@@ -254,22 +265,32 @@ export const PublishStep = () => {
           <Button
             variant="outline"
             className="gap-1"
-            onClick={() => toast.info('Content saved as draft')}
+            onClick={handleSaveDraft}
+            disabled={isSaving}
           >
-            <Save className="h-4 w-4" />
-            Save Draft
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Draft
+              </>
+            )}
           </Button>
           
           <Button
             className="gap-1 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple min-w-[150px]"
             onClick={handlePublish}
-            disabled={publishing}
+            disabled={isSaving || isPublishing}
           >
-            {publishing ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+            {isPublishing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Publishing...
-              </div>
+              </>
             ) : (
               <>
                 <Share2 className="h-4 w-4" />

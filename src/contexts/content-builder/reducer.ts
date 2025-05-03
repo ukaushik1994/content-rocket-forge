@@ -62,6 +62,12 @@ export const contentBuilderReducer = (
     case 'SET_IS_ANALYZING':
       return { ...state, isAnalyzing: action.payload };
       
+    case 'SET_IS_SAVING':
+      return { ...state, isSaving: action.payload };
+      
+    case 'SET_IS_PUBLISHING':
+      return { ...state, isPublishing: action.payload };
+      
     case 'SET_CONTENT':
       return { ...state, content: action.payload };
     
