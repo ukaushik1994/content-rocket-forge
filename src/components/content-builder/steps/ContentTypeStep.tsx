@@ -56,13 +56,21 @@ export const ContentTypeStep = () => {
       
       if (data) {
         // Transform the data from jsonb columns to the expected format
-        const formattedSolutions = data.map(solution => ({
+        const formattedSolutions: Solution[] = data.map(solution => ({
           id: solution.id,
           name: solution.name,
-          features: Array.isArray(solution.features) ? solution.features : [],
-          useCases: Array.isArray(solution.use_cases) ? solution.use_cases : [],
-          painPoints: Array.isArray(solution.pain_points) ? solution.pain_points : [],
-          targetAudience: Array.isArray(solution.target_audience) ? solution.target_audience : [],
+          features: Array.isArray(solution.features) 
+            ? solution.features.map(f => String(f)) 
+            : [],
+          useCases: Array.isArray(solution.use_cases) 
+            ? solution.use_cases.map(u => String(u)) 
+            : [],
+          painPoints: Array.isArray(solution.pain_points) 
+            ? solution.pain_points.map(p => String(p)) 
+            : [],
+          targetAudience: Array.isArray(solution.target_audience) 
+            ? solution.target_audience.map(t => String(t)) 
+            : [],
           description: `${solution.name} - Business Solution` // Default description
         }));
         setSolutions(formattedSolutions);

@@ -25,8 +25,11 @@ export interface ContentCluster {
 export interface Solution {
   id: string;
   name: string;
-  description: string;
-  features?: string[];
+  description?: string;
+  features: string[];
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
 }
 
 export interface ContentOutlineSection {
