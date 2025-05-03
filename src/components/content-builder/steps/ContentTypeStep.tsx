@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import {
   Mail, 
   MessageCircle 
 } from 'lucide-react';
-import { ContentType, Solution } from '@/contexts/ContentBuilderContext';
+import { ContentType, Solution } from '@/contexts/content-builder/types';
 
 // Mock solutions until we integrate with backend
 const mockSolutions: Solution[] = [
@@ -53,7 +52,7 @@ export const ContentTypeStep = () => {
     if (contentType && selectedSolution) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
     }
-  }, [contentType, selectedSolution]);
+  }, [contentType, selectedSolution, dispatch]);
   
   const handleSelectContentType = (value: string) => {
     dispatch({ type: 'SET_CONTENT_TYPE', payload: value as ContentType });

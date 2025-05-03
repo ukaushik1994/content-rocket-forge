@@ -41,16 +41,25 @@ export const initialState: ContentBuilderState = {
       completed: false
     }
   ],
+  primaryKeyword: '',
+  secondaryKeywords: [],
+  keywordClusters: {},
+  contentType: null,
+  contentFormat: '',
+  outline: [],
+  serpAnalysisResults: null,
+  serpKeywordsSelected: [],
+  serpQuestionsSelected: [],
+  isAnalyzing: false,
+  content: '',
+  
+  // Additional properties
   mainKeyword: '',
   selectedKeywords: [],
   selectedCluster: null,
-  contentType: null,
-  selectedSolution: null,
   serpData: null,
   serpSelections: [],
-  isAnalyzing: false,
-  outline: [],
-  content: '',
+  selectedSolution: null,
   contentTitle: '',
   seoScore: 0,
   additionalInstructions: ''

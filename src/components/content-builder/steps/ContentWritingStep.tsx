@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { SerpContentGenerator } from '@/components/content/SerpContentGenerator';
 import { Badge } from '@/components/ui/badge';
+import { ContentOutlineSection } from '@/contexts/content-builder/types';
 
 export const ContentWritingStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -98,49 +99,51 @@ export const ContentWritingStep = () => {
       demoContent += `In this comprehensive guide, we'll explore everything you need to know about ${mainKeyword}, from fundamental concepts to advanced strategies.\n\n`;
     }
     
-    outline.forEach(section => {
-      demoContent += `## ${section.title}\n\n`;
-      
-      if (selectedSolution && section.title.includes("Introduction")) {
-        demoContent += `${mainKeyword} has become increasingly important in today's landscape. ${selectedSolution.name} offers a unique approach that addresses the common challenges faced by professionals in this field.\n\n`;
-      } else if (section.title.includes("Challenges") || section.title.includes("Problems")) {
-        demoContent += `When dealing with ${mainKeyword}, many face difficulties such as [challenge 1], [challenge 2], and [challenge 3]. These obstacles can significantly impact your results if not properly addressed.\n\n`;
-      } else if (selectedSolution && (section.title.includes("Solutions") || section.title.includes("Benefits"))) {
-        demoContent += `${selectedSolution.name} provides several key advantages:\n\n`;
-        if (selectedSolution.features && selectedSolution.features.length > 0) {
-          selectedSolution.features.forEach(feature => {
-            demoContent += `- **${feature}**: This feature helps you overcome common challenges by...\n`;
+    if (outline && outline.length > 0) {
+      outline.forEach((section: ContentOutlineSection) => {
+        demoContent += `## ${section.title}\n\n`;
+        
+        if (selectedSolution && section.title.includes("Introduction")) {
+          demoContent += `${mainKeyword} has become increasingly important in today's landscape. ${selectedSolution.name} offers a unique approach that addresses the common challenges faced by professionals in this field.\n\n`;
+        } else if (section.title.includes("Challenges") || section.title.includes("Problems")) {
+          demoContent += `When dealing with ${mainKeyword}, many face difficulties such as [challenge 1], [challenge 2], and [challenge 3]. These obstacles can significantly impact your results if not properly addressed.\n\n`;
+        } else if (selectedSolution && (section.title.includes("Solutions") || section.title.includes("Benefits"))) {
+          demoContent += `${selectedSolution.name} provides several key advantages:\n\n`;
+          if (selectedSolution.features && selectedSolution.features.length > 0) {
+            selectedSolution.features.forEach(feature => {
+              demoContent += `- **${feature}**: This feature helps you overcome common challenges by...\n`;
+            });
+            demoContent += `\n`;
+          } else {
+            demoContent += `- **Feature 1**: Description of how this helps with ${mainKeyword}\n`;
+            demoContent += `- **Feature 2**: Another key benefit for your ${mainKeyword} strategy\n`;
+            demoContent += `- **Feature 3**: How this feature sets ${selectedSolution.name} apart\n\n`;
+          }
+        } else if (section.title.includes("FAQ") || section.title.includes("Questions")) {
+          demoContent += `Here are answers to the most common questions about ${mainKeyword}:\n\n`;
+          demoContent += `### Is ${mainKeyword} right for my business?\n\n`;
+          demoContent += `Absolutely! ${mainKeyword} can benefit businesses of all sizes by improving...\n\n`;
+          demoContent += `### How long does it take to see results with ${mainKeyword}?\n\n`;
+          demoContent += `Most businesses start seeing positive outcomes within [timeframe]...\n\n`;
+        } else if (section.title.includes("Conclusion")) {
+          if (selectedSolution) {
+            demoContent += `In conclusion, ${selectedSolution.name} offers a comprehensive solution for ${mainKeyword} that addresses the key challenges faced by professionals. By implementing this powerful tool, you can expect improved results and greater efficiency in your workflow.\n\n`;
+            demoContent += `Ready to transform your approach to ${mainKeyword}? [Get started with ${selectedSolution.name} today](#) and experience the difference firsthand.\n\n`;
+          } else {
+            demoContent += `In this guide, we've covered the essentials of ${mainKeyword}, from basic concepts to advanced strategies. By applying these principles consistently, you'll be well on your way to mastering ${mainKeyword} and achieving your goals.\n\n`;
+          }
+        } else {
+          demoContent += `This section provides detailed information about ${section.title.toLowerCase()}. In a real implementation, this would be generated by an AI writing service based on your outline and SERP analysis.\n\n`;
+        }
+        
+        if (section.subsections && section.subsections.length > 0) {
+          section.subsections.forEach(subsection => {
+            demoContent += `### ${subsection.title}\n\n`;
+            demoContent += `This is detailed content for the ${subsection.title.toLowerCase()} subsection.\n\n`;
           });
-          demoContent += `\n`;
-        } else {
-          demoContent += `- **Feature 1**: Description of how this helps with ${mainKeyword}\n`;
-          demoContent += `- **Feature 2**: Another key benefit for your ${mainKeyword} strategy\n`;
-          demoContent += `- **Feature 3**: How this feature sets ${selectedSolution.name} apart\n\n`;
         }
-      } else if (section.title.includes("FAQ") || section.title.includes("Questions")) {
-        demoContent += `Here are answers to the most common questions about ${mainKeyword}:\n\n`;
-        demoContent += `### Is ${mainKeyword} right for my business?\n\n`;
-        demoContent += `Absolutely! ${mainKeyword} can benefit businesses of all sizes by improving...\n\n`;
-        demoContent += `### How long does it take to see results with ${mainKeyword}?\n\n`;
-        demoContent += `Most businesses start seeing positive outcomes within [timeframe]...\n\n`;
-      } else if (section.title.includes("Conclusion")) {
-        if (selectedSolution) {
-          demoContent += `In conclusion, ${selectedSolution.name} offers a comprehensive solution for ${mainKeyword} that addresses the key challenges faced by professionals. By implementing this powerful tool, you can expect improved results and greater efficiency in your workflow.\n\n`;
-          demoContent += `Ready to transform your approach to ${mainKeyword}? [Get started with ${selectedSolution.name} today](#) and experience the difference firsthand.\n\n`;
-        } else {
-          demoContent += `In this guide, we've covered the essentials of ${mainKeyword}, from basic concepts to advanced strategies. By applying these principles consistently, you'll be well on your way to mastering ${mainKeyword} and achieving your goals.\n\n`;
-        }
-      } else {
-        demoContent += `This section provides detailed information about ${section.title.toLowerCase()}. In a real implementation, this would be generated by an AI writing service based on your outline and SERP analysis.\n\n`;
-      }
-      
-      if (section.subsections && section.subsections.length > 0) {
-        section.subsections.forEach(subsection => {
-          demoContent += `### ${subsection.title}\n\n`;
-          demoContent += `This is detailed content for the ${subsection.title.toLowerCase()} subsection.\n\n`;
-        });
-      }
-    });
+      });
+    }
     
     return demoContent;
   };
@@ -271,9 +274,9 @@ export const ContentWritingStep = () => {
               <CardContent className="pt-6">
                 <h4 className="text-sm font-medium mb-4">Content Outline</h4>
                 
-                {outline.length > 0 ? (
+                {outline && outline.length > 0 ? (
                   <div className="space-y-4">
-                    {outline.map((section) => (
+                    {outline.map((section: ContentOutlineSection) => (
                       <div key={section.id} className="space-y-2">
                         <div className="font-medium text-sm">{section.title}</div>
                         

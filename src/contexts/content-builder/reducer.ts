@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from './types';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection } from './types';
 
 // Reducer function to handle state updates
 export const contentBuilderReducer = (
@@ -10,6 +10,62 @@ export const contentBuilderReducer = (
     case 'SET_ACTIVE_STEP':
       return { ...state, activeStep: action.payload };
       
+    case 'COMPLETE_STEP':
+      return {
+        ...state,
+        steps: state.steps.map(step =>
+          step.id === action.payload ? { ...step, completed: true } : step
+        ),
+      };
+      
+    // Original action handlers
+    case 'SET_PRIMARY_KEYWORD':
+      return { ...state, primaryKeyword: action.payload };
+      
+    case 'ADD_SECONDARY_KEYWORD':
+      return {
+        ...state,
+        secondaryKeywords: [...state.secondaryKeywords, action.payload],
+      };
+      
+    case 'REMOVE_SECONDARY_KEYWORD':
+      return {
+        ...state,
+        secondaryKeywords: state.secondaryKeywords.filter(k => k !== action.payload),
+      };
+      
+    case 'SET_KEYWORD_CLUSTERS':
+      return { ...state, keywordClusters: action.payload };
+      
+    case 'SET_CONTENT_TYPE':
+      return { ...state, contentType: action.payload };
+      
+    case 'SET_CONTENT_FORMAT':
+      return { ...state, contentFormat: action.payload };
+      
+    case 'SET_OUTLINE_TITLE':
+      return { ...state, contentTitle: action.payload };
+      
+    case 'SET_OUTLINE_SECTIONS':
+      // This needs to be adapted based on how your outline structure is used
+      return { ...state };
+      
+    case 'SET_SERP_ANALYSIS_RESULTS':
+      return { ...state, serpAnalysisResults: action.payload };
+      
+    case 'SET_SERP_KEYWORDS_SELECTED':
+      return { ...state, serpKeywordsSelected: action.payload };
+      
+    case 'SET_SERP_QUESTIONS_SELECTED':
+      return { ...state, serpQuestionsSelected: action.payload };
+      
+    case 'SET_IS_ANALYZING':
+      return { ...state, isAnalyzing: action.payload };
+      
+    case 'SET_CONTENT':
+      return { ...state, content: action.payload };
+    
+    // Additional action handlers
     case 'MARK_STEP_COMPLETED':
       return {
         ...state,
@@ -47,9 +103,6 @@ export const contentBuilderReducer = (
         selectedKeywords: action.payload ? action.payload.keywords : state.selectedKeywords,
       };
       
-    case 'SET_CONTENT_TYPE':
-      return { ...state, contentType: action.payload };
-      
     case 'SELECT_SOLUTION':
       return { ...state, selectedSolution: action.payload };
       
@@ -78,9 +131,6 @@ export const contentBuilderReducer = (
         )
       };
       
-    case 'SET_IS_ANALYZING':
-      return { ...state, isAnalyzing: action.payload };
-      
     case 'SET_OUTLINE':
       return { ...state, outline: action.payload };
       
@@ -106,9 +156,6 @@ export const contentBuilderReducer = (
         outline: state.outline.filter(section => section.id !== action.payload),
       };
       
-    case 'SET_CONTENT':
-      return { ...state, content: action.payload };
-      
     case 'SET_CONTENT_TITLE':
       return { ...state, contentTitle: action.payload };
       
@@ -124,8 +171,10 @@ export const contentBuilderReducer = (
 };
 
 // Helper function to convert SERP data to selectable items
-function createSerpSelectionsFromData(serpData: any) {
-  const newSelections = [];
+function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
+  if (!serpData) return [];
+  
+  const newSelections: SerpSelection[] = [];
   
   // Convert SERP data to selectable items
   if (serpData?.peopleAlsoAsk) {

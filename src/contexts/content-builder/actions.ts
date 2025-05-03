@@ -1,9 +1,9 @@
 
-import { SerpSelection, ContentOutlineSection } from './types';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from './types';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 
-export const createContentBuilderActions = (state: any, dispatch: any) => {
+export const createContentBuilderActions = (state: ContentBuilderState, dispatch: React.Dispatch<ContentBuilderAction>) => {
   // Helper function to analyze keyword
   const analyzeKeyword = async (keyword: string) => {
     if (!keyword) {
@@ -30,6 +30,71 @@ export const createContentBuilderActions = (state: any, dispatch: any) => {
     if (step >= 0 && step < state.steps.length) {
       dispatch({ type: 'SET_ACTIVE_STEP', payload: step });
     }
+  };
+
+  // Helper function to set primary keyword
+  const setPrimaryKeyword = (keyword: string) => {
+    dispatch({ type: 'SET_PRIMARY_KEYWORD', payload: keyword });
+  };
+
+  // Helper function to add secondary keyword
+  const addSecondaryKeyword = (keyword: string) => {
+    dispatch({ type: 'ADD_SECONDARY_KEYWORD', payload: keyword });
+  };
+
+  // Helper function to remove secondary keyword
+  const removeSecondaryKeyword = (keyword: string) => {
+    dispatch({ type: 'REMOVE_SECONDARY_KEYWORD', payload: keyword });
+  };
+
+  // Helper function to set keyword clusters
+  const setKeywordClusters = (clusters: { [key: string]: string[] }) => {
+    dispatch({ type: 'SET_KEYWORD_CLUSTERS', payload: clusters });
+  };
+
+  // Helper function to set content type
+  const setContentType = (contentType: string) => {
+    dispatch({ type: 'SET_CONTENT_TYPE', payload: contentType });
+  };
+
+  // Helper function to set content format
+  const setContentFormat = (format: string) => {
+    dispatch({ type: 'SET_CONTENT_FORMAT', payload: format });
+  };
+
+  // Helper function to set outline title
+  const setOutlineTitle = (title: string) => {
+    dispatch({ type: 'SET_OUTLINE_TITLE', payload: title });
+  };
+
+  // Helper function to set outline sections
+  const setOutlineSections = (sections: { id: string; heading: string; content: string }[]) => {
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: sections });
+  };
+
+  // Helper function to set SERP analysis results
+  const setSerpAnalysisResults = (results: any) => {
+    dispatch({ type: 'SET_SERP_ANALYSIS_RESULTS', payload: results });
+  };
+
+  // Helper function to set selected SERP keywords
+  const setSerpKeywordsSelected = (keywords: SerpSelection[]) => {
+    dispatch({ type: 'SET_SERP_KEYWORDS_SELECTED', payload: keywords });
+  };
+
+  // Helper function to set selected SERP questions
+  const setSerpQuestionsSelected = (questions: SerpSelection[]) => {
+    dispatch({ type: 'SET_SERP_QUESTIONS_SELECTED', payload: questions });
+  };
+
+  // Helper function to set analyzing state
+  const setIsAnalyzing = (isAnalyzing: boolean) => {
+    dispatch({ type: 'SET_IS_ANALYZING', payload: isAnalyzing });
+  };
+
+  // Helper function to set content
+  const setContent = (content: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: content });
   };
 
   // Helper function to add content from SERP
@@ -117,6 +182,19 @@ export const createContentBuilderActions = (state: any, dispatch: any) => {
   return {
     analyzeKeyword,
     navigateToStep,
+    setPrimaryKeyword,
+    addSecondaryKeyword,
+    removeSecondaryKeyword,
+    setKeywordClusters,
+    setContentType,
+    setContentFormat,
+    setOutlineTitle,
+    setOutlineSections,
+    setSerpAnalysisResults,
+    setSerpKeywordsSelected,
+    setSerpQuestionsSelected,
+    setIsAnalyzing,
+    setContent,
     addContentFromSerp,
     generateOutlineFromSelections
   };
