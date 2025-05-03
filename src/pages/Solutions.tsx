@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud, PenSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 
 const Solutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,7 +65,9 @@ const Solutions = () => {
                     </Button>
                   </div>
                   
-                  <SolutionManager />
+                  <ContentBuilderProvider>
+                    <SolutionManager />
+                  </ContentBuilderProvider>
                 </CardContent>
               </Card>
             </TabsContent>
