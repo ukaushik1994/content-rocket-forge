@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const contentTypes: Array<{value: string; label: string; icon: React.ElementType; description: string}> = [
+const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
   { value: 'blog', label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
   { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
   { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
@@ -92,7 +91,7 @@ export const ContentTypeStep = () => {
     }
   };
   
-  const handleSelectContentType = (value: string) => {
+  const handleSelectContentType = (value: ContentType) => {
     dispatch({ type: 'SET_CONTENT_TYPE', payload: value });
   };
   

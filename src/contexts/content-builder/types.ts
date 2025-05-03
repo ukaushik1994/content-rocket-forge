@@ -7,8 +7,19 @@ export interface ContentBuilderStep {
   completed: boolean;
 }
 
+// Solution definition
+export interface Solution {
+  id: string;
+  name: string;
+  description?: string;
+  features?: string[];
+  useCases?: string[];
+  painPoints?: string[];
+  targetAudience?: string[];
+}
+
 // Content type options
-export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'email';
+export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'email' | 'landingPage' | 'productDescription' | 'social';
 
 // Keyword cluster definition
 export interface ContentCluster {
@@ -33,6 +44,11 @@ export interface ContentOutlineSection {
   content?: string;
   notes?: string;
   relatedKeywords?: string[];
+  subsections?: {
+    id: string;
+    title: string;
+    content?: string;
+  }[];
 }
 
 // Main state for content builder
@@ -56,7 +72,7 @@ export interface ContentBuilderState {
   mainKeyword: string;
   selectedKeywords: string[];
   selectedCluster: ContentCluster | null;
-  selectedSolution: any;
+  selectedSolution: Solution | null;
   serpData: any;
   serpSelections: SerpSelection[];
   outline: ContentOutlineSection[];
@@ -89,7 +105,7 @@ export type ContentBuilderAction =
   | { type: 'REMOVE_KEYWORD'; payload: string }
   | { type: 'SET_KEYWORDS'; payload: string[] }
   | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
-  | { type: 'SELECT_SOLUTION'; payload: any }
+  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_SERP_DATA'; payload: any }
   | { type: 'ADD_SERP_SELECTION'; payload: SerpSelection }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
@@ -136,4 +152,5 @@ export interface ContentBuilderContextType {
   // Publishing actions
   publishContent: (platform: string) => Promise<boolean>;
   scheduleContent: (platform: string, date: Date) => Promise<boolean>;
+  saveContentAsDraft: () => Promise<string | null>;
 }

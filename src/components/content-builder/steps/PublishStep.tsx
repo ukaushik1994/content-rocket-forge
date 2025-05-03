@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const PublishStep = () => {
-  const { state, saveContentAsDraft, publishContent } = useContentBuilder();
+  const { state, saveContentAsDraft, publishContent, scheduleContent } = useContentBuilder();
   const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving, isPublishing } = state;
   const navigate = useNavigate();
   
@@ -46,8 +45,16 @@ export const PublishStep = () => {
   };
   
   const handlePublish = async () => {
-    const contentId = await publishContent();
-    if (contentId) {
+    let success = false;
+    
+    if (publishOption === 'schedule' && scheduledDate) {
+      const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime || '00:00'}`);
+      success = await scheduleContent('website', scheduledDateTime);
+    } else {
+      success = await publishContent('website');
+    }
+    
+    if (success) {
       // Navigate to content library after successful publish
       setTimeout(() => {
         navigate('/content');

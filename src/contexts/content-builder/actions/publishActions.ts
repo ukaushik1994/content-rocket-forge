@@ -71,8 +71,40 @@ export const createPublishActions = (
     }
   };
 
+  // Save content as draft
+  const saveContentAsDraft = async (): Promise<string | null> => {
+    if (!state.content) {
+      toast.error("No content to save");
+      return null;
+    }
+
+    dispatch({ type: 'SET_IS_SAVING', payload: true });
+    
+    try {
+      // In a real implementation, this would call an API to save the content
+      console.log(`Saving content as draft...`);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock content ID that would be returned from API
+      const contentId = "draft-" + Date.now();
+      
+      toast.success("Content saved as draft");
+      
+      return contentId;
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast.error("Failed to save draft");
+      return null;
+    } finally {
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
+    }
+  };
+
   return {
     publishContent,
-    scheduleContent
+    scheduleContent,
+    saveContentAsDraft
   };
 };
