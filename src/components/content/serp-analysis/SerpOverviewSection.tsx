@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -23,25 +24,36 @@ export function SerpOverviewSection({
   const handleAddToContent = (section: string) => {
     let contentStrategy = `## Content Strategy for "${mainKeyword}"\n\n`;
 
-    if (serpData.titleAnalysis) {
-      contentStrategy += `### Title Optimization\n`;
-      contentStrategy += `- **Ideal Title Length:** Aim for ${serpData.titleAnalysis.idealTitleLength} characters.\n`;
-      contentStrategy += `- **Keywords in Title:** Include primary and secondary keywords naturally.\n\n`;
+    // Add recommendations if available
+    if (serpData.recommendations && serpData.recommendations.length > 0) {
+      contentStrategy += `### Content Recommendations\n`;
+      contentStrategy += serpData.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n');
+      contentStrategy += `\n\n`;
     }
 
-    if (serpData.metaDescriptionAnalysis) {
-      contentStrategy += `### Meta Description\n`;
-      contentStrategy += `- **Description Length:** Keep it around ${serpData.metaDescriptionAnalysis.idealDescriptionLength} characters.\n`;
-      contentStrategy += `- **Call to Action:** Add a compelling call to action to improve click-through rate.\n\n`;
+    // Add keywords section
+    if (serpData.keywords && serpData.keywords.length > 0) {
+      contentStrategy += `### Target Keywords\n`;
+      contentStrategy += `Primary: ${mainKeyword}\n`;
+      contentStrategy += `Secondary: ${serpData.keywords.slice(0, 5).join(', ')}\n\n`;
     }
 
-    if (serpData.contentOutline) {
-      contentStrategy += `### Content Outline\n`;
-      contentStrategy += `Here's a suggested content outline based on top-ranking pages:\n`;
-      serpData.contentOutline.forEach((outline, index) => {
-        contentStrategy += `${index + 1}. ${outline}\n`;
-      });
-      contentStrategy += `\n`;
+    // Add content structure suggestion
+    contentStrategy += `### Suggested Content Structure\n`;
+    contentStrategy += `- Introduction (with primary keyword)\n`;
+    contentStrategy += `- Main sections covering key aspects\n`;
+    contentStrategy += `- FAQ section addressing common questions\n`;
+    contentStrategy += `- Conclusion with call-to-action\n\n`;
+
+    // Competition insights
+    if (serpData.competitionScore !== undefined) {
+      const competitionLevel = 
+        serpData.competitionScore < 0.3 ? 'Low' : 
+        serpData.competitionScore < 0.7 ? 'Medium' : 'High';
+      
+      contentStrategy += `### Competition Analysis\n`;
+      contentStrategy += `- Competition Level: ${competitionLevel}\n`;
+      contentStrategy += `- To stand out, focus on creating comprehensive, well-structured content with unique insights.\n\n`;
     }
 
     onAddToContent(contentStrategy, section);
