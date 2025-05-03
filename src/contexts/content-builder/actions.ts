@@ -1,4 +1,5 @@
-import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from './types';
+
+import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection, ContentType } from './types';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
