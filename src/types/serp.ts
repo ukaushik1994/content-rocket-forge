@@ -32,4 +32,5 @@ export interface SerpAnalysisResult {
   }>;
   keywords?: string[];
   recommendations?: string[];
+  isMockData?: boolean; // Added this property to track if the data is mocked
 }

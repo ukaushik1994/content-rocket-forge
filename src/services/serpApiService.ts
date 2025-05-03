@@ -60,6 +60,7 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
       // Return mock data if API call fails - don't rethrow the error
       console.log('Using mock SERP data due to API error');
       const mockData = getMockSerpData(keyword);
+      mockData.isMockData = true; // Set flag to identify mock data
       serpResultsCache.set(`serp_${validatedKeyword}`, mockData);
       return mockData;
     }
@@ -67,8 +68,18 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
     if (!response) {
       console.log('No response from SERP API, using mock data');
       const mockData = getMockSerpData(keyword);
+      mockData.isMockData = true; // Set flag to identify mock data
       serpResultsCache.set(`serp_${validatedKeyword}`, mockData);
       return mockData;
+    }
+    
+    // Check if the response indicates it's mock data
+    if (response.isMockData) {
+      // If it's already flagged as mock data, just pass it through
+      const processedData = processSerpResponse(response);
+      processedData.isMockData = true;
+      serpResultsCache.set(cacheKey, processedData);
+      return processedData;
     }
     
     // Process data to ensure it has the expected structure
@@ -84,6 +95,7 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
     // Always return mock data on error to ensure UI doesn't break
     console.log('Using mock SERP data due to error');
     const mockData = getMockSerpData(keyword);
+    mockData.isMockData = true; // Set flag to identify mock data
     
     // Cache the mock result too
     serpResultsCache.set(`serp_${keyword.toLowerCase().trim()}`, mockData);

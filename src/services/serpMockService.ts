@@ -10,6 +10,7 @@ export function getMockSerpData(keyword: string): SerpAnalysisResult {
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
     competitionScore: Math.random(),
     keywordDifficulty: Math.floor(Math.random() * 100),
+    isMockData: true, // Flag to identify this as mock data
     topResults: [
       {
         title: `${keyword} - Complete Guide`,

@@ -49,6 +49,7 @@ async function handleSerpRequest(endpoint: string, params: any) {
     
     if (endpoint === 'search') {
       const mockResponse = getMockSerpData(params.keyword);
+      mockResponse.isMockData = true; // Flag to identify as mock data
       return new Response(
         JSON.stringify(mockResponse),
         { 
@@ -58,13 +59,14 @@ async function handleSerpRequest(endpoint: string, params: any) {
     } else if (endpoint === 'keywords') {
       const mockKeywords = getMockKeywordResults(params.query);
       return new Response(
-        JSON.stringify({ results: mockKeywords }),
+        JSON.stringify({ results: mockKeywords, isMockData: true }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     } else if (endpoint === 'analyze') {
       const mockAnalysis = getMockContentAnalysis(params.content, params.keywords);
+      mockAnalysis.isMockData = true; // Flag to identify as mock data
       return new Response(
         JSON.stringify(mockAnalysis),
         { 
@@ -73,7 +75,7 @@ async function handleSerpRequest(endpoint: string, params: any) {
       );
     } else {
       return new Response(
-        JSON.stringify({ message: "Mock data not available for this endpoint" }),
+        JSON.stringify({ message: "Mock data not available for this endpoint", isMockData: true }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400
@@ -175,6 +177,7 @@ function getMockSerpData(keyword: string) {
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
     competitionScore: Math.random(),
     keywordDifficulty: Math.floor(Math.random() * 100),
+    isMockData: true, // Flag to identify as mock data
     topResults: [
       {
         title: `${keyword} - Complete Guide`,
@@ -245,6 +248,7 @@ function getMockContentAnalysis(content: string, keywords: string[] = []) {
     searchVolume: Math.floor(Math.random() * 5000) + 1000,
     competitionScore: Math.random(),
     keywordDifficulty: Math.floor(Math.random() * 100),
+    isMockData: true, // Flag to identify as mock data
     keywords: keywords || [mainKeyword, `${mainKeyword} strategy`, `${mainKeyword} tips`],
     recommendations: [
       'Include more specific details about the main topic',
