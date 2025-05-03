@@ -50,6 +50,7 @@ export interface ContentBuilderState {
   isAnalyzing: boolean;
   outline: ContentOutlineSection[];
   content: string;
+  contentTitle: string;
   seoScore: number;
   additionalInstructions: string;
 }
@@ -74,6 +75,7 @@ export type ContentBuilderAction =
   | { type: 'UPDATE_OUTLINE_SECTION'; payload: { id: string; section: Partial<ContentOutlineSection> } }
   | { type: 'REMOVE_OUTLINE_SECTION'; payload: string }
   | { type: 'SET_CONTENT'; payload: string }
+  | { type: 'SET_CONTENT_TITLE'; payload: string }
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
 

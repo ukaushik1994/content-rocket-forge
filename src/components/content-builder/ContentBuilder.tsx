@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';

@@ -109,6 +109,9 @@ export const contentBuilderReducer = (
     case 'SET_CONTENT':
       return { ...state, content: action.payload };
       
+    case 'SET_CONTENT_TITLE':
+      return { ...state, contentTitle: action.payload };
+      
     case 'SET_SEO_SCORE':
       return { ...state, seoScore: action.payload };
       
@@ -125,7 +128,7 @@ function createSerpSelectionsFromData(serpData: any) {
   const newSelections = [];
   
   // Convert SERP data to selectable items
-  if (serpData.peopleAlsoAsk) {
+  if (serpData?.peopleAlsoAsk) {
     serpData.peopleAlsoAsk.forEach((item: any) => {
       newSelections.push({
         type: 'question',
@@ -136,7 +139,7 @@ function createSerpSelectionsFromData(serpData: any) {
     });
   }
   
-  if (serpData.relatedSearches) {
+  if (serpData?.relatedSearches) {
     serpData.relatedSearches.forEach((item: any) => {
       newSelections.push({
         type: 'keyword',
@@ -146,7 +149,7 @@ function createSerpSelectionsFromData(serpData: any) {
     });
   }
   
-  if (serpData.featuredSnippets) {
+  if (serpData?.featuredSnippets) {
     serpData.featuredSnippets.forEach((item: any) => {
       newSelections.push({
         type: 'snippet',
@@ -157,7 +160,7 @@ function createSerpSelectionsFromData(serpData: any) {
     });
   }
 
-  if (serpData.topResults) {
+  if (serpData?.topResults) {
     serpData.topResults.forEach((item: any) => {
       if (item.snippet) {
         newSelections.push({

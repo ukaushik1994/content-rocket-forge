@@ -54,6 +54,10 @@ export const createContentBuilderActions = (state: any, dispatch: any) => {
     const keywordItems = selectedItems.filter(item => item.type === 'keyword');
     const snippetItems = selectedItems.filter(item => item.type === 'snippet');
     
+    // Generate a title based on main keyword
+    const title = `Ultimate Guide to ${state.mainKeyword}`;
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
+    
     // Create outline sections based on selected items
     const outlineSections: ContentOutlineSection[] = [
       { id: crypto.randomUUID(), title: `Introduction to ${state.mainKeyword}` }
@@ -78,6 +82,19 @@ export const createContentBuilderActions = (state: any, dispatch: any) => {
           id: crypto.randomUUID(),
           title: item.content
         }))
+      });
+    }
+    
+    // If solution is selected, add solution-specific sections
+    if (state.selectedSolution) {
+      outlineSections.push({
+        id: crypto.randomUUID(),
+        title: `How ${state.selectedSolution.name} Solves Your ${state.mainKeyword} Challenges`
+      });
+      
+      outlineSections.push({
+        id: crypto.randomUUID(),
+        title: `Key Benefits of Using ${state.selectedSolution.name}`
       });
     }
     
