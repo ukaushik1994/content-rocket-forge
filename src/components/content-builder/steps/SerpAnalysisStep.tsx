@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
 export const SerpAnalysisStep = () => {
-  const { state, dispatch, analyzeKeyword, addContentFromSerp, generateOutlineFromSelections } = useContentBuilder();
+  const { state, dispatch, analyzeKeyword, addContentFromSerp, generateOutlineFromSelections, navigateToStep } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [activeTab, setActiveTab] = useState('overview');
   

@@ -1,260 +1,78 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { KeywordCluster } from '@/components/keywords/KeywordCluster';
-import { KeywordResearchTool } from '@/components/keywords/KeywordResearchTool';
-import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
 import { KeywordsList } from '@/components/keywords/KeywordsList';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { KeywordResearchTool } from '@/components/keywords/KeywordResearchTool';
+import { KeywordCluster } from '@/components/keywords/KeywordCluster';
+import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
+import { KeywordTrends } from '@/components/keywords/KeywordTrends';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { 
-  Filter, 
-  DownloadCloud,
-  Plus,
-  RefreshCcw,
-  Search,
-  FileText
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Plus, FileText } from 'lucide-react';
+import { Helmet } from 'react-helmet';
 
 const Keywords = () => {
-  const [activeTab, setActiveTab] = useState('research');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterValue, setFilterValue] = useState('all');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleCreateCluster = () => {
-    toast.info("Creating a new keyword cluster", {
-      description: "This feature will be available soon!"
-    });
-  };
-
-  const handleExport = () => {
-    toast.info("Exporting keyword data", {
-      description: "Your data will be exported shortly."
-    });
-  };
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Keywords refreshed successfully!");
-    }, 1500);
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <Helmet>
+        <title>Keywords Research | SEO Platform</title>
+      </Helmet>
+      
       <Navbar />
       
       <main className="flex-1 container py-8">
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gradient">Keyword Research</h1>
-            <div className="flex gap-2">
-              <Button 
-                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-                onClick={handleCreateCluster}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Keyword Cluster
-              </Button>
-              <Button 
-                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-                as={Link}
-                to="/content-builder"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Create Content
-              </Button>
-            </div>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Keywords</h1>
+            <p className="text-muted-foreground">
+              Research, organize, and analyze your keywords
+            </p>
           </div>
           
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-secondary/30">
-              <TabsTrigger value="research">Research</TabsTrigger>
-              <TabsTrigger value="clusters">My Clusters</TabsTrigger>
-              <TabsTrigger value="keywordsList">Keywords List</TabsTrigger>
-              <TabsTrigger value="competitors">Competitors</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="research" className="mt-6">
-              <Card className="glass-panel">
-                <CardHeader className="pb-2">
-                  <CardTitle>Keyword Research Tool</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <KeywordResearchTool />
-                </CardContent>
-              </Card>
-            </TabsContent>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/content-builder" className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                Create Content
+              </Link>
+            </Button>
             
-            <TabsContent value="clusters" className="mt-6">
-              <Card className="glass-panel">
-                <CardHeader className="pb-2 flex justify-between items-center">
-                  <CardTitle>Keyword Clusters</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-64">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search clusters..."
-                        className="pl-9 bg-glass border-white/10"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                    <Select value={filterValue} onValueChange={setFilterValue}>
-                      <SelectTrigger className="bg-glass border-white/10 w-[160px]">
-                        <SelectValue placeholder="All Clusters" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-glass border-white/10">
-                        <SelectItem value="all">All Clusters</SelectItem>
-                        <SelectItem value="recent">Recently Updated</SelectItem>
-                        <SelectItem value="high-volume">High Volume</SelectItem>
-                        <SelectItem value="low-diff">Low Difficulty</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="icon" onClick={() => toast.info("Advanced filters")}>
-                      <Filter className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={handleExport}>
-                      <DownloadCloud className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8" 
-                      onClick={handleRefresh}
-                      disabled={isLoading}
-                    >
-                      <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <KeywordCluster 
-                      primary="best project management software"
-                      volume="12,000"
-                      difficulty="Medium"
-                      cpc="$1.50"
-                      intent="Commercial"
-                      secondaryKeywords={[
-                        "project management tools",
-                        "task management software",
-                        "team collaboration tools"
-                      ]}
-                      semanticTerms={[
-                        "Gantt charts",
-                        "collaboration features",
-                        "time tracking"
-                      ]}
-                      longTailKeywords={[
-                        "best project management software for remote teams",
-                        "affordable project management tools for startups",
-                        "enterprise project management software comparison"
-                      ]}
-                    />
-                    
-                    <KeywordCluster 
-                      primary="email marketing platforms"
-                      volume="8,500"
-                      difficulty="Medium"
-                      cpc="$2.10"
-                      intent="Commercial"
-                      secondaryKeywords={[
-                        "email marketing services",
-                        "email automation tools",
-                        "newsletter software"
-                      ]}
-                      semanticTerms={[
-                        "drip campaigns",
-                        "A/B testing",
-                        "audience segmentation"
-                      ]}
-                      longTailKeywords={[
-                        "best email marketing platforms for small business",
-                        "affordable email marketing software",
-                        "email marketing platforms with automation"
-                      ]}
-                    />
-                    
-                    <KeywordCluster 
-                      primary="CRM software"
-                      volume="18,000"
-                      difficulty="High"
-                      cpc="$3.25"
-                      intent="Transactional"
-                      secondaryKeywords={[
-                        "customer relationship management",
-                        "sales CRM",
-                        "contact management software"
-                      ]}
-                      semanticTerms={[
-                        "lead scoring",
-                        "pipeline management",
-                        "sales analytics"
-                      ]}
-                      longTailKeywords={[
-                        "best CRM software for small business",
-                        "free CRM tools for startups",
-                        "enterprise CRM comparison"
-                      ]}
-                    />
-                    
-                    <KeywordCluster 
-                      primary="digital marketing strategies"
-                      volume="9,200"
-                      difficulty="Low"
-                      cpc="$1.85"
-                      intent="Informational"
-                      secondaryKeywords={[
-                        "online marketing tactics",
-                        "digital marketing tips",
-                        "marketing strategy guide"
-                      ]}
-                      semanticTerms={[
-                        "SEO",
-                        "content marketing",
-                        "social media"
-                      ]}
-                      longTailKeywords={[
-                        "digital marketing strategies for small business",
-                        "B2B digital marketing strategies",
-                        "effective digital marketing strategies 2025"
-                      ]}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="keywordsList" className="mt-6">
-              <Card className="glass-panel">
-                <CardHeader className="pb-2">
-                  <CardTitle>Keywords List</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <KeywordsList />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="competitors" className="mt-6">
-              <Card className="glass-panel">
-                <CardHeader className="pb-2">
-                  <CardTitle>Competitor Keyword Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <KeywordCompetitors />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            <Button size="sm" className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
+              <Plus className="h-4 w-4 mr-1" /> Add Keywords
+            </Button>
+          </div>
         </div>
+        
+        <Tabs defaultValue="research" className="space-y-4">
+          <TabsList className="w-full border-b pb-0 bg-transparent">
+            <TabsTrigger value="research">Research</TabsTrigger>
+            <TabsTrigger value="list">My Keywords</TabsTrigger>
+            <TabsTrigger value="clusters">Clusters</TabsTrigger>
+            <TabsTrigger value="competitors">Competitors</TabsTrigger>
+            <TabsTrigger value="trends">Trends</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="research" className="space-y-4">
+            <KeywordResearchTool />
+          </TabsContent>
+          
+          <TabsContent value="list" className="space-y-4">
+            <KeywordsList />
+          </TabsContent>
+          
+          <TabsContent value="clusters" className="space-y-4">
+            <KeywordCluster />
+          </TabsContent>
+          
+          <TabsContent value="competitors" className="space-y-4">
+            <KeywordCompetitors />
+          </TabsContent>
+          
+          <TabsContent value="trends" className="space-y-4">
+            <KeywordTrends />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
