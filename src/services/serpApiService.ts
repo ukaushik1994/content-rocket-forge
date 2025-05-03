@@ -5,10 +5,43 @@ import { toast } from 'sonner';
 const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
 const serpCache: Record<string, { data: any; timestamp: number }> = {};
 
+// Define the SerpAnalysisResult type
+export interface SerpAnalysisResult {
+  keyword: string;
+  searchVolume?: number;
+  competitionScore?: number;
+  keywordDifficulty?: number;
+  topResults?: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+  }>;
+  relatedSearches?: Array<{
+    query: string;
+  }>;
+  peopleAlsoAsk?: Array<{
+    question: string;
+    source: string;
+  }>;
+  featuredSnippets?: Array<{
+    content: string;
+    source: string;
+  }>;
+  keywords?: string[];
+  recommendations?: string[];
+}
+
+// Define the SerpSearchParams type
+export interface SerpSearchParams {
+  query: string;
+  country?: string;
+  num?: number;
+}
+
 /**
  * Analyze a keyword using the SERP API with caching
  */
-export async function analyzeKeywordSerp(keyword: string) {
+export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisResult> {
   const cacheKey = `serp_${keyword.toLowerCase().trim()}`;
   
   // Check cache first
@@ -62,8 +95,61 @@ export async function analyzeKeywordSerp(keyword: string) {
   }
 }
 
+// Add searchKeywords function
+export async function searchKeywords(params: SerpSearchParams): Promise<any[]> {
+  try {
+    const response = await callApiProxy({
+      service: 'serp',
+      endpoint: 'keywords',
+      params
+    });
+    
+    return response?.results || [];
+  } catch (error: any) {
+    console.error('Error searching keywords:', error);
+    toast.error(`API Error: ${error.message}`);
+    
+    // Return mock data for development
+    return getMockKeywordResults(params.query);
+  }
+}
+
+// Add analyzeContent function
+export async function analyzeContent(content: string, keywords: string[] = []): Promise<SerpAnalysisResult> {
+  try {
+    const response = await callApiProxy({
+      service: 'serp',
+      endpoint: 'analyze',
+      params: { content, keywords }
+    });
+    
+    if (!response) {
+      throw new Error('No response from content analysis API');
+    }
+    
+    return response;
+  } catch (error: any) {
+    console.error('Error analyzing content:', error);
+    toast.error(`API Error: ${error.message}`);
+    
+    // Return mock analysis data
+    return {
+      keyword: keywords[0] || '',
+      searchVolume: 0,
+      competitionScore: 0.5,
+      keywordDifficulty: 50,
+      keywords: keywords,
+      recommendations: [
+        'Add more specific details about the topic.',
+        'Include more related keywords.',
+        'Structure content with proper headings and subheadings.'
+      ]
+    };
+  }
+}
+
 // Function to process and normalize API response
-function processSerpResponse(response: any) {
+function processSerpResponse(response: any): SerpAnalysisResult {
   // Ensure response has expected structure
   const processedData = {
     keyword: response.keyword || '',
@@ -79,7 +165,7 @@ function processSerpResponse(response: any) {
 }
 
 // Mock SERP data for development/demo purposes
-function getMockSerpData(keyword: string) {
+function getMockSerpData(keyword: string): SerpAnalysisResult {
   return {
     keyword,
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
@@ -121,4 +207,18 @@ function getMockSerpData(keyword: string) {
       }
     ]
   };
+}
+
+// Mock keyword search results for development
+function getMockKeywordResults(query: string): any[] {
+  return [
+    { title: `Best ${query} in 2025`, searchVolume: 3200 },
+    { title: `Top 10 ${query} tools`, searchVolume: 2800 },
+    { title: `How to use ${query} effectively`, searchVolume: 1900 },
+    { title: `${query} for beginners`, searchVolume: 2100 },
+    { title: `${query} advanced techniques`, searchVolume: 1500 },
+    { title: `${query} vs alternatives`, searchVolume: 1700 },
+    { title: `Why ${query} matters`, searchVolume: 1200 },
+    { title: `${query} best practices`, searchVolume: 2400 }
+  ];
 }

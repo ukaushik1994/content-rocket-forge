@@ -20,6 +20,22 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
+  description?: string; // Added missing description property
+}
+
+// Add the missing ContentCluster interface
+export interface ContentCluster {
+  id: string;
+  name: string;
+  keywords: string[];
+}
+
+// Add the missing ContentType interface
+export interface ContentType {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
 }
 
 export interface ContentBuilderState {

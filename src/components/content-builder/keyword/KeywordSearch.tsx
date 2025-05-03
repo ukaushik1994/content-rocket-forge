@@ -27,26 +27,37 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
     setIsSearching(true);
     try {
       const results = await searchKeywords({ query: keyword });
-      // Extract keywords from search results
-      const extractedKeywords = results.map(result => 
-        result.title
-          .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')
-          .trim()
-          .split(' ')
-          .slice(0, 3)
-          .join(' ')
-      );
-      
-      // Filter out duplicates and very short keywords
-      const filteredKeywords = [...new Set(extractedKeywords)]
-        .filter(k => k.length > 3)
-        .slice(0, 10);
-      
-      onKeywordSearch(keyword, filteredKeywords);
-      toast.success('Keyword search complete');
+      // Make sure results is an array before accessing .map
+      if (Array.isArray(results)) {
+        // Extract keywords from search results with explicit type casting
+        const extractedKeywords = results.map(result => {
+          const title = result.title ? String(result.title) : '';
+          return title
+            .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')
+            .trim()
+            .split(' ')
+            .slice(0, 3)
+            .join(' ');
+        });
+        
+        // Filter out duplicates and very short keywords
+        const filteredKeywords = [...new Set(extractedKeywords)]
+          .filter(k => k.length > 3)
+          .slice(0, 10);
+        
+        onKeywordSearch(keyword, filteredKeywords);
+        toast.success('Keyword search complete');
+      } else {
+        // Handle case where results is not an array
+        onKeywordSearch(keyword, []);
+        toast.warning('No keyword suggestions found');
+      }
     } catch (error) {
       console.error('Error searching keywords:', error);
       toast.error('Failed to search keywords');
+      
+      // Still provide the main keyword if search fails
+      onKeywordSearch(keyword, []);
     } finally {
       setIsSearching(false);
     }

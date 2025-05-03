@@ -1,6 +1,6 @@
 
 import { callApiProxy } from './apiProxyService';
-import { searchKeywords, SerpSearchParams, analyzeKeywordSerp } from './serpApiService';
+import { analyzeKeywordSerp, searchKeywords, SerpSearchParams } from './serpApiService';
 
 export interface KeywordSuggestion {
   keyword: string;

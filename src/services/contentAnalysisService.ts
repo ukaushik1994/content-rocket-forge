@@ -1,5 +1,5 @@
 
-import { analyzeContent as analyzeSerpContent, analyzeKeywordSerp } from './serpApiService';
+import { analyzeKeywordSerp, analyzeContent as analyzeSerpContent } from './serpApiService';
 import { callApiProxy } from './apiProxyService';
 import { toast } from 'sonner';
 
