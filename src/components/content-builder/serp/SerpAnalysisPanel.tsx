@@ -1,22 +1,17 @@
 
 import React, { useState } from 'react';
-import { Tab } from '@headlessui/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Search,
   ListFilter, 
-  HelpCircle, 
-  FileText, 
-  List, 
   TrendingUp, 
-  Link,
   Check,
   Plus,
   PlusCircle,
   Sparkles,
-  Info,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  X
 } from 'lucide-react';
 import { 
   Card, 
@@ -33,9 +28,7 @@ import { SerpKeywordList } from './SerpKeywordList';
 import { SerpQuestionsList } from './SerpQuestionsList';
 import { SerpSnippetsList } from './SerpSnippetsList';
 import { SerpCompetitorsList } from './SerpCompetitorsList';
-import { SerpAnalysisHeader } from './SerpAnalysisHeader';
 import { SerpLoadingState } from './SerpLoadingState';
-import { SerpAnalysisOverview } from './SerpAnalysisOverview';
 import { SerpSelection } from '@/contexts/content-builder/types';
 
 import { SerpAnalysisResult } from '@/services/serpApiService';
@@ -394,82 +387,80 @@ export function SerpAnalysisPanel({
           variant="blue"
         />
         
-        <AnimatePresence>
-          {expandedSections.searchMetrics && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
-                >
-                  <div className="text-sm text-muted-foreground mb-1">Search Volume</div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600">
-                      {serpData.searchVolume?.toLocaleString() || 'N/A'}
-                    </div>
-                    <TrendingUp className="h-5 w-5 text-purple-400" />
+        {expandedSections.searchMetrics && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
+              >
+                <div className="text-sm text-muted-foreground mb-1">Search Volume</div>
+                <div className="flex justify-between items-center">
+                  <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600">
+                    {serpData.searchVolume?.toLocaleString() || 'N/A'}
                   </div>
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
-                >
-                  <div className="text-sm text-muted-foreground mb-1">Keyword Difficulty</div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-                      {serpData.keywordDifficulty ? `${serpData.keywordDifficulty}/100` : 'N/A'}
-                    </div>
-                    <div className="w-16">
-                      {serpData.keywordDifficulty && (
-                        <div className="relative w-full h-2 bg-blue-900/30 rounded-full overflow-hidden">
-                          <div 
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
-                            style={{ width: `${serpData.keywordDifficulty}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
+                  <TrendingUp className="h-5 w-5 text-purple-400" />
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
+              >
+                <div className="text-sm text-muted-foreground mb-1">Keyword Difficulty</div>
+                <div className="flex justify-between items-center">
+                  <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
+                    {serpData.keywordDifficulty ? `${serpData.keywordDifficulty}/100` : 'N/A'}
                   </div>
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
-                >
-                  <div className="text-sm text-muted-foreground mb-1">Competition</div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-600">
-                      {serpData.competitionScore ? `${(serpData.competitionScore * 100).toFixed(0)}%` : 'N/A'}
-                    </div>
-                    <div className="w-16">
-                      {serpData.competitionScore && (
-                        <div className="relative w-full h-2 bg-green-900/30 rounded-full overflow-hidden">
-                          <div 
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
-                            style={{ width: `${serpData.competitionScore * 100}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
+                  <div className="w-16">
+                    {serpData.keywordDifficulty && (
+                      <div className="relative w-full h-2 bg-blue-900/30 rounded-full overflow-hidden">
+                        <div 
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
+                          style={{ width: `${serpData.keywordDifficulty}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
+              >
+                <div className="text-sm text-muted-foreground mb-1">Competition</div>
+                <div className="flex justify-between items-center">
+                  <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-600">
+                    {serpData.competitionScore ? `${(serpData.competitionScore * 100).toFixed(0)}%` : 'N/A'}
+                  </div>
+                  <div className="w-16">
+                    {serpData.competitionScore && (
+                      <div className="relative w-full h-2 bg-green-900/30 rounded-full overflow-hidden">
+                        <div 
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
+                          style={{ width: `${serpData.competitionScore * 100}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Content Recommendations */}
@@ -482,165 +473,163 @@ export function SerpAnalysisPanel({
           count={selectedCounts.recommendation + selectedCounts.structure}
         />
         
-        <AnimatePresence>
-          {expandedSections.recommendations && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Content Strategy */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="space-y-4"
-                >
-                  <Card className="border border-purple-500/20 shadow-lg bg-gradient-to-br from-purple-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden group">
-                    <CardHeader className="bg-gradient-to-r from-purple-500/10 to-purple-800/10 pb-3 border-b border-purple-500/10">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-md flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-purple-400" />
-                          <span>Content Strategy</span>
-                        </CardTitle>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 px-2 text-xs hover:bg-purple-500/20"
-                            onClick={() => handleSelectAll('recommendation', getItemsByType('recommendation'))}
-                          >
-                            <Check className="h-3 w-3 mr-1" />
-                            Select All
-                          </Button>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 px-2 text-xs hover:bg-purple-500/20"
-                            onClick={() => handleDeselectAll('recommendation')}
-                          >
-                            Clear
-                          </Button>
-                        </div>
+        {expandedSections.recommendations && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Content Strategy */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-4"
+              >
+                <Card className="border border-purple-500/20 shadow-lg bg-gradient-to-br from-purple-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden group">
+                  <CardHeader className="bg-gradient-to-r from-purple-500/10 to-purple-800/10 pb-3 border-b border-purple-500/10">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-md flex items-center gap-2">
+                        <Search className="h-4 w-4 text-purple-400" />
+                        <span>Content Strategy</span>
+                      </CardTitle>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs hover:bg-purple-500/20"
+                          onClick={() => handleSelectAll('recommendation', getItemsByType('recommendation'))}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Select All
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs hover:bg-purple-500/20"
+                          onClick={() => handleDeselectAll('recommendation')}
+                        >
+                          Clear
+                        </Button>
                       </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-3">
-                        {serpData.recommendations?.map((recommendation, index) => (
-                          <motion.div 
-                            key={index} 
-                            className="flex items-start gap-2"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                          >
-                            <div className="mt-0.5">
-                              <div 
-                                className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
-                                  ${selectedItems.recommendation?.[recommendation] 
-                                    ? 'bg-purple-500 border-purple-500 text-white' 
-                                    : 'border-white/20 hover:border-purple-400'
-                                  }`}
-                                onClick={() => handleToggleSelection('recommendation', recommendation)}
-                              >
-                                {selectedItems.recommendation?.[recommendation] && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                            </div>
-                            <p 
-                              className="text-sm cursor-pointer hover:text-purple-300 transition-colors"
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="space-y-3">
+                      {serpData.recommendations?.map((recommendation, index) => (
+                        <motion.div 
+                          key={index} 
+                          className="flex items-start gap-2"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <div className="mt-0.5">
+                            <div 
+                              className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
+                                ${selectedItems.recommendation?.[recommendation] 
+                                  ? 'bg-purple-500 border-purple-500 text-white' 
+                                  : 'border-white/20 hover:border-purple-400'
+                                }`}
                               onClick={() => handleToggleSelection('recommendation', recommendation)}
                             >
-                              {recommendation}
-                            </p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-                
-                {/* Common Structure */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="space-y-4"
-                >
-                  <Card className="border border-green-500/20 shadow-lg bg-gradient-to-br from-green-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-green-500/10 to-green-800/10 pb-3 border-b border-green-500/10">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-md flex items-center gap-2">
-                          <List className="h-4 w-4 text-green-400" />
-                          <span>Content Structure</span>
-                        </CardTitle>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 px-2 text-xs hover:bg-green-500/20"
-                            onClick={() => handleSelectAll('structure', getItemsByType('structure'))}
-                          >
-                            <Check className="h-3 w-3 mr-1" />
-                            Select All
-                          </Button>
-                          
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 px-2 text-xs hover:bg-green-500/20"
-                            onClick={() => handleDeselectAll('structure')}
-                          >
-                            Clear
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-3">
-                        {getItemsByType('structure').map((item, index) => (
-                          <motion.div 
-                            key={index} 
-                            className="flex items-start gap-2"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                          >
-                            <div className="mt-0.5">
-                              <div 
-                                className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
-                                  ${selectedItems.structure?.[item.content] 
-                                    ? 'bg-green-500 border-green-500 text-white' 
-                                    : 'border-white/20 hover:border-green-400'
-                                  }`}
-                                onClick={() => handleToggleSelection('structure', item.content)}
-                              >
-                                {selectedItems.structure?.[item.content] && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
+                              {selectedItems.recommendation?.[recommendation] && (
+                                <Check className="h-3 w-3" />
+                              )}
                             </div>
-                            <p 
-                              className="text-sm cursor-pointer hover:text-green-300 transition-colors"
+                          </div>
+                          <p 
+                            className="text-sm cursor-pointer hover:text-purple-300 transition-colors"
+                            onClick={() => handleToggleSelection('recommendation', recommendation)}
+                          >
+                            {recommendation}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              
+              {/* Common Structure */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4"
+              >
+                <Card className="border border-green-500/20 shadow-lg bg-gradient-to-br from-green-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden">
+                  <CardHeader className="bg-gradient-to-r from-green-500/10 to-green-800/10 pb-3 border-b border-green-500/10">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-md flex items-center gap-2">
+                        <Search className="h-4 w-4 text-green-400" />
+                        <span>Content Structure</span>
+                      </CardTitle>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs hover:bg-green-500/20"
+                          onClick={() => handleSelectAll('structure', getItemsByType('structure'))}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Select All
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs hover:bg-green-500/20"
+                          onClick={() => handleDeselectAll('structure')}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="space-y-3">
+                      {getItemsByType('structure').map((item, index) => (
+                        <motion.div 
+                          key={index} 
+                          className="flex items-start gap-2"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <div className="mt-0.5">
+                            <div 
+                              className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
+                                ${selectedItems.structure?.[item.content] 
+                                  ? 'bg-green-500 border-green-500 text-white' 
+                                  : 'border-white/20 hover:border-green-400'
+                                }`}
                               onClick={() => handleToggleSelection('structure', item.content)}
                             >
-                              {item.content}
-                            </p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                              {selectedItems.structure?.[item.content] && (
+                                <Check className="h-3 w-3" />
+                              )}
+                            </div>
+                          </div>
+                          <p 
+                            className="text-sm cursor-pointer hover:text-green-300 transition-colors"
+                            onClick={() => handleToggleSelection('structure', item.content)}
+                          >
+                            {item.content}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Content Elements by Tab */}
@@ -744,7 +733,7 @@ export function SerpAnalysisPanel({
         <TabsContent value="questions" className="space-y-4 mt-2">
           <div className="flex justify-between items-center mb-3">
             <div className="text-sm font-medium flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-purple-400" />
+              <Search className="h-4 w-4 text-purple-400" />
               People Also Ask
             </div>
             <div className="flex gap-2">
@@ -776,7 +765,7 @@ export function SerpAnalysisPanel({
         <TabsContent value="snippets" className="space-y-4 mt-2">
           <div className="flex justify-between items-center mb-3">
             <div className="text-sm font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4 text-green-400" />
+              <Search className="h-4 w-4 text-green-400" />
               Featured Snippets
             </div>
             <div className="flex gap-2">
@@ -809,7 +798,7 @@ export function SerpAnalysisPanel({
         <TabsContent value="competitors" className="space-y-4 mt-2">
           <div className="flex justify-between items-center mb-3">
             <div className="text-sm font-medium flex items-center gap-2">
-              <Link className="h-4 w-4 text-amber-400" />
+              <Search className="h-4 w-4 text-amber-400" />
               Top Competitors
             </div>
             <div className="flex gap-2">
@@ -878,7 +867,7 @@ export function SerpAnalysisPanel({
                           onClick={() => handleToggleSelection('recommendation', content)}
                           className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </Badge>
                     ))}
@@ -902,7 +891,7 @@ export function SerpAnalysisPanel({
                           onClick={() => handleToggleSelection('structure', content)}
                           className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </Badge>
                     ))}
@@ -926,7 +915,7 @@ export function SerpAnalysisPanel({
                           onClick={() => handleToggleSelection('keyword', content)}
                           className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </Badge>
                     ))}
@@ -950,7 +939,7 @@ export function SerpAnalysisPanel({
                           onClick={() => handleToggleSelection('question', content)}
                           className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </Badge>
                     ))}
@@ -974,7 +963,7 @@ export function SerpAnalysisPanel({
                           onClick={() => handleToggleSelection('snippet', content)}
                           className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </Badge>
                     ))}
@@ -998,7 +987,7 @@ export function SerpAnalysisPanel({
                           onClick={() => handleToggleSelection('competitor', content)}
                           className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </Badge>
                     ))}
