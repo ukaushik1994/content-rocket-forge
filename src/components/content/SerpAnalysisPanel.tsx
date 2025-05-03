@@ -241,11 +241,12 @@ export function SerpAnalysisPanel({
               </div>
               <div className="w-16">
                 {serpData.keywordDifficulty && (
-                  <Progress 
-                    value={serpData.keywordDifficulty} 
-                    className="h-2"
-                    indicatorClassName="bg-gradient-to-r from-green-500 to-blue-500" 
-                  />
+                  <div className="relative w-full h-2 bg-blue-900/30 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
+                      style={{ width: `${serpData.keywordDifficulty}%` }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -259,11 +260,12 @@ export function SerpAnalysisPanel({
               </div>
               <div className="w-16">
                 {serpData.competitionScore && (
-                  <Progress 
-                    value={serpData.competitionScore * 100} 
-                    className="h-2"
-                    indicatorClassName="bg-gradient-to-r from-green-500 to-blue-500" 
-                  />
+                  <div className="relative w-full h-2 bg-green-900/30 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
+                      style={{ width: `${serpData.competitionScore * 100}%` }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
