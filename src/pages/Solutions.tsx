@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { SolutionUploader } from '@/components/solutions/SolutionUploader';
-import { SolutionManager } from '@/components/solutions/SolutionManager';
+import { SolutionManager } from '@/components/solutions/manager/SolutionManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
