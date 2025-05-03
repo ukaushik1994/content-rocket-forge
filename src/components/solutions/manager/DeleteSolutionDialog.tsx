@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { Solution } from '@/contexts/content-builder/types';
 
 interface DeleteSolutionDialogProps {
@@ -29,9 +29,16 @@ export const DeleteSolutionDialog: React.FC<DeleteSolutionDialogProps> = ({
   isSubmitting
 }) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      // Prevent closing while submitting
+      if (isSubmitting && !newOpen) {
+        return;
+      }
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="glass-panel sm:max-w-md">
         <DialogHeader>
+          <AlertTriangle className="h-6 w-6 text-red-500 mb-2" />
           <DialogTitle className="text-red-500">Delete Solution</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete this solution? This action cannot be undone.
@@ -53,7 +60,11 @@ export const DeleteSolutionDialog: React.FC<DeleteSolutionDialogProps> = ({
         )}
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button 

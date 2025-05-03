@@ -1,16 +1,37 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@/contexts/AuthContext';
+
+// Validation functions
+const validateSolutionData = (data: any): boolean => {
+  if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+    return false;
+  }
+  
+  if (!Array.isArray(data.features) || 
+      !Array.isArray(data.useCases) || 
+      !Array.isArray(data.painPoints) || 
+      !Array.isArray(data.targetAudience)) {
+    return false;
+  }
+  
+  return true;
+};
 
 export function useSolutionsData() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const fetchSolutions = async () => {
+  // Fetch solutions with improved error handling and retry mechanism
+  const fetchSolutions = useCallback(async (retryCount = 0): Promise<Solution[]> => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       const { data, error } = await supabase
         .from('solutions')
@@ -19,32 +40,45 @@ export function useSolutionsData() {
       if (error) throw error;
       
       if (data) {
-        // Transform the data from jsonb columns to the expected format
-        const formattedSolutions: Solution[] = data.map(solution => ({
-          id: solution.id,
-          name: solution.name,
-          features: Array.isArray(solution.features) 
-            ? solution.features.map(f => String(f)) 
-            : [],
-          useCases: Array.isArray(solution.use_cases) 
-            ? solution.use_cases.map(u => String(u)) 
-            : [],
-          painPoints: Array.isArray(solution.pain_points) 
-            ? solution.pain_points.map(p => String(p)) 
-            : [],
-          targetAudience: Array.isArray(solution.target_audience) 
-            ? solution.target_audience.map(a => String(a)) 
-            : [],
-          description: `${solution.name} - Business Solution` // Default description
-        }));
+        // Transform the data from jsonb columns to the expected format with validation
+        const formattedSolutions: Solution[] = data
+          .filter(solution => solution && typeof solution === 'object')
+          .map(solution => ({
+            id: String(solution.id || ''),
+            name: String(solution.name || ''),
+            features: Array.isArray(solution.features) 
+              ? solution.features.filter(f => f).map(f => String(f)) 
+              : [],
+            useCases: Array.isArray(solution.use_cases) 
+              ? solution.use_cases.filter(u => u).map(u => String(u)) 
+              : [],
+            painPoints: Array.isArray(solution.pain_points) 
+              ? solution.pain_points.filter(p => p).map(p => String(p)) 
+              : [],
+            targetAudience: Array.isArray(solution.target_audience) 
+              ? solution.target_audience.filter(a => a).map(a => String(a)) 
+              : [],
+            description: `${solution.name || 'Unnamed Solution'} - Business Solution` // Default description
+          }));
+          
         setSolutions(formattedSolutions);
         return formattedSolutions;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching solutions:", error);
-      toast.error("Failed to load solutions");
+      setError(error.message || 'Failed to load solutions');
+      
+      // Implement retry mechanism for transient errors
+      if (retryCount < 2) {
+        toast.error(`Loading failed. Retrying... (${retryCount + 1}/3)`);
+        setTimeout(() => fetchSolutions(retryCount + 1), 1000 * Math.pow(2, retryCount));
+        return [];
+      }
+      
+      toast.error("Failed to load solutions. Please try again later.");
+      
       // Fallback to some default data if there's an error
-      setSolutions([{
+      const fallbackSolution = {
         id: '1',
         name: 'Demo Solution',
         description: 'Demo solution for content creation',
@@ -52,35 +86,48 @@ export function useSolutionsData() {
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"]
-      }]);
+      };
+      
+      setSolutions([fallbackSolution]);
     } finally {
       setIsLoading(false);
     }
     return [];
-  };
+  }, []);
 
-  const addSolution = async (solutionData: {
+  const addSolution = useCallback(async (solutionData: {
     name: string;
     features: string[];
     useCases: string[];
     painPoints: string[];
     targetAudience: string[];
-  }) => {
+  }): Promise<boolean> => {
+    // Input validation
+    if (!solutionData.name || solutionData.name.trim() === '') {
+      toast.error("Solution name is required");
+      return false;
+    }
+    
     try {
-      // Generate a temporary client-side UUID for the user_id
-      // In a real authentication setup, this would come from the auth context
-      const tempUserId = uuidv4();
+      // Use the authenticated user ID if available
+      if (!user) {
+        toast.error("You must be logged in to add solutions");
+        return false;
+      }
+      
+      // Data sanitization
+      const sanitizedData = {
+        name: solutionData.name.trim(),
+        features: solutionData.features.filter(f => f && f.trim() !== ''),
+        use_cases: solutionData.useCases.filter(u => u && u.trim() !== ''),
+        pain_points: solutionData.painPoints.filter(p => p && p.trim() !== ''),
+        target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== ''),
+        user_id: user.id
+      };
       
       const { data, error } = await supabase
         .from('solutions')
-        .insert({
-          name: solutionData.name,
-          features: solutionData.features,
-          use_cases: solutionData.useCases,
-          pain_points: solutionData.painPoints,
-          target_audience: solutionData.targetAudience,
-          user_id: tempUserId // Use the generated UUID instead of 'system'
-        })
+        .insert(sanitizedData)
         .select();
       
       if (error) throw error;
@@ -107,31 +154,46 @@ export function useSolutionsData() {
         setSolutions(prev => [...prev, newSolution]);
         return true;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding solution:", error);
-      toast.error("Failed to add solution");
+      toast.error(error.message || "Failed to add solution");
     }
     return false;
-  };
+  }, [user]);
 
-  const updateSolution = async (id: string, solutionData: {
+  const updateSolution = useCallback(async (id: string, solutionData: {
     name: string;
     features: string[];
     useCases: string[];
     painPoints: string[];
     targetAudience: string[];
-  }) => {
+  }): Promise<boolean> => {
+    // Input validation
+    if (!solutionData.name || solutionData.name.trim() === '') {
+      toast.error("Solution name is required");
+      return false;
+    }
+    
     try {
+      if (!user) {
+        toast.error("You must be logged in to update solutions");
+        return false;
+      }
+      
+      // Data sanitization
+      const sanitizedData = {
+        name: solutionData.name.trim(),
+        features: solutionData.features.filter(f => f && f.trim() !== ''),
+        use_cases: solutionData.useCases.filter(u => u && u.trim() !== ''),
+        pain_points: solutionData.painPoints.filter(p => p && p.trim() !== ''),
+        target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== '')
+      };
+      
       const { error } = await supabase
         .from('solutions')
-        .update({
-          name: solutionData.name,
-          features: solutionData.features,
-          use_cases: solutionData.useCases,
-          pain_points: solutionData.painPoints,
-          target_audience: solutionData.targetAudience
-        })
-        .eq('id', id);
+        .update(sanitizedData)
+        .eq('id', id)
+        .eq('user_id', user.id);
       
       if (error) throw error;
       
@@ -146,34 +208,44 @@ export function useSolutionsData() {
       } : s));
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating solution:", error);
-      toast.error("Failed to update solution");
+      toast.error(error.message || "Failed to update solution");
       return false;
     }
-  };
+  }, [solutions, user]);
 
-  const deleteSolution = async (id: string) => {
+  const deleteSolution = useCallback(async (id: string): Promise<boolean> => {
     try {
+      if (!user) {
+        toast.error("You must be logged in to delete solutions");
+        return false;
+      }
+      
       const { error } = await supabase
         .from('solutions')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
       
       if (error) throw error;
       
       setSolutions(solutions.filter(s => s.id !== id));
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting solution:", error);
-      toast.error("Failed to delete solution");
+      toast.error(error.message || "Failed to delete solution");
       return false;
     }
-  };
+  }, [solutions, user]);
+
+  // Memoize solutions to prevent unnecessary re-renders
+  const memoizedSolutions = useMemo(() => solutions, [solutions]);
 
   return {
-    solutions,
+    solutions: memoizedSolutions,
     isLoading,
+    error,
     fetchSolutions,
     addSolution,
     updateSolution,

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, AlertCircle, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
@@ -10,6 +10,8 @@ import { SolutionGrid } from './SolutionGrid';
 import { useSolutionsData } from '../hooks/useSolutionsData';
 import { SolutionFormDialog } from './SolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SolutionManagerProps {
   searchTerm: string;
@@ -19,6 +21,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Added for content builder integration
   const navigate = useNavigate();
@@ -27,6 +30,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const { 
     solutions, 
     isLoading, 
+    error,
     fetchSolutions,
     addSolution,
     updateSolution,
@@ -35,7 +39,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   
   useEffect(() => {
     fetchSolutions();
-  }, []);
+  }, [fetchSolutions]);
 
   // Filter solutions based on search term
   const filteredSolutions = solutions.filter(solution => {
@@ -82,12 +86,20 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   
   const confirmDelete = async () => {
     if (selectedSolution) {
-      const success = await deleteSolution(selectedSolution.id);
-      if (success) {
-        toast.success(`${selectedSolution.name} deleted successfully!`);
+      setIsSubmitting(true);
+      try {
+        const success = await deleteSolution(selectedSolution.id);
+        if (success) {
+          toast.success(`${selectedSolution.name} deleted successfully!`);
+        }
+      } catch (error) {
+        console.error("Error during solution deletion:", error);
+        toast.error("An unexpected error occurred while deleting the solution");
+      } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedSolution(null);
+        setIsSubmitting(false);
       }
-      setIsDeleteDialogOpen(false);
-      setSelectedSolution(null);
     }
   };
   
@@ -98,34 +110,52 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     painPoints: string;
     targetAudience: string;
   }) => {
-    const splitStrings = (str: string) => str.split(',').map(s => s.trim()).filter(s => s);
+    // Validate form data
+    if (!formData.name.trim()) {
+      toast.error("Solution name is required");
+      return;
+    }
+    
+    // Helper function to properly split and sanitize string inputs
+    const splitStrings = (str: string) => 
+      str.split(',')
+         .map(s => s.trim())
+         .filter(s => s);
     
     const solutionData = {
-      name: formData.name,
+      name: formData.name.trim(),
       features: splitStrings(formData.features),
       useCases: splitStrings(formData.useCases),
       painPoints: splitStrings(formData.painPoints),
       targetAudience: splitStrings(formData.targetAudience),
     };
     
+    setIsSubmitting(true);
+    
     let success = false;
     
-    if (selectedSolution) {
-      // Update existing
-      success = await updateSolution(selectedSolution.id, solutionData);
-      if (success) {
-        toast.success(`${formData.name} updated successfully!`);
+    try {
+      if (selectedSolution) {
+        // Update existing
+        success = await updateSolution(selectedSolution.id, solutionData);
+        if (success) {
+          toast.success(`${formData.name} updated successfully!`);
+        }
+      } else {
+        // Add new
+        success = await addSolution(solutionData);
+        if (success) {
+          toast.success(`${formData.name} added successfully!`);
+        }
       }
-    } else {
-      // Add new
-      success = await addSolution(solutionData);
+    } catch (error) {
+      console.error("Error saving solution:", error);
+      toast.error("An unexpected error occurred while saving the solution");
+    } finally {
+      setIsSubmitting(false);
       if (success) {
-        toast.success(`${formData.name} added successfully!`);
+        setIsDialogOpen(false);
       }
-    }
-    
-    if (success) {
-      setIsDialogOpen(false);
     }
   };
 
@@ -144,6 +174,28 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error}
+          <div className="mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => fetchSolutions()}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Try Again
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
     );
   }
   
@@ -170,12 +222,35 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         </div>
       )}
       
-      <SolutionGrid 
-        solutions={filteredSolutions}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onUseInContent={handleUseInContent}
-      />
+      {filteredSolutions.length === 0 && !searchTerm && (
+        <Card className="glass-panel">
+          <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+            <div className="rounded-full bg-primary/10 p-4 mb-4">
+              <Plus className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No Solutions Yet</h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              Create your first business solution to start generating content that showcases your products or services.
+            </p>
+            <Button
+              onClick={handleAddNew}
+              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Your First Solution
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {filteredSolutions.length > 0 && (
+        <SolutionGrid 
+          solutions={filteredSolutions}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onUseInContent={handleUseInContent}
+        />
+      )}
       
       {/* Add/Edit Dialog */}
       <SolutionFormDialog
@@ -183,6 +258,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         onOpenChange={setIsDialogOpen}
         onSubmit={handleSubmitForm}
         solution={selectedSolution}
+        isSubmitting={isSubmitting}
       />
       
       {/* Delete Confirmation Dialog */}
@@ -191,7 +267,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         onOpenChange={setIsDeleteDialogOpen}
         onConfirmDelete={confirmDelete}
         solution={selectedSolution}
-        isSubmitting={false}
+        isSubmitting={isSubmitting}
       />
     </>
   );
