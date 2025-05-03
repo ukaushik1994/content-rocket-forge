@@ -398,4 +398,4 @@ export function SerpAnalysisPanel({
       </Card>
     </div>
   );
-}
+};
