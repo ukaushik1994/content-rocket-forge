@@ -12,7 +12,6 @@ import {
 import {
   Home,
   BarChart3,
-  Search,
   FileText,
   Settings,
   User,
@@ -28,7 +27,6 @@ import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: Home },
-  { name: 'Keywords', path: '/keywords', icon: Search },
   { name: 'Content', path: '/content', icon: FileText },
   { name: 'Solutions', path: '/solutions', icon: Rocket },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
