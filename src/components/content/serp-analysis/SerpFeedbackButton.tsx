@@ -5,18 +5,18 @@ import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SerpFeedbackButtonProps extends ButtonProps {
-  type: 'positive' | 'negative';
-  onFeedback?: (type: 'positive' | 'negative') => void;
+  feedbackType: 'positive' | 'negative'; // Renamed from 'type' to 'feedbackType'
+  onFeedback?: (feedbackType: 'positive' | 'negative') => void;
 }
 
 export function SerpFeedbackButton({ 
-  type, 
+  feedbackType, // Updated property name
   onFeedback = () => {},
   ...props 
 }: SerpFeedbackButtonProps) {
   const handleFeedback = () => {
-    onFeedback(type);
-    toast.success(`Thanks for your ${type === 'positive' ? 'positive' : 'negative'} feedback!`);
+    onFeedback(feedbackType);
+    toast.success(`Thanks for your ${feedbackType === 'positive' ? 'positive' : 'negative'} feedback!`);
   };
   
   return (
@@ -24,14 +24,14 @@ export function SerpFeedbackButton({
       variant="outline"
       size="sm"
       className={`h-8 px-3 border-white/10 
-        ${type === 'positive' 
+        ${feedbackType === 'positive' 
           ? 'hover:border-green-500/50 hover:bg-green-500/10' 
           : 'hover:border-red-500/50 hover:bg-red-500/10'
         }`}
       onClick={handleFeedback}
       {...props}
     >
-      {type === 'positive' 
+      {feedbackType === 'positive' 
         ? <ThumbsUp className="h-4 w-4" /> 
         : <ThumbsDown className="h-4 w-4" />
       }
