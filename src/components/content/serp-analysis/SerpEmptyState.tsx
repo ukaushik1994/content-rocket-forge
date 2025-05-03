@@ -4,11 +4,7 @@ import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface SerpEmptyStateProps {
-  onStartAnalysis?: () => void;
-}
-
-export function SerpEmptyState({ onStartAnalysis }: SerpEmptyStateProps) {
+export function SerpEmptyState() {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -20,15 +16,10 @@ export function SerpEmptyState({ onStartAnalysis }: SerpEmptyStateProps) {
       <p className="text-muted-foreground mt-2 mb-6 text-center max-w-md">
         Start the SERP analysis to get insights and recommendations for your content
       </p>
-      {onStartAnalysis && (
-        <Button 
-          onClick={onStartAnalysis} 
-          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Start Analysis
-        </Button>
-      )}
+      <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300">
+        <Search className="h-4 w-4 mr-2" />
+        Start Analysis
+      </Button>
     </motion.div>
   );
 }

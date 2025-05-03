@@ -1,72 +1,66 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Award } from 'lucide-react';
 
-interface SerpFeatureProps {
+export interface SerpFeatureProps {
   title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  onAddToContent?: () => void;
-  variant?: 'default' | 'purple' | 'blue' | 'green';
+  value: string | number | undefined;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'success' | 'warning' | 'info';
+  delay?: number;
 }
 
 export function SerpFeature({ 
   title, 
+  value, 
   icon, 
-  children, 
-  onAddToContent,
-  variant = 'default'
+  variant = 'default',
+  delay = 0 
 }: SerpFeatureProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const getGradient = () => {
+  const getBgColor = () => {
     switch(variant) {
-      case 'purple':
-        return 'hover:bg-gradient-to-br hover:from-purple-500/10 hover:to-purple-700/5';
-      case 'blue':
-        return 'hover:bg-gradient-to-br hover:from-blue-500/10 hover:to-blue-700/5';
-      case 'green':
-        return 'hover:bg-gradient-to-br hover:from-green-500/10 hover:to-green-700/5';
-      default:
-        return 'hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5';
+      case 'success': return 'from-green-500/20 to-green-500/5';
+      case 'warning': return 'from-amber-500/20 to-amber-500/5';
+      case 'info': return 'from-blue-500/20 to-blue-500/5';
+      default: return 'from-purple-500/20 to-purple-500/5';
+    }
+  };
+  
+  const getTextColor = () => {
+    switch(variant) {
+      case 'success': return 'from-green-300 to-green-500';
+      case 'warning': return 'from-amber-300 to-amber-500';
+      case 'info': return 'from-blue-300 to-blue-500';
+      default: return 'from-purple-300 to-purple-500';
+    }
+  };
+  
+  const getIcon = () => {
+    if (icon) return icon;
+    
+    switch(variant) {
+      case 'success': return <Award className="h-4 w-4 text-green-400" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-400" />;
+      case 'info': return <TrendingUp className="h-4 w-4 text-blue-400" />;
+      default: return <TrendingUp className="h-4 w-4 text-purple-400" />;
     }
   };
   
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ delay }}
+      className={`bg-gradient-to-br ${getBgColor()} border border-white/10 rounded-lg p-3 backdrop-blur-md`}
     >
-      <Card 
-        className={`glass-panel transition-all duration-300 border-white/10 ${getGradient()} ${isHovered ? 'shadow-lg' : ''}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <CardHeader className={`flex flex-row items-center justify-between pb-2 ${isHovered ? 'border-b border-white/5' : ''}`}>
-          <CardTitle className="text-md font-medium flex items-center gap-2">
-            {icon}
-            {title}
-          </CardTitle>
-          {onAddToContent && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onAddToContent} 
-              className={`h-8 px-2 text-xs transition-all duration-300 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-            >
-              <PlusCircle className="h-3 w-3 mr-1" />
-              Add to Content
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="transition-all duration-300">
-          {children}
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-2 mb-1">
+        {getIcon()}
+        <h4 className="text-xs text-muted-foreground">{title}</h4>
+      </div>
+      <div className={`text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r ${getTextColor()}`}>
+        {value !== undefined ? value : 'N/A'}
+      </div>
     </motion.div>
   );
 }

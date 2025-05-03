@@ -1,87 +1,82 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
 import { SerpAnalysisResult } from '@/services/serpApiService';
-import { SerpActionButton } from './SerpActionButton';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
-interface SerpOverviewSectionProps {
+export interface SerpOverviewSectionProps {
   serpData: SerpAnalysisResult;
   mainKeyword: string;
   expanded: boolean;
-  onAddToContent: (content: string, type: string) => void;
+  onAddToContent?: (content: string, type: string) => void;
 }
 
-export function SerpOverviewSection({
-  serpData,
-  mainKeyword,
+export function SerpOverviewSection({ 
+  serpData, 
+  mainKeyword, 
   expanded,
-  onAddToContent
+  onAddToContent = () => {}
 }: SerpOverviewSectionProps) {
   if (!expanded) return null;
-
-  const handleAddToContent = (section: string) => {
-    let contentStrategy = `## Content Strategy for "${mainKeyword}"\n\n`;
-
-    // Add recommendations if available
-    if (serpData.recommendations && serpData.recommendations.length > 0) {
-      contentStrategy += `### Content Recommendations\n`;
-      contentStrategy += serpData.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n');
-      contentStrategy += `\n\n`;
-    }
-
-    // Add keywords section
-    if (serpData.keywords && serpData.keywords.length > 0) {
-      contentStrategy += `### Target Keywords\n`;
-      contentStrategy += `Primary: ${mainKeyword}\n`;
-      contentStrategy += `Secondary: ${serpData.keywords.slice(0, 5).join(', ')}\n\n`;
-    }
-
-    // Add content structure suggestion
-    contentStrategy += `### Suggested Content Structure\n`;
-    contentStrategy += `- Introduction (with primary keyword)\n`;
-    contentStrategy += `- Main sections covering key aspects\n`;
-    contentStrategy += `- FAQ section addressing common questions\n`;
-    contentStrategy += `- Conclusion with call-to-action\n\n`;
-
-    // Competition insights
-    if (serpData.competitionScore !== undefined) {
-      const competitionLevel = 
-        serpData.competitionScore < 0.3 ? 'Low' : 
-        serpData.competitionScore < 0.7 ? 'Medium' : 'High';
-      
-      contentStrategy += `### Competition Analysis\n`;
-      contentStrategy += `- Competition Level: ${competitionLevel}\n`;
-      contentStrategy += `- To stand out, focus on creating comprehensive, well-structured content with unique insights.\n\n`;
-    }
-
-    onAddToContent(contentStrategy, section);
-    toast.success('Added content strategy to the content builder!');
-  };
-
+  
+  const recommendations = serpData.recommendations || [];
+  
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4"
     >
-    
-    <div className="flex flex-col gap-3 mt-4">
-      
-      
-      <SerpActionButton
-        onClick={() => handleAddToContent('content-strategy')}
-        variant="outline"
-        icon={<Sparkles className="h-4 w-4 mr-2" />}
-        actionType="add"
-      >
-        Add Content Strategy
-      </SerpActionButton>
-      
-      
-    </div>
-    
+      <Card className="border border-purple-500/20 shadow-lg bg-gradient-to-br from-purple-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {recommendations.map((recommendation, index) => (
+              <motion.div 
+                key={index} 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-start gap-3 group"
+              >
+                <div className="min-w-5 h-5 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue flex items-center justify-center text-white text-xs">
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm">{recommendation}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity h-7 px-2 hover:bg-purple-500/20"
+                  onClick={() => onAddToContent(recommendation, 'recommendation')}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Add</span>
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button 
+          variant="outline"
+          size="sm"
+          className="text-xs border-purple-500/30 hover:bg-purple-500/20"
+          onClick={() => {
+            const allRecommendations = recommendations.join('\n\n');
+            onAddToContent(allRecommendations, 'allRecommendations');
+          }}
+        >
+          <Plus className="h-3 w-3 mr-1" />
+          Add all recommendations
+        </Button>
+      </div>
     </motion.div>
   );
 }

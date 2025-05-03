@@ -1,215 +1,114 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, PlusCircle, Filter } from 'lucide-react';
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import { SerpAnalysisResult } from '@/services/serpApiService';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { SerpAnalysisResult } from '@/services/serpApiService';
-import { SerpActionButton } from './SerpActionButton';
+import { Plus, Search } from 'lucide-react';
 
-interface SerpKeywordsSectionProps {
+export interface SerpKeywordsSectionProps {
   serpData: SerpAnalysisResult;
   expanded: boolean;
-  onAddToContent: (content: string, type: string) => void;
+  onAddToContent?: (content: string, type: string) => void;
 }
 
-export function SerpKeywordsSection({
-  serpData,
+export function SerpKeywordsSection({ 
+  serpData, 
   expanded,
-  onAddToContent
+  onAddToContent = () => {}
 }: SerpKeywordsSectionProps) {
-  const [filter, setFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  if (!expanded) return null;
   
-  if (!expanded || !serpData.relatedSearches || serpData.relatedSearches.length === 0) return null;
+  const keywords = serpData.keywords || [];
+  const relatedSearches = serpData.relatedSearches || [];
   
-  const toggleKeywordSelection = (keyword: string) => {
-    if (selectedKeywords.includes(keyword)) {
-      setSelectedKeywords(selectedKeywords.filter(k => k !== keyword));
-    } else {
-      setSelectedKeywords([...selectedKeywords, keyword]);
-      toast.success(`Added "${keyword}" to selection`);
-    }
-  };
-  
-  const addSelectedKeywords = () => {
-    if (selectedKeywords.length === 0) {
-      toast.error("No keywords selected");
-      return;
-    }
-    
-    const keywordsText = selectedKeywords.join('\n- ');
-    onAddToContent(`## Selected Keywords\n- ${keywordsText}\n\n`, 'selectedKeywords');
-    toast.success(`Added ${selectedKeywords.length} keywords to your content`);
-  };
-  
-  // Ensure relatedSearches have volume property
-  const relatedSearchesWithVolume = serpData.relatedSearches?.map(item => ({
-    ...item,
-    volume: item.volume !== undefined ? item.volume : 0
-  })) || [];
-  
-  // Filter keywords based on volume (if available)
-  const getFilteredKeywords = () => {
-    if (filter === 'all') return relatedSearchesWithVolume;
-    
-    return relatedSearchesWithVolume.filter(item => {
-      const volume = item.volume || 0;
-      
-      if (filter === 'high') return volume > 1000;
-      if (filter === 'medium') return volume >= 500 && volume <= 1000;
-      if (filter === 'low') return volume < 500;
-      
-      return true;
-    });
-  };
-  
-  const filteredKeywords = getFilteredKeywords();
-  
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1 }
-  };
+  if (keywords.length === 0 && relatedSearches.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-8"
+      >
+        <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-muted-foreground">No keywords available for this search term.</p>
+      </motion.div>
+    );
+  }
   
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="space-y-5"
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Filter by volume:</span>
-        </div>
-        
-        <div className="flex rounded-lg bg-white/5 p-1">
-          {(['all', 'high', 'medium', 'low'] as const).map(option => (
-            <Button
-              key={option}
-              variant="ghost"
-              size="sm"
-              className={`text-xs px-2 py-1 h-7 ${filter === option ? 'bg-white/10' : ''}`}
-              onClick={() => setFilter(option)}
-            >
-              {option.charAt(0).toUpperCase() + option.slice(1)}
-            </Button>
-          ))}
-        </div>
-      </div>
-      
-      {/* Selected counter */}
-      {selectedKeywords.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-800/30 to-purple-800/30 p-2 rounded-lg flex justify-between items-center">
-          <span className="text-sm">
-            <span className="text-primary font-medium">{selectedKeywords.length}</span> keywords selected
-          </span>
-          <Button
-            variant="ghost" 
-            size="sm" 
-            className="h-7 text-xs"
-            onClick={() => setSelectedKeywords([])}
-          >
-            Clear
-          </Button>
-        </div>
-      )}
-      
-      {/* Keywords */}
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="flex flex-wrap gap-2 mb-4"
-      >
-        <AnimatePresence mode="popLayout">
-          {filteredKeywords.map((item, index) => (
-            <motion.div
-              layout
-              key={item.query}
-              variants={itemVariants}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ 
-                type: "spring",
-                stiffness: 500, 
-                damping: 30
-              }}
-            >
-              <Badge 
-                className={`
-                  cursor-pointer transition-all duration-300 px-3 py-1.5
-                  ${selectedKeywords.includes(item.query)
-                    ? 'bg-blue-500/50 hover:bg-blue-500/40 text-white border-blue-400/50'
-                    : 'bg-gradient-to-r from-blue-800/40 to-purple-800/40 border border-white/10 hover:from-blue-800/60 hover:to-purple-800/60'
-                  }
-                `}
-                onClick={() => toggleKeywordSelection(item.query)}
-              >
-                <div className="flex items-center gap-2">
-                  {item.query}
-                  {/* Use the guaranteed volume property */}
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    selectedKeywords.includes(item.query) 
-                      ? 'bg-white/20' 
-                      : 'bg-white/10'
-                  }`}>
-                    {item.volume}
-                  </span>
+      <Card className="border border-blue-500/20 shadow-lg bg-gradient-to-br from-blue-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden">
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            {/* Main keywords */}
+            {keywords.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Primary Keywords
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.map((keyword, index) => (
+                    <Badge 
+                      key={index}
+                      variant="outline" 
+                      className="border-blue-500/30 bg-blue-900/10 hover:bg-blue-900/20 cursor-pointer group flex items-center gap-1"
+                      onClick={() => onAddToContent(keyword, 'keyword')}
+                    >
+                      {keyword}
+                      <Plus className="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100" />
+                    </Badge>
+                  ))}
                 </div>
-              </Badge>
-            </motion.div>
-          ))}
-          
-          {filteredKeywords.length === 0 && (
-            <div className="w-full py-4 text-center text-muted-foreground">
-              No keywords match the current filter
-            </div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+              </div>
+            )}
+            
+            {/* Related searches */}
+            {relatedSearches.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  Related Searches
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {relatedSearches.map((search, index) => (
+                    <Badge 
+                      key={index}
+                      variant="outline" 
+                      className="border-purple-500/30 bg-purple-900/10 hover:bg-purple-900/20 cursor-pointer group flex items-center gap-1"
+                      onClick={() => onAddToContent(search.query, 'relatedSearch')}
+                    >
+                      {search.query}
+                      {search.volume && <span className="text-xs opacity-70">({search.volume})</span>}
+                      <Plus className="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100" />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       
-      <div className="flex flex-col gap-2">
-        <SerpActionButton
-          onClick={addSelectedKeywords}
-          className={`${selectedKeywords.length === 0 ? 'opacity-50' : ''}`}
+      <div className="flex justify-end mt-2">
+        <Button 
           variant="outline"
-          icon={<PlusCircle className="h-4 w-4 mr-2" />}
-          disabled={selectedKeywords.length === 0}
-          actionType="add"
-        >
-          Add {selectedKeywords.length} Selected Keywords
-        </SerpActionButton>
-        
-        <SerpActionButton
-          variant="outline"
+          size="sm"
+          className="text-xs border-blue-500/30 hover:bg-blue-500/20"
           onClick={() => {
-            const relatedSearchesText = relatedSearchesWithVolume.map(item => 
-              `- ${item.query}${item.volume ? ` (${item.volume} searches/month)` : ''}`
-            ).join('\n') || '';
-            onAddToContent(`## Related Searches\n${relatedSearchesText}\n\n`, 'relatedSearches');
-            toast.success('Added all related searches');
+            const allKeywords = [...keywords, ...relatedSearches.map(s => s.query)].join(', ');
+            onAddToContent(allKeywords, 'allKeywords');
           }}
-          className="mt-2"
-          icon={<Search className="h-4 w-4 mr-2" />}
-          actionType="add"
         >
-          Add All Related Searches
-        </SerpActionButton>
+          <Plus className="h-3 w-3 mr-1" />
+          Add all keywords
+        </Button>
       </div>
     </motion.div>
   );

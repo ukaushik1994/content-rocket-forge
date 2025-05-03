@@ -1,144 +1,91 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { SerpFeedbackButton } from './SerpFeedbackButton';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Check, Plus } from 'lucide-react';
 
-interface SerpInteractiveCardProps {
+export interface SerpInteractiveCardProps {
   title: string;
-  content: string;
-  type: string;
-  badge?: string;
-  onAdd: () => void;
-  variant?: 'purple' | 'blue' | 'green' | 'amber';
+  icon: React.ReactNode;
+  variant?: string;
+  children: React.ReactNode;
+  onSelectAll?: () => void;
+  onClearAll?: () => void;
 }
 
 export function SerpInteractiveCard({
   title,
-  content,
-  type,
-  badge,
-  onAdd,
-  variant = 'blue'
+  icon,
+  variant = 'purple',
+  children,
+  onSelectAll,
+  onClearAll
 }: SerpInteractiveCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const getGradient = () => {
+  const getBgColor = () => {
     switch(variant) {
-      case 'purple':
-        return 'from-purple-600/30 to-purple-900/20';
-      case 'blue':
-        return 'from-blue-600/30 to-blue-900/20';
-      case 'green':
-        return 'from-green-600/30 to-green-900/20';
-      case 'amber':
-        return 'from-amber-600/30 to-amber-900/20';
-      default:
-        return 'from-blue-600/30 to-blue-900/20';
+      case 'blue': return 'from-blue-900/20 via-black/20 to-black/30 border-blue-500/20';
+      case 'green': return 'from-green-900/20 via-black/20 to-black/30 border-green-500/20';
+      case 'amber': return 'from-amber-900/20 via-black/20 to-black/30 border-amber-500/20';
+      default: return 'from-purple-900/20 via-black/20 to-black/30 border-purple-500/20';
     }
   };
   
-  const getBorderColor = () => {
+  const getHeaderColor = () => {
     switch(variant) {
-      case 'purple':
-        return 'group-hover:border-purple-500/50';
-      case 'blue':
-        return 'group-hover:border-blue-500/50';
-      case 'green':
-        return 'group-hover:border-green-500/50';
-      case 'amber':
-        return 'group-hover:border-amber-500/50';
-      default:
-        return 'group-hover:border-blue-500/50';
+      case 'blue': return 'from-blue-500/10 to-blue-800/10 border-blue-500/10';
+      case 'green': return 'from-green-500/10 to-green-800/10 border-green-500/10';
+      case 'amber': return 'from-amber-500/10 to-amber-800/10 border-amber-500/10';
+      default: return 'from-purple-500/10 to-purple-800/10 border-purple-500/10';
     }
   };
   
-  const getTextColor = () => {
+  const getButtonHoverColor = () => {
     switch(variant) {
-      case 'purple':
-        return 'text-purple-300';
-      case 'blue':
-        return 'text-blue-300';
-      case 'green':
-        return 'text-green-300';
-      case 'amber':
-        return 'text-amber-300';
-      default:
-        return 'text-blue-300';
+      case 'blue': return 'hover:bg-blue-500/20';
+      case 'green': return 'hover:bg-green-500/20';
+      case 'amber': return 'hover:bg-amber-500/20';
+      default: return 'hover:bg-purple-500/20';
     }
   };
   
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      onClick={onAdd}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`group cursor-pointer rounded-xl p-4 backdrop-blur-md bg-gradient-to-br ${getGradient()} 
-        border border-white/10 ${getBorderColor()} transition-all duration-300 hover:shadow-lg relative overflow-hidden`}
-    >
-      {/* Particle Sparks Effect on Hover */}
-      {isHovered && (
-        <div className="absolute inset-0 pointer-events-none">
-          <motion.div 
-            className="absolute h-1 w-1 rounded-full bg-white"
-            initial={{ x: '50%', y: '100%', opacity: 0.7 }}
-            animate={{ 
-              x: [null, '70%', '30%', '50%'], 
-              y: [null, '30%', '10%', '0%'], 
-              opacity: [null, 0.8, 0.4, 0] 
-            }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-          />
-          <motion.div 
-            className="absolute h-1 w-1 rounded-full bg-white"
-            initial={{ x: '30%', y: '100%', opacity: 0.7 }}
-            animate={{ 
-              x: [null, '10%', '50%', '30%'], 
-              y: [null, '40%', '20%', '0%'], 
-              opacity: [null, 0.8, 0.4, 0] 
-            }}
-            transition={{ duration: 1.8, ease: "easeOut" }}
-          />
-          <motion.div 
-            className="absolute h-1 w-1 rounded-full bg-white"
-            initial={{ x: '70%', y: '100%', opacity: 0.7 }}
-            animate={{ 
-              x: [null, '90%', '60%', '70%'], 
-              y: [null, '50%', '30%', '0%'], 
-              opacity: [null, 0.8, 0.4, 0] 
-            }}
-            transition={{ duration: 2, ease: "easeOut" }}
-          />
+    <Card className={`border shadow-lg bg-gradient-to-br ${getBgColor()} backdrop-blur-md overflow-hidden group`}>
+      <CardHeader className={`bg-gradient-to-r ${getHeaderColor()} pb-3 border-b`}>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-md flex items-center gap-2">
+            {icon}
+            <span>{title}</span>
+          </CardTitle>
+          <div className="flex gap-2">
+            {onSelectAll && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`h-7 px-2 text-xs ${getButtonHoverColor()}`}
+                onClick={onSelectAll}
+              >
+                <Check className="h-3 w-3 mr-1" />
+                Select All
+              </Button>
+            )}
+            
+            {onClearAll && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`h-7 px-2 text-xs ${getButtonHoverColor()}`}
+                onClick={onClearAll}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
-      )}
-      
-      {/* Card Content */}
-      <div className="flex justify-between">
-        <h4 className={`font-medium mb-2 ${getTextColor()}`}>{title}</h4>
-        {badge && (
-          <Badge variant="outline" className="bg-white/10 border-0">
-            {badge}
-          </Badge>
-        )}
-      </div>
-      
-      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{content}</p>
-      
-      <div className="flex items-center justify-between mt-2">
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <Badge 
-            variant="outline"
-            className="border-0 bg-white/10 text-xs"
-          >
-            Click to add
-          </Badge>
-        </div>
-        <SerpFeedbackButton 
-          itemType={type}
-          itemContent={content}
-        />
-      </div>
-    </motion.div>
+      </CardHeader>
+      <CardContent className="pt-4">
+        {children}
+      </CardContent>
+    </Card>
   );
 }
