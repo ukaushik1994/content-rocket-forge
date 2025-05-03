@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -6,13 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { RocketIcon, Search, BarChart3, Fingerprint, TrendingUp, UserRoundPlus, Sparkles, FileText, MessageCircle, FileUp, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const navigate = useNavigate();
-  return <div className="min-h-screen flex flex-col bg-background">
+  const { user } = useAuth();
+  
+  return <div className="min-h-screen flex flex-col bg-background bg-slate-950">
       <Navbar />
       
-      <main className="flex-1 container py-8 bg-slate-950">
+      <main className="flex-1 container py-8">
         <div className="space-y-8">
           {/* Hero section */}
           <div className="relative overflow-hidden rounded-xl p-8 glass-panel shadow-neon">
@@ -78,7 +83,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Discover high-value keywords and group them into strategic clusters.
                 </p>
-                <Button variant="outline" className="w-full justify-between group" onClick={() => navigate('/keywords')}>
+                <Button variant="outline" className="w-full justify-between group" onClick={() => navigate('/content-builder')}>
                   <span>Start Research</span>
                   <Search className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -199,4 +204,5 @@ const Index = () => {
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>;
 };
+
 export default Index;

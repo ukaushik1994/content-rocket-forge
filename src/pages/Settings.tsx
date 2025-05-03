@@ -1,84 +1,134 @@
 
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { APISettings } from '@/components/settings/APISettings';
-import { ProfileSettings } from '@/components/settings/ProfileSettings';
-import { NotificationSettings } from '@/components/settings/NotificationSettings';
-import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
-import { ExportSettings } from '@/components/settings/ExportSettings';
-import { BillingSettings } from '@/components/settings/BillingSettings';
-import { AdvancedSettings } from '@/components/settings/AdvancedSettings';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { SettingsLayout } from '@/components/layout/SettingsLayout';
-import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProfileSettings } from '@/components/settings';
+import { APISettings } from '@/components/settings';
+import { NotificationSettings } from '@/components/settings';
+import { AdvancedSettings } from '@/components/settings';
+import { BillingSettings } from '@/components/settings';
+import { ExportSettings } from '@/components/settings';
+import { AppearanceSettings } from '@/components/settings';
+import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 
-const Settings = () => {
+export default function Settings() {
+  const { loading } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
-  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 container py-8 flex items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-t-2 border-primary"></div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <motion.div 
-      className="min-h-screen flex flex-col bg-background"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-    >
+    <div className="min-h-screen flex flex-col bg-background">
+      <Helmet>
+        <title>Settings | ContentRocketForge</title>
+      </Helmet>
+      
       <Navbar />
       
-      <motion.main 
-        className="flex-1 container py-8"
-        initial={{ y: 20 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <div className="space-y-6">
-          <motion.div 
-            className="flex items-center justify-between"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <h1 className="text-3xl font-bold text-gradient">Settings</h1>
-          </motion.div>
+      <main className="flex-1 container py-8">
+        <div className="space-y-0.5 mb-6">
+          <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences.
+          </p>
+        </div>
+
+        <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+          <aside className="-mx-4 lg:w-1/5">
+            <Card>
+              <TabsList className="flex flex-col h-full w-full bg-transparent space-y-1 p-2">
+                <TabsTrigger
+                  value="profile"
+                  className={`justify-start ${activeTab === "profile" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("profile")}
+                >
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger
+                  value="api"
+                  className={`justify-start ${activeTab === "api" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("api")}
+                >
+                  API Settings
+                </TabsTrigger>
+                <TabsTrigger
+                  value="notifications"
+                  className={`justify-start ${activeTab === "notifications" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("notifications")}
+                >
+                  Notifications
+                </TabsTrigger>
+                <TabsTrigger
+                  value="appearance"
+                  className={`justify-start ${activeTab === "appearance" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("appearance")}
+                >
+                  Appearance
+                </TabsTrigger>
+                <TabsTrigger
+                  value="billing"
+                  className={`justify-start ${activeTab === "billing" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("billing")}
+                >
+                  Billing
+                </TabsTrigger>
+                <TabsTrigger
+                  value="export"
+                  className={`justify-start ${activeTab === "export" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("export")}
+                >
+                  Export
+                </TabsTrigger>
+                <TabsTrigger
+                  value="advanced"
+                  className={`justify-start ${activeTab === "advanced" ? "bg-muted" : ""}`}
+                  onClick={() => setActiveTab("advanced")}
+                >
+                  Advanced
+                </TabsTrigger>
+              </TabsList>
+            </Card>
+          </aside>
           
-          <SettingsLayout activeTab={activeTab} onTabChange={handleTabChange}>
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsContent value="profile" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="flex-1 lg:max-w-3xl">
+            <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
+              <TabsContent value="profile" className="space-y-6">
                 <ProfileSettings />
               </TabsContent>
-              
-              <TabsContent value="api" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent value="api" className="space-y-6">
                 <APISettings />
               </TabsContent>
-              
-              <TabsContent value="notifications" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent value="notifications" className="space-y-6">
                 <NotificationSettings />
               </TabsContent>
-              
-              <TabsContent value="appearance" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent value="appearance" className="space-y-6">
                 <AppearanceSettings />
               </TabsContent>
-              
-              <TabsContent value="export" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <ExportSettings />
-              </TabsContent>
-              
-              <TabsContent value="billing" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent value="billing" className="space-y-6">
                 <BillingSettings />
               </TabsContent>
-              
-              <TabsContent value="advanced" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <TabsContent value="export" className="space-y-6">
+                <ExportSettings />
+              </TabsContent>
+              <TabsContent value="advanced" className="space-y-6">
                 <AdvancedSettings />
               </TabsContent>
             </Tabs>
-          </SettingsLayout>
+          </div>
         </div>
-      </motion.main>
-    </motion.div>
+      </main>
+    </div>
   );
-};
-
-export default Settings;
+}

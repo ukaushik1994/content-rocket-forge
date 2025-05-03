@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,68 +14,116 @@ type AuthContextType = {
   updateProfile: (data: { firstName?: string; lastName?: string; avatarUrl?: string }) => Promise<void>;
 };
 
-// Create a fixed default user and session that will always be provided
-// Using a proper UUID format for the user ID
-const defaultUser: User = {
-  id: '00000000-0000-0000-0000-000000000000',
-  app_metadata: {},
-  user_metadata: {
-    first_name: 'Default',
-    last_name: 'User',
-    avatar_url: null
-  },
-  aud: 'authenticated',
-  created_at: new Date().toISOString(),
-  role: 'authenticated',
-  email: 'default@example.com'
-};
-
-const defaultSession: Session = {
-  access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA',
-  refresh_token: 'default-refresh-token',
-  expires_in: 3600,
-  expires_at: new Date().getTime() + 3600000,
-  token_type: 'bearer',
-  user: defaultUser
-};
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // Simply provide the default values - no state needed as we're removing authentication
-  const loading = false;
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Set the session in Supabase client to ensure all API calls use the token
-  supabase.auth.setSession({
-    access_token: defaultSession.access_token,
-    refresh_token: defaultSession.refresh_token
-  });
+  useEffect(() => {
+    // First set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+      }
+    );
 
-  const signIn = async () => {
-    toast.success('No authentication required!');
-    return Promise.resolve();
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   };
 
-  const signUp = async () => {
-    toast.success('No authentication required!');
-    return Promise.resolve();
+  const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
+    try {
+      // Include first_name and last_name in user metadata
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Signup successful! Please check your email for verification.');
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   };
 
   const signOut = async () => {
-    toast.success('No authentication required!');
-    return Promise.resolve();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(`Sign out failed: ${error.message}`);
+    }
   };
 
-  const updateProfile = async () => {
-    toast.success('Profile updated!');
-    return Promise.resolve();
+  const updateProfile = async (data: { firstName?: string; lastName?: string; avatarUrl?: string }) => {
+    if (!user) {
+      throw new Error('User not logged in');
+    }
+
+    try {
+      // First update the user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+          avatar_url: data.avatarUrl,
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      // Then update the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          avatar_url: data.avatarUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(`Profile update failed: ${error.message}`);
+      throw error;
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user: defaultUser,
-        session: defaultSession,
+        user,
+        session,
         loading,
         signIn,
         signUp,
