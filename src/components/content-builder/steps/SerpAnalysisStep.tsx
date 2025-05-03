@@ -40,9 +40,18 @@ export const SerpAnalysisStep = () => {
   };
 
   const handleToggleSelection = (type: string, content: string) => {
+    // Find the item in serpSelections to get its current selected state
+    const item = serpSelections.find(item => item.type === type && item.content === content);
+    
+    // Fix: Include the selected property in the payload, toggling its current value
     dispatch({ 
       type: 'TOGGLE_SERP_SELECTION', 
-      payload: { type, content } 
+      payload: { 
+        type, 
+        content,
+        selected: item ? !item.selected : true,  // Toggle the current value or default to true if not found
+        source: item?.source // Preserve the source if it exists
+      } 
     });
   };
 
@@ -83,8 +92,8 @@ export const SerpAnalysisStep = () => {
       />
       
       {isAnalyzing || !serpData ? (
+        // Fix: Removing the isLoading prop and just passing isAnalyzing directly to SerpLoadingState
         <SerpLoadingState 
-          isLoading={isAnalyzing} 
           navigateToStep={navigateToStep} 
         />
       ) : (
