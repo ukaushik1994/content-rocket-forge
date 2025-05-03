@@ -6,8 +6,8 @@ export const initialState: ContentBuilderState = {
   steps: [
     {
       id: 0,
-      name: 'Keywords',
-      description: 'Select your target keywords to optimize your content.',
+      name: 'SERP Analysis',
+      description: 'Research keywords and analyze search results to optimize your content.',
       completed: false
     },
     {
@@ -18,30 +18,24 @@ export const initialState: ContentBuilderState = {
     },
     {
       id: 2,
-      name: 'SERP Analysis',
-      description: 'Analyze search results to optimize your content strategy.',
-      completed: false
-    },
-    {
-      id: 3,
       name: 'Outline',
       description: 'Create a structured outline for your content.',
       completed: false
     },
     {
-      id: 4,
+      id: 3,
       name: 'Content',
       description: 'Write your content with AI assistance.',
       completed: false
     },
     {
-      id: 5,
+      id: 4,
       name: 'Optimize',
       description: 'Optimize your content for search engines.',
       completed: false
     },
     {
-      id: 6,
+      id: 5,
       name: 'Publish',
       description: 'Prepare your content for publication.',
       completed: false

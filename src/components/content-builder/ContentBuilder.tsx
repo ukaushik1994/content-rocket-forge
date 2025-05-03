@@ -9,7 +9,6 @@ import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 // Import step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
-import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizationStep } from './steps/OptimizationStep';
@@ -28,20 +27,20 @@ export const ContentBuilder = () => {
   
   // Render the current step component
   const renderStepContent = () => {
-    switch (activeStep) {
+    const stepIndex = steps[activeStep].id;
+    
+    switch (stepIndex) {
       case 0:
         return <KeywordSelectionStep />;
       case 1:
         return <ContentTypeStep />;
       case 2:
-        return <SerpAnalysisStep />;
-      case 3:
         return <OutlineStep />;
-      case 4:
+      case 3:
         return <ContentWritingStep />;
-      case 5:
+      case 4:
         return <OptimizationStep />;
-      case 6:
+      case 5:
         return <PublishStep />;
       default:
         return <KeywordSelectionStep />;
