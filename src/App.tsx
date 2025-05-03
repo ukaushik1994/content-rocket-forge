@@ -14,6 +14,8 @@ import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 import { ContentProvider } from "./contexts/ContentContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { FeedbackProvider } from "./contexts/FeedbackContext";
+import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
 
 const queryClient = new QueryClient();
 
@@ -22,21 +24,24 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <ContentProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/keywords" element={<Keywords />} />
-              <Route path="/content" element={<Content />} />
-              <Route path="/content-builder" element={<ContentBuilder />} />
-              <Route path="/solutions" element={<Solutions />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/analytics" element={<Analytics />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <FeedbackProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/keywords" element={<Keywords />} />
+                <Route path="/content" element={<Content />} />
+                <Route path="/content-builder" element={<ContentBuilder />} />
+                <Route path="/solutions" element={<Solutions />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/analytics" element={<Analytics />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <FloatingFeedbackButton />
+            </BrowserRouter>
+          </FeedbackProvider>
         </ContentProvider>
       </AuthProvider>
     </TooltipProvider>

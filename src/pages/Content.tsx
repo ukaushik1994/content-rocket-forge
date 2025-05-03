@@ -8,6 +8,7 @@ import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentRepository } from '@/components/content/ContentRepository';
 import { PenSquare, FolderOpen } from 'lucide-react';
+import { FeedbackAlert } from '@/components/feedback/FeedbackAlert';
 
 // Main ContentPage component
 const ContentPage: React.FC = () => {
@@ -35,6 +36,8 @@ const ContentPage: React.FC = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">Content Manager</h1>
           </div>
+          
+          <FeedbackAlert className="mb-4" />
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex justify-between items-center">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,9 +20,11 @@ import {
   X,
   PanelRight,
   Rocket,
+  MessageSquarePlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: Home },
@@ -93,6 +94,7 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <FeedbackButton className="hidden md:flex" />
           <Button
             variant="ghost"
             size="icon"
@@ -152,6 +154,10 @@ const Navbar = () => {
                   </Link>
                 );
               })}
+              
+              <div className="pt-2">
+                <FeedbackButton className="w-full justify-center" />
+              </div>
             </nav>
           </div>
         </div>
