@@ -21,17 +21,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
 import { Json } from '@/integrations/supabase/types';
 
-// Solution type
-interface Solution {
-  id: string;
-  name: string;
-  features: string[];
-  useCases: string[];
-  painPoints: string[];
-  targetAudience: string[];
-  description: string;
-}
-
 export const SolutionManager: React.FC = () => {
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
