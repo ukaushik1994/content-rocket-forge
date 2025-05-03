@@ -11,7 +11,11 @@ import { useSolutionsData } from '../hooks/useSolutionsData';
 import { SolutionFormDialog } from './SolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
 
-export const SolutionManager: React.FC = () => {
+interface SolutionManagerProps {
+  searchTerm: string;
+}
+
+export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
@@ -32,6 +36,34 @@ export const SolutionManager: React.FC = () => {
   useEffect(() => {
     fetchSolutions();
   }, []);
+
+  // Filter solutions based on search term
+  const filteredSolutions = solutions.filter(solution => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Search in name
+    if (solution.name.toLowerCase().includes(searchLower)) return true;
+    
+    // Search in features
+    if (solution.features.some(feature => 
+      feature.toLowerCase().includes(searchLower))) return true;
+    
+    // Search in use cases
+    if (solution.useCases.some(useCase => 
+      useCase.toLowerCase().includes(searchLower))) return true;
+    
+    // Search in pain points
+    if (solution.painPoints.some(painPoint => 
+      painPoint.toLowerCase().includes(searchLower))) return true;
+    
+    // Search in target audience
+    if (solution.targetAudience.some(audience => 
+      audience.toLowerCase().includes(searchLower))) return true;
+    
+    return false;
+  });
 
   const handleAddNew = () => {
     setSelectedSolution(null);
@@ -118,7 +150,10 @@ export const SolutionManager: React.FC = () => {
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Business Solutions ({solutions.length})</h2>
+        <h2 className="text-xl font-bold">
+          Business Solutions ({filteredSolutions.length})
+          {searchTerm && <span className="text-base ml-2 font-normal text-muted-foreground">filtered by "{searchTerm}"</span>}
+        </h2>
         <Button 
           onClick={handleAddNew}
           className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
@@ -128,8 +163,15 @@ export const SolutionManager: React.FC = () => {
         </Button>
       </div>
       
+      {filteredSolutions.length === 0 && searchTerm && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-lg mb-2">No solutions found matching "{searchTerm}"</p>
+          <p className="text-muted-foreground">Try a different search term or clear the search</p>
+        </div>
+      )}
+      
       <SolutionGrid 
-        solutions={solutions}
+        solutions={filteredSolutions}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onUseInContent={handleUseInContent}

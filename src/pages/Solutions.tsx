@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud, PenSquare } from 'lucide-react';
+import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud, PenSquare, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 
@@ -17,6 +17,10 @@ const Solutions = () => {
   
   const handleCreateContent = () => {
     navigate('/content');
+  };
+  
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
   
   return <div className="min-h-screen flex flex-col bg-background">
@@ -58,15 +62,29 @@ const Solutions = () => {
                   <div className="flex items-center space-x-2 mb-6">
                     <div className="relative flex-1 max-w-sm">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search solutions..." className="pl-9 bg-glass border-white/10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                      <Input 
+                        placeholder="Search solutions by name, features, use cases or audience..." 
+                        className="pl-9 bg-glass border-white/10" 
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)}
+                      />
+                      {searchTerm && (
+                        <button 
+                          className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={handleClearSearch}
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Clear search</span>
+                        </button>
+                      )}
                     </div>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" className="flex-shrink-0">
                       <SlidersHorizontal className="h-4 w-4" />
                     </Button>
                   </div>
                   
                   <ContentBuilderProvider>
-                    <SolutionManager />
+                    <SolutionManager searchTerm={searchTerm} />
                   </ContentBuilderProvider>
                 </CardContent>
               </Card>
