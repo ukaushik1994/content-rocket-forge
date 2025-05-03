@@ -1,167 +1,135 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import {
+  LayoutDashboard,
+  FileText,
+  Wand2,
+  Puzzle,
+  BarChartBig,
+  Settings,
+  Bell,
+  Search,
+} from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Home,
-  BarChart3,
-  Search,
-  FileText,
-  Settings,
-  User,
-  Menu,
-  X,
-  PanelRight,
-  Rocket,
-  MessageSquarePlus,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+} from "@/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
 
-const navItems = [
-  { name: 'Dashboard', path: '/', icon: Home },
-  { name: 'Keywords', path: '/keywords', icon: Search },
-  { name: 'Content', path: '/content', icon: FileText },
-  { name: 'Solutions', path: '/solutions', icon: Rocket },
-  { name: 'Analytics', path: '/analytics', icon: BarChart3 },
-  { name: 'Settings', path: '/settings', icon: Settings },
+const navigationItems = [
+  {
+    name: "Dashboard",
+    path: "/",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    name: "Content",
+    path: "/content",
+    icon: <FileText className="h-4 w-4" />,
+  },
+  {
+    name: "Content Builder",
+    path: "/content-builder",
+    icon: <Wand2 className="h-4 w-4" />,
+  },
+  {
+    name: "Solutions",
+    path: "/solutions",
+    icon: <Puzzle className="h-4 w-4" />,
+  },
+  {
+    name: "Analytics",
+    path: "/analytics",
+    icon: <BarChartBig className="h-4 w-4" />,
+  },
+  {
+    name: "Settings",
+    path: "/settings",
+    icon: <Settings className="h-4 w-4" />,
+  },
 ];
 
-const Navbar = () => {
-  const location = useLocation();
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setShowMobileMenu(!showMobileMenu);
-  };
-
+const Navbar: React.FC = () => {
   return (
-    <div className="relative z-10 bg-background/80 backdrop-blur-md">
-      <header className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <div className="mr-4 hidden lg:flex">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
-                <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
-                  <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
-                </div>
-              </div>
-              <span className="font-bold text-gradient">ContentRocketForge</span>
-            </Link>
-          </div>
-          
-          <Button
-            variant="outline"
-            size="icon"
-            className="lg:hidden"
-            onClick={toggleMobileMenu}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
-
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
-              return (
-                <Link key={item.path} to={item.path}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "flex items-center gap-1 px-3",
-                      isActive && "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Button>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <FeedbackButton className="hidden md:flex" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full overflow-hidden border border-border"
-            asChild
-          >
-            <Link to="/settings">
-              <User className="h-5 w-5" />
-            </Link>
-          </Button>
-        </div>
-      </header>
-
-      {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
-          <div className="fixed inset-y-0 left-0 z-50 w-3/4 bg-background p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-8">
-              <Link to="/" className="flex items-center gap-2" onClick={() => setShowMobileMenu(false)}>
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-neon-blue opacity-40 blur-md absolute"></div>
-                  <div className="h-7 w-7 rounded-full bg-glass flex items-center justify-center border border-neon-blue relative">
-                    <PanelRight className="h-3.5 w-3.5 text-neon-blue" />
-                  </div>
-                </div>
-                <span className="font-bold text-gradient">ContentRocketForge</span>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMobileMenu}
-              >
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close Menu</span>
-              </Button>
-            </div>
-
-            <nav className="flex flex-col space-y-4">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                
-                return (
-                  <Link 
-                    key={item.path} 
-                    to={item.path}
-                    onClick={() => setShowMobileMenu(false)} 
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-2 rounded-md",
-                      isActive 
-                        ? "bg-accent text-accent-foreground" 
-                        : "hover:bg-accent/50 hover:text-accent-foreground"
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.name}</span>
+    <div className="border-b bg-background sticky top-0 z-50">
+      <div className="flex h-16 items-center px-4">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Menu">
+              <LayoutDashboard className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-full sm:w-64">
+            <SheetHeader className="text-left">
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Navigate through the application.
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="my-4">
+              <div className="flex flex-col space-y-1">
+                {navigationItems.map((item) => (
+                  <Link key={item.name} to={item.path}>
+                    <Button variant="ghost" className="justify-start font-normal">
+                      {item.icon}
+                      <span className="ml-2">{item.name}</span>
+                    </Button>
                   </Link>
-                );
-              })}
-              
-              <div className="pt-2">
-                <FeedbackButton className="w-full justify-center" />
+                ))}
               </div>
-            </nav>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+        <div className="flex-1 flex justify-between items-center">
+          <Input type="search" placeholder="Search..." className="max-w-md" />
+          <div className="flex items-center gap-2.5">
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="https://github.com/shadcn.png" alt="Shadcn" />
+                    <AvatarFallback>SC</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  Profile
+                  <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  Settings
+                  <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  Log out
+                  <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
