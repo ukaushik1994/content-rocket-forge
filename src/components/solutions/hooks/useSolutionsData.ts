@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export function useSolutionsData() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
@@ -66,6 +67,10 @@ export function useSolutionsData() {
     targetAudience: string[];
   }) => {
     try {
+      // Generate a temporary client-side UUID for the user_id
+      // In a real authentication setup, this would come from the auth context
+      const tempUserId = uuidv4();
+      
       const { data, error } = await supabase
         .from('solutions')
         .insert({
@@ -74,7 +79,7 @@ export function useSolutionsData() {
           use_cases: solutionData.useCases,
           pain_points: solutionData.painPoints,
           target_audience: solutionData.targetAudience,
-          user_id: 'system' // Using a default user_id for demo purposes
+          user_id: tempUserId // Use the generated UUID instead of 'system'
         })
         .select();
       
