@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PencilIcon, TrashIcon, BookmarkIcon } from 'lucide-react';
+import { BookmarkIcon } from 'lucide-react';
 
 interface SolutionCardProps {
   name: string;
@@ -11,10 +11,19 @@ interface SolutionCardProps {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  cta: string;
+  cta?: string;
+  onUseInContent?: () => void;
 }
 
-export function SolutionCard({ name, features, useCases, painPoints, targetAudience, cta }: SolutionCardProps) {
+export function SolutionCard({ 
+  name, 
+  features, 
+  useCases, 
+  painPoints, 
+  targetAudience, 
+  cta = "Use in Content",
+  onUseInContent 
+}: SolutionCardProps) {
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-neon border border-white/10 bg-glass">
       <CardHeader className="bg-gradient-to-br from-neon-purple/20 to-transparent">
@@ -23,9 +32,6 @@ export function SolutionCard({ name, features, useCases, painPoints, targetAudie
           <div className="flex items-center space-x-1">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <BookmarkIcon className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <PencilIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -75,12 +81,12 @@ export function SolutionCard({ name, features, useCases, painPoints, targetAudie
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between border-t border-white/10 pt-4">
-        <Button variant="ghost" size="sm" className="gap-1">
-          <TrashIcon className="h-4 w-4" />
-          <span>Delete</span>
-        </Button>
-        <Button size="sm" className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
+      <CardFooter className="flex justify-end border-t border-white/10 pt-4">
+        <Button 
+          size="sm" 
+          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+          onClick={onUseInContent}
+        >
           {cta}
         </Button>
       </CardFooter>

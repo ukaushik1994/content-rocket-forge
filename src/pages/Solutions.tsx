@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { SolutionUploader } from '@/components/solutions/SolutionUploader';
@@ -6,9 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud } from 'lucide-react';
+import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud, PenSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 const Solutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  
+  const handleCreateContent = () => {
+    navigate('/content');
+  };
+  
   return <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
@@ -16,6 +25,14 @@ const Solutions = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gradient">Business Solutions</h1>
+            
+            <Button 
+              onClick={handleCreateContent}
+              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            >
+              <PenSquare className="mr-2 h-4 w-4" />
+              Create Content with Solutions
+            </Button>
           </div>
           
           <Tabs defaultValue="solutions">

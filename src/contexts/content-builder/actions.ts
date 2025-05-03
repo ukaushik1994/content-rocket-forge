@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from './types';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -150,16 +149,40 @@ export const createContentBuilderActions = (state: ContentBuilderState, dispatch
       });
     }
     
-    // If solution is selected, add solution-specific sections
+    // Enhanced solution-specific sections if solution is selected
     if (state.selectedSolution) {
+      // Add section about the solution
       outlineSections.push({
         id: crypto.randomUUID(),
         title: `How ${state.selectedSolution.name} Solves Your ${state.mainKeyword} Challenges`
       });
       
+      // Add section about solution benefits
       outlineSections.push({
         id: crypto.randomUUID(),
         title: `Key Benefits of Using ${state.selectedSolution.name}`
+      });
+      
+      // Add section about features if they exist
+      if (state.selectedSolution.features && state.selectedSolution.features.length > 0) {
+        outlineSections.push({
+          id: crypto.randomUUID(),
+          title: `Essential Features of ${state.selectedSolution.name}`
+        });
+      }
+      
+      // Add use case section if they exist
+      if (state.selectedSolution.useCases && state.selectedSolution.useCases.length > 0) {
+        outlineSections.push({
+          id: crypto.randomUUID(),
+          title: `Real-World Use Cases for ${state.selectedSolution.name}`
+        });
+      }
+      
+      // Add a customer testimonial section placeholder
+      outlineSections.push({
+        id: crypto.randomUUID(),
+        title: `Success Stories: Real Results with ${state.selectedSolution.name}`
       });
     }
     

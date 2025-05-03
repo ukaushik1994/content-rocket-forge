@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -16,6 +16,9 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { supabase } from '@/integrations/supabase/client';
 
 // Solution type
 interface Solution {
@@ -28,37 +31,16 @@ interface Solution {
 }
 
 export const SolutionManager: React.FC = () => {
-  const [solutions, setSolutions] = useState<Solution[]>([
-    {
-      id: '1',
-      name: 'TaskMaster Pro',
-      features: ["Gantt charts", "Team collaboration", "AI analytics"],
-      useCases: ["Remote teams", "Agile workflows"],
-      painPoints: ["Missed deadlines", "Poor task visibility"],
-      targetAudience: ["Project managers", "IT teams"],
-    },
-    {
-      id: '2',
-      name: 'EmailPro Marketing',
-      features: ["Drip campaigns", "A/B testing", "Audience segmentation"],
-      useCases: ["Newsletter management", "Customer retention"],
-      painPoints: ["Low open rates", "Poor deliverability"],
-      targetAudience: ["Marketers", "Small businesses"],
-    },
-    {
-      id: '3',
-      name: 'SalesForce CRM+',
-      features: ["Pipeline management", "Lead scoring", "Analytics dashboard"],
-      useCases: ["Sales teams", "Account management"],
-      painPoints: ["Lost leads", "Disorganized contacts"],
-      targetAudience: ["Sales representatives", "Account managers"],
-    }
-  ]);
-  
+  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Added for content builder integration
+  const navigate = useNavigate();
+  const { dispatch } = useContentBuilder();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -68,6 +50,48 @@ export const SolutionManager: React.FC = () => {
     painPoints: '',
     targetAudience: '',
   });
+  
+  useEffect(() => {
+    fetchSolutions();
+  }, []);
+
+  const fetchSolutions = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Transform the data from jsonb columns to the expected format
+        const formattedSolutions = data.map(solution => ({
+          id: solution.id,
+          name: solution.name,
+          features: Array.isArray(solution.features) ? solution.features : [],
+          useCases: Array.isArray(solution.use_cases) ? solution.use_cases : [],
+          painPoints: Array.isArray(solution.pain_points) ? solution.pain_points : [],
+          targetAudience: Array.isArray(solution.target_audience) ? solution.target_audience : []
+        }));
+        setSolutions(formattedSolutions);
+      }
+    } catch (error) {
+      console.error("Error fetching solutions:", error);
+      toast.error("Failed to load solutions");
+      // Fallback to some default data if there's an error
+      setSolutions([{
+        id: '1',
+        name: 'TaskMaster Pro',
+        features: ["Gantt charts", "Team collaboration", "AI analytics"],
+        useCases: ["Remote teams", "Agile workflows"],
+        painPoints: ["Missed deadlines", "Poor task visibility"],
+        targetAudience: ["Project managers", "IT teams"],
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleAddNew = () => {
     setSelectedSolution(null);
@@ -98,16 +122,31 @@ export const SolutionManager: React.FC = () => {
     setIsDeleteDialogOpen(true);
   };
   
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedSolution) {
-      setSolutions(solutions.filter(s => s.id !== selectedSolution.id));
-      toast.success(`${selectedSolution.name} deleted successfully!`);
-      setIsDeleteDialogOpen(false);
-      setSelectedSolution(null);
+      setIsSubmitting(true);
+      try {
+        const { error } = await supabase
+          .from('solutions')
+          .delete()
+          .eq('id', selectedSolution.id);
+        
+        if (error) throw error;
+        
+        setSolutions(solutions.filter(s => s.id !== selectedSolution.id));
+        toast.success(`${selectedSolution.name} deleted successfully!`);
+      } catch (error) {
+        console.error("Error deleting solution:", error);
+        toast.error("Failed to delete solution");
+      } finally {
+        setIsSubmitting(false);
+        setIsDeleteDialogOpen(false);
+        setSelectedSolution(null);
+      }
     }
   };
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast.error('Solution name is required');
       return;
@@ -115,32 +154,86 @@ export const SolutionManager: React.FC = () => {
     
     setIsSubmitting(true);
     
-    setTimeout(() => {
-      const splitStrings = (str: string) => str.split(',').map(s => s.trim()).filter(s => s);
-      
-      const newSolution = {
-        id: selectedSolution?.id || `${Date.now()}`,
+    const splitStrings = (str: string) => str.split(',').map(s => s.trim()).filter(s => s);
+    
+    try {
+      const solutionData = {
         name: formData.name,
         features: splitStrings(formData.features),
-        useCases: splitStrings(formData.useCases),
-        painPoints: splitStrings(formData.painPoints),
-        targetAudience: splitStrings(formData.targetAudience),
+        use_cases: splitStrings(formData.useCases),
+        pain_points: splitStrings(formData.painPoints),
+        target_audience: splitStrings(formData.targetAudience),
       };
       
       if (selectedSolution) {
         // Update existing
-        setSolutions(solutions.map(s => s.id === selectedSolution.id ? newSolution : s));
-        toast.success(`${newSolution.name} updated successfully!`);
+        const { error } = await supabase
+          .from('solutions')
+          .update(solutionData)
+          .eq('id', selectedSolution.id);
+        
+        if (error) throw error;
+        
+        // Update local state
+        setSolutions(solutions.map(s => s.id === selectedSolution.id ? {
+          ...selectedSolution,
+          name: formData.name,
+          features: splitStrings(formData.features),
+          useCases: splitStrings(formData.useCases),
+          painPoints: splitStrings(formData.painPoints),
+          targetAudience: splitStrings(formData.targetAudience),
+        } : s));
+        
+        toast.success(`${formData.name} updated successfully!`);
       } else {
         // Add new
-        setSolutions([...solutions, newSolution]);
-        toast.success(`${newSolution.name} added successfully!`);
+        const { data, error } = await supabase
+          .from('solutions')
+          .insert(solutionData)
+          .select();
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+          const newSolution = {
+            id: data[0].id,
+            name: data[0].name,
+            features: Array.isArray(data[0].features) ? data[0].features : [],
+            useCases: Array.isArray(data[0].use_cases) ? data[0].use_cases : [],
+            painPoints: Array.isArray(data[0].pain_points) ? data[0].pain_points : [],
+            targetAudience: Array.isArray(data[0].target_audience) ? data[0].target_audience : [],
+          };
+          
+          setSolutions([...solutions, newSolution]);
+          toast.success(`${formData.name} added successfully!`);
+        }
       }
-      
+    } catch (error) {
+      console.error("Error saving solution:", error);
+      toast.error("Failed to save solution");
+    } finally {
       setIsSubmitting(false);
       setIsDialogOpen(false);
-    }, 1000);
+    }
   };
+
+  // New function to handle using a solution in content
+  const handleUseInContent = (solution: Solution) => {
+    // Store the solution in the content builder context
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
+    
+    // Navigate to the content builder page
+    toast.success(`${solution.name} selected for content creation`);
+    navigate('/content');
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   
   return (
     <>
@@ -164,14 +257,17 @@ export const SolutionManager: React.FC = () => {
               useCases={solution.useCases}
               painPoints={solution.painPoints}
               targetAudience={solution.targetAudience}
-              cta="Use in Content"
+              onUseInContent={() => handleUseInContent(solution)}
             />
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="h-7 bg-black/50 backdrop-blur-sm"
-                onClick={() => handleEdit(solution)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(solution);
+                }}
               >
                 Edit
               </Button>
@@ -179,7 +275,10 @@ export const SolutionManager: React.FC = () => {
                 variant="destructive" 
                 size="sm" 
                 className="h-7 bg-red-500/80 backdrop-blur-sm"
-                onClick={() => handleDelete(solution)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(solution);
+                }}
               >
                 <Trash className="h-3 w-3" />
               </Button>
@@ -322,8 +421,11 @@ export const SolutionManager: React.FC = () => {
             <Button 
               variant="destructive" 
               onClick={confirmDelete}
+              disabled={isSubmitting}
             >
-              Delete
+              {isSubmitting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+              ) : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
