@@ -13,10 +13,14 @@ const ContentPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("editor");
   const [content, setContent] = useState("");
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [serpData, setSerpData] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [mainKeyword, setMainKeyword] = useState("");
 
   const handleKeywordSelect = (keyword: string) => {
     if (!selectedKeywords.includes(keyword)) {
       setSelectedKeywords([...selectedKeywords, keyword]);
+      setMainKeyword(keyword);
     }
   };
 
@@ -29,6 +33,11 @@ const ContentPage: React.FC = () => {
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
+  };
+  
+  // Function to handle adding content from SERP analysis
+  const handleAddToContent = (contentToAdd: string, type: string) => {
+    setContent(prev => prev + contentToAdd);
   };
 
   return (
@@ -75,8 +84,10 @@ const ContentPage: React.FC = () => {
               />
               
               <SerpAnalysisPanel 
-                keywords={selectedKeywords}
-                content={content}
+                serpData={serpData}
+                isLoading={isAnalyzing}
+                mainKeyword={mainKeyword}
+                onAddToContent={handleAddToContent}
               />
             </div>
           </div>

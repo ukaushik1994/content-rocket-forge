@@ -63,7 +63,7 @@ const SerpFeature = ({ title, icon, children, onAddToContent }: SerpFeatureProps
   );
 };
 
-interface SerpAnalysisPanelProps {
+export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
   isLoading: boolean;
   mainKeyword: string;
