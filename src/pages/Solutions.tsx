@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { SolutionUploader } from '@/components/solutions/SolutionUploader';
@@ -7,19 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Search,
-  SlidersHorizontal,
-  BarChart3,
-  FileText,
-  UploadCloud
-} from 'lucide-react';
-
+import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud } from 'lucide-react';
 const Solutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
+  return <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
       <main className="flex-1 container py-8">
@@ -46,16 +36,11 @@ const Solutions = () => {
             
             <TabsContent value="solutions" className="mt-6 space-y-6">
               <Card className="glass-panel">
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 bg-gray-950">
                   <div className="flex items-center space-x-2 mb-6">
                     <div className="relative flex-1 max-w-sm">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search solutions..."
-                        className="pl-9 bg-glass border-white/10"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
+                      <Input placeholder="Search solutions..." className="pl-9 bg-glass border-white/10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                     </div>
                     <Button variant="outline" size="icon">
                       <SlidersHorizontal className="h-4 w-4" />
@@ -87,8 +72,6 @@ const Solutions = () => {
           </Tabs>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Solutions;
