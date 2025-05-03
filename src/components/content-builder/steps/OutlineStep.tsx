@@ -19,7 +19,8 @@ import {
   Save,
   FileUp,
   Lightbulb,
-  BookOpen
+  BookOpen,
+  Sparkles
 } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { ContentOutlineSection } from '@/contexts/content-builder/types';
