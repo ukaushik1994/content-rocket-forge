@@ -92,8 +92,9 @@ export const SerpAnalysisStep = () => {
       />
       
       {isAnalyzing || !serpData ? (
-        // Fix: Removing the isLoading prop and just passing isAnalyzing directly to SerpLoadingState
+        // Fix: Pass isAnalyzing prop to SerpLoadingState
         <SerpLoadingState 
+          isLoading={isAnalyzing} 
           navigateToStep={navigateToStep} 
         />
       ) : (
