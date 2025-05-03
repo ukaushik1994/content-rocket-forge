@@ -36,7 +36,7 @@ import { SerpCompetitorsList } from './SerpCompetitorsList';
 import { SerpAnalysisHeader } from './SerpAnalysisHeader';
 import { SerpLoadingState } from './SerpLoadingState';
 import { SerpAnalysisOverview } from './SerpAnalysisOverview';
-import { SerpSelection } from '@/contexts/ContentBuilderContext';
+import { SerpSelection } from '@/contexts/content-builder/types';
 
 import { SerpAnalysisResult } from '@/services/serpApiService';
 
@@ -45,13 +45,15 @@ export interface SerpAnalysisPanelProps {
   isLoading: boolean;
   mainKeyword: string;
   onAddToContent?: (content: string, type: string) => void;
+  navigateToStep?: (step: number) => void;
 }
 
 export function SerpAnalysisPanel({ 
   serpData, 
   isLoading, 
   mainKeyword,
-  onAddToContent = () => {}
+  onAddToContent = () => {},
+  navigateToStep = () => {} // Add default function to avoid undefined errors
 }: SerpAnalysisPanelProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedItems, setSelectedItems] = useState<{[key: string]: {[key: string]: boolean}}>({
@@ -284,7 +286,7 @@ export function SerpAnalysisPanel({
   };
   
   if (isLoading) {
-    return <SerpLoadingState />;
+    return <SerpLoadingState isLoading={true} navigateToStep={navigateToStep} />;
   }
 
   if (!serpData) {
