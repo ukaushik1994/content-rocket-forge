@@ -1,66 +1,58 @@
+
 import { callApiProxy } from '@/services/apiProxyService';
 import { toast } from 'sonner';
+import { serpResultsCache } from '@/utils/cacheUtils';
+import { getMockSerpData, getMockKeywordResults } from './serpMockService';
+import { processSerpResponse, validateKeywordInput } from './serpProcessingService';
+import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 
-const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
-const serpCache: Record<string, { data: any; timestamp: number }> = {};
+// Maximum number of retry attempts for API calls
+const MAX_RETRY_ATTEMPTS = 3;
+// Delay between retry attempts in ms (exponential backoff)
+const RETRY_DELAY_BASE = 300;
 
-// Define the SerpAnalysisResult type
-export interface SerpAnalysisResult {
-  keyword: string;
-  searchVolume?: number;
-  competitionScore?: number;
-  keywordDifficulty?: number;
-  topResults?: Array<{
-    title: string;
-    link: string;
-    snippet: string;
-    position: number; // Added position property
-  }>;
-  relatedSearches?: Array<{
-    query: string;
-    volume?: number; // Added volume property
-  }>;
-  peopleAlsoAsk?: Array<{
-    question: string;
-    source: string;
-    answer?: string; // Added answer property
-  }>;
-  featuredSnippets?: Array<{
-    content: string;
-    source: string;
-    type?: string; // Added type property
-  }>;
-  keywords?: string[];
-  recommendations?: string[];
-}
-
-// Define the SerpSearchParams type
-export interface SerpSearchParams {
-  query: string;
-  country?: string;
-  num?: number;
+/**
+ * Helper function to implement retry logic for API calls
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRY_ATTEMPTS): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      const delay = RETRY_DELAY_BASE * Math.pow(2, MAX_RETRY_ATTEMPTS - retries);
+      console.log(`API call failed, retrying in ${delay}ms... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1);
+    }
+    throw error;
+  }
 }
 
 /**
  * Analyze a keyword using the SERP API with caching
  */
 export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisResult> {
-  const cacheKey = `serp_${keyword.toLowerCase().trim()}`;
-  
-  // Check cache first
-  const cachedResult = serpCache[cacheKey];
-  if (cachedResult && (Date.now() - cachedResult.timestamp) < CACHE_EXPIRY) {
-    console.log(`Using cached SERP data for "${keyword}"`);
-    return cachedResult.data;
-  }
-  
   try {
-    console.log(`Fetching SERP data for "${keyword}"`);
-    const response = await callApiProxy({
-      service: 'serp',
-      endpoint: 'search',
-      params: { keyword, country: 'us' }
-    });
+    const validatedKeyword = validateKeywordInput(keyword);
+    const cacheKey = `serp_${validatedKeyword}`;
+    
+    // Check cache first
+    const cachedResult = serpResultsCache.get(cacheKey);
+    if (cachedResult) {
+      console.log(`Using cached SERP data for "${validatedKeyword}"`);
+      return cachedResult;
+    }
+    
+    console.log(`Fetching SERP data for "${validatedKeyword}"`);
+    
+    // Use retry logic for API call
+    const response = await withRetry(() => 
+      callApiProxy({
+        service: 'serp',
+        endpoint: 'search',
+        params: { keyword: validatedKeyword, country: 'us' }
+      })
+    );
     
     if (!response) {
       throw new Error('No response from SERP API');
@@ -70,10 +62,7 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
     const processedData = processSerpResponse(response);
     
     // Cache the result
-    serpCache[cacheKey] = {
-      data: processedData,
-      timestamp: Date.now()
-    };
+    serpResultsCache.set(cacheKey, processedData);
     
     return processedData;
   } catch (error: any) {
@@ -85,60 +74,107 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
       const mockData = getMockSerpData(keyword);
       
       // Cache the mock result too
-      serpCache[cacheKey] = {
-        data: mockData,
-        timestamp: Date.now()
-      };
+      serpResultsCache.set(`serp_${keyword.toLowerCase().trim()}`, mockData);
       
       return mockData;
     }
     
-    toast.error(`API Error: ${error.message}`);
+    // Show user-friendly error message
+    const errorMessage = error.message || 'Failed to analyze keyword';
+    toast.error(`API Error: ${errorMessage}`);
     throw error;
   }
 }
 
-// Add searchKeywords function
+/**
+ * Search for keywords related to a query
+ */
 export async function searchKeywords(params: SerpSearchParams): Promise<any[]> {
   try {
-    const response = await callApiProxy({
-      service: 'serp',
-      endpoint: 'keywords',
-      params
-    });
+    const { query } = params;
+    const validatedQuery = validateKeywordInput(query);
+    const cacheKey = `keywords_${validatedQuery}_${params.country || 'us'}_${params.num || 10}`;
+
+    // Check cache first
+    const cachedResult = serpResultsCache.get(cacheKey);
+    if (cachedResult) {
+      console.log(`Using cached keyword results for "${validatedQuery}"`);
+      return cachedResult;
+    }
+
+    const response = await withRetry(() => 
+      callApiProxy({
+        service: 'serp',
+        endpoint: 'keywords',
+        params
+      })
+    );
     
     // Check if response exists and has results property
     const results = response && typeof response === 'object' ? (response as any).results : [];
-    return Array.isArray(results) ? results : [];
+    const processedResults = Array.isArray(results) ? results : [];
+    
+    // Cache results
+    serpResultsCache.set(cacheKey, processedResults);
+    
+    return processedResults;
   } catch (error: any) {
     console.error('Error searching keywords:', error);
-    toast.error(`API Error: ${error.message}`);
     
-    // Return mock data for development
-    return getMockKeywordResults(params.query);
+    // For development, return mock data
+    if (process.env.NODE_ENV === 'development') {
+      const mockResults = getMockKeywordResults(params.query);
+      return mockResults;
+    }
+    
+    toast.error(`API Error: ${error.message || 'Failed to search keywords'}`);
+    return [];
   }
 }
 
-// Add analyzeContent function
+/**
+ * Analyze content for SEO recommendations
+ */
 export async function analyzeContent(content: string, keywords: string[] = []): Promise<SerpAnalysisResult> {
+  if (!content) {
+    throw new Error('Content cannot be empty');
+  }
+  
   try {
-    const response = await callApiProxy({
-      service: 'serp',
-      endpoint: 'analyze',
-      params: { content, keywords }
-    });
+    // Generate a cache key based on content hash and keywords
+    const contentHash = btoa(content.substring(0, 100) + (keywords.length > 0 ? keywords[0] : '')).replace(/[^a-zA-Z0-9]/g, '');
+    const cacheKey = `content_analysis_${contentHash}`;
+    
+    // Check cache first
+    const cachedResult = serpResultsCache.get(cacheKey);
+    if (cachedResult) {
+      console.log('Using cached content analysis results');
+      return cachedResult;
+    }
+    
+    const response = await withRetry(() => 
+      callApiProxy({
+        service: 'serp',
+        endpoint: 'analyze',
+        params: { content, keywords }
+      })
+    );
     
     if (!response) {
       throw new Error('No response from content analysis API');
     }
     
-    return response as SerpAnalysisResult;
+    const processedResult = processSerpResponse(response);
+    
+    // Cache the result
+    serpResultsCache.set(cacheKey, processedResult);
+    
+    return processedResult;
   } catch (error: any) {
     console.error('Error analyzing content:', error);
-    toast.error(`API Error: ${error.message}`);
     
     // Return mock analysis data with the required keyword field
-    return {
+    const mockResult: SerpAnalysisResult = {
       keyword: keywords[0] || 'unknown',
       searchVolume: 0,
       competitionScore: 0.5,
@@ -150,98 +186,11 @@ export async function analyzeContent(content: string, keywords: string[] = []): 
         'Structure content with proper headings and subheadings.'
       ]
     };
+    
+    toast.error(`Content analysis error: ${error.message || 'Failed to analyze content'}`);
+    return mockResult;
   }
 }
 
-// Function to process and normalize API response
-function processSerpResponse(response: any): SerpAnalysisResult {
-  // Ensure response has expected structure and the required keyword field
-  const processedData: SerpAnalysisResult = {
-    keyword: response.keyword || '',
-    searchVolume: response.searchVolume || 0,
-    competitionScore: response.competitionScore || 0,
-    keywordDifficulty: response.keywordDifficulty || 0,
-    topResults: response.topResults ? response.topResults.map((result: any, index: number) => ({
-      ...result,
-      position: result.position || index + 1 // Ensure position exists
-    })) : [],
-    relatedSearches: response.relatedSearches ? response.relatedSearches.map((search: any) => ({
-      ...search,
-      volume: search.volume || 0 // Ensure volume exists
-    })) : [],
-    peopleAlsoAsk: response.peopleAlsoAsk ? response.peopleAlsoAsk.map((item: any) => ({
-      ...item,
-      answer: item.answer || 'No answer available' // Ensure answer exists
-    })) : [],
-    featuredSnippets: response.featuredSnippets ? response.featuredSnippets.map((snippet: any) => ({
-      ...snippet,
-      type: snippet.type || 'general' // Ensure type exists
-    })) : []
-  };
-  
-  return processedData;
-}
-
-// Mock SERP data for development/demo purposes
-function getMockSerpData(keyword: string): SerpAnalysisResult {
-  return {
-    keyword,
-    searchVolume: Math.floor(Math.random() * 10000) + 1000,
-    competitionScore: Math.random(),
-    keywordDifficulty: Math.floor(Math.random() * 100),
-    topResults: [
-      {
-        title: `${keyword} - Complete Guide`,
-        link: 'https://example.com/complete-guide',
-        snippet: `This complete guide covers everything you need to know about ${keyword}. Learn practical tips and strategies.`,
-        position: 1
-      },
-      {
-        title: `${keyword} Explained in Simple Terms`,
-        link: 'https://example.com/explained',
-        snippet: `Understanding ${keyword} doesn't have to be complicated. Here's a simplified explanation.`,
-        position: 2
-      },
-      {
-        title: `How to Master ${keyword} in 2025`,
-        link: 'https://example.com/mastering',
-        snippet: `Learn how to master ${keyword} with our step-by-step guide. Perfect for beginners and experts alike.`,
-        position: 3
-      }
-    ],
-    relatedSearches: [
-      { query: `best ${keyword} tools`, volume: 1200 },
-      { query: `${keyword} vs competition`, volume: 950 },
-      { query: `how to learn ${keyword}`, volume: 1500 },
-      { query: `${keyword} for beginners`, volume: 2200 },
-      { query: `advanced ${keyword} techniques`, volume: 800 }
-    ],
-    peopleAlsoAsk: [
-      { question: `What is ${keyword}?`, source: 'https://example.com/what-is', answer: `${keyword} is a powerful tool for improving SEO.` },
-      { question: `Why is ${keyword} important?`, source: 'https://example.com/importance', answer: `${keyword} is crucial because it helps businesses reach their target audience.` },
-      { question: `How to get started with ${keyword}?`, source: 'https://example.com/getting-started', answer: `To get started with ${keyword}, first research your target audience and competitors.` },
-      { question: `What are the best practices for ${keyword}?`, source: 'https://example.com/best-practices', answer: `Best practices for ${keyword} include regular content updates and keyword research.` }
-    ],
-    featuredSnippets: [
-      {
-        content: `${keyword} is an essential aspect of modern business strategy. It involves analyzing data patterns to predict market trends and consumer behavior.`,
-        source: 'https://example.com/featured',
-        type: 'definition'
-      }
-    ]
-  };
-}
-
-// Mock keyword search results for development
-function getMockKeywordResults(query: string): any[] {
-  return [
-    { title: `Best ${query} in 2025`, searchVolume: 3200, volume: 3200 },
-    { title: `Top 10 ${query} tools`, searchVolume: 2800, volume: 2800 },
-    { title: `How to use ${query} effectively`, searchVolume: 1900, volume: 1900 },
-    { title: `${query} for beginners`, searchVolume: 2100, volume: 2100 },
-    { title: `${query} advanced techniques`, searchVolume: 1500, volume: 1500 },
-    { title: `${query} vs alternatives`, searchVolume: 1700, volume: 1700 },
-    { title: `Why ${query} matters`, searchVolume: 1200, volume: 1200 },
-    { title: `${query} best practices`, searchVolume: 2400, volume: 2400 }
-  ];
-}
+// Re-export types for backward compatibility
+export type { SerpAnalysisResult, SerpSearchParams };

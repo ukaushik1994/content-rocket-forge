@@ -2,6 +2,7 @@
 import { analyzeKeywordSerp, analyzeContent as analyzeSerpContent } from './serpApiService';
 import { callApiProxy } from './apiProxyService';
 import { toast } from 'sonner';
+import { SerpAnalysisResult } from '@/types/serp';
 
 export interface ContentAnalysis {
   seoScore: number;
