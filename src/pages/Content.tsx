@@ -6,11 +6,12 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { ContentRepository } from '@/components/content/ContentRepository';
-import { SerpKeywordSuggestions } from '@/components/content/SerpKeywordSuggestions';
 import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
+import { KeywordSelectionStep } from '@/components/content-builder/steps/KeywordSelectionStep';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 // Define step interface
 interface ContentStep {
@@ -20,127 +21,26 @@ interface ContentStep {
   completed: boolean;
 }
 
-const ContentPage: React.FC = () => {
-  // State for steps and active step
-  const [activeStep, setActiveStep] = useState(0);
-  const [steps, setSteps] = useState<ContentStep[]>([
-    { id: 0, name: 'Keywords', description: 'Select your target keywords', completed: false },
-    { id: 1, name: 'SERP Analysis', description: 'Analyze search results', completed: false },
-    { id: 2, name: 'Content Structure', description: 'Structure your content', completed: false },
-    { id: 3, name: 'Write Content', description: 'Create your content', completed: false },
-    { id: 4, name: 'Optimize', description: 'Improve SEO score', completed: false },
-    { id: 5, name: 'Publish', description: 'Publish and share', completed: false },
-  ]);
-
-  // State for content data
-  const [content, setContent] = useState("");
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-  const [serpData, setSerpData] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [mainKeyword, setMainKeyword] = useState("");
-  const [outline, setOutline] = useState<{ heading: string; content: string }[]>([]);
-  const [seoScore, setSeoScore] = useState(0);
+// ContentSteps wrapper that uses ContentBuilderProvider
+const ContentSteps: React.FC = () => {
+  const { state, navigateToStep } = useContentBuilder();
+  const { activeStep, steps, mainKeyword, selectedKeywords, content, serpData, outline, seoScore } = state;
 
   // Calculate progress percentage
   const progressPercentage = 
     (steps.filter(step => step.completed).length / steps.length) * 100;
 
-  // Mark a step as completed
-  const markStepCompleted = (stepId: number) => {
-    setSteps(prevSteps => 
-      prevSteps.map(step => 
-        step.id === stepId ? { ...step, completed: true } : step
-      )
-    );
-  };
-
-  // Navigate to a specific step
-  const navigateToStep = (step: number) => {
-    if (step >= 0 && step < steps.length) {
-      setActiveStep(step);
-    }
-  };
-
-  // Handle keyword selection
-  const handleKeywordSelect = (keyword: string) => {
-    if (!selectedKeywords.includes(keyword)) {
-      setSelectedKeywords([...selectedKeywords, keyword]);
-      setMainKeyword(keyword);
-      // Mark the keyword step as completed when at least one keyword is selected
-      markStepCompleted(0);
-    }
-  };
-
-  const handleKeywordsSelect = (keywords: string[]) => {
-    const newKeywords = keywords.filter(k => !selectedKeywords.includes(k));
-    if (newKeywords.length > 0) {
-      setSelectedKeywords([...selectedKeywords, ...newKeywords]);
-      markStepCompleted(0);
-    }
-  };
-
-  // Handle content changes
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent);
-    
-    // If content has some minimum length, mark the writing step as completed
-    if (newContent.length > 50) {
-      markStepCompleted(3);
-    }
-  };
-  
-  // Function to handle adding content from SERP analysis
-  const handleAddToContent = (contentToAdd: string, type: string) => {
-    setContent(prev => prev + contentToAdd);
-    // Mark SERP analysis step as completed when content is added
-    markStepCompleted(1);
-  };
-
-  // Function to handle adding outline items
-  const handleAddOutlineItem = (heading: string) => {
-    setOutline([...outline, { heading, content: '' }]);
-    // Mark structure step as completed when outline has items
-    markStepCompleted(2);
-  };
-
-  // Check if can proceed to next step
+  // Determine if user can proceed to next step
   const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
 
   // Render the current step component
   const renderStepContent = () => {
     switch (activeStep) {
       case 0: // Keywords
-        return (
-          <div className="space-y-6">
-            <SerpKeywordSuggestions 
-              onKeywordSelect={handleKeywordSelect}
-              onRelatedKeywordsSelect={handleKeywordsSelect}
-            />
-            
-            {selectedKeywords.length > 0 && (
-              <div className="bg-glass p-4 rounded-md">
-                <h3 className="text-lg font-medium mb-2">Selected Keywords</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedKeywords.map((keyword, index) => (
-                    <div 
-                      key={index}
-                      className="bg-primary/20 text-primary px-3 py-1 rounded-md text-sm"
-                    >
-                      {keyword}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
+        return <KeywordSelectionStep />;
       
-      case 1: // SERP Analysis - Using the ContentBuilder's SerpAnalysisStep
-        return (
-          <ContentBuilderProvider>
-            <SerpAnalysisStep />
-          </ContentBuilderProvider>
-        );
+      case 1: // SERP Analysis
+        return <SerpAnalysisStep />;
       
       case 2: // Content Structure
         return (
@@ -155,12 +55,6 @@ const ContentPage: React.FC = () => {
                     type="text" 
                     className="bg-background border border-white/10 p-2 rounded-md"
                     placeholder="Enter your content title..."
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleAddOutlineItem("Introduction");
-                        handleAddOutlineItem("Conclusion");
-                      }
-                    }}
                   />
                 </div>
                 
@@ -171,7 +65,7 @@ const ContentPage: React.FC = () => {
                     <div className="space-y-2">
                       {outline.map((item, index) => (
                         <div key={index} className="flex items-center justify-between bg-background p-2 rounded-md">
-                          <span>{item.heading}</span>
+                          <span>{item.title}</span>
                           <Button variant="ghost" size="sm">Edit</Button>
                         </div>
                       ))}
@@ -179,7 +73,6 @@ const ContentPage: React.FC = () => {
                       <Button 
                         variant="outline" 
                         className="w-full mt-2"
-                        onClick={() => handleAddOutlineItem(`Section ${outline.length + 1}`)}
                       >
                         Add Section
                       </Button>
@@ -199,7 +92,13 @@ const ContentPage: React.FC = () => {
         return (
           <ContentEditor 
             content={content}
-            onContentChange={handleContentChange}
+            onContentChange={(newContent) => {
+              // Update content in context
+              // Mark step as complete if content length is sufficient
+              if (newContent.length > 50) {
+                navigateToStep(4);
+              }
+            }}
           />
         );
       
@@ -239,8 +138,8 @@ const ContentPage: React.FC = () => {
                 <Button 
                   className="w-full bg-gradient-to-r from-neon-purple to-neon-blue"
                   onClick={() => {
-                    setSeoScore(78);
-                    markStepCompleted(4);
+                    // Mark step as complete and allow navigation
+                    navigateToStep(5);
                   }}
                 >
                   Optimize Content
@@ -306,6 +205,79 @@ const ContentPage: React.FC = () => {
   };
 
   return (
+    <div className="flex flex-col space-y-6">
+      {/* Progress Bar */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-medium">Content Builder</h2>
+          <div className="text-sm text-muted-foreground">
+            Step {activeStep + 1} of {steps.length}
+          </div>
+        </div>
+        <Progress value={progressPercentage} className="h-2" />
+      </div>
+
+      {/* Step Navigation */}
+      <div className="w-full overflow-x-auto">
+        <Tabs 
+          value={activeStep.toString()} 
+          onValueChange={(value) => navigateToStep(parseInt(value))}
+          className="w-full"
+        >
+          <TabsList className="w-full justify-start">
+            {steps.map((step) => (
+              <TabsTrigger 
+                key={step.id} 
+                value={step.id.toString()} 
+                disabled={!step.completed && step.id !== activeStep}
+                className="gap-1.5"
+              >
+                {step.completed ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : null}
+                {step.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Step Content */}
+      <div className="bg-glass rounded-lg border border-white/10 p-6">
+        <div className="space-y-2 mb-6">
+          <h3 className="text-xl font-bold">{steps[activeStep].name}</h3>
+          <p className="text-muted-foreground">{steps[activeStep].description}</p>
+        </div>
+        
+        {renderStepContent()}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={() => navigateToStep(activeStep - 1)}
+          disabled={activeStep === 0}
+          className="gap-1"
+        >
+          <ChevronLeft className="h-4 w-4" /> Previous
+        </Button>
+        
+        <Button
+          onClick={() => navigateToStep(activeStep + 1)}
+          disabled={!canGoNext}
+          className={`gap-1 ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple' : ''}`}
+        >
+          Next <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Main ContentPage component
+const ContentPage: React.FC = () => {
+  return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
         <title>Content Creator | SEO Platform</title>
@@ -323,71 +295,10 @@ const ContentPage: React.FC = () => {
             </div>
           </div>
           
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium">Content Builder</h2>
-              <div className="text-sm text-muted-foreground">
-                Step {activeStep + 1} of {steps.length}
-              </div>
-            </div>
-            <Progress value={progressPercentage} className="h-2" />
-          </div>
-
-          {/* Step Navigation */}
-          <div className="w-full overflow-x-auto">
-            <Tabs 
-              value={activeStep.toString()} 
-              onValueChange={(value) => navigateToStep(parseInt(value))}
-              className="w-full"
-            >
-              <TabsList className="w-full justify-start">
-                {steps.map((step) => (
-                  <TabsTrigger 
-                    key={step.id} 
-                    value={step.id.toString()} 
-                    disabled={!step.completed && step.id !== activeStep}
-                    className="gap-1.5"
-                  >
-                    {step.completed ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : null}
-                    {step.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Step Content */}
-          <div className="bg-glass rounded-lg border border-white/10 p-6">
-            <div className="space-y-2 mb-6">
-              <h3 className="text-xl font-bold">{steps[activeStep].name}</h3>
-              <p className="text-muted-foreground">{steps[activeStep].description}</p>
-            </div>
-            
-            {renderStepContent()}
-          </div>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => navigateToStep(activeStep - 1)}
-              disabled={activeStep === 0}
-              className="gap-1"
-            >
-              <ChevronLeft className="h-4 w-4" /> Previous
-            </Button>
-            
-            <Button
-              onClick={() => navigateToStep(activeStep + 1)}
-              disabled={!canGoNext}
-              className={`gap-1 ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple' : ''}`}
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Wrap everything in ContentBuilderProvider */}
+          <ContentBuilderProvider>
+            <ContentSteps />
+          </ContentBuilderProvider>
         </div>
       </main>
     </div>
