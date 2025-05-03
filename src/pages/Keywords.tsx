@@ -24,11 +24,6 @@ export interface KeywordItemProps {
   selected: boolean;
 }
 
-// Define the interface for KeywordsList component
-export interface KeywordsListProps {
-  keywords: KeywordItemProps[];
-}
-
 // Sample data for demonstration
 const sampleKeywords: KeywordItemProps[] = [
   {
@@ -54,6 +49,18 @@ const sampleKeywords: KeywordItemProps[] = [
     selected: true
   }
 ];
+
+// Sample data for KeywordCluster component
+const sampleClusterData = {
+  primary: 'content marketing',
+  volume: '12,000',
+  difficulty: 'Medium',
+  cpc: '$2.45',
+  intent: 'Informational',
+  secondaryKeywords: ['content strategy', 'content creation', 'content distribution'],
+  semanticTerms: ['blog', 'article', 'post', 'guide'],
+  longTailKeywords: ['best content marketing tools 2025', 'how to create content marketing strategy', 'content marketing examples for small business']
+};
 
 const KeywordsPage: React.FC = () => {
   return (
@@ -92,7 +99,16 @@ const KeywordsPage: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="clusters">
-            <KeywordCluster />
+            <KeywordCluster 
+              primary={sampleClusterData.primary}
+              volume={sampleClusterData.volume}
+              difficulty={sampleClusterData.difficulty}
+              cpc={sampleClusterData.cpc}
+              intent={sampleClusterData.intent}
+              secondaryKeywords={sampleClusterData.secondaryKeywords}
+              semanticTerms={sampleClusterData.semanticTerms}
+              longTailKeywords={sampleClusterData.longTailKeywords}
+            />
           </TabsContent>
           
           <TabsContent value="trends">
