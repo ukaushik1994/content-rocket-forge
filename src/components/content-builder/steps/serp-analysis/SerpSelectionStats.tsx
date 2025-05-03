@@ -1,26 +1,36 @@
 
-import React from 'react';
 import { SerpSelection } from '@/contexts/content-builder/types';
 
-interface SerpSelectionStatsProps {
-  serpSelections: SerpSelection[];
+interface SerpSelectionStatsResult {
+  totalSelected: number;
+  selectedCounts: {
+    keyword: number;
+    question: number;
+    snippet: number;
+    competitor: number;
+  };
 }
 
-export function SerpSelectionStats({ serpSelections }: SerpSelectionStatsProps) {
-  // Calculate selected counts
-  const selectedCounts = {
-    keyword: getSelectedCountByType('keyword'),
-    question: getSelectedCountByType('question'),
-    snippet: getSelectedCountByType('snippet'),
-    competitor: getSelectedCountByType('competitor')
+export const SerpSelectionStats = ({ 
+  serpSelections 
+}: { 
+  serpSelections: SerpSelection[] 
+}): SerpSelectionStatsResult => {
+  // Count selected items by type
+  const selectedItems = serpSelections.filter(item => item.selected);
+  
+  const keywordCount = selectedItems.filter(item => item.type === 'keyword').length;
+  const questionCount = selectedItems.filter(item => item.type === 'question').length;
+  const snippetCount = selectedItems.filter(item => item.type === 'snippet').length;
+  const competitorCount = selectedItems.filter(item => item.type === 'competitor').length;
+  
+  return {
+    totalSelected: selectedItems.length,
+    selectedCounts: {
+      keyword: keywordCount,
+      question: questionCount,
+      snippet: snippetCount,
+      competitor: competitorCount
+    }
   };
-  
-  const totalSelected = Object.values(selectedCounts).reduce((acc, count) => acc + count, 0);
-  
-  // Helper function to get selected count by type
-  function getSelectedCountByType(type: string): number {
-    return serpSelections.filter(item => item.type === type && item.selected).length;
-  }
-  
-  return { selectedCounts, totalSelected };
-}
+};

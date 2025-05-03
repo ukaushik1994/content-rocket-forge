@@ -1,334 +1,234 @@
+
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Loader2, Sparkles, ThumbsUp, ThumbsDown, RefreshCw } from 'lucide-react';
-import { ContentOutlineSection } from '@/contexts/content-builder/types';
+import { motion } from 'framer-motion';
+import { Sparkles, PenLine, ChevronRight, CheckCheck, Loader2, FileType } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
-
-interface OutlineGenerationPrompt {
-  mainKeyword: string;
-  selectedKeywords: string[];
-  solutionName?: string;
-  solutionFeatures?: string[];
-  customInstructions?: string;
-  contentType?: string;
-}
-
-interface OutlineSuggestion {
-  id: string;
-  title: string;
-  description: string;
-  sections: ContentOutlineSection[];
-}
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export function AIOutlineGenerator() {
   const { state, dispatch } = useContentBuilder();
   const { 
     mainKeyword, 
-    selectedKeywords, 
-    serpSelections, 
-    selectedSolution,
-    contentType,
-    serpData
+    selectedKeywords,
+    serpSelections,
+    contentTitle,
+    additionalInstructions
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
-  const [suggestions, setSuggestions] = useState<OutlineSuggestion[]>([]);
-  const [customTitle, setCustomTitle] = useState('');
-  const [customInstructions, setCustomInstructions] = useState('');
-  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
+  const [customInstructions, setCustomInstructions] = useState(additionalInstructions);
   
-  const generateOutlineSuggestions = async () => {
-    // In a real app, this would call an AI service
-    setIsGenerating(true);
+  const selectedItems = serpSelections.filter(item => item.selected);
+  const totalSelectedItems = selectedItems.length;
+  
+  // Generate an AI outline based on selections and keywords
+  const handleGenerateOutline = async () => {
+    if (!mainKeyword) {
+      toast.error("Please set a main keyword first");
+      return;
+    }
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsGenerating(true);
       
-      // Selected SERP elements
-      const selectedItems = serpSelections.filter(item => item.selected);
-      const selectedQuestions = selectedItems
-        .filter(item => item.type === 'question')
-        .map(item => item.content);
-      
-      const selectedKeywordItems = selectedItems
-        .filter(item => item.type === 'keyword')
-        .map(item => item.content);
-      
-      // Create generation prompt
-      const prompt: OutlineGenerationPrompt = {
+      // In a real implementation, this would call an API to generate the outline
+      console.info("AI Generation prompt:", {
         mainKeyword,
-        selectedKeywords: [...selectedKeywords, ...selectedKeywordItems],
+        selectedKeywords,
         customInstructions,
-        contentType
-      };
+        contentType: "article"
+      });
       
-      // Add solution context if available
-      if (selectedSolution) {
-        prompt.solutionName = selectedSolution.name;
-        prompt.solutionFeatures = selectedSolution.features;
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Create a sample outline based on the keyword
+      const newOutline = [
+        {
+          id: uuid(),
+          title: `Introduction to ${mainKeyword}`,
+          notes: "Brief overview of the topic and why it's important"
+        },
+        {
+          id: uuid(),
+          title: `What are ${mainKeyword}?`,
+          notes: "Definition and key concepts"
+        },
+        {
+          id: uuid(),
+          title: `Benefits of ${mainKeyword}`,
+          notes: "List main advantages and business outcomes"
+        },
+        {
+          id: uuid(),
+          title: `Top ${mainKeyword} Strategies`,
+          notes: "Explore effective approaches and methodologies"
+        },
+        {
+          id: uuid(),
+          title: `How to Implement ${mainKeyword}`,
+          notes: "Step-by-step guide with practical advice"
+        },
+        {
+          id: uuid(),
+          title: `${mainKeyword} Case Studies`,
+          notes: "Real-world examples of successful implementation"
+        },
+        {
+          id: uuid(),
+          title: `Common Challenges with ${mainKeyword}`,
+          notes: "Address potential obstacles and solutions"
+        },
+        {
+          id: uuid(),
+          title: `Tools and Resources for ${mainKeyword}`,
+          notes: "List of helpful tools and additional resources"
+        },
+        {
+          id: uuid(),
+          title: `Conclusion: Future of ${mainKeyword}`,
+          notes: "Summary and forward-looking perspective"
+        }
+      ];
+      
+      // Update the outline in state
+      dispatch({ type: 'SET_OUTLINE', payload: newOutline });
+      
+      // Set a title if none exists
+      if (!contentTitle) {
+        const suggestedTitle = `Complete Guide to ${mainKeyword}: Benefits, Strategies, and Implementation`;
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
       }
       
-      console.log("AI Generation prompt:", prompt);
+      // Mark the outline step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
       
-      // Generate mock suggestions (in a real app, this would come from an AI service)
-      const mockSuggestions = generateMockOutlines(prompt, selectedQuestions);
-      
-      setSuggestions(mockSuggestions);
-      toast.success("Outline suggestions generated!");
+      toast.success("AI outline generated successfully!");
     } catch (error) {
-      console.error("Error generating outline suggestions:", error);
-      toast.error("Failed to generate outline suggestions. Please try again.");
+      console.error("Error generating AI outline:", error);
+      toast.error("Failed to generate outline. Please try again.");
     } finally {
       setIsGenerating(false);
     }
   };
   
-  const selectOutlineSuggestion = (suggestionId: string) => {
-    const selectedSuggestion = suggestions.find(s => s.id === suggestionId);
-    if (!selectedSuggestion) return;
-    
-    setSelectedSuggestionId(suggestionId);
-    
-    // Update outline in context
-    dispatch({ type: 'SET_OUTLINE', payload: selectedSuggestion.sections });
-    
-    toast.success("Outline selected! You can now customize it in the editor.");
-    
-    // Mark step as complete
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
+  const handleSaveInstructions = () => {
+    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: customInstructions });
+    toast.success("Instructions saved");
   };
-  
-  // Generate mock outlines for demo purposes
-  const generateMockOutlines = (
-    prompt: OutlineGenerationPrompt, 
-    questions: string[]
-  ): OutlineSuggestion[] => {
-    // This is a demo function - in a real app, you'd call an AI service
-    
-    const formatOptions = [
-      // Option 1: Problem-Solution Format
-      {
-        id: uuid(),
-        title: `The Ultimate Guide to ${prompt.mainKeyword}`,
-        description: "A comprehensive guide focusing on problems and solutions",
-        sections: [
-          { id: uuid(), title: `Understanding ${prompt.mainKeyword}: A Complete Overview` },
-          { id: uuid(), title: "Common Challenges and Pain Points" },
-          { id: uuid(), title: "Proven Solutions and Approaches" },
-          ...(questions.slice(0, 3).map(q => ({ id: uuid(), title: q }))),
-          { id: uuid(), title: "Implementation Strategy" },
-          { id: uuid(), title: "Best Practices for Success" }
-        ]
-      },
-      
-      // Option 2: How-To Format
-      {
-        id: uuid(),
-        title: `How to Master ${prompt.mainKeyword} in 2025`,
-        description: "Step-by-step practical guide with actionable advice",
-        sections: [
-          { id: uuid(), title: "Introduction: Why Master " + prompt.mainKeyword },
-          { id: uuid(), title: "Step 1: Getting Started with the Basics" },
-          { id: uuid(), title: "Step 2: Advanced Techniques and Strategies" },
-          { id: uuid(), title: "Step 3: Overcoming Common Obstacles" },
-          { id: uuid(), title: "Step 4: Measuring Success and Optimization" },
-          { id: uuid(), title: "FAQ: Common Questions Answered" },
-          { id: uuid(), title: "Conclusion: Your Path Forward" }
-        ]
-      },
-      
-      // Option 3: Comparison Format
-      {
-        id: uuid(),
-        title: `${prompt.mainKeyword} Compared: Finding the Best Solution`,
-        description: "Comparative analysis focused on helping readers make decisions",
-        sections: [
-          { id: uuid(), title: "Introduction to " + prompt.mainKeyword },
-          { id: uuid(), title: "Evaluation Criteria: What Matters Most" },
-          { id: uuid(), title: "Top Options in the Market" },
-          { id: uuid(), title: "Head-to-Head Comparisons" },
-          { id: uuid(), title: "Use Case Analysis: Which Option is Best for You" },
-          { id: uuid(), title: "Expert Recommendations and Final Verdict" }
-        ]
-      }
-    ];
-    
-    // If a solution is selected, add a solution-specific outline
-    if (prompt.solutionName) {
-      formatOptions.push({
-        id: uuid(),
-        title: `${prompt.mainKeyword}: Why ${prompt.solutionName} is the Superior Choice`,
-        description: "Solution-focused content highlighting specific benefits",
-        sections: [
-          { id: uuid(), title: `The State of ${prompt.mainKeyword} Today` },
-          { id: uuid(), title: `Introducing ${prompt.solutionName}: A Game-Changing Solution` },
-          { id: uuid(), title: "Key Features and Benefits" },
-          { id: uuid(), title: "Real-World Success Stories" },
-          { id: uuid(), title: "How to Get Started with " + prompt.solutionName },
-          { id: uuid(), title: "Conclusion: Transform Your Results with " + prompt.solutionName }
-        ]
-      });
-    }
-    
-    return formatOptions;
-  };
-  
-  const applyCustomTitle = () => {
-    if (!selectedSuggestionId || !customTitle.trim()) return;
-    
-    const selectedSuggestion = suggestions.find(s => s.id === selectedSuggestionId);
-    if (!selectedSuggestion) return;
-    
-    const updatedSections = [...selectedSuggestion.sections];
-    dispatch({ type: 'SET_OUTLINE', payload: updatedSections });
-    
-    // Set main title
-    dispatch({ type: 'SET_CONTENT_TITLE', payload: customTitle });
-    
-    toast.success("Custom title applied!");
-  };
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">AI Outline Generator</h3>
-        
-        <Button
-          onClick={generateOutlineSuggestions}
-          disabled={isGenerating || !mainKeyword}
-          className="gap-1.5"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              Generate Outline Options
-            </>
-          )}
-        </Button>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="title">Custom Title (Optional)</Label>
-            <div className="flex mt-1 space-x-2">
-              <Input 
-                id="title"
-                value={customTitle} 
-                onChange={e => setCustomTitle(e.target.value)}
-                placeholder="Enter your preferred title..."
-                className="flex-1"
-              />
-              <Button 
-                variant="outline"
-                onClick={applyCustomTitle}
-                disabled={!selectedSuggestionId || !customTitle.trim()}
-              >
-                Apply
-              </Button>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <div className="bg-gradient-to-br from-neon-purple/10 to-neon-blue/5 border border-white/10 rounded-lg p-5">
+        <div className="flex items-start gap-4">
+          <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">AI Outline Generator</h3>
+            <p className="text-sm text-white/70">
+              Let AI create a structured outline based on your keyword research and SERP selections
+            </p>
+            
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Badge variant="secondary" className="bg-white/10">
+                Main Keyword: {mainKeyword || "Not set"}
+              </Badge>
+              
+              {totalSelectedItems > 0 && (
+                <Badge variant="secondary" className="bg-white/10">
+                  {totalSelectedItems} SERP items selected
+                </Badge>
+              )}
+              
+              {selectedKeywords.length > 0 && (
+                <Badge variant="secondary" className="bg-white/10">
+                  {selectedKeywords.length} keywords
+                </Badge>
+              )}
             </div>
           </div>
-          
-          <div>
-            <Label htmlFor="custom-instructions">Custom Instructions (Optional)</Label>
-            <Textarea
-              id="custom-instructions"
-              value={customInstructions}
-              onChange={e => setCustomInstructions(e.target.value)}
-              placeholder="E.g., Focus on beginners, include case studies, etc."
-              className="h-[70px] resize-none"
-            />
-          </div>
         </div>
       </div>
       
-      {isGenerating ? (
-        <div className="py-8 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">
-            Generating outline suggestions based on your SERP selections and keywords...
-          </p>
-        </div>
-      ) : suggestions.length > 0 ? (
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Select an outline suggestion:</h3>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            {suggestions.map((suggestion) => (
-              <Card 
-                key={suggestion.id}
-                className={`cursor-pointer transition-all ${selectedSuggestionId === suggestion.id ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
-                onClick={() => selectOutlineSuggestion(suggestion.id)}
+      <Card className="bg-white/5 border border-white/10">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium mb-2">
+                <PenLine className="h-4 w-4" /> 
+                Additional Instructions (Optional)
+              </div>
+              <Textarea
+                value={customInstructions}
+                onChange={(e) => setCustomInstructions(e.target.value)}
+                placeholder="Include specific topics, tone preferences, or structure requirements..."
+                className="min-h-[100px] bg-white/5 border-white/10"
+              />
+              <div className="flex justify-end mt-2">
+                <Button 
+                  size="sm"
+                  variant="outline" 
+                  onClick={handleSaveInstructions}
+                  className="text-xs"
+                >
+                  <CheckCheck className="h-3.5 w-3.5 mr-1" />
+                  Save Instructions
+                </Button>
+              </div>
+            </div>
+            
+            <div className="pt-4">
+              <Button 
+                onClick={handleGenerateOutline}
+                disabled={isGenerating || !mainKeyword}
+                className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                size="lg"
               >
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <h4 className="font-medium text-sm line-clamp-2">{suggestion.title}</h4>
-                    {selectedSuggestionId === suggestion.id && (
-                      <div className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center">
-                        <ThumbsUp className="h-3 w-3" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">{suggestion.description}</p>
-                  
-                  <div className="text-xs">
-                    <div className="font-medium mb-1">Sections:</div>
-                    <ul className="list-disc list-inside space-y-0.5">
-                      {suggestion.sections.slice(0, 4).map((section, i) => (
-                        <li key={i} className="line-clamp-1">{section.title}</li>
-                      ))}
-                      {suggestion.sections.length > 4 && (
-                        <li className="text-muted-foreground">
-                          +{suggestion.sections.length - 4} more sections
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          <div className="flex justify-center pt-2">
-            <Button 
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => {
-                setSuggestions([]);
-                setSelectedSuggestionId(null);
-              }}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Generate New Options
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">
-              {mainKeyword ? (
-                "Click 'Generate Outline Options' to create AI-powered outline suggestions based on your selected SERP items and keywords."
-              ) : (
-                "Please enter a main keyword first, then select SERP items to generate outline suggestions."
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating Outline...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate AI Outline
+                  </>
+                )}
+              </Button>
+              
+              {!mainKeyword && (
+                <p className="text-xs text-amber-400 mt-2 text-center">
+                  Please set a main keyword before generating an outline
+                </p>
               )}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-white/70">
+          <FileType className="h-4 w-4" />
+          Alternative: Create outline manually with drag & drop
+        </div>
+        
+        <Button variant="outline" size="sm" onClick={() => dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 })}>
+          Switch to Manual Editor <ChevronRight className="h-3.5 w-3.5 ml-1" />
+        </Button>
+      </div>
+    </motion.div>
   );
 }

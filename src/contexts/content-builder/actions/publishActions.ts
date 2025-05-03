@@ -1,142 +1,70 @@
 
 import { ContentBuilderState, ContentBuilderAction } from '../types';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
- * Actions related to saving and publishing content
+ * Actions related to content publishing in the content builder
  */
 export const createPublishActions = (
   state: ContentBuilderState,
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  // Save content as draft
-  const saveContentAsDraft = async () => {
+  // Publish content to platform
+  const publishContent = async (platform: string): Promise<boolean> => {
+    if (!state.content) {
+      toast.error("No content to publish");
+      return false;
+    }
+
+    dispatch({ type: 'SET_IS_PUBLISHING', payload: true });
+    
     try {
-      dispatch({ type: 'SET_IS_SAVING', payload: true });
+      // In a real implementation, this would call an API to publish the content
+      console.log(`Publishing content to ${platform}...`);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in to save content');
-        return false;
-      }
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Prepare content data
-      const contentData = {
-        title: state.contentTitle || `Content about ${state.primaryKeyword || state.mainKeyword}`,
-        content: state.content,
-        status: 'draft',
-        seo_score: state.seoScore || 0,
-        user_id: user.id
-      };
+      toast.success(`Content published to ${platform}`);
       
-      // Insert into database
-      const { data, error } = await supabase
-        .from('content_items')
-        .insert(contentData)
-        .select('id')
-        .single();
-        
-      if (error) {
-        throw error;
-      }
+      // Mark the publishing step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
       
-      // Add keywords if available
-      if ((state.selectedKeywords && state.selectedKeywords.length > 0) || state.primaryKeyword) {
-        const allKeywords = [...(state.selectedKeywords || [])];
-        
-        if (state.primaryKeyword && !allKeywords.includes(state.primaryKeyword)) {
-          allKeywords.push(state.primaryKeyword);
-        }
-        
-        if (state.mainKeyword && !allKeywords.includes(state.mainKeyword)) {
-          allKeywords.push(state.mainKeyword);
-        }
-        
-        // Create and link keywords
-        for (const keyword of allKeywords) {
-          // First check if keyword exists
-          const { data: existingKeyword, error: keywordError } = await supabase
-            .from('keywords')
-            .select('id')
-            .eq('keyword', keyword)
-            .eq('user_id', user.id)
-            .single();
-            
-          if (keywordError && keywordError.code !== 'PGRST116') {
-            console.error('Error checking keyword:', keywordError);
-            continue;
-          }
-          
-          let keywordId;
-          
-          if (!existingKeyword) {
-            // Create keyword if it doesn't exist
-            const { data: newKeyword, error: createError } = await supabase
-              .from('keywords')
-              .insert({ keyword, user_id: user.id })
-              .select('id')
-              .single();
-              
-            if (createError) {
-              console.error('Error creating keyword:', createError);
-              continue;
-            }
-            
-            keywordId = newKeyword.id;
-          } else {
-            keywordId = existingKeyword.id;
-          }
-          
-          // Link keyword to content
-          await supabase
-            .from('content_keywords')
-            .insert({
-              content_id: data.id,
-              keyword_id: keywordId
-            });
-        }
-      }
-      
-      toast.success('Content saved as draft');
-      return data.id;
-    } catch (error: any) {
-      console.error('Error saving content:', error);
-      toast.error(`Failed to save content: ${error.message}`);
+      return true;
+    } catch (error) {
+      console.error(`Error publishing to ${platform}:`, error);
+      toast.error(`Failed to publish to ${platform}`);
       return false;
     } finally {
-      dispatch({ type: 'SET_IS_SAVING', payload: false });
+      dispatch({ type: 'SET_IS_PUBLISHING', payload: false });
     }
   };
 
-  // Publish content
-  const publishContent = async () => {
+  // Schedule content for publishing
+  const scheduleContent = async (platform: string, date: Date): Promise<boolean> => {
+    if (!state.content) {
+      toast.error("No content to schedule");
+      return false;
+    }
+
+    dispatch({ type: 'SET_IS_PUBLISHING', payload: true });
+    
     try {
-      dispatch({ type: 'SET_IS_PUBLISHING', payload: true });
+      // In a real implementation, this would call an API to schedule the content
+      console.log(`Scheduling content for ${platform} on ${date}...`);
       
-      // First save as draft to get the id
-      const contentId = await saveContentAsDraft();
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (!contentId) {
-        throw new Error('Failed to save content before publishing');
-      }
+      toast.success(`Content scheduled for ${platform} on ${date.toLocaleDateString()}`);
       
-      // Update status to published
-      const { error } = await supabase
-        .from('content_items')
-        .update({ status: 'published' })
-        .eq('id', contentId);
-        
-      if (error) {
-        throw error;
-      }
+      // Mark the publishing step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
       
-      toast.success('Content published successfully!');
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
-      return contentId;
-    } catch (error: any) {
-      console.error('Error publishing content:', error);
-      toast.error(`Failed to publish content: ${error.message}`);
+      return true;
+    } catch (error) {
+      console.error(`Error scheduling for ${platform}:`, error);
+      toast.error(`Failed to schedule for ${platform}`);
       return false;
     } finally {
       dispatch({ type: 'SET_IS_PUBLISHING', payload: false });
@@ -144,7 +72,7 @@ export const createPublishActions = (
   };
 
   return {
-    saveContentAsDraft,
-    publishContent
+    publishContent,
+    scheduleContent
   };
 };

@@ -1,153 +1,140 @@
 
-import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from '../types';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
+import { v4 as uuid } from 'uuid';
 
 /**
- * Actions related to SERP data analysis and selection
+ * Actions related to SERP analysis and selection in the content builder
  */
 export const createSerpActions = (
   state: ContentBuilderState,
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  // Set SERP analysis results
-  const setSerpAnalysisResults = (results: any) => {
-    dispatch({ type: 'SET_SERP_ANALYSIS_RESULTS', payload: results });
+  // Add SERP selection
+  const addSerpSelection = (selection: SerpSelection) => {
+    dispatch({ type: 'ADD_SERP_SELECTION', payload: selection });
   };
 
-  // Set selected SERP keywords
-  const setSerpKeywordsSelected = (keywords: SerpSelection[]) => {
-    dispatch({ type: 'SET_SERP_KEYWORDS_SELECTED', payload: keywords });
+  // Toggle SERP selection
+  const toggleSerpSelection = (type: string, content: string) => {
+    dispatch({
+      type: 'TOGGLE_SERP_SELECTION',
+      payload: { type, content }
+    });
   };
 
-  // Set selected SERP questions
-  const setSerpQuestionsSelected = (questions: SerpSelection[]) => {
-    dispatch({ type: 'SET_SERP_QUESTIONS_SELECTED', payload: questions });
+  // Analyze keyword for SERP data
+  const analyzeKeyword = async (keyword: string) => {
+    if (!keyword) {
+      toast.error('Please enter a keyword to analyze');
+      return;
+    }
+
+    dispatch({ type: 'SET_IS_ANALYZING', payload: true });
+    
+    try {
+      // Call API to analyze keyword
+      const data = await analyzeKeywordSerp(keyword);
+      
+      // Set main keyword if not already set
+      if (!state.mainKeyword) {
+        dispatch({ type: 'SET_MAIN_KEYWORD', payload: keyword });
+      }
+      
+      // Update SERP data in state
+      if (data) {
+        dispatch({ type: 'SET_SERP_DATA', payload: data });
+        
+        // Mark current step as completed if we have SERP data
+        dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+        
+        // Show success message
+        if (data.isMockData) {
+          toast.info(`Analysis completed for ${keyword} (using demo data)`);
+        } else {
+          toast.success(`Analysis completed for ${keyword}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error analyzing keyword:", error);
+      toast.error("Failed to analyze keyword. Please try again.");
+    } finally {
+      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
+    }
   };
 
-  // Set analyzing state
-  const setIsAnalyzing = (isAnalyzing: boolean) => {
-    dispatch({ type: 'SET_IS_ANALYZING', payload: isAnalyzing });
+  // Add content from SERP to outline
+  const addContentFromSerp = (content: string, type: string) => {
+    toggleSerpSelection(type, content);
+    toast.success(`Added ${type} to selected items`);
   };
 
-  // Generate outline from SERP selections
+  // Generate outline from selected SERP items
   const generateOutlineFromSelections = () => {
-    // Generate outline based on selected SERP items
-    const selectedItems = state.serpSelections.filter((item: SerpSelection) => item.selected);
+    const { serpSelections, contentTitle } = state;
+    const selectedItems = serpSelections.filter(item => item.selected);
     
     if (selectedItems.length === 0) {
-      toast.warning('Please select some items from the SERP analysis first');
+      toast.error("Please select items to include in your outline");
       return;
     }
     
-    // Group selected items by type
-    const questionItems = selectedItems.filter(item => item.type === 'question');
-    const keywordItems = selectedItems.filter(item => item.type === 'keyword');
-    const snippetItems = selectedItems.filter(item => item.type === 'snippet');
+    // Create sections for the outline based on selections
+    const keywords = selectedItems.filter(item => item.type === 'keyword');
+    const questions = selectedItems.filter(item => item.type === 'question');
+    const snippets = selectedItems.filter(item => item.type === 'snippet');
     
-    // Generate a title based on main keyword
-    const title = `Ultimate Guide to ${state.mainKeyword}`;
-    dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
-    
-    // Create outline sections based on selected items
-    const outlineSections: ContentOutlineSection[] = [
-      { id: crypto.randomUUID(), title: `Introduction to ${state.mainKeyword}` }
-    ];
-    
-    // Add sections for keywords
-    if (keywordItems.length > 0) {
-      keywordItems.forEach(item => {
-        outlineSections.push({
-          id: crypto.randomUUID(),
-          title: item.content.charAt(0).toUpperCase() + item.content.slice(1)
+    try {
+      // Create outline sections
+      const newOutline = [];
+      
+      // Use questions as main sections
+      questions.forEach(question => {
+        newOutline.push({
+          id: uuid(),
+          title: question.content,
+          type: 'question'
         });
       });
-    }
-    
-    // Add FAQ section if questions exist
-    if (questionItems.length > 0) {
-      const faqSection: ContentOutlineSection = {
-        id: crypto.randomUUID(),
-        title: 'Frequently Asked Questions'
-      };
       
-      // Create separate subsections for each question
-      const faqSubsections = questionItems.map(item => ({
-        id: crypto.randomUUID(),
-        title: item.content
-      }));
-      
-      // Add subsections to FAQ section
-      faqSection.subsections = faqSubsections;
-      
-      // Add FAQ section to outline
-      outlineSections.push(faqSection);
-    }
-    
-    // Enhanced solution-specific sections if solution is selected
-    if (state.selectedSolution) {
-      // Add section about the solution
-      outlineSections.push({
-        id: crypto.randomUUID(),
-        title: `How ${state.selectedSolution.name} Solves Your ${state.mainKeyword} Challenges`
-      });
-      
-      // Add section about solution benefits
-      outlineSections.push({
-        id: crypto.randomUUID(),
-        title: `Key Benefits of Using ${state.selectedSolution.name}`
-      });
-      
-      // Add section about features if they exist
-      if (state.selectedSolution.features && state.selectedSolution.features.length > 0) {
-        outlineSections.push({
-          id: crypto.randomUUID(),
-          title: `Essential Features of ${state.selectedSolution.name}`
+      // Add a section for keywords
+      if (keywords.length > 0) {
+        newOutline.push({
+          id: uuid(),
+          title: "Key Concepts & Definitions",
+          type: 'keywords',
+          relatedKeywords: keywords.map(k => k.content)
         });
       }
       
-      // Add use case section if they exist
-      if (state.selectedSolution.useCases && state.selectedSolution.useCases.length > 0) {
-        outlineSections.push({
-          id: crypto.randomUUID(),
-          title: `Real-World Use Cases for ${state.selectedSolution.name}`
-        });
+      // Set the outline in state
+      dispatch({ type: 'SET_OUTLINE', payload: newOutline });
+      
+      // Create a title if one doesn't exist
+      if (!contentTitle && state.mainKeyword) {
+        const suggestedTitle = `Complete Guide to ${state.mainKeyword}`;
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
       }
       
-      // Add a customer testimonial section placeholder
-      outlineSections.push({
-        id: crypto.randomUUID(),
-        title: `Success Stories: Real Results with ${state.selectedSolution.name}`
-      });
-    }
-    
-    // Add conclusion
-    outlineSections.push({ 
-      id: crypto.randomUUID(), 
-      title: 'Conclusion' 
-    });
-    
-    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
-    toast.success('Outline generated from selected items');
-    
-    // Mark outline step as completed
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
-    
-    // Navigate to the outline step
-    navigateToStep(3);
-  };
-  
-  // Helper function to navigate between steps (defined here to avoid circular dependency)
-  const navigateToStep = (step: number) => {
-    if (step >= 0 && step < state.steps.length) {
-      dispatch({ type: 'SET_ACTIVE_STEP', payload: step });
+      // Mark SERP analysis step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
+      
+      // Navigate to outline step
+      dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 });
+      
+      toast.success(`Outline generated with ${newOutline.length} sections`);
+    } catch (error) {
+      console.error("Error generating outline:", error);
+      toast.error("Failed to generate outline. Please try again.");
     }
   };
 
   return {
-    setSerpAnalysisResults,
-    setSerpKeywordsSelected,
-    setSerpQuestionsSelected,
-    setIsAnalyzing,
+    addSerpSelection,
+    toggleSerpSelection,
+    analyzeKeyword,
+    addContentFromSerp,
     generateOutlineFromSelections
   };
 };
