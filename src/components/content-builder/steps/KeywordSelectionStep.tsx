@@ -24,7 +24,6 @@ const mockClusters: ContentCluster[] = [{
   name: 'Social Media',
   keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
 }];
-
 export const KeywordSelectionStep = () => {
   const {
     state,
@@ -33,7 +32,6 @@ export const KeywordSelectionStep = () => {
     addContentFromSerp,
     generateOutlineFromSelections
   } = useContentBuilder();
-  
   const {
     mainKeyword,
     selectedKeywords,
@@ -41,11 +39,9 @@ export const KeywordSelectionStep = () => {
     serpData,
     isAnalyzing
   } = state;
-  
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
-  
   useEffect(() => {
     // Check if we have completed the requirements to move forward
     if (mainKeyword && selectedKeywords.length > 0) {
@@ -61,7 +57,6 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
-  
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
 
@@ -82,37 +77,31 @@ export const KeywordSelectionStep = () => {
     // Automatically start SERP analysis when a keyword is entered
     await analyzeKeyword(keyword);
   };
-  
   const handleAddKeyword = (kw: string) => {
     dispatch({
       type: 'ADD_KEYWORD',
       payload: kw
     });
   };
-  
   const handleRemoveKeyword = (kw: string) => {
     dispatch({
       type: 'REMOVE_KEYWORD',
       payload: kw
     });
   };
-  
   const handleSelectCluster = (cluster: ContentCluster) => {
     dispatch({
       type: 'SELECT_CLUSTER',
       payload: cluster
     });
   };
-  
   const handleClearCluster = () => {
     dispatch({
       type: 'SELECT_CLUSTER',
       payload: null
     });
   };
-  
-  return (
-    <div className="space-y-8">
+  return <div className="space-y-8">
       {/* Header with animation */}
       <div className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
@@ -152,14 +141,18 @@ export const KeywordSelectionStep = () => {
             </div>
             
             {/* Selected Keywords */}
-            <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <div className="animate-fade-in" style={{
+            animationDelay: '100ms'
+          }}>
               <SelectedKeywords keywords={selectedKeywords} onRemoveKeyword={handleRemoveKeyword} />
             </div>
           </div>
           
           {/* Right column for saved keywords or clusters */}
           <div className="space-y-4">
-            <div className="glass-panel border border-white/10 rounded-lg p-4 shadow-lg animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div style={{
+            animationDelay: '200ms'
+          }} className="glass-panel border border-white/10 rounded-lg p-4 shadow-lg animate-fade-in px-[16px] py-[30px]">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <ChevronRight className="h-4 w-4 text-primary" />
                 Content Strategy Tips
@@ -185,8 +178,9 @@ export const KeywordSelectionStep = () => {
         </div>
         
         {/* SERP Analysis Section */}
-        {mainKeyword && (
-          <div className="mt-8 border-t border-white/10 pt-8 animate-fade-in" style={{ animationDelay: '300ms' }}>
+        {mainKeyword && <div className="mt-8 border-t border-white/10 pt-8 animate-fade-in" style={{
+        animationDelay: '300ms'
+      }}>
             <div className="flex items-center gap-2 mb-6">
               <div className="h-1 w-1 bg-primary rounded-full"></div>
               <div className="h-1.5 w-1.5 bg-primary rounded-full"></div>
@@ -201,16 +195,9 @@ export const KeywordSelectionStep = () => {
               {/* Decorative elements */}
               <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-30 pointer-events-none rounded-lg"></div>
               
-              <SerpAnalysisPanel 
-                serpData={serpData} 
-                isLoading={isAnalyzing} 
-                mainKeyword={mainKeyword} 
-                onAddToContent={addContentFromSerp} 
-              />
+              <SerpAnalysisPanel serpData={serpData} isLoading={isAnalyzing} mainKeyword={mainKeyword} onAddToContent={addContentFromSerp} />
             </div>
-          </div>
-        )}
+          </div>}
       </div>
-    </div>
-  );
+    </div>;
 };
