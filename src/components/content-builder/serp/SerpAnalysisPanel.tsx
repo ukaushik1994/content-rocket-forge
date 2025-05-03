@@ -1,36 +1,20 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Search,
-  ListFilter, 
-  TrendingUp, 
-  Check,
-  Plus,
-  PlusCircle,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  X
-} from 'lucide-react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from 'sonner';
+import { SerpAnalysisResult } from '@/types/serp';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag } from 'lucide-react';
 
-import { SerpKeywordList } from './SerpKeywordList';
-import { SerpQuestionsList } from './SerpQuestionsList';
-import { SerpSnippetsList } from './SerpSnippetsList';
-import { SerpCompetitorsList } from './SerpCompetitorsList';
-import { SerpLoadingState } from './SerpLoadingState';
-import { SerpSelection } from '@/contexts/content-builder/types';
-
-import { SerpAnalysisResult } from '@/services/serpApiService';
+// Import refactored components
+import { SerpSectionHeader } from '@/components/content/serp-analysis/SerpSectionHeader';
+import { SerpEmptyState } from '@/components/content/serp-analysis/SerpEmptyState';
+import { SerpMetricsSection } from '@/components/content/serp-analysis/SerpMetricsSection';
+import { SerpOverviewSection } from '@/components/content/serp-analysis/SerpOverviewSection';
+import { SerpKeywordsSection } from '@/components/content/serp-analysis/SerpKeywordsSection';
+import { SerpQuestionsSection } from '@/components/content/serp-analysis/SerpQuestionsSection';
+import { SerpCompetitorsSection } from '@/components/content/serp-analysis/SerpCompetitorsSection';
+import { SerpInteractiveCard } from '@/components/content/serp-analysis/SerpInteractiveCard';
 
 export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -45,248 +29,16 @@ export function SerpAnalysisPanel({
   mainKeyword,
   onAddToContent = () => {}
 }: SerpAnalysisPanelProps) {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [selectedItems, setSelectedItems] = useState<{[key: string]: {[key: string]: boolean}}>({
-    question: {},
-    keyword: {},
-    snippet: {},
-    competitor: {},
-    recommendation: {},
-    structure: {},
-  });
-  
-  // For expandable sections
-  const [expandedSections, setExpandedSections] = useState({
-    searchMetrics: true,
-    recommendations: true,
-    keywords: false,
-    questions: false,
-    competitors: false
-  });
-  
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-  
-  // Helper function to convert serpData to SerpSelection objects with proper type casting
-  const convertToSerpSelections = (
-    items: string[] | undefined, 
-    type: 'keyword' | 'question' | 'snippet' | 'competitor' | 'recommendation' | 'structure', 
-    sourceField?: string
-  ): SerpSelection[] => {
-    if (!items || items.length === 0) return [];
-    
-    return items.map(item => ({
-      type,
-      content: typeof item === 'string' ? item : item,
-      source: sourceField ? 'SERP Analysis' : undefined,
-      selected: !!selectedItems[type]?.[typeof item === 'string' ? item : item]
-    }));
-  };
-  
-  // Toggle selection of an item
-  const handleToggleSelection = (type: string, content: string) => {
-    setSelectedItems(prev => {
-      const newState = { ...prev };
-      if (!newState[type]) newState[type] = {};
-      
-      // Toggle selection status
-      newState[type][content] = !newState[type][content];
-      
-      return newState;
-    });
-  };
-  
-  // Select all items of a type
-  const handleSelectAll = (type: string, items: SerpSelection[]) => {
-    setSelectedItems(prev => {
-      const newState = { ...prev };
-      if (!newState[type]) newState[type] = {};
-      
-      // Set all items to selected
-      items.forEach(item => {
-        newState[type][item.content] = true;
-      });
-      
-      return newState;
-    });
-    
-    toast.success(`Selected all ${type}s`);
-  };
-  
-  // Deselect all items of a type
-  const handleDeselectAll = (type: string) => {
-    setSelectedItems(prev => {
-      const newState = { ...prev };
-      newState[type] = {};
-      return newState;
-    });
-    
-    toast.success(`Deselected all ${type}s`);
-  };
-  
-  // Get items by type with proper type safety
-  const getItemsByType = (type: string): SerpSelection[] => {
-    switch(type) {
-      case 'keyword':
-        return convertToSerpSelections(serpData?.keywords, 'keyword');
-      case 'question':
-        return serpData?.peopleAlsoAsk?.map(item => ({
-          type: 'question' as const,
-          content: item.question,
-          source: item.source,
-          selected: !!selectedItems['question']?.[item.question]
-        })) || [];
-      case 'snippet':
-        return serpData?.featuredSnippets?.map(item => ({
-          type: 'snippet' as const,
-          content: item.content,
-          source: item.source,
-          selected: !!selectedItems['snippet']?.[item.content]
-        })) || [];
-      case 'competitor':
-        return serpData?.topResults?.map(item => ({
-          type: 'competitor' as const,
-          content: item.snippet,
-          source: item.link,
-          selected: !!selectedItems['competitor']?.[item.snippet]
-        })) || [];
-      case 'recommendation':
-        return convertToSerpSelections(serpData?.recommendations, 'recommendation');
-      case 'structure':
-        // Create a structure array from common patterns with proper type
-        const structures = [
-          "H1 with numbers for higher CTR",
-          "Define key terms in intro",
-          "Use H2 for main categories",
-          "Include comparison table",
-          "End with FAQ section"
-        ];
-        return structures.map(item => ({
-          type: 'structure' as const,
-          content: item,
-          source: undefined,
-          selected: !!selectedItems['structure']?.[item]
-        }));
-      default:
-        return [];
-    }
-  };
-  
-  // Get count of selected items for each type
-  const getSelectedCounts = () => {
-    const counts = {
-      question: 0,
-      keyword: 0,
-      snippet: 0,
-      competitor: 0,
-      recommendation: 0,
-      structure: 0
-    };
-    
-    Object.keys(selectedItems).forEach(type => {
-      counts[type as keyof typeof counts] = Object.values(selectedItems[type] || {}).filter(Boolean).length;
-    });
-    
-    return counts;
-  };
-  
-  const selectedCounts = getSelectedCounts();
-  const totalSelected = Object.values(selectedCounts).reduce((sum, count) => sum + count, 0);
-  
-  // Add content to editor from selected items
-  const addContentFromSerp = (content: string, type: string) => {
-    onAddToContent(content, type);
-    toast.success(`Added ${type} to your content`);
-  };
-  
-  // Generate and add all selected content
-  const addAllSelectedToContent = () => {
-    let contentToAdd = '';
-    
-    // Add recommendations if selected
-    const selectedRecommendations = getItemsByType('recommendation').filter(item => selectedItems['recommendation']?.[item.content]);
-    if (selectedRecommendations.length > 0) {
-      contentToAdd += '## Content Strategy Recommendations\n';
-      selectedRecommendations.forEach(item => {
-        contentToAdd += `- ${item.content}\n`;
-      });
-      contentToAdd += '\n';
-    }
-    
-    // Add structure if selected
-    const selectedStructure = getItemsByType('structure').filter(item => selectedItems['structure']?.[item.content]);
-    if (selectedStructure.length > 0) {
-      contentToAdd += '## Recommended Content Structure\n';
-      selectedStructure.forEach(item => {
-        contentToAdd += `- ${item.content}\n`;
-      });
-      contentToAdd += '\n';
-    }
-    
-    // Add keywords if selected
-    const selectedKeywords = getItemsByType('keyword').filter(item => selectedItems['keyword']?.[item.content]);
-    if (selectedKeywords.length > 0) {
-      contentToAdd += '## Target Keywords\n';
-      selectedKeywords.forEach(item => {
-        contentToAdd += `- ${item.content}\n`;
-      });
-      contentToAdd += '\n';
-    }
-    
-    // Add questions if selected
-    const selectedQuestions = getItemsByType('question').filter(item => selectedItems['question']?.[item.content]);
-    if (selectedQuestions.length > 0) {
-      // Add questions with proper access to the answer property
-      const selectedQuestionsContent = '## Frequently Asked Questions\n\n' +
-        selectedQuestions.map(item => {
-          const question = item.content;
-          const questionObject = serpData?.peopleAlsoAsk?.find(q => q.question === question);
-          const answer = questionObject?.answer || 'No answer available';
-          return `### ${question}\n${answer}\n\n`;
-        }).join('');
-      
-      contentToAdd += selectedQuestionsContent;
-    }
-    
-    // Add snippets if selected
-    const selectedSnippets = getItemsByType('snippet').filter(item => selectedItems['snippet']?.[item.content]);
-    if (selectedSnippets.length > 0) {
-      contentToAdd += '## Featured Content\n\n';
-      selectedSnippets.forEach(item => {
-        contentToAdd += `${item.content}\n\n`;
-      });
-    }
-    
-    // Add competitors if selected
-    const selectedCompetitors = getItemsByType('competitor').filter(item => selectedItems['competitor']?.[item.content]);
-    if (selectedCompetitors.length > 0) {
-      contentToAdd += '## Competitor Research\n\n';
-      selectedCompetitors.forEach(item => {
-        const competitor = serpData?.topResults?.find(r => r.snippet === item.content);
-        contentToAdd += `### ${competitor?.title || 'Competitor'}\n${item.content}\n[Source](${item.source})\n\n`;
-      });
-    }
-    
-    // Add content to editor
-    if (contentToAdd) {
-      onAddToContent(contentToAdd, 'allSelected');
-      toast.success('Added all selected items to your content');
-    } else {
-      toast.error('No items selected');
-    }
-  };
-  
+  const [activeTab, setActiveTab] = useState('metrics');
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex flex-col items-center justify-center py-12 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+        <div className="flex flex-col items-center justify-center py-12 bg-gradient-to-br from-black/30 to-blue-900/10 backdrop-blur-sm rounded-xl border border-white/10">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary h-8 w-8 animate-pulse" />
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-purple"></div>
+            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-neon-purple h-8 w-8 animate-pulse" />
           </div>
           <p className="mt-6 text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">Analyzing search results...</p>
           <p className="text-sm text-muted-foreground mt-2">Extracting insights from top-ranking content</p>
@@ -295,721 +47,355 @@ export function SerpAnalysisPanel({
     );
   }
 
+  // No data state
   if (!serpData) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center h-96 bg-gradient-to-b from-white/5 to-white/0 rounded-xl border border-white/10 backdrop-blur-md"
-      >
-        <Search className="h-16 w-16 text-primary/20 mb-4" />
-        <h3 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">No Analysis Data</h3>
-        <p className="text-muted-foreground mt-2 mb-6 text-center max-w-md">
-          Start the SERP analysis to get insights and recommendations for your content
-        </p>
-        <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300">
-          <Search className="h-4 w-4 mr-2" />
-          Start Analysis
-        </Button>
-      </motion.div>
-    );
+    return <SerpEmptyState />;
   }
-
-  // Animated section header component
-  const SectionHeader = ({ 
-    title, 
-    expanded, 
-    onToggle,
-    count = 0,
-    variant = 'default'
-  }: { 
-    title: string; 
-    expanded: boolean; 
-    onToggle: () => void;
-    count?: number;
-    variant?: 'default' | 'purple' | 'blue' | 'green';
-  }) => {
-    // Get gradient based on variant
-    const getGradient = () => {
-      switch(variant) {
-        case 'purple':
-          return 'from-purple-500/20 to-purple-800/5';
-        case 'blue':
-          return 'from-blue-500/20 to-blue-800/5';
-        case 'green':
-          return 'from-green-500/20 to-green-800/5';
-        default:
-          return 'from-primary/20 to-primary/5';
-      }
-    };
-    
-    return (
-      <motion.div 
-        className={`flex items-center justify-between py-3 px-4 rounded-lg backdrop-blur-md cursor-pointer mb-4
-          bg-gradient-to-br ${getGradient()} border border-white/10 hover:shadow-lg transition-all duration-300`}
-        onClick={onToggle}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <div className="flex items-center gap-3">
-          <motion.div 
-            animate={{ rotate: expanded ? 0 : -90 }}
-            transition={{ duration: 0.2 }}
-          >
-            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </motion.div>
-          <h3 className="text-lg font-medium">{title}</h3>
-          {count > 0 && (
-            <Badge className="ml-2 bg-white/10 hover:bg-white/20">{count}</Badge>
-          )}
-        </div>
-        <motion.div
-          animate={{ rotateZ: expanded ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <ChevronDown className="h-5 w-5" />
-        </motion.div>
-      </motion.div>
-    );
-  };
-
+  
+  // Check if data is mock
+  const isMockData = serpData.isMockData;
+  
   return (
-    <div className="space-y-8">
-      {/* Header with Search Metrics */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 p-5 rounded-xl border border-white/10 backdrop-blur-xl shadow-xl"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-primary/20 rounded-full">
-            <Search className="text-primary h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-xl">
-              Analysis for: <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">{mainKeyword}</span>
-            </h3>
-            <p className="text-sm text-muted-foreground">Select items to include in your content outline</p>
-          </div>
+    <div className="space-y-6">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-neon-purple/20 to-neon-blue/5 backdrop-blur-lg p-4">
+        {/* Interactive background elements */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <motion.div
+            className="absolute left-0 right-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            animate={{
+              left: ['-100%', '100%'],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+          <motion.div
+            className="absolute w-20 h-20 rounded-full bg-neon-purple/20 filter blur-xl"
+            animate={{
+              x: ['-10%', '110%'],
+              y: ['30%', '50%'],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute w-32 h-32 rounded-full bg-neon-blue/20 filter blur-xl"
+            animate={{
+              x: ['110%', '-10%'],
+              y: ['60%', '40%'],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+          />
         </div>
         
-        <SectionHeader 
-          title="Search Metrics" 
-          expanded={expandedSections.searchMetrics}
-          onToggle={() => toggleSection('searchMetrics')}
-          variant="blue"
-        />
-        
-        {expandedSections.searchMetrics && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
-              >
-                <div className="text-sm text-muted-foreground mb-1">Search Volume</div>
-                <div className="flex justify-between items-center">
-                  <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600">
-                    {serpData.searchVolume?.toLocaleString() || 'N/A'}
-                  </div>
-                  <TrendingUp className="h-5 w-5 text-purple-400" />
-                </div>
-              </motion.div>
-              
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
-              >
-                <div className="text-sm text-muted-foreground mb-1">Keyword Difficulty</div>
-                <div className="flex justify-between items-center">
-                  <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-                    {serpData.keywordDifficulty ? `${serpData.keywordDifficulty}/100` : 'N/A'}
-                  </div>
-                  <div className="w-16">
-                    {serpData.keywordDifficulty && (
-                      <div className="relative w-full h-2 bg-blue-900/30 rounded-full overflow-hidden">
-                        <div 
-                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
-                          style={{ width: `${serpData.keywordDifficulty}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-              
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white/5 border border-white/10 rounded-md p-4 backdrop-blur-md"
-              >
-                <div className="text-sm text-muted-foreground mb-1">Competition</div>
-                <div className="flex justify-between items-center">
-                  <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-600">
-                    {serpData.competitionScore ? `${(serpData.competitionScore * 100).toFixed(0)}%` : 'N/A'}
-                  </div>
-                  <div className="w-16">
-                    {serpData.competitionScore && (
-                      <div className="relative w-full h-2 bg-green-900/30 rounded-full overflow-hidden">
-                        <div 
-                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
-                          style={{ width: `${serpData.competitionScore * 100}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
+        {/* Content */}
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-neon-purple to-neon-blue rounded-full">
+              <TrendingUp className="text-white h-5 w-5" />
             </div>
-          </motion.div>
-        )}
-      </motion.div>
-
-      {/* Content Recommendations */}
-      <div className="space-y-4">
-        <SectionHeader 
-          title="Strategy Recommendations" 
-          expanded={expandedSections.recommendations}
-          onToggle={() => toggleSection('recommendations')}
-          variant="purple"
-          count={selectedCounts.recommendation + selectedCounts.structure}
-        />
-        
-        {expandedSections.recommendations && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Content Strategy */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="space-y-4"
-              >
-                <Card className="border border-purple-500/20 shadow-lg bg-gradient-to-br from-purple-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden group">
-                  <CardHeader className="bg-gradient-to-r from-purple-500/10 to-purple-800/10 pb-3 border-b border-purple-500/10">
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-md flex items-center gap-2">
-                        <Search className="h-4 w-4 text-purple-400" />
-                        <span>Content Strategy</span>
-                      </CardTitle>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 px-2 text-xs hover:bg-purple-500/20"
-                          onClick={() => handleSelectAll('recommendation', getItemsByType('recommendation'))}
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          Select All
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 px-2 text-xs hover:bg-purple-500/20"
-                          onClick={() => handleDeselectAll('recommendation')}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-3">
-                      {serpData.recommendations?.map((recommendation, index) => (
-                        <motion.div 
-                          key={index} 
-                          className="flex items-start gap-2"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <div className="mt-0.5">
-                            <div 
-                              className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
-                                ${selectedItems.recommendation?.[recommendation] 
-                                  ? 'bg-purple-500 border-purple-500 text-white' 
-                                  : 'border-white/20 hover:border-purple-400'
-                                }`}
-                              onClick={() => handleToggleSelection('recommendation', recommendation)}
-                            >
-                              {selectedItems.recommendation?.[recommendation] && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                          </div>
-                          <p 
-                            className="text-sm cursor-pointer hover:text-purple-300 transition-colors"
-                            onClick={() => handleToggleSelection('recommendation', recommendation)}
-                          >
-                            {recommendation}
-                          </p>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              
-              {/* Common Structure */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="space-y-4"
-              >
-                <Card className="border border-green-500/20 shadow-lg bg-gradient-to-br from-green-900/20 via-black/20 to-black/30 backdrop-blur-md overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-green-500/10 to-green-800/10 pb-3 border-b border-green-500/10">
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-md flex items-center gap-2">
-                        <Search className="h-4 w-4 text-green-400" />
-                        <span>Content Structure</span>
-                      </CardTitle>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 px-2 text-xs hover:bg-green-500/20"
-                          onClick={() => handleSelectAll('structure', getItemsByType('structure'))}
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          Select All
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 px-2 text-xs hover:bg-green-500/20"
-                          onClick={() => handleDeselectAll('structure')}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-3">
-                      {getItemsByType('structure').map((item, index) => (
-                        <motion.div 
-                          key={index} 
-                          className="flex items-start gap-2"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <div className="mt-0.5">
-                            <div 
-                              className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
-                                ${selectedItems.structure?.[item.content] 
-                                  ? 'bg-green-500 border-green-500 text-white' 
-                                  : 'border-white/20 hover:border-green-400'
-                                }`}
-                              onClick={() => handleToggleSelection('structure', item.content)}
-                            >
-                              {selectedItems.structure?.[item.content] && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                          </div>
-                          <p 
-                            className="text-sm cursor-pointer hover:text-green-300 transition-colors"
-                            onClick={() => handleToggleSelection('structure', item.content)}
-                          >
-                            {item.content}
-                          </p>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+            <div>
+              <h3 className="font-semibold text-xl">
+                Analysis for: <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">{mainKeyword}</span>
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {isMockData ? 
+                  "Using demonstration data - add API key for real-time results" : 
+                  "Interactive insights from top-ranking content"}
+              </p>
             </div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Content Elements by Tab */}
-      <Tabs 
-        defaultValue="keywords" 
-        className="w-full bg-gradient-to-br from-black/40 to-black/20 p-5 rounded-xl border border-white/10 backdrop-blur-xl shadow-xl"
-      >
-        {/* Tab Header */}
-        <div className="mb-6">
-          <h3 className="font-medium text-lg mb-2 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">
-              Content Elements
-            </span>
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Select specific elements to include in your content
-          </p>
+          </div>
           
-          <TabsList className="w-full flex overflow-x-auto scrollbar-none p-1 bg-white/10 backdrop-blur-md border border-white/10 rounded-lg">
-            <TabsTrigger 
-              value="keywords" 
-              className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-800/40 data-[state=active]:to-blue-600/20 data-[state=active]:text-white"
+          {/* Search Metrics Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+              <div className="text-sm text-muted-foreground mb-1">Search Volume</div>
+              <div className="text-2xl font-bold text-neon-purple">
+                {serpData.searchVolume?.toLocaleString() || 'N/A'}
+              </div>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+              <div className="text-sm text-muted-foreground mb-1">Keyword Difficulty</div>
+              <div className="flex justify-between items-center">
+                <div className="text-2xl font-bold text-neon-blue">
+                  {serpData.keywordDifficulty || 'N/A'}
+                </div>
+                {serpData.keywordDifficulty && (
+                  <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-green-500 to-neon-blue rounded-full"
+                      style={{ width: `${serpData.keywordDifficulty}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+              <div className="text-sm text-muted-foreground mb-1">Competition</div>
+              <div className="flex justify-between items-center">
+                <div className="text-2xl font-bold text-green-400">
+                  {serpData.competitionScore ? `${(serpData.competitionScore * 100).toFixed(0)}%` : 'N/A'}
+                </div>
+                {serpData.competitionScore && (
+                  <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-green-500 to-neon-purple rounded-full"
+                      style={{ width: `${serpData.competitionScore * 100}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Content Tabs */}
+      <Card className="border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden">
+        <Tabs defaultValue="keywords" className="w-full">
+          <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0">
+            <TabsTrigger
+              value="keywords"
+              className="flex-1 rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              onClick={() => setActiveTab('keywords')}
             >
-              Keywords
-              {selectedCounts.keyword > 0 && (
-                <Badge className="ml-2 bg-blue-500/40 hover:bg-blue-500/60 text-white border-none">
-                  {selectedCounts.keyword}
-                </Badge>
-              )}
+              <Tag className="h-4 w-4 mr-2" /> Keywords
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="questions"
-              className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-800/40 data-[state=active]:to-purple-600/20 data-[state=active]:text-white"
+              className="flex-1 rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              onClick={() => setActiveTab('questions')}
             >
-              Questions
-              {selectedCounts.question > 0 && (
-                <Badge className="ml-2 bg-purple-500/40 hover:bg-purple-500/60 text-white border-none">
-                  {selectedCounts.question}
-                </Badge>
-              )}
+              <HelpCircle className="h-4 w-4 mr-2" /> Questions
             </TabsTrigger>
-            <TabsTrigger 
-              value="snippets"
-              className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-800/40 data-[state=active]:to-green-600/20 data-[state=active]:text-white"
-            >
-              Snippets
-              {selectedCounts.snippet > 0 && (
-                <Badge className="ml-2 bg-green-500/40 hover:bg-green-500/60 text-white border-none">
-                  {selectedCounts.snippet}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="competitors"
-              className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-800/40 data-[state=active]:to-amber-600/20 data-[state=active]:text-white"
+              className="flex-1 rounded-none data-[state=active]:bg-white/5"
+              onClick={() => setActiveTab('competitors')}
             >
-              Competitors
-              {selectedCounts.competitor > 0 && (
-                <Badge className="ml-2 bg-amber-500/40 hover:bg-amber-500/60 text-white border-none">
-                  {selectedCounts.competitor}
-                </Badge>
-              )}
+              <FileText className="h-4 w-4 mr-2" /> Competitors
             </TabsTrigger>
           </TabsList>
-        </div>
-        
-        {/* Tab Content */}
-        <TabsContent value="keywords" className="space-y-4 mt-2">
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Search className="h-4 w-4 text-blue-400" />
-              Target Keywords
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-blue-500/30 hover:border-blue-500/60 hover:bg-blue-500/20"
-                onClick={() => handleSelectAll('keyword', getItemsByType('keyword'))}
-              >
-                <Check className="h-3 w-3 mr-1" />
-                Select All
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-blue-500/30 hover:border-blue-500/60 hover:bg-blue-500/20"
-                onClick={() => handleDeselectAll('keyword')}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-          <SerpKeywordList 
-            keywords={getItemsByType('keyword')} 
-            handleToggleSelection={handleToggleSelection} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="questions" className="space-y-4 mt-2">
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Search className="h-4 w-4 text-purple-400" />
-              People Also Ask
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/20"
-                onClick={() => handleSelectAll('question', getItemsByType('question'))}
-              >
-                <Check className="h-3 w-3 mr-1" />
-                Select All
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-purple-500/30 hover:border-purple-500/60 hover:bg-purple-500/20"
-                onClick={() => handleDeselectAll('question')}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-          <SerpQuestionsList 
-            questions={getItemsByType('question')} 
-            handleToggleSelection={handleToggleSelection} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="snippets" className="space-y-4 mt-2">
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Search className="h-4 w-4 text-green-400" />
-              Featured Snippets
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-green-500/30 hover:border-green-500/60 hover:bg-green-500/20"
-                onClick={() => handleSelectAll('snippet', getItemsByType('snippet'))}
-              >
-                <Check className="h-3 w-3 mr-1" />
-                Select All
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-green-500/30 hover:border-green-500/60 hover:bg-green-500/20"
-                onClick={() => handleDeselectAll('snippet')}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-          <SerpSnippetsList 
-            snippets={getItemsByType('snippet')} 
-            handleToggleSelection={handleToggleSelection}
-            addContentFromSerp={addContentFromSerp}
-          />
-        </TabsContent>
-        
-        <TabsContent value="competitors" className="space-y-4 mt-2">
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Search className="h-4 w-4 text-amber-400" />
-              Top Competitors
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/20"
-                onClick={() => handleSelectAll('competitor', getItemsByType('competitor'))}
-              >
-                <Check className="h-3 w-3 mr-1" />
-                Select All
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 text-xs border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/20"
-                onClick={() => handleDeselectAll('competitor')}
-              >
-                Clear
-              </Button>
-            </div>
-          </div>
-          <SerpCompetitorsList 
-            competitors={getItemsByType('competitor')} 
-            handleToggleSelection={handleToggleSelection} 
-          />
-        </TabsContent>
-      </Tabs>
-      
-      {/* Selected Items Summary */}
-      {totalSelected > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="border border-primary/30 rounded-xl p-5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent backdrop-blur-xl shadow-lg"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-lg flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              Selected Items ({totalSelected})
-            </h3>
-            <Button 
-              onClick={addAllSelectedToContent}
-              disabled={totalSelected === 0}
-              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add to Content
-            </Button>
-          </div>
           
-          <div className="space-y-4">
-            {selectedCounts.recommendation > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Recommendations ({selectedCounts.recommendation})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(selectedItems.recommendation || {})
-                    .filter(([_, selected]) => selected)
-                    .map(([content], i) => (
-                      <Badge key={i} variant="outline" className="bg-purple-900/30 border-purple-500/30 flex items-center gap-1">
-                        {content.length > 40 ? content.substring(0, 40) + '...' : content}
-                        <button 
-                          onClick={() => handleToggleSelection('recommendation', content)}
-                          className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
+          <CardContent className="pt-6">
+            <TabsContent value="keywords" className="mt-0">
+              <div className="space-y-6">
+                {/* Content Strategy Section */}
+                {serpData.recommendations && serpData.recommendations.length > 0 && (
+                  <div className="space-y-2">
+                    <SerpSectionHeader
+                      title="Content Strategy"
+                      expanded={true}
+                      onToggle={() => {}}
+                      variant="purple"
+                      description="Recommendations for structuring your content"
+                    />
+                    <Card className="border-purple-500/20 bg-gradient-to-br from-purple-900/10 to-black/20 backdrop-blur-sm">
+                      <CardContent className="pt-6">
+                        <div className="space-y-4">
+                          {serpData.recommendations.map((recommendation, index) => (
+                            <motion.div 
+                              key={index}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-start gap-3 group hover:bg-white/5 p-2 rounded-lg transition-colors"
+                            >
+                              <div className="min-w-7 h-7 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue flex items-center justify-center text-white text-xs">
+                                {index + 1}
+                              </div>
+                              <p className="text-sm flex-1">{recommendation}</p>
+                              <button 
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-neon-purple/20 text-neon-purple px-2 py-1 rounded-full"
+                                onClick={() => onAddToContent(recommendation, 'recommendation')}
+                              >
+                                Add
+                              </button>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {/* Keywords Section */}
+                <div className="space-y-2">
+                  <SerpSectionHeader
+                    title="Related Keywords"
+                    expanded={true}
+                    onToggle={() => {}}
+                    variant="blue"
+                    description="Keywords to include in your content"
+                    count={serpData.relatedSearches?.length || 0}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {serpData.relatedSearches && serpData.relatedSearches.length > 0 ? (
+                      serpData.relatedSearches.map((keyword, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="group flex items-center justify-between bg-blue-900/10 hover:bg-blue-900/20 border border-blue-500/20 rounded-lg p-3 transition-all"
                         >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-blue-400" />
+                            <span className="text-sm">{keyword.query}</span>
+                            {keyword.volume && (
+                              <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-full">
+                                {keyword.volume.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <button 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full"
+                            onClick={() => onAddToContent(keyword.query, 'keyword')}
+                          >
+                            Add
+                          </button>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-center py-10 bg-white/5 rounded-lg border border-white/10">
+                        <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No keywords available for this search term.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
+            </TabsContent>
             
-            {selectedCounts.structure > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Structure ({selectedCounts.structure})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(selectedItems.structure || {})
-                    .filter(([_, selected]) => selected)
-                    .map(([content], i) => (
-                      <Badge key={i} variant="outline" className="bg-green-900/30 border-green-500/30 flex items-center gap-1">
-                        {content.length > 40 ? content.substring(0, 40) + '...' : content}
-                        <button 
-                          onClick={() => handleToggleSelection('structure', content)}
-                          className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+            <TabsContent value="questions" className="mt-0">
+              <div className="space-y-2">
+                <SerpSectionHeader
+                  title="People Also Ask"
+                  expanded={true}
+                  onToggle={() => {}}
+                  variant="amber"
+                  description="Common questions people search about this topic"
+                  count={serpData.peopleAlsoAsk?.length || 0}
+                />
+                
+                <div className="space-y-3">
+                  {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 ? (
+                    serpData.peopleAlsoAsk.map((question, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border border-amber-500/20 rounded-lg overflow-hidden bg-gradient-to-br from-amber-900/10 to-black/20"
+                      >
+                        <div className="p-4 flex items-center justify-between group hover:bg-white/5 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <HelpCircle className="h-5 w-5 text-amber-400 mt-0.5" />
+                            <div>
+                              <h4 className="font-medium text-sm">{question.question}</h4>
+                              {question.answer && (
+                                <p className="text-sm text-muted-foreground mt-1">{question.answer}</p>
+                              )}
+                              {question.source && (
+                                <p className="text-xs text-blue-400 mt-1 underline hover:text-blue-300">
+                                  <a href={question.source} target="_blank" rel="noopener noreferrer">
+                                    Source
+                                  </a>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <button 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full self-start"
+                            onClick={() => onAddToContent(question.question, 'question')}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 bg-white/5 rounded-lg border border-white/10">
+                      <HelpCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No questions available for this search term.</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+            </TabsContent>
             
-            {selectedCounts.keyword > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Keywords ({selectedCounts.keyword})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(selectedItems.keyword || {})
-                    .filter(([_, selected]) => selected)
-                    .map(([content], i) => (
-                      <Badge key={i} variant="outline" className="bg-blue-900/30 border-blue-500/30 flex items-center gap-1">
-                        {content}
-                        <button 
-                          onClick={() => handleToggleSelection('keyword', content)}
-                          className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                </div>
-              </div>
-            )}
-            
-            {selectedCounts.question > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Questions ({selectedCounts.question})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(selectedItems.question || {})
-                    .filter(([_, selected]) => selected)
-                    .map(([content], i) => (
-                      <Badge key={i} variant="outline" className="bg-purple-900/30 border-purple-500/30 flex items-center gap-1">
-                        {content.length > 40 ? content.substring(0, 40) + '...' : content}
-                        <button 
-                          onClick={() => handleToggleSelection('question', content)}
-                          className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                </div>
-              </div>
-            )}
-            
-            {selectedCounts.snippet > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Snippets ({selectedCounts.snippet})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(selectedItems.snippet || {})
-                    .filter(([_, selected]) => selected)
-                    .map(([content], i) => (
-                      <Badge key={i} variant="outline" className="bg-green-900/30 border-green-500/30 flex items-center gap-1">
-                        {content.length > 40 ? content.substring(0, 40) + '...' : content}
-                        <button 
-                          onClick={() => handleToggleSelection('snippet', content)}
-                          className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+            <TabsContent value="competitors" className="mt-0">
+              <div className="space-y-2">
+                <SerpSectionHeader
+                  title="Competitor Analysis"
+                  expanded={true}
+                  onToggle={() => {}}
+                  variant="green"
+                  description="Learn from top-ranking content for this keyword"
+                  count={serpData.topResults?.length || 0}
+                />
+                
+                <div className="space-y-4">
+                  {serpData.topResults && serpData.topResults.length > 0 ? (
+                    serpData.topResults.map((competitor, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="border border-green-500/20 rounded-lg overflow-hidden bg-gradient-to-br from-green-900/10 to-black/20 hover:bg-white/5 transition-colors group"
+                      >
+                        <div className="p-4">
+                          <div className="flex justify-between">
+                            <div className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded-full">
+                              Rank #{competitor.position}
+                            </div>
+                            <button 
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full"
+                              onClick={() => onAddToContent(competitor.snippet, 'competitor')}
+                            >
+                              Add
+                            </button>
+                          </div>
+                          <h4 className="font-medium my-2">{competitor.title}</h4>
+                          <p className="text-sm text-muted-foreground">{competitor.snippet}</p>
+                          <a 
+                            href={competitor.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 mt-2 inline-block hover:underline"
+                          >
+                            {competitor.link}
+                          </a>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 bg-white/5 rounded-lg border border-white/10">
+                      <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No competitor data available.</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-            
-            {selectedCounts.competitor > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Competitors ({selectedCounts.competitor})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(selectedItems.competitor || {})
-                    .filter(([_, selected]) => selected)
-                    .map(([content], i) => (
-                      <Badge key={i} variant="outline" className="bg-amber-900/30 border-amber-500/30 flex items-center gap-1">
-                        {content.length > 40 ? content.substring(0, 40) + '...' : content}
-                        <button 
-                          onClick={() => handleToggleSelection('competitor', content)}
-                          className="ml-1 text-red-400 hover:text-red-300 rounded-full p-0.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
+            </TabsContent>
+          </CardContent>
+        </Tabs>
+      </Card>
     </div>
   );
 }

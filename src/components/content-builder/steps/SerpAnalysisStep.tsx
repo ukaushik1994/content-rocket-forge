@@ -3,7 +3,8 @@ import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
-import { SerpSelectionStats, SelectedItemsSidebar } from './serp-analysis';
+import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
+import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
@@ -38,6 +39,11 @@ export const SerpAnalysisStep = () => {
     });
   };
   
+  // Function to handle adding content from SERP items
+  const handleAddToContent = (content: string, type: string) => {
+    handleToggleSelection(type, content);
+  };
+  
   return (
     <div className="space-y-6">
       <SerpAnalysisHeader
@@ -48,20 +54,17 @@ export const SerpAnalysisStep = () => {
         handleContinueWithSelections={handleContinueWithSelections}
       />
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
           <SerpAnalysisPanel 
             serpData={serpData}
             isLoading={isAnalyzing}
             mainKeyword={mainKeyword}
-            onAddToContent={(content, type) => {
-              // Toggle item as selected
-              handleToggleSelection(type, content);
-            }}
+            onAddToContent={handleAddToContent}
           />
         </div>
         
-        <div className="space-y-6">
+        <div className="lg:col-span-1">
           <SelectedItemsSidebar 
             serpSelections={serpSelections}
             totalSelected={totalSelected}

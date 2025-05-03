@@ -2,70 +2,69 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
-export interface SerpSectionHeaderProps { 
-  title: string; 
-  expanded: boolean; 
+export interface SerpSectionHeaderProps {
+  title: string;
+  expanded: boolean;
   onToggle: () => void;
+  variant?: 'blue' | 'purple' | 'green' | 'amber';
   description?: string;
   count?: number;
-  variant?: 'default' | 'purple' | 'blue' | 'green' | 'amber';
 }
 
-export function SerpSectionHeader({ 
-  title, 
-  expanded, 
+export function SerpSectionHeader({
+  title,
+  expanded,
   onToggle,
+  variant = 'blue',
   description,
-  count = 0,
-  variant = 'default'
+  count
 }: SerpSectionHeaderProps) {
-  // Get gradient based on variant
-  const getGradient = () => {
-    switch(variant) {
-      case 'purple':
-        return 'from-purple-500/20 to-purple-800/5';
-      case 'blue':
-        return 'from-blue-500/20 to-blue-800/5';
-      case 'green':
-        return 'from-green-500/20 to-green-800/5';
-      case 'amber':
-        return 'from-amber-500/20 to-amber-800/5';
-      default:
-        return 'from-primary/20 to-primary/5';
+  const getIconColor = () => {
+    switch (variant) {
+      case 'blue': return 'text-blue-400';
+      case 'purple': return 'text-purple-400';
+      case 'green': return 'text-green-400';
+      case 'amber': return 'text-amber-400';
+      default: return 'text-blue-400';
     }
   };
   
+  const getBgColor = () => {
+    switch (variant) {
+      case 'blue': return 'from-blue-500/10 to-blue-900/5';
+      case 'purple': return 'from-purple-500/10 to-purple-900/5';
+      case 'green': return 'from-green-500/10 to-green-900/5';
+      case 'amber': return 'from-amber-500/10 to-amber-900/5';
+      default: return 'from-blue-500/10 to-blue-900/5';
+    }
+  };
+
   return (
-    <motion.div 
-      className={`flex items-center justify-between py-3 px-4 rounded-lg backdrop-blur-md cursor-pointer mb-4
-        bg-gradient-to-br ${getGradient()} border border-white/10 hover:shadow-lg transition-all duration-300`}
+    <div 
+      className={`flex items-center justify-between p-3 cursor-pointer rounded-lg border border-white/5 backdrop-blur-sm bg-gradient-to-r ${getBgColor()} hover:bg-white/5 transition-colors group`}
       onClick={onToggle}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
     >
-      <div className="flex items-center gap-3">
-        <motion.div 
-          animate={{ rotate: expanded ? 0 : -90 }}
-          transition={{ duration: 0.2 }}
-        >
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </motion.div>
-        <div>
-          <h3 className="text-lg font-medium">{title}</h3>
-          {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        </div>
-        {count > 0 && (
-          <Badge className="ml-2 bg-white/10 hover:bg-white/20">{count}</Badge>
+      <div className="flex-1">
+        <h3 className="font-medium flex items-center gap-2">
+          {title}
+          {count !== undefined && (
+            <span className={`text-xs ${getIconColor()} bg-white/5 px-2 py-0.5 rounded-full`}>
+              {count}
+            </span>
+          )}
+        </h3>
+        {description && (
+          <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </div>
       <motion.div
-        animate={{ rotateZ: expanded ? 180 : 0 }}
-        transition={{ duration: 0.3 }}
+        animate={{ rotate: expanded ? 180 : 0 }}
+        transition={{ duration: 0.2 }}
+        className={`w-6 h-6 rounded-full flex items-center justify-center ${getIconColor()} bg-white/5 group-hover:bg-white/10`}
       >
-        <ChevronDown className="h-5 w-5" />
+        {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

@@ -1,96 +1,119 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, Search, FileText } from 'lucide-react';
-import { SelectedItemsBadge } from './SelectedItemsBadge';
 import { SerpSelection } from '@/contexts/content-builder/types';
+import { Badge } from '@/components/ui/badge';
+import { HelpCircle, Text, FileText, X, Search } from 'lucide-react';
 
-interface SelectedItemsGroupProps {
-  title: string;
+interface ItemsGroupProps {
   count: number;
   items: SerpSelection[];
-  icon: React.ReactNode;
-  badgeClassName: string;
   handleToggleSelection: (type: string, content: string) => void;
 }
 
-export const SelectedItemsGroup: React.FC<SelectedItemsGroupProps> = ({
-  title,
-  count,
-  items,
-  icon,
-  badgeClassName,
-  handleToggleSelection
-}) => {
-  const item = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
-  };
-
+export function QuestionsGroup({ count, items, handleToggleSelection }: ItemsGroupProps) {
   if (count === 0) return null;
-
+  
+  const selectedItems = items.filter(item => item.selected);
+  
   return (
-    <motion.div variants={item}>
-      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-        {icon}
-        <span>{title} ({count})</span>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+        <HelpCircle className="h-3.5 w-3.5 text-purple-400" />
+        Questions ({count})
       </h4>
-      <div className="flex flex-wrap gap-2">
-        {items.filter(item => item.selected).map((item, i) => (
-          <SelectedItemsBadge 
-            key={i}
-            item={item}
-            handleToggleSelection={handleToggleSelection}
-            badgeClassName={badgeClassName}
-          />
+      <div className="space-y-2">
+        {selectedItems.map((item, i) => (
+          <div key={i} className="p-2 rounded-md bg-purple-950/30 border border-purple-500/20 text-xs group">
+            <div className="flex items-start gap-2 justify-between">
+              <div className="flex items-start gap-2">
+                <HelpCircle className="h-3.5 w-3.5 text-purple-400 mt-0.5" />
+                <span>{item.content}</span>
+              </div>
+              <button 
+                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                onClick={() => handleToggleSelection(item.type, item.content)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
         ))}
       </div>
     </motion.div>
   );
-};
+}
 
-// Pre-configured components for specific item types
-export const QuestionsGroup: React.FC<{
-  count: number;
-  items: SerpSelection[];
-  handleToggleSelection: (type: string, content: string) => void;
-}> = ({ count, items, handleToggleSelection }) => (
-  <SelectedItemsGroup
-    title="Questions"
-    count={count}
-    items={items}
-    icon={<HelpCircle className="h-3.5 w-3.5 text-purple-400" />}
-    badgeClassName="bg-purple-900/20 border-purple-500/30 text-purple-200 hover:bg-purple-900/30"
-    handleToggleSelection={handleToggleSelection}
-  />
-);
+export function KeywordsGroup({ count, items, handleToggleSelection }: ItemsGroupProps) {
+  if (count === 0) return null;
+  
+  const selectedItems = items.filter(item => item.selected);
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+        <Search className="h-3.5 w-3.5 text-blue-400" />
+        Keywords ({count})
+      </h4>
+      <div className="flex flex-wrap gap-2">
+        {selectedItems.map((item, i) => (
+          <Badge 
+            key={i} 
+            variant="outline" 
+            className="bg-blue-950/30 hover:bg-blue-950/50 border-blue-500/30 group"
+          >
+            {item.content}
+            <button 
+              className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+              onClick={() => handleToggleSelection(item.type, item.content)}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
 
-export const KeywordsGroup: React.FC<{
-  count: number;
-  items: SerpSelection[];
-  handleToggleSelection: (type: string, content: string) => void;
-}> = ({ count, items, handleToggleSelection }) => (
-  <SelectedItemsGroup
-    title="Keywords"
-    count={count}
-    items={items}
-    icon={<Search className="h-3.5 w-3.5 text-blue-400" />}
-    badgeClassName="bg-blue-900/20 border-blue-500/30 text-blue-200 hover:bg-blue-900/30"
-    handleToggleSelection={handleToggleSelection}
-  />
-);
-
-export const SnippetsGroup: React.FC<{
-  count: number;
-  items: SerpSelection[];
-  handleToggleSelection: (type: string, content: string) => void;
-}> = ({ count, items, handleToggleSelection }) => (
-  <SelectedItemsGroup
-    title="Snippets"
-    count={count}
-    items={items}
-    icon={<FileText className="h-3.5 w-3.5 text-green-400" />}
-    badgeClassName="bg-green-900/20 border-green-500/30 text-green-200 hover:bg-green-900/30"
-    handleToggleSelection={handleToggleSelection}
-  />
-);
+export function SnippetsGroup({ count, items, handleToggleSelection }: ItemsGroupProps) {
+  if (count === 0) return null;
+  
+  const selectedItems = items.filter(item => item.selected);
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+        <Text className="h-3.5 w-3.5 text-amber-400" />
+        Featured Snippets ({count})
+      </h4>
+      <div className="space-y-2">
+        {selectedItems.map((item, i) => (
+          <div key={i} className="p-2 rounded-md bg-amber-950/30 border border-amber-500/20 text-xs group">
+            <div className="flex items-start gap-2 justify-between">
+              <div className="flex items-start gap-2">
+                <Text className="h-3.5 w-3.5 text-amber-400 mt-0.5" />
+                <span>{item.content.substring(0, 100)}...</span>
+              </div>
+              <button 
+                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                onClick={() => handleToggleSelection(item.type, item.content)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}

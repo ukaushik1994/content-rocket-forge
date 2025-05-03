@@ -2,24 +2,25 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 export function SerpEmptyState() {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center h-96 bg-gradient-to-b from-white/5 to-white/0 rounded-xl border border-white/10 backdrop-blur-md"
+      className="text-center py-16 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
     >
-      <Search className="h-16 w-16 text-primary/20 mb-4" />
-      <h3 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">No Analysis Data</h3>
-      <p className="text-muted-foreground mt-2 mb-6 text-center max-w-md">
-        Start the SERP analysis to get insights and recommendations for your content
-      </p>
-      <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300">
-        <Search className="h-4 w-4 mr-2" />
-        Start Analysis
-      </Button>
+      <div className="flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue/50 flex items-center justify-center mb-4 animate-pulse">
+          <Search className="h-8 w-8 text-white" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+          No Analysis Data Yet
+        </h3>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Enter a keyword and click "Analyze" to get search insights and content recommendations.
+        </p>
+      </div>
     </motion.div>
   );
 }
