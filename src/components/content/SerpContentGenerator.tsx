@@ -11,10 +11,14 @@ import {
   ListOrdered,
   Table,
   BarChart3,
+  Sparkles,
+  Lightbulb,
+  Wand2
 } from 'lucide-react';
 import { SerpAnalysisResult } from '@/services/serpApiService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ContentTemplateProps {
   title: string;
@@ -22,25 +26,85 @@ interface ContentTemplateProps {
   icon: React.ReactNode;
   onClick: () => void;
   className?: string;
+  featured?: boolean;
 }
 
-const ContentTemplate = ({ title, description, icon, onClick, className }: ContentTemplateProps) => (
-  <Card 
-    className={cn(
-      "cursor-pointer hover:border-primary transition-all hover:bg-primary/5", 
-      className
-    )}
-    onClick={onClick}
-  >
-    <CardContent className="p-4 flex flex-col items-center text-center">
-      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-        {icon}
-      </div>
-      <h5 className="font-medium">{title}</h5>
-      <p className="text-xs text-muted-foreground mt-1">{description}</p>
-    </CardContent>
-  </Card>
-);
+const ContentTemplate = ({ title, description, icon, onClick, className, featured = false }: ContentTemplateProps) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
+      className="h-full"
+    >
+      <Card 
+        className={cn(
+          "cursor-pointer transition-all duration-300 h-full", 
+          featured 
+            ? "bg-gradient-to-br from-neon-purple/20 to-neon-blue/5 hover:from-neon-purple/30 hover:to-neon-blue/10 border-neon-purple/30" 
+            : "hover:border-primary/50 hover:bg-primary/5 border-white/10",
+          className
+        )}
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <CardContent className="p-5 flex flex-col items-center text-center">
+          <div className={cn(
+            "h-12 w-12 rounded-full flex items-center justify-center mb-3 transition-all duration-300",
+            featured 
+              ? "bg-gradient-to-br from-neon-purple/30 to-neon-blue/20" 
+              : "bg-primary/10"
+          )}>
+            {icon}
+            {isHovered && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute w-full h-full rounded-full bg-primary/5 -z-10"
+                style={{ 
+                  animationDuration: '2s',
+                  animationIterationCount: 'infinite',
+                  animationName: 'pulse',
+                  animationTimingFunction: 'ease-in-out'
+                }}
+              />
+            )}
+          </div>
+          <h5 className={cn(
+            "font-medium transition-all duration-300",
+            featured ? "text-gradient" : ""
+          )}>
+            {title}
+          </h5>
+          <p className="text-xs text-muted-foreground mt-2">{description}</p>
+          
+          {isHovered && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3"
+            >
+              <Button 
+                size="sm" 
+                variant={featured ? "default" : "outline"}
+                className={cn(
+                  "text-xs w-full",
+                  featured ? "bg-gradient-to-r from-neon-purple to-neon-blue" : ""
+                )}
+              >
+                <Wand2 className="h-3 w-3 mr-1" />
+                Generate
+              </Button>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
 
 interface SerpContentGeneratorProps {
   serpData: SerpAnalysisResult | null;
@@ -55,11 +119,15 @@ export function SerpContentGenerator({
 }: SerpContentGeneratorProps) {
   if (!serpData) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">
-          Run a SERP analysis first to generate content templates
-        </p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-12 bg-gradient-to-b from-white/5 to-transparent rounded-xl border border-white/10"
+      >
+        <Sparkles className="h-16 w-16 text-primary/30 mx-auto" />
+        <p className="mt-6 text-lg">Run a SERP analysis first to generate content</p>
+        <p className="text-muted-foreground mt-2">Templates will be created based on search results</p>
+      </motion.div>
     );
   }
 
@@ -275,138 +343,177 @@ export function SerpContentGenerator({
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-medium">Content Templates</h3>
-      <p className="text-muted-foreground">
-        Generate content templates based on SERP analysis to boost your SEO rankings.
-      </p>
+    <div className="space-y-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+          <h3 className="text-xl font-medium text-gradient">Content Templates</h3>
+        </div>
+        <div>
+          <span className="text-sm text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
+            Based on SERP analysis
+          </span>
+        </div>
+      </motion.div>
+      
+      <motion.p 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="text-muted-foreground"
+      >
+        Generate content templates optimized for search rankings based on your SERP analysis.
+      </motion.p>
       
       <TooltipProvider>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Featured Snippet" 
-                  description="Optimized for position zero" 
-                  icon={<FileText className="h-5 w-5 text-primary" />} 
-                  onClick={generateFeaturedSnippetTemplate}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates content optimized to win featured snippets</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="List Article" 
-                  description="Top 10 style content" 
-                  icon={<ListOrdered className="h-5 w-5 text-primary" />} 
-                  onClick={generateListArticleTemplate}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates a ranked list of items with comparisons</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="How-to Guide" 
-                  description="Step-by-step tutorial" 
-                  icon={<CheckSquare className="h-5 w-5 text-primary" />} 
-                  onClick={generateHowToGuideTemplate}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates instructional content with clear steps</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Comparison" 
-                  description="Product/service comparison" 
-                  icon={<Table className="h-5 w-5 text-primary" />} 
-                  onClick={generateComparisonTemplate}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates side-by-side comparison content</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Ultimate Guide" 
-                  description="Comprehensive resource" 
-                  icon={<Layout className="h-5 w-5 text-primary" />} 
-                  onClick={generateUltimateGuideTemplate}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates a comprehensive long-form guide</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Custom Template" 
-                  description="Create your own" 
-                  icon={<BarChart3 className="h-5 w-5 text-primary" />} 
-                  onClick={() => {
-                    toast("Coming soon!", {
-                      description: "Custom template generator will be available soon."
-                    });
-                  }}
-                  className="border-dashed"
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Create a custom template (coming soon)</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ContentTemplate 
+                    title="Featured Snippet" 
+                    description="Optimized for position zero" 
+                    icon={<FileText className="h-5 w-5 text-primary" />} 
+                    onClick={generateFeaturedSnippetTemplate}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Creates content optimized to win featured snippets</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ContentTemplate 
+                    title="List Article" 
+                    description="Top 10 style content" 
+                    icon={<ListOrdered className="h-5 w-5 text-primary" />} 
+                    onClick={generateListArticleTemplate}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Creates a ranked list of items with comparisons</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ContentTemplate 
+                    title="How-to Guide" 
+                    description="Step-by-step tutorial" 
+                    icon={<CheckSquare className="h-5 w-5 text-primary" />} 
+                    onClick={generateHowToGuideTemplate}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Creates instructional content with clear steps</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ContentTemplate 
+                    title="Comparison" 
+                    description="Product/service comparison" 
+                    icon={<Table className="h-5 w-5 text-primary" />} 
+                    onClick={generateComparisonTemplate}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Creates side-by-side comparison content</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ContentTemplate 
+                    title="Ultimate Guide" 
+                    description="Comprehensive resource" 
+                    icon={<Layout className="h-5 w-5 text-primary" />} 
+                    onClick={generateUltimateGuideTemplate}
+                    featured={true}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Creates a comprehensive long-form guide</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <ContentTemplate 
+                    title="Custom Template" 
+                    description="Create your own" 
+                    icon={<BarChart3 className="h-5 w-5 text-primary" />} 
+                    onClick={() => {
+                      toast("Coming soon!", {
+                        description: "Custom template generator will be available soon."
+                      });
+                    }}
+                    className="border-dashed"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Create a custom template (coming soon)</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </motion.div>
       </TooltipProvider>
       
-      <div className="pt-4 border-t border-border">
-        <h4 className="text-sm font-medium mb-2">Content Strategy Tips</h4>
-        <ul className="space-y-2 text-sm">
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Use keywords from SERP analysis in headings (H2, H3) for better ranking</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Include related keywords throughout your content for semantic relevance</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Add a FAQ section using "People Also Ask" questions to target featured snippets</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Use tables, lists, and structured data to increase chances of rich snippets</span>
-          </li>
-        </ul>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="pt-6 mt-4 border-t border-white/10"
+      >
+        <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 p-4 rounded-lg border border-white/10">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="h-4 w-4 text-amber-400" />
+            <h4 className="text-sm font-medium">Content Strategy Tips</h4>
+          </div>
+          
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-start gap-2">
+              <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
+              <span>Use keywords from SERP analysis in headings (H2, H3) for better ranking</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
+              <span>Include related keywords throughout your content for semantic relevance</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
+              <span>Add a FAQ section using "People Also Ask" questions to target featured snippets</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
+              <span>Use tables, lists, and structured data to increase chances of rich snippets</span>
+            </li>
+          </ul>
+        </div>
+      </motion.div>
     </div>
   );
 }
