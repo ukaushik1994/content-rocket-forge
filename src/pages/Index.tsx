@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -6,29 +5,14 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
-import { 
-  RocketIcon, 
-  Search, 
-  BarChart3, 
-  Fingerprint, 
-  TrendingUp,
-  UserRoundPlus,
-  Sparkles,
-  FileText,
-  MessageCircle,
-  FileUp,
-  ArrowRight,
-} from 'lucide-react';
-
+import { RocketIcon, Search, BarChart3, Fingerprint, TrendingUp, UserRoundPlus, Sparkles, FileText, MessageCircle, FileUp, ArrowRight } from 'lucide-react';
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
+  return <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="flex-1 container py-8">
+      <main className="flex-1 container py-8 bg-slate-950">
         <div className="space-y-8">
           {/* Hero section */}
           <div className="relative overflow-hidden rounded-xl p-8 glass-panel shadow-neon">
@@ -43,10 +27,7 @@ const Index = () => {
                   keyword clusters, and business solutions.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Button 
-                    className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-                    onClick={() => navigate('/content')}
-                  >
+                  <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple" onClick={() => navigate('/content')}>
                     New Project
                     <RocketIcon className="ml-2 h-4 w-4" />
                   </Button>
@@ -69,34 +50,22 @@ const Index = () => {
           
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              title="Total Projects" 
-              value="12" 
-              description="2 active workflows"
-              icon={<FileText className="h-4 w-4" />}
-              trend={{ value: 33, positive: true }}
-            />
-            <StatCard 
-              title="Keywords Analyzed" 
-              value="284" 
-              description="Last 30 days"
-              icon={<Search className="h-4 w-4" />}
-              trend={{ value: 12, positive: true }}
-            />
-            <StatCard 
-              title="Average SEO Score" 
-              value="78/100" 
-              description="Across all content"
-              icon={<BarChart3 className="h-4 w-4" />}
-              trend={{ value: 5, positive: true }}
-            />
-            <StatCard 
-              title="Conversions" 
-              value="5.4%" 
-              description="From content links"
-              icon={<Fingerprint className="h-4 w-4" />}
-              trend={{ value: 2, positive: false }}
-            />
+            <StatCard title="Total Projects" value="12" description="2 active workflows" icon={<FileText className="h-4 w-4" />} trend={{
+            value: 33,
+            positive: true
+          }} />
+            <StatCard title="Keywords Analyzed" value="284" description="Last 30 days" icon={<Search className="h-4 w-4" />} trend={{
+            value: 12,
+            positive: true
+          }} />
+            <StatCard title="Average SEO Score" value="78/100" description="Across all content" icon={<BarChart3 className="h-4 w-4" />} trend={{
+            value: 5,
+            positive: true
+          }} />
+            <StatCard title="Conversions" value="5.4%" description="From content links" icon={<Fingerprint className="h-4 w-4" />} trend={{
+            value: 2,
+            positive: false
+          }} />
           </div>
           
           {/* Quick actions */}
@@ -109,11 +78,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Discover high-value keywords and group them into strategic clusters.
                 </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-between group"
-                  onClick={() => navigate('/keywords')}
-                >
+                <Button variant="outline" className="w-full justify-between group" onClick={() => navigate('/keywords')}>
                   <span>Start Research</span>
                   <Search className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -128,11 +93,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Generate optimized content with AI that ranks well on search engines.
                 </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-between group"
-                  onClick={() => navigate('/content')}
-                >
+                <Button variant="outline" className="w-full justify-between group" onClick={() => navigate('/content')}>
                   <span>Create Content</span>
                   <FileText className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -147,11 +108,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Upload your products and services to include in generated content.
                 </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-between group"
-                  onClick={() => navigate('/solutions')}
-                >
+                <Button variant="outline" className="w-full justify-between group" onClick={() => navigate('/solutions')}>
                   <span>Upload Solutions</span>
                   <FileUp className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -170,41 +127,32 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { 
-                  title: "Best Project Management Software", 
-                  status: "Published", 
-                  score: 92, 
-                  date: "Apr 28, 2025",
-                  clicks: 487,
-                  impressions: 5240
-                },
-                { 
-                  title: "Email Marketing Platforms Comparison", 
-                  status: "Draft", 
-                  score: 78, 
-                  date: "Apr 25, 2025", 
-                  clicks: 0, 
-                  impressions: 0 
-                },
-                { 
-                  title: "Top CRM Solutions for SMBs", 
-                  status: "In Progress", 
-                  score: 65, 
-                  date: "Apr 22, 2025",
-                  clicks: 0,
-                  impressions: 0
-                },
-              ].map((project, index) => (
-                <Card key={index} className="glass-panel">
+              {[{
+              title: "Best Project Management Software",
+              status: "Published",
+              score: 92,
+              date: "Apr 28, 2025",
+              clicks: 487,
+              impressions: 5240
+            }, {
+              title: "Email Marketing Platforms Comparison",
+              status: "Draft",
+              score: 78,
+              date: "Apr 25, 2025",
+              clicks: 0,
+              impressions: 0
+            }, {
+              title: "Top CRM Solutions for SMBs",
+              status: "In Progress",
+              score: 65,
+              date: "Apr 22, 2025",
+              clicks: 0,
+              impressions: 0
+            }].map((project, index) => <Card key={index} className="glass-panel">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <h3 className="font-medium">{project.title}</h3>
-                      <div className={`px-2 py-1 rounded-full text-xs ${
-                        project.status === 'Published' ? 'bg-green-500/20 text-green-500' :
-                        project.status === 'Draft' ? 'bg-yellow-500/20 text-yellow-500' :
-                        'bg-blue-500/20 text-blue-500'
-                      }`}>
+                      <div className={`px-2 py-1 rounded-full text-xs ${project.status === 'Published' ? 'bg-green-500/20 text-green-500' : project.status === 'Draft' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-blue-500/20 text-blue-500'}`}>
                         {project.status}
                       </div>
                     </div>
@@ -215,8 +163,7 @@ const Index = () => {
                         <span className="font-medium">{project.score}/100</span>
                       </div>
                       
-                      {project.status === 'Published' && (
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                      {project.status === 'Published' && <div className="grid grid-cols-2 gap-2 text-sm">
                           <div className="space-y-1">
                             <span className="block text-muted-foreground text-xs">Clicks</span>
                             <div className="flex items-center gap-1">
@@ -231,25 +178,18 @@ const Index = () => {
                               <TrendingUp className="h-3 w-3 text-green-500" />
                             </div>
                           </div>
-                        </div>
-                      )}
+                        </div>}
                       
                       <div className="text-xs text-muted-foreground">
                         Last updated: {project.date}
                       </div>
                     </div>
                     
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full mt-2"
-                      onClick={() => navigate('/content')}
-                    >
+                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => navigate('/content')}>
                       {project.status === 'Published' ? 'View Stats' : 'Continue Editing'}
                     </Button>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </div>
@@ -257,8 +197,6 @@ const Index = () => {
       
       {/* Feedback dialog */}
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
