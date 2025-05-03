@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { ContentRepository } from '@/components/content/ContentRepository';
 import { SerpKeywordSuggestions } from '@/components/content/SerpKeywordSuggestions';
-import { SerpAnalysisPanel } from '@/components/content/SerpAnalysisPanel';
 import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
+import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 
 // Define step interface
 interface ContentStep {
@@ -134,14 +135,11 @@ const ContentPage: React.FC = () => {
           </div>
         );
       
-      case 1: // SERP Analysis
+      case 1: // SERP Analysis - Using the ContentBuilder's SerpAnalysisStep
         return (
-          <SerpAnalysisPanel 
-            serpData={serpData}
-            isLoading={isAnalyzing}
-            mainKeyword={mainKeyword}
-            onAddToContent={handleAddToContent}
-          />
+          <ContentBuilderProvider>
+            <SerpAnalysisStep />
+          </ContentBuilderProvider>
         );
       
       case 2: // Content Structure
