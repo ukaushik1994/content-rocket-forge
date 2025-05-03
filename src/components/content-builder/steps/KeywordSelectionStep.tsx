@@ -105,7 +105,7 @@ export const KeywordSelectionStep = () => {
   return <div className="space-y-6">
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="research">Keyword Research</TabsTrigger>
+          <TabsTrigger value="research" className="text-base">Keyword Research</TabsTrigger>
           
           
         </TabsList>
@@ -122,7 +122,7 @@ export const KeywordSelectionStep = () => {
             <SelectedKeywords keywords={selectedKeywords} onRemoveKeyword={handleRemoveKeyword} />
             
             {mainKeyword && <div className="mt-8 border-t pt-6">
-                <h3 className="text-xl font-semibold mb-4">SERP Analysis Results</h3>
+                
                 <SerpAnalysisPanel serpData={serpData} isLoading={isAnalyzing} mainKeyword={mainKeyword} onAddToContent={addContentFromSerp} />
               </div>}
           </div>

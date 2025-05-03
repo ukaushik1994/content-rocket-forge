@@ -10,8 +10,5 @@ export const SelectedKeywords: React.FC<SelectedKeywordsProps> = ({
   keywords,
   onRemoveKeyword
 }) => {
-  return <Card>
-      
-      
-    </Card>;
+  return;
 };
