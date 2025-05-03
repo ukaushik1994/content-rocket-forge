@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Sparkles, SearchX, Loader2 } from 'lucide-react';
+import { Search, Sparkles, SearchX } from 'lucide-react';
 import { SerpAnalysisResult } from '@/services/serpApiService';
 import { SerpLoadingState } from '@/components/content-builder/serp/SerpLoadingState';
 
@@ -75,9 +75,51 @@ export function SerpAnalysisPanel({
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 p-5 rounded-xl border border-white/10 backdrop-blur-xl shadow-xl"
+        className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 p-5 rounded-xl border border-white/10 backdrop-blur-xl shadow-xl relative overflow-hidden"
       >
-        <div className="flex items-center gap-3 mb-6">
+        {/* Interactive background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-grid-white/5 opacity-10"></div>
+          <motion.div
+            className="absolute left-0 right-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            animate={{
+              left: ['-100%', '100%'],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+          <motion.div
+            className="absolute w-20 h-20 rounded-full bg-purple-500/10 filter blur-xl"
+            animate={{
+              x: ['-10%', '110%'],
+              y: ['30%', '50%'],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute w-32 h-32 rounded-full bg-blue-500/10 filter blur-xl"
+            animate={{
+              x: ['110%', '-10%'],
+              y: ['60%', '40%'],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+          />
+        </div>
+        
+        <div className="flex items-center gap-3 mb-6 relative z-10">
           <div className="p-2 bg-primary/20 rounded-full">
             <Search className="text-primary h-5 w-5" />
           </div>
@@ -85,7 +127,7 @@ export function SerpAnalysisPanel({
             <h3 className="font-semibold text-xl">
               Analysis for: <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">{mainKeyword}</span>
             </h3>
-            <p className="text-sm text-muted-foreground">Select items to include in your content outline</p>
+            <p className="text-sm text-muted-foreground">Interactive insights from top-ranking content</p>
           </div>
         </div>
         
@@ -95,6 +137,7 @@ export function SerpAnalysisPanel({
           expanded={expandedSections.searchMetrics}
           onToggle={() => toggleSection('searchMetrics')}
           variant="blue"
+          description="Keyword metrics to understand search volume and competition"
         />
         
         <SerpMetricsSection 
@@ -110,6 +153,8 @@ export function SerpAnalysisPanel({
           title="Content Strategy" 
           expanded={expandedSections.overview}
           onToggle={() => toggleSection('overview')}
+          variant="purple"
+          description="Strategic recommendations for structuring your content"
         />
         
         <SerpOverviewSection 
@@ -126,6 +171,9 @@ export function SerpAnalysisPanel({
           title="Related Keywords" 
           expanded={expandedSections.keywords}
           onToggle={() => toggleSection('keywords')}
+          variant="blue"
+          description="Select keywords to include in your content"
+          count={serpData.relatedSearches?.length || 0}
         />
         
         <SerpKeywordsSection 
@@ -141,6 +189,9 @@ export function SerpAnalysisPanel({
           title="People Also Ask" 
           expanded={expandedSections.questions}
           onToggle={() => toggleSection('questions')}
+          variant="amber"
+          description="Common questions people search about this topic"
+          count={serpData.peopleAlsoAsk?.length || 0}
         />
         
         <SerpQuestionsSection 
@@ -156,6 +207,9 @@ export function SerpAnalysisPanel({
           title="Competitor Analysis" 
           expanded={expandedSections.competitors}
           onToggle={() => toggleSection('competitors')}
+          variant="green"
+          description="Learn from the top-ranking content for this keyword"
+          count={serpData.topResults?.length || 0}
         />
         
         <SerpCompetitorsSection 

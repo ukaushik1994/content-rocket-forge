@@ -8,3 +8,6 @@ export * from './SerpOverviewSection';
 export * from './SerpKeywordsSection';
 export * from './SerpQuestionsSection';
 export * from './SerpCompetitorsSection';
+export * from './SerpInteractiveCard';
+export * from './SerpActionButton';
+export * from './SerpFeedbackButton';
