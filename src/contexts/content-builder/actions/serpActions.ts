@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from '../types';
 import { toast } from 'sonner';
 
 /**
@@ -49,7 +49,7 @@ export const createSerpActions = (
     dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
     
     // Create outline sections based on selected items
-    const outlineSections = [
+    const outlineSections: ContentOutlineSection[] = [
       { id: crypto.randomUUID(), title: `Introduction to ${state.mainKeyword}` }
     ];
     
@@ -65,14 +65,22 @@ export const createSerpActions = (
     
     // Add FAQ section if questions exist
     if (questionItems.length > 0) {
-      outlineSections.push({
+      const faqSection: ContentOutlineSection = {
         id: crypto.randomUUID(),
-        title: 'Frequently Asked Questions',
-        subsections: questionItems.map(item => ({
-          id: crypto.randomUUID(),
-          title: item.content
-        }))
-      });
+        title: 'Frequently Asked Questions'
+      };
+      
+      // Create separate subsections for each question
+      const faqSubsections = questionItems.map(item => ({
+        id: crypto.randomUUID(),
+        title: item.content
+      }));
+      
+      // Add subsections to FAQ section
+      faqSection.subsections = faqSubsections;
+      
+      // Add FAQ section to outline
+      outlineSections.push(faqSection);
     }
     
     // Enhanced solution-specific sections if solution is selected
