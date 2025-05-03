@@ -11,8 +11,8 @@ import { KeywordTrends } from '@/components/keywords/KeywordTrends';
 import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
 import { Helmet } from 'react-helmet-async';
 
-// Define the KeywordProps interface to pass to KeywordsList
-interface KeywordProps {
+// Define the interface for KeywordsList component
+interface KeywordItemProps {
   id: string;
   primary: string;
   volume: number;
@@ -24,8 +24,14 @@ interface KeywordProps {
   selected: boolean;
 }
 
+interface KeywordsListProps {
+  keywords: KeywordItemProps[];
+}
+
+// Make sure to update/check if the KeywordsList component has the correct interface
+
 // Sample data for demonstration
-const sampleKeywords: KeywordProps[] = [
+const sampleKeywords: KeywordItemProps[] = [
   {
     id: '1',
     primary: 'content marketing',
