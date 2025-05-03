@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, FileText, Search, TrendingUp, List } from 'lucide-react';
+import { CheckCircle, FileText, Search, TrendingUp, List, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SerpFeature } from './SerpFeature';
