@@ -1,0 +1,174 @@
+
+import { ContentBuilderState, ContentBuilderAction } from './types';
+
+// Reducer function to handle state updates
+export const contentBuilderReducer = (
+  state: ContentBuilderState, 
+  action: ContentBuilderAction
+): ContentBuilderState => {
+  switch (action.type) {
+    case 'SET_ACTIVE_STEP':
+      return { ...state, activeStep: action.payload };
+      
+    case 'MARK_STEP_COMPLETED':
+      return {
+        ...state,
+        steps: state.steps.map(step =>
+          step.id === action.payload ? { ...step, completed: true } : step
+        ),
+      };
+      
+    case 'SET_MAIN_KEYWORD':
+      return { ...state, mainKeyword: action.payload };
+      
+    case 'ADD_KEYWORD':
+      if (state.selectedKeywords.includes(action.payload)) {
+        return state;
+      }
+      return {
+        ...state,
+        selectedKeywords: [...state.selectedKeywords, action.payload],
+      };
+      
+    case 'REMOVE_KEYWORD':
+      return {
+        ...state,
+        selectedKeywords: state.selectedKeywords.filter(k => k !== action.payload),
+      };
+      
+    case 'SET_KEYWORDS':
+      return { ...state, selectedKeywords: action.payload };
+      
+    case 'SELECT_CLUSTER':
+      return {
+        ...state,
+        selectedCluster: action.payload,
+        // If a cluster is selected, use its keywords
+        selectedKeywords: action.payload ? action.payload.keywords : state.selectedKeywords,
+      };
+      
+    case 'SET_CONTENT_TYPE':
+      return { ...state, contentType: action.payload };
+      
+    case 'SELECT_SOLUTION':
+      return { ...state, selectedSolution: action.payload };
+      
+    case 'SET_SERP_DATA':
+      const newSelections = createSerpSelectionsFromData(action.payload);
+      
+      return { 
+        ...state, 
+        serpData: action.payload,
+        serpSelections: newSelections
+      };
+      
+    case 'ADD_SERP_SELECTION':
+      return {
+        ...state,
+        serpSelections: [...state.serpSelections, action.payload]
+      };
+      
+    case 'TOGGLE_SERP_SELECTION':
+      return {
+        ...state,
+        serpSelections: state.serpSelections.map(item => 
+          item.type === action.payload.type && item.content === action.payload.content
+            ? { ...item, selected: !item.selected }
+            : item
+        )
+      };
+      
+    case 'SET_IS_ANALYZING':
+      return { ...state, isAnalyzing: action.payload };
+      
+    case 'SET_OUTLINE':
+      return { ...state, outline: action.payload };
+      
+    case 'ADD_OUTLINE_SECTION':
+      return {
+        ...state,
+        outline: [...state.outline, action.payload],
+      };
+      
+    case 'UPDATE_OUTLINE_SECTION': {
+      const { id, section } = action.payload;
+      return {
+        ...state,
+        outline: state.outline.map(item =>
+          item.id === id ? { ...item, ...section } : item
+        ),
+      };
+    }
+      
+    case 'REMOVE_OUTLINE_SECTION':
+      return {
+        ...state,
+        outline: state.outline.filter(section => section.id !== action.payload),
+      };
+      
+    case 'SET_CONTENT':
+      return { ...state, content: action.payload };
+      
+    case 'SET_SEO_SCORE':
+      return { ...state, seoScore: action.payload };
+      
+    case 'SET_ADDITIONAL_INSTRUCTIONS':
+      return { ...state, additionalInstructions: action.payload };
+      
+    default:
+      return state;
+  }
+};
+
+// Helper function to convert SERP data to selectable items
+function createSerpSelectionsFromData(serpData: any) {
+  const newSelections = [];
+  
+  // Convert SERP data to selectable items
+  if (serpData.peopleAlsoAsk) {
+    serpData.peopleAlsoAsk.forEach((item: any) => {
+      newSelections.push({
+        type: 'question',
+        content: item.question,
+        source: item.source,
+        selected: false
+      });
+    });
+  }
+  
+  if (serpData.relatedSearches) {
+    serpData.relatedSearches.forEach((item: any) => {
+      newSelections.push({
+        type: 'keyword',
+        content: item.query,
+        selected: false
+      });
+    });
+  }
+  
+  if (serpData.featuredSnippets) {
+    serpData.featuredSnippets.forEach((item: any) => {
+      newSelections.push({
+        type: 'snippet',
+        content: item.content,
+        source: item.source,
+        selected: false
+      });
+    });
+  }
+
+  if (serpData.topResults) {
+    serpData.topResults.forEach((item: any) => {
+      if (item.snippet) {
+        newSelections.push({
+          type: 'competitor',
+          content: item.snippet,
+          source: item.link,
+          selected: false
+        });
+      }
+    });
+  }
+  
+  return newSelections;
+}

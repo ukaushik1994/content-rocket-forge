@@ -1,81 +1,106 @@
 
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { KeywordsList } from '@/components/keywords/KeywordsList';
-import { KeywordResearchTool } from '@/components/keywords/KeywordResearchTool';
-import { KeywordCluster } from '@/components/keywords/KeywordCluster';
-import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
-import { KeywordTrends } from '@/components/keywords/KeywordTrends';
+import { Container } from '@/components/ui/Container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Plus, FileText } from 'lucide-react';
+import { KeywordResearchTool } from '@/components/keywords/KeywordResearchTool';
+import { KeywordsList } from '@/components/keywords/KeywordsList';
+import { KeywordCluster } from '@/components/keywords/KeywordCluster';
+import { KeywordTrends } from '@/components/keywords/KeywordTrends';
+import { KeywordCompetitors } from '@/components/keywords/KeywordCompetitors';
 import { Helmet } from 'react-helmet-async';
 
-const Keywords = () => {
+// Define the KeywordProps interface to pass to KeywordsList
+interface KeywordProps {
+  id: string;
+  primary: string;
+  volume: number;
+  difficulty: number;
+  cpc: number;
+  intent: string;
+  trend: string;
+  serp: string;
+  selected: boolean;
+}
+
+// Sample data for demonstration
+const sampleKeywords: KeywordProps[] = [
+  {
+    id: '1',
+    primary: 'content marketing',
+    volume: 12000,
+    difficulty: 68,
+    cpc: 2.45,
+    intent: 'informational',
+    trend: 'increasing',
+    serp: 'featured_snippet',
+    selected: false
+  },
+  {
+    id: '2',
+    primary: 'seo optimization',
+    volume: 9500,
+    difficulty: 72,
+    cpc: 3.15,
+    intent: 'commercial',
+    trend: 'stable',
+    serp: 'local_pack',
+    selected: true
+  }
+];
+
+const KeywordsPage: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>Keywords Research | SEO Platform</title>
+        <title>Keywords | SEO Platform</title>
       </Helmet>
       
       <Navbar />
       
-      <main className="flex-1 container py-8">
+      <Container className="flex-1 py-8">
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Keywords</h1>
-            <p className="text-muted-foreground">
-              Research, organize, and analyze your keywords
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold">Keywords Research</h1>
           
-          <div className="flex gap-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/content-builder" className="flex items-center gap-1">
-                <FileText className="h-4 w-4" />
-                Create Content
-              </Link>
-            </Button>
-            
-            <Button size="sm" className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple">
-              <Plus className="h-4 w-4 mr-1" /> Add Keywords
-            </Button>
+          <div className="space-x-2">
+            <Button variant="outline">Import</Button>
+            <Button>Add Keywords</Button>
           </div>
         </div>
         
-        <Tabs defaultValue="research" className="space-y-4">
-          <TabsList className="w-full border-b pb-0 bg-transparent">
+        <Tabs defaultValue="research">
+          <TabsList className="mb-6">
             <TabsTrigger value="research">Research</TabsTrigger>
-            <TabsTrigger value="list">My Keywords</TabsTrigger>
+            <TabsTrigger value="my-keywords">My Keywords</TabsTrigger>
             <TabsTrigger value="clusters">Clusters</TabsTrigger>
-            <TabsTrigger value="competitors">Competitors</TabsTrigger>
             <TabsTrigger value="trends">Trends</TabsTrigger>
+            <TabsTrigger value="competitors">Competitors</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="research" className="space-y-4">
+          <TabsContent value="research">
             <KeywordResearchTool />
           </TabsContent>
           
-          <TabsContent value="list" className="space-y-4">
-            <KeywordsList />
+          <TabsContent value="my-keywords">
+            <KeywordsList keywords={sampleKeywords} />
           </TabsContent>
           
-          <TabsContent value="clusters" className="space-y-4">
+          <TabsContent value="clusters">
             <KeywordCluster />
           </TabsContent>
           
-          <TabsContent value="competitors" className="space-y-4">
-            <KeywordCompetitors />
-          </TabsContent>
-          
-          <TabsContent value="trends" className="space-y-4">
+          <TabsContent value="trends">
             <KeywordTrends />
           </TabsContent>
+          
+          <TabsContent value="competitors">
+            <KeywordCompetitors />
+          </TabsContent>
         </Tabs>
-      </main>
+      </Container>
     </div>
   );
 };
 
-export default Keywords;
+export default KeywordsPage;
