@@ -91,7 +91,7 @@ export const KeywordSelectionStep = () => {
         <TabsList>
           <TabsTrigger value="research">Keyword Research</TabsTrigger>
           
-          <TabsTrigger value="saved">Saved Keywords</TabsTrigger>
+          
         </TabsList>
 
         <TabsContent value="research" className="space-y-6 pt-4">
