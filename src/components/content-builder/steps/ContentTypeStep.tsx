@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,13 +11,15 @@ import {
   Newspaper, 
   Mail, 
   MessageCircle,
-  Loader2
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { ContentType, Solution } from '@/contexts/content-builder/types';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
   { value: 'blog', label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
@@ -54,7 +57,7 @@ export const ContentTypeStep = () => {
       if (error) throw error;
       
       if (data) {
-        // Transform the data from jsonb columns to the expected format
+        // Transform the data from jsonb columns to the expected format with validation
         const formattedSolutions: Solution[] = data.map(solution => ({
           id: solution.id,
           name: solution.name,
@@ -70,7 +73,20 @@ export const ContentTypeStep = () => {
           targetAudience: Array.isArray(solution.target_audience) 
             ? solution.target_audience.map(t => String(t)) 
             : [],
-          description: `${solution.name} - Business Solution` // Default description
+          description: `${solution.name} - Business Solution`,
+          logoUrl: solution.logo_url,
+          externalUrl: solution.external_url,
+          resources: Array.isArray(solution.resources) 
+            ? solution.resources.map(resource => {
+                if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
+                  return {
+                    title: String(resource.title || ''),
+                    url: String(resource.url || '')
+                  };
+                }
+                return { title: '', url: '' };
+              }).filter(r => r.title && r.url)
+            : []
         }));
         setSolutions(formattedSolutions);
       }
@@ -84,7 +100,10 @@ export const ContentTypeStep = () => {
         features: ["Feature 1", "Feature 2", "Feature 3"],
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
-        targetAudience: ["Audience 1", "Audience 2"]
+        targetAudience: ["Audience 1", "Audience 2"],
+        logoUrl: null,
+        externalUrl: null,
+        resources: []
       }]);
     } finally {
       setIsLoading(false);
@@ -102,6 +121,16 @@ export const ContentTypeStep = () => {
 
   const handleNavigateToSolutions = () => {
     navigate('/solutions');
+  };
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
@@ -163,40 +192,79 @@ export const ContentTypeStep = () => {
             {solutions.map((solution) => (
               <Card 
                 key={solution.id} 
-                className={`cursor-pointer transition-all hover:border-primary
+                className={`cursor-pointer transition-all hover:shadow-md hover:border-primary overflow-hidden
                   ${selectedSolution?.id === solution.id ? 'border-primary bg-primary/5' : ''}`}
                 onClick={() => handleSelectSolution(solution)}
               >
-                <CardContent className="p-4">
-                  <h4 className="font-medium">{solution.name}</h4>
-                  {solution.description && (
-                    <p className="text-sm text-muted-foreground">{solution.description}</p>
-                  )}
-                  
-                  {solution.features && solution.features.length > 0 && (
-                    <div className="mt-3">
-                      <span className="text-xs font-medium">Features:</span>
-                      <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
-                        {solution.features.slice(0, 3).map((feature, idx) => (
-                          <li key={idx}>{feature}</li>
-                        ))}
-                        {solution.features.length > 3 && (
-                          <li className="text-xs text-primary">+{solution.features.length - 3} more features</li>
-                        )}
-                      </ul>
+                <CardContent className="p-4 flex gap-4">
+                  <div className="flex-shrink-0">
+                    <Avatar className="h-12 w-12 rounded-md border">
+                      {solution.logoUrl ? (
+                        <AvatarImage 
+                          src={solution.logoUrl} 
+                          alt={solution.name}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <AvatarFallback className="rounded-md bg-primary/10 text-primary font-medium">
+                          {getInitials(solution.name)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">{solution.name}</h4>
+                      {solution.externalUrl && (
+                        <a 
+                          href={solution.externalUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
                     </div>
-                  )}
+                    
+                    {solution.features && solution.features.length > 0 && (
+                      <div className="mt-3">
+                        <span className="text-xs font-medium">Features:</span>
+                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
+                          {solution.features.slice(0, 3).map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                          {solution.features.length > 3 && (
+                            <li className="text-xs text-primary">+{solution.features.length - 3} more features</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
 
-                  {solution.useCases && solution.useCases.length > 0 && (
-                    <div className="mt-2">
-                      <span className="text-xs font-medium">Use Cases:</span>
-                      <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
-                        {solution.useCases.slice(0, 2).map((useCase, idx) => (
-                          <li key={idx}>{useCase}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    {solution.useCases && solution.useCases.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-xs font-medium">Use Cases:</span>
+                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
+                          {solution.useCases.slice(0, 2).map((useCase, idx) => (
+                            <li key={idx}>{useCase}</li>
+                          ))}
+                          {solution.useCases.length > 2 && (
+                            <li className="text-xs text-primary">+{solution.useCases.length - 2} more use cases</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {solution.resources && solution.resources.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-xs font-medium">Resources:</span>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {solution.resources.length} resource(s) available
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
