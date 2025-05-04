@@ -17,18 +17,14 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, description, icon, trend, className }: StatCardProps) {
-  // Dynamically get the icon component
+  // Dynamically get the icon component with proper type checking
   const IconComponent = icon ? LucideIcons[icon] : null;
   
   return (
     <Card className={cn("overflow-hidden glass-panel bg-glass group", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200">{title}</CardTitle>
-        {IconComponent && (
-          <div className="w-8 h-8 rounded-full bg-background/30 flex items-center justify-center">
-            <IconComponent className="w-4 h-4 text-primary" />
-          </div>
-        )}
+        {IconComponent && React.createElement(IconComponent, { className: "w-4 h-4 text-primary" })}
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold group-hover:text-gradient transition-all duration-300">{value}</div>
