@@ -1,15 +1,14 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { 
-  extractDocumentStructure, 
-  generateMetaSuggestions,
-  analyzeSolutionIntegration,
-  detectCTAs,
-  generateTitleSuggestions
-} from '@/utils/seo/documentAnalysis';
-import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
+import { extractDocumentStructure } from '@/utils/seo/documentAnalysis';
 import { toast } from 'sonner';
+
+import { useContentAnalysis } from './final-review/useContentAnalysis';
+import { useMetaGenerator } from './final-review/useMetaGenerator';
+import { useSolutionAnalysis } from './final-review/useSolutionAnalysis';
+import { useStepCompletion } from './final-review/useStepCompletion';
+import { useTitleSuggestions } from './final-review/useTitleSuggestions';
 
 // Standard toast configuration
 const toastConfig = {
@@ -22,21 +21,19 @@ export const useFinalReview = () => {
   const { state, dispatch } = useContentBuilder();
   const { 
     content, 
-    mainKeyword, 
-    selectedKeywords, 
-    contentTitle, 
     metaTitle,
-    metaDescription,
-    selectedSolution, 
-    serpSelections,
+    contentTitle,
     serpData
   } = state;
   
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
-  const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
-  const [ctaInfo, setCTAInfo] = useState<{ hasCTA: boolean; ctaText: string[] }>({ hasCTA: false, ctaText: [] });
-  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
+  
+  // Use refactored hooks
+  const { keywordUsage, ctaInfo } = useContentAnalysis();
+  const { titleSuggestions, isGeneratingTitles, generateTitleSuggestions } = useTitleSuggestions();
+  const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
+  const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
+  const { checkStepCompletion } = useStepCompletion();
   
   // Debug logs for tracking state
   useEffect(() => {
@@ -52,158 +49,53 @@ export const useFinalReview = () => {
       
       // DocumentStructure object already has the correct structure from documentAnalysis.ts now
       dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: structure });
-      
-      // Analyze keyword usage
-      const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
-      setKeywordUsage(usage);
-      
-      // Detect CTAs
-      const cta = detectCTAs(content);
-      setCTAInfo(cta);
     }
-  }, [content, mainKeyword, selectedKeywords, dispatch]);
+  }, [content, dispatch]);
   
-  // Sync selected keywords from SERP selections
+  // Check if step can be completed
   useEffect(() => {
-    if (serpSelections && serpSelections.length > 0) {
-      // Extract selected keywords from SERP selections
-      const selectedKeywordsFromSelections = serpSelections
-        .filter(item => item.selected && item.type === 'keyword')
-        .map(item => item.content);
-      
-      // Add selected keywords to state if they don't already exist
-      if (selectedKeywordsFromSelections.length > 0) {
-        const newKeywords = selectedKeywordsFromSelections.filter(
-          keyword => !selectedKeywords.includes(keyword) && keyword !== mainKeyword
-        );
-        
-        if (newKeywords.length > 0) {
-          const updatedKeywords = [...selectedKeywords, ...newKeywords];
-          dispatch({ type: 'SET_KEYWORDS', payload: updatedKeywords });
-        }
-      }
-    }
-  }, [serpSelections, mainKeyword, selectedKeywords, dispatch]);
+    checkStepCompletion();
+  }, [metaTitle, state.metaDescription, state.documentStructure]);
   
-  // Generate meta information
-  const generateMeta = () => {
-    if (!content) {
-      toast.error('No content available to generate meta information', toastConfig.error);
-      return;
-    }
-    
-    const { metaTitle: generatedTitle, metaDescription: generatedDescription } = generateMetaSuggestions(content, mainKeyword, contentTitle);
-    
-    console.log("[useFinalReview] Generating meta:", { generatedTitle, generatedDescription });
-    
-    // Update both meta title and content title for consistency
-    dispatch({ type: 'SET_META_TITLE', payload: generatedTitle });
-    dispatch({ type: 'SET_CONTENT_TITLE', payload: generatedTitle });
-    dispatch({ type: 'SET_META_DESCRIPTION', payload: generatedDescription });
-    
-    toast.success('Generated meta title and description', toastConfig.success);
-    
-    // Also generate title suggestions
-    generateTitleSuggestionsAsync();
-  };
-  
-  // Generate title suggestions
-  const generateTitleSuggestionsAsync = async () => {
-    if (!content || !mainKeyword) {
-      toast.error('Content or main keyword not available for generating titles', toastConfig.error);
-      return;
-    }
-    
-    setIsGeneratingTitles(true);
+  // Run all checks at once
+  const runAllChecks = async () => {
+    console.log("[useFinalReview] Running all checks");
+    setIsRunningAllChecks(true);
     
     try {
-      // Call the generateTitleSuggestions function from documentAnalysis
-      const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
-      
-      setTitleSuggestions(suggestions);
-      console.log("[useFinalReview] Generated title suggestions:", suggestions);
-      toast.success('Generated title suggestions', toastConfig.success);
-      
-      // If there's at least one suggestion and no meta title set yet, automatically use the first one
-      if (suggestions.length > 0 && !state.metaTitle) {
-        const initialTitle = suggestions[0];
-        console.log("[useFinalReview] Setting initial title:", initialTitle);
-        dispatch({ type: 'SET_META_TITLE', payload: initialTitle });
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: initialTitle });
+      if (!metaTitle || !state.metaDescription) {
+        await generateMeta();
       }
+      
+      if (!state.solutionIntegrationMetrics && state.selectedSolution) {
+        await analyzeSolutionUsage();
+      }
+      
+      if (titleSuggestions.length === 0) {
+        await generateTitleSuggestions();
+      }
+      
+      toast.success("All checks completed");
     } catch (error) {
-      console.error('Error generating title suggestions:', error);
-      toast.error('Failed to generate title suggestions', toastConfig.error);
+      console.error("[useFinalReview] Error running checks:", error);
+      toast.error("Some checks failed to complete");
     } finally {
-      setIsGeneratingTitles(false);
+      setIsRunningAllChecks(false);
     }
-  };
-  
-  // Analyze solution integration
-  const analyzeSolutionUsage = () => {
-    if (!content || !selectedSolution) {
-      toast.error('Content or solution not available for analysis', toastConfig.error);
-      return;
-    }
-    
-    setIsAnalyzing(true);
-    
-    try {
-      const metrics = analyzeSolutionIntegration(content, selectedSolution);
-      
-      // Ensure painPointsAddressed is always an array of strings
-      // The documentAnalysis.ts function might be returning a number instead of string array
-      const painPointsArray = Array.isArray(metrics.painPointsAddressed) 
-        ? metrics.painPointsAddressed 
-        : metrics.painPointsAddressed ? [`Pain point ${metrics.painPointsAddressed}`] : [];
-      
-      console.log("[useFinalReview] Raw metrics from analysis:", metrics);
-      console.log("[useFinalReview] Converted painPointsAddressed:", painPointsArray);
-      
-      const solutionMetrics = {
-        featureIncorporation: metrics.featureIncorporation,
-        positioningScore: metrics.positioningScore,
-        nameMentions: metrics.nameMentions,
-        painPointsAddressed: painPointsArray, // Ensure this is a string array
-        audienceAlignment: metrics.audienceAlignment,
-        ctaMentions: ctaInfo.ctaText.length,
-        overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
-      };
-      
-      console.log("[useFinalReview] Solution metrics to dispatch:", solutionMetrics);
-      
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
-      toast.success('Solution integration analysis completed', toastConfig.success);
-    } catch (error) {
-      console.error('Error analyzing solution integration:', error);
-      toast.error('Failed to analyze solution integration', toastConfig.error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-  
-  // Check if we can mark the step as complete
-  const checkStepCompletion = () => {
-    const { metaTitle, metaDescription, documentStructure } = state;
-    
-    if (metaTitle && metaDescription && documentStructure) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
-      return true;
-    }
-    
-    return false;
   };
   
   return {
     isAnalyzing,
     isGeneratingTitles,
+    isRunningAllChecks,
     keywordUsage,
     ctaInfo,
     titleSuggestions,
     serpData,
     generateMeta,
-    generateTitleSuggestions: generateTitleSuggestionsAsync,
+    generateTitleSuggestions,
     analyzeSolutionUsage,
-    checkStepCompletion
+    checkStepCompletion,
+    runAllChecks
   };
 };

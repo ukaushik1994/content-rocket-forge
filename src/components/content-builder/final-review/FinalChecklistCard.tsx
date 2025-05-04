@@ -15,6 +15,21 @@ export const FinalChecklistCard = ({ checks }: FinalChecklistProps) => {
   const passedChecks = checks.filter(check => check.passed).length;
   const progress = Math.round((passedChecks / checks.length) * 100);
   
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
+  
   return (
     <Card className="h-full shadow-xl bg-gradient-to-br from-background to-purple-950/5 border border-purple-500/20">
       <CardHeader className="pb-2 border-b border-purple-500/10">
@@ -38,7 +53,12 @@ export const FinalChecklistCard = ({ checks }: FinalChecklistProps) => {
           ></motion.div>
         </div>
         
-        <div className="space-y-1 mt-2 max-h-[280px] overflow-y-auto pr-1 -mr-1">
+        <motion.div 
+          className="space-y-1 mt-2 max-h-[280px] overflow-y-auto pr-1 -mr-1"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {checks.map((check, index) => (
             <motion.div 
               key={index} 
@@ -47,9 +67,9 @@ export const FinalChecklistCard = ({ checks }: FinalChecklistProps) => {
                   ? 'bg-green-500/10 border border-green-500/30' 
                   : 'bg-secondary/20 hover:bg-secondary/30'
               }`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
+              variants={itemVariants}
+              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.01, x: 2 }}
             >
               <div className="mt-0.5">
                 {check.passed ? (
@@ -69,7 +89,7 @@ export const FinalChecklistCard = ({ checks }: FinalChecklistProps) => {
               </span>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </CardContent>
     </Card>
   );
