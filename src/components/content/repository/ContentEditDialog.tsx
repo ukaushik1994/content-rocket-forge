@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ContentItemType } from '@/contexts/content';
-import { ContentEditForm } from './ContentEditForm';
+import { EnhancedContentEditForm } from './EnhancedContentEditForm';
 
 interface ContentEditDialogProps {
   open: boolean;
@@ -11,12 +11,6 @@ interface ContentEditDialogProps {
   onOpenChange: (open: boolean) => void;
   onSave: (values: Partial<ContentItemType>) => Promise<void>;
 }
-
-type FormValues = {
-  title: string;
-  content: string;
-  keywords: string;
-};
 
 export const ContentEditDialog: React.FC<ContentEditDialogProps> = ({
   open,
@@ -26,7 +20,7 @@ export const ContentEditDialog: React.FC<ContentEditDialogProps> = ({
 }) => {
   const [isSaving, setIsSaving] = useState(false);
   
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = async (values: { title: string; content: string; keywords: string }) => {
     try {
       setIsSaving(true);
       
@@ -53,12 +47,12 @@ export const ContentEditDialog: React.FC<ContentEditDialogProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-4 pb-2">
           <DialogTitle>Edit Content</DialogTitle>
         </DialogHeader>
         
-        <ContentEditForm 
+        <EnhancedContentEditForm 
           content={content}
           isSaving={isSaving}
           onSubmit={handleSubmit}
