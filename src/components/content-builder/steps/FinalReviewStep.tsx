@@ -4,6 +4,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useFinalReview } from '@/hooks/useFinalReview';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 // Import components
 import { ContentTabContent, SeoTabContent, TechnicalTabContent } from '../final-review/tabs';
@@ -42,6 +43,7 @@ export const FinalReviewStep = () => {
 
   const { checklistItems, completionPercentage, passedChecks, totalChecks } = useChecklistItems();
   const [activeTab, setActiveTab] = useState("content");
+  const [confettiShown, setConfettiShown] = useState(false);
   
   // Debug current state
   useEffect(() => {
@@ -59,6 +61,32 @@ export const FinalReviewStep = () => {
       generateMeta();
     }
   }, [content, mainKeyword, metaTitle, metaDescription, generateMeta]);
+
+  // Trigger confetti when all checks pass
+  useEffect(() => {
+    if (completionPercentage === 100 && !confettiShown) {
+      const duration = 3000;
+      const end = Date.now() + duration;
+
+      const launchConfetti = () => {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#8B5CF6', '#6366F1', '#3B82F6', '#10B981', '#34D399'],
+          startVelocity: 30,
+          gravity: 1.2
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(launchConfetti);
+        }
+      };
+
+      launchConfetti();
+      setConfettiShown(true);
+    }
+  }, [completionPercentage, confettiShown]);
   
   // Update meta information
   const handleMetaTitleChange = (value: string) => {
