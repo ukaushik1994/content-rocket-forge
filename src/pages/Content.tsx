@@ -4,7 +4,7 @@ import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { ContentRepository } from '@/components/content/ContentRepository';
 import { useContent } from '@/contexts/content';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Inbox } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -53,7 +53,26 @@ const Content = () => {
           </Button>
         </div>
         
-        <ContentRepository />
+        {!loading && contentItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 border border-dashed rounded-lg border-muted">
+            <div className="bg-muted/20 p-4 rounded-full mb-4">
+              <Inbox className="h-12 w-12 text-muted-foreground/70" />
+            </div>
+            <h2 className="text-xl font-medium mb-2">No content items yet</h2>
+            <p className="text-muted-foreground mb-6 max-w-md text-center">
+              Create your first content piece to start building your content library.
+            </p>
+            <Button 
+              onClick={handleCreateContent}
+              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Your First Content
+            </Button>
+          </div>
+        ) : (
+          <ContentRepository />
+        )}
       </main>
     </div>
   );
