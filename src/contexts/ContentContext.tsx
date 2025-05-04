@@ -81,16 +81,68 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        
+        // First, fetch the content items
+        const { data: contentData, error: contentError } = await supabase
           .from('content_items')
           .select('*')
           .order('updated_at', { ascending: false });
         
-        if (error) throw error;
-
-        if (data) {
-          // Map database items to ContentItemType format
-          const mappedData: ContentItemType[] = data.map(item => ({
+        if (contentError) throw contentError;
+        
+        if (!contentData || contentData.length === 0) {
+          setContentItems(process.env.NODE_ENV === 'development' ? initialContent : []);
+          setLoading(false);
+          return;
+        }
+        
+        // Get all content IDs to fetch their associated keywords
+        const contentIds = contentData.map(item => item.id);
+        
+        // Fetch the keyword relationships
+        const { data: keywordRelations, error: relationsError } = await supabase
+          .from('content_keywords')
+          .select('content_id, keyword_id')
+          .in('content_id', contentIds);
+        
+        if (relationsError) throw relationsError;
+        
+        // Get unique keyword IDs to fetch the actual keyword texts
+        const keywordIds = keywordRelations ? 
+          [...new Set(keywordRelations.map(rel => rel.keyword_id))] 
+          : [];
+        
+        let keywordMap: Record<string, string> = {};
+        
+        // Only fetch keywords if there are any relationships
+        if (keywordIds.length > 0) {
+          const { data: keywordsData, error: keywordsError } = await supabase
+            .from('keywords')
+            .select('id, keyword')
+            .in('id', keywordIds);
+          
+          if (keywordsError) throw keywordsError;
+          
+          // Create a map of keyword IDs to their text values
+          keywordMap = (keywordsData || []).reduce((acc, kw) => {
+            acc[kw.id] = kw.keyword;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+        
+        // Map content data with their keywords
+        const mappedData: ContentItemType[] = contentData.map(item => {
+          // Find all keyword relations for this content item
+          const itemKeywordRelations = keywordRelations ? 
+            keywordRelations.filter(rel => rel.content_id === item.id) 
+            : [];
+            
+          // Get the actual keyword texts using the map
+          const itemKeywords = itemKeywordRelations
+            .map(rel => keywordMap[rel.keyword_id])
+            .filter(kw => kw !== undefined);
+          
+          return {
             id: item.id,
             title: item.title,
             content: item.content || '',
@@ -98,19 +150,12 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
             created_at: item.created_at,
             updated_at: item.updated_at,
             seo_score: item.seo_score || 0,
-            keywords: [], // We'll need to fetch keywords separately in a real implementation
+            keywords: itemKeywords,
             user_id: item.user_id,
-          }));
+          };
+        });
           
-          setContentItems(mappedData);
-        } else {
-          // If no data, use fallback only in development
-          if (process.env.NODE_ENV === 'development') {
-            setContentItems(initialContent);
-          } else {
-            setContentItems([]);
-          }
-        }
+        setContentItems(mappedData);
       } catch (error: any) {
         console.error('Error fetching content items:', error);
         toast.error('Failed to load content items');
@@ -137,14 +182,20 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
             if (payload.eventType === 'INSERT') {
               const newItem = payload.new as ContentItemType;
               if (newItem.user_id === user.id) {
-                setContentItems(prev => [newItem, ...prev]);
+                // For newly inserted items, we need to fetch any keywords that might be associated
+                fetchItemKeywords(newItem).then(itemWithKeywords => {
+                  setContentItems(prev => [itemWithKeywords, ...prev]);
+                });
               }
             } else if (payload.eventType === 'UPDATE') {
               const updatedItem = payload.new as ContentItemType;
               if (updatedItem.user_id === user.id) {
-                setContentItems(prev => prev.map(item => 
-                  item.id === updatedItem.id ? updatedItem : item
-                ));
+                // For updated items, we need to fetch any keywords that might be updated
+                fetchItemKeywords(updatedItem).then(itemWithKeywords => {
+                  setContentItems(prev => prev.map(item => 
+                    item.id === itemWithKeywords.id ? itemWithKeywords : item
+                  ));
+                });
               }
             } else if (payload.eventType === 'DELETE') {
               const deletedItem = payload.old as ContentItemType;
@@ -159,6 +210,58 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       };
     }
   }, [user]);
+  
+  // Helper function to fetch keywords for a single content item
+  const fetchItemKeywords = async (item: any): Promise<ContentItemType> => {
+    try {
+      // Fetch keyword relationships for this item
+      const { data: relations, error: relationsError } = await supabase
+        .from('content_keywords')
+        .select('keyword_id')
+        .eq('content_id', item.id);
+      
+      if (relationsError) throw relationsError;
+      
+      if (!relations || relations.length === 0) {
+        // No keywords for this item
+        return {
+          ...item,
+          content: item.content || '',
+          keywords: [],
+          status: item.status as 'draft' | 'published' | 'archived'
+        };
+      }
+      
+      // Get the keyword IDs
+      const keywordIds = relations.map(rel => rel.keyword_id);
+      
+      // Fetch the actual keywords
+      const { data: keywordsData, error: keywordsError } = await supabase
+        .from('keywords')
+        .select('keyword')
+        .in('id', keywordIds);
+      
+      if (keywordsError) throw keywordsError;
+      
+      // Extract the keyword texts
+      const keywords = keywordsData ? keywordsData.map(kw => kw.keyword) : [];
+      
+      return {
+        ...item,
+        content: item.content || '',
+        keywords,
+        status: item.status as 'draft' | 'published' | 'archived'
+      };
+    } catch (error) {
+      console.error('Error fetching keywords for content item:', error);
+      return {
+        ...item,
+        content: item.content || '',
+        keywords: [],
+        status: item.status as 'draft' | 'published' | 'archived'
+      };
+    }
+  };
 
   const addContentItem = async (item: Omit<ContentItemType, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     if (!user) {
@@ -184,12 +287,65 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       if (data) {
+        // If the content has keywords, create the relationships
+        if (item.keywords && item.keywords.length > 0) {
+          // First, check if the keywords exist or create them
+          for (const keywordText of item.keywords) {
+            try {
+              // Check if keyword exists
+              const { data: existingKeyword, error: searchError } = await supabase
+                .from('keywords')
+                .select('id')
+                .eq('keyword', keywordText)
+                .eq('user_id', user.id)
+                .single();
+                
+              if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
+                throw searchError;
+              }
+              
+              let keywordId;
+              
+              if (!existingKeyword) {
+                // Create the keyword if it doesn't exist
+                const { data: newKeyword, error: insertError } = await supabase
+                  .from('keywords')
+                  .insert({
+                    keyword: keywordText,
+                    user_id: user.id
+                  })
+                  .select('id')
+                  .single();
+                  
+                if (insertError) throw insertError;
+                
+                keywordId = newKeyword.id;
+              } else {
+                keywordId = existingKeyword.id;
+              }
+              
+              // Create the relationship between content item and keyword
+              const { error: relationError } = await supabase
+                .from('content_keywords')
+                .insert({
+                  content_id: data.id,
+                  keyword_id: keywordId
+                });
+                
+              if (relationError) throw relationError;
+            } catch (error) {
+              console.error(`Error processing keyword: ${keywordText}`, error);
+            }
+          }
+        }
+        
         toast.success('Content item created successfully');
         
-        // Add to local state (realtime subscription should handle this, but for safety)
+        // Add to local state with keywords
         const createdItem: ContentItemType = {
           ...data,
-          keywords: item.keywords,
+          keywords: item.keywords || [],
+          content: data.content || '',
           status: data.status as 'draft' | 'published' | 'archived'
         };
         
@@ -229,14 +385,17 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // Handle keyword updates separately
+      const keywordsToUpdate = updates.keywords;
+      
       // Prepare updates for the database
       const dbUpdates = {
         ...updates,
         updated_at: new Date().toISOString(),
-        // Remove id and user_id from updates if present
+        // Remove id, user_id and keywords from updates
         id: undefined,
         user_id: undefined,
-        keywords: undefined, // Handle keywords separately
+        keywords: undefined,
       };
       
       // Filter out undefined values
@@ -246,6 +405,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         }
       });
       
+      // Update the content item
       const { error } = await supabase
         .from('content_items')
         .update(dbUpdates)
@@ -254,9 +414,145 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         
       if (error) throw error;
       
+      // If keywords are being updated
+      if (keywordsToUpdate !== undefined) {
+        // First, get current keywords
+        const { data: currentRelations, error: relationsError } = await supabase
+          .from('content_keywords')
+          .select('keyword_id')
+          .eq('content_id', id);
+          
+        if (relationsError) throw relationsError;
+        
+        // Get the current keywords
+        const currentKeywordIds = currentRelations ? currentRelations.map(rel => rel.keyword_id) : [];
+        
+        if (currentKeywordIds.length > 0) {
+          const { data: currentKeywords, error: keywordsError } = await supabase
+            .from('keywords')
+            .select('id, keyword')
+            .in('id', currentKeywordIds);
+            
+          if (keywordsError) throw keywordsError;
+          
+          const currentKeywordTexts = currentKeywords ? currentKeywords.map(k => k.keyword) : [];
+          const currentKeywordMap = currentKeywords ? 
+            currentKeywords.reduce((acc, k) => {
+              acc[k.keyword] = k.id;
+              return acc;
+            }, {} as Record<string, string>) : {};
+            
+          // Keywords to add (in updates but not in current)
+          const keywordsToAdd = keywordsToUpdate ? 
+            keywordsToUpdate.filter(kw => !currentKeywordTexts.includes(kw)) : [];
+            
+          // Keywords to remove (in current but not in updates)
+          const keywordsToRemove = keywordsToUpdate ? 
+            currentKeywordTexts.filter(kw => !keywordsToUpdate.includes(kw)) : [];
+          
+          // Remove keyword relationships
+          for (const kwToRemove of keywordsToRemove) {
+            const keywordId = currentKeywordMap[kwToRemove];
+            if (keywordId) {
+              await supabase
+                .from('content_keywords')
+                .delete()
+                .eq('content_id', id)
+                .eq('keyword_id', keywordId);
+            }
+          }
+          
+          // Add new keyword relationships
+          for (const kwToAdd of keywordsToAdd) {
+            // Check if keyword exists
+            let { data: existingKeyword, error: kwError } = await supabase
+              .from('keywords')
+              .select('id')
+              .eq('keyword', kwToAdd)
+              .eq('user_id', user.id)
+              .maybeSingle();
+              
+            if (kwError && kwError.code !== 'PGRST116') throw kwError;
+            
+            let keywordId;
+            
+            if (!existingKeyword) {
+              // Create keyword if it doesn't exist
+              const { data: newKeyword, error: insertError } = await supabase
+                .from('keywords')
+                .insert({
+                  keyword: kwToAdd,
+                  user_id: user.id
+                })
+                .select('id')
+                .single();
+                
+              if (insertError) throw insertError;
+              
+              keywordId = newKeyword.id;
+            } else {
+              keywordId = existingKeyword.id;
+            }
+            
+            // Create relationship
+            const { error: relationError } = await supabase
+              .from('content_keywords')
+              .insert({
+                content_id: id,
+                keyword_id: keywordId
+              });
+              
+            if (relationError) throw relationError;
+          }
+        } else if (keywordsToUpdate && keywordsToUpdate.length > 0) {
+          // No existing keywords but new ones to add
+          for (const kwToAdd of keywordsToUpdate) {
+            // Check if keyword exists
+            let { data: existingKeyword, error: kwError } = await supabase
+              .from('keywords')
+              .select('id')
+              .eq('keyword', kwToAdd)
+              .eq('user_id', user.id)
+              .maybeSingle();
+              
+            if (kwError && kwError.code !== 'PGRST116') throw kwError;
+            
+            let keywordId;
+            
+            if (!existingKeyword) {
+              // Create keyword if it doesn't exist
+              const { data: newKeyword, error: insertError } = await supabase
+                .from('keywords')
+                .insert({
+                  keyword: kwToAdd,
+                  user_id: user.id
+                })
+                .select('id')
+                .single();
+                
+              if (insertError) throw insertError;
+              
+              keywordId = newKeyword.id;
+            } else {
+              keywordId = existingKeyword.id;
+            }
+            
+            // Create relationship
+            const { error: relationError } = await supabase
+              .from('content_keywords')
+              .insert({
+                content_id: id,
+                keyword_id: keywordId
+              });
+              
+            if (relationError) throw relationError;
+          }
+        }
+      }
+      
       toast.success('Content updated successfully');
       
-      // Update local state (realtime subscription should handle this, but for safety)
+      // Update local state
       setContentItems(prev => 
         prev.map(item => item.id === id ? { 
           ...item, 
@@ -289,6 +585,15 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // First delete associated keyword relationships
+      const { error: relationsError } = await supabase
+        .from('content_keywords')
+        .delete()
+        .eq('content_id', id);
+        
+      if (relationsError) throw relationsError;
+      
+      // Then delete the content item
       const { error } = await supabase
         .from('content_items')
         .delete()
@@ -299,7 +604,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success('Content deleted successfully');
       
-      // Update local state (realtime subscription should handle this, but for safety)
+      // Update local state
       setContentItems(prev => prev.filter(item => item.id !== id));
     } catch (error: any) {
       console.error('Error deleting content item:', error);

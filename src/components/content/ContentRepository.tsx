@@ -177,13 +177,17 @@ export function ContentRepository() {
                   <StatusBadge status={item.status} />
                 </div>
                 
-                <div className="flex flex-wrap gap-1 my-3">
-                  {item.keywords && item.keywords.map((keyword, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-white/5 text-xs">
-                      <Tag className="h-2.5 w-2.5 mr-1" />
-                      {keyword}
-                    </Badge>
-                  ))}
+                <div className="flex flex-wrap gap-1 my-3 min-h-[28px]">
+                  {Array.isArray(item.keywords) && item.keywords.length > 0 ? (
+                    item.keywords.map((keyword, idx) => (
+                      <Badge key={idx} variant="outline" className="bg-white/5 text-xs">
+                        <Tag className="h-2.5 w-2.5 mr-1" />
+                        {keyword}
+                      </Badge>
+                    ))
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic">No keywords</div>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between mt-4">
