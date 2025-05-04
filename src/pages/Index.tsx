@@ -127,7 +127,7 @@ const Index = () => {
               <QuickActionsGrid navigate={navigate} />
             </motion.div>
             
-            {/* Performance Overview - With simplified animations for better chart rendering */}
+            {/* Performance Overview - With stat cards MOVED ABOVE the chart */}
             <motion.div 
               variants={performanceVariants} 
               className="relative"
@@ -164,47 +164,9 @@ const Index = () => {
                 </motion.div>
               </motion.div>
               
-              {/* Enhanced grid layout with better chart rendering */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <motion.div 
-                  className="col-span-1 lg:col-span-2"
-                  variants={chartVariants}
-                >
-                  <PerformanceChart />
-                </motion.div>
-                
-                <div className="col-span-1 space-y-6">
-                  <motion.div variants={statCardVariants} custom={0}>
-                    <StatCard 
-                      title="Content Created" 
-                      value="37" 
-                      description="8 published this month" 
-                      icon="FileText"
-                      trend={{
-                        value: 18,
-                        positive: true
-                      }}
-                    />
-                  </motion.div>
-                  
-                  <motion.div variants={statCardVariants} custom={1}>
-                    <StatCard 
-                      title="Audience Growth" 
-                      value="14.2%" 
-                      description="New visitors" 
-                      icon="Users"
-                      trend={{
-                        value: 3.5,
-                        positive: true
-                      }}
-                    />
-                  </motion.div>
-                </div>
-              </div>
-              
-              {/* Enhanced stat cards grid with staggered animations */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-                <motion.div variants={statCardVariants} custom={2}>
+              {/* Stat cards grid MOVED ABOVE the chart with staggered animations */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <motion.div variants={statCardVariants} custom={0}>
                   <StatCard 
                     title="Total Projects" 
                     value="12" 
@@ -217,7 +179,7 @@ const Index = () => {
                   />
                 </motion.div>
                 
-                <motion.div variants={statCardVariants} custom={3}>
+                <motion.div variants={statCardVariants} custom={1}>
                   <StatCard 
                     title="Keywords Analyzed" 
                     value="284" 
@@ -230,7 +192,7 @@ const Index = () => {
                   />
                 </motion.div>
                 
-                <motion.div variants={statCardVariants} custom={4}>
+                <motion.div variants={statCardVariants} custom={2}>
                   <StatCard 
                     title="Average SEO Score" 
                     value="78/100" 
@@ -243,7 +205,7 @@ const Index = () => {
                   />
                 </motion.div>
                 
-                <motion.div variants={statCardVariants} custom={5}>
+                <motion.div variants={statCardVariants} custom={3}>
                   <StatCard 
                     title="Conversions" 
                     value="5.4%" 
@@ -255,6 +217,44 @@ const Index = () => {
                     }}
                   />
                 </motion.div>
+              </div>
+              
+              {/* Enhanced grid layout with performance chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <motion.div 
+                  className="col-span-1 lg:col-span-2"
+                  variants={chartVariants}
+                >
+                  <PerformanceChart />
+                </motion.div>
+                
+                <div className="col-span-1 space-y-6">
+                  <motion.div variants={statCardVariants} custom={4}>
+                    <StatCard 
+                      title="Content Created" 
+                      value="37" 
+                      description="8 published this month" 
+                      icon="FileText"
+                      trend={{
+                        value: 18,
+                        positive: true
+                      }}
+                    />
+                  </motion.div>
+                  
+                  <motion.div variants={statCardVariants} custom={5}>
+                    <StatCard 
+                      title="Audience Growth" 
+                      value="14.2%" 
+                      description="New visitors" 
+                      icon="Users"
+                      trend={{
+                        value: 3.5,
+                        positive: true
+                      }}
+                    />
+                  </motion.div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
