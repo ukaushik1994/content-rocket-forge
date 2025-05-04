@@ -2,12 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import * as LucideIcons from 'lucide-react';
 
 interface StatCardProps {
   title: string;
   value: string | number;
   description?: string;
-  icon?: React.ReactNode;
+  icon?: keyof typeof LucideIcons;
   trend?: {
     value: number;
     positive: boolean;
@@ -16,23 +17,35 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, description, icon, trend, className }: StatCardProps) {
+  // Dynamically get the icon component
+  const IconComponent = icon ? LucideIcons[icon] : null;
+  
   return (
-    <Card className={cn("overflow-hidden glass-panel bg-glass", className)}>
+    <Card className={cn("overflow-hidden glass-panel bg-glass group", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        {icon && <div className="w-4 h-4 text-foreground">{icon}</div>}
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200">{title}</CardTitle>
+        {IconComponent && (
+          <div className="w-8 h-8 rounded-full bg-background/30 flex items-center justify-center">
+            <IconComponent className="w-4 h-4 text-primary" />
+          </div>
+        )}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-bold group-hover:text-gradient transition-all duration-300">{value}</div>
         {(description || trend) && (
           <div className="flex items-center mt-1">
             {trend && (
               <span 
                 className={cn(
-                  "text-xs font-medium mr-2", 
+                  "text-xs font-medium mr-2 flex items-center gap-1", 
                   trend.positive ? "text-green-400" : "text-red-400"
                 )}
               >
+                {trend.positive ? (
+                  <LucideIcons.TrendingUp className="h-3 w-3" />
+                ) : (
+                  <LucideIcons.TrendingDown className="h-3 w-3" />
+                )}
                 {trend.positive ? "+" : "-"}{trend.value}%
               </span>
             )}

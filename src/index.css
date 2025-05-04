@@ -90,7 +90,7 @@
     box-shadow: 0 0 15px rgba(155, 135, 245, 0.5);
   }
 
-  /* New animations */
+  /* Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
@@ -102,7 +102,15 @@
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out forwards;
   }
-
+  
+  .animate-float {
+    animation: floatAnimation 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+  
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -110,6 +118,17 @@
   
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* 3D Card Effect */
+  .card-3d {
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .card-3d:hover {
+    transform: translateY(-5px) rotateX(2deg);
+    box-shadow: 0 10px 20px rgba(155, 135, 245, 0.2);
   }
 }
 
@@ -150,5 +169,16 @@
   }
   50% {
     transform: translateY(-10px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1) drop-shadow(0 0 5px rgba(155, 135, 245, 0.5));
+  }
+  50% {
+    opacity: 0.8;
+    filter: brightness(1.5) drop-shadow(0 0 10px rgba(155, 135, 245, 0.8));
   }
 }
