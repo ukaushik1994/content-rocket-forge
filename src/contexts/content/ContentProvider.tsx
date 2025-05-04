@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
 import { toast } from 'sonner';
-import { ContentItemType, ContentContextType, initialContent } from './types';
+import { ContentItemType, ContentContextType } from './types';
 import { fetchItemKeywords, processContentItems } from './utils';
 import { createContentActions } from './actions';
 
@@ -34,7 +34,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         if (contentError) throw contentError;
         
         if (!contentData || contentData.length === 0) {
-          setContentItems(process.env.NODE_ENV === 'development' ? initialContent : []);
+          setContentItems([]);
           setLoading(false);
           return;
         }
@@ -45,11 +45,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       } catch (error: any) {
         console.error('Error fetching content items:', error);
         toast.error('Failed to load content items');
-        
-        // Use fallback data in development mode if fetch fails
-        if (process.env.NODE_ENV === 'development') {
-          setContentItems(initialContent);
-        }
+        setContentItems([]);
       } finally {
         setLoading(false);
       }

@@ -1,19 +1,16 @@
+
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Calendar, 
-  Clock, 
   Save, 
-  Share2, 
   Download, 
   Twitter, 
   Facebook, 
@@ -21,44 +18,51 @@ import {
   Mail,
   Loader2
 } from 'lucide-react';
+import { useContent } from '@/contexts/content';
 
 export const PublishStep = () => {
-  const { state, saveContentAsDraft, publishContent, scheduleContent } = useContentBuilder();
-  const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving, isPublishing } = state;
+  const { state, saveContentAsDraft } = useContentBuilder();
+  const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving } = state;
+  const { addContentItem } = useContent();
   const navigate = useNavigate();
   
   const [title, setTitle] = useState(`${mainKeyword} - Complete Guide`);
   const [description, setDescription] = useState(`A comprehensive guide about ${mainKeyword}`);
-  const [publishOption, setPublishOption] = useState('now');
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
   const [socialShare, setSocialShare] = useState(true);
   
-  const handleSaveDraft = async () => {
-    const contentId = await saveContentAsDraft();
-    if (contentId) {
-      // Navigate to content library after successful save
+  const handleSaveContent = async () => {
+    if (!content || !mainKeyword) {
+      toast.error("Content or keywords are missing");
+      return;
+    }
+
+    // Save to content library
+    try {
+      // Prepare content item for storage
+      const contentItem = {
+        title: title,
+        content: content,
+        status: 'draft',
+        seo_score: seoScore,
+        keywords: [mainKeyword, ...(state.selectedKeywords || [])],
+      };
+      
+      // Add to content library
+      await addContentItem(contentItem);
+      
+      toast.success("Content saved to library");
+      
+      // Navigate to content library
       setTimeout(() => {
         navigate('/content');
       }, 1500);
-    }
-  };
-  
-  const handlePublish = async () => {
-    let success = false;
-    
-    if (publishOption === 'schedule' && scheduledDate) {
-      const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime || '00:00'}`);
-      success = await scheduleContent('website', scheduledDateTime);
-    } else {
-      success = await publishContent('website');
-    }
-    
-    if (success) {
-      // Navigate to content library after successful publish
-      setTimeout(() => {
-        navigate('/content');
-      }, 1500);
+      
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast.error('Failed to save content');
+      
+      // Call the original saveContentAsDraft as a fallback
+      await saveContentAsDraft();
     }
   };
   
@@ -81,7 +85,7 @@ export const PublishStep = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Publication Details</CardTitle>
+            <CardTitle className="text-sm">Content Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -106,56 +110,6 @@ export const PublishStep = () => {
               <p className="text-xs text-muted-foreground">
                 {description.length}/160 characters (recommended: 120-155)
               </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Publication Schedule</Label>
-              <RadioGroup
-                value={publishOption}
-                onValueChange={setPublishOption}
-                className="flex flex-col space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="now" id="publish-now" />
-                  <Label htmlFor="publish-now">Publish now</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="schedule" id="publish-schedule" />
-                  <Label htmlFor="publish-schedule">Schedule for later</Label>
-                </div>
-              </RadioGroup>
-              
-              {publishOption === 'schedule' && (
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="scheduled-date" className="text-xs">Date</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="scheduled-date"
-                        type="date"
-                        className="pl-9"
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <Label htmlFor="scheduled-time" className="text-xs">Time</Label>
-                    <div className="relative">
-                      <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="scheduled-time"
-                        type="time"
-                        className="pl-9"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
             
             <div className="flex items-center justify-between pt-2">
@@ -268,44 +222,23 @@ export const PublishStep = () => {
       </div>
       
       <div className="flex justify-center pt-4">
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="gap-1"
-            onClick={handleSaveDraft}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save Draft
-              </>
-            )}
-          </Button>
-          
-          <Button
-            className="gap-1 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple min-w-[150px]"
-            onClick={handlePublish}
-            disabled={isSaving || isPublishing}
-          >
-            {isPublishing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Publishing...
-              </>
-            ) : (
-              <>
-                <Share2 className="h-4 w-4" />
-                {publishOption === 'schedule' ? 'Schedule' : 'Publish'} Content
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          className="gap-1 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple min-w-[150px]"
+          onClick={handleSaveContent}
+          disabled={isSaving || !content || !mainKeyword}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Save to Content Library
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

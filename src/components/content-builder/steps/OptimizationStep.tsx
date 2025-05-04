@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { analyzeContent } from '@/services/serpApiService';
 import { 
   Search, 
   AlertCircle, 
@@ -14,6 +13,7 @@ import {
   RefreshCw 
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ScoreBadge } from '@/components/content/repository';
 
 export const OptimizationStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -22,6 +22,11 @@ export const OptimizationStep = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [scores, setScores] = useState({
+    keywordUsage: 0,
+    contentLength: 0,
+    readability: 0
+  });
   
   useEffect(() => {
     // Run initial analysis if we have content but no SEO score
@@ -42,15 +47,16 @@ export const OptimizationStep = () => {
     if (!content || !mainKeyword) return;
     
     const wordCount = content.split(/\s+/).filter(Boolean).length;
-    const usageData = [mainKeyword, ...selectedKeywords.filter(k => k !== mainKeyword)]
-      .map(keyword => {
-        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-        const matches = content.match(regex) || [];
-        const count = matches.length;
-        const density = ((count / wordCount) * 100).toFixed(1);
-        
-        return { keyword, count, density: `${density}%` };
-      });
+    const keywords = [mainKeyword, ...(selectedKeywords || []).filter(k => k !== mainKeyword)];
+    
+    const usageData = keywords.map(keyword => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = content.match(regex) || [];
+      const count = matches.length;
+      const density = ((count / wordCount) * 100).toFixed(1);
+      
+      return { keyword, count, density: `${density}%` };
+    });
     
     setKeywordUsage(usageData);
   };
@@ -63,17 +69,25 @@ export const OptimizationStep = () => {
     
     setIsAnalyzing(true);
     try {
-      const data = await analyzeContent(content, [mainKeyword, ...selectedKeywords]);
-      
-      // Set recommendations
-      if (data.recommendations && data.recommendations.length > 0) {
-        setRecommendations(data.recommendations);
-      }
-      
-      // Calculate a score based on several factors
+      // Local analysis without relying on external API
+      // 1. Calculate various scores
       const keywordUsageScore = calculateKeywordUsageScore();
       const contentLengthScore = calculateContentLengthScore();
-      const readabilityScore = 75; // Placeholder - would be from actual analysis
+      const readabilityScore = calculateReadabilityScore();
+      
+      // 2. Generate recommendations based on analysis
+      const contentRecommendations = generateRecommendations(
+        keywordUsageScore, 
+        contentLengthScore, 
+        readabilityScore
+      );
+      
+      setRecommendations(contentRecommendations);
+      setScores({
+        keywordUsage: keywordUsageScore,
+        contentLength: contentLengthScore,
+        readability: readabilityScore
+      });
       
       // Weighted average
       const calculatedScore = Math.round(
@@ -94,7 +108,7 @@ export const OptimizationStep = () => {
   };
   
   const calculateKeywordUsageScore = () => {
-    // Basic scoring based on keyword presence and density
+    // Calculate based on keyword presence and density
     const mainKeywordUsage = keywordUsage.find(k => k.keyword === mainKeyword);
     if (!mainKeywordUsage) return 50;
     
@@ -109,6 +123,7 @@ export const OptimizationStep = () => {
   };
   
   const calculateContentLengthScore = () => {
+    if (!content) return 0;
     const wordCount = content.split(/\s+/).filter(Boolean).length;
     
     // Score based on content length
@@ -117,6 +132,108 @@ export const OptimizationStep = () => {
     if (wordCount >= 600 && wordCount < 1200) return 80;
     if (wordCount >= 1200) return 100;
     return 0;
+  };
+  
+  const calculateReadabilityScore = () => {
+    if (!content) return 0;
+    
+    // Simple readability calculation based on:
+    // - Sentence length (shorter is better)
+    // - Word length (shorter is better)
+    // - Paragraph length (shorter is better)
+    
+    const sentences = content.split(/[.!?]+/).filter(Boolean);
+    const words = content.split(/\s+/).filter(Boolean);
+    const paragraphs = content.split(/\n\s*\n/).filter(Boolean);
+    
+    // Average sentence length (in words)
+    const avgSentenceLength = words.length / Math.max(sentences.length, 1);
+    // Average word length (in characters)
+    const avgWordLength = words.join('').length / Math.max(words.length, 1);
+    // Average paragraph length (in sentences)
+    const avgParagraphLength = sentences.length / Math.max(paragraphs.length, 1);
+    
+    let readabilityScore = 100;
+    
+    // Penalize for long sentences (ideal: 15-20 words)
+    if (avgSentenceLength > 25) readabilityScore -= 20;
+    else if (avgSentenceLength > 20) readabilityScore -= 10;
+    else if (avgSentenceLength < 10) readabilityScore -= 5; // Too short can be choppy
+    
+    // Penalize for long words (ideal: ~5 characters)
+    if (avgWordLength > 7) readabilityScore -= 15;
+    else if (avgWordLength > 6) readabilityScore -= 5;
+    
+    // Penalize for long paragraphs (ideal: 3-5 sentences)
+    if (avgParagraphLength > 7) readabilityScore -= 15;
+    else if (avgParagraphLength > 5) readabilityScore -= 5;
+    
+    return Math.max(Math.min(readabilityScore, 100), 0);
+  };
+  
+  const generateRecommendations = (keywordScore: number, lengthScore: number, readabilityScore: number) => {
+    const recommendations: string[] = [];
+    
+    // Keyword usage recommendations
+    if (keywordScore < 70) {
+      const mainKeywordUsage = keywordUsage.find(k => k.keyword === mainKeyword);
+      const density = mainKeywordUsage ? parseFloat(mainKeywordUsage.density) : 0;
+      
+      if (density < 0.5) {
+        recommendations.push(`Increase usage of your main keyword "${mainKeyword}" (current density: ${density}%, aim for 1-2%)`);
+      } else if (density > 5) {
+        recommendations.push(`Reduce usage of your main keyword "${mainKeyword}" as it appears too frequently (current density: ${density}%, aim for 1-2%)`);
+      }
+    }
+    
+    // Content length recommendations
+    if (lengthScore < 80) {
+      const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+      if (wordCount < 300) {
+        recommendations.push('Content is too short. Aim for at least 600 words for better search ranking');
+      } else if (wordCount < 600) {
+        recommendations.push('Consider expanding your content to at least 600 words for better search ranking');
+      }
+    }
+    
+    // Readability recommendations
+    if (readabilityScore < 70) {
+      const sentences = content?.split(/[.!?]+/).filter(Boolean) || [];
+      const avgSentenceLength = sentences.reduce((sum, sent) => sum + sent.split(/\s+/).filter(Boolean).length, 0) / Math.max(sentences.length, 1);
+      
+      if (avgSentenceLength > 20) {
+        recommendations.push('Your sentences are too long. Consider breaking them into shorter, more digestible sentences');
+      }
+      
+      const paragraphs = content?.split(/\n\s*\n/).filter(Boolean) || [];
+      if (paragraphs.some(p => p.split(/\s+/).filter(Boolean).length > 100)) {
+        recommendations.push('Some paragraphs are too long. Break them into smaller paragraphs for better readability');
+      }
+    }
+    
+    // General recommendations
+    if (!recommendations.includes('Add a compelling meta description')) {
+      recommendations.push('Add a compelling meta description that includes your main keyword');
+    }
+    
+    if (!recommendations.includes('Use your main keyword in the title')) {
+      recommendations.push('Use your main keyword in the title, preferably near the beginning');
+    }
+    
+    if (!recommendations.includes('Add internal links')) {
+      recommendations.push('Add internal links to other relevant content on your site');
+    }
+    
+    if (!recommendations.includes('Add external links')) {
+      recommendations.push('Add external links to authoritative sources to boost credibility');
+    }
+    
+    if (!recommendations.includes('Use headings')) {
+      recommendations.push('Use headings (H2, H3) to structure your content and include keywords in them');
+    }
+    
+    // Return a maximum of 8 recommendations
+    return recommendations.slice(0, 8);
   };
   
   const getScoreColor = (score: number) => {
@@ -208,7 +325,7 @@ export const OptimizationStep = () => {
                     r="45" 
                     cx="50" 
                     cy="50" 
-                    stroke-width="10" 
+                    strokeWidth="10" 
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 45 * (seoScore / 100)} ${2 * Math.PI * 45}`}
                     strokeDashoffset={2 * Math.PI * 45 * 0.25}
@@ -233,15 +350,15 @@ export const OptimizationStep = () => {
             <div className="space-y-3">
               <div>
                 <div className="text-xs mb-1 font-medium">Keyword Usage</div>
-                <Progress value={calculateKeywordUsageScore()} className="h-1.5" />
+                <Progress value={scores.keywordUsage} className="h-1.5" />
               </div>
               <div>
                 <div className="text-xs mb-1 font-medium">Content Length</div>
-                <Progress value={calculateContentLengthScore()} className="h-1.5" />
+                <Progress value={scores.contentLength} className="h-1.5" />
               </div>
               <div>
                 <div className="text-xs mb-1 font-medium">Readability</div>
-                <Progress value={75} className="h-1.5" />
+                <Progress value={scores.readability} className="h-1.5" />
               </div>
             </div>
           </CardContent>

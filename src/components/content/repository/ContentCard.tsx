@@ -1,20 +1,26 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ContentItemType } from '@/contexts/content';
-import { Edit, ExternalLink, BarChart3, Clock, Tag } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { StatusBadge } from './StatusBadge';
 import { ScoreBadge } from './ScoreBadge';
+import { formatDistanceToNow } from 'date-fns';
+import { MoreVertical, Edit, Bar, Eye, Archive } from 'lucide-react';
 
 interface ContentCardProps {
   item: ContentItemType;
   onEdit: () => void;
   onView: () => void;
   onAnalyze: () => void;
-  onPublish?: () => void;
-  onArchive?: () => void;
+  onPublish: () => void;
+  onArchive: () => void;
 }
 
 export const ContentCard: React.FC<ContentCardProps> = ({
@@ -25,109 +31,89 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   onPublish,
   onArchive
 }) => {
-  // Format the date to be more readable
+  const getExcerpt = (content: string | undefined) => {
+    if (!content) return '';
+    return content.substring(0, 120) + (content.length > 120 ? '...' : '');
+  };
+  
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return 'Unknown date';
+    }
   };
 
   return (
-    <Card key={item.id} className="bg-glass border border-white/10 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-white/20">
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h3 className="font-medium truncate">{item.title}</h3>
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>Updated {formatDate(item.updated_at)}</span>
-            </div>
+    <Card className="overflow-hidden border border-border/40 bg-card/60 backdrop-blur-sm">
+      <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <StatusBadge status={item.status} />
+            <ScoreBadge score={item.seo_score || 0} />
           </div>
-          <StatusBadge status={item.status} />
+          <h3 className="font-semibold line-clamp-1 mr-4">{item.title}</h3>
         </div>
-        
-        <div className="flex flex-wrap gap-1 my-3 min-h-[28px]">
-          {Array.isArray(item.keywords) && item.keywords.length > 0 ? (
-            item.keywords.map((keyword, idx) => (
-              <Badge key={idx} variant="outline" className="bg-white/5 text-xs">
-                <Tag className="h-2.5 w-2.5 mr-1" />
-                {keyword}
-              </Badge>
-            ))
-          ) : (
-            <div className="text-xs text-muted-foreground italic">No keywords</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">Menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onView}>
+              <Eye className="mr-2 h-4 w-4" />
+              <span>View</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              <span>Edit</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onAnalyze}>
+              <Bar className="mr-2 h-4 w-4" />
+              <span>Analyze</span>
+            </DropdownMenuItem>
+            {item.status === 'draft' && (
+              <DropdownMenuItem onClick={onPublish}>
+                <span className="mr-2">📤</span>
+                <span>Publish</span>
+              </DropdownMenuItem>
+            )}
+            {item.status !== 'archived' && (
+              <DropdownMenuItem onClick={onArchive}>
+                <Archive className="mr-2 h-4 w-4" />
+                <span>Archive</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardHeader>
+      <CardContent className="p-4 pt-3">
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {getExcerpt(item.content)}
+        </p>
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-between">
+        <div className="flex flex-wrap gap-1">
+          {item.keywords?.slice(0, 3).map((keyword, i) => (
+            <span
+              key={i}
+              className="inline-flex text-xs px-1.5 py-0.5 bg-secondary/50 rounded text-secondary-foreground"
+            >
+              {keyword}
+            </span>
+          ))}
+          {(item.keywords?.length || 0) > 3 && (
+            <span className="inline-flex text-xs px-1.5 py-0.5 bg-secondary/30 rounded text-secondary-foreground">
+              +{item.keywords!.length - 3}
+            </span>
           )}
         </div>
-        
-        <div className="flex items-center justify-between mt-4">
-          <div>
-            <div className="text-xs text-muted-foreground mb-1">SEO Score</div>
-            <div className="flex items-center gap-1">
-              <ScoreBadge score={item.seo_score} />
-              <span className="text-xs font-medium">{item.seo_score}/100</span>
-            </div>
-          </div>
-          
-          <div className="flex gap-1">
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-8 w-8 p-0" 
-              onClick={onEdit}
-            >
-              <Edit className="h-4 w-4" />
-              <span className="sr-only">Edit</span>
-            </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-8 w-8 p-0"
-              onClick={onView}
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span className="sr-only">View</span>
-            </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-8 w-8 p-0"
-              onClick={onAnalyze}
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="sr-only">Analytics</span>
-            </Button>
-          </div>
+        <div className="text-xs text-muted-foreground">
+          {formatDate(item.updated_at)}
         </div>
-        
-        {/* Status Action Buttons */}
-        {item.status === 'draft' && onPublish && (
-          <div className="mt-4 flex justify-end">
-            <Button
-              size="sm"
-              variant="default"
-              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-              onClick={onPublish}
-            >
-              Publish
-            </Button>
-          </div>
-        )}
-        
-        {item.status === 'published' && onArchive && (
-          <div className="mt-4 flex justify-end">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onArchive}
-            >
-              Archive
-            </Button>
-          </div>
-        )}
-      </div>
+      </CardFooter>
     </Card>
   );
 };
