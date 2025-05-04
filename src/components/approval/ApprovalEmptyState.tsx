@@ -1,8 +1,6 @@
 
 import React from 'react';
-import { FileText, Sparkles, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { FileText, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 
@@ -11,8 +9,6 @@ interface ApprovalEmptyStateProps {
 }
 
 export const ApprovalEmptyState: React.FC<ApprovalEmptyStateProps> = ({ loading }) => {
-  const navigate = useNavigate();
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 border border-white/10 rounded-xl bg-gray-800/20 backdrop-blur-sm shadow-xl">
@@ -49,18 +45,9 @@ export const ApprovalEmptyState: React.FC<ApprovalEmptyStateProps> = ({ loading 
       </motion.div>
       
       <h3 className="text-2xl font-medium mb-3 text-white/90">No content matching filter</h3>
-      <p className="text-white/60 mb-8 text-center max-w-md">
-        Try selecting a different filter or create new content to manage in this view.
+      <p className="text-white/60 mb-4 text-center max-w-md">
+        Try selecting a different filter to view available content for review and approval.
       </p>
-      
-      <Button 
-        onClick={() => navigate('/content-builder')}
-        className="px-6 py-6 h-auto bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple shadow-lg shadow-neon-purple/20 flex items-center gap-2"
-        size="lg"
-      >
-        <Sparkles className="h-5 w-5" />
-        Create New Content
-      </Button>
     </motion.div>
   );
 };

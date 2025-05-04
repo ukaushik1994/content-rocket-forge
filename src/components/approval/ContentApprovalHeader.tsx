@@ -1,11 +1,9 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle, FileText, Filter } from 'lucide-react';
+import { CheckCircle, FileText } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { motion } from 'framer-motion';
-import { StatusBadge } from '@/components/content/repository/StatusBadge';
-import { CustomBadge } from '@/components/ui/custom-badge';
 
 interface ContentStats {
   all: number;
@@ -36,7 +34,7 @@ export const ContentApprovalHeader: React.FC<ContentApprovalHeaderProps> = ({
               <CheckCircle className="h-4 w-4 text-neon-purple" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white/90 mb-1">
-              Content Management
+              Content Approval
             </h1>
           </div>
           
