@@ -11,31 +11,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Home,
-  BarChart3,
-  FileText,
-  Settings,
-  User,
   Menu,
   X,
   PanelRight,
-  Rocket,
-  MessageSquarePlus,
   LogOut,
   UserCircle,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { toast } from 'sonner';
-
-const navItems = [
-  { name: 'Dashboard', path: '/', icon: Home },
-  { name: 'Content', path: '/content', icon: FileText },
-  { name: 'Solutions', path: '/solutions', icon: Rocket },
-  { name: 'Analytics', path: '/analytics', icon: BarChart3 },
-  { name: 'Settings', path: '/settings', icon: Settings },
-];
+import { navItems, NavItem } from './NavItems';
 
 const Navbar = () => {
   const location = useLocation();
