@@ -10,8 +10,9 @@ export function useContentActions() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  const { updateContentItem, deleteContentItem } = useContent();
+  const { updateContentItem, deleteContentItem, contentItems } = useContent();
   const navigate = useNavigate();
   
   const handleSelectContent = (id: string) => {
@@ -91,15 +92,24 @@ export function useContentActions() {
   };
 
   const confirmDelete = async () => {
-    if (!selectedContentId) return;
+    if (!selectedContentId || isDeleting) return;
     
     try {
-      // Store deleted item ID for reference
+      // Mark as deleting to prevent multiple clicks
+      setIsDeleting(true);
+      
+      // First, close the dialog to avoid UI freezes
+      setIsDeleteDialogOpen(false);
+      
+      // Store ID for reference
       const deletedItemId = selectedContentId;
       
-      // Close dialog and reset state immediately
-      setIsDeleteDialogOpen(false);
-      setSelectedContentId(null);
+      // Find a new item to select after deletion
+      const remainingItems = contentItems.filter(item => item.id !== deletedItemId);
+      const newSelectedId = remainingItems.length > 0 ? remainingItems[0].id : null;
+      
+      // Update selection before actual deletion to avoid reference issues
+      setSelectedContentId(newSelectedId);
       
       // Then perform the actual deletion
       await deleteContentItem(deletedItemId);
@@ -113,6 +123,9 @@ export function useContentActions() {
         duration: 5000,
         closeButton: true,
       });
+      console.error('Delete error:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -125,6 +138,7 @@ export function useContentActions() {
     setIsDeleteDialogOpen,
     isPreviewOpen,
     setIsPreviewOpen,
+    isDeleting,
     actions: {
       handleSelectContent,
       handleEditContent,

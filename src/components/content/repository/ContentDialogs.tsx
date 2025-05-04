@@ -12,6 +12,7 @@ interface ContentDialogsProps {
   selectedContent: ContentItemType | null;
   onSaveContent: (updates: Partial<ContentItemType>) => Promise<void>;
   onConfirmDelete: () => Promise<void>;
+  isDeleting?: boolean;
 }
 
 export const ContentDialogs: React.FC<ContentDialogsProps> = ({
@@ -21,7 +22,8 @@ export const ContentDialogs: React.FC<ContentDialogsProps> = ({
   setIsDeleteDialogOpen,
   selectedContent,
   onSaveContent,
-  onConfirmDelete
+  onConfirmDelete,
+  isDeleting = false
 }) => {
   return (
     <>
@@ -39,6 +41,7 @@ export const ContentDialogs: React.FC<ContentDialogsProps> = ({
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={onConfirmDelete}
         title={selectedContent?.title || ''}
+        isDeleting={isDeleting}
       />
     </>
   );

@@ -17,14 +17,15 @@ import {
   Linkedin, 
   Mail,
   Loader2,
-  Info
+  Info,
+  CheckCircle
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 
 export const SaveStep = () => {
   const { state, saveContentAsDraft } = useContentBuilder();
   const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving } = state;
-  const { addContentItem, contentItems } = useContent();
+  const { addContentItem, contentItems, getContentItem } = useContent();
   const navigate = useNavigate();
   
   const [title, setTitle] = useState(`${mainKeyword} - Complete Guide`);
@@ -33,14 +34,22 @@ export const SaveStep = () => {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
   
-  // Check if similar content already exists
+  // Improved check for similar content already exists
   useEffect(() => {
     if (mainKeyword && title) {
-      // Look for similar content based on title and main keyword
-      const similarContent = contentItems.find(item => 
-        (item.title.toLowerCase() === title.toLowerCase() || 
-        (item.keywords && item.keywords.includes(mainKeyword)))
-      );
+      // Look for similar content based on title or main keyword
+      const similarContent = contentItems.find(item => {
+        // Check for similar title (case insensitive)
+        const titleMatch = item.title.toLowerCase() === title.toLowerCase();
+        
+        // Check for main keyword match
+        const keywordMatch = item.keywords && 
+          item.keywords.some(kw => 
+            kw.toLowerCase() === mainKeyword.toLowerCase()
+          );
+          
+        return titleMatch || keywordMatch;
+      });
       
       if (similarContent) {
         setAlreadySaved(true);
@@ -52,20 +61,25 @@ export const SaveStep = () => {
     }
   }, [title, mainKeyword, contentItems]);
   
+  const handleViewExisting = () => {
+    if (existingContentId) {
+      // Navigate to content library with focus on the existing item
+      navigate('/content', { state: { highlightId: existingContentId } });
+    } else {
+      navigate('/content');
+    }
+  };
+  
   const handleSaveContent = async () => {
     if (!content || !mainKeyword) {
       toast.error("Content or keywords are missing");
       return;
     }
 
-    // If content is already saved, show message and navigate to content library
+    // If content is already saved, navigate directly to content library
     if (alreadySaved && existingContentId) {
-      toast.info("This content appears to already be saved in your library");
-      
-      // Navigate to content library
-      setTimeout(() => {
-        navigate('/content');
-      }, 1500);
+      toast.info("Navigating to existing content in your library");
+      handleViewExisting();
       return;
     }
 
@@ -75,7 +89,7 @@ export const SaveStep = () => {
       const contentItem = {
         title: title,
         content: content,
-        status: 'draft' as 'draft' | 'published' | 'archived', // Explicitly cast to allowed type
+        status: 'draft' as 'draft' | 'published' | 'archived',
         seo_score: seoScore,
         keywords: [mainKeyword, ...(state.selectedKeywords || [])],
       };
@@ -85,10 +99,10 @@ export const SaveStep = () => {
       
       toast.success("Content saved to library");
       
-      // Navigate to content library
+      // Navigate to content library after a short delay
       setTimeout(() => {
         navigate('/content');
-      }, 1500);
+      }, 800);
       
     } catch (error) {
       console.error('Error saving content:', error);
@@ -97,10 +111,6 @@ export const SaveStep = () => {
       // Call the original saveContentAsDraft as a fallback
       await saveContentAsDraft();
     }
-  };
-  
-  const handleViewExisting = () => {
-    navigate('/content');
   };
   
   const handleDownload = (format: 'pdf' | 'docx' | 'html') => {
@@ -127,7 +137,7 @@ export const SaveStep = () => {
             <p className="text-sm">You may already have saved content with this title or keyword.</p>
           </div>
           <Button variant="outline" size="sm" onClick={handleViewExisting}>
-            View Library
+            View in Library
           </Button>
         </div>
       )}
@@ -288,13 +298,13 @@ export const SaveStep = () => {
             </>
           ) : alreadySaved ? (
             <>
-              <Save className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
               View in Content Library
             </>
           ) : (
             <>
-              <Save className="h-4 w-4" />
-              Save to Content Library
+              <CheckCircle className="h-4 w-4" />
+              Finish
             </>
           )}
         </Button>

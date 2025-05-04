@@ -6,6 +6,7 @@ import { useContentActions } from './repository/hooks/useContentActions';
 import { EnhancedContentFilters } from './repository/EnhancedContentFilters';
 import { ContentDisplay } from './repository/ContentDisplay';
 import { ContentDialogs } from './repository/ContentDialogs';
+import { useLocation } from 'react-router-dom';
 
 export function ContentRepository() {
   // Standard configuration
@@ -13,6 +14,7 @@ export function ContentRepository() {
   
   // Get content data and loading state
   const { contentItems, loading } = useContent();
+  const location = useLocation();
   
   // Use custom hooks for filtering and actions
   const { 
@@ -31,8 +33,18 @@ export function ContentRepository() {
     setIsEditDialogOpen,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
+    isDeleting,
     actions
   } = useContentActions();
+  
+  // Check if we should highlight a specific item from navigation
+  useEffect(() => {
+    if (location.state?.highlightId) {
+      setSelectedContentId(location.state.highlightId);
+      // Clear the state to prevent persistent highlighting
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, setSelectedContentId]);
   
   // Set the first content item as selected by default when items load
   useEffect(() => {
@@ -99,6 +111,7 @@ export function ContentRepository() {
         selectedContent={selectedContent}
         onSaveContent={actions.handleSaveContent}
         onConfirmDelete={actions.confirmDelete}
+        isDeleting={isDeleting}
       />
     </div>
   );
