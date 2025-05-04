@@ -136,35 +136,24 @@ export const OptimizeTab = ({
         {/* Quick actions specific to optimization */}
         <div className="bg-card border border-purple-500/20 rounded-lg p-6 shadow-md">
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-purple-500" />
-            Optimization Actions
+            <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+            Quick Actions
           </h3>
-          
           <div className="space-y-3">
             <Button 
-              onClick={onGenerateTitleSuggestions}
+              onClick={onGenerateTitleSuggestions} 
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               disabled={isGeneratingTitles}
-              className="w-full bg-indigo-500/80 hover:bg-indigo-600"
-              size="sm"
             >
-              Generate Title Ideas
+              Generate Better Titles
             </Button>
-            
             <Button 
-              onClick={onAnalyze}
+              onClick={onAnalyze} 
+              className="w-full" 
+              variant="outline" 
               disabled={isAnalyzing}
-              className="w-full bg-blue-500/80 hover:bg-blue-600"
-              size="sm"
             >
-              Analyze Keyword Usage
-            </Button>
-            
-            <Button 
-              onClick={onGenerateMeta}
-              className="w-full bg-purple-500/80 hover:bg-purple-600"
-              size="sm"
-            >
-              Generate Meta Info
+              Analyze Content Structure
             </Button>
           </div>
         </div>

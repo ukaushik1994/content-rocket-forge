@@ -1,28 +1,33 @@
+
 import React from 'react';
-import { DocumentStructureCard } from '../DocumentStructureCard';
-import { EntitiesAnalysisCard } from '../EntitiesAnalysisCard';
-import { HeadingsAnalysisCard } from '../HeadingsAnalysisCard';
-import { ContentGapsCard } from '../ContentGapsCard';
-import { FeaturedSnippetsCard } from '../FeaturedSnippetsCard';
-import { DocumentStructure } from '@/contexts/content-builder/types';
-import { SerpAnalysisResult } from '@/types/serp';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle2, FileCode, Shield } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { FileText, Code, List } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TechnicalTabProps {
-  documentStructure: DocumentStructure | null;
+  documentStructure: {
+    h1: string[];
+    h2: string[];
+    h3: string[];
+    h4: string[];
+    h5: string[];
+    h6: string[];
+    hasSingleH1: boolean;
+    hasLogicalHierarchy: boolean;
+  } | null;
   metaTitle: string | null;
   metaDescription: string | null;
-  serpData: SerpAnalysisResult | null;
+  serpData: any;
 }
 
-export const TechnicalTab = ({ 
+export const TechnicalTab = ({
   documentStructure,
   metaTitle,
   metaDescription,
   serpData
 }: TechnicalTabProps) => {
+  // Animation variants
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -37,117 +42,191 @@ export const TechnicalTab = ({
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
-  
+
   return (
     <motion.div 
-      className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       variants={container}
       initial="hidden"
       animate="show"
+      className="space-y-6"
     >
-      {/* Main technical area */}
-      <div className="lg:col-span-2 space-y-6">
-        <motion.div variants={item}>
-          <DocumentStructureCard documentStructure={documentStructure} />
-        </motion.div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <motion.div variants={item}>
-            <EntitiesAnalysisCard entities={serpData?.entities} />
-          </motion.div>
-          <motion.div variants={item}>
-            <HeadingsAnalysisCard headings={serpData?.headings} />
-          </motion.div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <motion.div variants={item}>
-            <ContentGapsCard contentGaps={serpData?.contentGaps} />
-          </motion.div>
-          <motion.div variants={item}>
-            <FeaturedSnippetsCard snippets={serpData?.featuredSnippets} />
-          </motion.div>
-        </div>
-      </div>
-      
-      {/* Side panel - keep the validation section */}
+      {/* Document Structure Analysis */}
       <motion.div variants={item}>
-        <Card className="h-full bg-gradient-to-br from-violet-500/5 to-indigo-500/5 shadow-lg border border-violet-500/20">
-          <CardHeader className="pb-2 border-b bg-gradient-to-r from-muted/30 to-transparent">
+        <Card className="overflow-hidden shadow-lg">
+          <CardHeader className="pb-3 border-b">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Shield className="h-4 w-4 text-blue-500" />
-              Technical Health Check
+              <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+              Document Structure Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {documentStructure ? (
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between">
+                  <div className="font-medium text-sm">Document Structure</div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className={`px-3 py-1 text-xs rounded-full ${documentStructure.hasSingleH1 ? 'bg-green-500/20 text-green-600 border border-green-500/30' : 'bg-yellow-500/20 text-yellow-600 border border-yellow-500/30'}`}>
+                      {documentStructure.hasSingleH1 ? 'Single H1 Tag ✓' : 'Missing Single H1 Tag ✕'}
+                    </div>
+                    <div className={`px-3 py-1 text-xs rounded-full ${documentStructure.hasLogicalHierarchy ? 'bg-green-500/20 text-green-600 border border-green-500/30' : 'bg-yellow-500/20 text-yellow-600 border border-yellow-500/30'}`}>
+                      {documentStructure.hasLogicalHierarchy ? 'Logical Hierarchy ✓' : 'Incorrect Heading Hierarchy ✕'}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {/* Headings Overview */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {documentStructure.h1.length > 0 && (
+                      <div className="bg-card border rounded-md p-3">
+                        <div className="text-xs font-semibold mb-2 text-purple-500 flex items-center">
+                          <FileText className="h-3 w-3 mr-1" /> H1 Headings ({documentStructure.h1.length})
+                        </div>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          {documentStructure.h1.map((heading, i) => (
+                            <li key={`h1-${i}`} className="truncate">{heading}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {documentStructure.h2.length > 0 && (
+                      <div className="bg-card border rounded-md p-3">
+                        <div className="text-xs font-semibold mb-2 text-blue-500 flex items-center">
+                          <FileText className="h-3 w-3 mr-1" /> H2 Headings ({documentStructure.h2.length})
+                        </div>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          {documentStructure.h2.map((heading, i) => (
+                            <li key={`h2-${i}`} className="truncate">{heading}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {documentStructure.h3.length > 0 && (
+                      <div className="bg-card border rounded-md p-3">
+                        <div className="text-xs font-semibold mb-2 text-cyan-500 flex items-center">
+                          <FileText className="h-3 w-3 mr-1" /> H3 Headings ({documentStructure.h3.length})
+                        </div>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          {documentStructure.h3.map((heading, i) => (
+                            <li key={`h3-${i}`} className="truncate">{heading}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center p-6 text-muted-foreground">
+                <Code className="h-10 w-10 mb-3 mx-auto opacity-30" />
+                <p>No document structure available. Please run a technical analysis.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+      
+      {/* Meta Information Technical Review */}
+      <motion.div variants={item}>
+        <Card className="overflow-hidden shadow-lg">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+              Meta Information Technical Review
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="space-y-4">
-              <div className="bg-card/50 rounded-md p-3 border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileCode className="h-4 w-4 text-green-500" />
-                  <h3 className="text-sm font-medium">HTML Structure</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Meta Title</div>
+                  <div className="bg-card border rounded-md p-3">
+                    <div className={`text-sm ${metaTitle && metaTitle.length > 60 ? 'text-red-500' : 'text-primary'}`}>
+                      {metaTitle || 'No meta title set'}
+                    </div>
+                    {metaTitle && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Length: {metaTitle.length}/60 characters
+                        {metaTitle.length > 60 && ' (Too long)'}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Ensures proper HTML5 semantic structure for better accessibility and SEO.
-                </p>
-                {!!documentStructure?.hasSingleH1 && !!documentStructure?.hasLogicalHierarchy ? (
-                  <div className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    <span className="text-xs text-green-500">Valid HTML structure</span>
+                
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Meta Description</div>
+                  <div className="bg-card border rounded-md p-3">
+                    <div className={`text-sm ${metaDescription && metaDescription.length > 160 ? 'text-red-500' : 'text-primary'}`}>
+                      {metaDescription || 'No meta description set'}
+                    </div>
+                    {metaDescription && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Length: {metaDescription.length}/160 characters
+                        {metaDescription.length > 160 && ' (Too long)'}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    <span className="text-xs text-amber-500">Structure needs improvement</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="bg-card/50 rounded-md p-3 border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileCode className="h-4 w-4 text-blue-500" />
-                  <h3 className="text-sm font-medium">Metadata</h3>
                 </div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Validates meta title and description for search engine optimization.
-                </p>
-                {!!metaTitle && !!metaDescription && metaTitle.length <= 60 && metaDescription.length >= 50 && metaDescription.length <= 160 ? (
-                  <div className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    <span className="text-xs text-green-500">Valid metadata</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    <span className="text-xs text-amber-500">Metadata needs improvement</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="bg-card/50 rounded-md p-3 border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileCode className="h-4 w-4 text-purple-500" />
-                  <h3 className="text-sm font-medium">SERP Features</h3>
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Analyzes content for featured snippet and entity optimization.
-                </p>
-                {(serpData?.featuredSnippets && serpData.featuredSnippets.length > 0) || 
-                 (serpData?.entities && serpData.entities.length > 0) ? (
-                  <div className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    <span className="text-xs text-green-500">SERP data available</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    <span className="text-xs text-amber-500">SERP data missing</span>
-                  </div>
-                )}
               </div>
             </div>
           </CardContent>
         </Card>
       </motion.div>
+      
+      {/* SERP Data */}
+      {serpData && Object.keys(serpData).length > 0 && (
+        <motion.div variants={item}>
+          <Card className="overflow-hidden shadow-lg">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
+                SERP Analysis Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-4">
+                  {serpData.topResults && serpData.topResults.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <List className="h-4 w-4 text-blue-500" /> 
+                        Top Ranking Pages
+                      </h4>
+                      <div className="space-y-2">
+                        {serpData.topResults.slice(0, 3).map((result: any, idx: number) => (
+                          <div key={`result-${idx}`} className="bg-card border rounded-md p-3">
+                            <div className="text-xs font-medium text-blue-600">
+                              Position {result.position}: {result.title || 'No title'}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 truncate">
+                              {result.url || 'No URL'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {serpData.relatedSearches && serpData.relatedSearches.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Related Searches</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {serpData.relatedSearches.slice(0, 5).map((search: any, idx: number) => (
+                          <div key={`search-${idx}`} className="bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1 text-xs">
+                            {search.query || 'No query'}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </motion.div>
   );
 };
