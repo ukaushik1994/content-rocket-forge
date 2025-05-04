@@ -3,6 +3,8 @@
  * Utility functions for content analysis
  */
 
+import { getKeywordRecommendations } from './keywordAnalysis';
+
 /**
  * Calculate content length score
  */
