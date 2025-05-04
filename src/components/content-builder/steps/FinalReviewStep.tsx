@@ -53,7 +53,10 @@ export const FinalReviewStep = () => {
   
   // Update meta information
   const handleMetaTitleChange = (value: string) => {
+    console.log("Setting meta title to:", value);
     dispatch({ type: 'SET_META_TITLE', payload: value });
+    // Also update the content title for consistency
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: value });
   };
   
   const handleMetaDescriptionChange = (value: string) => {

@@ -28,8 +28,12 @@ export const TitleSuggestionsCard = ({
 
   const handleSelectTitle = (index: number) => {
     setSelected(index);
-    onSelectTitle(suggestions[index]);
+    const selectedTitle = suggestions[index];
+    onSelectTitle(selectedTitle);
     toast.success("Title updated successfully");
+    
+    // Log to verify the title is being selected correctly
+    console.log("Title selected:", selectedTitle);
   };
 
   return (

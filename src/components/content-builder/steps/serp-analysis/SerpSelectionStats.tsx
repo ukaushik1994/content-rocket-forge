@@ -25,7 +25,7 @@ export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSel
     entity: selectedItems.filter(item => item.type === 'entity').length,
     heading: selectedItems.filter(item => item.type === 'heading').length,
     contentGap: selectedItems.filter(item => item.type === 'contentGap').length,
-    competitor: 0, // Added for backward compatibility, with a default value of 0
+    competitor: selectedItems.filter(item => item.type === 'topRank').length, // Count topRank items as competitors for backward compatibility
     topRank: selectedItems.filter(item => item.type === 'topRank').length
   };
   

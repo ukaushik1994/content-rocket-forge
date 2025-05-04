@@ -87,6 +87,8 @@ export const useFinalReview = () => {
     const { metaTitle, metaDescription } = generateMetaSuggestions(content, mainKeyword, contentTitle);
     
     dispatch({ type: 'SET_META_TITLE', payload: metaTitle });
+    // Also update content title for consistency
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: metaTitle });
     dispatch({ type: 'SET_META_DESCRIPTION', payload: metaDescription });
     
     toast.success('Generated meta title and description', toastConfig.success);
@@ -110,6 +112,13 @@ export const useFinalReview = () => {
       
       setTitleSuggestions(suggestions);
       toast.success('Generated title suggestions', toastConfig.success);
+      
+      // If there's at least one suggestion and no meta title set yet, automatically use the first one
+      if (suggestions.length > 0 && !state.metaTitle) {
+        dispatch({ type: 'SET_META_TITLE', payload: suggestions[0] });
+        // Also update content title for consistency
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestions[0] });
+      }
     } catch (error) {
       console.error('Error generating title suggestions:', error);
       toast.error('Failed to generate title suggestions', toastConfig.error);

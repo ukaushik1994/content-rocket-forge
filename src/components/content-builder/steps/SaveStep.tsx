@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,16 +22,39 @@ import {
 import { useContent } from '@/contexts/content';
 
 export const SaveStep = () => {
-  const { state, saveContentAsDraft } = useContentBuilder();
-  const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving } = state;
+  const { state } = useContentBuilder();
+  const { 
+    content, 
+    mainKeyword, 
+    contentType, 
+    seoScore, 
+    selectedSolution, 
+    isSaving,
+    metaTitle,
+    metaDescription
+  } = state;
+  
   const { addContentItem, contentItems, getContentItem } = useContent();
   const navigate = useNavigate();
   
-  const [title, setTitle] = useState(`${mainKeyword} - Complete Guide`);
-  const [description, setDescription] = useState(`A comprehensive guide about ${mainKeyword}`);
+  // Initialize title from metaTitle if available, otherwise use a default
+  const [title, setTitle] = useState(metaTitle || `${mainKeyword} - Complete Guide`);
+  // Initialize description from metaDescription if available, otherwise use a default
+  const [description, setDescription] = useState(metaDescription || `A comprehensive guide about ${mainKeyword}`);
   const [socialShare, setSocialShare] = useState(true);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
+  
+  // Update the title and description when metaTitle or metaDescription changes
+  useEffect(() => {
+    if (metaTitle) {
+      setTitle(metaTitle);
+    }
+    
+    if (metaDescription) {
+      setDescription(metaDescription);
+    }
+  }, [metaTitle, metaDescription]);
   
   // Improved check for similar content already exists
   useEffect(() => {
@@ -85,31 +107,32 @@ export const SaveStep = () => {
 
     // Save to content library
     try {
-      // Prepare content item for storage
+      // Prepare content item for storage, use the current title and description from state
       const contentItem = {
         title: title,
         content: content,
         status: 'draft' as 'draft' | 'published' | 'archived',
         seo_score: seoScore,
         keywords: [mainKeyword, ...(state.selectedKeywords || [])],
+        meta_description: description // Store the meta description
       };
       
-      // Add to content library
-      await addContentItem(contentItem);
+      // Add to content library - no need for fallback to saveContentAsDraft
+      const result = await addContentItem(contentItem);
       
-      toast.success("Content saved to library");
-      
-      // Navigate to content library after a short delay
-      setTimeout(() => {
-        navigate('/content');
-      }, 800);
-      
+      if (result) {
+        toast.success("Content saved to library");
+        
+        // Navigate to content library after a short delay
+        setTimeout(() => {
+          navigate('/content');
+        }, 800);
+      } else {
+        toast.error("Failed to save content");
+      }
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');
-      
-      // Call the original saveContentAsDraft as a fallback
-      await saveContentAsDraft();
     }
   };
   
