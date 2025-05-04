@@ -4,7 +4,7 @@ import Navbar from '@/components/layout/Navbar';
 import { SolutionUploader } from '@/components/solutions/SolutionUploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, UploadCloud, BarChart3, X, Loader2 } from 'lucide-react';
+import { FileText, UploadCloud, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
@@ -113,10 +113,6 @@ const Solutions = () => {
                 <UploadCloud className="h-4 w-4" />
                 Add Solutions
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">
-                <BarChart3 className="h-4 w-4" />
-                Usage Analytics
-              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="solutions" className="mt-6">
@@ -137,33 +133,6 @@ const Solutions = () => {
                 transition={{ delay: 0.2 }}
               >
                 <SolutionUploader />
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="analytics" className="mt-6">
-              <motion.div 
-                className="flex flex-col items-center justify-center h-96 gap-4"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="w-16 h-16 rounded-full bg-glass flex items-center justify-center animate-float">
-                  <BarChart3 className="h-8 w-8 text-neon-blue" />
-                </div>
-                <h2 className="text-xl font-medium text-gradient">Solution Analytics Coming Soon</h2>
-                <p className="text-muted-foreground text-center max-w-md">
-                  Track how your business solutions are performing in generated content, including mentions, click-throughs, and conversion metrics.
-                </p>
-                <div className="mt-4 grid grid-cols-3 gap-4 w-full max-w-lg">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-4 bg-neon-purple/10 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r from-neon-purple to-neon-blue animate-pulse-glow`}
-                        style={{ width: `${15 * i}%` }}
-                      ></div>
-                    </div>
-                  ))}
-                </div>
               </motion.div>
             </TabsContent>
           </Tabs>
