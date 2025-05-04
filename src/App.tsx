@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Content from "./pages/Content";
 import ContentBuilder from "./pages/ContentBuilder";
+import ContentApproval from "./pages/ContentApproval";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/content" element={<ProtectedRoute><Content /></ProtectedRoute>} />
                 <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
