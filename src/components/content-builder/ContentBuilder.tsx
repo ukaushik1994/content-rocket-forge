@@ -13,7 +13,7 @@ import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizationStep } from './steps/OptimizationStep';
-import { PublishStep } from './steps/PublishStep';
+import { SaveStep } from './steps/SaveStep';
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
@@ -35,7 +35,7 @@ export const ContentBuilder = () => {
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
-      case 6: return <PublishStep />;
+      case 6: return <SaveStep />; // Changed from PublishStep to SaveStep
       default: return <KeywordSelectionStep />;
     }
   };

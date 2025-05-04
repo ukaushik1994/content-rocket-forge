@@ -6,14 +6,14 @@ export const initialState: ContentBuilderState = {
   steps: [
     {
       id: 0,
-      name: 'Keywords',
+      name: 'Keyword Selection',
       description: 'Select target keywords for your content',
       completed: false,
     },
     {
       id: 1,
       name: 'Content Type',
-      description: 'Choose the type of content you want to create',
+      description: 'Choose the type and format of content',
       completed: false,
     },
     {
@@ -24,26 +24,26 @@ export const initialState: ContentBuilderState = {
     },
     {
       id: 3,
-      name: 'Outline',
+      name: 'Content Outline',
       description: 'Create an outline for your content',
       completed: false,
     },
     {
       id: 4,
-      name: 'Write',
-      description: 'Write your content using AI assistance',
+      name: 'Content Writing',
+      description: 'Write your content based on the outline',
       completed: false,
     },
     {
       id: 5,
-      name: 'Optimize',
+      name: 'SEO Optimization',
       description: 'Optimize your content for search engines',
       completed: false,
     },
     {
       id: 6,
-      name: 'Publish',
-      description: 'Publish or schedule your content',
+      name: 'Save & Export',
+      description: 'Save your content to library or export',
       completed: false,
     },
   ],
@@ -51,7 +51,7 @@ export const initialState: ContentBuilderState = {
   secondaryKeywords: [],
   keywordClusters: {},
   contentType: 'article',
-  contentFormat: 'blog',
+  contentFormat: '',
   contentTitle: '',
   outlineSections: [],
   serpAnalysisResults: null,
@@ -70,4 +70,5 @@ export const initialState: ContentBuilderState = {
   outline: [],
   seoScore: 0,
   additionalInstructions: '',
+  seoImprovements: []
 };

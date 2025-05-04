@@ -1,3 +1,4 @@
+
 // Step definition
 export interface ContentBuilderStep {
   id: number;
@@ -53,6 +54,15 @@ export interface ContentOutlineSection {
   }[];
 }
 
+// SEO improvement suggestion
+export interface SeoImprovement {
+  id: string;
+  type: 'keyword' | 'readability' | 'structure' | 'general';
+  recommendation: string;
+  applied: boolean;
+  previewContent?: string;
+}
+
 // Main state for content builder
 export interface ContentBuilderState {
   activeStep: number;
@@ -80,6 +90,7 @@ export interface ContentBuilderState {
   outline: ContentOutlineSection[];
   seoScore: number;
   additionalInstructions: string;
+  seoImprovements?: SeoImprovement[];
 }
 
 // Action types for the reducer
@@ -117,7 +128,9 @@ export type ContentBuilderAction =
   | { type: 'REMOVE_OUTLINE_SECTION'; payload: string }
   | { type: 'SET_CONTENT_TITLE'; payload: string }
   | { type: 'SET_SEO_SCORE'; payload: number }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
+  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
+  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string };
 
 // Context type definition
 export interface ContentBuilderContextType {
@@ -150,9 +163,8 @@ export interface ContentBuilderContextType {
   
   // Content actions
   setContent: (content: string) => void;
+  rewriteContent: (newContent: string, improvementType: string) => void;
   
   // Publishing actions
-  publishContent: (platform: string) => Promise<boolean>;
-  scheduleContent: (platform: string, date: Date) => Promise<boolean>;
   saveContentAsDraft: () => Promise<string | null>;
 }

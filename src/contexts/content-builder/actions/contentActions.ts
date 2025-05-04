@@ -40,12 +40,19 @@ export const createContentActions = (
     toast.success(`Added ${type} to your content draft`);
   };
 
+  // Rewrite content based on SEO recommendations
+  const rewriteContent = (newContent: string, improvementType: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: newContent });
+    toast.success(`Content has been optimized for better ${improvementType}`);
+  };
+
   return {
     setContentType,
     setContentFormat,
     setOutlineTitle,
     setOutlineSections,
     setContent,
-    addContentFromSerp
+    addContentFromSerp,
+    rewriteContent
   };
 };

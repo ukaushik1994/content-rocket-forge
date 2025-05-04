@@ -1,5 +1,4 @@
-
-import { ContentBuilderState, ContentBuilderAction, SerpSelection } from './types';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection, SeoImprovement } from './types';
 
 // Reducer function to handle state updates
 export const contentBuilderReducer = (
@@ -170,6 +169,22 @@ export const contentBuilderReducer = (
       
     case 'SET_ADDITIONAL_INSTRUCTIONS':
       return { ...state, additionalInstructions: action.payload };
+
+    // New SEO improvement actions
+    case 'SET_SEO_IMPROVEMENTS':
+      return { ...state, seoImprovements: action.payload };
+      
+    case 'APPLY_SEO_IMPROVEMENT':
+      return {
+        ...state,
+        seoImprovements: state.seoImprovements 
+          ? state.seoImprovements.map(improvement => 
+              improvement.id === action.payload 
+                ? { ...improvement, applied: true } 
+                : improvement
+            )
+          : []
+      };
       
     default:
       return state;

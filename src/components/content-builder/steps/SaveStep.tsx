@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 
-export const PublishStep = () => {
+export const SaveStep = () => {
   const { state, saveContentAsDraft } = useContentBuilder();
   const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving } = state;
   const { addContentItem } = useContent();
