@@ -63,6 +63,27 @@ export interface SeoImprovement {
   previewContent?: string;
 }
 
+// Document structure analysis
+export interface DocumentStructure {
+  h1: string[];
+  h2: string[];
+  h3: string[];
+  h4: string[];
+  hasSingleH1: boolean;
+  hasLogicalHierarchy: boolean;
+}
+
+// Solution integration metrics
+export interface SolutionIntegrationMetrics {
+  nameMentions: number;
+  featureIncorporation: number; // Percentage 0-100
+  painPointsAddressed: string[];
+  audienceAlignment: number; // Scale 0-100
+  positioningScore: number; // Scale 0-100
+  ctaMentions: number;
+  overallScore: number; // Scale 0-100
+}
+
 // Main state for content builder
 export interface ContentBuilderState {
   activeStep: number;
@@ -91,6 +112,10 @@ export interface ContentBuilderState {
   seoScore: number;
   additionalInstructions: string;
   seoImprovements?: SeoImprovement[];
+  metaTitle?: string;
+  metaDescription?: string;
+  documentStructure?: DocumentStructure | null;
+  solutionIntegrationMetrics?: SolutionIntegrationMetrics | null;
 }
 
 // Action types for the reducer
@@ -130,7 +155,11 @@ export type ContentBuilderAction =
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
   | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
-  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string };
+  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
+  | { type: 'SET_META_TITLE'; payload: string }
+  | { type: 'SET_META_DESCRIPTION'; payload: string }
+  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics };
 
 // Context type definition
 export interface ContentBuilderContextType {

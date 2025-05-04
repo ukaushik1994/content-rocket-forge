@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -13,6 +12,7 @@ import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizationStep } from './steps/OptimizationStep';
+import { FinalReviewStep } from './steps/FinalReviewStep';
 import { SaveStep } from './steps/SaveStep';
 
 export const ContentBuilder = () => {
@@ -35,7 +35,8 @@ export const ContentBuilder = () => {
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
-      case 6: return <SaveStep />; // Changed from PublishStep to SaveStep
+      case 6: return <FinalReviewStep />; // New Final Review step
+      case 7: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
   };

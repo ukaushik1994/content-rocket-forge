@@ -42,6 +42,12 @@ export const initialState: ContentBuilderState = {
     },
     {
       id: 6,
+      name: 'Final Review',
+      description: 'Review document structure, meta info and solution integration',
+      completed: false,
+    },
+    {
+      id: 7,
       name: 'Save & Export',
       description: 'Save your content to library or export',
       completed: false,
@@ -70,5 +76,9 @@ export const initialState: ContentBuilderState = {
   outline: [],
   seoScore: 0,
   additionalInstructions: '',
-  seoImprovements: []
+  seoImprovements: [],
+  metaTitle: '',
+  metaDescription: '',
+  documentStructure: null,
+  solutionIntegrationMetrics: null
 };

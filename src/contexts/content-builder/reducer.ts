@@ -186,6 +186,19 @@ export const contentBuilderReducer = (
           : []
       };
       
+    // New action handlers for final review step
+    case 'SET_META_TITLE':
+      return { ...state, metaTitle: action.payload };
+      
+    case 'SET_META_DESCRIPTION':
+      return { ...state, metaDescription: action.payload };
+      
+    case 'SET_DOCUMENT_STRUCTURE':
+      return { ...state, documentStructure: action.payload };
+    
+    case 'SET_SOLUTION_INTEGRATION_METRICS':
+      return { ...state, solutionIntegrationMetrics: action.payload };
+      
     default:
       return state;
   }
