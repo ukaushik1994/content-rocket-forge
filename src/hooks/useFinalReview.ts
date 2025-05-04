@@ -151,18 +151,26 @@ export const useFinalReview = () => {
     try {
       const metrics = analyzeSolutionIntegration(content, selectedSolution);
       
-      // Fix the type mismatch: ensure painPointsAddressed is a string array, not a number
+      // Ensure painPointsAddressed is always an array of strings
+      // The documentAnalysis.ts function might be returning a number instead of string array
+      const painPointsArray = Array.isArray(metrics.painPointsAddressed) 
+        ? metrics.painPointsAddressed 
+        : metrics.painPointsAddressed ? [`Pain point ${metrics.painPointsAddressed}`] : [];
+      
+      console.log("[useFinalReview] Raw metrics from analysis:", metrics);
+      console.log("[useFinalReview] Converted painPointsAddressed:", painPointsArray);
+      
       const solutionMetrics = {
         featureIncorporation: metrics.featureIncorporation,
         positioningScore: metrics.positioningScore,
         nameMentions: metrics.nameMentions,
-        painPointsAddressed: metrics.painPointsAddressed, // This should already be a string array
+        painPointsAddressed: painPointsArray, // Ensure this is a string array
         audienceAlignment: metrics.audienceAlignment,
         ctaMentions: ctaInfo.ctaText.length,
         overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
       };
       
-      console.log("[useFinalReview] Solution metrics:", solutionMetrics);
+      console.log("[useFinalReview] Solution metrics to dispatch:", solutionMetrics);
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
       toast.success('Solution integration analysis completed', toastConfig.success);
