@@ -1,0 +1,141 @@
+
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Solution } from '@/contexts/content-builder/types';
+import { EnhancedSolutionCard } from './EnhancedSolutionCard';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PlusCircle, Shuffle } from 'lucide-react';
+
+interface EnhancedSolutionGridProps {
+  solutions: Solution[];
+  onEdit: (solution: Solution) => void;
+  onDelete: (solution: Solution) => void;
+  onUseInContent: (solution: Solution) => void;
+  onAddNew: () => void;
+}
+
+export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
+  solutions,
+  onEdit,
+  onDelete,
+  onUseInContent,
+  onAddNew
+}) => {
+  const [filter, setFilter] = useState('all');
+  const [view, setView] = useState('grid'); // 'grid' or 'list'
+  
+  // Get all unique audiences across all solutions for filtering
+  const allAudiences = Array.from(
+    new Set(solutions.flatMap(solution => solution.targetAudience))
+  ).slice(0, 4); // Limit to top 4 for UI simplicity
+
+  const filteredSolutions = filter === 'all'
+    ? solutions
+    : solutions.filter(solution => solution.targetAudience.includes(filter));
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Filters and view options */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <Tabs
+          value={filter}
+          onValueChange={setFilter}
+          className="w-full md:w-auto"
+        >
+          <TabsList className="bg-background/20 backdrop-blur-sm border border-white/10 w-full md:w-auto">
+            <TabsTrigger value="all" className="data-[state=active]:bg-neon-purple/20">
+              All Solutions
+            </TabsTrigger>
+            {allAudiences.map(audience => (
+              <TabsTrigger 
+                key={audience} 
+                value={audience} 
+                className="hidden md:flex data-[state=active]:bg-neon-purple/20"
+              >
+                {audience}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} variant="outline" size="sm">
+            {view === 'grid' ? 'List View' : 'Grid View'}
+          </Button>
+          <Button 
+            onClick={onAddNew}
+            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Solution
+          </Button>
+        </div>
+      </div>
+      
+      {/* Solutions grid with staggered animation */}
+      {solutions.length > 0 ? (
+        <motion.div 
+          className={`grid grid-cols-1 ${view === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-1'} gap-6`}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {filteredSolutions.map((solution) => (
+            <EnhancedSolutionCard
+              key={solution.id}
+              solution={solution}
+              onEdit={() => onEdit(solution)}
+              onDelete={() => onDelete(solution)}
+              onUseInContent={() => onUseInContent(solution)}
+            />
+          ))}
+        </motion.div>
+      ) : (
+        <EmptySolutionsState onAddNew={onAddNew} />
+      )}
+    </div>
+  );
+};
+
+// Empty state component with animation
+const EmptySolutionsState: React.FC<{ onAddNew: () => void }> = ({ onAddNew }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="flex flex-col items-center justify-center py-16 text-center space-y-6"
+    >
+      <motion.div 
+        className="rounded-full bg-neon-purple/20 p-6 mb-2"
+        whileHover={{ rotate: [0, -10, 10, -5, 0], scale: 1.05 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Shuffle className="w-12 h-12 text-primary" />
+      </motion.div>
+      <h3 className="text-2xl font-bold text-gradient">Start Creating Solutions</h3>
+      <p className="text-muted-foreground max-w-md mx-auto">
+        Add your first business solution to start generating content that highlights your products and services.
+      </p>
+      <Button 
+        onClick={onAddNew}
+        size="lg"
+        className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+      >
+        <PlusCircle className="mr-2 h-5 w-5" />
+        Add Your First Solution
+      </Button>
+    </motion.div>
+  );
+};
