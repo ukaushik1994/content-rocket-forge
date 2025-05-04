@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -17,14 +18,17 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, description, icon, trend, className }: StatCardProps) {
-  // Dynamically get the icon component with proper type checking
-  const IconComponent = icon ? LucideIcons[icon] : null;
+  // Get the icon component if it exists
+  let IconComponent: LucideIcon | null = null;
+  if (icon && icon in LucideIcons) {
+    IconComponent = LucideIcons[icon] as LucideIcon;
+  }
   
   return (
     <Card className={cn("overflow-hidden glass-panel bg-glass group", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200">{title}</CardTitle>
-        {IconComponent && React.createElement(IconComponent, { className: "w-4 h-4 text-primary" })}
+        {IconComponent && <IconComponent className="w-4 h-4 text-primary" />}
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold group-hover:text-gradient transition-all duration-300">{value}</div>
