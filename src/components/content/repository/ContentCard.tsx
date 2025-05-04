@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import {
 import { StatusBadge } from './StatusBadge';
 import { ScoreBadge } from './ScoreBadge';
 import { formatDistanceToNow } from 'date-fns';
-import { MoreVertical, Edit, Bar, Eye, Archive } from 'lucide-react';
+import { MoreVertical, Edit, BarChart2, Eye, Archive } from 'lucide-react';
 
 interface ContentCardProps {
   item: ContentItemType;
@@ -71,7 +70,7 @@ export const ContentCard: React.FC<ContentCardProps> = ({
               <span>Edit</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onAnalyze}>
-              <Bar className="mr-2 h-4 w-4" />
+              <BarChart2 className="mr-2 h-4 w-4" />
               <span>Analyze</span>
             </DropdownMenuItem>
             {item.status === 'draft' && (

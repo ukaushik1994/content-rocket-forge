@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +41,7 @@ export const PublishStep = () => {
       const contentItem = {
         title: title,
         content: content,
-        status: 'draft',
+        status: 'draft' as 'draft' | 'published' | 'archived', // Explicitly cast to allowed type
         seo_score: seoScore,
         keywords: [mainKeyword, ...(state.selectedKeywords || [])],
       };
