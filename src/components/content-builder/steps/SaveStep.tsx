@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,23 +16,56 @@ import {
   Facebook, 
   Linkedin, 
   Mail,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 
 export const SaveStep = () => {
   const { state, saveContentAsDraft } = useContentBuilder();
   const { content, mainKeyword, contentType, seoScore, selectedSolution, isSaving } = state;
-  const { addContentItem } = useContent();
+  const { addContentItem, contentItems } = useContent();
   const navigate = useNavigate();
   
   const [title, setTitle] = useState(`${mainKeyword} - Complete Guide`);
   const [description, setDescription] = useState(`A comprehensive guide about ${mainKeyword}`);
   const [socialShare, setSocialShare] = useState(true);
+  const [alreadySaved, setAlreadySaved] = useState(false);
+  const [existingContentId, setExistingContentId] = useState<string | null>(null);
+  
+  // Check if similar content already exists
+  useEffect(() => {
+    if (mainKeyword && title) {
+      // Look for similar content based on title and main keyword
+      const similarContent = contentItems.find(item => 
+        (item.title.toLowerCase() === title.toLowerCase() || 
+        (item.keywords && item.keywords.includes(mainKeyword)))
+      );
+      
+      if (similarContent) {
+        setAlreadySaved(true);
+        setExistingContentId(similarContent.id);
+      } else {
+        setAlreadySaved(false);
+        setExistingContentId(null);
+      }
+    }
+  }, [title, mainKeyword, contentItems]);
   
   const handleSaveContent = async () => {
     if (!content || !mainKeyword) {
       toast.error("Content or keywords are missing");
+      return;
+    }
+
+    // If content is already saved, show message and navigate to content library
+    if (alreadySaved && existingContentId) {
+      toast.info("This content appears to already be saved in your library");
+      
+      // Navigate to content library
+      setTimeout(() => {
+        navigate('/content');
+      }, 1500);
       return;
     }
 
@@ -66,6 +99,10 @@ export const SaveStep = () => {
     }
   };
   
+  const handleViewExisting = () => {
+    navigate('/content');
+  };
+  
   const handleDownload = (format: 'pdf' | 'docx' | 'html') => {
     toast.success(`Content exported as ${format.toUpperCase()}`);
     
@@ -82,6 +119,19 @@ export const SaveStep = () => {
   
   return (
     <div className="space-y-6">
+      {alreadySaved && (
+        <div className="flex items-center gap-2 p-4 rounded-md bg-amber-50 border border-amber-200 text-amber-700">
+          <Info className="h-5 w-5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">Similar content already exists in your library</p>
+            <p className="text-sm">You may already have saved content with this title or keyword.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleViewExisting}>
+            View Library
+          </Button>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -223,7 +273,11 @@ export const SaveStep = () => {
       
       <div className="flex justify-center pt-4">
         <Button
-          className="gap-1 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple min-w-[150px]"
+          className={`gap-1 ${
+            alreadySaved 
+            ? 'bg-secondary hover:bg-secondary/90' 
+            : 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple'
+          } min-w-[150px]`}
           onClick={handleSaveContent}
           disabled={isSaving || !content || !mainKeyword}
         >
@@ -231,6 +285,11 @@ export const SaveStep = () => {
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
+            </>
+          ) : alreadySaved ? (
+            <>
+              <Save className="h-4 w-4" />
+              View in Content Library
             </>
           ) : (
             <>
