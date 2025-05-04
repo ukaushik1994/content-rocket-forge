@@ -43,199 +43,276 @@ export const extractDocumentStructure = (content: string): DocumentStructure => 
     h3,
     h4,
     hasSingleH1,
-    hasLogicalHierarchy,
+    hasLogicalHierarchy
   };
 };
 
 /**
- * Generate meta title and description suggestions based on content
+ * Generate meta title and description suggestions
  */
 export const generateMetaSuggestions = (
   content: string, 
   mainKeyword: string, 
-  title?: string
+  contentTitle: string | null
 ): { metaTitle: string; metaDescription: string } => {
-  // Default values
-  let metaTitle = title || '';
-  let metaDescription = '';
-
   if (!content) {
-    return { metaTitle, metaDescription };
+    return {
+      metaTitle: '',
+      metaDescription: ''
+    };
   }
 
-  // Generate meta title if not provided
-  if (!metaTitle) {
-    // Extract first H1 or first sentence
-    const h1Match = content.match(/^# (.+)$|^<h1>(.+)<\/h1>$/m);
-    if (h1Match) {
-      metaTitle = h1Match[0].replace(/^# |^<h1>|<\/h1>$/g, '');
+  // Create title suggestion based on keyword and content
+  let metaTitle = '';
+  
+  if (contentTitle) {
+    // Use content title if available
+    metaTitle = contentTitle.length > 60 
+      ? `${contentTitle.substring(0, 57)}...` 
+      : contentTitle;
+  } else {
+    // Generate title from main keyword - use first H1 if available or create a generic one
+    const h1 = extractDocumentStructure(content).h1[0];
+    
+    if (h1) {
+      metaTitle = h1.length > 60 ? `${h1.substring(0, 57)}...` : h1;
     } else {
-      const firstSentence = content.split('.')[0];
-      metaTitle = firstSentence.substring(0, 60);
-    }
-
-    // Ensure keyword is in title
-    if (mainKeyword && !metaTitle.toLowerCase().includes(mainKeyword.toLowerCase())) {
-      metaTitle = `${mainKeyword}: ${metaTitle}`.substring(0, 60);
+      metaTitle = `Complete Guide to ${mainKeyword}`;
     }
   }
-
-  // Generate meta description
-  if (content.length > 0) {
-    // Get first paragraph or first couple of sentences
-    const firstParagraph = content.split('\n\n')[0].replace(/[#<>h1-6/]/g, '').trim();
-    metaDescription = firstParagraph.length > 10 ? firstParagraph.substring(0, 155) : content.substring(0, 155);
-    
-    // Ensure it doesn't end mid-sentence
-    const lastPeriodIndex = metaDescription.lastIndexOf('.');
-    if (lastPeriodIndex > 50) {
-      metaDescription = metaDescription.substring(0, lastPeriodIndex + 1);
-    }
-    
-    // Add ellipsis if we're cutting the text
-    if (metaDescription.length < firstParagraph.length) {
-      metaDescription += '...';
-    }
+  
+  // Create description from first paragraph or introduction
+  let metaDescription = '';
+  
+  // Try to find the first significant paragraph
+  const paragraphs = content.split(/\n\n+/);
+  const textParagraphs = paragraphs.filter(p => 
+    !p.startsWith('#') && // Not a heading
+    !p.startsWith('!') && // Not an image
+    !p.startsWith('```') && // Not a code block
+    p.length > 20 // Has some substance
+  );
+  
+  if (textParagraphs.length > 0) {
+    const firstPara = textParagraphs[0].replace(/(\*\*|\*|__|_|~~)/g, ''); // Remove markdown formatting
+    metaDescription = firstPara.length > 160 
+      ? `${firstPara.substring(0, 157)}...` 
+      : firstPara;
+  } else {
+    // Fallback description
+    metaDescription = `Learn everything you need to know about ${mainKeyword} in this comprehensive guide covering key concepts and best practices.`;
   }
-
-  return { metaTitle, metaDescription };
+  
+  return {
+    metaTitle,
+    metaDescription
+  };
 };
 
 /**
- * Analyze how solution information has been integrated into content
+ * Generate multiple unique title suggestions
+ */
+export const generateTitleSuggestions = async (
+  content: string,
+  mainKeyword: string,
+  selectedKeywords: string[],
+  currentTitle: string
+): Promise<string[]> => {
+  // Create title templates
+  const templates = [
+    `The Complete Guide to ${mainKeyword}`,
+    `${mainKeyword}: Everything You Need to Know`,
+    `How to Master ${mainKeyword} in ${new Date().getFullYear()}`,
+    `${mainKeyword} 101: A Beginner's Guide`,
+    `Top Strategies for ${mainKeyword} Success`,
+    `Ultimate ${mainKeyword} Guide: Tips & Best Practices`
+  ];
+  
+  // Add templates with secondary keywords if available
+  if (selectedKeywords.length > 0) {
+    const secondaryKeyword = selectedKeywords[Math.floor(Math.random() * selectedKeywords.length)];
+    templates.push(`${mainKeyword} and ${secondaryKeyword}: The Ultimate Guide`);
+    templates.push(`How ${mainKeyword} Relates to ${secondaryKeyword}: Complete Breakdown`);
+  }
+  
+  // Extract the first h1 from content
+  const h1 = extractDocumentStructure(content).h1[0];
+  if (h1 && h1 !== currentTitle) {
+    templates.push(h1);
+  }
+  
+  // Filter out any that match the current title
+  const filteredTemplates = templates.filter(
+    template => template.toLowerCase() !== currentTitle.toLowerCase()
+  );
+  
+  // Take up to 5 unique titles
+  const uniqueTitles = Array.from(new Set(filteredTemplates)).slice(0, 5);
+  
+  // If we have fewer than 5 titles, generate some variations
+  while (uniqueTitles.length < 5) {
+    const adjectives = ['Ultimate', 'Complete', 'Essential', 'Comprehensive', 'Definitive'];
+    const structures = ['Guide to', 'Handbook for', 'Manual for', 'Approach to', 'Strategies for'];
+    
+    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const structure = structures[Math.floor(Math.random() * structures.length)];
+    
+    const newTitle = `The ${adjective} ${structure} ${mainKeyword}`;
+    
+    if (!uniqueTitles.includes(newTitle) && newTitle.toLowerCase() !== currentTitle.toLowerCase()) {
+      uniqueTitles.push(newTitle);
+    } else {
+      // Add year to ensure uniqueness if we're struggling to generate
+      uniqueTitles.push(`${adjective} ${mainKeyword} ${structure} ${new Date().getFullYear()}`);
+      break;
+    }
+  }
+  
+  return uniqueTitles;
+};
+
+/**
+ * Analyze solution integration in content
  */
 export const analyzeSolutionIntegration = (
-  content: string,
-  solution: Solution | null
+  content: string, 
+  solution: Solution
 ): SolutionIntegrationMetrics => {
-  // Default metrics
-  const metrics: SolutionIntegrationMetrics = {
-    nameMentions: 0,
-    featureIncorporation: 0,
-    painPointsAddressed: [],
-    audienceAlignment: 0,
-    positioningScore: 0,
-    ctaMentions: 0,
-    overallScore: 0
-  };
-
   if (!content || !solution) {
-    return metrics;
+    return {
+      nameMentions: 0,
+      featureIncorporation: 0,
+      painPointsAddressed: [],
+      audienceAlignment: 0,
+      positioningScore: 0,
+      ctaMentions: 0,
+      overallScore: 0
+    };
   }
-
-  const contentLower = content.toLowerCase();
-  const { name, features, painPoints, targetAudience } = solution;
-
-  // Count name mentions
-  const nameLower = name.toLowerCase();
-  const nameMatches = contentLower.match(new RegExp(nameLower, 'g')) || [];
-  metrics.nameMentions = nameMatches.length;
-
-  // Calculate feature incorporation
-  let featuresIncorporated = 0;
-  for (const feature of features) {
-    const featureLower = feature.toLowerCase();
-    if (contentLower.includes(featureLower)) {
-      featuresIncorporated++;
+  
+  // Count how many times the solution name is mentioned
+  const nameMentions = (content.match(new RegExp(solution.name, 'gi')) || []).length;
+  
+  // Count features mentioned
+  let featuresCount = 0;
+  solution.features.forEach(feature => {
+    const matches = content.match(new RegExp(feature, 'gi')) || [];
+    if (matches.length > 0) {
+      featuresCount++;
     }
-  }
-  metrics.featureIncorporation = features.length > 0 
-    ? Math.round((featuresIncorporated / features.length) * 100) 
+  });
+  
+  // Calculate feature incorporation percentage
+  const featureIncorporation = solution.features.length > 0
+    ? Math.round((featuresCount / solution.features.length) * 100)
     : 0;
-
-  // Count pain points addressed
-  for (const painPoint of painPoints) {
-    const painPointLower = painPoint.toLowerCase();
-    if (contentLower.includes(painPointLower)) {
-      metrics.painPointsAddressed.push(painPoint);
-    }
-  }
-
-  // Calculate audience alignment
+  
+  // Find pain points addressed
+  const painPointsAddressed = solution.painPoints.filter(point => {
+    return content.match(new RegExp(point, 'gi'));
+  });
+  
+  // Check target audience alignment
   let audienceMatches = 0;
-  for (const audience of targetAudience) {
-    const audienceLower = audience.toLowerCase();
-    if (contentLower.includes(audienceLower)) {
+  solution.targetAudience.forEach(audience => {
+    const matches = content.match(new RegExp(audience, 'gi')) || [];
+    if (matches.length > 0) {
       audienceMatches++;
     }
-  }
-  metrics.audienceAlignment = targetAudience.length > 0
-    ? Math.round((audienceMatches / targetAudience.length) * 100)
+  });
+  
+  const audienceAlignment = solution.targetAudience.length > 0
+    ? Math.round((audienceMatches / solution.targetAudience.length) * 100)
     : 0;
-
-  // Check for CTAs
-  const ctaPatterns = [
-    'try now',
-    'get started',
-    'sign up',
-    'learn more',
-    'contact us',
-    'book a demo',
-    'download',
-    'subscribe'
+  
+  // Count potential CTA mentions
+  const ctaPhrases = [
+    `try ${solution.name}`,
+    `get ${solution.name}`,
+    `use ${solution.name}`,
+    `subscribe to`,
+    `sign up`,
+    `learn more`,
+    `contact us`,
+    `get started`
   ];
   
   let ctaCount = 0;
-  for (const pattern of ctaPatterns) {
-    const matches = contentLower.match(new RegExp(pattern, 'g')) || [];
+  ctaPhrases.forEach(phrase => {
+    const matches = content.match(new RegExp(phrase, 'gi')) || [];
     ctaCount += matches.length;
-  }
-  metrics.ctaMentions = ctaCount;
-
-  // Calculate positioning score
-  // Good positioning = name mentions + features + audience targeting + CTAs
-  const positioningFactors = [
-    metrics.nameMentions > 0 ? 25 : 0,
-    metrics.featureIncorporation > 50 ? 25 : metrics.featureIncorporation / 2,
-    metrics.painPointsAddressed.length > 0 ? 25 : 0,
-    metrics.audienceAlignment > 50 ? 25 : metrics.audienceAlignment / 2
-  ];
-  metrics.positioningScore = Math.min(100, Math.round(positioningFactors.reduce((a, b) => a + b, 0)));
-
+  });
+  
+  // Calculate overall positioning score
+  const positioningScore = Math.min(100, Math.round(
+    (nameMentions * 10 + 
+    featureIncorporation + 
+    (painPointsAddressed.length / Math.max(1, solution.painPoints.length)) * 30 + 
+    audienceAlignment + 
+    (ctaCount * 15)) / 5
+  ));
+  
   // Calculate overall score
-  metrics.overallScore = Math.round(
-    (metrics.positioningScore * 0.5) +
-    (metrics.featureIncorporation * 0.3) +
-    (metrics.audienceAlignment * 0.2)
+  const overallScore = Math.round(
+    (featureIncorporation * 0.3) + 
+    (painPointsAddressed.length / Math.max(1, solution.painPoints.length) * 100 * 0.3) +
+    (audienceAlignment * 0.2) +
+    (Math.min(5, ctaCount) / 5 * 100 * 0.2)
   );
-
-  return metrics;
+  
+  return {
+    nameMentions,
+    featureIncorporation,
+    painPointsAddressed,
+    audienceAlignment,
+    positioningScore,
+    ctaMentions: ctaCount,
+    overallScore
+  };
 };
 
 /**
- * Check for presence of CTA in content
+ * Detect calls-to-action in content
  */
 export const detectCTAs = (content: string): { hasCTA: boolean; ctaText: string[] } => {
-  const ctaPatterns = [
-    'try now',
-    'get started',
+  if (!content) {
+    return { hasCTA: false, ctaText: [] };
+  }
+  
+  // Common CTA phrases
+  const ctaPhrases = [
     'sign up',
+    'subscribe',
+    'register',
+    'get started',
+    'try now',
+    'download',
     'learn more',
     'contact us',
     'book a demo',
-    'download',
-    'subscribe'
+    'get in touch',
+    'start today',
+    'request a quote',
+    'free trial',
+    'buy now',
+    'order now',
+    'get access',
+    'join us'
   ];
-
-  const ctaText: string[] = [];
-  let hasCTA = false;
-
-  // Look for sentences containing CTA patterns
-  const sentences = content.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
   
-  for (const sentence of sentences) {
-    const sentenceLower = sentence.toLowerCase();
-    for (const pattern of ctaPatterns) {
-      if (sentenceLower.includes(pattern)) {
-        ctaText.push(sentence);
-        hasCTA = true;
-        break;
-      }
+  // Find CTAs in content
+  const ctaMatches: string[] = [];
+  const paragraphs = content.split(/\n\n+/);
+  
+  paragraphs.forEach(paragraph => {
+    if (ctaPhrases.some(phrase => paragraph.toLowerCase().includes(phrase))) {
+      // This paragraph has a CTA phrase
+      ctaMatches.push(paragraph.trim());
     }
-  }
-
+  });
+  
   return {
-    hasCTA,
-    ctaText: [...new Set(ctaText)] // Remove duplicates
+    hasCTA: ctaMatches.length > 0,
+    ctaText: ctaMatches
   };
 };

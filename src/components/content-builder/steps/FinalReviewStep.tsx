@@ -21,14 +21,18 @@ export const FinalReviewStep = () => {
     selectedSolution,
     solutionIntegrationMetrics,
     selectedKeywords,
-    seoScore
+    seoScore,
+    serpData
   } = state;
   
   const { 
     isAnalyzing, 
+    isGeneratingTitles,
     keywordUsage, 
     ctaInfo, 
+    titleSuggestions,
     generateMeta, 
+    generateTitleSuggestions,
     analyzeSolutionUsage, 
     checkStepCompletion 
   } = useFinalReview();
@@ -113,6 +117,10 @@ export const FinalReviewStep = () => {
       analyzeSolutionUsage();
     }
     
+    if (titleSuggestions.length === 0) {
+      generateTitleSuggestions();
+    }
+    
     toast.success("All checks completed");
   };
 
@@ -169,6 +177,9 @@ export const FinalReviewStep = () => {
             selectedSolution={selectedSolution}
             isAnalyzing={isAnalyzing}
             onAnalyze={analyzeSolutionUsage}
+            titleSuggestions={titleSuggestions}
+            isGeneratingTitles={isGeneratingTitles}
+            onGenerateTitleSuggestions={generateTitleSuggestions}
           />
         </TabsContent>
         
@@ -178,6 +189,7 @@ export const FinalReviewStep = () => {
             documentStructure={documentStructure}
             metaTitle={metaTitle}
             metaDescription={metaDescription}
+            serpData={serpData}
           />
         </TabsContent>
       </Tabs>

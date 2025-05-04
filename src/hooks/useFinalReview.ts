@@ -5,18 +5,29 @@ import {
   extractDocumentStructure, 
   generateMetaSuggestions,
   analyzeSolutionIntegration,
-  detectCTAs
+  detectCTAs,
+  generateTitleSuggestions
 } from '@/utils/seo/documentAnalysis';
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 import { toast } from 'sonner';
 
 export const useFinalReview = () => {
   const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, selectedKeywords, contentTitle, selectedSolution, serpSelections } = state;
+  const { 
+    content, 
+    mainKeyword, 
+    selectedKeywords, 
+    contentTitle, 
+    selectedSolution, 
+    serpSelections,
+    serpData
+  } = state;
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
   const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
   const [ctaInfo, setCTAInfo] = useState<{ hasCTA: boolean; ctaText: string[] }>({ hasCTA: false, ctaText: [] });
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
   
   // Run document structure analysis when the content changes
   useEffect(() => {
@@ -70,6 +81,30 @@ export const useFinalReview = () => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: metaDescription });
     
     toast.success('Generated meta title and description');
+    
+    // Also generate title suggestions
+    generateTitleSuggestions();
+  };
+  
+  // Generate title suggestions
+  const generateTitleSuggestions = async () => {
+    if (!content || !mainKeyword) {
+      toast.error('Content or main keyword not available for generating titles');
+      return;
+    }
+    
+    setIsGeneratingTitles(true);
+    
+    try {
+      const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords, state.metaTitle || '');
+      setTitleSuggestions(suggestions);
+      toast.success('Generated title suggestions');
+    } catch (error) {
+      console.error('Error generating title suggestions:', error);
+      toast.error('Failed to generate title suggestions');
+    } finally {
+      setIsGeneratingTitles(false);
+    }
   };
   
   // Analyze solution integration
@@ -107,9 +142,13 @@ export const useFinalReview = () => {
   
   return {
     isAnalyzing,
+    isGeneratingTitles,
     keywordUsage,
     ctaInfo,
+    titleSuggestions,
+    serpData,
     generateMeta,
+    generateTitleSuggestions,
     analyzeSolutionUsage,
     checkStepCompletion
   };

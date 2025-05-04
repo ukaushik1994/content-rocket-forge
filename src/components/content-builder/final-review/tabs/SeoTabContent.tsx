@@ -3,6 +3,7 @@ import React from 'react';
 import { KeywordUsageSummaryCard } from '../KeywordUsageSummaryCard';
 import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
+import { TitleSuggestionsCard } from '../TitleSuggestionsCard';
 import { Solution, SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
 
 interface SeoTabContentProps {
@@ -18,6 +19,9 @@ interface SeoTabContentProps {
   selectedSolution: Solution | null;
   isAnalyzing: boolean;
   onAnalyze: () => void;
+  titleSuggestions: string[];
+  isGeneratingTitles: boolean;
+  onGenerateTitleSuggestions: () => void;
 }
 
 export const SeoTabContent = ({
@@ -32,7 +36,10 @@ export const SeoTabContent = ({
   solutionIntegrationMetrics,
   selectedSolution,
   isAnalyzing,
-  onAnalyze
+  onAnalyze,
+  titleSuggestions,
+  isGeneratingTitles,
+  onGenerateTitleSuggestions
 }: SeoTabContentProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -50,6 +57,19 @@ export const SeoTabContent = ({
           onMetaDescriptionChange={onMetaDescriptionChange}
           onGenerateMeta={onGenerateMeta}
         />
+        
+        {/* Title Suggestions Card */}
+        <div className="col-span-1 md:col-span-2">
+          <TitleSuggestionsCard 
+            currentTitle={metaTitle}
+            mainKeyword={mainKeyword}
+            selectedKeywords={selectedKeywords}
+            onSelectTitle={onMetaTitleChange}
+            generateNewTitles={onGenerateTitleSuggestions}
+            suggestions={titleSuggestions}
+            isGenerating={isGeneratingTitles}
+          />
+        </div>
       </div>
       
       {/* Side panel */}

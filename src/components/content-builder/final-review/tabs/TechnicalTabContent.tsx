@@ -1,30 +1,45 @@
-
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { DocumentStructureCard } from '../DocumentStructureCard';
-import { AlertTriangle, CheckCircle2, FileCode } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { EntitiesAnalysisCard } from '../EntitiesAnalysisCard';
+import { HeadingsAnalysisCard } from '../HeadingsAnalysisCard';
+import { ContentGapsCard } from '../ContentGapsCard';
+import { FeaturedSnippetsCard } from '../FeaturedSnippetsCard';
 import { DocumentStructure } from '@/contexts/content-builder/types';
+import { SerpAnalysisResult } from '@/types/serp';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { AlertTriangle, CheckCircle2, FileCode } from 'lucide-react';
 
 interface TechnicalTabContentProps {
   documentStructure: DocumentStructure | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  serpData: SerpAnalysisResult | null;
 }
 
 export const TechnicalTabContent = ({ 
   documentStructure,
   metaTitle,
-  metaDescription
+  metaDescription,
+  serpData
 }: TechnicalTabContentProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main technical area */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 space-y-6">
         <DocumentStructureCard documentStructure={documentStructure} />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <EntitiesAnalysisCard entities={serpData?.entities} />
+          <HeadingsAnalysisCard headings={serpData?.headings} />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ContentGapsCard contentGaps={serpData?.contentGaps} />
+          <FeaturedSnippetsCard snippets={serpData?.featuredSnippets} />
+        </div>
       </div>
       
-      {/* Side panel */}
+      {/* Side panel - keep the validation section */}
       <div>
         <Card className="h-full bg-gradient-to-br from-violet-500/5 to-indigo-500/5 shadow-md">
           <CardHeader className="pb-2 border-b bg-gradient-to-r from-muted/30 to-transparent">
@@ -73,6 +88,28 @@ export const TechnicalTabContent = ({
                   <div className="flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3 text-amber-500" />
                     <span className="text-xs text-amber-500">Metadata needs improvement</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="bg-card/50 rounded-md p-3 border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileCode className="h-4 w-4 text-purple-500" />
+                  <h3 className="text-sm font-medium">SERP Features</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Analyzes content for featured snippet and entity optimization.
+                </p>
+                {(serpData?.featuredSnippets && serpData.featuredSnippets.length > 0) || 
+                 (serpData?.entities && serpData.entities.length > 0) ? (
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <span className="text-xs text-green-500">SERP data available</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <span className="text-xs text-amber-500">SERP data missing</span>
                   </div>
                 )}
               </div>
