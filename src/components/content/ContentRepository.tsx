@@ -7,7 +7,6 @@ import {
   EnhancedContentFilters, 
   ContentGrid, 
   ViewToggle,
-  ContentDetailView,
   ContentEditDialog,
   DeleteConfirmationDialog
 } from './repository';
@@ -230,6 +229,7 @@ export function ContentRepository() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Get selected content (kept for dialogs, but not displayed anymore)
   const selectedContent = selectedContentId 
     ? filteredItems.find(item => item.id === selectedContentId) || null
     : null;
@@ -263,39 +263,24 @@ export function ContentRepository() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className={`${selectedContent ? 'lg:col-span-2' : 'lg:col-span-5'}`}>
-          <ContentGrid 
-            loading={loading}
-            filteredItems={filteredItems}
-            searchQuery={searchQuery}
-            filterStatus={filterStatus}
-            selectedContentId={selectedContentId}
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-            onSelect={handleSelectContent}
-            onEdit={handleEditContent}
-            onPreview={handlePreviewContent}
-            onAnalyze={handleAnalyzeContent}
-            onPublish={handlePublishContent}
-            onArchive={handleArchiveContent}
-            onDelete={handleDeleteContent}
-          />
-        </div>
-        
-        {selectedContent && (
-          <div className="lg:col-span-3">
-            <ContentDetailView 
-              item={selectedContent}
-              onEdit={handleEditContent}
-              onAnalyze={handleAnalyzeContent}
-              onPublish={handlePublishContent}
-              onArchive={handleArchiveContent}
-              onDelete={handleDeleteContent}
-            />
-          </div>
-        )}
+      <div className="w-full">
+        <ContentGrid 
+          loading={loading}
+          filteredItems={filteredItems}
+          searchQuery={searchQuery}
+          filterStatus={filterStatus}
+          selectedContentId={selectedContentId}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onSelect={handleSelectContent}
+          onEdit={handleEditContent}
+          onPreview={handlePreviewContent}
+          onAnalyze={handleAnalyzeContent}
+          onPublish={handlePublishContent}
+          onArchive={handleArchiveContent}
+          onDelete={handleDeleteContent}
+        />
       </div>
 
       {/* Edit Dialog */}
