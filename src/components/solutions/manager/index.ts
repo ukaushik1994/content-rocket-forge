@@ -1,2 +1,2 @@
 
-export { SolutionManager as default } from './SolutionManager';
+export { SolutionManager } from './SolutionManager';
