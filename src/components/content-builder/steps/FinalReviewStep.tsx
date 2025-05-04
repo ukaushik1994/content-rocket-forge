@@ -7,6 +7,7 @@ import { MetaInformationCard } from '../final-review/MetaInformationCard';
 import { SolutionIntegrationCard } from '../final-review/SolutionIntegrationCard';
 import { KeywordUsageSummaryCard } from '../final-review/KeywordUsageSummaryCard';
 import { FinalChecklistCard } from '../final-review/FinalChecklistCard';
+import { ContentReviewCard } from '../final-review/ContentReviewCard';
 
 export const FinalReviewStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -17,7 +18,8 @@ export const FinalReviewStep = () => {
     metaDescription, 
     documentStructure, 
     selectedSolution,
-    solutionIntegrationMetrics 
+    solutionIntegrationMetrics,
+    selectedKeywords 
   } = state;
   
   const { 
@@ -85,6 +87,12 @@ export const FinalReviewStep = () => {
       passed: keywordUsage.some(k => k.keyword === mainKeyword && 
         parseFloat(k.density) >= 0.5 && 
         parseFloat(k.density) <= 3)
+    },
+    {
+      title: 'Secondary keywords are included in content',
+      passed: selectedKeywords.filter(k => k !== mainKeyword).some(k => 
+        keywordUsage.some(usage => usage.keyword === k && usage.count > 0)
+      )
     }
   ];
   
@@ -97,16 +105,15 @@ export const FinalReviewStep = () => {
         </p>
       </div>
       
-      {/* Responsive grid layout with consistent card heights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* First column at larger screens */}
-        <div className="space-y-4 md:col-span-1">
-          <DocumentStructureCard documentStructure={documentStructure} />
-          <FinalChecklistCard checks={checklistItems} />
+      {/* Updated layout with content review */}
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
+        {/* Content review - takes up 4/7 of space on large screens */}
+        <div className="lg:col-span-4 space-y-4">
+          <ContentReviewCard content={content} />
         </div>
         
-        {/* Second column at larger screens */}
-        <div className="space-y-4 md:col-span-1">
+        {/* Sidebar with meta and keyword information - takes up 3/7 of space */}
+        <div className="lg:col-span-3 space-y-4">
           <MetaInformationCard 
             metaTitle={metaTitle || ''} 
             metaDescription={metaDescription || ''}
@@ -114,21 +121,25 @@ export const FinalReviewStep = () => {
             onMetaDescriptionChange={handleMetaDescriptionChange}
             onGenerateMeta={generateMeta}
           />
+          
           <KeywordUsageSummaryCard 
             keywordUsage={keywordUsage} 
-            mainKeyword={mainKeyword} 
+            mainKeyword={mainKeyword}
+            selectedKeywords={selectedKeywords}
           />
         </div>
-        
-        {/* Third column - Solution integration (full width on mobile) */}
-        <div className="md:col-span-1">
-          <SolutionIntegrationCard 
-            metrics={solutionIntegrationMetrics}
-            solution={selectedSolution}
-            isAnalyzing={isAnalyzing}
-            onAnalyze={analyzeSolutionUsage}
-          />
-        </div>
+      </div>
+      
+      {/* Second row - document structure, checklist, and solution integration */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <DocumentStructureCard documentStructure={documentStructure} />
+        <FinalChecklistCard checks={checklistItems} />
+        <SolutionIntegrationCard 
+          metrics={solutionIntegrationMetrics}
+          solution={selectedSolution}
+          isAnalyzing={isAnalyzing}
+          onAnalyze={analyzeSolutionUsage}
+        />
       </div>
     </div>
   );

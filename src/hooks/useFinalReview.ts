@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 export const useFinalReview = () => {
   const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, selectedKeywords, contentTitle, selectedSolution } = state;
+  const { content, mainKeyword, selectedKeywords, contentTitle, selectedSolution, serpSelections } = state;
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
@@ -34,6 +34,28 @@ export const useFinalReview = () => {
       setCTAInfo(cta);
     }
   }, [content, mainKeyword, selectedKeywords, dispatch]);
+  
+  // Sync selected keywords from SERP selections
+  useEffect(() => {
+    if (serpSelections && serpSelections.length > 0) {
+      // Extract selected keywords from SERP selections
+      const selectedKeywordsFromSelections = serpSelections
+        .filter(item => item.selected && item.type === 'keyword')
+        .map(item => item.content);
+      
+      // Add selected keywords to state if they don't already exist
+      if (selectedKeywordsFromSelections.length > 0) {
+        const newKeywords = selectedKeywordsFromSelections.filter(
+          keyword => !selectedKeywords.includes(keyword) && keyword !== mainKeyword
+        );
+        
+        if (newKeywords.length > 0) {
+          const updatedKeywords = [...selectedKeywords, ...newKeywords];
+          dispatch({ type: 'SET_KEYWORDS', payload: updatedKeywords });
+        }
+      }
+    }
+  }, [serpSelections, mainKeyword, selectedKeywords, dispatch]);
   
   // Generate meta information
   const generateMeta = () => {
