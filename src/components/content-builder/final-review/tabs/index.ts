@@ -1,4 +1,4 @@
 
-export * from './ContentTabContent';
-export * from './SeoTabContent';
-export * from './TechnicalTabContent';
+export * from './OverviewTab';
+export * from './OptimizeTab';
+export * from './TechnicalTab';

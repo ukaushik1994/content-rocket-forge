@@ -13,13 +13,13 @@ export const FinalReviewTabNavigation = () => {
       className="bg-card shadow-lg rounded-lg p-1 mb-6 border border-purple-500/20"
     >
       <TabsList className="w-full grid grid-cols-3 gap-1">
-        <TabsTrigger value="content" className="flex gap-2 items-center data-[state=active]:bg-gradient-to-r from-blue-500/20 to-purple-500/20">
+        <TabsTrigger value="overview" className="flex gap-2 items-center data-[state=active]:bg-gradient-to-r from-blue-500/20 to-purple-500/20">
           <FileText className="h-4 w-4" />
-          <span>Content</span>
+          <span>Overview</span>
         </TabsTrigger>
-        <TabsTrigger value="seo" className="flex gap-2 items-center data-[state=active]:bg-gradient-to-r from-blue-500/20 to-purple-500/20">
+        <TabsTrigger value="optimize" className="flex gap-2 items-center data-[state=active]:bg-gradient-to-r from-blue-500/20 to-purple-500/20">
           <BarChart2 className="h-4 w-4" />
-          <span>SEO</span>
+          <span>Optimize</span>
         </TabsTrigger>
         <TabsTrigger value="technical" className="flex gap-2 items-center data-[state=active]:bg-gradient-to-r from-blue-500/20 to-purple-500/20">
           <Settings className="h-4 w-4" />

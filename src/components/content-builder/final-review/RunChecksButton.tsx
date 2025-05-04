@@ -10,6 +10,7 @@ interface RunChecksButtonProps {
   className?: string;
   icon?: boolean;
   variant?: "default" | "outline" | "secondary" | "ghost";
+  label?: string;
 }
 
 export const RunChecksButton = ({ 
@@ -17,7 +18,8 @@ export const RunChecksButton = ({
   onRunChecks,
   className = "",
   icon = true,
-  variant = "default"
+  variant = "default",
+  label = "Run All Checks"
 }: RunChecksButtonProps) => {
   return (
     <motion.div
@@ -39,7 +41,7 @@ export const RunChecksButton = ({
         ) : (
           <>
             {icon && <CheckCircle className="h-4 w-4 mr-2" />}
-            Run All Checks
+            {label}
           </>
         )}
       </Button>

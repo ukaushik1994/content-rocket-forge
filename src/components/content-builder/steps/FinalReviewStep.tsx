@@ -4,14 +4,15 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useFinalReview } from '@/hooks/useFinalReview';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
 
 // Import components
-import { ContentTabContent, SeoTabContent, TechnicalTabContent } from '../final-review/tabs';
+import { OverviewTab, OptimizeTab, TechnicalTab } from '../final-review/tabs';
 import { FinalReviewHeader } from '../final-review/FinalReviewHeader';
 import { FinalReviewTabNavigation } from '../final-review/FinalReviewTabNavigation';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
+import { useConfetti } from '@/hooks/final-review/useConfetti';
+import { toast } from 'sonner';
 
 export const FinalReviewStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -42,8 +43,8 @@ export const FinalReviewStep = () => {
   } = useFinalReview();
 
   const { checklistItems, completionPercentage, passedChecks, totalChecks } = useChecklistItems();
-  const [activeTab, setActiveTab] = useState("content");
-  const [confettiShown, setConfettiShown] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const { confettiShown, triggerConfetti } = useConfetti();
   
   // Debug current state
   useEffect(() => {
@@ -59,34 +60,17 @@ export const FinalReviewStep = () => {
     if (content && mainKeyword && !metaTitle && !metaDescription) {
       console.log("[FinalReviewStep] No meta information detected, generating...");
       generateMeta();
+      toast.info("Generating meta information for your content...");
     }
   }, [content, mainKeyword, metaTitle, metaDescription, generateMeta]);
 
   // Trigger confetti when all checks pass
   useEffect(() => {
     if (completionPercentage === 100 && !confettiShown) {
-      const duration = 3000;
-      const end = Date.now() + duration;
-
-      const launchConfetti = () => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#8B5CF6', '#6366F1', '#3B82F6', '#10B981', '#34D399'],
-          startVelocity: 30,
-          gravity: 1.2
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(launchConfetti);
-        }
-      };
-
-      launchConfetti();
-      setConfettiShown(true);
+      triggerConfetti();
+      toast.success("All checks passed! Your content is ready to publish.");
     }
-  }, [completionPercentage, confettiShown]);
+  }, [completionPercentage, confettiShown, triggerConfetti]);
   
   // Update meta information
   const handleMetaTitleChange = (value: string) => {
@@ -99,6 +83,30 @@ export const FinalReviewStep = () => {
   const handleMetaDescriptionChange = (value: string) => {
     console.log("[FinalReviewStep] Setting meta description to:", value);
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+  };
+  
+  // Handler for running necessary checks based on the current tab
+  const handleRunTabChecks = () => {
+    switch (activeTab) {
+      case "overview":
+        // Run content-specific checks
+        if (!metaTitle || !metaDescription) {
+          generateMeta();
+        }
+        break;
+      case "optimize":
+        // Run SEO-specific checks
+        analyzeSolutionUsage();
+        generateTitleSuggestions();
+        break;
+      case "technical":
+        // Run technical checks
+        // (This could include structure validation or other technical aspects)
+        break;
+      default:
+        // Run all checks as a fallback
+        runAllChecks();
+    }
   };
 
   return (
@@ -117,10 +125,12 @@ export const FinalReviewStep = () => {
         />
       </motion.div>
       
-      {/* Quick Actions */}
+      {/* Quick Actions - Now contextual based on current tab */}
       <FinalReviewQuickActions 
         isRunningAllChecks={isRunningAllChecks} 
-        onRunAllChecks={runAllChecks} 
+        onRunAllChecks={runAllChecks}
+        activeTab={activeTab}
+        onRunTabChecks={handleRunTabChecks}
       />
       
       {/* Main Content Area with Tabs */}
@@ -129,21 +139,26 @@ export const FinalReviewStep = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Tabs defaultValue="content" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <FinalReviewTabNavigation />
           
-          {/* Content Tab */}
-          <TabsContent value="content" className="mt-0">
-            <ContentTabContent 
+          {/* Overview Tab (replaces Content tab) */}
+          <TabsContent value="overview" className="mt-0">
+            <OverviewTab 
               content={content} 
               checklistItems={checklistItems}
               onRunAllChecks={runAllChecks}
+              metaTitle={metaTitle}
+              metaDescription={metaDescription}
+              onMetaTitleChange={handleMetaTitleChange}
+              onMetaDescriptionChange={handleMetaDescriptionChange}
+              onGenerateMeta={generateMeta}
             />
           </TabsContent>
           
-          {/* SEO Tab */}
-          <TabsContent value="seo" className="mt-0">
-            <SeoTabContent 
+          {/* Optimize Tab (replaces SEO tab) */}
+          <TabsContent value="optimize" className="mt-0">
+            <OptimizeTab 
               keywordUsage={keywordUsage}
               mainKeyword={mainKeyword}
               selectedKeywords={selectedKeywords}
@@ -159,12 +174,13 @@ export const FinalReviewStep = () => {
               titleSuggestions={titleSuggestions}
               isGeneratingTitles={isGeneratingTitles}
               onGenerateTitleSuggestions={generateTitleSuggestions}
+              completionPercentage={completionPercentage}
             />
           </TabsContent>
           
           {/* Technical Tab */}
           <TabsContent value="technical" className="mt-0">
-            <TechnicalTabContent 
+            <TechnicalTab 
               documentStructure={documentStructure}
               metaTitle={metaTitle}
               metaDescription={metaDescription}
