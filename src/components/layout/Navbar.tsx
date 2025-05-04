@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Home,
+  BarChart3,
   FileText,
   Settings,
   User,
@@ -18,6 +20,7 @@ import {
   X,
   PanelRight,
   Rocket,
+  MessageSquarePlus,
   LogOut,
   UserCircle,
 } from 'lucide-react';
@@ -30,6 +33,7 @@ const navItems = [
   { name: 'Dashboard', path: '/', icon: Home },
   { name: 'Content', path: '/content', icon: FileText },
   { name: 'Solutions', path: '/solutions', icon: Rocket },
+  { name: 'Analytics', path: '/analytics', icon: BarChart3 },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
