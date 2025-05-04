@@ -13,7 +13,7 @@ import { KeywordUsageSummaryCard } from '../final-review/KeywordUsageSummaryCard
 import { FinalChecklistCard } from '../final-review/FinalChecklistCard';
 import { ContentReviewCard } from '../final-review/ContentReviewCard';
 import { FinalReviewHeader } from '../final-review/FinalReviewHeader';
-import { CheckCircle, FileText, BarChart2, Settings, Tag, CheckSquare, FileCode } from 'lucide-react';
+import { CheckCircle, FileText, BarChart2, Settings, Tag, CheckSquare, FileCode, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const FinalReviewStep = () => {
