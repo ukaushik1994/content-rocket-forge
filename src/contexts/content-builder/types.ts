@@ -69,6 +69,8 @@ export interface DocumentStructure {
   h2: string[];
   h3: string[];
   h4: string[];
+  h5: string[];  // Adding the h5 property
+  h6: string[];  // Adding the h6 property
   hasSingleH1: boolean;
   hasLogicalHierarchy: boolean;
 }
