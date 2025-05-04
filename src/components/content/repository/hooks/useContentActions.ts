@@ -95,36 +95,44 @@ export function useContentActions() {
     if (!selectedContentId || isDeleting) return;
     
     try {
-      // Mark as deleting to prevent multiple clicks
+      // 1. Set deleting state to prevent multiple clicks
       setIsDeleting(true);
       
-      // First, close the dialog to avoid UI freezes
-      setIsDeleteDialogOpen(false);
-      
-      // Store ID for reference
-      const deletedItemId = selectedContentId;
-      
-      // Find a new item to select after deletion
-      const remainingItems = contentItems.filter(item => item.id !== deletedItemId);
+      // 2. Find a new item to select after deletion - do this before closing dialog
+      const remainingItems = contentItems.filter(item => item.id !== selectedContentId);
       const newSelectedId = remainingItems.length > 0 ? remainingItems[0].id : null;
       
-      // Update selection before actual deletion to avoid reference issues
+      // 3. Store current ID for reference
+      const deletedItemId = selectedContentId;
+      
+      // 4. Close dialog immediately to improve UI responsiveness
+      setIsDeleteDialogOpen(false);
+      
+      // 5. Update selection before actual deletion to avoid reference issues
       setSelectedContentId(newSelectedId);
       
-      // Then perform the actual deletion
+      // 6. Show deletion in progress toast
+      const toastId = toast.loading('Deleting content...', {
+        duration: 5000,
+      });
+      
+      // 7. Perform the actual deletion
       await deleteContentItem(deletedItemId);
       
+      // 8. Update toast to success
       toast.success('Content deleted successfully', {
+        id: toastId,
         duration: 3000,
-        closeButton: true,
       });
     } catch (error) {
+      // If error occurs, show error toast
       toast.error('Failed to delete content', {
         duration: 5000,
         closeButton: true,
       });
       console.error('Delete error:', error);
     } finally {
+      // Always reset the deleting state
       setIsDeleting(false);
     }
   };
