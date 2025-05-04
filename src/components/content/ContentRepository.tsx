@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useContent } from '@/contexts/ContentContext';
+import { useContent } from '@/contexts/content';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 

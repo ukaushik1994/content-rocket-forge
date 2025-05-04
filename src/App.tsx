@@ -12,7 +12,7 @@ import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import { ContentProvider } from "./contexts/ContentContext";
+import { ContentProvider } from "./contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";

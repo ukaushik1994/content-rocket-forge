@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { ContentRepository } from '@/components/content/ContentRepository';
-import { useContent } from '@/contexts/ContentContext';
+import { useContent } from '@/contexts/content';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
