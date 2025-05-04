@@ -35,17 +35,8 @@ export const useFinalReview = () => {
       // Extract document structure
       const structure = extractDocumentStructure(content);
       
-      // Create a DocumentStructure object that matches the expected type
-      const documentStructure = {
-        h1: structure.hasSingleH1 ? 1 : 0,
-        h2: 0, // Default values since we don't have this info
-        h3: 0, // Default values since we don't have this info
-        h4: 0, // Default values since we don't have this info
-        hasSingleH1: structure.hasSingleH1,
-        hasLogicalHierarchy: structure.hasLogicalHierarchy
-      };
-      
-      dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: documentStructure });
+      // DocumentStructure object already has the correct structure from documentAnalysis.ts now
+      dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: structure });
       
       // Analyze keyword usage
       const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
@@ -132,13 +123,13 @@ export const useFinalReview = () => {
     try {
       const metrics = analyzeSolutionIntegration(content, selectedSolution);
       
-      // Create a complete SolutionIntegrationMetrics object
+      // SolutionIntegrationMetrics object is now compatible with the expected type
       const solutionMetrics = {
         featureIncorporation: metrics.featureIncorporation,
         positioningScore: metrics.positioningScore,
-        nameMentions: 0, // Default values since we don't have this info
-        painPointsAddressed: 0, // Default values since we don't have this info
-        audienceAlignment: 0, // Default values since we don't have this info
+        nameMentions: metrics.nameMentions,
+        painPointsAddressed: metrics.painPointsAddressed,
+        audienceAlignment: metrics.audienceAlignment,
         ctaMentions: ctaInfo.ctaText.length,
         overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
       };

@@ -3,29 +3,38 @@
  * Utility functions for analyzing document structure, headings, and content
  */
 
-import { JSDOM } from 'jsdom';
-
 /**
  * Extract document structure from HTML content
  */
 export const extractDocumentStructure = (htmlContent: string) => {
-  const dom = new JSDOM(htmlContent);
-  const document = dom.window.document;
+  // Create a temporary DOM parser in the browser
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, 'text/html');
   
   // Check for single H1 tag
-  const h1Tags = document.querySelectorAll('h1');
+  const h1Tags = doc.querySelectorAll('h1');
   const hasSingleH1 = h1Tags.length === 1;
   
   // Check for logical heading hierarchy (e.g., H2 follows H1, H3 follows H2)
   let hasLogicalHierarchy = true;
   let lastHeadingLevel = 0;
   
-  const headingTags = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  const headingTags = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  
+  // Count headings by level
+  const headingCounts = {
+    h1: h1Tags.length,
+    h2: doc.querySelectorAll('h2').length,
+    h3: doc.querySelectorAll('h3').length,
+    h4: doc.querySelectorAll('h4').length,
+    h5: doc.querySelectorAll('h5').length,
+    h6: doc.querySelectorAll('h6').length
+  };
   
   for (const tag of headingTags) {
     const level = parseInt(tag.tagName.substring(1));
     
-    if (level > lastHeadingLevel + 1) {
+    if (level > lastHeadingLevel + 1 && lastHeadingLevel !== 0) {
       hasLogicalHierarchy = false;
       break;
     }
@@ -34,6 +43,12 @@ export const extractDocumentStructure = (htmlContent: string) => {
   }
   
   return {
+    h1: headingCounts.h1,
+    h2: headingCounts.h2,
+    h3: headingCounts.h3,
+    h4: headingCounts.h4,
+    h5: headingCounts.h5,
+    h6: headingCounts.h6,
     hasSingleH1,
     hasLogicalHierarchy
   };
@@ -87,7 +102,10 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: { 
   
   return {
     featureIncorporation: featureIncorporationPercentage,
-    positioningScore: Math.min(positioningScore, 100)
+    positioningScore: Math.min(positioningScore, 100),
+    nameMentions: nameOccurrences,
+    painPointsAddressed: [] as string[],
+    audienceAlignment: 0
   };
 };
 
