@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
@@ -100,7 +99,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, fetchContentItems]);
   
-  // Create all content-related actions
+  // Create all content-related actions using our refactored approach
   const actions = createContentActions(contentItems, setContentItems, user?.id);
 
   return (
