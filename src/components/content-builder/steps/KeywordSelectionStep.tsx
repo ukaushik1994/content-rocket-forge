@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -6,7 +7,6 @@ import { KeywordSuggestions } from '../keyword/KeywordSuggestions';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { SavedKeywords } from '../keyword/SavedKeywords';
-import { SerpAnalysisPanel } from '@/components/content/SerpAnalysisPanel';
 import { ContentCluster } from '@/contexts/content-builder/types';
 import { Loader2, Search, ChevronRight, Sparkles } from 'lucide-react';
 
@@ -42,6 +42,7 @@ export const KeywordSelectionStep = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
+  
   useEffect(() => {
     // Check if we have completed the requirements to move forward
     if (mainKeyword && selectedKeywords.length > 0) {
@@ -57,6 +58,7 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
+  
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
 
@@ -77,30 +79,35 @@ export const KeywordSelectionStep = () => {
     // Automatically start SERP analysis when a keyword is entered
     await analyzeKeyword(keyword);
   };
+  
   const handleAddKeyword = (kw: string) => {
     dispatch({
       type: 'ADD_KEYWORD',
       payload: kw
     });
   };
+  
   const handleRemoveKeyword = (kw: string) => {
     dispatch({
       type: 'REMOVE_KEYWORD',
       payload: kw
     });
   };
+  
   const handleSelectCluster = (cluster: ContentCluster) => {
     dispatch({
       type: 'SELECT_CLUSTER',
       payload: cluster
     });
   };
+  
   const handleClearCluster = () => {
     dispatch({
       type: 'SELECT_CLUSTER',
       payload: null
     });
   };
+  
   return <div className="space-y-8">
       {/* Header with animation */}
       <div className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5">
@@ -176,28 +183,6 @@ export const KeywordSelectionStep = () => {
             <SavedKeywords />
           </div>
         </div>
-        
-        {/* SERP Analysis Section */}
-        {mainKeyword && <div className="mt-8 border-t border-white/10 pt-8 animate-fade-in" style={{
-        animationDelay: '300ms'
-      }}>
-            <div className="flex items-center gap-2 mb-6">
-              <div className="h-1 w-1 bg-primary rounded-full"></div>
-              <div className="h-1.5 w-1.5 bg-primary rounded-full"></div>
-              <div className="h-2 w-2 bg-primary rounded-full"></div>
-              <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">SERP Analysis Results</h3>
-              <div className="h-2 w-2 bg-primary rounded-full"></div>
-              <div className="h-1.5 w-1.5 bg-primary rounded-full"></div>
-              <div className="h-1 w-1 bg-primary rounded-full"></div>
-            </div>
-            
-            <div className="relative">
-              {/* Decorative elements */}
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-30 pointer-events-none rounded-lg"></div>
-              
-              <SerpAnalysisPanel serpData={serpData} isLoading={isAnalyzing} mainKeyword={mainKeyword} onAddToContent={addContentFromSerp} />
-            </div>
-          </div>}
       </div>
     </div>;
 };
