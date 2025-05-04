@@ -21,15 +21,13 @@ export const extractDocumentStructure = (htmlContent: string) => {
   
   const headingTags = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6'));
   
-  // Count headings by level
-  const headingCounts = {
-    h1: h1Tags.length,
-    h2: doc.querySelectorAll('h2').length,
-    h3: doc.querySelectorAll('h3').length,
-    h4: doc.querySelectorAll('h4').length,
-    h5: doc.querySelectorAll('h5').length,
-    h6: doc.querySelectorAll('h6').length
-  };
+  // Extract heading text content by level
+  const h1 = Array.from(doc.querySelectorAll('h1')).map(el => el.textContent || '');
+  const h2 = Array.from(doc.querySelectorAll('h2')).map(el => el.textContent || '');
+  const h3 = Array.from(doc.querySelectorAll('h3')).map(el => el.textContent || '');
+  const h4 = Array.from(doc.querySelectorAll('h4')).map(el => el.textContent || '');
+  const h5 = Array.from(doc.querySelectorAll('h5')).map(el => el.textContent || '');
+  const h6 = Array.from(doc.querySelectorAll('h6')).map(el => el.textContent || '');
   
   for (const tag of headingTags) {
     const level = parseInt(tag.tagName.substring(1));
@@ -43,12 +41,12 @@ export const extractDocumentStructure = (htmlContent: string) => {
   }
   
   return {
-    h1: headingCounts.h1,
-    h2: headingCounts.h2,
-    h3: headingCounts.h3,
-    h4: headingCounts.h4,
-    h5: headingCounts.h5,
-    h6: headingCounts.h6,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
     hasSingleH1,
     hasLogicalHierarchy
   };
