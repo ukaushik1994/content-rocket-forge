@@ -1,0 +1,128 @@
+
+import React from 'react';
+import { LineChart, BarChart } from '@/components/ui/chart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Mock performance data for the past week
+const performanceData = [
+  { date: 'Apr 28', visitors: 420, conversions: 12, avgTime: 2.4, keywords: 38 },
+  { date: 'Apr 29', visitors: 480, conversions: 15, avgTime: 2.8, keywords: 41 },
+  { date: 'Apr 30', visitors: 520, conversions: 17, avgTime: 3.2, keywords: 41 },
+  { date: 'May 1', visitors: 580, conversions: 22, avgTime: 3.6, keywords: 43 },
+  { date: 'May 2', visitors: 610, conversions: 21, avgTime: 3.4, keywords: 45 },
+  { date: 'May 3', visitors: 640, conversions: 24, avgTime: 3.8, keywords: 47 },
+  { date: 'May 4', visitors: 680, conversions: 28, avgTime: 3.5, keywords: 49 },
+];
+
+// Content performance data
+const contentPerformance = [
+  { content: 'Homepage', views: 245, engagement: 68, conversion: 8.4 },
+  { content: 'Products', views: 187, engagement: 54, conversion: 6.2 },
+  { content: 'Blog', views: 134, engagement: 72, conversion: 5.1 },
+  { content: 'About Us', views: 96, engagement: 42, conversion: 3.8 },
+  { content: 'Contact', views: 78, engagement: 38, conversion: 5.7 },
+];
+
+interface PerformanceChartProps {
+  className?: string;
+}
+
+export function PerformanceChart({ className }: PerformanceChartProps) {
+  // Format number as compact representation (e.g. 1.5k)
+  const formatCompact = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      compactDisplay: 'short'
+    }).format(value);
+  };
+
+  return (
+    <Card className={`glass-panel bg-glass hover:shadow-neon transition-all ${className}`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium">Performance Trends</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="visitors">
+          <TabsList className="bg-background/50 mb-4">
+            <TabsTrigger value="visitors" className="text-xs">Traffic</TabsTrigger>
+            <TabsTrigger value="engagement" className="text-xs">Engagement</TabsTrigger>
+            <TabsTrigger value="content" className="text-xs">Content</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="visitors" className="mt-0">
+            <div className="h-[240px]">
+              <LineChart 
+                data={performanceData}
+                categories={['visitors', 'keywords']}
+                index="date"
+                colors={['#9b87f5', '#1EAEDB']}
+                valueFormatter={(value) => formatCompact(value)}
+              />
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="bg-background/50 p-2 rounded text-xs">
+                <div className="font-medium">Avg. Daily Traffic</div>
+                <div className="mt-1 text-lg font-bold">561</div>
+                <div className="text-green-400 text-xs">+18.4% vs last week</div>
+              </div>
+              <div className="bg-background/50 p-2 rounded text-xs">
+                <div className="font-medium">Keywords Ranked</div>
+                <div className="mt-1 text-lg font-bold">49</div>
+                <div className="text-green-400 text-xs">+6 vs last month</div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="engagement" className="mt-0">
+            <div className="h-[240px]">
+              <LineChart 
+                data={performanceData}
+                categories={['conversions', 'avgTime']}
+                index="date"
+                colors={['#7E69AB', '#1EAEDB']}
+                valueFormatter={(value) => value.toString()}
+              />
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="bg-background/50 p-2 rounded text-xs">
+                <div className="font-medium">Avg. Conversion Rate</div>
+                <div className="mt-1 text-lg font-bold">4.2%</div>
+                <div className="text-green-400 text-xs">+0.8% vs last week</div>
+              </div>
+              <div className="bg-background/50 p-2 rounded text-xs">
+                <div className="font-medium">Avg. Time on Page</div>
+                <div className="mt-1 text-lg font-bold">3:12</div>
+                <div className="text-green-400 text-xs">+42s vs last month</div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="content" className="mt-0">
+            <div className="h-[240px]">
+              <BarChart 
+                data={contentPerformance}
+                categories={['views', 'engagement']}
+                index="content"
+                colors={['#9b87f5', '#1EAEDB']}
+                valueFormatter={(value) => formatCompact(value)}
+              />
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="bg-background/50 p-2 rounded text-xs">
+                <div className="font-medium">Top Performing</div>
+                <div className="mt-1 text-lg font-bold">Homepage</div>
+                <div className="text-green-400 text-xs">245 views, 8.4% conv.</div>
+              </div>
+              <div className="bg-background/50 p-2 rounded text-xs">
+                <div className="font-medium">Highest Engagement</div>
+                <div className="mt-1 text-lg font-bold">Blog</div>
+                <div className="text-green-400 text-xs">72% engagement rate</div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}

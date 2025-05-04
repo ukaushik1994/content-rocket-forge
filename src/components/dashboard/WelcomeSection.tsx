@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { RocketIcon, MessageCircle, Sparkles, LineChart } from 'lucide-react';
+import { RocketIcon, MessageCircle, Sparkles, BarChart3 } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 
 interface WelcomeSectionProps {
@@ -62,11 +62,11 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ setFeedbackOpen,
             
             <Button 
               variant="outline" 
-              className="border-white/10 hover:border-white/20 hover:bg-neon-purple/10 transition-all duration-300" 
+              className="border-white/10 hover:border-white/20 hover:bg-neon-purple/10 transition-all duration-300 group" 
               onClick={() => navigate('/analytics')}
             >
               View Analytics
-              <LineChart className="ml-2 h-4 w-4" />
+              <BarChart3 className="ml-2 h-4 w-4 group-hover:text-primary transition-colors" />
             </Button>
             
             <Button 

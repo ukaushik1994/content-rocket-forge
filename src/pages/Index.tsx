@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { WelcomeSection } from '@/components/dashboard/WelcomeSection';
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
+import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { 
   FileText, 
@@ -80,7 +81,7 @@ const Index = () => {
               <WelcomeSection setFeedbackOpen={setFeedbackOpen} navigate={navigate} />
             </motion.div>
             
-            {/* Stats Overview */}
+            {/* Performance Overview - Updated with charts */}
             <motion.div variants={itemVariants}>
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-medium">Performance Overview</h2>
@@ -88,11 +89,42 @@ const Index = () => {
                   variants={fadeInVariants} 
                   className="text-xs text-muted-foreground"
                 >
-                  Last 30 days
+                  Last 7 days
                 </motion.div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="col-span-1 lg:col-span-2">
+                  <PerformanceChart />
+                </div>
+                <div className="col-span-1 space-y-4">
+                  <StatCard 
+                    title="Content Created" 
+                    value="37" 
+                    description="8 published this month" 
+                    icon="FileText"
+                    trend={{
+                      value: 18,
+                      positive: true
+                    }}
+                    className="h-[calc(50%-0.5rem)]"
+                  />
+                  
+                  <StatCard 
+                    title="Audience Growth" 
+                    value="14.2%" 
+                    description="New visitors" 
+                    icon="Users"
+                    trend={{
+                      value: 3.5,
+                      positive: true
+                    }}
+                    className="h-[calc(50%-0.5rem)]"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                 <StatCard 
                   title="Total Projects" 
                   value="12" 
@@ -134,55 +166,6 @@ const Index = () => {
                   trend={{
                     value: 2,
                     positive: false
-                  }}
-                />
-              </div>
-            </motion.div>
-            
-            {/* Second row of stats */}
-            <motion.div variants={itemVariants}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                  title="Content Created" 
-                  value="37" 
-                  description="8 published this month" 
-                  icon="FileText"
-                  trend={{
-                    value: 18,
-                    positive: true
-                  }}
-                />
-                
-                <StatCard 
-                  title="Avg. Time on Page" 
-                  value="2m 48s" 
-                  description="Up from last month" 
-                  icon="Clock"
-                  trend={{
-                    value: 9,
-                    positive: true
-                  }}
-                />
-                
-                <StatCard 
-                  title="Audience Growth" 
-                  value="14.2%" 
-                  description="New visitors" 
-                  icon="Users"
-                  trend={{
-                    value: 3.5,
-                    positive: true
-                  }}
-                />
-                
-                <StatCard 
-                  title="Keywords Ranked" 
-                  value="49" 
-                  description="Top 10 positions" 
-                  icon="Target"
-                  trend={{
-                    value: 7,
-                    positive: true
                   }}
                 />
               </div>
