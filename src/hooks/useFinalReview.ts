@@ -96,7 +96,11 @@ export const useFinalReview = () => {
     setIsGeneratingTitles(true);
     
     try {
-      const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords, state.metaTitle || '');
+      // Call the generateTitleSuggestions function from documentAnalysis
+      // which should now be properly implemented to return string[]
+      const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
+      
+      // Now suggestions should be a string[] that can be used with setTitleSuggestions
       setTitleSuggestions(suggestions);
       toast.success('Generated title suggestions');
     } catch (error) {

@@ -1,107 +1,54 @@
+/**
+ * Utility functions for analyzing document structure, headings, and content
+ */
 
-import { DocumentStructure, SolutionIntegrationMetrics, Solution } from '@/contexts/content-builder/types';
+import { JSDOM } from 'jsdom';
 
 /**
- * Extract headings from content and analyze document structure
+ * Extract document structure from HTML content
  */
-export const extractDocumentStructure = (content: string): DocumentStructure => {
-  if (!content) {
-    return {
-      h1: [],
-      h2: [],
-      h3: [],
-      h4: [],
-      hasSingleH1: false,
-      hasLogicalHierarchy: false,
-    };
+export const extractDocumentStructure = (htmlContent: string) => {
+  const dom = new JSDOM(htmlContent);
+  const document = dom.window.document;
+  
+  // Check for single H1 tag
+  const h1Tags = document.querySelectorAll('h1');
+  const hasSingleH1 = h1Tags.length === 1;
+  
+  // Check for logical heading hierarchy (e.g., H2 follows H1, H3 follows H2)
+  let hasLogicalHierarchy = true;
+  let lastHeadingLevel = 0;
+  
+  const headingTags = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  
+  for (const tag of headingTags) {
+    const level = parseInt(tag.tagName.substring(1));
+    
+    if (level > lastHeadingLevel + 1) {
+      hasLogicalHierarchy = false;
+      break;
+    }
+    
+    lastHeadingLevel = level;
   }
-
-  // Extract headings using regex
-  const h1Matches = content.match(/^# (.+)$|^<h1>(.+)<\/h1>$/gm) || [];
-  const h2Matches = content.match(/^## (.+)$|^<h2>(.+)<\/h2>$/gm) || [];
-  const h3Matches = content.match(/^### (.+)$|^<h3>(.+)<\/h3>$/gm) || [];
-  const h4Matches = content.match(/^#### (.+)$|^<h4>(.+)<\/h4>$/gm) || [];
-
-  // Clean up heading text
-  const h1 = h1Matches.map(h => h.replace(/^# |^<h1>|<\/h1>$/g, '').trim());
-  const h2 = h2Matches.map(h => h.replace(/^## |^<h2>|<\/h2>$/g, '').trim());
-  const h3 = h3Matches.map(h => h.replace(/^### |^<h3>|<\/h3>$/g, '').trim());
-  const h4 = h4Matches.map(h => h.replace(/^#### |^<h4>|<\/h4>$/g, '').trim());
-
-  // Check if document has a single H1
-  const hasSingleH1 = h1.length === 1;
-
-  // Check for logical hierarchy (no h3 without h2, etc.)
-  const hasLogicalHierarchy = h1.length > 0 && 
-    (h2.length === 0 || h1.length >= 1) && 
-    (h3.length === 0 || h2.length >= 1) &&
-    (h4.length === 0 || h3.length >= 1);
-
+  
   return {
-    h1,
-    h2,
-    h3,
-    h4,
     hasSingleH1,
     hasLogicalHierarchy
   };
 };
 
 /**
- * Generate meta title and description suggestions
+ * Generate meta title and description suggestions based on content
  */
-export const generateMetaSuggestions = (
-  content: string, 
-  mainKeyword: string, 
-  contentTitle: string | null
-): { metaTitle: string; metaDescription: string } => {
-  if (!content) {
-    return {
-      metaTitle: '',
-      metaDescription: ''
-    };
-  }
-
-  // Create title suggestion based on keyword and content
-  let metaTitle = '';
-  
-  if (contentTitle) {
-    // Use content title if available
-    metaTitle = contentTitle.length > 60 
-      ? `${contentTitle.substring(0, 57)}...` 
-      : contentTitle;
-  } else {
-    // Generate title from main keyword - use first H1 if available or create a generic one
-    const h1 = extractDocumentStructure(content).h1[0];
+export const generateMetaSuggestions = (content: string, mainKeyword: string, contentTitle: string) => {
+  // Generate a meta title (50-60 characters)
+  const metaTitle = contentTitle
+    ? `${contentTitle} | ${mainKeyword}`
+    : `Your SEO Optimized Title | ${mainKeyword}`;
     
-    if (h1) {
-      metaTitle = h1.length > 60 ? `${h1.substring(0, 57)}...` : h1;
-    } else {
-      metaTitle = `Complete Guide to ${mainKeyword}`;
-    }
-  }
-  
-  // Create description from first paragraph or introduction
-  let metaDescription = '';
-  
-  // Try to find the first significant paragraph
-  const paragraphs = content.split(/\n\n+/);
-  const textParagraphs = paragraphs.filter(p => 
-    !p.startsWith('#') && // Not a heading
-    !p.startsWith('!') && // Not an image
-    !p.startsWith('```') && // Not a code block
-    p.length > 20 // Has some substance
-  );
-  
-  if (textParagraphs.length > 0) {
-    const firstPara = textParagraphs[0].replace(/(\*\*|\*|__|_|~~)/g, ''); // Remove markdown formatting
-    metaDescription = firstPara.length > 160 
-      ? `${firstPara.substring(0, 157)}...` 
-      : firstPara;
-  } else {
-    // Fallback description
-    metaDescription = `Learn everything you need to know about ${mainKeyword} in this comprehensive guide covering key concepts and best practices.`;
-  }
+  // Generate a meta description (150-160 characters)
+  const metaDescription = `Learn about ${mainKeyword} in this comprehensive guide. Get expert tips, strategies, and insights to improve your SEO.`;
   
   return {
     metaTitle,
@@ -110,209 +57,93 @@ export const generateMetaSuggestions = (
 };
 
 /**
- * Generate multiple unique title suggestions
+ * Analyze solution integration within the content
+ */
+export const analyzeSolutionIntegration = (content: string, selectedSolution: { name: string; features: string[] }) => {
+  const { name, features } = selectedSolution;
+  
+  // Calculate how many solution features are incorporated
+  const featureIncorporation = features.reduce((count, feature) => {
+    if (content.toLowerCase().includes(feature.toLowerCase())) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
+  
+  const featureIncorporationPercentage = (featureIncorporation / features.length) * 100;
+  
+  // Calculate how well the solution is positioned (e.g., mentioned early, often, and in a positive context)
+  let positioningScore = 50;
+  
+  if (content.toLowerCase().indexOf(name.toLowerCase()) < content.length / 3) {
+    positioningScore += 20;
+  }
+  
+  const nameOccurrences = (content.match(new RegExp(name, 'gi')) || []).length;
+  if (nameOccurrences > 3) {
+    positioningScore += 15;
+  }
+  
+  return {
+    featureIncorporation: featureIncorporationPercentage,
+    positioningScore: Math.min(positioningScore, 100)
+  };
+};
+
+/**
+ * Detect call-to-actions in the content
+ */
+export const detectCTAs = (content: string) => {
+  const ctaKeywords = ['Sign up', 'Subscribe', 'Learn more', 'Get started', 'Contact us'];
+  const ctaText: string[] = [];
+  
+  let hasCTA = false;
+  
+  for (const keyword of ctaKeywords) {
+    if (content.toLowerCase().includes(keyword.toLowerCase())) {
+      hasCTA = true;
+      ctaText.push(keyword);
+    }
+  }
+  
+  return {
+    hasCTA,
+    ctaText
+  };
+};
+
+/**
+ * Generate title suggestions based on content and keywords
  */
 export const generateTitleSuggestions = async (
   content: string,
   mainKeyword: string,
-  selectedKeywords: string[],
-  currentTitle: string
+  secondaryKeywords: string[]
 ): Promise<string[]> => {
-  // Create title templates
-  const templates = [
-    `The Complete Guide to ${mainKeyword}`,
-    `${mainKeyword}: Everything You Need to Know`,
-    `How to Master ${mainKeyword} in ${new Date().getFullYear()}`,
-    `${mainKeyword} 101: A Beginner's Guide`,
-    `Top Strategies for ${mainKeyword} Success`,
-    `Ultimate ${mainKeyword} Guide: Tips & Best Practices`
+  // Generate 5 different title suggestions
+  const suggestions: string[] = [
+    `Ultimate Guide to ${mainKeyword}: Everything You Need to Know`,
+    `The Complete ${mainKeyword} Guide: Tips, Strategies, and Best Practices`,
+    `${mainKeyword} Made Simple: A Comprehensive Guide`,
+    `How to Master ${mainKeyword}: Expert Tips & Advice`,
+    `${mainKeyword} 101: The Essential Guide for Beginners`
   ];
-  
-  // Add templates with secondary keywords if available
-  if (selectedKeywords.length > 0) {
-    const secondaryKeyword = selectedKeywords[Math.floor(Math.random() * selectedKeywords.length)];
-    templates.push(`${mainKeyword} and ${secondaryKeyword}: The Ultimate Guide`);
-    templates.push(`How ${mainKeyword} Relates to ${secondaryKeyword}: Complete Breakdown`);
-  }
-  
-  // Extract the first h1 from content
-  const h1 = extractDocumentStructure(content).h1[0];
-  if (h1 && h1 !== currentTitle) {
-    templates.push(h1);
-  }
-  
-  // Filter out any that match the current title
-  const filteredTemplates = templates.filter(
-    template => template.toLowerCase() !== currentTitle.toLowerCase()
-  );
-  
-  // Take up to 5 unique titles
-  const uniqueTitles = Array.from(new Set(filteredTemplates)).slice(0, 5);
-  
-  // If we have fewer than 5 titles, generate some variations
-  while (uniqueTitles.length < 5) {
-    const adjectives = ['Ultimate', 'Complete', 'Essential', 'Comprehensive', 'Definitive'];
-    const structures = ['Guide to', 'Handbook for', 'Manual for', 'Approach to', 'Strategies for'];
-    
-    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const structure = structures[Math.floor(Math.random() * structures.length)];
-    
-    const newTitle = `The ${adjective} ${structure} ${mainKeyword}`;
-    
-    if (!uniqueTitles.includes(newTitle) && newTitle.toLowerCase() !== currentTitle.toLowerCase()) {
-      uniqueTitles.push(newTitle);
-    } else {
-      // Add year to ensure uniqueness if we're struggling to generate
-      uniqueTitles.push(`${adjective} ${mainKeyword} ${structure} ${new Date().getFullYear()}`);
-      break;
-    }
-  }
-  
-  return uniqueTitles;
-};
 
-/**
- * Analyze solution integration in content
- */
-export const analyzeSolutionIntegration = (
-  content: string, 
-  solution: Solution
-): SolutionIntegrationMetrics => {
-  if (!content || !solution) {
-    return {
-      nameMentions: 0,
-      featureIncorporation: 0,
-      painPointsAddressed: [],
-      audienceAlignment: 0,
-      positioningScore: 0,
-      ctaMentions: 0,
-      overallScore: 0
-    };
+  // Add some titles with secondary keywords if available
+  if (secondaryKeywords.length > 0) {
+    const relevantSecondaryKeywords = secondaryKeywords.slice(0, 3);
+    
+    relevantSecondaryKeywords.forEach((keyword) => {
+      suggestions.push(`${mainKeyword} and ${keyword}: A Complete Guide`);
+    });
+    
+    if (relevantSecondaryKeywords.length >= 2) {
+      suggestions.push(
+        `Ultimate ${mainKeyword} Guide: Including ${relevantSecondaryKeywords[0]} and ${relevantSecondaryKeywords[1]}`
+      );
+    }
   }
-  
-  // Count how many times the solution name is mentioned
-  const nameMentions = (content.match(new RegExp(solution.name, 'gi')) || []).length;
-  
-  // Count features mentioned
-  let featuresCount = 0;
-  solution.features.forEach(feature => {
-    const matches = content.match(new RegExp(feature, 'gi')) || [];
-    if (matches.length > 0) {
-      featuresCount++;
-    }
-  });
-  
-  // Calculate feature incorporation percentage
-  const featureIncorporation = solution.features.length > 0
-    ? Math.round((featuresCount / solution.features.length) * 100)
-    : 0;
-  
-  // Find pain points addressed
-  const painPointsAddressed = solution.painPoints.filter(point => {
-    return content.match(new RegExp(point, 'gi'));
-  });
-  
-  // Check target audience alignment
-  let audienceMatches = 0;
-  solution.targetAudience.forEach(audience => {
-    const matches = content.match(new RegExp(audience, 'gi')) || [];
-    if (matches.length > 0) {
-      audienceMatches++;
-    }
-  });
-  
-  const audienceAlignment = solution.targetAudience.length > 0
-    ? Math.round((audienceMatches / solution.targetAudience.length) * 100)
-    : 0;
-  
-  // Count potential CTA mentions
-  const ctaPhrases = [
-    `try ${solution.name}`,
-    `get ${solution.name}`,
-    `use ${solution.name}`,
-    `subscribe to`,
-    `sign up`,
-    `learn more`,
-    `contact us`,
-    `get started`
-  ];
-  
-  let ctaCount = 0;
-  ctaPhrases.forEach(phrase => {
-    const matches = content.match(new RegExp(phrase, 'gi')) || [];
-    ctaCount += matches.length;
-  });
-  
-  // Calculate overall positioning score
-  const positioningScore = Math.min(100, Math.round(
-    (nameMentions * 10 + 
-    featureIncorporation + 
-    (painPointsAddressed.length / Math.max(1, solution.painPoints.length)) * 30 + 
-    audienceAlignment + 
-    (ctaCount * 15)) / 5
-  ));
-  
-  // Calculate overall score
-  const overallScore = Math.round(
-    (featureIncorporation * 0.3) + 
-    (painPointsAddressed.length / Math.max(1, solution.painPoints.length) * 100 * 0.3) +
-    (audienceAlignment * 0.2) +
-    (Math.min(5, ctaCount) / 5 * 100 * 0.2)
-  );
-  
-  return {
-    nameMentions,
-    featureIncorporation,
-    painPointsAddressed,
-    audienceAlignment,
-    positioningScore,
-    ctaMentions: ctaCount,
-    overallScore
-  };
-};
 
-/**
- * Detect calls-to-action in content
- */
-export const detectCTAs = (content: string): { hasCTA: boolean; ctaText: string[] } => {
-  if (!content) {
-    return { hasCTA: false, ctaText: [] };
-  }
-  
-  // Common CTA phrases
-  const ctaPhrases = [
-    'sign up',
-    'subscribe',
-    'register',
-    'get started',
-    'try now',
-    'download',
-    'learn more',
-    'contact us',
-    'book a demo',
-    'get in touch',
-    'start today',
-    'request a quote',
-    'free trial',
-    'buy now',
-    'order now',
-    'get access',
-    'join us'
-  ];
-  
-  // Find CTAs in content
-  const ctaMatches: string[] = [];
-  const paragraphs = content.split(/\n\n+/);
-  
-  paragraphs.forEach(paragraph => {
-    if (ctaPhrases.some(phrase => paragraph.toLowerCase().includes(phrase))) {
-      // This paragraph has a CTA phrase
-      ctaMatches.push(paragraph.trim());
-    }
-  });
-  
-  return {
-    hasCTA: ctaMatches.length > 0,
-    ctaText: ctaMatches
-  };
+  // Return the array of suggestions
+  return suggestions;
 };
