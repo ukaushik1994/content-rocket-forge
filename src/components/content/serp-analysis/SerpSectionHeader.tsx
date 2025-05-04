@@ -1,70 +1,77 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type SectionVariant = "blue" | "green" | "purple" | "amber" | "indigo" | "teal" | "rose";
 
 export interface SerpSectionHeaderProps {
   title: string;
   expanded: boolean;
   onToggle: () => void;
-  variant?: 'blue' | 'purple' | 'green' | 'amber';
+  variant?: SectionVariant;
   description?: string;
   count?: number;
 }
 
-export function SerpSectionHeader({
-  title,
-  expanded,
-  onToggle,
-  variant = 'blue',
+export function SerpSectionHeader({ 
+  title, 
+  expanded, 
+  onToggle, 
+  variant = "purple",
   description,
   count
 }: SerpSectionHeaderProps) {
-  const getIconColor = () => {
-    switch (variant) {
-      case 'blue': return 'text-blue-400';
-      case 'purple': return 'text-purple-400';
-      case 'green': return 'text-green-400';
-      case 'amber': return 'text-amber-400';
-      default: return 'text-blue-400';
-    }
+  // Determine variant classes
+  const variantClasses = {
+    purple: "from-purple-900/10 to-purple-800/5 border-purple-500/20 hover:bg-purple-900/10",
+    blue: "from-blue-900/10 to-blue-800/5 border-blue-500/20 hover:bg-blue-900/10",
+    green: "from-green-900/10 to-green-800/5 border-green-500/20 hover:bg-green-900/10",
+    amber: "from-amber-900/10 to-amber-800/5 border-amber-500/20 hover:bg-amber-900/10",
+    indigo: "from-indigo-900/10 to-indigo-800/5 border-indigo-500/20 hover:bg-indigo-900/10",
+    teal: "from-teal-900/10 to-teal-800/5 border-teal-500/20 hover:bg-teal-900/10",
+    rose: "from-rose-900/10 to-rose-800/5 border-rose-500/20 hover:bg-rose-900/10"
   };
   
-  const getBgColor = () => {
-    switch (variant) {
-      case 'blue': return 'from-blue-500/10 to-blue-900/5';
-      case 'purple': return 'from-purple-500/10 to-purple-900/5';
-      case 'green': return 'from-green-500/10 to-green-900/5';
-      case 'amber': return 'from-amber-500/10 to-amber-900/5';
-      default: return 'from-blue-500/10 to-blue-900/5';
-    }
+  // Icon color classes
+  const iconColorClasses = {
+    purple: "text-purple-400",
+    blue: "text-blue-400",
+    green: "text-green-400",
+    amber: "text-amber-400",
+    indigo: "text-indigo-400",
+    teal: "text-teal-400",
+    rose: "text-rose-400"
   };
-
+  
   return (
     <div 
-      className={`flex items-center justify-between p-3 cursor-pointer rounded-lg border border-white/5 backdrop-blur-sm bg-gradient-to-r ${getBgColor()} hover:bg-white/5 transition-colors group`}
+      className={cn(
+        "flex justify-between items-center p-3 rounded-lg cursor-pointer border bg-gradient-to-br transition-all",
+        variantClasses[variant]
+      )}
       onClick={onToggle}
     >
       <div className="flex-1">
-        <h3 className="font-medium flex items-center gap-2">
-          {title}
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium">{title}</h3>
           {count !== undefined && (
-            <span className={`text-xs ${getIconColor()} bg-white/5 px-2 py-0.5 rounded-full`}>
+            <div className={`px-2 py-0.5 text-xs rounded-full bg-white/10 ${iconColorClasses[variant]}`}>
               {count}
-            </span>
+            </div>
           )}
-        </h3>
+        </div>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
         )}
       </div>
-      <motion.div
-        animate={{ rotate: expanded ? 180 : 0 }}
-        transition={{ duration: 0.2 }}
-        className={`w-6 h-6 rounded-full flex items-center justify-center ${getIconColor()} bg-white/5 group-hover:bg-white/10`}
-      >
-        {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </motion.div>
+      <div className={cn("h-6 w-6 flex items-center justify-center rounded-full transition-colors", iconColorClasses[variant])}>
+        {expanded ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </div>
     </div>
   );
 }
