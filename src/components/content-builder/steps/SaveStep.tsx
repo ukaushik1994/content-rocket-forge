@@ -117,19 +117,16 @@ export const SaveStep = () => {
         meta_description: description // Store the meta description
       };
       
-      // Add to content library - no need for fallback to saveContentAsDraft
-      const result = await addContentItem(contentItem);
+      // Fix: Don't check the return value directly since addContentItem returns void
+      // Instead, just call the function and handle any errors in the catch block
+      await addContentItem(contentItem);
       
-      if (result) {
-        toast.success("Content saved to library");
-        
-        // Navigate to content library after a short delay
-        setTimeout(() => {
-          navigate('/content');
-        }, 800);
-      } else {
-        toast.error("Failed to save content");
-      }
+      toast.success("Content saved to library");
+      
+      // Navigate to content library after a short delay
+      setTimeout(() => {
+        navigate('/content');
+      }, 800);
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, RefreshCw, Sparkles } from 'lucide-react';
@@ -25,6 +25,19 @@ export const TitleSuggestionsCard = ({
   isGenerating
 }: TitleSuggestionsCardProps) => {
   const [selected, setSelected] = useState<number | null>(null);
+  
+  // Effect to preselect a title that matches the current title if it exists
+  useEffect(() => {
+    if (currentTitle && suggestions.length > 0) {
+      const currentTitleIndex = suggestions.findIndex(
+        suggestion => suggestion === currentTitle
+      );
+      
+      if (currentTitleIndex !== -1) {
+        setSelected(currentTitleIndex);
+      }
+    }
+  }, [currentTitle, suggestions]);
 
   const handleSelectTitle = (index: number) => {
     setSelected(index);
