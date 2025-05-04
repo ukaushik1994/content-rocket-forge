@@ -99,7 +99,8 @@ export const createSerpActions = (
           newOutline.push({
             id: uuid(),
             title: heading.content,
-            type: 'heading'
+            type: 'heading',
+            notes: 'From top-ranking content headings'
           });
         });
       }
@@ -109,7 +110,8 @@ export const createSerpActions = (
         newOutline.push({
           id: uuid(),
           title: question.content,
-          type: 'question'
+          type: 'question',
+          notes: 'Based on commonly asked questions'
         });
       });
       
@@ -118,7 +120,7 @@ export const createSerpActions = (
         newOutline.push({
           id: uuid(),
           title: gap.content,
-          notes: gap.source, // Description stored in source
+          notes: gap.source || 'Content opportunity from gap analysis', 
           type: 'contentGap'
         });
       });
@@ -129,6 +131,7 @@ export const createSerpActions = (
           id: uuid(),
           title: "Key Concepts & Definitions",
           type: 'keywords',
+          notes: 'Define these important terms for your readers',
           relatedKeywords: keywords.map(k => k.content)
         });
       }
@@ -139,6 +142,7 @@ export const createSerpActions = (
           id: uuid(),
           title: "Important Entities & Concepts",
           type: 'entities',
+          notes: 'Cover these key topics for comprehensiveness',
           relatedKeywords: entities.map(e => e.content)
         });
       }

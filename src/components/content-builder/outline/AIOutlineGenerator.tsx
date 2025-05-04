@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
-import { Sparkles, PenLine, ChevronRight, CheckCheck, Loader2, FileType } from 'lucide-react';
+import { Sparkles, PenLine, ChevronRight, CheckCheck, Loader2 } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -26,6 +26,16 @@ export function AIOutlineGenerator() {
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelectedItems = selectedItems.length;
   
+  // Group selected items by type for better organization
+  const itemsByType = {
+    keyword: selectedItems.filter(item => item.type === 'keyword'),
+    question: selectedItems.filter(item => item.type === 'question'),
+    entity: selectedItems.filter(item => item.type === 'entity'),
+    heading: selectedItems.filter(item => item.type === 'heading'),
+    contentGap: selectedItems.filter(item => item.type === 'contentGap'),
+    topRank: selectedItems.filter(item => item.type === 'topRank')
+  };
+  
   // Generate an AI outline based on selections and keywords
   const handleGenerateOutline = async () => {
     if (!mainKeyword) {
@@ -40,6 +50,7 @@ export function AIOutlineGenerator() {
       console.info("AI Generation prompt:", {
         mainKeyword,
         selectedKeywords,
+        selectedSerpItems: selectedItems.map(item => ({ type: item.type, content: item.content })),
         customInstructions,
         contentType: "article"
       });
@@ -47,68 +58,107 @@ export function AIOutlineGenerator() {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Create a sample outline based on the keyword
-      const newOutline = [
-        {
+      // Create an outline based on SERP selections
+      const newOutline = [];
+      
+      // Use headings as primary structure if available
+      if (itemsByType.heading.length > 0) {
+        itemsByType.heading.forEach(heading => {
+          newOutline.push({
+            id: uuid(),
+            title: heading.content,
+            type: 'heading',
+            notes: 'From top-ranking content headings'
+          });
+        });
+      }
+      
+      // Use questions as main sections
+      itemsByType.question.forEach(question => {
+        newOutline.push({
           id: uuid(),
-          title: `Introduction to ${mainKeyword}`,
-          notes: "Brief overview of the topic and why it's important"
-        },
-        {
+          title: question.content,
+          type: 'question',
+          notes: 'Based on commonly asked questions'
+        });
+      });
+      
+      // Add content gaps as sections
+      itemsByType.contentGap.forEach(gap => {
+        newOutline.push({
           id: uuid(),
-          title: `What are ${mainKeyword}?`,
-          notes: "Definition and key concepts"
-        },
-        {
+          title: gap.content,
+          notes: gap.source || 'Content opportunity from gap analysis',
+          type: 'contentGap'
+        });
+      });
+      
+      // If no specific sections are selected, create a standard outline structure
+      if (newOutline.length === 0) {
+        newOutline.push(
+          {
+            id: uuid(),
+            title: `Introduction to ${mainKeyword}`,
+            notes: "Brief overview of the topic and why it's important"
+          },
+          {
+            id: uuid(),
+            title: `What is ${mainKeyword}?`,
+            notes: "Definition and key concepts"
+          },
+          {
+            id: uuid(),
+            title: `Benefits of ${mainKeyword}`,
+            notes: "List main advantages and outcomes"
+          },
+          {
+            id: uuid(),
+            title: `How to Use ${mainKeyword}`,
+            notes: "Step-by-step guide with practical advice"
+          },
+          {
+            id: uuid(),
+            title: `Conclusion: Key Takeaways`,
+            notes: "Summary of the most important points"
+          }
+        );
+      }
+      
+      // Add a section for keywords if present
+      if (itemsByType.keyword.length > 0) {
+        newOutline.push({
           id: uuid(),
-          title: `Benefits of ${mainKeyword}`,
-          notes: "List main advantages and business outcomes"
-        },
-        {
+          title: "Key Terms & Definitions",
+          type: 'keywords',
+          notes: 'Define these important terms for your readers',
+          relatedKeywords: itemsByType.keyword.map(k => k.content)
+        });
+      }
+      
+      // Add a section for entities if present
+      if (itemsByType.entity.length > 0) {
+        newOutline.push({
           id: uuid(),
-          title: `Top ${mainKeyword} Strategies`,
-          notes: "Explore effective approaches and methodologies"
-        },
-        {
-          id: uuid(),
-          title: `How to Implement ${mainKeyword}`,
-          notes: "Step-by-step guide with practical advice"
-        },
-        {
-          id: uuid(),
-          title: `${mainKeyword} Case Studies`,
-          notes: "Real-world examples of successful implementation"
-        },
-        {
-          id: uuid(),
-          title: `Common Challenges with ${mainKeyword}`,
-          notes: "Address potential obstacles and solutions"
-        },
-        {
-          id: uuid(),
-          title: `Tools and Resources for ${mainKeyword}`,
-          notes: "List of helpful tools and additional resources"
-        },
-        {
-          id: uuid(),
-          title: `Conclusion: Future of ${mainKeyword}`,
-          notes: "Summary and forward-looking perspective"
-        }
-      ];
+          title: "Important Entities & Concepts",
+          type: 'entities',
+          notes: 'Cover these key topics for comprehensiveness',
+          relatedKeywords: itemsByType.entity.map(e => e.content)
+        });
+      }
       
       // Update the outline in state
       dispatch({ type: 'SET_OUTLINE', payload: newOutline });
       
       // Set a title if none exists
       if (!contentTitle) {
-        const suggestedTitle = `Complete Guide to ${mainKeyword}: Benefits, Strategies, and Implementation`;
+        const suggestedTitle = `Complete Guide to ${mainKeyword}: Everything You Need to Know`;
         dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
       }
       
       // Mark the outline step as completed
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
       
-      toast.success("AI outline generated successfully!");
+      toast.success(`AI outline generated with ${newOutline.length} sections`);
     } catch (error) {
       console.error("Error generating AI outline:", error);
       toast.error("Failed to generate outline. Please try again.");
@@ -138,7 +188,7 @@ export function AIOutlineGenerator() {
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">AI Outline Generator</h3>
             <p className="text-sm text-white/70">
-              Let AI create a structured outline based on your keyword research and SERP selections
+              Let AI create a structured outline based on your {totalSelectedItems > 0 ? `${totalSelectedItems} selected SERP items` : 'keyword research'}
             </p>
             
             <div className="flex flex-wrap gap-2 pt-2">
@@ -146,15 +196,33 @@ export function AIOutlineGenerator() {
                 Main Keyword: {mainKeyword || "Not set"}
               </Badge>
               
-              {totalSelectedItems > 0 && (
-                <Badge variant="secondary" className="bg-white/10">
-                  {totalSelectedItems} SERP items selected
+              {itemsByType.keyword.length > 0 && (
+                <Badge variant="secondary" className="bg-white/10 border-blue-500/30">
+                  {itemsByType.keyword.length} keywords
                 </Badge>
               )}
               
-              {selectedKeywords.length > 0 && (
-                <Badge variant="secondary" className="bg-white/10">
-                  {selectedKeywords.length} keywords
+              {itemsByType.question.length > 0 && (
+                <Badge variant="secondary" className="bg-white/10 border-purple-500/30">
+                  {itemsByType.question.length} questions
+                </Badge>
+              )}
+              
+              {itemsByType.entity.length > 0 && (
+                <Badge variant="secondary" className="bg-white/10 border-indigo-500/30">
+                  {itemsByType.entity.length} entities
+                </Badge>
+              )}
+              
+              {itemsByType.heading.length > 0 && (
+                <Badge variant="secondary" className="bg-white/10 border-teal-500/30">
+                  {itemsByType.heading.length} headings
+                </Badge>
+              )}
+              
+              {itemsByType.contentGap.length > 0 && (
+                <Badge variant="secondary" className="bg-white/10 border-rose-500/30">
+                  {itemsByType.contentGap.length} content gaps
                 </Badge>
               )}
             </div>
@@ -204,7 +272,7 @@ export function AIOutlineGenerator() {
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Generate AI Outline
+                    Generate AI Outline {totalSelectedItems > 0 ? `from ${totalSelectedItems} Selected Items` : ''}
                   </>
                 )}
               </Button>
@@ -218,17 +286,6 @@ export function AIOutlineGenerator() {
           </div>
         </CardContent>
       </Card>
-      
-      <div className="flex items-center justify-between pt-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-white/70">
-          <FileType className="h-4 w-4" />
-          Alternative: Create outline manually with drag & drop
-        </div>
-        
-        <Button variant="outline" size="sm" onClick={() => dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 })}>
-          Switch to Manual Editor <ChevronRight className="h-3.5 w-3.5 ml-1" />
-        </Button>
-      </div>
     </motion.div>
   );
 }

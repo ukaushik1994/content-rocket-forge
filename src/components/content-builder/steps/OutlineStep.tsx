@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Lightbulb, Sparkles, Tag, HelpCircle, FileText, Heading, FileSearch, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Lightbulb, Sparkles, Tag, HelpCircle, FileText, Heading, FileSearch, CheckCircle, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,8 @@ export const OutlineStep = () => {
   
   const [instructions, setInstructions] = useState(additionalInstructions);
   const [isAddingInstructions, setIsAddingInstructions] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(contentTitle || '');
   
   useEffect(() => {
     // Mark as complete if we have an outline with at least 3 sections
@@ -31,10 +34,21 @@ export const OutlineStep = () => {
     }
   }, [outline]);
   
+  useEffect(() => {
+    // Update edited title when content title changes
+    setEditedTitle(contentTitle || '');
+  }, [contentTitle]);
+  
   const handleSaveInstructions = () => {
     dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
     setIsAddingInstructions(false);
     toast.success('Additional instructions saved');
+  };
+  
+  const handleSaveTitle = () => {
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: editedTitle });
+    setIsEditingTitle(false);
+    toast.success('Title updated');
   };
   
   // Filter selected items from SERP analysis
@@ -106,13 +120,24 @@ export const OutlineStep = () => {
         </div>
       </div>
 
-      {/* Current content title display if it exists */}
+      {/* Content title with edit option */}
       {contentTitle && (
         <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/10 border border-white/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-400" />
-              AI Suggested Title
+            <CardTitle className="text-sm flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-400" />
+                Content Title
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 hover:bg-white/10"
+                onClick={() => setIsEditingTitle(true)}
+              >
+                <Edit className="h-3.5 w-3.5 mr-1" />
+                <span className="text-xs">Edit</span>
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -120,8 +145,35 @@ export const OutlineStep = () => {
               {contentTitle}
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              This title was generated based on your keyword and SERP selections. You can update it in the final review.
+              This title will be used in the final content and can be updated here or in the final review.
             </p>
+            
+            <Dialog open={isEditingTitle} onOpenChange={setIsEditingTitle}>
+              <DialogContent className="sm:max-w-[550px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Content Title</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Update your content title to better reflect your topic.
+                  </p>
+                  <Input 
+                    value={editedTitle} 
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    placeholder="Enter a descriptive title for your content"
+                    className="w-full"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={handleSaveTitle}
+                    className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+                  >
+                    Save Title
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       )}
