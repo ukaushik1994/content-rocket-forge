@@ -19,15 +19,16 @@ interface StatCardProps {
 
 export function StatCard({ title, value, description, icon, trend, className }: StatCardProps) {
   // Get the icon component if it exists
-  const IconComponent = icon && LucideIcons[icon] as LucideIcon | undefined;
+  const IconComponent = icon && (LucideIcons[icon] as LucideIcon | undefined);
   
   return (
-    <Card className={cn("overflow-hidden glass-panel bg-glass group", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+    <Card className={cn("overflow-hidden glass-panel bg-glass group hover:shadow-neon transition-all duration-300", className)}>
+      <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
         <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200">{title}</CardTitle>
         {IconComponent && <IconComponent className="w-4 h-4 text-primary" />}
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         <div className="text-2xl font-bold group-hover:text-gradient transition-all duration-300">{value}</div>
         {(description || trend) && (
           <div className="flex items-center mt-1">
