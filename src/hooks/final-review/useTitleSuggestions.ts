@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { generateTitleSuggestions } from '@/utils/seo/documentAnalysis';
+import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
 import { toast } from 'sonner';
 
 // Standard toast configuration

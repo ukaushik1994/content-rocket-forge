@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { detectCTAs } from '@/utils/seo/documentAnalysis';
+import { detectCTAs } from '@/utils/seo/content/detectCTAs';
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 
 /**

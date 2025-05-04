@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
-import { analyzeSolutionIntegration } from '@/utils/seo/documentAnalysis';
+import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 
 // Standard toast configuration
 const toastConfig = {

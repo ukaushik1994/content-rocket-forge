@@ -1,6 +1,6 @@
 
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { generateMetaSuggestions } from '@/utils/seo/documentAnalysis';
+import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import { toast } from 'sonner';
 
 // Standard toast configuration

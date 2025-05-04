@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { extractDocumentStructure } from '@/utils/seo/documentAnalysis';
+import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 import { toast } from 'sonner';
 
 import { useContentAnalysis } from './final-review/useContentAnalysis';
