@@ -8,7 +8,7 @@ import { getImprovementType, generateRewrittenContent } from '@/utils/seo/conten
  * Custom hook for content rewriting functionality
  */
 export const useContentRewriter = () => {
-  const { state, setContent } = useContentBuilder();
+  const { state, setContent, dispatch } = useContentBuilder();
   const { content, mainKeyword } = state;
   
   const [showRewriteDialog, setShowRewriteDialog] = useState(false);
@@ -16,10 +16,26 @@ export const useContentRewriter = () => {
   const [rewriteType, setRewriteType] = useState<string>('');
   const [rewrittenContent, setRewrittenContent] = useState<string>('');
   const [isRewriting, setIsRewriting] = useState(false);
+  const [currentRecommendationId, setCurrentRecommendationId] = useState<string | null>(null);
+  
+  // Check if a recommendation has been applied
+  const isRecommendationApplied = (recommendationId: string) => {
+    if (!state.seoImprovements) return false;
+    
+    return state.seoImprovements.some(improvement => 
+      improvement.id === recommendationId && improvement.applied
+    );
+  };
   
   // Handle rewrite content
-  const handleRewriteContent = (recommendation: string) => {
+  const handleRewriteContent = (recommendation: string, recommendationId: string) => {
+    if (isRecommendationApplied(recommendationId)) {
+      toast.info("This recommendation has already been applied");
+      return;
+    }
+    
     setSelectedRecommendation(recommendation);
+    setCurrentRecommendationId(recommendationId);
     const improvementType = getImprovementType(recommendation);
     
     let type = 'general';
@@ -57,10 +73,14 @@ export const useContentRewriter = () => {
   
   // Apply rewritten content
   const applyRewrittenContent = () => {
-    if (!rewrittenContent) return;
+    if (!rewrittenContent || !currentRecommendationId) return;
     
     // Apply the rewritten content
     setContent(rewrittenContent);
+    
+    // Mark the improvement as applied in state
+    dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: currentRecommendationId });
+    
     toast.success(`Content optimized for ${rewriteType}`);
     
     // Close the dialog
@@ -75,6 +95,7 @@ export const useContentRewriter = () => {
     isRewriting,
     handleRewriteContent,
     applyRewrittenContent,
-    setShowRewriteDialog
+    setShowRewriteDialog,
+    isRecommendationApplied
   };
 };

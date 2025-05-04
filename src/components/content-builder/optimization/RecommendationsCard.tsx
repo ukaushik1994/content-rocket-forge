@@ -3,18 +3,22 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Heading2, KeyRound, Wand2, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle, Heading2, KeyRound, Wand2, Sparkles } from 'lucide-react';
 
 interface RecommendationsCardProps {
   recommendations: string[];
+  recommendationIds: string[];
   isAnalyzing: boolean;
-  handleRewriteContent: (recommendation: string) => void;
+  handleRewriteContent: (recommendation: string, id: string) => void;
+  isRecommendationApplied: (id: string) => boolean;
 }
 
 export const RecommendationsCard = ({ 
   recommendations, 
+  recommendationIds,
   isAnalyzing,
-  handleRewriteContent
+  handleRewriteContent,
+  isRecommendationApplied
 }: RecommendationsCardProps) => {
   
   // Get appropriate icon based on recommendation
@@ -41,23 +45,38 @@ export const RecommendationsCard = ({
       <CardContent>
         {recommendations.length > 0 ? (
           <ul className="space-y-3">
-            {recommendations.map((recommendation, index) => (
-              <li key={index} className="flex items-start gap-2 group">
-                <div className="mt-1">{getRecommendationIcon(recommendation)}</div>
-                <div className="flex-1">
-                  <span className="text-sm">{recommendation}</span>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity gap-1 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20"
-                  onClick={() => handleRewriteContent(recommendation)}
-                >
-                  <Wand2 className="h-3.5 w-3.5" />
-                  <span>Optimize</span>
-                </Button>
-              </li>
-            ))}
+            {recommendations.map((recommendation, index) => {
+              const isApplied = isRecommendationApplied(recommendationIds[index] || '');
+              
+              return (
+                <li key={index} className={`flex items-start gap-2 group ${isApplied ? 'opacity-70' : ''}`}>
+                  <div className="mt-1">
+                    {isApplied ? 
+                      <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                      getRecommendationIcon(recommendation)
+                    }
+                  </div>
+                  <div className="flex-1">
+                    <span className={`text-sm ${isApplied ? 'line-through text-muted-foreground' : ''}`}>
+                      {recommendation}
+                    </span>
+                    {isApplied && (
+                      <span className="ml-2 text-xs text-green-500">Applied</span>
+                    )}
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className={`${isApplied ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity gap-1 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20`}
+                    onClick={() => handleRewriteContent(recommendation, recommendationIds[index] || '')}
+                    disabled={isApplied}
+                  >
+                    <Wand2 className="h-3.5 w-3.5" />
+                    <span>Optimize</span>
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <div className="text-center py-8 text-muted-foreground">

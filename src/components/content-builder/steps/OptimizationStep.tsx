@@ -17,7 +17,7 @@ import { ContentRewriteDialog } from '@/components/content-builder/optimization/
 
 export const OptimizationStep = () => {
   const { state } = useContentBuilder();
-  const { content, mainKeyword, seoScore } = state;
+  const { content, mainKeyword, seoScore, seoImprovements } = state;
   
   // Use custom hooks for functionality
   const { 
@@ -37,7 +37,8 @@ export const OptimizationStep = () => {
     isRewriting,
     handleRewriteContent,
     applyRewrittenContent,
-    setShowRewriteDialog
+    setShowRewriteDialog,
+    isRecommendationApplied
   } = useContentRewriter();
   
   // Run initial analysis if we have content but no SEO score
@@ -46,6 +47,9 @@ export const OptimizationStep = () => {
       runSeoAnalysis();
     }
   }, [content, seoScore, runSeoAnalysis]);
+  
+  // Get recommendation IDs from the state
+  const recommendationIds = seoImprovements ? seoImprovements.map(item => item.id) : [];
   
   return (
     <div className="space-y-6">
@@ -80,8 +84,10 @@ export const OptimizationStep = () => {
         <div className="col-span-2">
           <RecommendationsCard 
             recommendations={recommendations} 
+            recommendationIds={recommendationIds}
             isAnalyzing={isAnalyzing}
             handleRewriteContent={handleRewriteContent}
+            isRecommendationApplied={isRecommendationApplied}
           />
         </div>
         

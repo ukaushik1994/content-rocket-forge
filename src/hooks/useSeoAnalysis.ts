@@ -73,7 +73,7 @@ export const useSeoAnalysis = () => {
         readability: readabilityScore
       });
       
-      // Create SEO improvements
+      // Create SEO improvements with unique IDs
       const newImprovements = contentRecommendations.map(recommendation => {
         const improvementType = getImprovementType(recommendation);
         return {
@@ -107,10 +107,10 @@ export const useSeoAnalysis = () => {
   
   // Get score color based on value
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'bg-green-500';
-    if (score >= 70) return 'bg-yellow-500';
-    if (score >= 50) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (score >= 90) return 'stroke-green-500';
+    if (score >= 70) return 'stroke-yellow-500';
+    if (score >= 50) return 'stroke-orange-500';
+    return 'stroke-red-500';
   };
 
   return {
