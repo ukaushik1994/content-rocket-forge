@@ -361,13 +361,15 @@ export const LineChart = ({
   categories,
   colors = ["#2563eb", "#8b5cf6", "#e11d48"],
   valueFormatter,
+  className,
   ...props 
 }: {
   data: any[];
   index?: string;
   categories: string[];
   colors?: string[];
-  valueFormatter?: (value: number) => string;
+  valueFormatter?: (value: number, name?: string) => string;
+  className?: string;
 } & Omit<React.ComponentProps<typeof ChartContainer>, "config" | "children">) => {
   const config: ChartConfig = {}
   
@@ -378,40 +380,51 @@ export const LineChart = ({
   })
   
   return (
-    <ChartContainer config={config} {...props}>
-      <RechartsPrimitive.LineChart data={data}>
-        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
+    <ChartContainer config={config} className={className} {...props}>
+      <RechartsPrimitive.LineChart 
+        data={data}
+        margin={{ top: 20, right: 30, left: 10, bottom: 10 }}
+      >
+        <RechartsPrimitive.CartesianGrid 
+          strokeDasharray="3 3" 
+          vertical={false} 
+          stroke="rgba(255,255,255,0.1)" 
+        />
         <RechartsPrimitive.XAxis 
           dataKey={index} 
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          fontSize={10}
+          tickFormatter={(value) => value}
         />
         <RechartsPrimitive.YAxis 
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          fontSize={10}
+          tickCount={5}
           tickFormatter={(value) => valueFormatter ? valueFormatter(value) : value.toLocaleString()}
         />
         <ChartTooltip
           content={
             <ChartTooltipContent
               formatter={(value, name) => 
-                [valueFormatter ? valueFormatter(value as number) : value, name]
+                [valueFormatter ? valueFormatter(value as number, name as string) : value, name]
               }
             />
           }
         />
-        <ChartLegend content={<ChartLegendContent />} />
+        <ChartLegend content={<ChartLegendContent />} verticalAlign="top" />
         {categories.map((category, i) => (
           <RechartsPrimitive.Line
             key={category}
             type="monotone"
             dataKey={category}
             stroke={colors[i % colors.length]}
-            strokeWidth={2}
-            dot={{ r: 4 }}
-            activeDot={{ r: 6 }}
+            strokeWidth={2.5}
+            activeDot={{ r: 6, strokeWidth: 0 }}
+            dot={{ r: 4, strokeWidth: 0, fill: colors[i % colors.length] }}
           />
         ))}
       </RechartsPrimitive.LineChart>
@@ -426,6 +439,7 @@ export const BarChart = ({
   categories,
   colors = ["#2563eb", "#8b5cf6", "#e11d48"],
   valueFormatter,
+  className,
   ...props 
 }: {
   data: any[];
@@ -433,6 +447,7 @@ export const BarChart = ({
   categories: string[];
   colors?: string[];
   valueFormatter?: (value: number) => string;
+  className?: string;
 } & Omit<React.ComponentProps<typeof ChartContainer>, "config" | "children">) => {
   const config: ChartConfig = {}
   
@@ -443,19 +458,31 @@ export const BarChart = ({
   })
   
   return (
-    <ChartContainer config={config} {...props}>
-      <RechartsPrimitive.BarChart data={data}>
-        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
+    <ChartContainer config={config} className={className} {...props}>
+      <RechartsPrimitive.BarChart 
+        data={data}
+        margin={{ top: 20, right: 30, left: 10, bottom: 10 }}
+      >
+        <RechartsPrimitive.CartesianGrid 
+          strokeDasharray="3 3" 
+          vertical={false} 
+          stroke="rgba(255,255,255,0.1)" 
+        />
         <RechartsPrimitive.XAxis 
           dataKey={index} 
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          fontSize={10}
+          interval={0}
+          tickFormatter={(value) => value.substring(0, 4) + (value.length > 4 ? '..' : '')}
         />
         <RechartsPrimitive.YAxis 
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          fontSize={10}
+          tickCount={5}
           tickFormatter={(value) => valueFormatter ? valueFormatter(value) : value.toLocaleString()}
         />
         <ChartTooltip
@@ -467,14 +494,15 @@ export const BarChart = ({
             />
           }
         />
-        <ChartLegend content={<ChartLegendContent />} />
+        <ChartLegend content={<ChartLegendContent />} verticalAlign="top" />
         {categories.map((category, i) => (
           <RechartsPrimitive.Bar
             key={category}
             dataKey={category}
             fill={colors[i % colors.length]}
             radius={[4, 4, 0, 0]}
-            barSize={30}
+            barSize={24}
+            maxBarSize={30}
           />
         ))}
       </RechartsPrimitive.BarChart>
