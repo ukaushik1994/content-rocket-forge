@@ -34,7 +34,18 @@ export const useFinalReview = () => {
     if (content) {
       // Extract document structure
       const structure = extractDocumentStructure(content);
-      dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: structure });
+      
+      // Create a DocumentStructure object that matches the expected type
+      const documentStructure = {
+        h1: structure.hasSingleH1 ? 1 : 0,
+        h2: 0, // Default values since we don't have this info
+        h3: 0, // Default values since we don't have this info
+        h4: 0, // Default values since we don't have this info
+        hasSingleH1: structure.hasSingleH1,
+        hasLogicalHierarchy: structure.hasLogicalHierarchy
+      };
+      
+      dispatch({ type: 'SET_DOCUMENT_STRUCTURE', payload: documentStructure });
       
       // Analyze keyword usage
       const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
@@ -83,11 +94,11 @@ export const useFinalReview = () => {
     toast.success('Generated meta title and description');
     
     // Also generate title suggestions
-    generateTitleSuggestions();
+    generateTitleSuggestionsAsync();
   };
   
   // Generate title suggestions
-  const generateTitleSuggestions = async () => {
+  const generateTitleSuggestionsAsync = async () => {
     if (!content || !mainKeyword) {
       toast.error('Content or main keyword not available for generating titles');
       return;
@@ -97,10 +108,8 @@ export const useFinalReview = () => {
     
     try {
       // Call the generateTitleSuggestions function from documentAnalysis
-      // which should now be properly implemented to return string[]
       const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
       
-      // Now suggestions should be a string[] that can be used with setTitleSuggestions
       setTitleSuggestions(suggestions);
       toast.success('Generated title suggestions');
     } catch (error) {
@@ -122,7 +131,19 @@ export const useFinalReview = () => {
     
     try {
       const metrics = analyzeSolutionIntegration(content, selectedSolution);
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics });
+      
+      // Create a complete SolutionIntegrationMetrics object
+      const solutionMetrics = {
+        featureIncorporation: metrics.featureIncorporation,
+        positioningScore: metrics.positioningScore,
+        nameMentions: 0, // Default values since we don't have this info
+        painPointsAddressed: 0, // Default values since we don't have this info
+        audienceAlignment: 0, // Default values since we don't have this info
+        ctaMentions: ctaInfo.ctaText.length,
+        overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
+      };
+      
+      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
       toast.success('Solution integration analysis completed');
     } catch (error) {
       console.error('Error analyzing solution integration:', error);
@@ -152,7 +173,7 @@ export const useFinalReview = () => {
     titleSuggestions,
     serpData,
     generateMeta,
-    generateTitleSuggestions,
+    generateTitleSuggestions: generateTitleSuggestionsAsync,
     analyzeSolutionUsage,
     checkStepCompletion
   };

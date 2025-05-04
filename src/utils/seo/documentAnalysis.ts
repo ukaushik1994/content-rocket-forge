@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for analyzing document structure, headings, and content
  */
