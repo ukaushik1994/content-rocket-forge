@@ -151,16 +151,18 @@ export const useFinalReview = () => {
     try {
       const metrics = analyzeSolutionIntegration(content, selectedSolution);
       
-      // SolutionIntegrationMetrics object is now compatible with the expected type
+      // Fix the type mismatch: ensure painPointsAddressed is a string array, not a number
       const solutionMetrics = {
         featureIncorporation: metrics.featureIncorporation,
         positioningScore: metrics.positioningScore,
         nameMentions: metrics.nameMentions,
-        painPointsAddressed: metrics.painPointsAddressed,
+        painPointsAddressed: metrics.painPointsAddressed, // This should already be a string array
         audienceAlignment: metrics.audienceAlignment,
         ctaMentions: ctaInfo.ctaText.length,
         overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
       };
+      
+      console.log("[useFinalReview] Solution metrics:", solutionMetrics);
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
       toast.success('Solution integration analysis completed', toastConfig.success);
