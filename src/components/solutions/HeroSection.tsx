@@ -48,12 +48,62 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       animate="visible"
       variants={containerVariants}
     >
-      {/* Background Elements */}
-      <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-neon-purple opacity-[0.07] blur-[80px]" />
-      <div className="absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-neon-blue opacity-[0.07] blur-[60px]" />
+      {/* Enhanced background elements */}
+      <div className="absolute inset-0 futuristic-grid opacity-10 z-0" />
       
-      <div className="relative z-10 max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      {/* Animated gradient background */}
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 to-neon-blue/5 z-0"
+        initial={{ opacity: 0 }}
+        animate={{ 
+          opacity: 1,
+          background: [
+            "linear-gradient(to bottom right, rgba(155, 135, 245, 0.1), rgba(51, 195, 240, 0.05))",
+            "linear-gradient(to bottom right, rgba(155, 135, 245, 0.15), rgba(51, 195, 240, 0.07))",
+            "linear-gradient(to bottom right, rgba(155, 135, 245, 0.1), rgba(51, 195, 240, 0.05))"
+          ]
+        }}
+        transition={{ 
+          duration: 8, 
+          repeat: Infinity, 
+          repeatType: "reverse" 
+        }}
+      />
+      
+      {/* Animated particles */}
+      <motion.div
+        className="absolute inset-0 z-0 overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ delay: 0.5, duration: 1 }}
+      >
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-neon-blue/20 blur-md"
+            style={{ 
+              width: Math.random() * 100 + 50, 
+              height: Math.random() * 100 + 50,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`
+            }}
+            animate={{
+              x: [0, Math.random() * 50 - 25],
+              y: [0, Math.random() * 50 - 25],
+              opacity: [0.3, 0.7, 0.3]
+            }}
+            transition={{
+              duration: Math.random() * 10 + 15,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </motion.div>
+      
+      <div className="relative z-10">
+        <div className="flex flex-col md:flex-row items-start justify-between gap-6">
           <div className="space-y-4 max-w-2xl">
             <motion.div variants={itemVariants} className="inline-block">
               <div className="flex items-center space-x-2 bg-neon-purple/20 rounded-full px-3 py-1 text-sm font-medium text-neon-purple">
