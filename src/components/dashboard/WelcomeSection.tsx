@@ -13,7 +13,8 @@ interface WelcomeSectionProps {
 export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ setFeedbackOpen, navigate }) => {
   return (
     <div className="relative overflow-hidden rounded-xl p-6 md:p-8 glass-panel shadow-sm border border-white/10 backdrop-blur-xl">
-      <div className="absolute inset-0 futuristic-grid opacity-10" />
+      {/* Background elements with proper z-index */}
+      <div className="absolute inset-0 futuristic-grid opacity-10 z-0" />
       <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 to-neon-blue/5 z-0" />
       
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
@@ -81,14 +82,14 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ setFeedbackOpen,
         </div>
         
         <motion.div 
-          className="w-full max-w-xs flex items-center justify-center"
+          className="w-full max-w-[220px] flex items-center justify-center" /* Fixed width */
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 1.1, duration: 0.6 }}
         >
           <div className="relative">
             <motion.div 
-              className="w-48 h-48 rounded-full bg-gradient-to-br from-neon-purple via-neon-blue to-neon-pink opacity-20 blur-xl absolute"
+              className="w-40 h-40 rounded-full bg-gradient-to-br from-neon-purple via-neon-blue to-neon-pink opacity-20 blur-xl absolute"
               animate={{ 
                 scale: [1, 1.1, 1],
               }}
@@ -99,9 +100,9 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ setFeedbackOpen,
               }}
             />
             <motion.div 
-              className="w-40 h-40 rounded-full bg-glass flex items-center justify-center relative z-10 border border-white/10 backdrop-blur-xl"
+              className="w-36 h-36 rounded-full bg-glass flex items-center justify-center relative z-10 border border-white/10 backdrop-blur-xl"
               animate={{ 
-                y: [0, -10, 0]
+                y: [0, -8, 0]
               }}
               transition={{
                 duration: 6,
@@ -111,7 +112,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ setFeedbackOpen,
             >
               <div className="relative">
                 <div className="absolute -inset-4 rounded-full bg-primary/20 animate-pulse opacity-70"></div>
-                <Sparkles className="h-16 w-16 text-primary animate-pulse-glow" />
+                <Sparkles className="h-12 w-12 text-primary animate-pulse-glow" />
               </div>
             </motion.div>
           </div>

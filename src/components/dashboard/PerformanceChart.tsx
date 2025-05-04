@@ -38,20 +38,20 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
   };
 
   return (
-    <Card className={`glass-panel bg-glass hover:shadow-neon transition-all ${className}`}>
+    <Card className={`glass-panel bg-glass overflow-hidden ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">Performance Trends</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="visitors">
-          <TabsList className="bg-background/50 mb-4">
+          <TabsList className="bg-background/50 mb-4 w-full md:w-auto">
             <TabsTrigger value="visitors" className="text-xs">Traffic</TabsTrigger>
             <TabsTrigger value="engagement" className="text-xs">Engagement</TabsTrigger>
             <TabsTrigger value="content" className="text-xs">Content</TabsTrigger>
           </TabsList>
           
           <TabsContent value="visitors" className="mt-0">
-            <div className="h-[240px]">
+            <div className="h-[220px] w-full"> {/* Fixed height and width */}
               <LineChart 
                 data={performanceData}
                 categories={['visitors', 'keywords']}
@@ -60,13 +60,13 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
                 valueFormatter={(value) => formatCompact(value)}
               />
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="bg-background/50 p-2 rounded text-xs">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Better responsive layout */}
+              <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Avg. Daily Traffic</div>
                 <div className="mt-1 text-lg font-bold">561</div>
                 <div className="text-green-400 text-xs">+18.4% vs last week</div>
               </div>
-              <div className="bg-background/50 p-2 rounded text-xs">
+              <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Keywords Ranked</div>
                 <div className="mt-1 text-lg font-bold">49</div>
                 <div className="text-green-400 text-xs">+6 vs last month</div>
@@ -75,7 +75,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
           </TabsContent>
           
           <TabsContent value="engagement" className="mt-0">
-            <div className="h-[240px]">
+            <div className="h-[220px] w-full"> {/* Fixed height and width */}
               <LineChart 
                 data={performanceData}
                 categories={['conversions', 'avgTime']}
@@ -84,13 +84,13 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
                 valueFormatter={(value) => value.toString()}
               />
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="bg-background/50 p-2 rounded text-xs">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Better responsive layout */}
+              <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Avg. Conversion Rate</div>
                 <div className="mt-1 text-lg font-bold">4.2%</div>
                 <div className="text-green-400 text-xs">+0.8% vs last week</div>
               </div>
-              <div className="bg-background/50 p-2 rounded text-xs">
+              <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Avg. Time on Page</div>
                 <div className="mt-1 text-lg font-bold">3:12</div>
                 <div className="text-green-400 text-xs">+42s vs last month</div>
@@ -99,7 +99,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
           </TabsContent>
           
           <TabsContent value="content" className="mt-0">
-            <div className="h-[240px]">
+            <div className="h-[220px] w-full"> {/* Fixed height and width */}
               <BarChart 
                 data={contentPerformance}
                 categories={['views', 'engagement']}
@@ -108,13 +108,13 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
                 valueFormatter={(value) => formatCompact(value)}
               />
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="bg-background/50 p-2 rounded text-xs">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Better responsive layout */}
+              <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Top Performing</div>
                 <div className="mt-1 text-lg font-bold">Homepage</div>
                 <div className="text-green-400 text-xs">245 views, 8.4% conv.</div>
               </div>
-              <div className="bg-background/50 p-2 rounded text-xs">
+              <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Highest Engagement</div>
                 <div className="mt-1 text-lg font-bold">Blog</div>
                 <div className="text-green-400 text-xs">72% engagement rate</div>

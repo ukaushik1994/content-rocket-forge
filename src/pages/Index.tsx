@@ -60,6 +60,7 @@ const Index = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* Background elements with proper z-index */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-neon-purple/10 to-transparent opacity-30" />
         <div className="absolute top-[150px] left-[10%] w-[500px] h-[500px] rounded-full bg-neon-blue opacity-[0.03] blur-[120px]" />
@@ -68,10 +69,10 @@ const Index = () => {
       
       <Navbar />
       
-      <main className="flex-1 py-8 relative">
+      <main className="flex-1 py-8 relative z-0">
         <Container className="mb-8">
           <motion.div 
-            className="space-y-8"
+            className="space-y-12" /* Increased spacing between sections */
             initial="hidden"
             animate={isLoaded ? "visible" : "hidden"}
             variants={containerVariants}
@@ -81,9 +82,9 @@ const Index = () => {
               <WelcomeSection setFeedbackOpen={setFeedbackOpen} navigate={navigate} />
             </motion.div>
             
-            {/* Performance Overview - Updated with charts */}
-            <motion.div variants={itemVariants}>
-              <div className="mb-2 flex items-center justify-between">
+            {/* Performance Overview - Updated with better spacing */}
+            <motion.div variants={itemVariants} className="overflow-visible">
+              <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-medium">Performance Overview</h2>
                 <motion.div 
                   variants={fadeInVariants} 
@@ -93,11 +94,12 @@ const Index = () => {
                 </motion.div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Fixed grid layout with better responsive design */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="col-span-1 lg:col-span-2">
                   <PerformanceChart />
                 </div>
-                <div className="col-span-1 space-y-4">
+                <div className="col-span-1 space-y-6"> {/* Increased spacing */}
                   <StatCard 
                     title="Content Created" 
                     value="37" 
@@ -107,7 +109,6 @@ const Index = () => {
                       value: 18,
                       positive: true
                     }}
-                    className="h-[calc(50%-0.5rem)]"
                   />
                   
                   <StatCard 
@@ -119,12 +120,12 @@ const Index = () => {
                       value: 3.5,
                       positive: true
                     }}
-                    className="h-[calc(50%-0.5rem)]"
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              {/* Fixed stat cards grid with better spacing */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                 <StatCard 
                   title="Total Projects" 
                   value="12" 
@@ -172,7 +173,7 @@ const Index = () => {
             </motion.div>
             
             {/* Quick Actions */}
-            <motion.div variants={itemVariants}>
+            <motion.div variants={itemVariants} className="pt-2"> {/* Added top padding */}
               <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
               <QuickActionsGrid navigate={navigate} />
             </motion.div>
