@@ -32,5 +32,22 @@ export interface SerpAnalysisResult {
   }>;
   keywords?: string[];
   recommendations?: string[];
-  isMockData?: boolean; // Added this property to track if the data is mocked
+  isMockData?: boolean; // Track if the data is mocked
+  
+  // New fields for enhanced SERP analysis
+  entities?: Array<{
+    name: string;
+    type?: string;
+    importance?: number;
+  }>;
+  headings?: Array<{
+    text: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+    subtext?: string;
+  }>;
+  contentGaps?: Array<{
+    topic: string;
+    description: string;
+    recommendation?: string;
+  }>;
 }

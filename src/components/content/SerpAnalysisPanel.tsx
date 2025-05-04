@@ -12,7 +12,10 @@ import {
   SerpOverviewSection,
   SerpKeywordsSection,
   SerpQuestionsSection,
-  SerpCompetitorsSection
+  SerpCompetitorsSection,
+  SerpEntitiesSection,
+  SerpHeadingsSection,
+  SerpContentGapsSection
 } from './serp-analysis';
 
 export interface SerpAnalysisPanelProps {
@@ -34,12 +37,18 @@ export function SerpAnalysisPanel({
     keywords: boolean;
     questions: boolean;
     competitors: boolean;
+    entities: boolean;
+    headings: boolean;
+    contentGaps: boolean;
   }>({
     searchMetrics: true,
     overview: true,
     keywords: false,
     questions: false,
-    competitors: false
+    competitors: false,
+    entities: false,
+    headings: false,
+    contentGaps: false
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -196,6 +205,60 @@ export function SerpAnalysisPanel({
         <SerpQuestionsSection 
           serpData={serpData}
           expanded={expandedSections.questions}
+          onAddToContent={onAddToContent}
+        />
+      </div>
+      
+      {/* Entities Section - NEW */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Key Entities" 
+          expanded={expandedSections.entities}
+          onToggle={() => toggleSection('entities')}
+          variant="indigo"
+          description="Important entities and concepts related to this topic"
+          count={serpData.entities?.length || 0}
+        />
+        
+        <SerpEntitiesSection 
+          serpData={serpData}
+          expanded={expandedSections.entities}
+          onAddToContent={onAddToContent}
+        />
+      </div>
+      
+      {/* Headings Section - NEW */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Top Headings" 
+          expanded={expandedSections.headings}
+          onToggle={() => toggleSection('headings')}
+          variant="teal"
+          description="Common headings used by top-ranking content"
+          count={serpData.headings?.length || 0}
+        />
+        
+        <SerpHeadingsSection 
+          serpData={serpData}
+          expanded={expandedSections.headings}
+          onAddToContent={onAddToContent}
+        />
+      </div>
+      
+      {/* Content Gaps Section - NEW */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Content Gaps" 
+          expanded={expandedSections.contentGaps}
+          onToggle={() => toggleSection('contentGaps')}
+          variant="rose"
+          description="Topics competitors are missing that you can cover"
+          count={serpData.contentGaps?.length || 0}
+        />
+        
+        <SerpContentGapsSection 
+          serpData={serpData}
+          expanded={expandedSections.contentGaps}
           onAddToContent={onAddToContent}
         />
       </div>
