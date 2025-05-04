@@ -138,10 +138,10 @@ export const KeywordUsageSummaryCard = ({
 };
 
 // Helper function to determine badge variant based on keyword density
-const getDensityVariant = (density: number): "default" | "secondary" | "destructive" | "success" => {
+const getDensityVariant = (density: number): "default" | "secondary" | "destructive" | "outline" => {
   if (density < 0.5) return "secondary"; // Too low
   if (density > 3) return "destructive"; // Too high (keyword stuffing)
-  return "success"; // Good range
+  return "default"; // Good range - using default instead of success
 };
 
 // Helper function to get the appropriate icon for the density
