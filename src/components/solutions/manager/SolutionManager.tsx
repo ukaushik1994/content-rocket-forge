@@ -1,11 +1,10 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Solution } from '@/contexts/content-builder/types';
 import { useSolutionsData } from '../hooks/useSolutionsData';
-import { SolutionGrid } from './SolutionGrid';
 import { SolutionFormDialog } from './SolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
 import { useSolutionForm } from './hooks/useSolutionForm';
@@ -14,6 +13,9 @@ import { EmptyState } from './EmptyState';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingState } from './LoadingState';
 import { SolutionsHeader } from './SolutionsHeader';
+import { EnhancedSolutionGrid } from '../EnhancedSolutionGrid';
+import { HeroSection } from '../HeroSection';
+import { motion } from 'framer-motion';
 
 interface SolutionManagerProps {
   searchTerm: string;
@@ -23,6 +25,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   // Added for content builder integration
   const navigate = useNavigate();
   const { dispatch } = useContentBuilder();
+  const [filterTerm, setFilterTerm] = useState(searchTerm);
   
   const { 
     solutions, 
@@ -42,6 +45,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const deleteHandler = useDeleteSolution({
     deleteSolution
   });
+
+  // Update local filter when search term changes
+  useEffect(() => {
+    setFilterTerm(searchTerm);
+  }, [searchTerm]);
   
   useEffect(() => {
     fetchSolutions();
@@ -49,9 +57,9 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
 
   // Filter solutions based on search term
   const filteredSolutions = solutions.filter(solution => {
-    if (!searchTerm) return true;
+    if (!filterTerm) return true;
     
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = filterTerm.toLowerCase();
     
     // Search in name
     if (solution.name.toLowerCase().includes(searchLower)) return true;
@@ -84,6 +92,10 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     toast.success(`${solution.name} selected for content creation`);
     navigate('/content');
   };
+
+  const handleSearchChange = (term: string) => {
+    setFilterTerm(term);
+  };
   
   if (isLoading) {
     return <LoadingState />;
@@ -94,21 +106,29 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   }
   
   return (
-    <>
-      <SolutionsHeader 
-        solutionCount={filteredSolutions.length}
-        searchTerm={searchTerm}
-        onAddNew={solutionForm.handleAddNew}
+    <motion.div 
+      className="space-y-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Hero section with search and stats */}
+      <HeroSection 
+        solutionCount={filteredSolutions.length} 
+        searchTerm={filterTerm}
+        onSearchChange={handleSearchChange}
       />
       
+      {/* Main content area */}
       {filteredSolutions.length === 0 ? (
-        <EmptyState searchTerm={searchTerm} onAddNew={solutionForm.handleAddNew} />
+        <EmptyState searchTerm={filterTerm} onAddNew={solutionForm.handleAddNew} />
       ) : (
-        <SolutionGrid 
+        <EnhancedSolutionGrid 
           solutions={filteredSolutions}
           onEdit={solutionForm.handleEdit}
           onDelete={deleteHandler.handleDelete}
           onUseInContent={handleUseInContent}
+          onAddNew={solutionForm.handleAddNew}
         />
       )}
       
@@ -129,6 +149,6 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         solution={deleteHandler.selectedSolution}
         isSubmitting={deleteHandler.isSubmitting}
       />
-    </>
+    </motion.div>
   );
 };

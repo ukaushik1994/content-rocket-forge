@@ -3,26 +3,30 @@ import React, { useState, Suspense, lazy } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { SolutionUploader } from '@/components/solutions/SolutionUploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, SlidersHorizontal, BarChart3, FileText, UploadCloud, PenSquare, X, Loader2 } from 'lucide-react';
+import { FileText, UploadCloud, BarChart3, X, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 import { Helmet } from 'react-helmet-async';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { motion } from 'framer-motion';
-import { HeroSection } from '@/components/solutions/HeroSection';
 
 // Lazy load the SolutionManager for better performance
-const SolutionManager = lazy(() => import('@/components/solutions/manager/SolutionManager').then(
+const SolutionManager = lazy(() => import('@/components/solutions/manager').then(
   module => ({ default: module.SolutionManager })
 ));
 
 // Loading fallback component
 const LoadingFallback = () => (
-  <div className="flex justify-center items-center py-12">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    <span className="ml-2 text-lg">Loading solutions...</span>
+  <div className="flex flex-col justify-center items-center py-12 space-y-4">
+    <div className="relative">
+      <div className="w-16 h-16 rounded-full border-4 border-neon-purple/30 border-t-neon-purple animate-spin"></div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-neon-purple animate-pulse" />
+      </div>
+    </div>
+    <span className="text-lg font-medium text-gradient">Loading solutions...</span>
   </div>
 );
 
@@ -57,11 +61,23 @@ const Solutions = () => {
     initial: { opacity: 0 },
     animate: { 
       opacity: 1,
-      transition: { duration: 0.5 }
+      transition: { 
+        duration: 0.5,
+        staggerChildren: 0.1
+      }
     },
     exit: { 
       opacity: 0,
       transition: { duration: 0.3 }
+    }
+  };
+
+  const itemVariants = {
+    initial: { y: 20, opacity: 0 },
+    animate: { 
+      y: 0, 
+      opacity: 1,
+      transition: { type: "spring", stiffness: 100, damping: 15 }
     }
   };
   
@@ -80,55 +96,78 @@ const Solutions = () => {
       
       <Navbar />
       
-      <main className="flex-1 container py-8 space-y-6">
-        <Tabs 
-          defaultValue="solutions" 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="bg-secondary/30">
-            <TabsTrigger value="solutions" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              All Solutions
-            </TabsTrigger>
-            <TabsTrigger value="add" className="flex items-center gap-2">
-              <UploadCloud className="h-4 w-4" />
-              Add Solutions
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Usage Analytics
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="solutions" className="mt-6 space-y-6">
-            <ContentBuilderProvider>
-              <ErrorBoundary FallbackComponent={ErrorFallback}>
-                <Suspense fallback={<LoadingFallback />}>
-                  <SolutionManager searchTerm={searchTerm} />
-                </Suspense>
-              </ErrorBoundary>
-            </ContentBuilderProvider>
-          </TabsContent>
-          
-          <TabsContent value="add" className="mt-6">
-            <div className="max-w-2xl mx-auto">
-              <SolutionUploader />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="analytics" className="mt-6">
-            <div className="flex flex-col items-center justify-center h-96 gap-4">
-              <div className="w-16 h-16 rounded-full bg-glass flex items-center justify-center">
-                <SlidersHorizontal className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl font-medium">Solution Analytics Coming Soon</h2>
-              <p className="text-muted-foreground text-center max-w-md">
-                Track how your business solutions are performing in generated content, including mentions, click-throughs, and conversion metrics.
-              </p>
-            </div>
-          </TabsContent>
-        </Tabs>
+      <main className="flex-1 container py-8">
+        <motion.div variants={itemVariants} className="mb-8">
+          <Tabs 
+            defaultValue="solutions" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="bg-secondary/30 backdrop-blur-sm border border-white/5 p-1 w-full sm:w-auto">
+              <TabsTrigger value="solutions" className="flex items-center gap-2 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">
+                <FileText className="h-4 w-4" />
+                All Solutions
+              </TabsTrigger>
+              <TabsTrigger value="add" className="flex items-center gap-2 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">
+                <UploadCloud className="h-4 w-4" />
+                Add Solutions
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2 data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">
+                <BarChart3 className="h-4 w-4" />
+                Usage Analytics
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="solutions" className="mt-6">
+              <ContentBuilderProvider>
+                <ErrorBoundary FallbackComponent={ErrorFallback}>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <SolutionManager searchTerm={searchTerm} />
+                  </Suspense>
+                </ErrorBoundary>
+              </ContentBuilderProvider>
+            </TabsContent>
+            
+            <TabsContent value="add" className="mt-6">
+              <motion.div 
+                className="max-w-2xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <SolutionUploader />
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="analytics" className="mt-6">
+              <motion.div 
+                className="flex flex-col items-center justify-center h-96 gap-4"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="w-16 h-16 rounded-full bg-glass flex items-center justify-center animate-float">
+                  <BarChart3 className="h-8 w-8 text-neon-blue" />
+                </div>
+                <h2 className="text-xl font-medium text-gradient">Solution Analytics Coming Soon</h2>
+                <p className="text-muted-foreground text-center max-w-md">
+                  Track how your business solutions are performing in generated content, including mentions, click-throughs, and conversion metrics.
+                </p>
+                <div className="mt-4 grid grid-cols-3 gap-4 w-full max-w-lg">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-4 bg-neon-purple/10 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r from-neon-purple to-neon-blue animate-pulse-glow`}
+                        style={{ width: `${15 * i}%` }}
+                      ></div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </main>
     </motion.div>
   );
