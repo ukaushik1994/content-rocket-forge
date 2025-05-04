@@ -9,6 +9,7 @@ export interface SerpSelectionStatsResult {
     entity: number;
     heading: number;
     contentGap: number;
+    competitor: number; // Added for backward compatibility
     topRank: number;
   };
   totalSelected: number;
@@ -24,6 +25,7 @@ export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSel
     entity: selectedItems.filter(item => item.type === 'entity').length,
     heading: selectedItems.filter(item => item.type === 'heading').length,
     contentGap: selectedItems.filter(item => item.type === 'contentGap').length,
+    competitor: 0, // Added for backward compatibility, with a default value of 0
     topRank: selectedItems.filter(item => item.type === 'topRank').length
   };
   

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -16,7 +15,7 @@ interface SelectedItemsSidebarProps {
     keyword: number;
     question: number;
     snippet: number;
-    competitor: number;
+    competitor: number; // Kept for backward compatibility
     entity: number;
     heading: number;
     contentGap: number;
@@ -231,12 +230,12 @@ export function SelectedItemsSidebar({
                   </div>
                 )}
 
-                {/* Top Ranks Group (renamed from competitors) */}
-                {selectedTab === 'all' && selectedCounts.topRank > 0 && (
+                {/* Top Ranks Group (renamed from competitors) - updated to handle both properties */}
+                {selectedTab === 'all' && (selectedCounts.topRank > 0 || selectedCounts.competitor > 0) && (
                   <div>
                     <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-green-400" />
-                      Top Ranks ({selectedCounts.topRank})
+                      Top Ranks ({selectedCounts.topRank || selectedCounts.competitor})
                     </h4>
                     <div className="space-y-2">
                       {getItemsByType('topRank')
