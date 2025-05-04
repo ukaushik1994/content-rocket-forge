@@ -25,14 +25,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState('grid'); // 'grid' or 'list'
   
-  // Get all unique audiences across all solutions for filtering
-  const allAudiences = Array.from(
-    new Set(solutions.flatMap(solution => solution.targetAudience))
-  ).slice(0, 4); // Limit to top 4 for UI simplicity
-
-  const filteredSolutions = filter === 'all'
-    ? solutions
-    : solutions.filter(solution => solution.targetAudience.includes(filter));
+  const filteredSolutions = solutions;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -57,15 +50,6 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
             <TabsTrigger value="all" className="data-[state=active]:bg-neon-purple/20">
               All Solutions
             </TabsTrigger>
-            {allAudiences.map(audience => (
-              <TabsTrigger 
-                key={audience} 
-                value={audience} 
-                className="hidden md:flex data-[state=active]:bg-neon-purple/20"
-              >
-                {audience}
-              </TabsTrigger>
-            ))}
           </TabsList>
         </Tabs>
         
