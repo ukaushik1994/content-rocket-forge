@@ -9,6 +9,7 @@ import { Sparkles, PenLine, ChevronRight, CheckCheck, Loader2 } from 'lucide-rea
 import { v4 as uuid } from 'uuid';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
 
 export function AIOutlineGenerator() {
   const { state, dispatch } = useContentBuilder();
@@ -286,6 +287,25 @@ export function AIOutlineGenerator() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* New Section - Ready to Proceed */}
+      <div className="pt-6">
+        <Separator className="my-4 bg-white/10" />
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-medium mb-1">Ready to proceed?</h4>
+            <p className="text-xs text-white/70">
+              Once you've generated your outline, continue to the next step
+            </p>
+          </div>
+          <Button 
+            variant="default" 
+            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+          >
+            Continue to Content <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
     </motion.div>
   );
 }
