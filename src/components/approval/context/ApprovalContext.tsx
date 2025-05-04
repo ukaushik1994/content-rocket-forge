@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
-import { contentAnalysisService } from '@/services/contentAnalysisService';
+import { analyzeContent, ContentAnalysis } from '@/services/contentAnalysisService';
 
 interface InterLinkingSuggestion {
   sourceContent: ContentItemType;

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { toast } from 'sonner';
-import { navItems, NavItem } from './NavItems';
+import NavItems from './NavItems';
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,9 +18,11 @@ const Navbar = () => {
     user,
     signOut
   } = useAuth();
+  
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
   };
+  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -28,9 +32,12 @@ const Navbar = () => {
       console.error('Sign out error:', error);
     }
   };
+  
   const userFullName = user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` : user?.email || 'User';
   const userEmail = user?.email || '';
-  return <div className="relative z-10 bg-background/80 backdrop-blur-md">
+  
+  return (
+    <div className="relative z-10 bg-background/80 backdrop-blur-md">
       <header className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="mr-4 hidden lg:flex">
@@ -51,16 +58,7 @@ const Navbar = () => {
           </Button>
 
           <nav className="hidden lg:flex items-center space-x-1">
-            {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return <Link key={item.path} to={item.path}>
-                  <Button variant="ghost" size="sm" className={cn("flex items-center gap-1 px-3", isActive && "bg-accent text-accent-foreground")}>
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Button>
-                </Link>;
-          })}
+            <NavItems />
           </nav>
         </div>
 
@@ -92,7 +90,8 @@ const Navbar = () => {
       </header>
 
       {/* Mobile Menu */}
-      {showMobileMenu && <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden">
           <div className="fixed inset-y-0 left-0 z-50 w-3/4 bg-background p-6 shadow-lg">
             <div className="flex items-center justify-between mb-8">
               <Link to="/" className="flex items-center gap-2" onClick={() => setShowMobileMenu(false)}>
@@ -111,14 +110,7 @@ const Navbar = () => {
             </div>
 
             <nav className="flex flex-col space-y-4">
-              {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return <Link key={item.path} to={item.path} onClick={() => setShowMobileMenu(false)} className={cn("flex items-center gap-3 px-4 py-2 rounded-md", isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/50 hover:text-accent-foreground")}>
-                    <Icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>;
-          })}
+              <NavItems />
               
               <div className="pt-2">
                 <FeedbackButton className="w-full justify-center" />
@@ -130,7 +122,10 @@ const Navbar = () => {
               </Button>
             </nav>
           </div>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default Navbar;
