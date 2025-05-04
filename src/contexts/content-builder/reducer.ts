@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction, SerpSelection, SeoImprovement } from './types';
 
 // Reducer function to handle state updates
@@ -247,8 +248,8 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
     serpData.topResults.forEach((item: any) => {
       if (item.snippet) {
         newSelections.push({
-          type: 'competitor',
-          content: item.snippet,
+          type: 'topRank', // Changed from 'competitor' to 'topRank' for consistency
+          content: item.title, // Using title instead of snippet for better overview
           source: item.link,
           selected: false
         });
@@ -256,5 +257,42 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
     });
   }
   
+  // Add support for entities
+  if (serpData?.entities) {
+    serpData.entities.forEach((item: any) => {
+      newSelections.push({
+        type: 'entity',
+        content: item.name,
+        source: item.type,
+        selected: false
+      });
+    });
+  }
+  
+  // Add support for headings
+  if (serpData?.headings) {
+    serpData.headings.forEach((item: any) => {
+      newSelections.push({
+        type: 'heading',
+        content: item.text,
+        source: item.level,
+        selected: false
+      });
+    });
+  }
+  
+  // Add support for content gaps
+  if (serpData?.contentGaps) {
+    serpData.contentGaps.forEach((item: any) => {
+      newSelections.push({
+        type: 'contentGap',
+        content: item.topic,
+        source: item.description,
+        selected: false
+      });
+    });
+  }
+  
   return newSelections;
 }
+

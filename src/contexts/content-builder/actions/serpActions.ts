@@ -84,10 +84,25 @@ export const createSerpActions = (
     const keywords = selectedItems.filter(item => item.type === 'keyword');
     const questions = selectedItems.filter(item => item.type === 'question');
     const snippets = selectedItems.filter(item => item.type === 'snippet');
+    const entities = selectedItems.filter(item => item.type === 'entity');
+    const headings = selectedItems.filter(item => item.type === 'heading');
+    const contentGaps = selectedItems.filter(item => item.type === 'contentGap');
+    const topRanks = selectedItems.filter(item => item.type === 'topRank');
     
     try {
       // Create outline sections
       const newOutline = [];
+      
+      // Use headings as primary structure if available
+      if (headings.length > 0) {
+        headings.forEach(heading => {
+          newOutline.push({
+            id: uuid(),
+            title: heading.content,
+            type: 'heading'
+          });
+        });
+      }
       
       // Use questions as main sections
       questions.forEach(question => {
@@ -98,6 +113,16 @@ export const createSerpActions = (
         });
       });
       
+      // Add content gaps as sections
+      contentGaps.forEach(gap => {
+        newOutline.push({
+          id: uuid(),
+          title: gap.content,
+          notes: gap.source, // Description stored in source
+          type: 'contentGap'
+        });
+      });
+      
       // Add a section for keywords
       if (keywords.length > 0) {
         newOutline.push({
@@ -105,6 +130,27 @@ export const createSerpActions = (
           title: "Key Concepts & Definitions",
           type: 'keywords',
           relatedKeywords: keywords.map(k => k.content)
+        });
+      }
+      
+      // Add a section for entities if present
+      if (entities.length > 0) {
+        newOutline.push({
+          id: uuid(),
+          title: "Important Entities & Concepts",
+          type: 'entities',
+          relatedKeywords: entities.map(e => e.content)
+        });
+      }
+      
+      // Add top-ranked content insights if available
+      if (topRanks.length > 0) {
+        newOutline.push({
+          id: uuid(),
+          title: "Insights from Top-Ranked Content",
+          type: 'topRanks',
+          notes: "Incorporate learnings from competitor content",
+          relatedKeywords: topRanks.map(t => t.content)
         });
       }
       
