@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, Bold, Italic, Heading, ListOrdered, ListUnordered } from 'lucide-react';
+import { Loader2, Save, Bold, Italic, Heading, ListOrdered, List } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ContentItemType } from '@/contexts/content';
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
@@ -254,7 +253,7 @@ export const EnhancedContentEditForm: React.FC<EnhancedContentEditFormProps> = (
                 onClick={() => insertMarkdown('list-unordered')}
                 className="p-1 h-8 w-8"
               >
-                <ListUnordered className="h-4 w-4" />
+                <List className="h-4 w-4" />
               </Button>
             </div>
           </div>
