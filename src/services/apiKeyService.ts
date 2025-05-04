@@ -167,6 +167,12 @@ export async function testApiKey(service: string, key: string): Promise<boolean>
     } else if (service === 'serp' && key.length > 20) {
       toast.success(`${service} API connection successful`);
       return true;
+    } else if (service === 'anthropic' && key.startsWith('sk-ant-')) {
+      toast.success(`${service} API connection successful`);
+      return true;
+    } else if (service === 'gemini' && key.length > 15) {
+      toast.success(`${service} API connection successful`);
+      return true;
     } else {
       throw new Error(`Invalid ${service} API key format`);
     }
@@ -174,4 +180,21 @@ export async function testApiKey(service: string, key: string): Promise<boolean>
     toast.error(error.message || `${service} API connection failed`);
     return false;
   }
+}
+
+// New function to detect API key type based on key format
+export async function detectApiKeyType(key: string): Promise<string | null> {
+  // Detect API key type based on common formats
+  if (key.startsWith('sk-') && !key.startsWith('sk-ant-')) {
+    return 'openai';
+  } else if (key.startsWith('sk-ant-')) {
+    return 'anthropic';
+  } else if (key.startsWith('AIza')) {
+    return 'gemini';
+  } else if (key.length > 20 && /^[a-zA-Z0-9]{20,}$/.test(key)) {
+    // Generic format check for SERP API keys
+    return 'serp';
+  }
+  
+  return null;
 }
