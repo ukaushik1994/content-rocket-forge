@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -111,7 +110,7 @@ const Index = () => {
       <main className="flex-1 py-8 relative z-0">
         <Container className="mb-8">
           <motion.div 
-            className="space-y-12" /* Increased spacing between sections */
+            className="space-y-12" 
             initial="hidden"
             animate={isLoaded ? "visible" : "hidden"}
             variants={containerVariants}
@@ -121,25 +120,11 @@ const Index = () => {
               <WelcomeSection setFeedbackOpen={setFeedbackOpen} navigate={navigate} />
             </motion.div>
             
-            {/* Performance Overview - Enhanced with better animations and styling */}
+            {/* Performance Overview - With simplified animations for better chart rendering */}
             <motion.div 
               variants={performanceVariants} 
-              className="overflow-visible relative"
+              className="relative"
             >
-              {/* Decorative elements */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.4 }}
-                transition={{ delay: 0.8, duration: 1.2 }}
-                className="absolute -top-6 -right-6 w-32 h-32 bg-neon-blue/10 rounded-full blur-3xl -z-10"
-              />
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.3 }}
-                transition={{ delay: 1.1, duration: 1.2 }}
-                className="absolute -bottom-10 -left-10 w-40 h-40 bg-neon-purple/10 rounded-full blur-3xl -z-10"
-              />
-              
               {/* Section header with enhanced styling */}
               <motion.div 
                 variants={fadeInVariants}
@@ -172,27 +157,13 @@ const Index = () => {
                 </motion.div>
               </motion.div>
               
-              {/* Enhanced grid layout with better animations */}
+              {/* Enhanced grid layout with better chart rendering */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <motion.div 
-                  className="col-span-1 lg:col-span-2 relative"
+                  className="col-span-1 lg:col-span-2"
                   variants={chartVariants}
                 >
-                  {/* Glass effect overlay for chart */}
-                  <div className="absolute inset-0 rounded-xl bg-white/[0.02] backdrop-blur-[1px] border border-white/10 shadow-lg -z-10" />
-                  
-                  {/* Highlight effect on chart */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.7, duration: 0.5 }}
-                    className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 -z-20 blur-sm"
-                  />
-                  
-                  {/* Chart component with padding to account for effects */}
-                  <div className="relative rounded-xl overflow-hidden p-0.5">
-                    <PerformanceChart />
-                  </div>
+                  <PerformanceChart />
                 </motion.div>
                 
                 <div className="col-span-1 space-y-6">
@@ -281,7 +252,7 @@ const Index = () => {
             </motion.div>
             
             {/* Quick Actions */}
-            <motion.div variants={itemVariants} className="pt-2"> {/* Added top padding */}
+            <motion.div variants={itemVariants} className="pt-2"> 
               <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
               <QuickActionsGrid navigate={navigate} />
             </motion.div>

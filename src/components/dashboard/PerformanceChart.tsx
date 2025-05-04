@@ -38,7 +38,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
   };
 
   return (
-    <Card className={`glass-panel bg-glass overflow-hidden ${className}`}>
+    <Card className={`overflow-hidden ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">Performance Trends</CardTitle>
       </CardHeader>
@@ -51,7 +51,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
           </TabsList>
           
           <TabsContent value="visitors" className="mt-0">
-            <div className="h-[220px] w-full"> {/* Fixed height and width */}
+            <div className="h-[280px] w-full"> {/* Increased height for better visibility */}
               <LineChart 
                 data={performanceData}
                 categories={['visitors', 'keywords']}
@@ -60,7 +60,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
                 valueFormatter={(value) => formatCompact(value)}
               />
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Better responsive layout */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Avg. Daily Traffic</div>
                 <div className="mt-1 text-lg font-bold">561</div>
@@ -75,7 +75,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
           </TabsContent>
           
           <TabsContent value="engagement" className="mt-0">
-            <div className="h-[220px] w-full"> {/* Fixed height and width */}
+            <div className="h-[280px] w-full"> {/* Increased height for better visibility */}
               <LineChart 
                 data={performanceData}
                 categories={['conversions', 'avgTime']}
@@ -84,7 +84,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
                 valueFormatter={(value) => value.toString()}
               />
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Better responsive layout */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Avg. Conversion Rate</div>
                 <div className="mt-1 text-lg font-bold">4.2%</div>
@@ -99,7 +99,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
           </TabsContent>
           
           <TabsContent value="content" className="mt-0">
-            <div className="h-[220px] w-full"> {/* Fixed height and width */}
+            <div className="h-[280px] w-full"> {/* Increased height for better visibility */}
               <BarChart 
                 data={contentPerformance}
                 categories={['views', 'engagement']}
@@ -108,7 +108,7 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
                 valueFormatter={(value) => formatCompact(value)}
               />
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Better responsive layout */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-background/50 p-3 rounded text-xs">
                 <div className="font-medium">Top Performing</div>
                 <div className="mt-1 text-lg font-bold">Homepage</div>
