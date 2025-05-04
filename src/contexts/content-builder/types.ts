@@ -1,4 +1,3 @@
-
 // Step definition
 export interface ContentBuilderStep {
   id: number;
@@ -11,11 +10,14 @@ export interface ContentBuilderStep {
 export interface Solution {
   id: string;
   name: string;
-  description?: string;
-  features?: string[];
-  useCases?: string[];
-  painPoints?: string[];
-  targetAudience?: string[];
+  features: string[];
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
+  description: string;
+  logoUrl?: string | null;
+  externalUrl?: string | null;
+  resources?: Array<{ title: string; url: string; }>;
 }
 
 // Content type options

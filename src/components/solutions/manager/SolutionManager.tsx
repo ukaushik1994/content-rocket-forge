@@ -12,7 +12,6 @@ import { useDeleteSolution } from './hooks/useDeleteSolution';
 import { EmptyState } from './EmptyState';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingState } from './LoadingState';
-import { SolutionsHeader } from './SolutionsHeader';
 import { EnhancedSolutionGrid } from '../EnhancedSolutionGrid';
 import { HeroSection } from '../HeroSection';
 import { motion } from 'framer-motion';
@@ -114,7 +113,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     >
       {/* Hero section with search and stats */}
       <HeroSection 
-        solutionCount={filteredSolutions.length} 
+        solutionCount={solutions.length} 
         searchTerm={filterTerm}
         onSearchChange={handleSearchChange}
       />
@@ -152,3 +151,5 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     </motion.div>
   );
 };
+
+export default SolutionManager;

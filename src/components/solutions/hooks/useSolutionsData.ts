@@ -58,7 +58,10 @@ export function useSolutionsData() {
             targetAudience: Array.isArray(solution.target_audience) 
               ? solution.target_audience.filter(a => a).map(a => String(a)) 
               : [],
-            description: `${solution.name || 'Unnamed Solution'} - Business Solution` // Default description
+            description: `${solution.name || 'Unnamed Solution'} - Business Solution`, // Default description
+            logoUrl: solution.logo_url,
+            externalUrl: solution.external_url,
+            resources: Array.isArray(solution.resources) ? solution.resources : []
           }));
           
         setSolutions(formattedSolutions);
@@ -85,7 +88,10 @@ export function useSolutionsData() {
         features: ["Feature 1", "Feature 2", "Feature 3"],
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
-        targetAudience: ["Audience 1", "Audience 2"]
+        targetAudience: ["Audience 1", "Audience 2"],
+        logoUrl: null,
+        externalUrl: null,
+        resources: []
       };
       
       setSolutions([fallbackSolution]);
@@ -101,7 +107,9 @@ export function useSolutionsData() {
     useCases: string[];
     painPoints: string[];
     targetAudience: string[];
-  }): Promise<boolean> => {
+    externalUrl?: string | null;
+    resources?: Array<{ title: string; url: string; }>;
+  }, logoUrl?: string): Promise<boolean> => {
     // Input validation
     if (!solutionData.name || solutionData.name.trim() === '') {
       toast.error("Solution name is required");
@@ -122,6 +130,9 @@ export function useSolutionsData() {
         use_cases: solutionData.useCases.filter(u => u && u.trim() !== ''),
         pain_points: solutionData.painPoints.filter(p => p && p.trim() !== ''),
         target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== ''),
+        external_url: solutionData.externalUrl || null,
+        logo_url: logoUrl || null,
+        resources: solutionData.resources || [],
         user_id: user.id
       };
       
@@ -148,7 +159,10 @@ export function useSolutionsData() {
           targetAudience: Array.isArray(data[0].target_audience) 
             ? data[0].target_audience.map(String) 
             : [],
-          description: `${data[0].name} - Business Solution`
+          description: `${data[0].name} - Business Solution`,
+          logoUrl: data[0].logo_url,
+          externalUrl: data[0].external_url,
+          resources: data[0].resources || []
         };
         
         setSolutions(prev => [...prev, newSolution]);
@@ -167,7 +181,9 @@ export function useSolutionsData() {
     useCases: string[];
     painPoints: string[];
     targetAudience: string[];
-  }): Promise<boolean> => {
+    externalUrl?: string | null;
+    resources?: Array<{ title: string; url: string; }>;
+  }, logoUrl?: string): Promise<boolean> => {
     // Input validation
     if (!solutionData.name || solutionData.name.trim() === '') {
       toast.error("Solution name is required");
@@ -186,8 +202,15 @@ export function useSolutionsData() {
         features: solutionData.features.filter(f => f && f.trim() !== ''),
         use_cases: solutionData.useCases.filter(u => u && u.trim() !== ''),
         pain_points: solutionData.painPoints.filter(p => p && p.trim() !== ''),
-        target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== '')
+        target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== ''),
+        external_url: solutionData.externalUrl || null,
+        resources: solutionData.resources || []
       };
+      
+      // Only update logo_url if a new one is provided
+      if (logoUrl !== undefined) {
+        sanitizedData['logo_url'] = logoUrl;
+      }
       
       const { error } = await supabase
         .from('solutions')
@@ -205,6 +228,9 @@ export function useSolutionsData() {
         useCases: solutionData.useCases,
         painPoints: solutionData.painPoints,
         targetAudience: solutionData.targetAudience,
+        logoUrl: logoUrl !== undefined ? logoUrl : s.logoUrl,
+        externalUrl: solutionData.externalUrl || null,
+        resources: solutionData.resources || []
       } : s));
       
       return true;
@@ -222,6 +248,9 @@ export function useSolutionsData() {
         return false;
       }
       
+      // Get the solution to delete (to get the logo URL)
+      const solutionToDelete = solutions.find(s => s.id === id);
+      
       const { error } = await supabase
         .from('solutions')
         .delete()
@@ -229,6 +258,21 @@ export function useSolutionsData() {
         .eq('user_id', user.id);
       
       if (error) throw error;
+      
+      // If there's a logo, delete it from storage
+      if (solutionToDelete?.logoUrl) {
+        // Extract the filename from the URL
+        const logoPath = solutionToDelete.logoUrl.split('/').pop();
+        if (logoPath) {
+          const { error: storageError } = await supabase.storage
+            .from('solution-logos')
+            .remove([logoPath]);
+            
+          if (storageError) {
+            console.error("Error deleting logo:", storageError);
+          }
+        }
+      }
       
       setSolutions(solutions.filter(s => s.id !== id));
       return true;

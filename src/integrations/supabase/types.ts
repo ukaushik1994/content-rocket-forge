@@ -213,10 +213,13 @@ export type Database = {
       solutions: {
         Row: {
           created_at: string
+          external_url: string | null
           features: Json | null
           id: string
+          logo_url: string | null
           name: string
           pain_points: Json | null
+          resources: Json | null
           target_audience: Json | null
           updated_at: string
           use_cases: Json | null
@@ -224,10 +227,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          external_url?: string | null
           features?: Json | null
           id?: string
+          logo_url?: string | null
           name: string
           pain_points?: Json | null
+          resources?: Json | null
           target_audience?: Json | null
           updated_at?: string
           use_cases?: Json | null
@@ -235,10 +241,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          external_url?: string | null
           features?: Json | null
           id?: string
+          logo_url?: string | null
           name?: string
           pain_points?: Json | null
+          resources?: Json | null
           target_audience?: Json | null
           updated_at?: string
           use_cases?: Json | null

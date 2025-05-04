@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CustomBadge } from '@/components/ui/custom-badge';
 import { motion } from 'framer-motion';
-import { BookmarkIcon, CheckCircle, Target, Users, Zap } from 'lucide-react';
+import { BookmarkIcon, CheckCircle, ExternalLink, Target, Trash2, Users, Zap } from 'lucide-react';
 import { Solution } from '@/contexts/content-builder/types';
 
 interface EnhancedSolutionCardProps {
@@ -20,7 +20,7 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
   onEdit,
   onDelete
 }) => {
-  const { name, features, useCases, painPoints, targetAudience } = solution;
+  const { name, features, useCases, painPoints, targetAudience, logoUrl, externalUrl, resources } = solution;
 
   // Get background gradient based on solution name (for visual variety)
   const getGradient = (name: string) => {
@@ -51,10 +51,39 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
         
         <CardContent className="relative z-10 p-6 space-y-5">
           <div className="flex justify-between items-start">
-            <h3 className="text-gradient text-xl font-bold truncate pr-4">{name}</h3>
-            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 hover:opacity-100">
-              <BookmarkIcon className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-3 items-center">
+              {logoUrl ? (
+                <div className="h-10 w-10 rounded-md overflow-hidden bg-white/20 flex items-center justify-center">
+                  <img 
+                    src={logoUrl} 
+                    alt={`${name} logo`} 
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Logo';
+                    }} 
+                  />
+                </div>
+              ) : (
+                <div className="h-10 w-10 rounded-md bg-white/10 flex items-center justify-center">
+                  <BookmarkIcon className="h-5 w-5 text-white/70" />
+                </div>
+              )}
+              <h3 className="text-gradient text-xl font-bold truncate pr-4 flex-1">{name}</h3>
+            </div>
+            
+            {externalUrl && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 opacity-60 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(externalUrl, '_blank');
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
           <div className="space-y-4">
@@ -114,6 +143,32 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
                 )}
               </div>
             </div>
+            
+            {resources && resources.length > 0 && (
+              <div className="border-t border-white/10 pt-3 mt-3">
+                <div className="text-sm font-medium mb-2">Resources</div>
+                <div className="space-y-1.5">
+                  {resources.slice(0, 2).map((resource, index) => (
+                    <a 
+                      key={index} 
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm flex items-center gap-2 text-neon-blue hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {resource.title}
+                    </a>
+                  ))}
+                  {resources.length > 2 && (
+                    <div className="text-xs text-muted-foreground">
+                      +{resources.length - 2} more resources
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
         
@@ -150,7 +205,7 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
           className="h-8 w-8 rounded-full shadow-lg"
           onClick={onDelete}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+          <Trash2 className="h-4 w-4" />
         </Button>
       </motion.div>
     </motion.div>
