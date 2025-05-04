@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
@@ -10,10 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
   Loader2, 
-  Save, 
   CheckCircle, 
   BookOpen, 
-  FolderPlus, 
   FileCheck,
   Plus,
   RefreshCw
@@ -148,10 +145,6 @@ export const ContentWritingStep = () => {
     return demoContent;
   };
   
-  const handleSaveContent = () => {
-    setShowSaveDialog(true);
-  };
-  
   const handleToggleOutline = () => {
     setShowOutline(!showOutline);
   };
@@ -239,15 +232,6 @@ export const ContentWritingStep = () => {
                 Generate Content
               </>
             )}
-          </Button>
-          
-          <Button
-            onClick={handleSaveContent}
-            variant="outline"
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" />
-            Save
           </Button>
         </div>
       </div>
@@ -421,7 +405,7 @@ export const ContentWritingStep = () => {
                 </>
               ) : (
                 <>
-                  <FolderPlus className="h-4 w-4" />
+                  <FileCheck className="h-4 w-4" />
                   Save to Repository
                 </>
               )}
