@@ -19,7 +19,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
-import { RecentProjectsSection } from '@/components/dashboard/RecentProjectsSection';
 
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -193,11 +192,6 @@ const Index = () => {
             <motion.div variants={itemVariants}>
               <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
               <QuickActionsGrid navigate={navigate} />
-            </motion.div>
-            
-            {/* Recent Projects */}
-            <motion.div variants={itemVariants}>
-              <RecentProjectsSection navigate={navigate} />
             </motion.div>
           </motion.div>
         </Container>
