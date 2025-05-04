@@ -3,6 +3,8 @@ import React from 'react';
 import { LineChart, BarChart } from '@/components/ui/chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Activity, TrendingUp, BarChart3, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // Mock performance data for the past week
 const performanceData = [
@@ -42,128 +44,197 @@ export function PerformanceChart({ className }: PerformanceChartProps) {
     return `${value.toFixed(1)} min`;
   };
 
+  // Animation variants
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { type: 'spring', stiffness: 100, damping: 15 }
+    }
+  };
+
+  const iconAnimationVariants = {
+    pulse: {
+      scale: [1, 1.1, 1],
+      opacity: [0.7, 1, 0.7],
+      transition: {
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    }
+  };
+
   return (
-    <Card className={`overflow-hidden shadow-lg bg-card/95 backdrop-blur-sm ${className}`}>
-      <CardHeader className="pb-2 border-b border-border/20">
-        <CardTitle className="text-base font-medium">Performance Trends</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Tabs defaultValue="visitors" className="w-full">
-          <div className="px-6 pt-4">
-            <TabsList className="bg-background/30 grid w-full grid-cols-3 h-9 mb-2">
-              <TabsTrigger 
-                value="visitors" 
-                className="text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-foreground transition-all"
-              >
-                Traffic
-              </TabsTrigger>
-              <TabsTrigger 
-                value="engagement" 
-                className="text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-foreground transition-all"
-              >
-                Engagement
-              </TabsTrigger>
-              <TabsTrigger 
-                value="content" 
-                className="text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-foreground transition-all"
-              >
-                Content
-              </TabsTrigger>
-            </TabsList>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={cardVariants}
+    >
+      <Card className={`overflow-hidden border border-border/10 bg-card/95 backdrop-blur-sm shadow-xl ${className}`}>
+        <CardHeader className="pb-2 border-b border-border/20 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <motion.div 
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20"
+              variants={iconAnimationVariants}
+              animate="pulse"
+            >
+              <Activity className="h-4 w-4 text-primary" />
+            </motion.div>
+            <CardTitle className="text-base font-medium">Performance Trends</CardTitle>
           </div>
           
-          <TabsContent value="visitors" className="mt-0 px-2 pb-4">
-            <div className="h-[300px] w-full px-2"> 
-              <LineChart 
-                data={performanceData}
-                categories={['visitors', 'keywords']}
-                index="date"
-                colors={['#9b87f5', '#33C3F0']}
-                valueFormatter={(value) => formatCompact(value)}
-                className="pt-4"
-              />
+          <div className="flex items-center px-3 py-1.5 rounded-full bg-white/5 text-xs font-medium text-muted-foreground border border-white/10">
+            <Clock className="h-3 w-3 mr-1.5 text-primary" />
+            Last 7 days
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Tabs defaultValue="visitors" className="w-full">
+            <div className="px-6 pt-4">
+              <TabsList className="bg-background/30 grid w-full grid-cols-3 h-9 mb-2">
+                <TabsTrigger 
+                  value="visitors" 
+                  className="text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-foreground transition-all"
+                >
+                  <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                  Traffic
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="engagement" 
+                  className="text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-foreground transition-all"
+                >
+                  <Activity className="h-3.5 w-3.5 mr-1.5" />
+                  Engagement
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="content" 
+                  className="text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-foreground transition-all"
+                >
+                  <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                  Content
+                </TabsTrigger>
+              </TabsList>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-4 px-4">
-              <div className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20">
-                <div className="font-medium text-xs text-muted-foreground">Avg. Daily Traffic</div>
-                <div className="mt-1.5 text-lg font-bold">561</div>
-                <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                  +18.4% vs last week
-                </div>
+            
+            <TabsContent value="visitors" className="mt-0 px-2 pb-4">
+              <div className="h-[300px] w-full px-2"> 
+                <LineChart 
+                  data={performanceData}
+                  categories={['visitors', 'keywords']}
+                  index="date"
+                  colors={['#9b87f5', '#33C3F0']}
+                  valueFormatter={(value) => formatCompact(value)}
+                  className="pt-4"
+                />
               </div>
-              <div className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20">
-                <div className="font-medium text-xs text-muted-foreground">Keywords Ranked</div>
-                <div className="mt-1.5 text-lg font-bold">49</div>
-                <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                  6 vs last month
-                </div>
+              <div className="mt-6 grid grid-cols-2 gap-4 px-4">
+                <motion.div 
+                  className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20"
+                  whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <div className="font-medium text-xs text-muted-foreground">Avg. Daily Traffic</div>
+                  <div className="mt-1.5 text-lg font-bold">561</div>
+                  <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                    <TrendingUp className="h-3 w-3" />
+                    +18.4% vs last week
+                  </div>
+                </motion.div>
+                <motion.div 
+                  className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20"
+                  whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <div className="font-medium text-xs text-muted-foreground">Keywords Ranked</div>
+                  <div className="mt-1.5 text-lg font-bold">49</div>
+                  <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    6 vs last month
+                  </div>
+                </motion.div>
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="engagement" className="mt-0 px-2 pb-4">
-            <div className="h-[300px] w-full px-2"> 
-              <LineChart 
-                data={performanceData}
-                categories={['conversions', 'avgTime']}
-                index="date"
-                colors={['#D946EF', '#33C3F0']}
-                valueFormatter={(value, name) => name === 'avgTime' ? formatTime(value) : value.toString()}
-                className="pt-4"
-              />
-            </div>
-            <div className="mt-6 grid grid-cols-2 gap-4 px-4">
-              <div className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20">
-                <div className="font-medium text-xs text-muted-foreground">Avg. Conversion Rate</div>
-                <div className="mt-1.5 text-lg font-bold">4.2%</div>
-                <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                  +0.8% vs last week
-                </div>
+            </TabsContent>
+            
+            <TabsContent value="engagement" className="mt-0 px-2 pb-4">
+              <div className="h-[300px] w-full px-2"> 
+                <LineChart 
+                  data={performanceData}
+                  categories={['conversions', 'avgTime']}
+                  index="date"
+                  colors={['#D946EF', '#33C3F0']}
+                  valueFormatter={(value, name) => name === 'avgTime' ? formatTime(value) : value.toString()}
+                  className="pt-4"
+                />
               </div>
-              <div className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20">
-                <div className="font-medium text-xs text-muted-foreground">Avg. Time on Page</div>
-                <div className="mt-1.5 text-lg font-bold">3:12</div>
-                <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                  42s vs last month
-                </div>
+              <div className="mt-6 grid grid-cols-2 gap-4 px-4">
+                <motion.div 
+                  className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20"
+                  whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <div className="font-medium text-xs text-muted-foreground">Avg. Conversion Rate</div>
+                  <div className="mt-1.5 text-lg font-bold">4.2%</div>
+                  <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                    <TrendingUp className="h-3 w-3" />
+                    +0.8% vs last week
+                  </div>
+                </motion.div>
+                <motion.div 
+                  className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20"
+                  whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <div className="font-medium text-xs text-muted-foreground">Avg. Time on Page</div>
+                  <div className="mt-1.5 text-lg font-bold">3:12</div>
+                  <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    42s vs last month
+                  </div>
+                </motion.div>
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="content" className="mt-0 px-2 pb-4">
-            <div className="h-[300px] w-full px-2">
-              <BarChart 
-                data={contentPerformance}
-                categories={['views', 'engagement']}
-                index="content"
-                colors={['#9b87f5', '#33C3F0']}
-                valueFormatter={(value) => formatCompact(value)}
-                className="pt-4"
-              />
-            </div>
-            <div className="mt-6 grid grid-cols-2 gap-4 px-4">
-              <div className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20">
-                <div className="font-medium text-xs text-muted-foreground">Top Performing</div>
-                <div className="mt-1.5 text-lg font-bold">Homepage</div>
-                <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                  245 views, 8.4% conv.
-                </div>
+            </TabsContent>
+            
+            <TabsContent value="content" className="mt-0 px-2 pb-4">
+              <div className="h-[300px] w-full px-2">
+                <BarChart 
+                  data={contentPerformance}
+                  categories={['views', 'engagement']}
+                  index="content"
+                  colors={['#9b87f5', '#33C3F0']}
+                  valueFormatter={(value) => formatCompact(value)}
+                  className="pt-4"
+                />
               </div>
-              <div className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20">
-                <div className="font-medium text-xs text-muted-foreground">Highest Engagement</div>
-                <div className="mt-1.5 text-lg font-bold">Blog</div>
-                <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                  72% engagement rate
-                </div>
+              <div className="mt-6 grid grid-cols-2 gap-4 px-4">
+                <motion.div 
+                  className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20"
+                  whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <div className="font-medium text-xs text-muted-foreground">Top Performing</div>
+                  <div className="mt-1.5 text-lg font-bold">Homepage</div>
+                  <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                    245 views, 8.4% conv.
+                  </div>
+                </motion.div>
+                <motion.div 
+                  className="bg-background/50 p-3 px-4 rounded-lg shadow-sm border border-border/20"
+                  whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  <div className="font-medium text-xs text-muted-foreground">Highest Engagement</div>
+                  <div className="mt-1.5 text-lg font-bold">Blog</div>
+                  <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                    72% engagement rate
+                  </div>
+                </motion.div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
