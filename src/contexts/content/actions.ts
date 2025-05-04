@@ -5,6 +5,13 @@ import { fetchItemKeywords } from './utils';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
+// Standard toast configuration
+const toastConfig = {
+  success: { duration: 3000, closeButton: true },
+  error: { duration: 5000, closeButton: true },
+  info: { duration: 4000, closeButton: true }
+};
+
 export const createContentActions = (
   contentItems: ContentItemType[],
   setContentItems: React.Dispatch<React.SetStateAction<ContentItemType[]>>,
@@ -12,7 +19,7 @@ export const createContentActions = (
 ) => {
   const addContentItem = async (item: Omit<ContentItemType, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     if (!userId) {
-      toast.error('You must be logged in to create content');
+      toast.error('You must be logged in to create content', toastConfig.error);
       return;
     }
 
@@ -86,7 +93,7 @@ export const createContentActions = (
           }
         }
         
-        toast.success('Content item created successfully');
+        toast.success('Content item created successfully', toastConfig.success);
         
         // Add to local state with keywords
         const createdItem: ContentItemType = {
@@ -100,7 +107,7 @@ export const createContentActions = (
       }
     } catch (error: any) {
       console.error('Error adding content item:', error);
-      toast.error(error.message || 'Error creating content item');
+      toast.error(error.message || 'Error creating content item', toastConfig.error);
       
       // Fallback for development: Create in memory if database fails
       if (process.env.NODE_ENV === 'development') {
@@ -120,14 +127,14 @@ export const createContentActions = (
 
   const updateContentItem = async (id: string, updates: Partial<ContentItemType>) => {
     if (!userId) {
-      toast.error('You must be logged in to update content');
+      toast.error('You must be logged in to update content', toastConfig.error);
       return;
     }
 
     // Get the existing item
     const existingItem = contentItems.find(item => item.id === id);
     if (!existingItem) {
-      toast.error('Content item not found');
+      toast.error('Content item not found', toastConfig.error);
       return;
     }
 
@@ -297,7 +304,7 @@ export const createContentActions = (
         }
       }
       
-      toast.success('Content updated successfully');
+      toast.success('Content updated successfully', toastConfig.success);
       
       // Update local state
       setContentItems(prev => 
@@ -309,7 +316,7 @@ export const createContentActions = (
       );
     } catch (error: any) {
       console.error('Error updating content item:', error);
-      toast.error(error.message || 'Error updating content');
+      toast.error(error.message || 'Error updating content', toastConfig.error);
       
       // Fallback for development: Update in memory if database fails
       if (process.env.NODE_ENV === 'development') {
@@ -327,7 +334,7 @@ export const createContentActions = (
 
   const deleteContentItem = async (id: string) => {
     if (!userId) {
-      toast.error('You must be logged in to delete content');
+      toast.error('You must be logged in to delete content', toastConfig.error);
       return;
     }
 
@@ -349,18 +356,18 @@ export const createContentActions = (
         
       if (error) throw error;
       
-      toast.success('Content deleted successfully');
+      toast.success('Content deleted successfully', toastConfig.success);
       
       // Update local state
       setContentItems(prev => prev.filter(item => item.id !== id));
     } catch (error: any) {
       console.error('Error deleting content item:', error);
-      toast.error(error.message || 'Error deleting content');
+      toast.error(error.message || 'Error deleting content', toastConfig.error);
       
       // Fallback for development: Delete from memory if database fails
       if (process.env.NODE_ENV === 'development') {
         setContentItems(prev => prev.filter(item => item.id !== id));
-        toast.info('Deleted content from memory (development mode)');
+        toast.info('Deleted content from memory (development mode)', toastConfig.info);
       }
     }
   };

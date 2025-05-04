@@ -11,6 +11,13 @@ import {
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 import { toast } from 'sonner';
 
+// Standard toast configuration
+const toastConfig = {
+  success: { duration: 3000, closeButton: true },
+  error: { duration: 5000, closeButton: true },
+  info: { duration: 4000, closeButton: true }
+};
+
 export const useFinalReview = () => {
   const { state, dispatch } = useContentBuilder();
   const { 
@@ -73,7 +80,7 @@ export const useFinalReview = () => {
   // Generate meta information
   const generateMeta = () => {
     if (!content) {
-      toast.error('No content available to generate meta information');
+      toast.error('No content available to generate meta information', toastConfig.error);
       return;
     }
     
@@ -82,7 +89,7 @@ export const useFinalReview = () => {
     dispatch({ type: 'SET_META_TITLE', payload: metaTitle });
     dispatch({ type: 'SET_META_DESCRIPTION', payload: metaDescription });
     
-    toast.success('Generated meta title and description');
+    toast.success('Generated meta title and description', toastConfig.success);
     
     // Also generate title suggestions
     generateTitleSuggestionsAsync();
@@ -91,7 +98,7 @@ export const useFinalReview = () => {
   // Generate title suggestions
   const generateTitleSuggestionsAsync = async () => {
     if (!content || !mainKeyword) {
-      toast.error('Content or main keyword not available for generating titles');
+      toast.error('Content or main keyword not available for generating titles', toastConfig.error);
       return;
     }
     
@@ -102,10 +109,10 @@ export const useFinalReview = () => {
       const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
       
       setTitleSuggestions(suggestions);
-      toast.success('Generated title suggestions');
+      toast.success('Generated title suggestions', toastConfig.success);
     } catch (error) {
       console.error('Error generating title suggestions:', error);
-      toast.error('Failed to generate title suggestions');
+      toast.error('Failed to generate title suggestions', toastConfig.error);
     } finally {
       setIsGeneratingTitles(false);
     }
@@ -114,7 +121,7 @@ export const useFinalReview = () => {
   // Analyze solution integration
   const analyzeSolutionUsage = () => {
     if (!content || !selectedSolution) {
-      toast.error('Content or solution not available for analysis');
+      toast.error('Content or solution not available for analysis', toastConfig.error);
       return;
     }
     
@@ -135,10 +142,10 @@ export const useFinalReview = () => {
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
-      toast.success('Solution integration analysis completed');
+      toast.success('Solution integration analysis completed', toastConfig.success);
     } catch (error) {
       console.error('Error analyzing solution integration:', error);
-      toast.error('Failed to analyze solution integration');
+      toast.error('Failed to analyze solution integration', toastConfig.error);
     } finally {
       setIsAnalyzing(false);
     }

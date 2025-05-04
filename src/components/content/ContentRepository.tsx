@@ -167,7 +167,10 @@ export function ContentRepository() {
     setSelectedContentId(id);
     setIsPreviewOpen(true);
     // Implement preview functionality
-    toast.info('Content preview coming soon');
+    toast.info('Content preview coming soon', {
+      duration: 3000,
+      closeButton: true,
+    });
   };
 
   const handleSaveContent = async (updates: Partial<ContentItemType>) => {
@@ -175,9 +178,15 @@ export function ContentRepository() {
     
     try {
       await updateContentItem(selectedContentId, updates);
-      toast.success('Content updated successfully');
+      toast.success('Content updated successfully', {
+        duration: 3000,
+        closeButton: true,
+      });
     } catch (error) {
-      toast.error('Failed to update content');
+      toast.error('Failed to update content', {
+        duration: 5000,
+        closeButton: true,
+      });
       throw error; // Re-throw so the dialog can handle it
     }
   };
@@ -189,18 +198,30 @@ export function ContentRepository() {
   const handlePublishContent = async (id: string) => {
     try {
       await updateContentItem(id, { status: 'published' });
-      toast.success('Content published successfully');
+      toast.success('Content published successfully', {
+        duration: 3000,
+        closeButton: true,
+      });
     } catch (error) {
-      toast.error('Failed to publish content');
+      toast.error('Failed to publish content', {
+        duration: 5000,
+        closeButton: true,
+      });
     }
   };
 
   const handleArchiveContent = async (id: string) => {
     try {
       await updateContentItem(id, { status: 'archived' });
-      toast.success('Content archived successfully');
+      toast.success('Content archived successfully', {
+        duration: 3000,
+        closeButton: true,
+      });
     } catch (error) {
-      toast.error('Failed to archive content');
+      toast.error('Failed to archive content', {
+        duration: 5000,
+        closeButton: true,
+      });
     }
   };
 
@@ -213,13 +234,40 @@ export function ContentRepository() {
     if (!selectedContentId) return;
     
     try {
-      await deleteContentItem(selectedContentId);
-      toast.success('Content deleted successfully');
+      // First update local state to avoid UI freezing
+      const deletedItemId = selectedContentId;
+      
+      // Find a new item to select after deletion
+      let newSelectedId: string | null = null;
+      if (filteredItems.length > 1) {
+        const currentItemIndex = filteredItems.findIndex(item => item.id === deletedItemId);
+        const nextItemIndex = currentItemIndex < filteredItems.length - 1 ? currentItemIndex + 1 : currentItemIndex - 1;
+        newSelectedId = filteredItems[nextItemIndex]?.id || null;
+      }
+      
+      // Update local state first
       setIsDeleteDialogOpen(false);
-      setSelectedContentId(filteredItems.length > 1 ? 
-        filteredItems.find(item => item.id !== selectedContentId)?.id || null : null);
+      setSelectedContentId(null);
+      
+      // Then perform the deletion with the backend
+      await deleteContentItem(deletedItemId);
+      
+      // After successful deletion, update the selected ID if we have another item
+      setTimeout(() => {
+        setSelectedContentId(newSelectedId);
+      }, 0);
+      
+      toast.success('Content deleted successfully', {
+        duration: 3000,
+        closeButton: true,
+      });
     } catch (error) {
-      toast.error('Failed to delete content');
+      toast.error('Failed to delete content', {
+        duration: 5000,
+        closeButton: true,
+      });
+      // Re-open dialog if there was an error
+      setIsDeleteDialogOpen(true);
     }
   };
   

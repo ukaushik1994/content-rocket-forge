@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ContentRepository } from '@/components/content/ContentRepository';
 import { useContent } from '@/contexts/content';
 import { PlusCircle, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const Content = () => {
@@ -13,16 +13,10 @@ const Content = () => {
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   
-  const handleCreateContent = async () => {
-    try {
-      setIsCreating(true);
-      // Navigate to the content builder
-      navigate('/content-builder');
-    } catch (error: any) {
-      toast.error(`Failed to create content: ${error.message}`);
-    } finally {
-      setIsCreating(false);
-    }
+  const handleCreateContent = () => {
+    setIsCreating(true);
+    // Navigate to the content builder
+    navigate('/content-builder');
   };
   
   return (
