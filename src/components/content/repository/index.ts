@@ -14,5 +14,6 @@ export * from './EnhancedContentCard';
 export * from './EnhancedContentFilters';
 export * from './ContentDisplay';
 export * from './ContentDialogs';
+export * from './card';
 export * from './hooks/useContentFiltering';
 export * from './hooks/useContentActions';
