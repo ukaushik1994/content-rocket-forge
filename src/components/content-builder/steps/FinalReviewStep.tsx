@@ -13,7 +13,7 @@ import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
 export const FinalReviewStep = () => {
-  const { state } = useContentBuilder();
+  const { state, dispatch } = useContentBuilder();
   const { 
     content, 
     mainKeyword, 
@@ -64,13 +64,13 @@ export const FinalReviewStep = () => {
   const handleMetaTitleChange = (value: string) => {
     console.log("[FinalReviewStep] Setting meta title to:", value);
     // Update both metaTitle and contentTitle for consistency
-    state.dispatch({ type: 'SET_META_TITLE', payload: value });
-    state.dispatch({ type: 'SET_CONTENT_TITLE', payload: value });
+    dispatch({ type: 'SET_META_TITLE', payload: value });
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: value });
   };
   
   const handleMetaDescriptionChange = (value: string) => {
     console.log("[FinalReviewStep] Setting meta description to:", value);
-    state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+    dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
 
   return (
