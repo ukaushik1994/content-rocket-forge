@@ -32,6 +32,13 @@ export const ContentRewriteDialog = ({
   isRewriting,
   onApplyContent
 }: ContentRewriteDialogProps) => {
+  // Debug logging when content changes
+  React.useEffect(() => {
+    if (rewrittenContent) {
+      console.log("[ContentRewriteDialog] Rewritten content available for type:", rewriteType);
+    }
+  }, [rewrittenContent, rewriteType]);
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">

@@ -32,30 +32,46 @@ export const SaveStep = () => {
     selectedSolution, 
     isSaving,
     metaTitle,
-    metaDescription
+    metaDescription,
+    contentTitle,
+    seoImprovements
   } = state;
   
   const { addContentItem, contentItems, getContentItem } = useContent();
   const navigate = useNavigate();
   
-  // Initialize title from metaTitle if available, otherwise use a default
-  const [title, setTitle] = useState(metaTitle || `${mainKeyword} - Complete Guide`);
+  // Track optimizations
+  const hasAppliedOptimizations = React.useMemo(() => {
+    return seoImprovements?.some(improvement => improvement.applied) || false;
+  }, [seoImprovements]);
+  
+  // Initialize title from contentTitle or metaTitle if available, otherwise use a default
+  const [title, setTitle] = useState(metaTitle || contentTitle || `${mainKeyword} - Complete Guide`);
+  
   // Initialize description from metaDescription if available, otherwise use a default
   const [description, setDescription] = useState(metaDescription || `A comprehensive guide about ${mainKeyword}`);
+  
   const [socialShare, setSocialShare] = useState(true);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
   
-  // Update the title and description when metaTitle or metaDescription changes
+  // Update the local state when global state changes
   useEffect(() => {
+    console.log("[SaveStep] Global state updated:", { metaTitle, contentTitle, metaDescription });
+    
     if (metaTitle) {
       setTitle(metaTitle);
+      console.log("[SaveStep] Updated title from metaTitle:", metaTitle);
+    } else if (contentTitle) {
+      setTitle(contentTitle);
+      console.log("[SaveStep] Updated title from contentTitle:", contentTitle);
     }
     
     if (metaDescription) {
       setDescription(metaDescription);
+      console.log("[SaveStep] Updated description from metaDescription:", metaDescription);
     }
-  }, [metaTitle, metaDescription]);
+  }, [metaTitle, metaDescription, contentTitle]);
   
   // Improved check for similar content already exists
   useEffect(() => {
@@ -108,6 +124,10 @@ export const SaveStep = () => {
 
     // Save to content library
     try {
+      console.log("[SaveStep] Saving content with title:", title);
+      console.log("[SaveStep] Using description:", description);
+      console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
+      
       // Prepare content item for storage, use the current title and description from state
       const contentItem = {
         title: title,
@@ -115,11 +135,10 @@ export const SaveStep = () => {
         status: 'draft' as 'draft' | 'published' | 'archived',
         seo_score: seoScore,
         keywords: [mainKeyword, ...(state.selectedKeywords || [])],
-        meta_description: description // Store the meta description
+        meta_description: description, // Store the meta description
+        optimized: hasAppliedOptimizations // Track if optimizations were applied
       };
       
-      // Fix: Don't check the return value directly since addContentItem returns void
-      // Instead, just call the function and handle any errors in the catch block
       await addContentItem(contentItem);
       
       toast.success("Content saved to library");
@@ -160,6 +179,16 @@ export const SaveStep = () => {
           <Button variant="outline" size="sm" onClick={handleViewExisting}>
             View in Library
           </Button>
+        </div>
+      )}
+      
+      {hasAppliedOptimizations && (
+        <div className="flex items-center gap-2 p-4 rounded-md bg-green-50 border border-green-200 text-green-700">
+          <CheckCircle className="h-5 w-5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">Content has been optimized</p>
+            <p className="text-sm">SEO improvements from the optimization step have been applied.</p>
+          </div>
         </div>
       )}
       
@@ -243,6 +272,11 @@ export const SaveStep = () => {
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Status</p>
                 <p className="font-medium">Draft</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Optimized</p>
+                <p className="font-medium">{hasAppliedOptimizations ? 'Yes' : 'No'}</p>
               </div>
             </div>
             

@@ -56,18 +56,90 @@ export const extractDocumentStructure = (htmlContent: string) => {
  * Generate meta title and description suggestions based on content
  */
 export const generateMetaSuggestions = (content: string, mainKeyword: string, contentTitle: string) => {
+  console.log("[documentAnalysis] Generating meta suggestions for:", { mainKeyword, contentTitle });
+  
   // Generate a meta title (50-60 characters)
-  const metaTitle = contentTitle
-    ? `${contentTitle} | ${mainKeyword}`
-    : `Your SEO Optimized Title | ${mainKeyword}`;
-    
+  let metaTitle = '';
+  if (contentTitle && contentTitle.length > 0 && contentTitle !== 'Untitled') {
+    // Use existing content title if it's meaningful
+    metaTitle = contentTitle.includes(mainKeyword) 
+      ? contentTitle 
+      : `${contentTitle} | ${mainKeyword}`;
+  } else {
+    // Create a new title
+    metaTitle = `${mainKeyword} - Complete Guide`;
+  }
+  
+  // Ensure title isn't too long
+  if (metaTitle.length > 60) {
+    metaTitle = metaTitle.substring(0, 57) + '...';
+  }
+  
   // Generate a meta description (150-160 characters)
-  const metaDescription = `Learn about ${mainKeyword} in this comprehensive guide. Get expert tips, strategies, and insights to improve your SEO.`;
+  const metaDescription = `Learn about ${mainKeyword} in this comprehensive guide. Get expert tips, strategies, and insights to improve your SEO and boost your search engine rankings.`;
+  
+  console.log("[documentAnalysis] Generated:", { metaTitle, metaDescription });
   
   return {
     metaTitle,
     metaDescription
   };
+};
+
+/**
+ * Generate compelling title suggestions based on content and keywords
+ */
+export const generateTitleSuggestions = async (content: string, mainKeyword: string, selectedKeywords: string[]) => {
+  console.log("[documentAnalysis] Generating title suggestions for:", mainKeyword);
+  
+  // Analyse first 300 words of content to extract themes
+  const firstWords = content.split(/\s+/).slice(0, 300).join(' ');
+  
+  // Create different title patterns
+  const titleFormats = [
+    // How-to format
+    `How to Master ${mainKeyword}: A Complete Guide`,
+    
+    // List format
+    `Top 10 ${mainKeyword} Strategies for Better SEO Results`,
+    
+    // Question format
+    `Why is ${mainKeyword} Essential for Your SEO Strategy?`,
+    
+    // Benefit-driven format
+    `Boost Your Rankings with These ${mainKeyword} Techniques`,
+    
+    // Problem-solving format
+    `Solving Common ${mainKeyword} Problems: Expert Tips`,
+    
+    // SEO-focused format
+    `${mainKeyword}: Best Practices for SEO Success in 2023`,
+    
+    // Authoritative format
+    `The Ultimate Guide to ${mainKeyword} for Digital Marketers`,
+    
+    // Data-driven format
+    `${mainKeyword} Analysis: Key Insights and Implementation`,
+    
+    // Tutorial format
+    `Step-by-Step ${mainKeyword} Implementation for Beginners`,
+    
+    // Strategic format
+    `${mainKeyword} Strategy: A Framework for Successful Optimization`
+  ];
+  
+  // Add secondary keywords to some titles if available
+  const enhancedTitles = [...titleFormats];
+  if (selectedKeywords && selectedKeywords.length > 0) {
+    const secondaryKeyword = selectedKeywords[0];
+    if (secondaryKeyword && secondaryKeyword !== mainKeyword) {
+      enhancedTitles.push(`${mainKeyword} and ${secondaryKeyword}: The Perfect SEO Combination`);
+      enhancedTitles.push(`How to Optimize for ${mainKeyword} and ${secondaryKeyword}`);
+    }
+  }
+  
+  console.log("[documentAnalysis] Generated title suggestions:", enhancedTitles);
+  return enhancedTitles;
 };
 
 /**
@@ -90,77 +162,85 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: { 
   let positioningScore = 50;
   
   if (content.toLowerCase().indexOf(name.toLowerCase()) < content.length / 3) {
-    positioningScore += 20;
+    positioningScore += 20; // Mentioned early in content
   }
   
-  const nameOccurrences = (content.match(new RegExp(name, 'gi')) || []).length;
-  if (nameOccurrences > 3) {
-    positioningScore += 15;
+  const nameMentions = (content.toLowerCase().match(new RegExp(name.toLowerCase(), 'g')) || []).length;
+  if (nameMentions >= 3) {
+    positioningScore += 15; // Mentioned multiple times
   }
   
-  return {
-    featureIncorporation: featureIncorporationPercentage,
-    positioningScore: Math.min(positioningScore, 100),
-    nameMentions: nameOccurrences,
-    painPointsAddressed: [] as string[],
-    audienceAlignment: 0
-  };
-};
-
-/**
- * Detect call-to-actions in the content
- */
-export const detectCTAs = (content: string) => {
-  const ctaKeywords = ['Sign up', 'Subscribe', 'Learn more', 'Get started', 'Contact us'];
-  const ctaText: string[] = [];
+  // Create positive word mapping to check context
+  const positiveWords = ['best', 'great', 'excellent', 'solution', 'recommended', 'powerful', 'effective'];
+  let positiveContexts = 0;
   
-  let hasCTA = false;
-  
-  for (const keyword of ctaKeywords) {
-    if (content.toLowerCase().includes(keyword.toLowerCase())) {
-      hasCTA = true;
-      ctaText.push(keyword);
+  // Check if solution is mentioned in a positive context
+  const sentences = content.split(/[.!?]+/);
+  for (const sentence of sentences) {
+    if (sentence.toLowerCase().includes(name.toLowerCase())) {
+      for (const word of positiveWords) {
+        if (sentence.toLowerCase().includes(word)) {
+          positiveContexts++;
+          break;
+        }
+      }
     }
   }
   
+  if (positiveContexts >= 2) {
+    positioningScore += 15; // Mentioned in positive contexts
+  }
+  
+  // Simple estimate for pain points addressed and audience alignment
+  const painPointsAddressed = Math.min(100, Math.round(featureIncorporationPercentage * 1.2));
+  const audienceAlignment = Math.min(100, Math.round((positioningScore + featureIncorporationPercentage) / 2));
+  
   return {
-    hasCTA,
-    ctaText
+    featureIncorporation: Math.round(featureIncorporationPercentage),
+    positioningScore,
+    nameMentions,
+    painPointsAddressed,
+    audienceAlignment
   };
 };
 
 /**
- * Generate title suggestions based on content and keywords
+ * Detect Call-to-Action elements in content
  */
-export const generateTitleSuggestions = async (
-  content: string,
-  mainKeyword: string,
-  secondaryKeywords: string[]
-): Promise<string[]> => {
-  // Generate 5 different title suggestions
-  const suggestions: string[] = [
-    `Ultimate Guide to ${mainKeyword}: Everything You Need to Know`,
-    `The Complete ${mainKeyword} Guide: Tips, Strategies, and Best Practices`,
-    `${mainKeyword} Made Simple: A Comprehensive Guide`,
-    `How to Master ${mainKeyword}: Expert Tips & Advice`,
-    `${mainKeyword} 101: The Essential Guide for Beginners`
+export const detectCTAs = (content: string): { hasCTA: boolean; ctaText: string[] } => {
+  const ctaMarkers = [
+    'click here',
+    'sign up',
+    'register',
+    'subscribe',
+    'download',
+    'learn more',
+    'get started',
+    'try now',
+    'contact us',
+    'buy now',
+    'order now'
   ];
-
-  // Add some titles with secondary keywords if available
-  if (secondaryKeywords.length > 0) {
-    const relevantSecondaryKeywords = secondaryKeywords.slice(0, 3);
-    
-    relevantSecondaryKeywords.forEach((keyword) => {
-      suggestions.push(`${mainKeyword} and ${keyword}: A Complete Guide`);
-    });
-    
-    if (relevantSecondaryKeywords.length >= 2) {
-      suggestions.push(
-        `Ultimate ${mainKeyword} Guide: Including ${relevantSecondaryKeywords[0]} and ${relevantSecondaryKeywords[1]}`
-      );
+  
+  const foundCTAs: string[] = [];
+  
+  // Check each sentence for CTA markers
+  const sentences = content.split(/[.!?]+/);
+  for (const sentence of sentences) {
+    const lowerSentence = sentence.toLowerCase();
+    for (const marker of ctaMarkers) {
+      if (lowerSentence.includes(marker)) {
+        foundCTAs.push(sentence.trim());
+        break;
+      }
     }
   }
-
-  // Return the array of suggestions
-  return suggestions;
+  
+  // Remove duplicates
+  const uniqueCTAs = [...new Set(foundCTAs)];
+  
+  return {
+    hasCTA: uniqueCTAs.length > 0,
+    ctaText: uniqueCTAs
+  };
 };

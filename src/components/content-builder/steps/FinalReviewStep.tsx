@@ -22,7 +22,8 @@ export const FinalReviewStep = () => {
     solutionIntegrationMetrics,
     selectedKeywords,
     seoScore,
-    serpData
+    serpData,
+    contentTitle
   } = state;
   
   const { 
@@ -39,12 +40,22 @@ export const FinalReviewStep = () => {
 
   const [activeTab, setActiveTab] = useState("content");
   
+  // Debug current state
+  useEffect(() => {
+    console.log("[FinalReviewStep] Current state:", { 
+      metaTitle, 
+      contentTitle, 
+      metaDescription
+    });
+  }, [metaTitle, contentTitle, metaDescription]);
+  
   // Set meta information when component mounts if not already set
   useEffect(() => {
     if (content && mainKeyword && !metaTitle && !metaDescription) {
+      console.log("[FinalReviewStep] No meta information detected, generating...");
       generateMeta();
     }
-  }, []);
+  }, [content, mainKeyword, metaTitle, metaDescription]);
   
   // Check if step can be completed
   useEffect(() => {
@@ -53,13 +64,22 @@ export const FinalReviewStep = () => {
   
   // Update meta information
   const handleMetaTitleChange = (value: string) => {
-    console.log("Setting meta title to:", value);
+    console.log("[FinalReviewStep] Setting meta title to:", value);
+    // Update both metaTitle and contentTitle for consistency
     dispatch({ type: 'SET_META_TITLE', payload: value });
-    // Also update the content title for consistency
     dispatch({ type: 'SET_CONTENT_TITLE', payload: value });
+    
+    // Verify the update
+    setTimeout(() => {
+      console.log("[FinalReviewStep] Updated state:", {
+        metaTitle: state.metaTitle,
+        contentTitle: state.contentTitle
+      });
+    }, 100);
   };
   
   const handleMetaDescriptionChange = (value: string) => {
+    console.log("[FinalReviewStep] Setting meta description to:", value);
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
   
@@ -112,6 +132,8 @@ export const FinalReviewStep = () => {
   const completionPercentage = Math.round((passedChecks / totalChecks) * 100);
   
   const runAllChecks = () => {
+    console.log("[FinalReviewStep] Running all checks");
+    
     if (!metaTitle || !metaDescription) {
       generateMeta();
     }

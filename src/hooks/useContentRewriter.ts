@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
 import { getImprovementType, generateRewrittenContent } from '@/utils/seo/contentRewriter';
@@ -9,7 +9,7 @@ import { getImprovementType, generateRewrittenContent } from '@/utils/seo/conten
  */
 export const useContentRewriter = () => {
   const { state, setContent, dispatch } = useContentBuilder();
-  const { content, mainKeyword } = state;
+  const { content, mainKeyword, seoImprovements } = state;
   
   const [showRewriteDialog, setShowRewriteDialog] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
@@ -17,6 +17,11 @@ export const useContentRewriter = () => {
   const [rewrittenContent, setRewrittenContent] = useState<string>('');
   const [isRewriting, setIsRewriting] = useState(false);
   const [currentRecommendationId, setCurrentRecommendationId] = useState<string | null>(null);
+  
+  // Debugging - log improvements whenever they change
+  useEffect(() => {
+    console.log("[useContentRewriter] SEO Improvements:", seoImprovements);
+  }, [seoImprovements]);
   
   // Check if a recommendation has been applied
   const isRecommendationApplied = (recommendationId: string) => {
@@ -33,6 +38,8 @@ export const useContentRewriter = () => {
       toast.info("This recommendation has already been applied");
       return;
     }
+    
+    console.log("[useContentRewriter] Handling content rewrite:", { recommendation, recommendationId });
     
     setSelectedRecommendation(recommendation);
     setCurrentRecommendationId(recommendationId);
@@ -61,6 +68,7 @@ export const useContentRewriter = () => {
       // Simulate API call with setTimeout
       setTimeout(() => {
         const newContent = generateRewrittenContent(content, recommendation, type, mainKeyword);
+        console.log("[useContentRewriter] Generated rewritten content");
         setRewrittenContent(newContent);
         setIsRewriting(false);
       }, 1500);
@@ -73,9 +81,13 @@ export const useContentRewriter = () => {
   
   // Apply rewritten content
   const applyRewrittenContent = () => {
-    if (!rewrittenContent || !currentRecommendationId) return;
+    if (!rewrittenContent || !currentRecommendationId) {
+      console.warn("[useContentRewriter] Cannot apply rewritten content - missing content or recommendation ID");
+      return;
+    }
     
     // Apply the rewritten content
+    console.log("[useContentRewriter] Applying rewritten content for recommendation:", currentRecommendationId);
     setContent(rewrittenContent);
     
     // Mark the improvement as applied in state

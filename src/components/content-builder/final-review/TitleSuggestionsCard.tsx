@@ -43,10 +43,8 @@ export const TitleSuggestionsCard = ({
     setSelected(index);
     const selectedTitle = suggestions[index];
     onSelectTitle(selectedTitle);
+    console.log("[TitleSuggestionsCard] Title selected:", selectedTitle);
     toast.success("Title updated successfully");
-    
-    // Log to verify the title is being selected correctly
-    console.log("Title selected:", selectedTitle);
   };
 
   return (

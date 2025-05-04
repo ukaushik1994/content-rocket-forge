@@ -25,6 +25,8 @@ export const useFinalReview = () => {
     mainKeyword, 
     selectedKeywords, 
     contentTitle, 
+    metaTitle,
+    metaDescription,
     selectedSolution, 
     serpSelections,
     serpData
@@ -35,6 +37,12 @@ export const useFinalReview = () => {
   const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
   const [ctaInfo, setCTAInfo] = useState<{ hasCTA: boolean; ctaText: string[] }>({ hasCTA: false, ctaText: [] });
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  
+  // Debug logs for tracking state
+  useEffect(() => {
+    console.log("[useFinalReview] Meta title state:", metaTitle);
+    console.log("[useFinalReview] Content title state:", contentTitle);
+  }, [metaTitle, contentTitle]);
   
   // Run document structure analysis when the content changes
   useEffect(() => {
@@ -84,12 +92,14 @@ export const useFinalReview = () => {
       return;
     }
     
-    const { metaTitle, metaDescription } = generateMetaSuggestions(content, mainKeyword, contentTitle);
+    const { metaTitle: generatedTitle, metaDescription: generatedDescription } = generateMetaSuggestions(content, mainKeyword, contentTitle);
     
-    dispatch({ type: 'SET_META_TITLE', payload: metaTitle });
-    // Also update content title for consistency
-    dispatch({ type: 'SET_CONTENT_TITLE', payload: metaTitle });
-    dispatch({ type: 'SET_META_DESCRIPTION', payload: metaDescription });
+    console.log("[useFinalReview] Generating meta:", { generatedTitle, generatedDescription });
+    
+    // Update both meta title and content title for consistency
+    dispatch({ type: 'SET_META_TITLE', payload: generatedTitle });
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: generatedTitle });
+    dispatch({ type: 'SET_META_DESCRIPTION', payload: generatedDescription });
     
     toast.success('Generated meta title and description', toastConfig.success);
     
@@ -111,13 +121,15 @@ export const useFinalReview = () => {
       const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
       
       setTitleSuggestions(suggestions);
+      console.log("[useFinalReview] Generated title suggestions:", suggestions);
       toast.success('Generated title suggestions', toastConfig.success);
       
       // If there's at least one suggestion and no meta title set yet, automatically use the first one
       if (suggestions.length > 0 && !state.metaTitle) {
-        dispatch({ type: 'SET_META_TITLE', payload: suggestions[0] });
-        // Also update content title for consistency
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestions[0] });
+        const initialTitle = suggestions[0];
+        console.log("[useFinalReview] Setting initial title:", initialTitle);
+        dispatch({ type: 'SET_META_TITLE', payload: initialTitle });
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: initialTitle });
       }
     } catch (error) {
       console.error('Error generating title suggestions:', error);
