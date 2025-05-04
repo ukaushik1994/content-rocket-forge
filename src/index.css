@@ -68,11 +68,11 @@
 
 @layer utilities {
   .glass-panel {
-    @apply backdrop-blur-xl bg-glass border border-white/10 shadow-lg;
+    @apply backdrop-blur-md bg-black/20 border border-white/10 shadow-lg;
   }
   
   .neon-border {
-    @apply border border-neon-purple shadow-neon;
+    @apply border border-primary/20 shadow-[0_0_10px_rgba(155,135,245,0.3)];
   }
   
   .text-gradient {
@@ -111,6 +111,24 @@
     animation: pulseGlow 3s ease-in-out infinite;
   }
   
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(155, 135, 245, 0.3) transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(155, 135, 245, 0.3);
+    border-radius: 20px;
+  }
+  
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -129,6 +147,14 @@
   .card-3d:hover {
     transform: translateY(-5px) rotateX(2deg);
     box-shadow: 0 10px 20px rgba(155, 135, 245, 0.2);
+  }
+
+  /* Glass effect for cards */
+  .card-glass {
+    background: rgba(31, 32, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius);
   }
 }
 
@@ -181,4 +207,49 @@
     opacity: 0.8;
     filter: brightness(1.5) drop-shadow(0 0 10px rgba(155, 135, 245, 0.8));
   }
+}
+
+/* Prose styles for markdown content */
+.prose h1 {
+  @apply text-2xl font-bold mb-4 mt-6;
+}
+
+.prose h2 {
+  @apply text-xl font-bold mb-3 mt-5;
+}
+
+.prose h3 {
+  @apply text-lg font-bold mb-2 mt-4;
+}
+
+.prose p {
+  @apply mb-4;
+}
+
+.prose ul {
+  @apply list-disc pl-5 mb-4;
+}
+
+.prose ol {
+  @apply list-decimal pl-5 mb-4;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+.prose a {
+  @apply text-primary underline;
+}
+
+.prose blockquote {
+  @apply pl-4 border-l-4 border-muted italic;
+}
+
+.prose code {
+  @apply bg-secondary/30 rounded px-1 font-mono text-sm;
+}
+
+.prose pre {
+  @apply bg-secondary/20 p-3 rounded-lg overflow-auto font-mono text-sm mb-4;
 }

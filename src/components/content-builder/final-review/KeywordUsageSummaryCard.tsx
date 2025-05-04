@@ -42,15 +42,15 @@ export const KeywordUsageSummaryCard = ({
   );
   
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2 border-b">
+    <Card className="h-full shadow-md">
+      <CardHeader className="pb-2 border-b bg-gradient-to-r from-muted/30 to-transparent">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
           Keyword Usage
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4 overflow-hidden">
-        <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+        <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
           {/* Primary Keyword Section */}
           <div>
             <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
