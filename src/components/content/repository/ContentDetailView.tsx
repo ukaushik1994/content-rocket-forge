@@ -55,7 +55,7 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
-      <CardHeader className="pb-2 border-b">
+      <CardHeader>
         <div className="flex flex-wrap gap-2 mb-2">
           <StatusBadge status={item.status} />
           <ScoreBadge score={item.seo_score || 0} />
