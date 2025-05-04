@@ -1,36 +1,38 @@
 
 import { SerpSelection } from '@/contexts/content-builder/types';
 
-interface SerpSelectionStatsResult {
-  totalSelected: number;
+export interface SerpSelectionStatsResult {
   selectedCounts: {
     keyword: number;
     question: number;
     snippet: number;
     competitor: number;
+    entity: number;
+    heading: number;
+    contentGap: number;
+    topRank: number;
   };
+  totalSelected: number;
 }
 
-export const SerpSelectionStats = ({ 
-  serpSelections 
-}: { 
-  serpSelections: SerpSelection[] 
-}): SerpSelectionStatsResult => {
-  // Count selected items by type
+export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSelection[] }): SerpSelectionStatsResult => {
   const selectedItems = serpSelections.filter(item => item.selected);
   
-  const keywordCount = selectedItems.filter(item => item.type === 'keyword').length;
-  const questionCount = selectedItems.filter(item => item.type === 'question').length;
-  const snippetCount = selectedItems.filter(item => item.type === 'snippet').length;
-  const competitorCount = selectedItems.filter(item => item.type === 'competitor').length;
+  const selectedCounts = {
+    keyword: selectedItems.filter(item => item.type === 'keyword').length,
+    question: selectedItems.filter(item => item.type === 'question').length,
+    snippet: selectedItems.filter(item => item.type === 'snippet').length,
+    competitor: selectedItems.filter(item => item.type === 'competitor').length,
+    entity: selectedItems.filter(item => item.type === 'entity').length,
+    heading: selectedItems.filter(item => item.type === 'heading').length,
+    contentGap: selectedItems.filter(item => item.type === 'contentGap').length,
+    topRank: selectedItems.filter(item => item.type === 'topRank').length
+  };
+  
+  const totalSelected = selectedItems.length;
   
   return {
-    totalSelected: selectedItems.length,
-    selectedCounts: {
-      keyword: keywordCount,
-      question: questionCount,
-      snippet: snippetCount,
-      competitor: competitorCount
-    }
+    selectedCounts,
+    totalSelected
   };
 };

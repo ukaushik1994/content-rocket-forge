@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Search, FileText, X, ListPlus, Sparkles, CheckCircle } from 'lucide-react';
+import { ChevronRight, Search, FileText, X, ListPlus, Sparkles, CheckCircle, Tag, Heading, FileSearch } from 'lucide-react';
 import { SerpSelection } from '@/contexts/content-builder/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QuestionsGroup, KeywordsGroup, SnippetsGroup } from '@/components/content-builder/serp/overview/SelectedItemsGroup';
@@ -17,6 +17,10 @@ interface SelectedItemsSidebarProps {
     question: number;
     snippet: number;
     competitor: number;
+    entity: number;
+    heading: number;
+    contentGap: number;
+    topRank: number;
   };
   handleToggleSelection: (type: string, content: string) => void;
   handleContinueWithSelections: () => void;
@@ -137,22 +141,112 @@ export function SelectedItemsSidebar({
                     handleToggleSelection={handleToggleSelection}
                   />
                 )}
-                
-                {selectedTab === 'all' && selectedCounts.competitor > 0 && (
+
+                {/* New Entity Group */}
+                {selectedTab === 'all' && selectedCounts.entity > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <Tag className="h-3.5 w-3.5 text-indigo-400" />
+                      Entities ({selectedCounts.entity})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {getItemsByType('entity')
+                        .filter(item => item.selected)
+                        .map((item, i) => (
+                          <Badge 
+                            key={i} 
+                            variant="outline" 
+                            className="bg-indigo-950/30 hover:bg-indigo-950/50 border-indigo-500/30 group"
+                          >
+                            {item.content}
+                            <button 
+                              className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                              onClick={() => handleToggleSelection(item.type, item.content)}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Heading Group */}
+                {selectedTab === 'all' && selectedCounts.heading > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <Heading className="h-3.5 w-3.5 text-teal-400" />
+                      Headings ({selectedCounts.heading})
+                    </h4>
+                    <div className="space-y-2">
+                      {getItemsByType('heading')
+                        .filter(item => item.selected)
+                        .map((item, i) => (
+                          <div key={i} className="p-2 rounded-md bg-teal-950/30 border border-teal-500/20 text-xs group">
+                            <div className="flex items-start gap-2 justify-between">
+                              <div className="flex items-start gap-2">
+                                <Heading className="h-3.5 w-3.5 text-teal-400 mt-0.5" />
+                                <span>{item.content}</span>
+                              </div>
+                              <button 
+                                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                                onClick={() => handleToggleSelection(item.type, item.content)}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Content Gap Group */}
+                {selectedTab === 'all' && selectedCounts.contentGap > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <FileSearch className="h-3.5 w-3.5 text-rose-400" />
+                      Content Gaps ({selectedCounts.contentGap})
+                    </h4>
+                    <div className="space-y-2">
+                      {getItemsByType('contentGap')
+                        .filter(item => item.selected)
+                        .map((item, i) => (
+                          <div key={i} className="p-2 rounded-md bg-rose-950/30 border border-rose-500/20 text-xs group">
+                            <div className="flex items-start gap-2 justify-between">
+                              <div className="flex items-start gap-2">
+                                <FileSearch className="h-3.5 w-3.5 text-rose-400 mt-0.5" />
+                                <span>{item.content}</span>
+                              </div>
+                              <button 
+                                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                                onClick={() => handleToggleSelection(item.type, item.content)}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Ranks Group (renamed from competitors) */}
+                {selectedTab === 'all' && selectedCounts.topRank > 0 && (
                   <div>
                     <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-green-400" />
-                      Competitor Content ({selectedCounts.competitor})
+                      Top Ranks ({selectedCounts.topRank})
                     </h4>
                     <div className="space-y-2">
-                      {getItemsByType('competitor')
+                      {getItemsByType('topRank')
                         .filter(item => item.selected)
                         .map((item, i) => (
                           <div key={i} className="p-2 rounded-md bg-green-950/30 border border-green-500/20 text-xs group">
                             <div className="flex items-start gap-2 justify-between">
                               <div className="flex items-start gap-2">
                                 <FileText className="h-3.5 w-3.5 text-green-400 mt-0.5" />
-                                <span>{item.content.substring(0, 100)}...</span>
+                                <span>{item.content}</span>
                               </div>
                               <button 
                                 className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"

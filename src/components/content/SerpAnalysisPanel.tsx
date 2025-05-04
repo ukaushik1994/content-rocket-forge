@@ -181,7 +181,7 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('keywords')}
           variant="blue"
           description="Select keywords to include in your content"
-          count={serpData.relatedSearches?.length || 0}
+          count={serpData?.relatedSearches?.length || 0}
         />
         
         <SerpKeywordsSection 
@@ -199,7 +199,7 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('questions')}
           variant="amber"
           description="Common questions people search about this topic"
-          count={serpData.peopleAlsoAsk?.length || 0}
+          count={serpData?.peopleAlsoAsk?.length || 0}
         />
         
         <SerpQuestionsSection 
@@ -209,7 +209,7 @@ export function SerpAnalysisPanel({
         />
       </div>
       
-      {/* Entities Section - NEW */}
+      {/* Entities Section */}
       <div className="space-y-4">
         <SerpSectionHeader 
           title="Key Entities" 
@@ -217,7 +217,7 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('entities')}
           variant="indigo"
           description="Important entities and concepts related to this topic"
-          count={serpData.entities?.length || 0}
+          count={serpData?.entities?.length || 0}
         />
         
         <SerpEntitiesSection 
@@ -227,7 +227,7 @@ export function SerpAnalysisPanel({
         />
       </div>
       
-      {/* Headings Section - NEW */}
+      {/* Headings Section */}
       <div className="space-y-4">
         <SerpSectionHeader 
           title="Top Headings" 
@@ -235,7 +235,7 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('headings')}
           variant="teal"
           description="Common headings used by top-ranking content"
-          count={serpData.headings?.length || 0}
+          count={serpData?.headings?.length || 0}
         />
         
         <SerpHeadingsSection 
@@ -245,7 +245,7 @@ export function SerpAnalysisPanel({
         />
       </div>
       
-      {/* Content Gaps Section - NEW */}
+      {/* Content Gaps Section */}
       <div className="space-y-4">
         <SerpSectionHeader 
           title="Content Gaps" 
@@ -253,7 +253,7 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('contentGaps')}
           variant="rose"
           description="Topics competitors are missing that you can cover"
-          count={serpData.contentGaps?.length || 0}
+          count={serpData?.contentGaps?.length || 0}
         />
         
         <SerpContentGapsSection 
@@ -263,15 +263,15 @@ export function SerpAnalysisPanel({
         />
       </div>
       
-      {/* Competitor Analysis Section */}
+      {/* Top Ranks Section - Renamed from Competitor Analysis */}
       <div className="space-y-4">
         <SerpSectionHeader 
-          title="Competitor Analysis" 
+          title="Top Ranks" 
           expanded={expandedSections.competitors}
           onToggle={() => toggleSection('competitors')}
           variant="green"
-          description="Learn from the top-ranking content for this keyword"
-          count={serpData.topResults?.length || 0}
+          description="Top-ranking content for this keyword"
+          count={serpData?.topResults?.length || 0}
         />
         
         <SerpCompetitorsSection 

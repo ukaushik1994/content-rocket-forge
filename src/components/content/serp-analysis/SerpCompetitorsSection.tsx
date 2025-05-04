@@ -29,7 +29,7 @@ export function SerpCompetitorsSection({
         className="text-center py-8"
       >
         <Link className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-muted-foreground">No competitor data available.</p>
+        <p className="text-muted-foreground">No top results data available.</p>
       </motion.div>
     );
   }
@@ -59,7 +59,7 @@ export function SerpCompetitorsSection({
                       size="sm"
                       variant="ghost"
                       className="h-7 px-2 hover:bg-green-500/20"
-                      onClick={() => onAddToContent(competitor.snippet, 'competitor')}
+                      onClick={() => onAddToContent(competitor.title, 'topRank')}
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       <span className="text-xs">Add</span>
