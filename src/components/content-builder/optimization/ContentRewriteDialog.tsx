@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +11,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, RefreshCw, Wand2 } from 'lucide-react';
+import { ArrowRight, RefreshCw, Wand2, Check, Copy, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface ContentRewriteDialogProps {
   open: boolean;
@@ -32,6 +35,8 @@ export const ContentRewriteDialog = ({
   isRewriting,
   onApplyContent
 }: ContentRewriteDialogProps) => {
+  const [showDiff, setShowDiff] = useState(false);
+  
   // Debug logging when content changes
   React.useEffect(() => {
     if (rewrittenContent) {
@@ -39,49 +44,99 @@ export const ContentRewriteDialog = ({
     }
   }, [rewrittenContent, rewriteType]);
 
+  const copyToClipboard = () => {
+    if (rewrittenContent) {
+      navigator.clipboard.writeText(rewrittenContent);
+      toast.success("Content copied to clipboard");
+    }
+  };
+
+  const getOptimizationColor = (type: string) => {
+    switch(type.toLowerCase()) {
+      case 'keyword optimization': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
+      case 'readability': return 'bg-green-500/10 text-green-500 border-green-500/30';
+      case 'structure': return 'bg-purple-500/10 text-purple-500 border-purple-500/30';
+      default: return 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30';
+    }
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-purple-500/20 shadow-xl">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
+          <AlertDialogTitle className="flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
             <Wand2 className="h-5 w-5 text-purple-500" />
-            <span>Content Optimization</span>
+            <span>AI Content Optimization</span>
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {selectedRecommendation}
+            <div className="mt-1 mb-2">
+              {selectedRecommendation}
+            </div>
+            <Badge variant="outline" className={`mt-1 ${getOptimizationColor(rewriteType)}`}>
+              {rewriteType} optimization
+            </Badge>
           </AlertDialogDescription>
         </AlertDialogHeader>
         
         <div className="py-4 space-y-4">
           {isRewriting ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <RefreshCw className="h-10 w-10 animate-spin text-purple-500 mb-4" />
-              <p className="text-center text-muted-foreground">
-                Optimizing your content for better {rewriteType}...
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-600/20 to-blue-600/20 animate-pulse"></div>
+                <RefreshCw className="h-8 w-8 text-purple-500 animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <p className="text-center text-muted-foreground mt-4 max-w-md">
+                AI is optimizing your content for better <span className="font-medium text-purple-500">{rewriteType}</span>...
               </p>
             </div>
           ) : (
-            <>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">
                   Optimized Content Preview
                 </Badge>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-1 text-xs"
+                    onClick={copyToClipboard}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-1 text-xs"
+                    onClick={() => setShowDiff(!showDiff)}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    {showDiff ? 'Simple View' : 'Show Changes'}
+                  </Button>
+                </div>
               </div>
               
-              <div className="border rounded-md p-4 bg-zinc-900/50 relative overflow-hidden">
+              <div className="border rounded-md p-4 bg-black/50 relative overflow-hidden shadow-inner">
                 <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500/20 to-blue-500/20 text-xs px-2 py-0.5">
                   Optimized for {rewriteType}
                 </div>
-                <pre className="whitespace-pre-wrap font-sans text-sm">
+                <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed">
                   {rewrittenContent || "No preview available"}
                 </pre>
               </div>
-            </>
+            </motion.div>
           )}
         </div>
         
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="border-purple-500/30 text-muted-foreground hover:text-foreground hover:bg-purple-500/5">Cancel</AlertDialogCancel>
           <AlertDialogAction 
             onClick={onApplyContent} 
             disabled={isRewriting || !rewrittenContent}
@@ -90,7 +145,7 @@ export const ContentRewriteDialog = ({
             {isRewriting ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
-              <ArrowRight className="h-4 w-4" />
+              <Check className="h-4 w-4" />
             )}
             Apply Changes
           </AlertDialogAction>

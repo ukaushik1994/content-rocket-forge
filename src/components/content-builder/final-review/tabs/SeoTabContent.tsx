@@ -5,6 +5,7 @@ import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { TitleSuggestionsCard } from '../TitleSuggestionsCard';
 import { Solution, SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
+import { motion } from 'framer-motion';
 
 interface SeoTabContentProps {
   keywordUsage: { keyword: string; count: number; density: string }[];
@@ -41,25 +42,50 @@ export const SeoTabContent = ({
   isGeneratingTitles,
   onGenerateTitleSuggestions
 }: SeoTabContentProps) => {
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+  
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <motion.div 
+      className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
       {/* Main SEO area */}
       <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <KeywordUsageSummaryCard 
-          keywordUsage={keywordUsage} 
-          mainKeyword={mainKeyword}
-          selectedKeywords={selectedKeywords}
-        />
-        <MetaInformationCard 
-          metaTitle={metaTitle || ''} 
-          metaDescription={metaDescription || ''}
-          onMetaTitleChange={onMetaTitleChange}
-          onMetaDescriptionChange={onMetaDescriptionChange}
-          onGenerateMeta={onGenerateMeta}
-        />
+        <motion.div variants={item}>
+          <KeywordUsageSummaryCard 
+            keywordUsage={keywordUsage} 
+            mainKeyword={mainKeyword}
+            selectedKeywords={selectedKeywords}
+          />
+        </motion.div>
+        
+        <motion.div variants={item}>
+          <MetaInformationCard 
+            metaTitle={metaTitle || ''} 
+            metaDescription={metaDescription || ''}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
+            onGenerateMeta={onGenerateMeta}
+          />
+        </motion.div>
         
         {/* Title Suggestions Card */}
-        <div className="col-span-1 md:col-span-2">
+        <motion.div variants={item} className="col-span-1 md:col-span-2">
           <TitleSuggestionsCard 
             currentTitle={metaTitle}
             mainKeyword={mainKeyword}
@@ -69,18 +95,18 @@ export const SeoTabContent = ({
             suggestions={titleSuggestions}
             isGenerating={isGeneratingTitles}
           />
-        </div>
+        </motion.div>
       </div>
       
       {/* Side panel */}
-      <div className="space-y-6">
+      <motion.div variants={item} className="space-y-6">
         <SolutionIntegrationCard 
           metrics={solutionIntegrationMetrics}
           solution={selectedSolution}
           isAnalyzing={isAnalyzing}
           onAnalyze={onAnalyze}
         />
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

@@ -3,7 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, CheckCircle, Heading2, KeyRound, Wand2, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle, Heading2, KeyRound, Wand2, Sparkles, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface RecommendationsCardProps {
   recommendations: string[];
@@ -24,67 +25,106 @@ export const RecommendationsCard = ({
   // Get appropriate icon based on recommendation
   const getRecommendationIcon = (recommendation: string) => {
     if (recommendation.toLowerCase().includes('keyword')) 
-      return <KeyRound className="h-4 w-4 text-purple-500" />;
+      return <KeyRound className="h-4 w-4 text-blue-500" />;
     if (recommendation.toLowerCase().includes('sentence') || recommendation.toLowerCase().includes('paragraph')) 
-      return <BookOpen className="h-4 w-4 text-blue-500" />;
+      return <BookOpen className="h-4 w-4 text-green-500" />;
     if (recommendation.toLowerCase().includes('heading')) 
-      return <Heading2 className="h-4 w-4 text-green-500" />;
-    return <Sparkles className="h-4 w-4 text-blue-500" />;
+      return <Heading2 className="h-4 w-4 text-purple-500" />;
+    return <Sparkles className="h-4 w-4 text-indigo-500" />;
+  };
+  
+  // Get appropriate background class based on recommendation
+  const getRecommendationBg = (recommendation: string, isApplied: boolean) => {
+    if (isApplied) return 'bg-green-500/5 border-green-500/20';
+    
+    if (recommendation.toLowerCase().includes('keyword')) 
+      return 'border-blue-500/20 hover:bg-blue-500/5';
+    if (recommendation.toLowerCase().includes('sentence') || recommendation.toLowerCase().includes('paragraph')) 
+      return 'border-green-500/20 hover:bg-green-500/5';
+    if (recommendation.toLowerCase().includes('heading')) 
+      return 'border-purple-500/20 hover:bg-purple-500/5';
+    return 'border-indigo-500/20 hover:bg-indigo-500/5';
   };
   
   return (
-    <Card>
+    <Card className="shadow-xl bg-gradient-to-br from-background to-purple-950/5 border border-purple-500/20">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex justify-between items-center">
-          <span>Optimization Recommendations</span>
+          <span className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            Optimization Suggestions
+          </span>
           <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-400/30">
-            Click on suggestions to optimize
+            Click suggestions to optimize
           </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
         {recommendations.length > 0 ? (
-          <ul className="space-y-3">
+          <motion.ul 
+            className="space-y-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ staggerChildren: 0.1 }}
+          >
             {recommendations.map((recommendation, index) => {
               const isApplied = isRecommendationApplied(recommendationIds[index] || '');
               
               return (
-                <li key={index} className={`flex items-start gap-2 group ${isApplied ? 'opacity-70' : ''}`}>
-                  <div className="mt-1">
+                <motion.li 
+                  key={index} 
+                  className={`flex items-start gap-2 p-3 border rounded-md transition-all ${getRecommendationBg(recommendation, isApplied)} ${isApplied ? 'opacity-70' : ''}`}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <div className="mt-0.5">
                     {isApplied ? 
-                      <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                      <CheckCircle className="h-5 w-5 text-green-500" /> : 
                       getRecommendationIcon(recommendation)
                     }
                   </div>
                   <div className="flex-1">
-                    <span className={`text-sm ${isApplied ? 'line-through text-muted-foreground' : ''}`}>
+                    <span className={`text-sm ${isApplied ? 'text-muted-foreground' : ''}`}>
                       {recommendation}
                     </span>
                     {isApplied && (
-                      <span className="ml-2 text-xs text-green-500">Applied</span>
+                      <div className="mt-1">
+                        <Badge variant="outline" className="text-xs text-green-500 border-green-500/30 bg-green-500/10">
+                          Optimization Applied
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   <Button 
                     size="sm" 
-                    variant="outline"
-                    className={`${isApplied ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity gap-1 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20`}
+                    variant="ghost"
+                    className={`${isApplied ? 'opacity-0 pointer-events-none' : 'opacity-100'} gap-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30`}
                     onClick={() => handleRewriteContent(recommendation, recommendationIds[index] || '')}
                     disabled={isApplied}
                   >
                     <Wand2 className="h-3.5 w-3.5" />
                     <span>Optimize</span>
                   </Button>
-                </li>
+                </motion.li>
               );
             })}
-          </ul>
+          </motion.ul>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>
-              {isAnalyzing 
-                ? 'Analyzing content...' 
-                : 'Run the analysis to get optimization recommendations'}
-            </p>
+          <div className="text-center py-10 px-4">
+            {isAnalyzing ? (
+              <div className="flex flex-col items-center">
+                <RefreshCw className="h-8 w-8 text-purple-500 animate-spin mb-3" />
+                <p className="text-muted-foreground">Analyzing your content...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-3">
+                  <Sparkles className="h-8 w-8 text-purple-500" />
+                </div>
+                <p className="text-muted-foreground">Run the analysis to get optimization suggestions</p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
