@@ -22,59 +22,60 @@ export const SolutionIntegrationCard = ({
 }: SolutionIntegrationCardProps) => {
   if (!solution) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <BarChart4 className="h-4 w-4" />
+      <Card className="h-full">
+        <CardHeader className="pb-2 border-b">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-purple-500"></span>
             Solution Integration
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">No solution selected.</p>
+        <CardContent className="flex items-center justify-center h-[250px]">
+          <p className="text-muted-foreground text-sm text-center">No solution selected.</p>
         </CardContent>
       </Card>
     );
   }
   
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <BarChart4 className="h-4 w-4" />
+    <Card className="h-full">
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-purple-500"></span>
           Solution Integration: {solution.name}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4 overflow-hidden">
         {metrics ? (
-          <>
+          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
             <div className="flex flex-col items-center justify-center p-4">
               <div className="relative h-24 w-24">
+                {/* SVG circular progress */}
                 <svg className="h-full w-full" viewBox="0 0 100 100">
                   {/* Background circle */}
                   <circle 
-                    className="stroke-gray-200" 
-                    r={45} 
+                    className="stroke-secondary/50" 
                     cx="50" 
                     cy="50" 
+                    r="45" 
                     strokeWidth="10" 
                     fill="none" 
                   />
                   
-                  {/* Progress arc */}
+                  {/* Progress arc - using strokeDasharray and strokeDashoffset for animation */}
                   <circle 
                     className={`${getScoreColor(metrics.overallScore)} transition-all duration-1000 ease-in-out`}
-                    r={45}
                     cx="50" 
                     cy="50" 
+                    r="45" 
                     strokeWidth="10" 
                     fill="none"
-                    strokeDasharray={2 * Math.PI * 45}
-                    strokeDashoffset={2 * Math.PI * 45 * (1 - metrics.overallScore / 100)}
+                    strokeDasharray={`${2 * Math.PI * 45}`}
+                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - metrics.overallScore / 100)}`}
+                    transform="rotate(-90, 50, 50)"
                     strokeLinecap="round"
-                    transform="rotate(-90 50 50)"
                   />
                 </svg>
-                <div className="absolute top-0 left-0 h-full w-full flex items-center justify-center text-2xl font-bold">
+                <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
                   {metrics.overallScore}
                 </div>
               </div>
@@ -137,15 +138,22 @@ export const SolutionIntegrationCard = ({
                 {metrics.ctaMentions}
               </Badge>
             </div>
-          </>
+          </div>
         ) : (
-          <p className="text-muted-foreground text-sm">Click analyze to check solution integration metrics.</p>
+          <div className="flex flex-col items-center justify-center h-[250px] text-center space-y-4">
+            <div className="text-muted-foreground text-sm">
+              Click analyze to check solution integration metrics.
+            </div>
+            <div className="p-4 rounded-full bg-secondary/20">
+              <BarChart4 className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </div>
         )}
       </CardContent>
       <CardFooter>
         <Button 
           variant="outline" 
-          className="w-full flex items-center gap-2"
+          className="w-full flex items-center gap-2 bg-secondary/20 hover:bg-secondary/40"
           onClick={onAnalyze}
           disabled={isAnalyzing}
         >

@@ -12,30 +12,30 @@ interface KeywordUsageSummaryCardProps {
 export const KeywordUsageSummaryCard = ({ keywordUsage, mainKeyword }: KeywordUsageSummaryCardProps) => {
   if (!keywordUsage || keywordUsage.length === 0) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Tag className="h-4 w-4" />
+      <Card className="h-full">
+        <CardHeader className="pb-2 border-b">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
             Keyword Usage
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">No keyword usage data available.</p>
+        <CardContent className="flex items-center justify-center h-[250px]">
+          <p className="text-muted-foreground text-sm text-center">No keyword usage data available.</p>
         </CardContent>
       </Card>
     );
   }
   
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Tag className="h-4 w-4" />
+    <Card className="h-full">
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
           Keyword Usage
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="pt-4 overflow-hidden">
+        <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
           <div>
             <h4 className="text-xs font-medium mb-2">Primary Keyword</h4>
             {keywordUsage.filter(k => k.keyword === mainKeyword).map((item, i) => (
@@ -59,9 +59,9 @@ export const KeywordUsageSummaryCard = ({ keywordUsage, mainKeyword }: KeywordUs
             <div className="space-y-1">
               {keywordUsage.filter(k => k.keyword !== mainKeyword).map((item, i) => (
                 <div key={i} className="flex justify-between items-center p-2 rounded-md bg-secondary/10">
-                  <span className="text-sm">{item.keyword}</span>
+                  <span className="text-sm truncate max-w-[150px]" title={item.keyword}>{item.keyword}</span>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">{item.count} occurrences</Badge>
+                    <Badge variant="outline">{item.count}</Badge>
                     <Badge 
                       variant={getDensityVariant(parseFloat(item.density))}
                       className="min-w-16 text-center"

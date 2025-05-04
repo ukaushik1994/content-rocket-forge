@@ -89,7 +89,7 @@ export const FinalReviewStep = () => {
   ];
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h3 className="text-lg font-medium">Final Review</h3>
         <p className="text-sm text-muted-foreground">
@@ -97,13 +97,16 @@ export const FinalReviewStep = () => {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="space-y-6">
+      {/* Responsive grid layout with consistent card heights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* First column at larger screens */}
+        <div className="space-y-4 md:col-span-1">
           <DocumentStructureCard documentStructure={documentStructure} />
           <FinalChecklistCard checks={checklistItems} />
         </div>
         
-        <div className="space-y-6">
+        {/* Second column at larger screens */}
+        <div className="space-y-4 md:col-span-1">
           <MetaInformationCard 
             metaTitle={metaTitle || ''} 
             metaDescription={metaDescription || ''}
@@ -117,12 +120,15 @@ export const FinalReviewStep = () => {
           />
         </div>
         
-        <SolutionIntegrationCard 
-          metrics={solutionIntegrationMetrics}
-          solution={selectedSolution}
-          isAnalyzing={isAnalyzing}
-          onAnalyze={analyzeSolutionUsage}
-        />
+        {/* Third column - Solution integration (full width on mobile) */}
+        <div className="md:col-span-1">
+          <SolutionIntegrationCard 
+            metrics={solutionIntegrationMetrics}
+            solution={selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
+          />
+        </div>
       </div>
     </div>
   );

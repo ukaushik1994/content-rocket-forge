@@ -22,35 +22,36 @@ export const MetaInformationCard = ({
   onGenerateMeta
 }: MetaInformationCardProps) => {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Info className="h-4 w-4" />
+    <Card className="h-full">
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
           Meta Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4 overflow-hidden">
         <div className="space-y-2">
-          <label htmlFor="meta-title" className="text-sm font-medium">
-            Meta Title
-            <span className="text-xs ml-2 text-muted-foreground">(Recommended: 50-60 characters)</span>
+          <label htmlFor="meta-title" className="text-sm font-medium flex justify-between">
+            <span>Meta Title</span>
+            <span className={`text-xs ${metaTitle.length > 60 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {metaTitle.length}/60 characters
+            </span>
           </label>
           <Input
             id="meta-title"
             value={metaTitle}
             onChange={(e) => onMetaTitleChange(e.target.value)}
             placeholder="Enter meta title"
-            className="font-medium"
+            className={`font-medium ${metaTitle.length > 60 ? 'border-destructive' : ''}`}
           />
-          <p className="text-xs text-muted-foreground text-right">
-            {metaTitle.length}/60 characters
-          </p>
         </div>
         
         <div className="space-y-2">
-          <label htmlFor="meta-description" className="text-sm font-medium">
-            Meta Description
-            <span className="text-xs ml-2 text-muted-foreground">(Recommended: 150-160 characters)</span>
+          <label htmlFor="meta-description" className="text-sm font-medium flex justify-between">
+            <span>Meta Description</span>
+            <span className={`text-xs ${metaDescription.length > 160 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {metaDescription.length}/160 characters
+            </span>
           </label>
           <Textarea
             id="meta-description"
@@ -58,16 +59,14 @@ export const MetaInformationCard = ({
             onChange={(e) => onMetaDescriptionChange(e.target.value)}
             placeholder="Enter meta description"
             rows={4}
+            className={metaDescription.length > 160 ? 'border-destructive' : ''}
           />
-          <p className="text-xs text-muted-foreground text-right">
-            {metaDescription.length}/160 characters
-          </p>
         </div>
       </CardContent>
       <CardFooter>
         <Button 
           variant="outline" 
-          className="w-full flex items-center gap-2"
+          className="w-full flex items-center gap-2 bg-secondary/20 hover:bg-secondary/40"
           onClick={onGenerateMeta}
         >
           <Sparkles className="h-4 w-4" /> Generate Meta Info

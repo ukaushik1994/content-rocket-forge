@@ -12,15 +12,15 @@ interface DocumentStructureCardProps {
 export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCardProps) => {
   if (!documentStructure) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+      <Card className="h-full">
+        <CardHeader className="pb-2 border-b">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
             Document Structure
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">No document structure available.</p>
+        <CardContent className="flex items-center justify-center h-[250px]">
+          <p className="text-muted-foreground text-sm text-center">No document structure available.</p>
         </CardContent>
       </Card>
     );
@@ -29,17 +29,17 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
   const { h1, h2, h3, h4, hasSingleH1, hasLogicalHierarchy } = documentStructure;
   
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <FileText className="h-4 w-4" />
+    <Card className="h-full">
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
           Document Structure
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4 overflow-hidden">
         {/* Structure validation */}
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-2 rounded-md bg-secondary/20">
             <span className="text-sm">Single H1 tag</span>
             {hasSingleH1 ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -48,7 +48,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
             )}
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-2 rounded-md bg-secondary/20">
             <span className="text-sm">Logical heading hierarchy</span>
             {hasLogicalHierarchy ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -59,11 +59,11 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
         </div>
         
         {/* Heading list */}
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
           <h4 className="text-xs text-muted-foreground font-medium">Heading Structure</h4>
           
           {h1.length > 0 && (
-            <div>
+            <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H1</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h1.map((heading, i) => (
@@ -74,7 +74,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
           )}
           
           {h2.length > 0 && (
-            <div>
+            <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H2</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h2.map((heading, i) => (
@@ -85,7 +85,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
           )}
           
           {h3.length > 0 && (
-            <div>
+            <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H3</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h3.map((heading, i) => (
@@ -96,7 +96,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
           )}
           
           {h4.length > 0 && (
-            <div>
+            <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H4</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h4.map((heading, i) => (
