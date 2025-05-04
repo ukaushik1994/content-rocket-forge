@@ -7,6 +7,8 @@ import { InterLinkingSuggestions } from './interlinking/InterLinkingSuggestions'
 import { SeoRecommendations } from './seo/SeoRecommendations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApproval } from './context/ApprovalContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Link, BarChart3 } from 'lucide-react';
 
 interface ContentApprovalWorkflowProps {
   contentItems: ContentItemType[];
@@ -36,53 +38,98 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
     }
   }, [selectedContent, findInterLinkingOpportunities]);
 
+  const tabVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Sidebar */}
-      <div className="lg:col-span-1">
+      <motion.div 
+        className="lg:col-span-1"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <ContentApprovalSidebar 
           contentItems={contentItems}
           selectedContent={selectedContent}
           onSelectContent={onSelectContent}
         />
-      </div>
+      </motion.div>
       
       {/* Main Content Area */}
-      <div className="lg:col-span-3 space-y-6">
+      <motion.div 
+        className="lg:col-span-3 space-y-6"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         {selectedContent ? (
           <>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3 mb-6">
-                <TabsTrigger value="editor">Content Editor</TabsTrigger>
-                <TabsTrigger value="interlinking">Interlinking</TabsTrigger>
-                <TabsTrigger value="seo">SEO Recommendations</TabsTrigger>
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab} 
+              className="w-full"
+            >
+              <TabsList className="grid grid-cols-3 mb-6 p-1 bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-lg">
+                <TabsTrigger 
+                  value="editor"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple data-[state=active]:to-neon-blue data-[state=active]:text-white"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Content Editor
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="interlinking"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple data-[state=active]:to-neon-blue data-[state=active]:text-white"
+                >
+                  <Link className="h-4 w-4 mr-2" />
+                  Interlinking
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="seo"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple data-[state=active]:to-neon-blue data-[state=active]:text-white"
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  SEO Analysis
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="editor" className="mt-0">
-                <ContentApprovalEditor 
-                  content={selectedContent} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="interlinking" className="mt-0">
-                <InterLinkingSuggestions
-                  content={selectedContent}
-                />
-              </TabsContent>
-              
-              <TabsContent value="seo" className="mt-0">
-                <SeoRecommendations
-                  content={selectedContent}
-                />
-              </TabsContent>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  variants={tabVariants}
+                >
+                  {activeTab === "editor" && (
+                    <ContentApprovalEditor content={selectedContent} />
+                  )}
+                  
+                  {activeTab === "interlinking" && (
+                    <InterLinkingSuggestions content={selectedContent} />
+                  )}
+                  
+                  {activeTab === "seo" && (
+                    <SeoRecommendations content={selectedContent} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </Tabs>
           </>
         ) : (
-          <div className="border rounded-md p-8 flex items-center justify-center text-muted-foreground">
-            Select content from the sidebar to begin approval process
+          <div className="border border-white/10 rounded-xl p-12 flex flex-col items-center justify-center text-white/50 bg-gray-800/20 backdrop-blur-sm shadow-xl">
+            <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+              <FileText className="h-8 w-8 text-white/30" />
+            </div>
+            <h3 className="text-xl font-medium mb-2">Select content to review</h3>
+            <p>Choose an item from the sidebar to begin the approval process</p>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };
