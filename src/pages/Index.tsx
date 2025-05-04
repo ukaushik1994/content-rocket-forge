@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -118,6 +119,12 @@ const Index = () => {
             {/* Welcome Section */}
             <motion.div variants={itemVariants}>
               <WelcomeSection setFeedbackOpen={setFeedbackOpen} navigate={navigate} />
+            </motion.div>
+            
+            {/* Quick Actions - Moved Above Performance Overview */}
+            <motion.div variants={itemVariants} className="pt-2"> 
+              <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
+              <QuickActionsGrid navigate={navigate} />
             </motion.div>
             
             {/* Performance Overview - With simplified animations for better chart rendering */}
@@ -249,12 +256,6 @@ const Index = () => {
                   />
                 </motion.div>
               </div>
-            </motion.div>
-            
-            {/* Quick Actions */}
-            <motion.div variants={itemVariants} className="pt-2"> 
-              <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
-              <QuickActionsGrid navigate={navigate} />
             </motion.div>
           </motion.div>
         </Container>

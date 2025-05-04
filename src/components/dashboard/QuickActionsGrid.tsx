@@ -3,7 +3,7 @@ import React from 'react';
 import { NavigateFunction } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, FileText, FileUp, ArrowRight, FileBarChart, Settings } from 'lucide-react';
+import { FileText, FileUp, ArrowRight, FileBarChart, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface QuickActionsGridProps {
@@ -13,16 +13,6 @@ interface QuickActionsGridProps {
 export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) => {
   const actions = [
     {
-      title: "Keyword Research",
-      description: "Discover high-value keywords and group them into strategic clusters.",
-      icon: <Search className="h-5 w-5 text-neon-blue" />,
-      action: () => navigate('/content-builder'),
-      buttonText: "Start Research",
-      buttonIcon: <ArrowRight className="h-4 w-4" />,
-      gradient: "from-neon-blue/20 to-neon-purple/10",
-      delay: 0.1
-    },
-    {
       title: "Content Creation",
       description: "Generate optimized content with AI that ranks well on search engines.",
       icon: <FileText className="h-5 w-5 text-neon-purple" />,
@@ -30,7 +20,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       buttonText: "Create Content",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-neon-purple/20 to-neon-pink/10",
-      delay: 0.2
+      delay: 0.1
     },
     {
       title: "Solution Upload",
@@ -40,7 +30,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       buttonText: "Manage Solutions",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-neon-pink/20 to-neon-blue/10",
-      delay: 0.3
+      delay: 0.2
     },
     {
       title: "Analytics Overview",
@@ -50,7 +40,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       buttonText: "View Analytics",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-green-400/20 to-emerald-500/10",
-      delay: 0.4
+      delay: 0.3
     },
     {
       title: "Configure Settings",
@@ -60,12 +50,12 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       buttonText: "Open Settings",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-amber-400/20 to-orange-500/10",
-      delay: 0.5
+      delay: 0.4
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {actions.map((action, index) => (
         <motion.div
           key={index}
