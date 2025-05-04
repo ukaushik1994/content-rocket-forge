@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Sparkles } from 'lucide-react';
+import { FileText, Sparkles, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,13 +44,13 @@ export const ApprovalEmptyState: React.FC<ApprovalEmptyStateProps> = ({ loading 
           animate={{ scale: 1 }}
           transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut", delay: 0.2 }}
         >
-          <Sparkles className="h-4 w-4 text-neon-blue" />
+          <Filter className="h-4 w-4 text-neon-blue" />
         </motion.div>
       </motion.div>
       
-      <h3 className="text-2xl font-medium mb-3 text-white/90">No content pending approval</h3>
+      <h3 className="text-2xl font-medium mb-3 text-white/90">No content matching filter</h3>
       <p className="text-white/60 mb-8 text-center max-w-md">
-        Create some content in the builder or draft new content to get started with the approval workflow.
+        Try selecting a different filter or create new content to manage in this view.
       </p>
       
       <Button 

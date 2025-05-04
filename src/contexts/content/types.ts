@@ -3,7 +3,7 @@ export type ContentItemType = {
   id: string;
   title: string;
   content: string;
-  status: 'draft' | 'published' | 'archived';
+  status: 'draft' | 'approved' | 'published' | 'archived';
   created_at: string;
   updated_at: string;
   seo_score: number;
@@ -49,7 +49,7 @@ export const initialContent: ContentItemType[] = [
     id: '3',
     title: 'How to Choose the Best CRM for Your Business',
     content: 'Content about selecting a CRM system...',
-    status: 'published',
+    status: 'approved',
     created_at: new Date(2025, 4, 1).toISOString(),
     updated_at: new Date(2025, 4, 1).toISOString(),
     seo_score: 91,

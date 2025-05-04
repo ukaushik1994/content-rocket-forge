@@ -1,31 +1,43 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { FileText, Calendar } from 'lucide-react';
+import { StatusBadge } from '@/components/content/repository/StatusBadge';
 
 interface ContentApprovalSidebarProps {
   contentItems: ContentItemType[];
   selectedContent: ContentItemType | null;
   onSelectContent: (content: ContentItemType | null) => void;
+  statusFilter: string;
 }
 
 export const ContentApprovalSidebar: React.FC<ContentApprovalSidebarProps> = ({
   contentItems,
   selectedContent,
-  onSelectContent
+  onSelectContent,
+  statusFilter
 }) => {
+  // Get display title for the current filter
+  const filterTitle = useMemo(() => {
+    switch(statusFilter) {
+      case 'draft': return 'Draft Content';
+      case 'approved': return 'Approved Content';
+      case 'published': return 'Published Content';
+      default: return 'All Content';
+    }
+  }, [statusFilter]);
+
   return (
     <div className="h-[calc(100vh-12rem)] rounded-xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 overflow-hidden shadow-xl">
       <div className="p-4 border-b border-white/10 backdrop-blur-sm bg-black/20">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-neon-purple" />
           <h3 className="font-medium text-sm text-white">
-            Pending Approval ({contentItems.length})
+            {filterTitle} ({contentItems.length})
           </h3>
         </div>
       </div>
@@ -56,12 +68,7 @@ export const ContentApprovalSidebar: React.FC<ContentApprovalSidebarProps> = ({
                     ) : 'Recently updated'}
                   </span>
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className="ml-2 border-white/20 text-white/60"
-                >
-                  {item.status}
-                </Badge>
+                <StatusBadge status={item.status} />
               </div>
               
               {selectedContent?.id === item.id && (
@@ -79,7 +86,7 @@ export const ContentApprovalSidebar: React.FC<ContentApprovalSidebarProps> = ({
           
           {contentItems.length === 0 && (
             <div className="p-4 text-center text-white/50">
-              No content items pending approval
+              No content items to display
             </div>
           )}
         </div>

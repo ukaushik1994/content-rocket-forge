@@ -7,22 +7,28 @@ import { InterLinkingSuggestions } from './interlinking/InterLinkingSuggestions'
 import { SeoRecommendations } from './seo/SeoRecommendations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApproval } from './context/ApprovalContext';
+import { useContent } from '@/contexts/content';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Link, BarChart3 } from 'lucide-react';
+import { FileText, Link, BarChart3, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface ContentApprovalWorkflowProps {
   contentItems: ContentItemType[];
   selectedContent: ContentItemType | null;
   onSelectContent: (content: ContentItemType | null) => void;
+  statusFilter: string;
 }
 
 export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = ({
   contentItems,
   selectedContent,
-  onSelectContent
+  onSelectContent,
+  statusFilter
 }) => {
   const [activeTab, setActiveTab] = useState('editor');
   const { findInterLinkingOpportunities } = useApproval();
+  const { updateContentItem, publishContent } = useContent();
   
   // Select first item by default if nothing is selected
   useEffect(() => {
@@ -38,9 +44,65 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
     }
   }, [selectedContent, findInterLinkingOpportunities]);
 
+  const handleApprove = async () => {
+    if (!selectedContent) return;
+    
+    try {
+      await updateContentItem(selectedContent.id, { 
+        status: 'approved',
+        updated_at: new Date().toISOString()
+      });
+      toast.success('Content approved successfully');
+    } catch (error) {
+      console.error('Error approving content:', error);
+      toast.error('Failed to approve content');
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!selectedContent) return;
+    
+    try {
+      await publishContent(selectedContent.id);
+      toast.success('Content published successfully');
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      toast.error('Failed to publish content');
+    }
+  };
+
   const tabVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+  };
+
+  const renderStatusActions = () => {
+    if (!selectedContent) return null;
+    
+    switch(selectedContent.status) {
+      case 'draft':
+        return (
+          <Button 
+            onClick={handleApprove}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Approve Content
+          </Button>
+        );
+      case 'approved':
+        return (
+          <Button 
+            onClick={handlePublish}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Publish Content
+          </Button>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -56,6 +118,7 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
           contentItems={contentItems}
           selectedContent={selectedContent}
           onSelectContent={onSelectContent}
+          statusFilter={statusFilter}
         />
       </motion.div>
       
@@ -68,6 +131,11 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
       >
         {selectedContent ? (
           <>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-white/90">{selectedContent.title}</h2>
+              {renderStatusActions()}
+            </div>
+            
             <Tabs 
               value={activeTab} 
               onValueChange={setActiveTab} 
