@@ -172,6 +172,9 @@ async function handleOpenAIRequest(endpoint: string, params: any) {
 
 // Mock SERP data generation
 function getMockSerpData(keyword: string) {
+  // Generate a simple hash of the keyword to ensure consistent but varied results
+  const keywordHash = simpleHash(keyword);
+  
   return {
     keyword,
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
@@ -217,6 +220,49 @@ function getMockSerpData(keyword: string) {
         source: 'https://example.com/featured',
         type: 'definition'
       }
+    ],
+    // NEW: Added entities data
+    entities: [
+      { name: keyword, type: 'main', importance: 10 },
+      { name: `${keyword} methodology`, type: 'concept', importance: 8 },
+      { name: `${keyword} tools`, type: 'product', importance: 7 },
+      { name: `${keyword} experts`, type: 'person', importance: 6 },
+      { name: `${keyword} software`, type: 'product', importance: 9 },
+      { name: `${keyword} certification`, type: 'credential', importance: 5 },
+      { name: `${keyword} best practices`, type: 'concept', importance: 8 },
+    ],
+    // NEW: Added headings data
+    headings: [
+      { text: `What is ${keyword}?`, level: 'h1', subtext: `A comprehensive introduction to ${keyword} and why it matters.` },
+      { text: `The Benefits of ${keyword}`, level: 'h2', subtext: `Discover the key advantages of implementing ${keyword} in your strategy.` },
+      { text: `How ${keyword} Works`, level: 'h2', subtext: `A step-by-step explanation of the ${keyword} process.` },
+      { text: `${keyword} Best Practices`, level: 'h2', subtext: `Expert tips to maximize your ${keyword} effectiveness.` },
+      { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2', subtext: `Learn from others' errors and improve your ${keyword} implementation.` },
+    ],
+    // NEW: Added content gaps data
+    contentGaps: [
+      { 
+        topic: `${keyword} for beginners`, 
+        description: `Most content assumes prior knowledge of ${keyword}, creating an opportunity for truly beginner-friendly content.`,
+        recommendation: `Create a step-by-step guide specifically for newcomers to ${keyword} with clear explanations of basic concepts.`
+      },
+      { 
+        topic: `${keyword} case studies`, 
+        description: `Few competitors provide detailed real-world examples of successful ${keyword} implementation.`,
+        recommendation: `Develop in-depth case studies showing measurable results from ${keyword} implementation.`
+      },
+      { 
+        topic: `${keyword} tools comparison`, 
+        description: `Current content lacks comprehensive comparisons of different ${keyword} tools and platforms.`,
+        recommendation: `Create a detailed comparison chart of top ${keyword} tools with pricing, features, and ideal use cases.`
+      },
+    ],
+    recommendations: [
+      `Include "${keyword}" in your page title and H1 heading`,
+      `Create content addressing common questions about ${keyword}`,
+      `Use related keywords throughout your content naturally`,
+      `Include visual elements to explain ${keyword} concepts`,
+      `Add case studies or examples showing successful ${keyword} implementation`
     ]
   };
 }
@@ -259,3 +305,17 @@ function getMockContentAnalysis(content: string, keywords: string[] = []) {
     ]
   };
 }
+
+/**
+ * Simple string hashing function for generating consistent but varied mock data
+ */
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
