@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
 import { ScoreBadge } from './ScoreBadge';
-import { Edit, BarChart2, Archive, FileText, Copy } from 'lucide-react';
+import { Edit, BarChart2, Archive, FileText, Copy, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ContentDetailViewProps {
@@ -15,6 +15,7 @@ interface ContentDetailViewProps {
   onAnalyze: (id: string) => void;
   onPublish: (id: string) => void;
   onArchive: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
@@ -22,7 +23,8 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
   onEdit,
   onAnalyze,
   onPublish,
-  onArchive
+  onArchive,
+  onDelete
 }) => {
   if (!item) {
     return (
@@ -129,6 +131,15 @@ export const ContentDetailView: React.FC<ContentDetailViewProps> = ({
             Archive
           </Button>
         )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-1"
+          onClick={() => onDelete(item.id)}
+        >
+          <Trash className="h-3.5 w-3.5" />
+          Delete
+        </Button>
         <Button 
           variant="outline" 
           size="sm" 

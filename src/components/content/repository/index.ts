@@ -6,3 +6,5 @@ export * from './ContentDetailView';
 export * from './StatusBadge';
 export * from './ScoreBadge';
 export * from './ViewToggle';
+export * from './ContentEditDialog';
+export * from './DeleteConfirmationDialog';

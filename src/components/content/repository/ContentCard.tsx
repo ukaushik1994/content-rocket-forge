@@ -1,43 +1,41 @@
 
 import React from 'react';
 import { ContentItemType } from '@/contexts/content';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from './StatusBadge';
+import { ScoreBadge } from './ScoreBadge';
+import { formatDistanceToNow } from 'date-fns';
+import { MoreHorizontal, Edit, BarChart2, Archive, Trash } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { StatusBadge } from './StatusBadge';
-import { ScoreBadge } from './ScoreBadge';
-import { formatDistanceToNow } from 'date-fns';
-import { MoreVertical, Edit, BarChart2, Eye, Archive } from 'lucide-react';
 
 interface ContentCardProps {
   item: ContentItemType;
-  isSelected?: boolean;
-  onClick: () => void;
+  isSelected: boolean;
+  onSelect: () => void;
   onEdit: () => void;
   onAnalyze: () => void;
   onPublish: () => void;
   onArchive: () => void;
+  onDelete: () => void;
 }
 
 export const ContentCard: React.FC<ContentCardProps> = ({
   item,
-  isSelected = false,
-  onClick,
+  isSelected,
+  onSelect,
   onEdit,
   onAnalyze,
   onPublish,
-  onArchive
+  onArchive,
+  onDelete
 }) => {
-  const getExcerpt = (content: string | undefined) => {
-    if (!content) return '';
-    return content.substring(0, 120) + (content.length > 120 ? '...' : '');
-  };
-  
   const formatDate = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
@@ -45,88 +43,93 @@ export const ContentCard: React.FC<ContentCardProps> = ({
       return 'Unknown date';
     }
   };
-
-  const handleClick = (e: React.MouseEvent) => {
-    // Prevent dropdown click from selecting the card
-    if ((e.target as HTMLElement).closest('.dropdown-trigger')) {
+  
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't select the card if clicking on a button or dropdown
+    if (
+      e.target instanceof Element && 
+      (e.target.closest('button') || e.target.closest('[role="menu"]'))
+    ) {
       return;
     }
-    onClick();
+    onSelect();
   };
-
+  
   return (
-    <Card 
-      className={`overflow-hidden border cursor-pointer transition-all duration-200 ${
-        isSelected 
-          ? 'border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20' 
-          : 'border-border/40 bg-card/60 hover:bg-card/80 hover:border-border/80'
+    <Card
+      className={`p-4 cursor-pointer hover:shadow-md transition-all ${
+        isSelected ? 'border-primary bg-primary/5' : 'border-border'
       }`}
-      onClick={handleClick}
+      onClick={handleCardClick}
     >
-      <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <StatusBadge status={item.status} />
-            <ScoreBadge score={item.seo_score || 0} />
-          </div>
-          <h3 className="font-semibold line-clamp-1 mr-4">{item.title}</h3>
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge status={item.status} />
+          <ScoreBadge score={item.seo_score || 0} />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 dropdown-trigger">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Menu</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">More options</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-              <Edit className="mr-2 h-4 w-4" />
-              <span>Edit</span>
+            <DropdownMenuItem onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAnalyze(); }}>
-              <BarChart2 className="mr-2 h-4 w-4" />
-              <span>Analyze</span>
+            <DropdownMenuItem onClick={onAnalyze}>
+              <BarChart2 className="h-4 w-4 mr-2" />
+              Analyze
             </DropdownMenuItem>
             {item.status === 'draft' && (
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onPublish(); }}>
-                <span className="mr-2">📤</span>
-                <span>Publish</span>
+              <DropdownMenuItem onClick={onPublish}>
+                <span className="text-xs mr-2">📤</span>
+                Publish
               </DropdownMenuItem>
             )}
             {item.status !== 'archived' && (
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(); }}>
-                <Archive className="mr-2 h-4 w-4" />
-                <span>Archive</span>
+              <DropdownMenuItem onClick={onArchive}>
+                <Archive className="h-4 w-4 mr-2" />
+                Archive
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+              onClick={onDelete}
+            >
+              <Trash className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </CardHeader>
-      <CardContent className="p-4 pt-3">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {getExcerpt(item.content)}
-        </p>
-      </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        <div className="flex flex-wrap gap-1">
-          {item.keywords?.slice(0, 3).map((keyword, i) => (
+      </div>
+      
+      <h3 className="font-medium text-base mb-1 line-clamp-2">{item.title}</h3>
+      
+      {item.keywords && item.keywords.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {item.keywords.slice(0, 3).map((keyword, i) => (
             <span
               key={i}
-              className="inline-flex text-xs px-1.5 py-0.5 bg-secondary/50 rounded text-secondary-foreground"
+              className="inline-flex text-[10px] px-1.5 py-0.5 bg-secondary/30 rounded"
             >
               {keyword}
             </span>
           ))}
-          {(item.keywords?.length || 0) > 3 && (
-            <span className="inline-flex text-xs px-1.5 py-0.5 bg-secondary/30 rounded text-secondary-foreground">
-              +{item.keywords!.length - 3}
+          {item.keywords.length > 3 && (
+            <span className="inline-flex text-[10px] px-1.5 py-0.5 bg-secondary/10 rounded">
+              +{item.keywords.length - 3}
             </span>
           )}
         </div>
-        <div className="text-xs text-muted-foreground">
-          {formatDate(item.updated_at)}
-        </div>
-      </CardFooter>
+      )}
+      
+      <div className="text-xs text-muted-foreground mt-2">
+        Updated {formatDate(item.updated_at)}
+      </div>
     </Card>
   );
 };

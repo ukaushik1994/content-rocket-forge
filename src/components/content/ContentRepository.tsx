@@ -7,7 +7,9 @@ import {
   ContentFilters, 
   ContentGrid, 
   ViewToggle,
-  ContentDetailView
+  ContentDetailView,
+  ContentEditDialog,
+  DeleteConfirmationDialog
 } from './repository';
 import { ContentItemType } from '@/contexts/content';
 
@@ -16,9 +18,11 @@ export function ContentRepository() {
   const [sortBy, setSortBy] = useState('date');
   const [filterStatus, setFilterStatus] = useState('all');
   const [view, setView] = useState('grid');
-  const { contentItems, loading, updateContentItem } = useContent();
+  const { contentItems, loading, updateContentItem, deleteContentItem } = useContent();
   const [filteredItems, setFilteredItems] = useState(contentItems);
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
   
   // Set the first content item as selected by default when items load
@@ -70,7 +74,20 @@ export function ContentRepository() {
   };
 
   const handleEditContent = (id: string) => {
-    navigate(`/content-builder?edit=${id}`);
+    setSelectedContentId(id);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveContent = async (updates: Partial<ContentItemType>) => {
+    if (!selectedContentId) return;
+    
+    try {
+      await updateContentItem(selectedContentId, updates);
+      toast.success('Content updated successfully');
+    } catch (error) {
+      toast.error('Failed to update content');
+      throw error; // Re-throw so the dialog can handle it
+    }
   };
 
   const handleAnalyzeContent = (id: string) => {
@@ -92,6 +109,25 @@ export function ContentRepository() {
       toast.success('Content archived successfully');
     } catch (error) {
       toast.error('Failed to archive content');
+    }
+  };
+
+  const handleDeleteContent = (id: string) => {
+    setSelectedContentId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedContentId) return;
+    
+    try {
+      await deleteContentItem(selectedContentId);
+      toast.success('Content deleted successfully');
+      setIsDeleteDialogOpen(false);
+      setSelectedContentId(filteredItems.length > 1 ? 
+        filteredItems.find(item => item.id !== selectedContentId)?.id || null : null);
+    } catch (error) {
+      toast.error('Failed to delete content');
     }
   };
 
@@ -127,6 +163,7 @@ export function ContentRepository() {
             onAnalyze={handleAnalyzeContent}
             onPublish={handlePublishContent}
             onArchive={handleArchiveContent}
+            onDelete={handleDeleteContent}
           />
         </div>
         
@@ -138,10 +175,27 @@ export function ContentRepository() {
               onAnalyze={handleAnalyzeContent}
               onPublish={handlePublishContent}
               onArchive={handleArchiveContent}
+              onDelete={handleDeleteContent}
             />
           </div>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <ContentEditDialog 
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        content={selectedContent}
+        onSave={handleSaveContent}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title={selectedContent?.title || ''}
+      />
     </div>
   );
 }
