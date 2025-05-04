@@ -19,6 +19,7 @@ export type ContentContextType = {
   deleteContentItem: (id: string) => Promise<void>;
   getContentItem: (id: string) => ContentItemType | undefined;
   publishContent: (id: string) => Promise<void>;
+  refreshContent: () => Promise<void>;
 };
 
 export const initialContent: ContentItemType[] = [

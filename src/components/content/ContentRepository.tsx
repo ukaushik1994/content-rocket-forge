@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useContent } from '@/contexts/content';
 import { useContentFiltering } from './repository/hooks/useContentFiltering';
 import { useContentActions } from './repository/hooks/useContentActions';
@@ -11,6 +11,7 @@ import { useLocation } from 'react-router-dom';
 export function ContentRepository() {
   // Standard configuration
   const [itemsPerPage] = React.useState(10);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // Get content data and loading state
   const { contentItems, loading } = useContent();
@@ -23,7 +24,8 @@ export function ContentRepository() {
     appliedFilters, 
     clearAllFilters, 
     clearFilter,
-    handlePageChange 
+    handlePageChange,
+    resetFilters
   } = useContentFiltering(contentItems);
   
   const {
@@ -36,6 +38,13 @@ export function ContentRepository() {
     isDeleting,
     actions
   } = useContentActions();
+
+  // Function to handle refresh
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prevKey => prevKey + 1);
+    // Reset to first page and maintain current filters
+    handlePageChange(1);
+  }, [handlePageChange]);
   
   // Check if we should highlight a specific item from navigation
   useEffect(() => {
@@ -62,6 +71,13 @@ export function ContentRepository() {
     }
   }, [filteredItems, selectedContentId, setSelectedContentId]);
 
+  // After deletion, make sure we refresh the view
+  useEffect(() => {
+    if (!isDeleting && !isDeleteDialogOpen) {
+      handleRefresh();
+    }
+  }, [isDeleting, isDeleteDialogOpen, handleRefresh]);
+
   // Get selected content for dialogs
   const selectedContent = selectedContentId 
     ? filteredItems.find(item => item.id === selectedContentId) || null
@@ -86,6 +102,7 @@ export function ContentRepository() {
       />
       
       <ContentDisplay
+        key={`content-display-${refreshKey}`}
         loading={loading}
         filteredItems={filteredItems}
         searchQuery={filterState.searchQuery}

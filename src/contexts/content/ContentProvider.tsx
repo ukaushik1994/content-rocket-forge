@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
 import { toast } from 'sonner';
@@ -14,46 +14,50 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchContentItems = async () => {
-      if (!user) {
+  // Fetch content items function
+  const fetchContentItems = useCallback(async () => {
+    if (!user) {
+      setContentItems([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // First, fetch the content items
+      const { data: contentData, error: contentError } = await supabase
+        .from('content_items')
+        .select('*')
+        .order('updated_at', { ascending: false });
+      
+      if (contentError) throw contentError;
+      
+      if (!contentData || contentData.length === 0) {
         setContentItems([]);
         setLoading(false);
         return;
       }
+      
+      // Process the content items with keywords
+      const processedItems = await processContentItems(contentData);
+      setContentItems(processedItems);
+    } catch (error: any) {
+      console.error('Error fetching content items:', error);
+      toast.error('Failed to load content items');
+      setContentItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
-      try {
-        setLoading(true);
-        
-        // First, fetch the content items
-        const { data: contentData, error: contentError } = await supabase
-          .from('content_items')
-          .select('*')
-          .order('updated_at', { ascending: false });
-        
-        if (contentError) throw contentError;
-        
-        if (!contentData || contentData.length === 0) {
-          setContentItems([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Process the content items with keywords
-        const processedItems = await processContentItems(contentData);
-        setContentItems(processedItems);
-      } catch (error: any) {
-        console.error('Error fetching content items:', error);
-        toast.error('Failed to load content items');
-        setContentItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  // Initial loading of content
+  useEffect(() => {
     fetchContentItems();
+  }, [fetchContentItems]);
 
-    // Set up realtime subscription
+  // Set up realtime subscription
+  useEffect(() => {
     if (user) {
       const channel = supabase
         .channel('content-changes')
@@ -81,7 +85,10 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
               }
             } else if (payload.eventType === 'DELETE') {
               const deletedItem = payload.old as ContentItemType;
+              // Remove the item from state immediately
               setContentItems(prev => prev.filter(item => item.id !== deletedItem.id));
+              // Re-fetch all items to ensure state is fresh (optional, helps with complex deletions)
+              setTimeout(fetchContentItems, 500);
             }
           }
         )
@@ -91,7 +98,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user, fetchContentItems]);
   
   // Create all content-related actions
   const actions = createContentActions(contentItems, setContentItems, user?.id);
@@ -101,7 +108,8 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       value={{ 
         contentItems, 
         loading,
-        ...actions
+        ...actions,
+        refreshContent: fetchContentItems
       }}
     >
       {children}

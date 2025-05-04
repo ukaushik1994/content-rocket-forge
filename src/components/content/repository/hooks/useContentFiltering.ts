@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { format } from 'date-fns';
 
@@ -138,11 +138,17 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
     }
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
+
+  // Add reset filters function
+  const resetFilters = useCallback(() => {
+    clearAllFilters();
+    setCurrentPage(1);
+  }, []);
 
   return {
     filterState: {
@@ -163,6 +169,7 @@ export function useContentFiltering(contentItems: ContentItemType[]) {
     appliedFilters: getAppliedFilters(),
     clearAllFilters,
     clearFilter,
-    handlePageChange
+    handlePageChange,
+    resetFilters
   };
 }

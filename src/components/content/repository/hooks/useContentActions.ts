@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
@@ -91,7 +91,8 @@ export function useContentActions() {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
+  // Enhanced delete confirmation function with refresh mechanism
+  const confirmDelete = useCallback(async () => {
     if (!selectedContentId || isDeleting) return;
     
     try {
@@ -131,11 +132,18 @@ export function useContentActions() {
         closeButton: true,
       });
       console.error('Delete error:', error);
+      
+      // Reopen dialog if deletion failed
+      if (selectedContentId) {
+        setTimeout(() => {
+          setIsDeleteDialogOpen(true);
+        }, 500);
+      }
     } finally {
       // Always reset the deleting state
       setIsDeleting(false);
     }
-  };
+  }, [selectedContentId, isDeleting, contentItems, deleteContentItem]);
 
   return {
     selectedContentId,

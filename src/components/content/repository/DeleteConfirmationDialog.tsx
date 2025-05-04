@@ -29,16 +29,20 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
 }) => {
   // Function to handle confirmation and prevent default behavior
   const handleConfirm = (e: React.MouseEvent) => {
+    if (isDeleting) return; // Prevent multiple clicks
     e.preventDefault();
     onConfirm();
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={(isOpen) => {
-      // Prevent dialog from closing if deletion is in progress
-      if (isDeleting && !isOpen) return;
-      onOpenChange(isOpen);
-    }}>
+    <AlertDialog 
+      open={open} 
+      onOpenChange={(isOpen) => {
+        // Prevent dialog from closing if deletion is in progress
+        if (isDeleting && !isOpen) return;
+        onOpenChange(isOpen);
+      }}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure you want to delete this content?</AlertDialogTitle>
