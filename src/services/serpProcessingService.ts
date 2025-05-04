@@ -30,7 +30,11 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     featuredSnippets: response.featuredSnippets ? response.featuredSnippets.map((snippet: any) => ({
       ...snippet,
       type: snippet.type || 'general' // Ensure type exists
-    })) : []
+    })) : [],
+    // Process new fields
+    entities: response.entities || [],
+    headings: response.headings || [],
+    contentGaps: response.contentGaps || [],
   };
   
   return processedData;

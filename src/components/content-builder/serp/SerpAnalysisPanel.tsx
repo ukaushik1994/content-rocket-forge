@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { SerpAnalysisResult } from '@/types/serp';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag } from 'lucide-react';
+import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag, Heading, FileSearch, Layers } from 'lucide-react';
 
 // Import refactored components
 import { SerpSectionHeader } from '@/components/content/serp-analysis/SerpSectionHeader';
@@ -15,6 +15,9 @@ import { SerpKeywordsSection } from '@/components/content/serp-analysis/SerpKeyw
 import { SerpQuestionsSection } from '@/components/content/serp-analysis/SerpQuestionsSection';
 import { SerpCompetitorsSection } from '@/components/content/serp-analysis/SerpCompetitorsSection';
 import { SerpInteractiveCard } from '@/components/content/serp-analysis/SerpInteractiveCard';
+import { SerpEntitiesSection } from '@/components/content/serp-analysis/SerpEntitiesSection';
+import { SerpHeadingsSection } from '@/components/content/serp-analysis/SerpHeadingsSection';
+import { SerpContentGapsSection } from '@/components/content/serp-analysis/SerpContentGapsSection';
 
 export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -167,24 +170,45 @@ export function SerpAnalysisPanel({
       {/* Content Tabs */}
       <Card className="border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden">
         <Tabs defaultValue="keywords" className="w-full">
-          <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0">
+          <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
             <TabsTrigger
               value="keywords"
-              className="flex-1 rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('keywords')}
             >
               <Tag className="h-4 w-4 mr-2" /> Keywords
             </TabsTrigger>
             <TabsTrigger
               value="questions"
-              className="flex-1 rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('questions')}
             >
               <HelpCircle className="h-4 w-4 mr-2" /> Questions
             </TabsTrigger>
             <TabsTrigger
+              value="entities"
+              className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              onClick={() => setActiveTab('entities')}
+            >
+              <Layers className="h-4 w-4 mr-2" /> Entities
+            </TabsTrigger>
+            <TabsTrigger
+              value="headings"
+              className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              onClick={() => setActiveTab('headings')}
+            >
+              <Heading className="h-4 w-4 mr-2" /> Headings
+            </TabsTrigger>
+            <TabsTrigger
+              value="gaps"
+              className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
+              onClick={() => setActiveTab('gaps')}
+            >
+              <FileSearch className="h-4 w-4 mr-2" /> Gaps
+            </TabsTrigger>
+            <TabsTrigger
               value="competitors"
-              className="flex-1 rounded-none data-[state=active]:bg-white/5"
+              className="rounded-none data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('competitors')}
             >
               <FileText className="h-4 w-4 mr-2" /> Competitors
@@ -335,6 +359,66 @@ export function SerpAnalysisPanel({
                     </div>
                   )}
                 </div>
+              </div>
+            </TabsContent>
+            
+            {/* New Entities Tab */}
+            <TabsContent value="entities" className="mt-0">
+              <div className="space-y-2">
+                <SerpSectionHeader
+                  title="Key Entities"
+                  expanded={true}
+                  onToggle={() => {}}
+                  variant="indigo"
+                  description="Important entities and concepts related to this topic"
+                  count={serpData.entities?.length || 0}
+                />
+                
+                <SerpEntitiesSection
+                  serpData={serpData}
+                  expanded={true}
+                  onAddToContent={onAddToContent}
+                />
+              </div>
+            </TabsContent>
+            
+            {/* New Headings Tab */}
+            <TabsContent value="headings" className="mt-0">
+              <div className="space-y-2">
+                <SerpSectionHeader
+                  title="Top Headings"
+                  expanded={true}
+                  onToggle={() => {}}
+                  variant="teal"
+                  description="Common headings used by top-ranking content"
+                  count={serpData.headings?.length || 0}
+                />
+                
+                <SerpHeadingsSection
+                  serpData={serpData}
+                  expanded={true}
+                  onAddToContent={onAddToContent}
+                />
+              </div>
+            </TabsContent>
+            
+            {/* New Content Gaps Tab */}
+            <TabsContent value="gaps" className="mt-0">
+              <div className="space-y-2">
+                <SerpSectionHeader
+                  title="Content Gaps"
+                  expanded={true}
+                  onToggle={() => {}}
+                  variant="rose"
+                  description="Topics competitors are missing that you can cover"
+                  count={serpData.contentGaps?.length || 0}
+                />
+                
+                <SerpContentGapsSection
+                  serpData={serpData}
+                  expanded={true}
+                  onAddToContent={onAddToContent}
+                />
               </div>
             </TabsContent>
             
