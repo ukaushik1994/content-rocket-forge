@@ -6,8 +6,10 @@ import { toast } from 'sonner';
 import { 
   ContentFilters, 
   ContentGrid, 
-  ViewToggle
+  ViewToggle,
+  ContentDetailView
 } from './repository';
+import { ContentItemType } from '@/contexts/content';
 
 export function ContentRepository() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,7 +18,17 @@ export function ContentRepository() {
   const [view, setView] = useState('grid');
   const { contentItems, loading, updateContentItem } = useContent();
   const [filteredItems, setFilteredItems] = useState(contentItems);
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Set the first content item as selected by default when items load
+  useEffect(() => {
+    if (filteredItems.length > 0 && !selectedContentId) {
+      setSelectedContentId(filteredItems[0].id);
+    } else if (filteredItems.length === 0) {
+      setSelectedContentId(null);
+    }
+  }, [filteredItems]);
   
   useEffect(() => {
     let filtered = [...contentItems];
@@ -46,20 +58,22 @@ export function ContentRepository() {
     });
     
     setFilteredItems(filtered);
+    
+    // If the currently selected item is filtered out, select the first available one
+    if (selectedContentId && !filtered.find(item => item.id === selectedContentId)) {
+      setSelectedContentId(filtered.length > 0 ? filtered[0].id : null);
+    }
   }, [contentItems, searchQuery, sortBy, filterStatus]);
 
-  const handleViewContent = (id: string) => {
-    // In a real app, navigate to content view page
-    toast.info(`Viewing content: ${id}`);
+  const handleSelectContent = (id: string) => {
+    setSelectedContentId(id);
   };
 
   const handleEditContent = (id: string) => {
-    // In a real app, navigate to content editor with the content loaded
     navigate(`/content-builder?edit=${id}`);
   };
 
   const handleAnalyzeContent = (id: string) => {
-    // In a real app, navigate to content analytics page
     navigate(`/analytics?content=${id}`);
   };
 
@@ -81,6 +95,10 @@ export function ContentRepository() {
     }
   };
 
+  const selectedContent = selectedContentId 
+    ? filteredItems.find(item => item.id === selectedContentId) || null
+    : null;
+
   return (
     <div className="space-y-6">
       <ContentFilters 
@@ -92,19 +110,38 @@ export function ContentRepository() {
         setSortBy={setSortBy}
       />
       
-      <ViewToggle view={view} setView={setView} />
+      <div className="flex justify-between items-center">
+        <ViewToggle view={view} setView={setView} />
+      </div>
       
-      <ContentGrid 
-        loading={loading}
-        filteredItems={filteredItems}
-        searchQuery={searchQuery}
-        filterStatus={filterStatus}
-        onEdit={handleEditContent}
-        onView={handleViewContent}
-        onAnalyze={handleAnalyzeContent}
-        onPublish={handlePublishContent}
-        onArchive={handleArchiveContent}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className={`${selectedContent ? 'lg:col-span-2' : 'lg:col-span-5'}`}>
+          <ContentGrid 
+            loading={loading}
+            filteredItems={filteredItems}
+            searchQuery={searchQuery}
+            filterStatus={filterStatus}
+            selectedContentId={selectedContentId}
+            onSelect={handleSelectContent}
+            onEdit={handleEditContent}
+            onAnalyze={handleAnalyzeContent}
+            onPublish={handlePublishContent}
+            onArchive={handleArchiveContent}
+          />
+        </div>
+        
+        {selectedContent && (
+          <div className="lg:col-span-3">
+            <ContentDetailView 
+              item={selectedContent}
+              onEdit={handleEditContent}
+              onAnalyze={handleAnalyzeContent}
+              onPublish={handlePublishContent}
+              onArchive={handleArchiveContent}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

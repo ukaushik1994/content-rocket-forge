@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import { ContentItemType } from '@/contexts/content';
 import { ContentCard } from './ContentCard';
 import { Loader2, Calendar } from 'lucide-react';
@@ -10,8 +9,9 @@ interface ContentGridProps {
   filteredItems: ContentItemType[];
   searchQuery: string;
   filterStatus: string;
+  selectedContentId: string | null;
+  onSelect: (id: string) => void;
   onEdit: (id: string) => void;
-  onView: (id: string) => void;
   onAnalyze: (id: string) => void;
   onPublish: (id: string) => void;
   onArchive: (id: string) => void;
@@ -22,8 +22,9 @@ export const ContentGrid: React.FC<ContentGridProps> = ({
   filteredItems,
   searchQuery,
   filterStatus,
+  selectedContentId,
+  onSelect,
   onEdit,
-  onView,
   onAnalyze,
   onPublish,
   onArchive
@@ -56,13 +57,14 @@ export const ContentGrid: React.FC<ContentGridProps> = ({
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-4">
       {filteredItems.map((item) => (
         <ContentCard 
           key={item.id}
           item={item}
+          isSelected={item.id === selectedContentId}
+          onClick={() => onSelect(item.id)}
           onEdit={() => onEdit(item.id)}
-          onView={() => onView(item.id)}
           onAnalyze={() => onAnalyze(item.id)}
           onPublish={() => onPublish(item.id)}
           onArchive={() => onArchive(item.id)}

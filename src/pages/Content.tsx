@@ -36,7 +36,7 @@ const Content = () => {
             <p className="text-muted-foreground">
               {loading 
                 ? 'Loading your content library...' 
-                : `You have ${contentItems.length} content items`}
+                : `You have ${contentItems.length} content ${contentItems.length === 1 ? 'item' : 'items'}`}
             </p>
           </div>
           

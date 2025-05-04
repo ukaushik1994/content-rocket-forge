@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ContentItemType } from '@/contexts/content';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -15,8 +16,9 @@ import { MoreVertical, Edit, BarChart2, Eye, Archive } from 'lucide-react';
 
 interface ContentCardProps {
   item: ContentItemType;
+  isSelected?: boolean;
+  onClick: () => void;
   onEdit: () => void;
-  onView: () => void;
   onAnalyze: () => void;
   onPublish: () => void;
   onArchive: () => void;
@@ -24,8 +26,9 @@ interface ContentCardProps {
 
 export const ContentCard: React.FC<ContentCardProps> = ({
   item,
+  isSelected = false,
+  onClick,
   onEdit,
-  onView,
   onAnalyze,
   onPublish,
   onArchive
@@ -43,8 +46,23 @@ export const ContentCard: React.FC<ContentCardProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent dropdown click from selecting the card
+    if ((e.target as HTMLElement).closest('.dropdown-trigger')) {
+      return;
+    }
+    onClick();
+  };
+
   return (
-    <Card className="overflow-hidden border border-border/40 bg-card/60 backdrop-blur-sm">
+    <Card 
+      className={`overflow-hidden border cursor-pointer transition-all duration-200 ${
+        isSelected 
+          ? 'border-primary/60 bg-primary/5 shadow-sm ring-1 ring-primary/20' 
+          : 'border-border/40 bg-card/60 hover:bg-card/80 hover:border-border/80'
+      }`}
+      onClick={handleClick}
+    >
       <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between space-y-0">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
@@ -55,32 +73,28 @@ export const ContentCard: React.FC<ContentCardProps> = ({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 dropdown-trigger">
               <MoreVertical className="h-4 w-4" />
               <span className="sr-only">Menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onView}>
-              <Eye className="mr-2 h-4 w-4" />
-              <span>View</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onAnalyze}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAnalyze(); }}>
               <BarChart2 className="mr-2 h-4 w-4" />
               <span>Analyze</span>
             </DropdownMenuItem>
             {item.status === 'draft' && (
-              <DropdownMenuItem onClick={onPublish}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onPublish(); }}>
                 <span className="mr-2">📤</span>
                 <span>Publish</span>
               </DropdownMenuItem>
             )}
             {item.status !== 'archived' && (
-              <DropdownMenuItem onClick={onArchive}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(); }}>
                 <Archive className="mr-2 h-4 w-4" />
                 <span>Archive</span>
               </DropdownMenuItem>
