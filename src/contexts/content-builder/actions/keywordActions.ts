@@ -6,19 +6,7 @@ export const createKeywordActions = (
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
   const setMainKeyword = (keyword: string) => {
-    dispatch({ type: 'SET_PRIMARY_KEYWORD', payload: keyword });
-  };
-
-  const addSecondaryKeyword = (keyword: string) => {
-    dispatch({ type: 'ADD_SECONDARY_KEYWORD', payload: keyword });
-  };
-
-  const removeSecondaryKeyword = (keyword: string) => {
-    dispatch({ type: 'REMOVE_SECONDARY_KEYWORD', payload: keyword });
-  };
-
-  const setKeywordClusters = (clusters: Array<{ name: string; keywords: string[] }>) => {
-    dispatch({ type: 'SET_KEYWORD_CLUSTERS', payload: clusters });
+    dispatch({ type: 'SET_MAIN_KEYWORD', payload: keyword });
   };
 
   const addKeyword = (keyword: string) => {
@@ -31,11 +19,7 @@ export const createKeywordActions = (
 
   return {
     setMainKeyword,
-    addSecondaryKeyword,
-    removeSecondaryKeyword,
-    setKeywordClusters,
     addKeyword,
     removeKeyword
   };
 };
-

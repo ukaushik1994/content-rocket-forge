@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
 
 // Simple encryption (not suitable for production, just for demonstration)
 // In production, we should use an edge function for storing sensitive keys
