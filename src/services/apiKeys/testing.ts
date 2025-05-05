@@ -3,6 +3,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { detectApiKeyType as detectApiKeyTypeFromValidation } from "./validation";
 
 /**
  * Test an API key for a particular service
@@ -50,21 +51,11 @@ export async function testApiKey(service: string, key: string): Promise<boolean>
 
 /**
  * Detect the type of API key based on its format
+ * Uses the validation module's implementation
  * @param key The API key to detect
  * @returns A promise that resolves to the service name or null
  */
 export async function detectApiKeyType(key: string): Promise<string | null> {
-  // Detect API key type based on common formats
-  if (key.startsWith('sk-') && !key.startsWith('sk-ant-')) {
-    return 'openai';
-  } else if (key.startsWith('sk-ant-')) {
-    return 'anthropic';
-  } else if (key.startsWith('AIza')) {
-    return 'gemini';
-  } else if (key.length > 20 && /^[a-zA-Z0-9]{20,}$/.test(key)) {
-    // Generic format check for SERP API keys
-    return 'serp';
-  }
-  
-  return null;
+  return detectApiKeyTypeFromValidation(key);
 }
+
