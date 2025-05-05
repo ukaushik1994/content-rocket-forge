@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -22,15 +23,13 @@ interface SelectedItemsSidebarProps {
     topRank: number;
   };
   handleToggleSelection: (type: string, content: string) => void;
-  handleContinueWithSelections: () => void;
 }
 
 export function SelectedItemsSidebar({
   serpSelections,
   totalSelected,
   selectedCounts,
-  handleToggleSelection,
-  handleContinueWithSelections
+  handleToggleSelection
 }: SelectedItemsSidebarProps) {
   const [selectedTab, setSelectedTab] = useState('all');
   
@@ -261,19 +260,7 @@ export function SelectedItemsSidebar({
                 )}
               </div>
               
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Button 
-                  className="w-full mt-6 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all"
-                  disabled={totalSelected === 0}
-                  onClick={handleContinueWithSelections}
-                >
-                  Generate Outline <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </motion.div>
+              {/* Generate Outline button has been removed */}
             </motion.div>
           )}
         </AnimatePresence>

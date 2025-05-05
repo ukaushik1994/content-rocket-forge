@@ -70,7 +70,6 @@ export const SerpAnalysisStep = () => {
             totalSelected={totalSelected}
             selectedCounts={selectedCounts}
             handleToggleSelection={handleToggleSelection}
-            handleContinueWithSelections={handleContinueWithSelections}
           />
         </div>
       </div>
