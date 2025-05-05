@@ -65,7 +65,7 @@ export const ContentBuilder = () => {
     switch (stepIndex) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
-      // We skip case 2 (SERP Analysis)
+      // We skip case 2 (SERP Analysis) as it's integrated into KeywordSelectionStep
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
