@@ -23,7 +23,7 @@ import {
 import { useContent } from '@/contexts/content';
 
 export const SaveStep = () => {
-  const { state } = useContentBuilder();
+  const { state, dispatch } = useContentBuilder();
   const { 
     content, 
     mainKeyword, 
@@ -54,22 +54,19 @@ export const SaveStep = () => {
   const [socialShare, setSocialShare] = useState(true);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<string | null>(null);
+  const [sharingPlatform, setSharingPlatform] = useState<string | null>(null);
   
   // Update the local state when global state changes
   useEffect(() => {
-    console.log("[SaveStep] Global state updated:", { metaTitle, contentTitle, metaDescription });
-    
     if (metaTitle) {
       setTitle(metaTitle);
-      console.log("[SaveStep] Updated title from metaTitle:", metaTitle);
     } else if (contentTitle) {
       setTitle(contentTitle);
-      console.log("[SaveStep] Updated title from contentTitle:", contentTitle);
     }
     
     if (metaDescription) {
       setDescription(metaDescription);
-      console.log("[SaveStep] Updated description from metaDescription:", metaDescription);
     }
   }, [metaTitle, metaDescription, contentTitle]);
   
@@ -122,12 +119,11 @@ export const SaveStep = () => {
       return;
     }
 
+    // Set saving state
+    dispatch({ type: 'SET_IS_SAVING', payload: true });
+    
     // Save to content library
     try {
-      console.log("[SaveStep] Saving content with title:", title);
-      console.log("[SaveStep] Using description:", description);
-      console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
-      
       // Prepare content item for storage, use the current title and description from state
       const contentItem = {
         title: title,
@@ -145,27 +141,88 @@ export const SaveStep = () => {
       
       // Navigate to content library after a short delay
       setTimeout(() => {
+        dispatch({ type: 'SET_IS_SAVING', payload: false });
         navigate('/content');
       }, 800);
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
     }
   };
   
   const handleDownload = (format: 'pdf' | 'docx' | 'html') => {
-    toast.success(`Content exported as ${format.toUpperCase()}`);
+    if (!content || !title) {
+      toast.error("Content or title is missing");
+      return;
+    }
+    
+    setDownloadingFormat(format);
     
     // Mock download functionality
     setTimeout(() => {
+      toast.success(`Content exported as ${format.toUpperCase()}`);
+      
       const link = document.createElement('a');
       link.href = '#';
       link.download = `${title.replace(/\s+/g, '-').toLowerCase()}.${format}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      setDownloadingFormat(null);
     }, 1000);
   };
+  
+  const handleShare = (platform: string) => {
+    if (!content || !title) {
+      toast.error("Content or title is missing");
+      return;
+    }
+    
+    setSharingPlatform(platform);
+    
+    // Mock sharing functionality
+    setTimeout(() => {
+      toast.success(`Content shared on ${platform}`);
+      setSharingPlatform(null);
+    }, 800);
+  };
+  
+  // Render download button with loading state
+  const renderDownloadButton = (format: 'pdf' | 'docx' | 'html', label: string) => (
+    <Button 
+      variant="outline" 
+      size="sm"
+      className="gap-1"
+      onClick={() => handleDownload(format)}
+      disabled={downloadingFormat !== null}
+    >
+      {downloadingFormat === format ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="h-4 w-4" />
+      )}
+      {label}
+    </Button>
+  );
+  
+  // Render share button with loading state
+  const renderShareButton = (platform: string, Icon: React.ComponentType<{ className?: string }>) => (
+    <Button 
+      size="icon" 
+      variant="outline"
+      onClick={() => handleShare(platform)}
+      disabled={sharingPlatform !== null}
+      className={sharingPlatform === platform ? "bg-primary/20" : ""}
+    >
+      {sharingPlatform === platform ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Icon className="h-4 w-4" />
+      )}
+    </Button>
+  );
   
   return (
     <div className="space-y-6">
@@ -283,33 +340,9 @@ export const SaveStep = () => {
             <div className="pt-4 space-y-3">
               <h4 className="text-sm font-medium">Export Options</h4>
               <div className="flex flex-wrap gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => handleDownload('pdf')}
-                >
-                  <Download className="h-4 w-4" />
-                  PDF
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => handleDownload('docx')}
-                >
-                  <Download className="h-4 w-4" />
-                  Word
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => handleDownload('html')}
-                >
-                  <Download className="h-4 w-4" />
-                  HTML
-                </Button>
+                {renderDownloadButton('pdf', 'PDF')}
+                {renderDownloadButton('docx', 'Word')}
+                {renderDownloadButton('html', 'HTML')}
               </div>
             </div>
             
@@ -317,18 +350,10 @@ export const SaveStep = () => {
               <div className="pt-4 space-y-3">
                 <h4 className="text-sm font-medium">Share On</h4>
                 <div className="flex gap-2">
-                  <Button size="icon" variant="outline">
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline">
-                    <Facebook className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline">
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline">
-                    <Mail className="h-4 w-4" />
-                  </Button>
+                  {renderShareButton('Twitter', Twitter)}
+                  {renderShareButton('Facebook', Facebook)}
+                  {renderShareButton('LinkedIn', Linkedin)}
+                  {renderShareButton('Email', Mail)}
                 </div>
               </div>
             )}
@@ -358,8 +383,8 @@ export const SaveStep = () => {
             </>
           ) : (
             <>
-              <CheckCircle className="h-4 w-4" />
-              Finish
+              <Save className="h-4 w-4" />
+              Save to Library
             </>
           )}
         </Button>

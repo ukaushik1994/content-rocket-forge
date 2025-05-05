@@ -20,13 +20,21 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
     switch (stepId) {
       case 0: return <Search className="h-4 w-4" />;
       case 1: return <CheckSquare className="h-4 w-4" />;
-      case 2: return <Search className="h-4 w-4" />;
+      // Skip case 2 (SERP Analysis) as we're removing it
       case 3: return <FileText className="h-4 w-4" />;
       case 4: return <Edit className="h-4 w-4" />;
       case 5: return <BarChart4 className="h-4 w-4" />;
-      case 6: return <Upload className="h-4 w-4" />;
+      case 6: return <Sparkles className="h-4 w-4" />;
+      case 7: return <Upload className="h-4 w-4" />;
       default: return <Sparkles className="h-4 w-4" />;
     }
+  };
+  
+  // Handle direct step navigation with skipping logic
+  const handleNavigateToStep = (index: number) => {
+    // Find the actual step ID in the steps array
+    const actualStepId = steps[index].id;
+    navigateToStep(actualStepId);
   };
   
   return (
@@ -47,7 +55,7 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
             return (
               <button
                 key={step.id}
-                onClick={() => navigateToStep(index)}
+                onClick={() => handleNavigateToStep(index)}
                 disabled={!isCompleted && !isActive && index !== 0}
                 className={cn(
                   "w-full flex items-center text-left rounded-md px-3 py-2.5 text-sm transition-colors relative overflow-hidden group",
