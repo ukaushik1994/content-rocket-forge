@@ -49,13 +49,13 @@ export const ContentEditor: React.FC<ContentEditorProps> = ({ content, onContent
             value={content} 
             onChange={handleChange} 
             placeholder="Write your content here..." 
-            className="min-h-[500px] border-0 focus-visible:ring-0 resize-none p-4 flex-1" 
+            className="min-h-[700px] border-0 focus-visible:ring-0 resize-none p-4 flex-1" 
           />
         </TabsContent>
         
         <TabsContent value="preview" className="flex-1 m-0 data-[state=active]:flex flex-col">
           <CardContent className="p-4 flex-1">
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-[700px]">
               <div 
                 className="prose prose-sm max-w-none dark:prose-invert" 
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} 
