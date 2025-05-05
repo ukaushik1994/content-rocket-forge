@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentEditor } from '@/components/content/ContentEditor';
@@ -66,7 +65,7 @@ export const ContentWritingStep = () => {
         ? outline.map((item, index) => {
             if (typeof item === 'string') {
               return `${index + 1}. ${item}`;
-            } else if (item && typeof item === 'object') {
+            } else if (item && typeof item === 'object' && 'title' in item) {
               return `${index + 1}. ${item.title}`;
             }
             return '';
@@ -179,8 +178,10 @@ export const ContentWritingStep = () => {
     ? outline.map(item => {
         if (typeof item === 'string') {
           return { id: Math.random().toString(), title: item, level: 2 };
+        } else if (item && typeof item === 'object' && 'title' in item) {
+          return item as OutlineSection;
         }
-        return item as OutlineSection;
+        return { id: Math.random().toString(), title: '', level: 2 };
       })
     : [];
 
