@@ -7,7 +7,7 @@ export const initialState: ContentBuilderState = {
     { id: 0, name: 'Keyword Selection', description: 'Choose main and secondary keywords', completed: false, visited: true },
     { id: 1, name: 'Content Type', description: 'Select content type and format', completed: false, visited: false },
     { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
-    { id: 3, name: 'Creation', description: 'Create outline and write content', completed: false, visited: false }, // Changed from "Outline" to "Creation"
+    { id: 3, name: 'Creation', description: 'Create outline and write content', completed: false, visited: false },
     { id: 5, name: 'Optimization', description: 'Optimize for SEO and readability', completed: false, visited: false },
     { id: 6, name: 'Final Review', description: 'Review and publish', completed: false, visited: false }
   ],
