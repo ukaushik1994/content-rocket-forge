@@ -25,19 +25,22 @@ import {
   saveApiKey, 
   getApiKey, 
   testApiKey, 
-  deleteApiKey
+  deleteApiKey,
+  detectApiKeyType
 } from '@/services/apiKeyService';
 
 interface ApiProviderCardProps {
   provider: ApiProvider;
   isConfigured: boolean;
   onConfigured: (configured: boolean) => void;
+  isLoading?: boolean;
 }
 
 export function ApiProviderCard({ 
   provider, 
   isConfigured,
-  onConfigured
+  onConfigured,
+  isLoading: externalLoading = false
 }: ApiProviderCardProps) {
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -49,9 +52,19 @@ export function ApiProviderCard({
   const [testSuccessful, setTestSuccessful] = useState(false);
   const [keyExists, setKeyExists] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cardHeight, setCardHeight] = useState<number | null>(null);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  // Preserve the card height to prevent layout shifts
+  useEffect(() => {
+    if (cardRef.current && !cardHeight) {
+      setCardHeight(cardRef.current.offsetHeight);
+    }
+  }, [cardHeight]);
 
   // Load the API key and test it
   useEffect(() => {
+    console.log(`Loading API key for ${provider.name}...`);
     const loadApiKey = async () => {
       try {
         setIsLoading(true);
@@ -59,6 +72,7 @@ export function ApiProviderCard({
         const key = await getApiKey(provider.serviceKey);
         
         if (key) {
+          console.log(`API key found for ${provider.name}`);
           setApiKey(key);
           setKeyExists(true);
           setIsActive(true);
@@ -66,6 +80,7 @@ export function ApiProviderCard({
           // Test the key
           try {
             const success = await testApiKey(provider.serviceKey, key);
+            console.log(`${provider.name} API key test result:`, success);
             setTestSuccessful(success);
           } catch (testError) {
             console.error(`Error testing ${provider.name} API key:`, testError);
@@ -73,6 +88,7 @@ export function ApiProviderCard({
           
           onConfigured(true);
         } else {
+          console.log(`No API key found for ${provider.name}`);
           onConfigured(false);
         }
       } catch (error: any) {
@@ -84,8 +100,11 @@ export function ApiProviderCard({
       }
     };
     
-    loadApiKey();
-  }, [provider, onConfigured]);
+    // Allow external loading state to override internal state
+    if (!externalLoading) {
+      loadApiKey();
+    }
+  }, [provider, onConfigured, externalLoading]);
 
   // Get the provider icon based on service type
   const getProviderIcon = () => {
@@ -199,9 +218,31 @@ export function ApiProviderCard({
     toast.success(`${provider.name} API ${newActive ? 'enabled' : 'disabled'}`);
   };
 
-  if (isLoading) {
+  // Auto-detect API key type
+  const handleDetectKeyType = async () => {
+    if (!apiKey.trim()) {
+      toast.error('Please enter an API key to detect');
+      return;
+    }
+
+    try {
+      const detectedType = detectApiKeyType(apiKey);
+      if (detectedType && detectedType !== provider.serviceKey) {
+        toast.info(`This appears to be a ${detectedType.toUpperCase()} API key. Would you like to use it there instead?`);
+      } else if (detectedType === provider.serviceKey) {
+        toast.success(`Confirmed as a valid ${provider.name} API key format`);
+      } else {
+        toast.error('Unable to detect API key type');
+      }
+    } catch (error: any) {
+      console.error('Error detecting API key type:', error);
+      setError(error.message || 'Failed to detect API key type');
+    }
+  };
+
+  if (isLoading || externalLoading) {
     return (
-      <Card className="border-white/10 bg-glass animate-pulse">
+      <Card className="border-white/10 bg-glass animate-pulse" style={{ minHeight: cardHeight ? `${cardHeight}px` : 'auto' }}>
         <CardContent className="p-6">
           <div className="h-6 bg-gray-700/40 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-700/40 rounded w-full mb-3"></div>
@@ -213,15 +254,19 @@ export function ApiProviderCard({
   }
 
   return (
-    <Card className={`border-white/10 bg-glass ${
-      provider.required && !keyExists 
-        ? 'border-red-500/40' 
-        : testSuccessful 
-          ? 'border-green-500/40' 
-          : keyExists && !testSuccessful
-            ? 'border-amber-500/40'
-            : ''
-    }`}>
+    <Card 
+      ref={cardRef}
+      className={`border-white/10 bg-glass ${
+        provider.required && !keyExists 
+          ? 'border-red-500/40' 
+          : testSuccessful 
+            ? 'border-green-500/40' 
+            : keyExists && !testSuccessful
+              ? 'border-amber-500/40'
+              : ''
+      }`}
+      style={{ minHeight: cardHeight ? `${cardHeight}px` : 'auto' }}
+    >
       <CardContent className="p-6 space-y-4">
         {/* Provider Header */}
         <div className="flex justify-between items-center">
@@ -384,24 +429,39 @@ export function ApiProviderCard({
               </Button>
             </>
           ) : (
-            <Button 
-              onClick={handleSaveKey} 
-              disabled={isSaving || !apiKey}
-              className={`${
-                provider.required 
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600' 
-                  : ''
-              }`}
-            >
-              {isSaving ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save API Key'
+            <>
+              <Button 
+                onClick={handleSaveKey} 
+                disabled={isSaving || !apiKey}
+                className={`${
+                  provider.required 
+                    ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600' 
+                    : ''
+                }`}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save API Key'
+                )}
+              </Button>
+              
+              {provider.autoDetectable && (
+                <Button
+                  variant="outline"
+                  onClick={handleDetectKeyType}
+                  disabled={!apiKey}
+                >
+                  <>
+                    <Zap className="mr-2 h-4 w-4" />
+                    Auto-Detect
+                  </>
+                </Button>
               )}
-            </Button>
+            </>
           )}
         </div>
       </CardContent>
