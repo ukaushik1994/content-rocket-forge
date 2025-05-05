@@ -28,6 +28,10 @@ export const createSerpActions = (
     }
   };
   
+  const addSerpSelection = (selection: SerpSelection) => {
+    dispatch({ type: 'ADD_SERP_SELECTION', payload: selection });
+  };
+  
   const addContentFromSerp = (content: string, type: string) => {
     const selection: SerpSelection = {
       type,
@@ -118,6 +122,7 @@ export const createSerpActions = (
   
   return {
     analyzeKeyword,
+    addSerpSelection,
     addContentFromSerp,
     toggleSerpSelection,
     generateOutlineFromSelections
