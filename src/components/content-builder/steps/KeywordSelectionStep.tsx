@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -7,12 +6,12 @@ import { KeywordSuggestions } from '../keyword/KeywordSuggestions';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types';
-import { Loader2, Search, ChevronRight, Sparkles, Tabs, TabsList, TabsTrigger, TabsContent } from 'lucide-react';
+import { Loader2, Search, ChevronRight, Sparkles } from 'lucide-react';
 import { SerpAnalysisPanel } from '../serp/SerpAnalysisPanel';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { Button } from '@/components/ui/button';
-import { Tabs as UITabs, TabsList as UITabsList, TabsTrigger as UITabsTrigger, TabsContent as UITabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -169,13 +168,13 @@ export const KeywordSelectionStep = () => {
       </div>
       
       {/* Tabs for Research and Analysis */}
-      <UITabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <UITabsList className="grid w-full grid-cols-2 mb-6">
-          <UITabsTrigger value="research" className="flex items-center gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="research" className="flex items-center gap-2">
             <Search className="h-4 w-4" />
             Keyword Research
-          </UITabsTrigger>
-          <UITabsTrigger value="analysis" className="flex items-center gap-2">
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-2">
             <ChevronRight className="h-4 w-4" />
             SERP Analysis
             {totalSelected > 0 && (
@@ -183,11 +182,11 @@ export const KeywordSelectionStep = () => {
                 {totalSelected}
               </span>
             )}
-          </UITabsTrigger>
-        </UITabsList>
+          </TabsTrigger>
+        </TabsList>
         
         {/* Research Tab Content */}
-        <UITabsContent value="research" className="animate-fade-in">
+        <TabsContent value="research" className="animate-fade-in">
           <div className="space-y-6">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
@@ -246,10 +245,10 @@ export const KeywordSelectionStep = () => {
               </div>
             </div>
           </div>
-        </UITabsContent>
+        </TabsContent>
         
         {/* Analysis Tab Content */}
-        <UITabsContent value="analysis" className="animate-fade-in">
+        <TabsContent value="analysis" className="animate-fade-in">
           <div className="space-y-6">
             {/* Analysis Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -311,8 +310,8 @@ export const KeywordSelectionStep = () => {
               </div>
             </div>
           </div>
-        </UITabsContent>
-      </UITabs>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
