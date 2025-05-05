@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
 import { KeywordSearch } from '../keyword/KeywordSearch';
-import { KeywordSuggestions } from '../keyword/KeywordSuggestions';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types';
@@ -225,18 +224,8 @@ export const KeywordSelectionStep = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left column - Keyword selections */}
                 <div className="lg:col-span-1 space-y-6">
-                  {/* Keyword Suggestions */}
-                  <div className="animate-fade-in">
-                    <KeywordSuggestions 
-                      suggestions={suggestions} 
-                      onAddKeyword={handleAddKeyword} 
-                    />
-                  </div>
-                  
                   {/* Selected Keywords */}
-                  <div className="animate-fade-in" style={{
-                    animationDelay: '100ms'
-                  }}>
+                  <div className="animate-fade-in">
                     <SelectedKeywords 
                       keywords={selectedKeywords} 
                       onRemoveKeyword={handleRemoveKeyword} 
