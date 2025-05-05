@@ -2,9 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getApiKey } from "../apiKeys/crud";
-import { AiApiParams, AiChatParams, AiChatResponse, AiCompletionParams, AiCompletionResponse } from "./types";
+import { AiApiParams, AiChatParams, AiChatResponse, AiCompletionParams, AiCompletionResponse, AiProvider } from "./types";
 import { getDefaultModel } from "./models";
-import { handleProviderError, getFallbackConfig, notifyProviderFallback, AiProviderType } from "./providerFallback";
+import { handleProviderError, getFallbackConfig, notifyProviderFallback } from "./providerFallback";
 
 /**
  * Send a chat request to an AI provider with fallback support
@@ -13,7 +13,7 @@ import { handleProviderError, getFallbackConfig, notifyProviderFallback, AiProvi
  * @returns A promise that resolves to the AI response
  */
 export async function sendChatRequest(
-  provider: AiProviderType,
+  provider: AiProvider,
   params: Omit<AiChatParams, 'model'>
 ): Promise<AiChatResponse | null> {
   try {
@@ -113,7 +113,7 @@ export async function sendChatRequest(
  * @returns A promise that resolves to the AI response
  */
 export async function generateCompletion(
-  provider: AiProviderType,
+  provider: AiProvider,
   params: Omit<AiCompletionParams, 'model'>
 ): Promise<AiCompletionResponse | null> {
   try {
@@ -227,14 +227,14 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
       
       if (enabled && config.provider && fallbackProviders.length > 0) {
         // Try fallback providers
-        return handleProviderError(config.provider as AiProviderType, new Error(`${config.provider} API key not configured`), 
+        return handleProviderError(config.provider as AiProvider, new Error(`${config.provider} API key not configured`), 
           async () => {
             for (const fallbackProvider of fallbackProviders) {
               console.log(`Attempting fallback to: ${fallbackProvider}`);
               const fallbackApiKey = await getApiKey(fallbackProvider);
               
               if (fallbackApiKey) {
-                notifyProviderFallback(config.provider as AiProviderType, fallbackProvider);
+                notifyProviderFallback(config.provider as AiProvider, fallbackProvider);
                 return callAiApi<T>({
                   ...config,
                   provider: fallbackProvider
@@ -265,14 +265,14 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
       const { enabled, fallbackProviders } = getFallbackConfig();
       
       if (enabled && config.provider && fallbackProviders.length > 0) {
-        return handleProviderError(config.provider as AiProviderType, error, 
+        return handleProviderError(config.provider as AiProvider, error, 
           async () => {
             for (const fallbackProvider of fallbackProviders) {
               console.log(`Attempting fallback to: ${fallbackProvider}`);
               const fallbackApiKey = await getApiKey(fallbackProvider);
               
               if (fallbackApiKey) {
-                notifyProviderFallback(config.provider as AiProviderType, fallbackProvider);
+                notifyProviderFallback(config.provider as AiProvider, fallbackProvider);
                 return callAiApi<T>({
                   ...config,
                   provider: fallbackProvider
@@ -292,7 +292,7 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
     return data as T;
   } catch (error: any) {
     if (config.provider) {
-      return handleProviderError(config.provider as AiProviderType, error);
+      return handleProviderError(config.provider as AiProvider, error);
     } else {
       console.error(`Error calling AI API:`, error);
       toast.error(`API error: ${error.message || 'Unknown error'}`);
