@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useReducer } from 'react';
-import { analyzeKeywordSerp, searchKeywords } from '@/services/serpApiService';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 import {
   ContentBuilderState,
@@ -18,6 +19,8 @@ interface ContentBuilderContextState {
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
+  saveContentToDraft?: (data: any) => Promise<void>;
+  saveContentToPublished?: (data: any) => Promise<void>;
 }
 
 // Create the context
@@ -91,12 +94,28 @@ export const ContentBuilderProvider = ({ children }: { children: React.ReactNode
     dispatch({ type: 'SET_OUTLINE', payload: basicOutline });
   };
 
+  const saveContentToDraft = async (data: any) => {
+    // Placeholder for saving content to draft
+    console.log('Saving content to draft:', data);
+    // In a real implementation, this would call an API
+    return Promise.resolve();
+  };
+
+  const saveContentToPublished = async (data: any) => {
+    // Placeholder for publishing content
+    console.log('Publishing content:', data);
+    // In a real implementation, this would call an API
+    return Promise.resolve();
+  };
+
   const value = {
     state,
     dispatch,
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
+    saveContentToDraft,
+    saveContentToPublished
   };
 
   return (

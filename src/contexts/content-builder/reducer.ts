@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction } from './types';
 
 export function contentBuilderReducer(
@@ -23,6 +24,9 @@ export function contentBuilderReducer(
             : [...state.steps.completed, action.payload],
         },
       };
+    case 'MARK_STEP_VISITED':
+      // Handle the new action type
+      return state;
     case 'SET_MAIN_KEYWORD':
       return {
         ...state,
@@ -89,20 +93,36 @@ export function contentBuilderReducer(
         ...state,
         serpError: action.payload,
       };
-    case 'SET_IS_GENERATING_OUTLINE':
+    case 'ADD_KEYWORD':
       return {
         ...state,
-        isGeneratingOutline: action.payload,
+        keywords: state.keywords.includes(action.payload)
+          ? state.keywords
+          : [...state.keywords, action.payload],
+        selectedKeywords: state.selectedKeywords?.includes(action.payload)
+          ? state.selectedKeywords
+          : [...(state.selectedKeywords || []), action.payload],
       };
-    case 'SET_IS_GENERATING_CONTENT':
+    case 'REMOVE_KEYWORD':
       return {
         ...state,
-        isGeneratingContent: action.payload,
+        keywords: state.keywords.filter(kw => kw !== action.payload),
+        selectedKeywords: state.selectedKeywords?.filter(kw => kw !== action.payload) || [],
       };
-    case 'SET_DOCUMENT_STRUCTURE':
+    case 'SELECT_CLUSTER':
       return {
         ...state,
-        documentStructure: action.payload,
+        selectedCluster: action.payload,
+      };
+    case 'SET_CLUSTERS':
+      return {
+        ...state,
+        clusters: action.payload,
+      };
+    case 'SET_CONTENT_TITLE':
+      return {
+        ...state,
+        contentTitle: action.payload,
       };
     case 'SET_ADDITIONAL_INSTRUCTIONS':
       return {
@@ -124,6 +144,21 @@ export function contentBuilderReducer(
         ...state,
         seoScore: action.payload,
       };
+    case 'SET_IS_GENERATING_OUTLINE':
+      return {
+        ...state,
+        isGeneratingOutline: action.payload,
+      };
+    case 'SET_IS_GENERATING_CONTENT':
+      return {
+        ...state,
+        isGeneratingContent: action.payload,
+      };
+    case 'SET_DOCUMENT_STRUCTURE':
+      return {
+        ...state,
+        documentStructure: action.payload,
+      };
     case 'SET_SELECTED_SOLUTION':
       return {
         ...state,
@@ -133,11 +168,6 @@ export function contentBuilderReducer(
       return {
         ...state,
         solutionIntegrationMetrics: action.payload,
-      };
-    case 'SET_IS_SAVING':
-      return {
-        ...state,
-        isSaving: action.payload,
       };
     case 'SET_SEO_IMPROVEMENTS':
       return {

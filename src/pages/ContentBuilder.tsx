@@ -2,7 +2,7 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { ContentBuilder } from '@/components/content-builder/ContentBuilder';
-import { ContentBuilderProvider } from '@/contexts/content-builder/ContentBuilderContext';
+import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 import { Helmet } from 'react-helmet-async';
 
 const ContentBuilderPage = () => {
@@ -24,4 +24,3 @@ const ContentBuilderPage = () => {
 };
 
 export default ContentBuilderPage;
-
