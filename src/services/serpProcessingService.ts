@@ -9,6 +9,8 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     throw new Error('Invalid SERP response data');
   }
 
+  console.log('Processing SERP response:', response);
+
   // Ensure response has expected structure and the required keyword field
   const processedData: SerpAnalysisResult = {
     keyword: response.keyword || '',
@@ -17,7 +19,7 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     keywordDifficulty: response.keywordDifficulty || 0,
     
     // Process top results
-    topResults: response.topResults ? response.topResults.map((result: any, index: number) => ({
+    topResults: Array.isArray(response.topResults) ? response.topResults.map((result: any, index: number) => ({
       title: result.title || '',
       link: result.link || '',
       snippet: result.snippet || '',
@@ -25,20 +27,20 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     })) : [],
     
     // Process related searches
-    relatedSearches: response.relatedSearches ? response.relatedSearches.map((search: any) => ({
+    relatedSearches: Array.isArray(response.relatedSearches) ? response.relatedSearches.map((search: any) => ({
       query: search.query || '',
       volume: search.volume || 0 // Ensure volume exists
     })) : [],
     
     // Process people also ask questions
-    peopleAlsoAsk: response.peopleAlsoAsk ? response.peopleAlsoAsk.map((item: any) => ({
+    peopleAlsoAsk: Array.isArray(response.peopleAlsoAsk) ? response.peopleAlsoAsk.map((item: any) => ({
       question: item.question || '',
       source: item.source || '',
       answer: item.answer || 'No answer available' // Ensure answer exists
     })) : [],
     
     // Process featured snippets
-    featuredSnippets: response.featuredSnippets ? response.featuredSnippets.map((snippet: any) => ({
+    featuredSnippets: Array.isArray(response.featuredSnippets) ? response.featuredSnippets.map((snippet: any) => ({
       content: snippet.content || '',
       source: snippet.source || '',
       type: snippet.type || 'general' // Ensure type exists

@@ -1,7 +1,7 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
+// We'll still use these as fallbacks if available
 const SERP_API_KEY = Deno.env.get("SERP_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
@@ -17,15 +17,15 @@ serve(async (req) => {
   }
 
   try {
-    const { service, endpoint, params, hasApiKey } = await req.json();
+    const { service, endpoint, params, apiKey, hasApiKey } = await req.json();
     
     console.log(`API Proxy: ${service} - ${endpoint}`, params);
 
     // Route to appropriate API service
     if (service === 'serp') {
-      return await handleSerpRequest(endpoint, params, hasApiKey);
+      return await handleSerpRequest(endpoint, params, apiKey, hasApiKey);
     } else if (service === 'openai') {
-      return await handleOpenAIRequest(endpoint, params, hasApiKey);
+      return await handleOpenAIRequest(endpoint, params, apiKey, hasApiKey);
     } else {
       throw new Error(`Unsupported service: ${service}`);
     }
@@ -42,21 +42,13 @@ serve(async (req) => {
 });
 
 // Handler for SERP API requests
-async function handleSerpRequest(endpoint: string, params: any, hasConfiguredApiKey: boolean) {
-  // Do not return mock data if the user has configured an API key but we don't have one in env
-  if (hasConfiguredApiKey && !SERP_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'SERP API key not configured in environment', configError: true }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-
-  // If user hasn't configured an API key, don't return mock data - let frontend handle "no data" state
-  if (!hasConfiguredApiKey) {
-    console.log('User has not configured a SERP API key, returning null');
+async function handleSerpRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
+  // Use client API key if provided, fall back to environment variable
+  const apiKey = clientApiKey || SERP_API_KEY;
+  
+  // If no API key available, return null for frontend to handle
+  if (!apiKey) {
+    console.log('No SERP API key available, returning null');
     return new Response(
       JSON.stringify(null),
       { 
@@ -82,12 +74,13 @@ async function handleSerpRequest(endpoint: string, params: any, hasConfiguredApi
       url.searchParams.append('google_domain', 'google.com');
       url.searchParams.append('gl', country);
       url.searchParams.append('hl', 'en');
-      url.searchParams.append('api_key', SERP_API_KEY);
+      url.searchParams.append('api_key', apiKey);
       
       const response = await fetch(url.toString());
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`SerpAPI error: ${response.status} - ${errorText}`);
         throw new Error(`SerpAPI error: ${response.status} - ${errorText}`);
       }
       
@@ -122,12 +115,13 @@ async function handleSerpRequest(endpoint: string, params: any, hasConfiguredApi
       url.searchParams.append('google_domain', 'google.com');
       url.searchParams.append('gl', 'us');
       url.searchParams.append('hl', 'en');
-      url.searchParams.append('api_key', SERP_API_KEY);
+      url.searchParams.append('api_key', apiKey);
       
       const response = await fetch(url.toString());
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`SerpAPI error: ${response.status} - ${errorText}`);
         throw new Error(`SerpAPI error: ${response.status} - ${errorText}`);
       }
       
@@ -178,12 +172,13 @@ async function handleSerpRequest(endpoint: string, params: any, hasConfiguredApi
       url.searchParams.append('google_domain', 'google.com');
       url.searchParams.append('gl', 'us');
       url.searchParams.append('hl', 'en');
-      url.searchParams.append('api_key', SERP_API_KEY);
+      url.searchParams.append('api_key', apiKey);
       
       const response = await fetch(url.toString());
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`SerpAPI error: ${response.status} - ${errorText}`);
         throw new Error(`SerpAPI error: ${response.status} - ${errorText}`);
       }
       
@@ -479,21 +474,13 @@ function generateContentRecommendations(content: string, keywords: string[], ser
 }
 
 // Handler for OpenAI API requests
-async function handleOpenAIRequest(endpoint: string, params: any, hasConfiguredApiKey: boolean) {
-  // Do not return mock data if the user has configured an API key but we don't have one in env
-  if (hasConfiguredApiKey && !OPENAI_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'OpenAI API key not configured in environment', configError: true }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-
-  // If user hasn't configured an API key, don't return mock data
-  if (!hasConfiguredApiKey) {
-    console.log('User has not configured an OpenAI API key, returning null');
+async function handleOpenAIRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
+  // Use client API key if provided, fall back to environment variable
+  const apiKey = clientApiKey || OPENAI_API_KEY;
+  
+  // If no API key available, return null for frontend to handle
+  if (!apiKey) {
+    console.log('No OpenAI API key available, returning null');
     return new Response(
       JSON.stringify(null),
       { 
@@ -514,7 +501,7 @@ async function handleOpenAIRequest(endpoint: string, params: any, hasConfiguredA
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model,

@@ -11,7 +11,7 @@ export type ApiProxyParams = {
 
 export async function callApiProxy<T>(config: ApiProxyParams): Promise<T | null> {
   try {
-    // Check if the user has configured an API key for this service
+    // Get the actual API key for this service
     const apiKey = await getApiKey(config.service);
     const hasApiKey = !!apiKey;
     
@@ -23,13 +23,15 @@ export async function callApiProxy<T>(config: ApiProxyParams): Promise<T | null>
       if (config.service === 'serp' && config.endpoint === 'search') {
         toast.warning(`${config.service.toUpperCase()} API key not configured. Configure your API keys in Settings.`);
       }
+      return null;
     }
     
-    // Call the API proxy
+    // Call the API proxy with the actual API key
     const { data, error } = await supabase.functions.invoke('api-proxy', {
       body: JSON.stringify({
         ...config,
-        // Pass a flag to indicate whether the user has configured an API key
+        // Pass the actual API key, not just a flag
+        apiKey: apiKey,
         hasApiKey
       }),
     });

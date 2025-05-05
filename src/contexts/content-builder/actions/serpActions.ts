@@ -22,13 +22,16 @@ export const createSerpActions = (
       
       if (!serpData) {
         toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
+      } else {
+        console.log("SERP data successfully retrieved:", serpData);
+        toast.success("Search data analysis completed successfully.");
       }
     } catch (error) {
       console.error('Error analyzing keyword:', error);
       // Set serpData to null to display the NoDataFound component
       dispatch({ type: 'SET_SERP_DATA', payload: null });
       // Handle error
-      toast.error("Failed to analyze keyword. Please try again later.");
+      toast.error("Failed to analyze keyword. Please check your API key and try again.");
     } finally {
       // End loading
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
