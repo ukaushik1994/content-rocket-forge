@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, FileEdit, List, Sparkles, FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Check, FileEdit, List, Sparkles, FileText, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -24,8 +24,32 @@ export const CreationStep = () => {
   
   const [localTitle, setLocalTitle] = useState(contentTitle);
   const [activeTab, setActiveTab] = useState('outline');
-  const [customOutline, setCustomOutline] = useState(outline.join('\n'));
-  const [localInstructions, setLocalInstructions] = useState(additionalInstructions);
+  const [customOutline, setCustomOutline] = useState(Array.isArray(outline) ? outline.join('\n') : '');
+  const [localInstructions, setLocalInstructions] = useState(additionalInstructions || '');
+  
+  // Effect to check for outline and auto-switch to content tab when generated
+  useEffect(() => {
+    if (outline.length > 0 && !content && activeTab === 'outline') {
+      const timer = setTimeout(() => {
+        // Show toast to guide the user
+        toast.info('Outline created! Ready to generate content?', {
+          action: {
+            label: 'Generate Now',
+            onClick: () => handleGenerateContent()
+          },
+        });
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [outline, content, activeTab]);
+
+  // Effect to update custom outline when state outline changes
+  useEffect(() => {
+    if (Array.isArray(outline)) {
+      setCustomOutline(outline.join('\n'));
+    }
+  }, [outline]);
   
   // Handle saving the title
   const handleSaveTitle = () => {
@@ -43,7 +67,6 @@ export const CreationStep = () => {
     }
     
     await generateOutline();
-    setCustomOutline(outline.join('\n'));
   };
   
   // Handle outline update
@@ -76,6 +99,29 @@ export const CreationStep = () => {
     });
     
     await generateContent();
+    
+    // Switch to content tab after generating
+    setActiveTab('content');
+  };
+  
+  // Handle switching from outline to content
+  const handleOutlineToContent = () => {
+    if (outline.length === 0) {
+      toast.warning('Please create an outline first');
+      return;
+    }
+    
+    setActiveTab('content');
+    
+    // If no content exists yet, suggest generating
+    if (!content && !isGeneratingContent) {
+      toast.info('Ready to generate content based on your outline', {
+        action: {
+          label: 'Generate',
+          onClick: () => handleGenerateContent()
+        },
+      });
+    }
   };
   
   // Handle additional instructions update
@@ -175,6 +221,36 @@ export const CreationStep = () => {
         </CardContent>
       </Card>
       
+      {/* Content Creation Guide */}
+      <div className="flex items-center justify-center py-2 px-4 rounded-md bg-white/5 border border-white/10">
+        <div className="flex items-center justify-center w-full space-x-4">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-neon-purple/20 flex items-center justify-center">
+              <List className="h-5 w-5 text-neon-purple" />
+            </div>
+            <span className="text-xs mt-1">Create Outline</span>
+          </div>
+          
+          <ArrowRight className="h-4 w-4 text-white/30" />
+          
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-neon-blue/20 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-neon-blue" />
+            </div>
+            <span className="text-xs mt-1">Generate Content</span>
+          </div>
+          
+          <ArrowRight className="h-4 w-4 text-white/30" />
+          
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-green-400/20 flex items-center justify-center">
+              <FileEdit className="h-5 w-5 text-green-400" />
+            </div>
+            <span className="text-xs mt-1">Edit Content</span>
+          </div>
+        </div>
+      </div>
+      
       {/* Main Content Area - 3 column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - SERP Selections Summary */}
@@ -232,6 +308,15 @@ export const CreationStep = () => {
                     The outline will guide the structure of your content. Each line represents a section.
                   </p>
                 </CardContent>
+                <CardFooter className="pt-2 pb-4 flex justify-end">
+                  <Button
+                    onClick={handleOutlineToContent}
+                    disabled={outline.length === 0}
+                    className="bg-white/10 hover:bg-white/20 text-white border border-white/5"
+                  >
+                    Continue to Content <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardFooter>
               </Card>
             </TabsContent>
             
@@ -242,23 +327,53 @@ export const CreationStep = () => {
                     <FileText className="h-4 w-4 text-neon-blue" />
                     Content Editor
                   </CardTitle>
-                  <Button
-                    onClick={handleGenerateContent}
-                    disabled={isGeneratingContent || !contentTitle || outline.length === 0}
-                    size="sm"
-                    className="bg-gradient-to-r from-neon-purple to-neon-blue text-white hover:from-neon-blue hover:to-neon-purple"
-                  >
-                    <Sparkles className="h-3 w-3 mr-2" />
-                    {isGeneratingContent ? 'Generating...' : 'Generate Content'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setActiveTab('outline')}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/5 border-white/10"
+                    >
+                      <List className="h-3 w-3 mr-2" />
+                      Back to Outline
+                    </Button>
+                    <Button
+                      onClick={handleGenerateContent}
+                      disabled={isGeneratingContent || !contentTitle || outline.length === 0}
+                      size="sm"
+                      className="bg-gradient-to-r from-neon-purple to-neon-blue text-white hover:from-neon-blue hover:to-neon-purple"
+                    >
+                      <Sparkles className="h-3 w-3 mr-2" />
+                      {isGeneratingContent ? 'Generating...' : 'Generate Content'}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <Textarea
-                    value={content}
-                    onChange={(e) => dispatch({ type: 'SET_CONTENT', payload: e.target.value })}
-                    placeholder="Your content will appear here"
-                    className="min-h-[300px] bg-white/5 border-white/10"
-                  />
+                  {content ? (
+                    <Textarea
+                      value={content}
+                      onChange={(e) => dispatch({ type: 'SET_CONTENT', payload: e.target.value })}
+                      placeholder="Your content will appear here"
+                      className="min-h-[350px] bg-white/5 border-white/10"
+                    />
+                  ) : (
+                    <div className="min-h-[350px] flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-md p-8">
+                      <Sparkles className="h-8 w-8 text-neon-blue mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Ready to Create Your Content</h3>
+                      <p className="text-sm text-white/70 text-center mb-6 max-w-md">
+                        Click the button below to generate content based on your outline with AI assistance
+                      </p>
+                      <Button
+                        onClick={handleGenerateContent}
+                        disabled={isGeneratingContent || !contentTitle || outline.length === 0}
+                        size="lg"
+                        className="bg-gradient-to-r from-neon-purple to-neon-blue text-white hover:from-neon-blue hover:to-neon-purple"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {isGeneratingContent ? 'Generating Content...' : 'Generate Content Now'}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
