@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -14,7 +15,7 @@ import { OptimizationStep } from './steps/OptimizationStep';
 import { FinalReviewStep } from './steps/FinalReviewStep';
 
 export const ContentBuilder = () => {
-  const { state, navigateToStep } = useContentBuilder();
+  const { state, navigateToStep, dispatch } = useContentBuilder();
   const { activeStep, steps } = state;
 
   // Calculate progress percentage
