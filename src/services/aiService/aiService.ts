@@ -35,7 +35,7 @@ export async function sendChatRequest(
     // Add model to params
     const fullParams: AiChatParams = {
       ...params,
-      model: params.model || defaultModel.id
+      model: defaultModel.id
     };
 
     // Call the API proxy
@@ -92,7 +92,7 @@ export async function generateCompletion(
     // Add model to params
     const fullParams: AiCompletionParams = {
       ...params,
-      model: params.model || defaultModel.id
+      model: defaultModel.id
     };
 
     // Call the API proxy
