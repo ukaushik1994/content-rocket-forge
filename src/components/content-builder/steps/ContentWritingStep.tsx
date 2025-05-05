@@ -1,57 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+
+import React from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
-import { OutlineSection } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
 import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
-import { sendChatRequest } from '@/services/aiService';
-import { useContentGeneration } from './writing/useContentGeneration';
-import { AiProvider } from '@/services/aiService/types';
+import { useWritingStep } from './writing/useWritingStep';
+import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 
 export const ContentWritingStep = () => {
-  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
-  const { 
-    mainKeyword, 
-    outline, 
-    content, 
-    additionalInstructions, 
-    serpData, 
+  const {
+    state,
+    isGenerating,
+    setIsGenerating,
+    showOutline,
+    showGenerator,
+    isSaving,
+    setIsSaving,
+    showSaveDialog,
+    setShowSaveDialog,
+    saveTitle,
+    setSaveTitle,
+    saveNote,
+    setSaveNote,
+    aiProvider,
+    additionalInstructions,
+    content,
+    mainKeyword,
+    outline,
     selectedSolution,
-    contentTitle
-  } = state;
-  
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showOutline, setShowOutline] = useState(true);
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
-  const [saveNote, setSaveNote] = useState('');
-  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
-
-  // Mark this step as complete when we have content
-  useEffect(() => {
-    if (content && content.trim().length > 100) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
-    }
-  }, [content, dispatch]);
-
-  useEffect(() => {
-    if (contentTitle && contentTitle !== saveTitle) {
-      setSaveTitle(contentTitle);
-    }
-  }, [contentTitle, saveTitle]);
-
-  const handleContentChange = (newContent: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: newContent });
-  };
-
-  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setAdditionalInstructions(e.target.value);
-  };
+    handleContentChange,
+    handleInstructionsChange,
+    handleToggleOutline,
+    handleToggleGenerator,
+    handleContentTemplateSelection,
+    handleAiProviderChange
+  } = useWritingStep();
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
@@ -59,133 +44,44 @@ export const ContentWritingStep = () => {
       return;
     }
     
-    setIsGenerating(true);
-    
-    try {
-      // Convert outline to a formatted string for the prompt
-      const outlineText = Array.isArray(outline) 
-        ? outline.map((item, index) => {
-            if (typeof item === 'string') {
-              return `${index + 1}. ${item}`;
-            } else if (item && typeof item === 'object' && 'title' in item) {
-              return `${index + 1}. ${(item as { title: string }).title}`;
-            }
-            return '';
-          }).filter(Boolean).join('\n')
-        : '';
+    // Convert outline to a formatted string for the prompt
+    const outlineText = Array.isArray(state.outline) 
+      ? state.outline.map((item, index) => {
+          if (typeof item === 'string') {
+            return `${index + 1}. ${item}`;
+          } else if (item && typeof item === 'object' && 'title' in item) {
+            return `${index + 1}. ${(item as { title: string }).title}`;
+          }
+          return '';
+        }).filter(Boolean).join('\n')
+      : '';
         
-      // Prepare secondary keywords
-      const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
-      
-      // Create a detailed prompt for the AI
-      const prompt = `
-      Write comprehensive, high-quality content for an article about "${mainKeyword}".
-      
-      Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
-      Primary Keyword: ${mainKeyword}
-      ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
-      
-      Use this outline structure:
-      ${outlineText}
-      
-      ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
-      
-      ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
-      
-      Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
-      Include a compelling introduction and a strong conclusion. 
-      Optimize the content for readability and search engines.
-      `;
-      
-      // Call the AI API via our service
-      console.info("AI Content Generation prompt:", prompt);
-      
-      const chatResponse = await sendChatRequest(aiProvider, {
-        messages: [
-          { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        maxTokens: 4000
-      });
-      
-      if (chatResponse?.choices?.[0]?.message?.content) {
-        // Use the AI-generated content
-        const generatedContent = chatResponse.choices[0].message.content;
-        dispatch({ type: 'SET_CONTENT', payload: generatedContent });
-        toast.success('Content generated successfully');
-      } else {
-        toast.error('Failed to generate content. Please check your API key configuration or try another provider.');
-      }
-      
-    } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error('Failed to generate content. Please try again or check your API configuration.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-  
-  const handleToggleOutline = () => {
-    setShowOutline(!showOutline);
-  };
-  
-  const handleToggleGenerator = () => {
-    setShowGenerator(!showGenerator);
-  };
-
-  const handleContentTemplateSelection = (template: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: template });
-    setShowGenerator(false);
-    toast.success('Content template applied');
+    // Prepare secondary keywords
+    const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
+    
+    await generateContent(
+      aiProvider,
+      mainKeyword,
+      state.contentTitle,
+      outlineText,
+      secondaryKeywords,
+      selectedSolution,
+      additionalInstructions,
+      setIsGenerating,
+      handleContentChange
+    );
   };
   
   const handleSaveToDraft = async () => {
-    if (!saveTitle.trim()) {
-      toast.error('Please enter a title');
-      return;
-    }
-    
-    setIsSaving(true);
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Content saved successfully to your repository');
-      setShowSaveDialog(false);
-      
-      // In a real app, this would save to a database
-      console.log('Saved content:', {
-        title: saveTitle,
-        content,
-        keyword: mainKeyword,
-        note: saveNote
-      });
-      
-    } catch (error) {
-      console.error('Error saving content:', error);
-      toast.error('Failed to save content. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
+    await saveContentToDraft(
+      saveTitle,
+      content,
+      mainKeyword,
+      saveNote,
+      setIsSaving,
+      setShowSaveDialog
+    );
   };
-  
-  const handleAiProviderChange = (provider: AiProvider) => {
-    setAiProvider(provider);
-  };
-
-  // Convert outline to the appropriate format for the sidebar component
-  const processedOutline = Array.isArray(outline) 
-    ? outline.map(item => {
-        if (typeof item === 'string') {
-          return { id: Math.random().toString(), title: item, level: 2 };
-        } else if (item && typeof item === 'object' && 'title' in item) {
-          return item as OutlineSection;
-        }
-        return { id: Math.random().toString(), title: '', level: 2 };
-      })
-    : [];
 
   return (
     <div className="space-y-6">
@@ -195,14 +91,14 @@ export const ContentWritingStep = () => {
         handleToggleOutline={handleToggleOutline}
         handleToggleGenerator={handleToggleGenerator}
         showOutline={showOutline}
-        outlineLength={outline.length}
+        outlineLength={state.outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
       />
       
       {showGenerator && (
         <ContentTemplateCard
-          serpData={serpData}
+          serpData={state.serpData}
           onGenerateContent={handleContentTemplateSelection}
           mainKeyword={mainKeyword}
         />
@@ -212,7 +108,7 @@ export const ContentWritingStep = () => {
         {showOutline && (
           <div className="lg:col-span-1 space-y-4">
             <ContentSidebar
-              outline={processedOutline}
+              outline={outline}
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}
@@ -239,7 +135,7 @@ export const ContentWritingStep = () => {
         isSaving={isSaving}
         mainKeyword={mainKeyword}
         content={content}
-        outlineLength={outline.length}
+        outlineLength={state.outline.length}
       />
     </div>
   );
