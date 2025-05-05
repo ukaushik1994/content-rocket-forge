@@ -54,7 +54,7 @@ export const SerpAnalysisStep = () => {
         handleContinueWithSelections={handleContinueWithSelections}
       />
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
         <div className="lg:col-span-3">
           <SerpAnalysisPanel 
             serpData={serpData}
@@ -65,7 +65,7 @@ export const SerpAnalysisStep = () => {
           />
         </div>
         
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 relative">
           <SelectedItemsSidebar 
             serpSelections={serpSelections}
             totalSelected={totalSelected}

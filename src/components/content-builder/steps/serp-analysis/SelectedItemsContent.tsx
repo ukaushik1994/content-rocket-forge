@@ -63,7 +63,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Questions */}
           {selectedCounts.question > 0 && (
             <>
-              {selectedCounts.keyword > 0 && <Separator />}
+              {selectedCounts.keyword > 0 && <Separator className="my-3 opacity-50" />}
               <QuestionsGroup 
                 count={selectedCounts.question}
                 items={questionItems}
@@ -75,7 +75,9 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Snippets */}
           {selectedCounts.snippet > 0 && (
             <>
-              {(selectedCounts.keyword > 0 || selectedCounts.question > 0) && <Separator />}
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0) && 
+                <Separator className="my-3 opacity-50" />
+              }
               <SnippetsGroup 
                 count={selectedCounts.snippet}
                 items={snippetItems}
@@ -87,7 +89,9 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Entities */}
           {selectedCounts.entity > 0 && (
             <>
-              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0) && <Separator />}
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0) && 
+                <Separator className="my-3 opacity-50" />
+              }
               <EntitiesGroup 
                 count={selectedCounts.entity}
                 items={entityItems}
@@ -99,7 +103,10 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Headings */}
           {selectedCounts.heading > 0 && (
             <>
-              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0 || selectedCounts.entity > 0) && <Separator />}
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
+                selectedCounts.snippet > 0 || selectedCounts.entity > 0) && 
+                <Separator className="my-3 opacity-50" />
+              }
               <HeadingsGroup 
                 count={selectedCounts.heading}
                 items={headingItems}
@@ -111,7 +118,11 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Content Gaps */}
           {selectedCounts.contentGap > 0 && (
             <>
-              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0 || selectedCounts.entity > 0 || selectedCounts.heading > 0) && <Separator />}
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
+                selectedCounts.snippet > 0 || selectedCounts.entity > 0 || 
+                selectedCounts.heading > 0) && 
+                <Separator className="my-3 opacity-50" />
+              }
               <ContentGapsGroup 
                 count={selectedCounts.contentGap}
                 items={contentGapItems}
@@ -123,7 +134,11 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Top Ranks */}
           {selectedCounts.topRank > 0 && (
             <>
-              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0 || selectedCounts.entity > 0 || selectedCounts.heading > 0 || selectedCounts.contentGap > 0) && <Separator />}
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
+                selectedCounts.snippet > 0 || selectedCounts.entity > 0 || 
+                selectedCounts.heading > 0 || selectedCounts.contentGap > 0) && 
+                <Separator className="my-3 opacity-50" />
+              }
               <TopRanksGroup 
                 count={selectedCounts.topRank}
                 items={topRankItems}
