@@ -5,6 +5,8 @@ import { toast } from "sonner";
 interface UserPreferences {
   defaultAiProvider?: 'openai' | 'anthropic' | 'gemini';
   enableAiFallback?: boolean;
+  theme?: 'light' | 'dark' | 'system';
+  notificationsEnabled?: boolean;
   // We can add more user preferences here in the future
 }
 
@@ -57,4 +59,27 @@ export async function saveUserPreference<K extends keyof UserPreferences>(
   value: UserPreferences[K]
 ): Promise<boolean> {
   return saveUserPreferences({ [key]: value } as Partial<UserPreferences>);
+}
+
+/**
+ * Check if a specific user preference is enabled
+ */
+export function isPreferenceEnabled(key: keyof UserPreferences): boolean {
+  const value = getUserPreference(key);
+  return value === true;
+}
+
+/**
+ * Get the configured default AI provider or fallback to OpenAI
+ */
+export function getDefaultAiProvider(): 'openai' | 'anthropic' | 'gemini' {
+  const provider = getUserPreference('defaultAiProvider');
+  return provider || 'openai';
+}
+
+/**
+ * Check if AI provider fallback is enabled
+ */
+export function isAiFallbackEnabled(): boolean {
+  return isPreferenceEnabled('enableAiFallback');
 }
