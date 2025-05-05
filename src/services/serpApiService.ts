@@ -2,7 +2,6 @@
 import { callApiProxy } from '@/services/apiProxyService';
 import { toast } from 'sonner';
 import { serpResultsCache } from '@/utils/cacheUtils';
-import { getMockSerpData, getMockKeywordResults } from './serpMockService';
 import { processSerpResponse, validateKeywordInput } from './serpProcessingService';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 
@@ -56,66 +55,102 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
         })
       );
     } catch (error: any) {
-      console.error('Error calling serp API:', error);
-      // Return mock data if API call fails - don't rethrow the error
-      console.log('Using mock SERP data due to API error');
-      const mockData = getMockSerpData(keyword);
-      mockData.isMockData = true; // Set flag to identify mock data
-      serpResultsCache.set(`serp_${validatedKeyword}`, mockData);
-      return mockData;
+      console.error('Error calling SERP API:', error);
+      
+      // Show error toast
+      if (error.message?.includes('API key not configured')) {
+        toast.error('SERP API key not configured. Please add your API key in Settings.');
+      } else {
+        toast.error(`SERP API Error: ${error.message || 'Failed to analyze keyword'}`);
+      }
+      
+      // Return empty result
+      return {
+        keyword: validatedKeyword,
+        searchVolume: 0,
+        competitionScore: 0,
+        keywordDifficulty: 0,
+        topResults: [],
+        relatedSearches: [],
+        peopleAlsoAsk: [],
+        entities: [],
+        headings: [],
+        contentGaps: [],
+        recommendations: []
+      };
     }
     
     if (!response) {
-      console.log('No response from SERP API, using mock data');
-      const mockData = getMockSerpData(keyword);
-      mockData.isMockData = true; // Set flag to identify mock data
-      serpResultsCache.set(`serp_${validatedKeyword}`, mockData);
-      return mockData;
+      console.log('No response from SERP API');
+      toast.error('No data received from SERP API. Please check your API key.');
+      
+      // Return empty result
+      return {
+        keyword: validatedKeyword,
+        searchVolume: 0,
+        competitionScore: 0,
+        keywordDifficulty: 0,
+        topResults: [],
+        relatedSearches: [],
+        peopleAlsoAsk: [],
+        entities: [],
+        headings: [],
+        contentGaps: [],
+        recommendations: []
+      };
     }
     
-    // Check if the response indicates it's mock data
-    if (response.isMockData) {
-      // If it's already flagged as mock data, just pass it through
-      console.log('Received mock data from the API, still using it');
-      const processedData = processSerpResponse(response);
-      processedData.isMockData = true;
-      serpResultsCache.set(cacheKey, processedData);
+    // Handle error in response
+    if (response.error) {
+      console.error('Error in SERP API response:', response.error);
+      toast.error(`SERP API Error: ${response.error}`);
       
-      // Show a toast notification about using mock data
-      toast.info('Using sample data for SERP analysis. Add a valid SERP API key in settings for real data.');
-      
-      return processedData;
-    } else {
-      console.log('Received real data from the SERP API');
-      // We got real data, process it normally
-      const processedData = processSerpResponse(response);
-      processedData.isMockData = false; // Ensure it's marked as real data
-      
-      // Cache the real data result
-      serpResultsCache.set(cacheKey, processedData);
-      
-      // Show success toast for real data
-      toast.success('SERP analysis completed with real data');
-      
-      return processedData;
+      // Return empty result
+      return {
+        keyword: validatedKeyword,
+        searchVolume: 0,
+        competitionScore: 0,
+        keywordDifficulty: 0,
+        topResults: [],
+        relatedSearches: [],
+        peopleAlsoAsk: [],
+        entities: [],
+        headings: [],
+        contentGaps: [],
+        recommendations: []
+      };
     }
+    
+    // Process the response data
+    const processedData = processSerpResponse(response);
+    
+    // Cache the result
+    serpResultsCache.set(cacheKey, processedData);
+    
+    // Show success toast
+    toast.success('SERP analysis completed successfully');
+    
+    return processedData;
   } catch (error: any) {
     console.error('Error analyzing keyword:', error);
     
-    // Always return mock data on error to ensure UI doesn't break
-    console.log('Using mock SERP data due to error');
-    const mockData = getMockSerpData(keyword);
-    mockData.isMockData = true; // Set flag to identify mock data
+    // Show error toast with specific message
+    toast.error(`API Error: ${error.message || 'Failed to analyze keyword'}`);
     
-    // Cache the mock result too
-    serpResultsCache.set(`serp_${keyword.toLowerCase().trim()}`, mockData);
-    
-    // Show user-friendly error message but don't break the UI flow
-    const errorMessage = error.message || 'Failed to analyze keyword';
-    toast.error(`API Error: ${errorMessage}`);
-    
-    // Return mock data instead of throwing
-    return mockData;
+    // Return empty result
+    return {
+      keyword,
+      searchVolume: 0,
+      competitionScore: 0,
+      keywordDifficulty: 0,
+      topResults: [],
+      relatedSearches: [],
+      peopleAlsoAsk: [],
+      entities: [],
+      headings: [],
+      contentGaps: [],
+      recommendations: []
+    };
   }
 }
 
@@ -146,39 +181,35 @@ export async function searchKeywords(params: SerpSearchParams): Promise<any[]> {
       );
     } catch (error: any) {
       console.error('Error calling keywords API:', error);
-      // Return mock data if API call fails
-      const mockResults = getMockKeywordResults(params.query);
-      serpResultsCache.set(cacheKey, mockResults);
-      return mockResults;
+      
+      // Show error toast with specific message
+      if (error.message?.includes('API key not configured')) {
+        toast.error('SERP API key not configured. Please add your API key in Settings.');
+      } else {
+        toast.error(`SERP API Error: ${error.message || 'Failed to search keywords'}`);
+      }
+      
+      return [];
     }
     
     // Check if response exists and has results property
-    const results = response && typeof response === 'object' ? 
-      (response.results || response) : [];
-    
-    // Check if the data is mock
-    const isMockData = response && response.isMockData === true;
-    
-    if (isMockData) {
-      toast.info('Using sample data for keyword suggestions. Add a valid SERP API key for real data.');
+    if (!response || !response.results) {
+      console.log('No results from keywords API');
+      return [];
     }
     
-    const processedResults = Array.isArray(results) ? results : [];
+    const results = response.results;
     
     // Cache results
-    serpResultsCache.set(cacheKey, processedResults);
+    serpResultsCache.set(cacheKey, results);
     
-    return processedResults;
+    return results;
   } catch (error: any) {
     console.error('Error searching keywords:', error);
     
-    // Always return mock data on error
-    const mockResults = getMockKeywordResults(params.query);
-    serpResultsCache.set(`keywords_${params.query.toLowerCase().trim()}_${params.country || 'us'}_${params.num || 10}`, mockResults);
-    
     // Show toast but don't break UI flow
     toast.error(`API Error: ${error.message || 'Failed to search keywords'}`);
-    return mockResults;
+    return [];
   }
 }
 
@@ -213,24 +244,72 @@ export async function analyzeContent(content: string, keywords: string[] = []): 
       );
     } catch (error: any) {
       console.error('Error calling content analysis API:', error);
-      // Return mock data if API call fails
-      const mockResult = getMockContentAnalysis(content, keywords);
-      serpResultsCache.set(cacheKey, mockResult);
-      return mockResult;
+      
+      // Show error toast with specific message
+      if (error.message?.includes('API key not configured')) {
+        toast.error('SERP API key not configured. Please add your API key in Settings.');
+      } else {
+        toast.error(`API Error: ${error.message || 'Failed to analyze content'}`);
+      }
+      
+      // Return empty result
+      return {
+        keyword: keywords.length > 0 ? keywords[0] : '',
+        searchVolume: 0,
+        competitionScore: 0,
+        keywordDifficulty: 0,
+        keywords: keywords,
+        recommendations: [],
+        topResults: [],
+        relatedSearches: [],
+        peopleAlsoAsk: [],
+        entities: [],
+        headings: [],
+        contentGaps: []
+      };
     }
     
     if (!response) {
-      console.log('No response from content analysis API, using mock data');
-      const mockResult = getMockContentAnalysis(content, keywords);
-      serpResultsCache.set(cacheKey, mockResult);
-      return mockResult;
+      console.log('No response from content analysis API');
+      toast.error('No data received from API. Please check your API key.');
+      
+      // Return empty result
+      return {
+        keyword: keywords.length > 0 ? keywords[0] : '',
+        searchVolume: 0,
+        competitionScore: 0,
+        keywordDifficulty: 0,
+        keywords: keywords,
+        recommendations: [],
+        topResults: [],
+        relatedSearches: [],
+        peopleAlsoAsk: [],
+        entities: [],
+        headings: [],
+        contentGaps: []
+      };
     }
     
-    // Check if the response indicates it's mock data
-    if (response.isMockData) {
-      toast.info('Using sample data for content analysis. Add a valid SERP API key for real data.');
-    } else {
-      toast.success('Content analysis completed with real data');
+    // Check if the response contains an error
+    if (response.error) {
+      console.error('Error in content analysis response:', response.error);
+      toast.error(`API Error: ${response.error}`);
+      
+      // Return empty result
+      return {
+        keyword: keywords.length > 0 ? keywords[0] : '',
+        searchVolume: 0,
+        competitionScore: 0,
+        keywordDifficulty: 0,
+        keywords: keywords,
+        recommendations: [],
+        topResults: [],
+        relatedSearches: [],
+        peopleAlsoAsk: [],
+        entities: [],
+        headings: [],
+        contentGaps: []
+      };
     }
     
     const processedResult = processSerpResponse(response);
@@ -238,61 +317,32 @@ export async function analyzeContent(content: string, keywords: string[] = []): 
     // Cache the result
     serpResultsCache.set(cacheKey, processedResult);
     
+    // Show success toast
+    toast.success('Content analysis completed successfully');
+    
     return processedResult;
   } catch (error: any) {
     console.error('Error analyzing content:', error);
     
-    // Return mock analysis data with the required keyword field
-    const mockResult = getMockContentAnalysis(content, keywords);
-    serpResultsCache.set(`content_analysis_${btoa(content.substring(0, 50)).replace(/[^a-zA-Z0-9]/g, '')}`, mockResult);
-    
     // Show toast but don't break UI flow
     toast.error(`Content analysis error: ${error.message || 'Failed to analyze content'}`);
-    return mockResult;
+    
+    // Return empty result
+    return {
+      keyword: keywords.length > 0 ? keywords[0] : '',
+      searchVolume: 0,
+      competitionScore: 0,
+      keywordDifficulty: 0,
+      keywords: keywords,
+      recommendations: [],
+      topResults: [],
+      relatedSearches: [],
+      peopleAlsoAsk: [],
+      entities: [],
+      headings: [],
+      contentGaps: []
+    };
   }
-}
-
-// Helper function for mock content analysis
-function getMockContentAnalysis(content: string, keywords: string[] = []): SerpAnalysisResult {
-  const mainKeyword = keywords && keywords.length > 0 ? keywords[0] : "content";
-  
-  return {
-    keyword: mainKeyword,
-    searchVolume: Math.floor(Math.random() * 5000) + 1000,
-    competitionScore: Math.random(),
-    keywordDifficulty: Math.floor(Math.random() * 100),
-    isMockData: true,
-    keywords: keywords || [mainKeyword, `${mainKeyword} strategy`, `${mainKeyword} tips`],
-    recommendations: [
-      'Include more specific details about the main topic',
-      'Add more related keywords throughout the content',
-      'Improve the readability with shorter paragraphs',
-      'Include statistics or data to support your claims',
-      'Add images or media to enhance engagement'
-    ],
-    topResults: [
-      {
-        title: `${mainKeyword} - Complete Guide`,
-        link: 'https://example.com/complete-guide',
-        snippet: `This complete guide covers everything you need to know about ${mainKeyword}.`,
-        position: 1
-      },
-      {
-        title: `${mainKeyword} Best Practices`,
-        link: 'https://example.com/best-practices',
-        snippet: `Learn the best practices for ${mainKeyword} in this comprehensive guide.`,
-        position: 2
-      }
-    ],
-    relatedSearches: [
-      { query: `${mainKeyword} examples`, volume: 1200 },
-      { query: `${mainKeyword} tools`, volume: 950 }
-    ],
-    peopleAlsoAsk: [
-      { question: `What is ${mainKeyword}?`, source: 'https://example.com/what-is' },
-      { question: `How to use ${mainKeyword}?`, source: 'https://example.com/how-to' }
-    ]
-  };
 }
 
 // Re-export types for backward compatibility

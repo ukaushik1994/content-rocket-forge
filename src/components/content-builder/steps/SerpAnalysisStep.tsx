@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
@@ -8,7 +8,7 @@ import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
-  const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
+  const { mainKeyword, serpData, isAnalyzing, serpSelections, serpError } = state;
   
   // Get selection statistics
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -61,6 +61,7 @@ export const SerpAnalysisStep = () => {
             isLoading={isAnalyzing}
             mainKeyword={mainKeyword}
             onAddToContent={handleAddToContent}
+            error={serpError}
           />
         </div>
         

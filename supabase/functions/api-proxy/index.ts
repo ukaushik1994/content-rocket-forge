@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SERP_API_KEY = Deno.env.get("SERP_API_KEY");
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+// Initialize Supabase client with the service role key for admin access
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,68 +26,117 @@ serve(async (req) => {
 
     // Route to appropriate API service
     if (service === 'serp') {
-      return await handleSerpRequest(endpoint, params);
+      return await handleSerpRequest(req, endpoint, params);
     } else if (service === 'openai') {
-      return await handleOpenAIRequest(endpoint, params);
+      return await handleOpenAIRequest(req, endpoint, params);
     } else {
       throw new Error(`Unsupported service: ${service}`);
     }
   } catch (error: any) {
     console.error(`API Proxy error: ${error.message}`);
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error' }),
+      JSON.stringify({ error: error.message || 'Unknown error', results: [] }),
       { 
-        status: 500, 
+        status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
 });
 
-// Handler for SERP API requests
-async function handleSerpRequest(endpoint: string, params: any) {
-  // If API key is missing, return mock data instead of error
-  if (!SERP_API_KEY) {
-    console.log('SERP API key not configured, returning mock data');
-    
-    if (endpoint === 'search') {
-      const mockResponse = getMockSerpData(params.keyword);
-      mockResponse.isMockData = true; // Flag to identify as mock data
-      return new Response(
-        JSON.stringify(mockResponse),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } else if (endpoint === 'keywords') {
-      const mockKeywords = getMockKeywordResults(params.query);
-      return new Response(
-        JSON.stringify({ results: mockKeywords, isMockData: true }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } else if (endpoint === 'analyze') {
-      const mockAnalysis = getMockContentAnalysis(params.content, params.keywords);
-      mockAnalysis.isMockData = true; // Flag to identify as mock data
-      return new Response(
-        JSON.stringify(mockAnalysis),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ message: "Mock data not available for this endpoint", isMockData: true }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      );
-    }
+// Helper function to extract the user ID from the authorization header
+async function getUserIdFromAuth(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return null;
   }
 
-  // Handle real SERP API calls with the API key
+  try {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('Error getting user from token:', error);
+      return null;
+    }
+    
+    return user.id;
+  } catch (error) {
+    console.error('Error parsing auth token:', error);
+    return null;
+  }
+}
+
+// Helper function to get API key from database
+async function getApiKeyFromDatabase(userId: string, service: string): Promise<string | null> {
+  if (!userId) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('api_keys')
+      .select('encrypted_key')
+      .eq('service', service)
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      console.error(`Error fetching ${service} API key:`, error);
+      return null;
+    }
+    
+    // Decrypt the key (simple base64 decode for this example)
+    try {
+      return atob(data.encrypted_key);
+    } catch (e) {
+      console.error('Error decrypting API key:', e);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error fetching ${service} API key:`, error);
+    return null;
+  }
+}
+
+// Handler for SERP API requests
+async function handleSerpRequest(req: Request, endpoint: string, params: any) {
+  // Get user ID from auth token
+  const userId = await getUserIdFromAuth(req);
+  
+  // If no user ID, return error
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'Authentication required', 
+        results: [] 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401
+      }
+    );
+  }
+  
+  // Get API key from database
+  const serpApiKey = await getApiKeyFromDatabase(userId, 'serp');
+  
+  // If API key is missing, return error
+  if (!serpApiKey) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'SERP API key not configured in settings',
+        results: []
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      }
+    );
+  }
+
+  // Handle SERP API calls with the API key
   try {
     if (endpoint === 'search') {
       // Extract parameters for the search
@@ -93,12 +146,12 @@ async function handleSerpRequest(endpoint: string, params: any) {
         throw new Error('Keyword is required');
       }
 
-      console.log(`Making real SERP API call for keyword: ${keyword}`);
+      console.log(`Making SERP API call for keyword: ${keyword}`);
       
-      // Make a real API call to SerpApi for Google search results
+      // Make API call to SerpApi for Google search results
       const apiUrl = new URL('https://serpapi.com/search.json');
       apiUrl.searchParams.append('q', keyword);
-      apiUrl.searchParams.append('api_key', SERP_API_KEY);
+      apiUrl.searchParams.append('api_key', serpApiKey);
       apiUrl.searchParams.append('engine', 'google');
       apiUrl.searchParams.append('gl', country); // Country
       apiUrl.searchParams.append('hl', 'en');    // Language
@@ -113,11 +166,10 @@ async function handleSerpRequest(endpoint: string, params: any) {
       
       // Process the API response into our expected format
       const processedData = {
-        keyword: keyword,
+        keyword,
         searchVolume: Math.floor(Math.random() * 10000) + 1000, // SerpApi doesn't provide search volume
         competitionScore: Math.random(),
         keywordDifficulty: Math.floor(Math.random() * 100),
-        isMockData: false, // This is real data
         
         // Extract organic results
         topResults: data.organic_results ? data.organic_results.slice(0, 10).map((result: any, idx: number) => ({
@@ -156,10 +208,20 @@ async function handleSerpRequest(endpoint: string, params: any) {
     } else if (endpoint === 'keywords') {
       const { query, num = 10 } = params;
       
+      if (!query) {
+        return new Response(
+          JSON.stringify({ error: 'Query is required', results: [] }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+      
       // For keywords endpoint, use Google's related searches
       const apiUrl = new URL('https://serpapi.com/search.json');
       apiUrl.searchParams.append('q', query);
-      apiUrl.searchParams.append('api_key', SERP_API_KEY);
+      apiUrl.searchParams.append('api_key', serpApiKey);
       apiUrl.searchParams.append('engine', 'google');
       
       const response = await fetch(apiUrl.toString());
@@ -198,8 +260,17 @@ async function handleSerpRequest(endpoint: string, params: any) {
       // Limit to requested number
       const results = relatedKeywords.slice(0, num);
       
+      if (results.length === 0) {
+        return new Response(
+          JSON.stringify({ message: 'No keywords found', results: [] }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ results, isMockData: false }),
+        JSON.stringify({ results }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
@@ -208,11 +279,14 @@ async function handleSerpRequest(endpoint: string, params: any) {
       const { content, keywords = [] } = params;
       
       if (!content) {
-        throw new Error('Content is required for analysis');
+        return new Response(
+          JSON.stringify({ error: 'Content is required for analysis', results: [] }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
       }
-      
-      // For content analysis, we can use a combination of keyword presence
-      // and some heuristic checks since SerpApi doesn't offer content analysis
       
       const mainKeyword = keywords.length > 0 ? keywords[0] : '';
       
@@ -241,7 +315,7 @@ async function handleSerpRequest(endpoint: string, params: any) {
       if (mainKeyword) {
         const apiUrl = new URL('https://serpapi.com/search.json');
         apiUrl.searchParams.append('q', mainKeyword);
-        apiUrl.searchParams.append('api_key', SERP_API_KEY);
+        apiUrl.searchParams.append('api_key', serpApiKey);
         apiUrl.searchParams.append('engine', 'google');
         
         try {
@@ -261,7 +335,6 @@ async function handleSerpRequest(endpoint: string, params: any) {
         keywordDifficulty: Math.floor(Math.random() * 100),
         keywords: keywords,
         recommendations: recommendations,
-        isMockData: false,
         
         // Include any search results we got
         topResults: searchResults?.organic_results ? searchResults.organic_results.slice(0, 5).map((result: any, idx: number) => ({
@@ -289,45 +362,45 @@ async function handleSerpRequest(endpoint: string, params: any) {
   } catch (error: any) {
     console.error(`SERP API call error:`, error);
     
-    // On error, fall back to mock data with an error flag
-    let mockData;
-    if (endpoint === 'search') {
-      mockData = getMockSerpData(params.keyword);
-    } else if (endpoint === 'keywords') {
-      mockData = { results: getMockKeywordResults(params.query) };
-    } else if (endpoint === 'analyze') {
-      mockData = getMockContentAnalysis(params.content, params.keywords);
-    } else {
-      mockData = { message: "Mock data not available for this endpoint" };
-    }
-    
-    mockData.isMockData = true;
-    mockData.error = error.message;
-    
     return new Response(
-      JSON.stringify(mockData),
+      JSON.stringify({ 
+        error: error.message || 'Error calling SERP API',
+        results: [] 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 // Still return 200 with mock data
+        status: 400
       }
     );
   }
 }
 
 // Handler for OpenAI API requests
-async function handleOpenAIRequest(endpoint: string, params: any) {
-  if (!OPENAI_API_KEY) {
-    console.log('OpenAI API key not configured, returning mock data');
+async function handleOpenAIRequest(req: Request, endpoint: string, params: any) {
+  // Get user ID from auth token
+  const userId = await getUserIdFromAuth(req);
+  
+  // If no user ID, return error
+  if (!userId) {
     return new Response(
-      JSON.stringify({ 
-        choices: [{ 
-          message: { 
-            content: "This is a mock response because the OpenAI API key is not configured. Please add your API key in the settings."
-          }
-        }]
-      }),
+      JSON.stringify({ error: 'Authentication required' }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401
+      }
+    );
+  }
+  
+  // Get API key from database
+  const openAIApiKey = await getApiKeyFromDatabase(userId, 'openai');
+  
+  // If API key is missing, return error
+  if (!openAIApiKey) {
+    return new Response(
+      JSON.stringify({ error: 'OpenAI API key not configured in settings' }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
       }
     );
   }
@@ -336,7 +409,13 @@ async function handleOpenAIRequest(endpoint: string, params: any) {
     const { messages, model = 'gpt-4o-mini', temperature = 0.7 } = params;
     
     if (!messages || !Array.isArray(messages)) {
-      throw new Error('Valid messages array is required');
+      return new Response(
+        JSON.stringify({ error: 'Valid messages array is required' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     try {
@@ -344,7 +423,7 @@ async function handleOpenAIRequest(endpoint: string, params: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${openAIApiKey}`,
         },
         body: JSON.stringify({
           model,
@@ -367,10 +446,22 @@ async function handleOpenAIRequest(endpoint: string, params: any) {
       );
     } catch (error: any) {
       console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error.message}`);
+      return new Response(
+        JSON.stringify({ error: error.message || 'Error calling OpenAI API' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
   } else {
-    throw new Error(`Unsupported OpenAI endpoint: ${endpoint}`);
+    return new Response(
+      JSON.stringify({ error: `Unsupported OpenAI endpoint: ${endpoint}` }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      }
+    );
   }
 }
 
