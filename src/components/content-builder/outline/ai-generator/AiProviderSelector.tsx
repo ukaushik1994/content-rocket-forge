@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ProviderStatusIndicator } from './ProviderStatusIndicator';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini';
 
@@ -25,8 +26,12 @@ export function AiProviderSelector({
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-white/70">AI Provider:</span>
+    <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-white/70">Using:</span>
+        <ProviderStatusIndicator selectedProvider={aiProvider} />
+      </div>
+      
       <div className="flex items-center gap-1">
         {availableProviders.length > 0 ? (
           availableProviders.map((provider) => (

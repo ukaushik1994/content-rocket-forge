@@ -4,3 +4,4 @@ export * from './types';
 export * from './models';
 export * from './aiService';
 export * from './testing';
+export * from './providerFallback';

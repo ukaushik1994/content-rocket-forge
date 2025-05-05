@@ -416,6 +416,7 @@ async function handleGeminiRequest(endpoint: string, params: any, clientApiKey: 
         requestBody.generation_config.max_output_tokens = maxTokens;
       }
       
+      console.log('Sending request to Gemini API');
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -426,7 +427,19 @@ async function handleGeminiRequest(endpoint: string, params: any, clientApiKey: 
 
       const data = await response.json();
       
+      // Check for quota errors specifically
       if (!response.ok) {
+        console.error('Gemini API error:', data);
+        
+        // Check for quota errors in Gemini's response
+        if (data.error && 
+            (data.error.message.includes('quota') || 
+             data.error.message.includes('rate limit') || 
+             data.error.message.includes('Resource exhausted') ||
+             data.error.status === 'RESOURCE_EXHAUSTED')) {
+          throw new Error(`Gemini API quota exceeded: ${data.error.message}`);
+        }
+        
         throw new Error(data.error?.message || 'Gemini API error');
       }
 
@@ -615,7 +628,7 @@ async function handleSerpRequest(endpoint: string, params: any, clientApiKey: st
         keywordDifficulty: Math.floor(Math.random() * 100), // Random score between 0-100
         
         // Top organic results
-        topResults: (data.organic_results || []).slice(0, 5).map((result: any, index: number) => ({
+        topResults: (data.organic_results || []).slice(0, 10).map((result: any, index: number) => ({
           title: result.title,
           link: result.link,
           snippet: result.snippet || '',
@@ -668,10 +681,7 @@ async function handleSerpRequest(endpoint: string, params: any, clientApiKey: st
         // Generate recommendations
         recommendations: [
           `Include "${mainKeyword}" in your page title and H1 heading`,
-          `Create content addressing common questions about ${mainKeyword}`,
-          `Use related keywords throughout your content naturally`,
-          `Include visual elements to explain ${mainKeyword} concepts`,
-          `Add case studies or examples showing successful ${mainKeyword} implementation`
+          `Ensure your content answers common questions about ${mainKeyword}`
         ]
       };
       
