@@ -203,6 +203,10 @@ export type ContentBuilderContextType = {
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
+  // New actions for CreationStep
+  updateTitle: (title: string) => void;
+  generateOutline: () => void;
+  generateContent: () => Promise<void>;
   // Navigation actions
   navigateToStep: (step: number) => void;
   // Saving and Publishing actions
