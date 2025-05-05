@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles } from 'lucide-react';
@@ -8,6 +7,7 @@ import { SerpAnalysisResult } from '@/services/serpApiService';
 import {
   SerpSectionHeader,
   SerpEmptyState,
+  SerpNoDataFound,
   SerpMetricsSection,
   SerpOverviewSection,
   SerpKeywordsSection,
@@ -23,13 +23,15 @@ export interface SerpAnalysisPanelProps {
   isLoading: boolean;
   mainKeyword: string;
   onAddToContent?: (content: string, type: string) => void;
+  onRetry?: () => void;
 }
 
 export function SerpAnalysisPanel({ 
   serpData, 
   isLoading, 
   mainKeyword,
-  onAddToContent = () => {}
+  onAddToContent = () => {},
+  onRetry = () => {}
 }: SerpAnalysisPanelProps) {
   const [expandedSections, setExpandedSections] = useState<{
     searchMetrics: boolean;
@@ -73,6 +75,12 @@ export function SerpAnalysisPanel({
     );
   }
 
+  // If serpData is null, show the NoDataFound component
+  if (serpData === null && mainKeyword) {
+    return <SerpNoDataFound mainKeyword={mainKeyword} onRetry={onRetry} />;
+  }
+
+  // If serpData is undefined or empty object, show the EmptyState
   if (!serpData) {
     return <SerpEmptyState />;
   }

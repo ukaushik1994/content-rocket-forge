@@ -61,6 +61,7 @@ export const SerpAnalysisStep = () => {
             isLoading={isAnalyzing}
             mainKeyword={mainKeyword}
             onAddToContent={handleAddToContent}
+            onRetry={handleReanalyze}
           />
         </div>
         
