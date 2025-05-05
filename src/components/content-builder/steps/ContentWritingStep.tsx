@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentEditor } from '@/components/content/ContentEditor';
@@ -10,6 +9,7 @@ import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { sendChatRequest } from '@/services/aiService';
 import { useContentGeneration } from './writing/useContentGeneration';
+import { AiProvider } from '@/services/aiService/types';
 
 export const ContentWritingStep = () => {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -30,7 +30,7 @@ export const ContentWritingStep = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
   const [saveNote, setSaveNote] = useState('');
-  const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('openai');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
 
   // Mark this step as complete when we have content
   useEffect(() => {
@@ -171,7 +171,7 @@ export const ContentWritingStep = () => {
     }
   };
   
-  const handleAiProviderChange = (provider: 'openai' | 'anthropic' | 'gemini') => {
+  const handleAiProviderChange = (provider: AiProvider) => {
     setAiProvider(provider);
   };
 
