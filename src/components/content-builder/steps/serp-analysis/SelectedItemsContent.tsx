@@ -23,15 +23,23 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
 }) => {
   const hasEmptySelections = totalSelected === 0;
   
-  // Separate the items by type
-  const keywordItems = serpSelections.filter(item => item.type === 'keyword');
-  const questionItems = serpSelections.filter(item => item.type === 'question');
-  const snippetItems = serpSelections.filter(item => item.type === 'snippet');
-  const competitorItems = serpSelections.filter(item => item.type === 'competitor');
+  // Filter items by their actual types used in the SERP components
+  const keywordItems = [
+    ...serpSelections.filter(item => item.type === 'keyword'),
+    ...serpSelections.filter(item => item.type === 'relatedSearch')
+  ];
+  const questionItems = serpSelections.filter(item => 
+    item.type === 'question' || item.type === 'peopleAlsoAsk'
+  );
+  const snippetItems = serpSelections.filter(item => 
+    item.type === 'snippet' || item.type === 'featuredSnippet'
+  );
   const entityItems = serpSelections.filter(item => item.type === 'entity');
   const headingItems = serpSelections.filter(item => item.type === 'heading');
   const contentGapItems = serpSelections.filter(item => item.type === 'contentGap');
-  const topRankItems = serpSelections.filter(item => item.type === 'topRank');
+  const topRankItems = serpSelections.filter(item => 
+    item.type === 'topRank' || item.type === 'competitor'
+  );
 
   // For safety, convert any content that's not a string to a string
   const safeHandleToggleSelection = (type: string, content: any) => {
@@ -51,21 +59,21 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           exit={{ opacity: 0 }}
           className="space-y-6"
         >
-          {/* Keywords */}
-          {selectedCounts.keyword > 0 && (
+          {/* Keywords - combine regular keywords and related searches */}
+          {(selectedCounts.keyword > 0 || keywordItems.filter(item => item.selected).length > 0) && (
             <KeywordsGroup 
-              count={selectedCounts.keyword}
+              count={keywordItems.filter(item => item.selected).length}
               items={keywordItems}
               handleToggleSelection={safeHandleToggleSelection}
             />
           )}
           
-          {/* Questions */}
-          {selectedCounts.question > 0 && (
+          {/* Questions - combine question and peopleAlsoAsk */}
+          {(selectedCounts.question > 0 || questionItems.filter(item => item.selected).length > 0) && (
             <>
               {selectedCounts.keyword > 0 && <Separator className="my-4 opacity-50" />}
               <QuestionsGroup 
-                count={selectedCounts.question}
+                count={questionItems.filter(item => item.selected).length}
                 items={questionItems}
                 handleToggleSelection={safeHandleToggleSelection}
               />
@@ -73,13 +81,13 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           )}
           
           {/* Snippets */}
-          {selectedCounts.snippet > 0 && (
+          {(selectedCounts.snippet > 0 || snippetItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0) && 
                 <Separator className="my-4 opacity-50" />
               }
               <SnippetsGroup 
-                count={selectedCounts.snippet}
+                count={snippetItems.filter(item => item.selected).length}
                 items={snippetItems}
                 handleToggleSelection={safeHandleToggleSelection}
               />
@@ -87,13 +95,13 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           )}
           
           {/* Entities */}
-          {selectedCounts.entity > 0 && (
+          {(selectedCounts.entity > 0 || entityItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0) && 
                 <Separator className="my-4 opacity-50" />
               }
               <EntitiesGroup 
-                count={selectedCounts.entity}
+                count={entityItems.filter(item => item.selected).length}
                 items={entityItems}
                 handleToggleSelection={safeHandleToggleSelection}
               />
@@ -101,14 +109,14 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           )}
           
           {/* Headings */}
-          {selectedCounts.heading > 0 && (
+          {(selectedCounts.heading > 0 || headingItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
                 selectedCounts.snippet > 0 || selectedCounts.entity > 0) && 
                 <Separator className="my-4 opacity-50" />
               }
               <HeadingsGroup 
-                count={selectedCounts.heading}
+                count={headingItems.filter(item => item.selected).length}
                 items={headingItems}
                 handleToggleSelection={safeHandleToggleSelection}
               />
@@ -116,7 +124,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           )}
           
           {/* Content Gaps */}
-          {selectedCounts.contentGap > 0 && (
+          {(selectedCounts.contentGap > 0 || contentGapItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
                 selectedCounts.snippet > 0 || selectedCounts.entity > 0 || 
@@ -124,15 +132,16 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
                 <Separator className="my-4 opacity-50" />
               }
               <ContentGapsGroup 
-                count={selectedCounts.contentGap}
+                count={contentGapItems.filter(item => item.selected).length}
                 items={contentGapItems}
                 handleToggleSelection={safeHandleToggleSelection}
               />
             </>
           )}
           
-          {/* Top Ranks */}
-          {selectedCounts.topRank > 0 && (
+          {/* Top Ranks - includes competitors */}
+          {(selectedCounts.topRank > 0 || selectedCounts.competitor > 0 || 
+            topRankItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
                 selectedCounts.snippet > 0 || selectedCounts.entity > 0 || 
@@ -140,7 +149,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
                 <Separator className="my-4 opacity-50" />
               }
               <TopRanksGroup 
-                count={selectedCounts.topRank}
+                count={topRankItems.filter(item => item.selected).length}
                 items={topRankItems}
                 handleToggleSelection={safeHandleToggleSelection}
                 competitorCount={selectedCounts.competitor}
