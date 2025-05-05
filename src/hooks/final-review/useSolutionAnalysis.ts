@@ -42,13 +42,12 @@ export const useSolutionAnalysis = (ctaInfo: { hasCTA: boolean; ctaText: string[
       
       const solutionMetrics: SolutionIntegrationMetrics = {
         mentions: metrics.nameMentions || 0,
-        contextualReferences: metrics.positioningScore || 0,
-        naturalness: metrics.audienceAlignment || 0,
+        nameMentions: metrics.nameMentions || 0,
         featureIncorporation: metrics.featureIncorporation || 0,
+        naturalness: metrics.audienceAlignment || 0,
+        audienceAlignment: metrics.audienceAlignment || 0,
         positioningScore: metrics.positioningScore || 0,
         overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2),
-        nameMentions: metrics.nameMentions || 0,
-        audienceAlignment: metrics.audienceAlignment || 0,
         painPointsAddressed: painPointsArray,
         ctaMentions: ctaInfo.ctaText.length,
         ctaEffectiveness: ctaInfo.hasCTA ? 100 : 0

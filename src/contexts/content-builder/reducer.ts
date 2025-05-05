@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from './types';
+import { ContentBuilderState, ContentBuilderAction, OutlineSection } from './types';
 
 export const contentBuilderReducer = (
   state: ContentBuilderState,
@@ -95,9 +95,15 @@ export const contentBuilderReducer = (
     }
       
     case 'SET_OUTLINE':
+      // Convert OutlineSection[] to string[] if needed
+      const outlineValue = Array.isArray(action.payload) && action.payload.length > 0 && 
+        typeof action.payload[0] !== 'string' 
+          ? (action.payload as OutlineSection[]).map(section => section.title) 
+          : action.payload;
+          
       return {
         ...state,
-        outline: action.payload
+        outline: outlineValue as string[]
       };
       
     case 'SET_OUTLINE_SECTIONS':
