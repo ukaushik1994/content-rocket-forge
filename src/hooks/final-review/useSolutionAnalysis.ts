@@ -44,7 +44,6 @@ export const useSolutionAnalysis = (ctaInfo: { hasCTA: boolean; ctaText: string[
         mentions: metrics.nameMentions || 0,
         nameMentions: metrics.nameMentions || 0,
         featureIncorporation: metrics.featureIncorporation || 0,
-        naturalness: metrics.audienceAlignment || 0,
         audienceAlignment: metrics.audienceAlignment || 0,
         positioningScore: metrics.positioningScore || 0,
         overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2),
