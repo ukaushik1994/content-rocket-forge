@@ -178,10 +178,7 @@ export const OutlineStep = () => {
         </Card>
       )}
 
-      {/* AI Outline Generator */}
-      <AIOutlineGenerator />
-      
-      {/* Selected Items Summary */}
+      {/* Selected Items Summary - MOVED ABOVE AI OUTLINE GENERATOR */}
       {selectedItems.length > 0 && (
         <Card className="border border-white/10">
           <CardHeader className="pb-2">
@@ -314,6 +311,9 @@ export const OutlineStep = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* AI Outline Generator - MOVED TO APPEAR AFTER SELECTED ITEMS */}
+      <AIOutlineGenerator />
     </div>
   );
 }

@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
-import { Sparkles, PenLine, CheckCheck, Loader2, Info, ListTodo } from 'lucide-react';
+import { Sparkles, PenLine, CheckCheck, Loader2, Info } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 export function AIOutlineGenerator() {
@@ -179,46 +178,6 @@ export function AIOutlineGenerator() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      {/* Selection Summary Card */}
-      <Card className="border border-purple-500/20 bg-gradient-to-br from-purple-950/20 to-indigo-950/10">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
-              <ListTodo className="h-6 w-6 text-white" />
-            </div>
-            
-            <div className="space-y-2 flex-1">
-              <h3 className="font-semibold text-lg">Selected Content Items</h3>
-              <p className="text-sm text-white/70">
-                {totalSelectedItems > 0 
-                  ? `You have selected ${totalSelectedItems} SERP items to include in your outline`
-                  : 'You have not selected any SERP items yet. Select items from the keyword research tab.'}
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-                {Object.entries(itemsByType).map(([type, items]) => (
-                  items.length > 0 && (
-                    <div key={type} className="bg-white/5 rounded-lg p-3">
-                      <div className="text-sm font-medium capitalize mb-1 flex items-center justify-between">
-                        <span>{type}s</span>
-                        <Badge variant="outline" className="text-xs bg-white/10">{items.length}</Badge>
-                      </div>
-                      <div className="max-h-24 overflow-y-auto scrollbar-thin">
-                        {items.map((item, i) => (
-                          <div key={i} className="text-xs py-1 border-b border-white/10 last:border-none truncate">
-                            {item.content}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
       {/* AI Generator Card */}
       <Card className="border-neon-purple/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
         <CardContent className="pt-6">
