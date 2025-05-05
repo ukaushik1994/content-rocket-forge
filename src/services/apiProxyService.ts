@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getApiKey } from "./apiKeyService";
@@ -47,13 +48,12 @@ export async function callApiProxy<T>(config: ApiProxyParams): Promise<T | null>
       return null;
     }
     
-    // If the data contains mock data and no API key is configured, return the mock data
-    // Otherwise, we'll handle this in the calling service
+    // Return the data from the API proxy
     return data as T;
   } catch (error: any) {
     console.error(`Error calling ${config.service} API:`, error);
     
-    // For all service errors, notify user but allow the app to continue with mock data
+    // For all service errors, notify user
     toast.error(`API error: ${error.message || 'Unknown error'}`);
     return null;
   }

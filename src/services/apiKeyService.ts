@@ -159,11 +159,29 @@ export async function deleteApiKey(service: string): Promise<boolean> {
 
 export async function testApiKey(service: string, key: string): Promise<boolean> {
   try {
-    // In a real app, this would make a test call to the API
-    if (service === 'openai' && key.startsWith('sk-')) {
-      toast.success(`${service} API connection successful`);
-      return true;
-    } else if (service === 'serp' && key.length > 20) {
+    if (service === 'serp') {
+      // For SERP API, we'll make a test call to SerpAPI
+      try {
+        // Create a simple test URL
+        const testUrl = new URL('https://serpapi.com/account');
+        testUrl.searchParams.append('api_key', key);
+        
+        // Make the request
+        const response = await fetch(testUrl.toString());
+        
+        // Check if the response is OK (200-299)
+        if (response.ok) {
+          toast.success(`${service} API connection successful`);
+          return true;
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Invalid API key');
+        }
+      } catch (error: any) {
+        console.error('Error testing SERP API key:', error);
+        throw new Error(`Invalid SERP API key: ${error.message}`);
+      }
+    } else if (service === 'openai' && key.startsWith('sk-')) {
       toast.success(`${service} API connection successful`);
       return true;
     } else if (service === 'anthropic' && key.startsWith('sk-ant-')) {
