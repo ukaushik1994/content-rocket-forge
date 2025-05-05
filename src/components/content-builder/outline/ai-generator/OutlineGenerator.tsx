@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
@@ -8,6 +9,7 @@ import { AIInstructionsInput } from '../AIInstructionsInput';
 import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
 import { getUserPreference } from '@/services/userPreferencesService';
+import { getApiKey } from '@/services/apiKeyService';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -22,13 +24,34 @@ export function OutlineGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(additionalInstructions || '');
   const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('gemini');
+  const [availableProviders, setAvailableProviders] = useState<('openai' | 'anthropic' | 'gemini')[]>([]);
   
-  // Load the default AI provider from user preferences
+  // Load available providers and default AI provider preference
   useEffect(() => {
-    const defaultProvider = getUserPreference('defaultAiProvider');
-    if (defaultProvider) {
-      setAiProvider(defaultProvider);
-    }
+    const checkAvailableProviders = async () => {
+      const providers: ('openai' | 'anthropic' | 'gemini')[] = [];
+      
+      // Check which providers have API keys configured
+      const openaiKey = await getApiKey('openai');
+      const anthropicKey = await getApiKey('anthropic');
+      const geminiKey = await getApiKey('gemini');
+      
+      if (openaiKey) providers.push('openai');
+      if (anthropicKey) providers.push('anthropic');
+      if (geminiKey) providers.push('gemini');
+      
+      setAvailableProviders(providers);
+      
+      // Set default provider from preferences or first available
+      const defaultProvider = getUserPreference('defaultAiProvider');
+      if (defaultProvider && providers.includes(defaultProvider)) {
+        setAiProvider(defaultProvider);
+      } else if (providers.length > 0 && !providers.includes(aiProvider)) {
+        setAiProvider(providers[0]);
+      }
+    };
+    
+    checkAvailableProviders();
   }, []);
   
   const selectedItems = serpSelections.filter(item => item.selected);
@@ -52,6 +75,14 @@ export function OutlineGenerator() {
       );
       
       console.info("AI Generation prompt:", outlinePrompt);
+      
+      // Make sure the selected provider has a key configured
+      const hasApiKey = await getApiKey(aiProvider);
+      if (!hasApiKey) {
+        toast.error(`No API key configured for ${aiProvider}. Please add your API key in Settings.`);
+        setIsGenerating(false);
+        return;
+      }
       
       const result = await generateOutlineWithFallback(outlinePrompt, aiProvider);
       
@@ -110,22 +141,12 @@ export function OutlineGenerator() {
   };
   
   const generateOutlineWithFallback = async (prompt: string, primaryProvider: 'openai' | 'anthropic' | 'gemini') => {
-    // Try with primary provider first
-    let chatResponse = await sendChatRequest(primaryProvider, {
-      messages: [
-        { role: 'system', content: 'You are an expert content outline creator.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7
-    });
+    // Check if fallback is enabled
+    const enableFallback = getUserPreference('enableAiFallback') === true;
     
-    // If the first provider fails, try a fallback
-    if (!chatResponse?.choices?.[0]?.message?.content) {
-      const fallbackProvider = primaryProvider === 'gemini' ? 'openai' : 'gemini';
-      console.log(`Primary provider ${primaryProvider} failed, trying fallback provider ${fallbackProvider}`);
-      
-      // Try with fallback provider
-      chatResponse = await sendChatRequest(fallbackProvider, {
+    // Try with primary provider first
+    try {
+      const chatResponse = await sendChatRequest(primaryProvider, {
         messages: [
           { role: 'system', content: 'You are an expert content outline creator.' },
           { role: 'user', content: prompt }
@@ -133,24 +154,54 @@ export function OutlineGenerator() {
         temperature: 0.7
       });
       
-      // If fallback succeeded, update the provider
+      // If we got a valid response
       if (chatResponse?.choices?.[0]?.message?.content) {
-        toast.info(`Using ${fallbackProvider} as fallback provider`);
-        setAiProvider(fallbackProvider as 'openai' | 'anthropic' | 'gemini');
+        return {
+          success: true,
+          outlineText: chatResponse.choices[0].message.content
+        };
+      }
+    } catch (error) {
+      console.error(`Error with ${primaryProvider}:`, error);
+    }
+    
+    // If we get here, the primary provider failed and we need to try fallbacks
+    if (enableFallback) {
+      // Find other available providers that are different from the primary
+      const fallbackProviders = availableProviders.filter(p => p !== primaryProvider);
+      
+      // Try each available fallback provider
+      for (const fallbackProvider of fallbackProviders) {
+        try {
+          console.log(`Primary provider ${primaryProvider} failed, trying fallback provider ${fallbackProvider}`);
+          
+          const fallbackResponse = await sendChatRequest(fallbackProvider, {
+            messages: [
+              { role: 'system', content: 'You are an expert content outline creator.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7
+          });
+          
+          if (fallbackResponse?.choices?.[0]?.message?.content) {
+            toast.info(`Using ${fallbackProvider} as fallback provider`);
+            return {
+              success: true,
+              outlineText: fallbackResponse.choices[0].message.content
+            };
+          }
+        } catch (fallbackError) {
+          console.error(`Fallback provider ${fallbackProvider} also failed:`, fallbackError);
+        }
       }
     }
     
-    // Return results
-    if (!chatResponse?.choices?.[0]?.message?.content) {
-      return {
-        success: false,
-        error: `Failed to generate outline. Please check your API keys in Settings.`
-      };
-    }
-    
+    // All providers failed or fallback is disabled
     return {
-      success: true,
-      outlineText: chatResponse.choices[0].message.content
+      success: false,
+      error: enableFallback
+        ? `All configured AI providers failed. Please check your API keys in Settings.`
+        : `${primaryProvider} API call failed. Enable AI Provider Fallback in Settings or try another provider.`
     };
   };
   
@@ -208,7 +259,14 @@ export function OutlineGenerator() {
           <AiProviderSelector 
             aiProvider={aiProvider}
             setAiProvider={setAiProvider}
+            availableProviders={availableProviders}
           />
+          
+          {availableProviders.length === 0 && (
+            <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-md text-sm text-amber-200">
+              No AI provider API keys configured. Please add at least one AI provider API key in Settings.
+            </div>
+          )}
           
           {/* Additional Instructions */}
           <AIInstructionsInput 
@@ -221,7 +279,7 @@ export function OutlineGenerator() {
           <AIGenerateButton
             isGenerating={isGenerating}
             onGenerate={handleGenerateOutline}
-            disabled={!mainKeyword}
+            disabled={!mainKeyword || availableProviders.length === 0}
             totalSelectedItems={totalSelectedItems}
             mainKeyword={mainKeyword}
           />

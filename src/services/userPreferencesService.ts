@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 interface UserPreferences {
   defaultAiProvider?: 'openai' | 'anthropic' | 'gemini';
+  enableAiFallback?: boolean;
   // We can add more user preferences here in the future
 }
 
