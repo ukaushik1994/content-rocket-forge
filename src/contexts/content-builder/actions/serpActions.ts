@@ -85,8 +85,8 @@ export const createSerpActions = (
     
     dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     
-    // Navigate to the next step
-    dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 });
+    // Navigate to the next step - fix the action type here
+    dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
   };
   
   return {
