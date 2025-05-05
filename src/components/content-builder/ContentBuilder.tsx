@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -20,28 +19,45 @@ export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
   const { activeStep, steps } = state;
 
-  // Calculate progress percentage
-  const progressPercentage = steps.filter(step => step.completed).length / steps.length * 100;
+  // Calculate progress percentage - exclude SERP Analysis step
+  const visibleSteps = steps.filter(step => step.id !== 2);
+  const completedVisibleSteps = visibleSteps.filter(step => step.completed);
+  const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
   // Determine if user can proceed to next step
   const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
   
   // Handle next step navigation with SERP Analysis skip
   const handleNextStep = () => {
-    // If we're on the first step (Selection & Analysis), skip the SERP Analysis step (id: 2)
+    // If we're on step 0 (Keywords), go directly to step 1 (Content Type)
     if (activeStep === 0) {
-      navigateToStep(1); // Go to Content Type
-    } else if (activeStep === 1) {
-      navigateToStep(3); // Skip SERP Analysis (id: 2) and go to Outline
-    } else {
+      navigateToStep(1); 
+    } 
+    // If we're on step 1 (Content Type), skip step 2 (SERP Analysis) and go to step 3 (Outline)
+    else if (activeStep === 1) {
+      const outlineStepIndex = steps.findIndex(s => s.id === 3);
+      if (outlineStepIndex !== -1) {
+        navigateToStep(outlineStepIndex);
+      } else {
+        navigateToStep(activeStep + 1); // Fallback
+      }
+    } 
+    // Otherwise proceed normally
+    else {
       navigateToStep(activeStep + 1);
     }
   };
   
   // Handle previous step navigation with SERP Analysis skip
   const handlePrevStep = () => {
-    if (activeStep === 3) {
-      navigateToStep(1); // If we're on Outline, go back to Content Type (skipping SERP Analysis)
+    // If we're on step 3 (Outline), go back to step 1 (Content Type), skipping step 2 (SERP Analysis)
+    if (steps[activeStep].id === 3) {
+      const contentTypeStepIndex = steps.findIndex(s => s.id === 1);
+      if (contentTypeStepIndex !== -1) {
+        navigateToStep(contentTypeStepIndex);
+      } else {
+        navigateToStep(activeStep - 1); // Fallback
+      }
     } else {
       navigateToStep(activeStep - 1);
     }
@@ -49,8 +65,10 @@ export const ContentBuilder = () => {
   
   // Render the current step component
   const renderStepContent = () => {
-    const stepIndex = steps[activeStep].id;
-    switch (stepIndex) {
+    // Get step ID of the active step
+    const stepID = steps[activeStep].id;
+    
+    switch (stepID) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
       case 2: return <SerpAnalysisStep />; // Keep this for backwards compatibility
@@ -62,6 +80,20 @@ export const ContentBuilder = () => {
       default: return <KeywordSelectionStep />;
     }
   };
+  
+  // Get visible step count and position for UI display
+  const getVisibleStepInfo = () => {
+    // Calculate the visible step number (excluding the SERP Analysis step)
+    const currentStepID = steps[activeStep].id;
+    const visibleStepNumber = visibleSteps.findIndex(step => step.id === currentStepID) + 1;
+    
+    return {
+      current: visibleStepNumber,
+      total: visibleSteps.length
+    };
+  };
+  
+  const stepInfo = getVisibleStepInfo();
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -84,7 +116,7 @@ export const ContentBuilder = () => {
               </h1>
             </div>
             <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
-              Step {activeStep + 1} of {steps.length}
+              Step {stepInfo.current} of {stepInfo.total}
             </div>
           </div>
           <Progress value={progressPercentage} className="h-1.5 bg-white/5" />

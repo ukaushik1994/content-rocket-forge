@@ -15,10 +15,13 @@ interface ContentBuilderSidebarProps {
 }
 
 export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: ContentBuilderSidebarProps) => {
+  // Filter out the SERP Analysis step (step with id 2)
+  const visibleSteps = steps.filter(step => step.id !== 2);
+  
   // Return the appropriate icon for each step
   const getStepIcon = (stepId: number) => {
     switch (stepId) {
-      case 0: return <Sparkles className="h-4 w-4" />; // Changed from Search to Sparkles
+      case 0: return <Sparkles className="h-4 w-4" />;
       case 1: return <CheckSquare className="h-4 w-4" />;
       case 2: return <Search className="h-4 w-4" />;
       case 3: return <FileText className="h-4 w-4" />;
@@ -27,6 +30,11 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
       case 6: return <Upload className="h-4 w-4" />;
       default: return <Sparkles className="h-4 w-4" />;
     }
+  };
+
+  // Get the visible step index for a step from the original steps array
+  const getVisibleStepIndex = (step: any) => {
+    return visibleSteps.findIndex(s => s.id === step.id);
   };
   
   return (
@@ -40,14 +48,16 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
         </div>
         
         <div className="space-y-1.5">
-          {steps.map((step, index) => {
-            const isActive = activeStep === index;
+          {visibleSteps.map((step, index) => {
+            // Find the actual step index from the original steps array
+            const originalStepIndex = steps.findIndex(s => s.id === step.id);
+            const isActive = activeStep === originalStepIndex;
             const isCompleted = step.completed;
             
             return (
               <button
                 key={step.id}
-                onClick={() => navigateToStep(index)}
+                onClick={() => navigateToStep(originalStepIndex)}
                 disabled={!isCompleted && !isActive && index !== 0}
                 className={cn(
                   "w-full flex items-center text-left rounded-md px-3 py-2.5 text-sm transition-colors relative overflow-hidden group",
