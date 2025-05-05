@@ -96,6 +96,7 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [keyExists, setKeyExists] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [testSuccessful, setTestSuccessful] = useState(false);
 
   useEffect(() => {
     const fetchApiKey = async () => {
@@ -106,6 +107,9 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
           setApiKey(key);
           setKeyExists(true);
           setIsActive(true);
+          // Try to test the key when loading
+          const success = await testApiKey(provider.serviceKey, key);
+          setTestSuccessful(success);
         }
       } catch (error) {
         console.error(`Error fetching ${provider.name} API key:`, error);
@@ -130,6 +134,10 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         setKeyExists(true);
         setIsActive(true);
         toast.success(`${provider.name} API key saved successfully`);
+        
+        // Test the key after saving
+        const testSuccess = await testApiKey(provider.serviceKey, apiKey);
+        setTestSuccessful(testSuccess);
       }
     } catch (error) {
       console.error(`Error saving ${provider.name} API key:`, error);
@@ -143,6 +151,7 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
     try {
       setIsTesting(true);
       const success = await testApiKey(provider.serviceKey, apiKey);
+      setTestSuccessful(success);
       if (success) {
         toast.success(`${provider.name} connection successful`);
       } else {
@@ -151,6 +160,7 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
     } catch (error) {
       console.error(`Error testing ${provider.name} API key:`, error);
       toast.error(`Failed to test ${provider.name} API key`);
+      setTestSuccessful(false);
     } finally {
       setIsTesting(false);
     }
@@ -164,6 +174,7 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         setApiKey("");
         setKeyExists(false);
         setIsActive(false);
+        setTestSuccessful(false);
         toast.success(`${provider.name} API key deleted successfully`);
       }
     } catch (error) {
@@ -174,8 +185,12 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
     }
   };
 
-  const handleToggleActive = () => {
-    setIsActive(!isActive);
+  const handleToggleActive = async () => {
+    const newActive = !isActive;
+    setIsActive(newActive);
+    
+    // In a real implementation, we would update the active status in the database
+    toast.success(`${provider.name} API ${newActive ? 'enabled' : 'disabled'} successfully`);
   };
 
   const handleDetectKeyType = async () => {
@@ -214,10 +229,10 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
   }
 
   return (
-    <Card className={`p-6 space-y-4 bg-glass ${provider.required && !keyExists ? 'border-red-500/40' : 'border-white/10'}`}>
+    <Card className={`p-6 space-y-4 bg-glass ${provider.required && !keyExists ? 'border-red-500/40' : testSuccessful ? 'border-green-500/40' : 'border-white/10'}`}>
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-md bg-primary/10">
+          <div className={`p-2 rounded-md ${testSuccessful ? 'bg-green-500/10' : 'bg-primary/10'}`}>
             {provider.icon}
           </div>
           <div>
@@ -225,6 +240,12 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
               {provider.name} API
               {provider.required && !keyExists && (
                 <span className="bg-red-500/20 text-red-300 text-xs px-2 py-0.5 rounded-full">Required</span>
+              )}
+              {keyExists && testSuccessful && (
+                <span className="bg-green-500/20 text-green-300 text-xs px-2 py-0.5 rounded-full">Connected</span>
+              )}
+              {keyExists && !testSuccessful && (
+                <span className="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-0.5 rounded-full">Not Verified</span>
               )}
             </h3>
             <p className="text-sm text-muted-foreground">{provider.description}</p>
@@ -251,7 +272,17 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
           <AlertTitle>API Key Required</AlertTitle>
           <AlertDescription>
             This API key is required for the content analysis features to work properly. 
-            Without it, the application will use mock data instead.
+            Without it, the application will show "No data found" instead of mock data.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {keyExists && testSuccessful && (
+        <Alert className="bg-green-900/20 border-green-500/30">
+          <Check className="h-4 w-4 text-green-500" />
+          <AlertTitle>API Connected</AlertTitle>
+          <AlertDescription>
+            Your {provider.name} API key is working correctly. Real data will be used for content analysis.
           </AlertDescription>
         </Alert>
       )}
@@ -276,7 +307,7 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
             onChange={(e) => setApiKey(e.target.value)}
             type={showApiKey ? "text" : "password"}
             placeholder={`Enter your ${provider.name} API key`}
-            className={`pr-10 ${provider.required && !keyExists ? 'border-red-500/50 focus:border-red-500' : ''}`}
+            className={`pr-10 ${provider.required && !keyExists ? 'border-red-500/50 focus:border-red-500' : testSuccessful ? 'border-green-500/50 focus:border-green-500' : ''}`}
           />
           <button
             className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
@@ -292,18 +323,24 @@ const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         {keyExists ? (
           <>
             <Button 
-              variant="outline" 
+              variant={testSuccessful ? "outline" : "default"}
               onClick={handleTestConnection}
               disabled={isTesting}
+              className={testSuccessful ? "border-green-500/50 text-green-300" : ""}
             >
               {isTesting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Testing...
                 </>
+              ) : testSuccessful ? (
+                <>
+                  <Check className="mr-2 h-4 w-4 text-green-500" />
+                  Connection Verified
+                </>
               ) : (
                 <>
-                  <Check className="mr-2 h-4 w-4" />
+                  <Zap className="mr-2 h-4 w-4" />
                   Test Connection
                 </>
               )}

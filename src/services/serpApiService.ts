@@ -39,6 +39,13 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
     const cachedResult = serpResultsCache.get(cacheKey);
     if (cachedResult) {
       console.log(`Using cached SERP data for "${validatedKeyword}"`);
+      
+      // If we have cached mock data and we don't want to show it, return null
+      if (cachedResult.isMockData) {
+        console.log('Cached data is mock data, returning null to show "No data found"');
+        return null;
+      }
+      
       return cachedResult;
     }
     
@@ -56,7 +63,6 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
       );
     } catch (error: any) {
       console.error('Error calling serp API:', error);
-      // Return null instead of mock data when API call fails
       toast.error(`Failed to retrieve SERP data: ${error.message || 'Unknown error'}`);
       return null;
     }
@@ -67,8 +73,18 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
       return null;
     }
     
-    // Cache the result
-    serpResultsCache.set(cacheKey, response);
+    // If the response contains mock data and we don't want to show mock data,
+    // return null to display the "No data found" component
+    if (response.isMockData) {
+      console.log('API returned mock data, returning null to show "No data found"');
+      toast.warning('No API key configured. Please add your SERP API key in Settings to see real data.');
+      return null;
+    }
+    
+    // Cache the result (only if it's not mock data)
+    if (!response.isMockData) {
+      serpResultsCache.set(cacheKey, response);
+    }
     
     return response;
   } catch (error: any) {
@@ -78,7 +94,6 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
     const errorMessage = error.message || 'Failed to analyze keyword';
     toast.error(`API Error: ${errorMessage}`);
     
-    // Return null instead of mock data
     return null;
   }
 }
@@ -96,6 +111,13 @@ export async function searchKeywords(params: SerpSearchParams): Promise<any[] | 
     const cachedResult = serpResultsCache.get(cacheKey);
     if (cachedResult) {
       console.log(`Using cached keyword results for "${validatedQuery}"`);
+      
+      // If we have cached mock data and we don't want to show it, return null
+      if (cachedResult.isMockData) {
+        console.log('Cached data is mock data, returning null');
+        return null;
+      }
+      
       return cachedResult;
     }
 
@@ -116,10 +138,21 @@ export async function searchKeywords(params: SerpSearchParams): Promise<any[] | 
     
     // Check if response exists and has results property
     const results = response && typeof response === 'object' ? (response as any).results : [];
+    
+    // If the response contains mock data and we don't want to show mock data,
+    // return null
+    if (response && response.isMockData) {
+      console.log('API returned mock data, returning null');
+      toast.warning('No API key configured. Please add your SERP API key in Settings to see real data.');
+      return null;
+    }
+    
     const processedResults = Array.isArray(results) ? results : [];
     
-    // Cache results
-    serpResultsCache.set(cacheKey, processedResults);
+    // Cache results only if they're not mock data
+    if (response && !response.isMockData) {
+      serpResultsCache.set(cacheKey, processedResults);
+    }
     
     return processedResults;
   } catch (error: any) {
@@ -148,6 +181,13 @@ export async function analyzeContent(content: string, keywords: string[] = []): 
     const cachedResult = serpResultsCache.get(cacheKey);
     if (cachedResult) {
       console.log('Using cached content analysis results');
+      
+      // If we have cached mock data and we don't want to show it, return null
+      if (cachedResult.isMockData) {
+        console.log('Cached data is mock data, returning null');
+        return null;
+      }
+      
       return cachedResult;
     }
     
@@ -172,8 +212,18 @@ export async function analyzeContent(content: string, keywords: string[] = []): 
       return null;
     }
     
-    // Cache the result
-    serpResultsCache.set(cacheKey, response);
+    // If the response contains mock data and we don't want to show mock data,
+    // return null
+    if (response.isMockData) {
+      console.log('API returned mock data, returning null');
+      toast.warning('No API key configured. Please add your SERP API key in Settings to see real data.');
+      return null;
+    }
+    
+    // Cache the result only if it's not mock data
+    if (!response.isMockData) {
+      serpResultsCache.set(cacheKey, response);
+    }
     
     return response;
   } catch (error: any) {

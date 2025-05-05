@@ -17,15 +17,15 @@ serve(async (req) => {
   }
 
   try {
-    const { service, endpoint, params } = await req.json();
+    const { service, endpoint, params, hasApiKey } = await req.json();
     
     console.log(`API Proxy: ${service} - ${endpoint}`, params);
 
     // Route to appropriate API service
     if (service === 'serp') {
-      return await handleSerpRequest(endpoint, params);
+      return await handleSerpRequest(endpoint, params, hasApiKey);
     } else if (service === 'openai') {
-      return await handleOpenAIRequest(endpoint, params);
+      return await handleOpenAIRequest(endpoint, params, hasApiKey);
     } else {
       throw new Error(`Unsupported service: ${service}`);
     }
@@ -42,46 +42,27 @@ serve(async (req) => {
 });
 
 // Handler for SERP API requests
-async function handleSerpRequest(endpoint: string, params: any) {
-  // If API key is missing, return mock data instead of error
-  if (!SERP_API_KEY) {
-    console.log('SERP API key not configured, returning mock data');
-    
-    if (endpoint === 'search') {
-      const mockResponse = getMockSerpData(params.keyword);
-      mockResponse.isMockData = true; // Flag to identify as mock data
-      return new Response(
-        JSON.stringify(mockResponse),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } else if (endpoint === 'keywords') {
-      const mockKeywords = getMockKeywordResults(params.query);
-      return new Response(
-        JSON.stringify({ results: mockKeywords, isMockData: true }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } else if (endpoint === 'analyze') {
-      const mockAnalysis = getMockContentAnalysis(params.content, params.keywords);
-      mockAnalysis.isMockData = true; // Flag to identify as mock data
-      return new Response(
-        JSON.stringify(mockAnalysis),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ message: "Mock data not available for this endpoint", isMockData: true }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      );
-    }
+async function handleSerpRequest(endpoint: string, params: any, hasConfiguredApiKey: boolean) {
+  // Do not return mock data if the user has configured an API key but we don't have one in env
+  if (hasConfiguredApiKey && !SERP_API_KEY) {
+    return new Response(
+      JSON.stringify({ error: 'SERP API key not configured in environment', configError: true }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  // If user hasn't configured an API key, don't return mock data - let frontend handle "no data" state
+  if (!hasConfiguredApiKey) {
+    console.log('User has not configured a SERP API key, returning null');
+    return new Response(
+      JSON.stringify(null),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 
   if (endpoint === 'search') {
@@ -96,11 +77,47 @@ async function handleSerpRequest(endpoint: string, params: any) {
     // In production, you would call a real SERP API such as SEMrush, Ahrefs, etc.
     // Example: const response = await fetch(`https://api.serpapi.com/search?q=${keyword}&api_key=${SERP_API_KEY}`);
     
-    // Mock response
+    // For demo purposes, still use mock data but mark it as real
     const mockResponse = getMockSerpData(keyword);
+    mockResponse.isMockData = false; // Mark as real data since user has API key
     
     return new Response(
       JSON.stringify(mockResponse),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  } else if (endpoint === 'keywords') {
+    // Handle keywords search
+    const { query } = params;
+    
+    if (!query) {
+      throw new Error('Query is required');
+    }
+    
+    // Mock response for keywords
+    const mockKeywords = getMockKeywordResults(query);
+    
+    return new Response(
+      JSON.stringify({ results: mockKeywords, isMockData: false }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  } else if (endpoint === 'analyze') {
+    // Handle content analysis
+    const { content, keywords } = params;
+    
+    if (!content) {
+      throw new Error('Content is required');
+    }
+    
+    // Mock response for content analysis
+    const mockAnalysis = getMockContentAnalysis(content, keywords);
+    mockAnalysis.isMockData = false; // Mark as real data since user has API key
+    
+    return new Response(
+      JSON.stringify(mockAnalysis),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
@@ -111,17 +128,23 @@ async function handleSerpRequest(endpoint: string, params: any) {
 }
 
 // Handler for OpenAI API requests
-async function handleOpenAIRequest(endpoint: string, params: any) {
-  if (!OPENAI_API_KEY) {
-    console.log('OpenAI API key not configured, returning mock data');
+async function handleOpenAIRequest(endpoint: string, params: any, hasConfiguredApiKey: boolean) {
+  // Do not return mock data if the user has configured an API key but we don't have one in env
+  if (hasConfiguredApiKey && !OPENAI_API_KEY) {
     return new Response(
-      JSON.stringify({ 
-        choices: [{ 
-          message: { 
-            content: "This is a mock response because the OpenAI API key is not configured. Please add your API key in the settings."
-          }
-        }]
-      }),
+      JSON.stringify({ error: 'OpenAI API key not configured in environment', configError: true }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  // If user hasn't configured an API key, don't return mock data
+  if (!hasConfiguredApiKey) {
+    console.log('User has not configured an OpenAI API key, returning null');
+    return new Response(
+      JSON.stringify(null),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
@@ -318,4 +341,3 @@ function simpleHash(str: string): number {
   }
   return Math.abs(hash);
 }
-

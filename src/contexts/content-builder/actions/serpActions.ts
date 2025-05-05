@@ -21,7 +21,7 @@ export const createSerpActions = (
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
-        toast.error("No search data could be retrieved. Please try again later.");
+        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
       }
     } catch (error) {
       console.error('Error analyzing keyword:', error);
