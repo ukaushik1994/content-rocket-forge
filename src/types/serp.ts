@@ -34,20 +34,25 @@ export interface SerpAnalysisResult {
   recommendations?: string[];
   isMockData?: boolean; // Track if the data is mocked
   
-  // New fields for enhanced SERP analysis
+  // Enhanced fields for SERP analysis with updated types
   entities?: Array<{
     name: string;
     type?: string;
     importance?: number;
+    description?: string; // Added this missing field
   }>;
   headings?: Array<{
     text: string;
     level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     subtext?: string;
+    type?: string; // Added this missing field
   }>;
   contentGaps?: Array<{
     topic: string;
     description: string;
     recommendation?: string;
+    content?: string; // Added missing field
+    opportunity?: string; // Added missing field
+    source?: string; // Added missing field
   }>;
 }

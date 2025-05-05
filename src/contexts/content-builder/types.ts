@@ -1,201 +1,129 @@
+import React from 'react';
 
 // Step definition
 export interface ContentBuilderStep {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   completed: boolean;
+  visited: boolean;
 }
 
-// Solution definition
-export interface Solution {
-  id: string;
-  name: string;
-  features: string[];
-  useCases: string[];
-  painPoints: string[];
-  targetAudience: string[];
-  description: string;
-  logoUrl?: string | null;
-  externalUrl?: string | null;
-  resources?: Array<{ title: string; url: string; }>;
-}
-
-// Content type options
-export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'email' | 'landingPage' | 'productDescription' | 'social';
-
-// Keyword cluster definition
-export interface ContentCluster {
-  id: string;
-  name: string;
-  keywords: string[];
-}
-
-// SERP selection item
-export interface SerpSelection {
-  type: string;
-  content: string;
-  source?: string;
-  selected: boolean;
-}
-
-// Content outline section
-export interface ContentOutlineSection {
-  id: string;
-  title: string;
-  type?: string;
-  content?: string;
-  notes?: string;
-  relatedKeywords?: string[];
-  subsections?: {
-    id: string;
-    title: string;
-    content?: string;
-  }[];
-}
-
-// SEO improvement suggestion
-export interface SeoImprovement {
-  id: string;
-  type: 'keyword' | 'readability' | 'structure' | 'general';
-  recommendation: string;
-  applied: boolean;
-  previewContent?: string;
-}
-
-// Document structure analysis
-export interface DocumentStructure {
-  h1: string[];
-  h2: string[];
-  h3: string[];
-  h4: string[];
-  h5: string[];  // Adding the h5 property
-  h6: string[];  // Adding the h6 property
-  hasSingleH1: boolean;
-  hasLogicalHierarchy: boolean;
-}
-
-// Solution integration metrics
-export interface SolutionIntegrationMetrics {
-  nameMentions: number;
-  featureIncorporation: number; // Percentage 0-100
-  painPointsAddressed: string[];
-  audienceAlignment: number; // Scale 0-100
-  positioningScore: number; // Scale 0-100
-  ctaMentions: number;
-  overallScore: number; // Scale 0-100
-}
-
-// Main state for content builder
+// Content builder state
 export interface ContentBuilderState {
-  activeStep: number;
+  // Steps and navigation
   steps: ContentBuilderStep[];
-  primaryKeyword: string;
-  secondaryKeywords: string[];
-  keywordClusters: { [key: string]: string[] };
-  contentType: ContentType;
-  contentFormat: string;
-  contentTitle: string;
-  outlineSections: any[];
-  serpAnalysisResults: any;
-  serpKeywordsSelected: string[];
-  serpQuestionsSelected: string[];
-  isAnalyzing: boolean;
-  isSaving: boolean;
-  isPublishing: boolean;
-  content: string;
+  activeStep: number;
+  
+  // Keyword data
   mainKeyword: string;
+  secondaryKeywords: string[];
+  keywordClusters: Array<{
+    name: string;
+    keywords: string[];
+  }>;
   selectedKeywords: string[];
-  selectedCluster: ContentCluster | null;
-  selectedSolution: Solution | null;
+  
+  // Content type and format
+  contentType: string;
+  contentFormat: string;
+  contentIntent: string;
+  contentTitle: string;
+  
+  // SERP data
+  isAnalyzing: boolean;
   serpData: any;
-  serpSelections: SerpSelection[];
-  outline: ContentOutlineSection[];
+  serpSelections: {
+    [key: string]: string[];
+  };
+  
+  // Outline data
+  outline: string[];
+  isGeneratingOutline: boolean;
+  
+  // Content data
+  content: string;
+  isGeneratingContent: boolean;
+  documentStructure: any;
+  
+  // Meta data
+  metaTitle: string;
+  metaDescription: string;
+  
+  // SEO data
   seoScore: number;
-  additionalInstructions: string;
-  seoImprovements?: SeoImprovement[];
-  metaTitle?: string;
-  metaDescription?: string;
-  documentStructure?: DocumentStructure | null;
-  solutionIntegrationMetrics?: SolutionIntegrationMetrics | null;
+  
+  // Solution integration
+  selectedSolution: string;
+  solutionIntegrationMetrics: {
+    mentions: number;
+    contextualReferences: number;
+    naturalness: number;
+  };
+  
+  // UI state
+  isSaving: boolean;
 }
 
-// Action types for the reducer
+// Action types
 export type ContentBuilderAction =
   | { type: 'SET_ACTIVE_STEP'; payload: number }
   | { type: 'COMPLETE_STEP'; payload: number }
   | { type: 'SET_PRIMARY_KEYWORD'; payload: string }
   | { type: 'ADD_SECONDARY_KEYWORD'; payload: string }
   | { type: 'REMOVE_SECONDARY_KEYWORD'; payload: string }
-  | { type: 'SET_KEYWORD_CLUSTERS'; payload: { [key: string]: string[] } }
-  | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
+  | { type: 'SET_KEYWORD_CLUSTERS'; payload: Array<{ name: string; keywords: string[] }> }
+  | { type: 'SET_CONTENT_TYPE'; payload: string }
   | { type: 'SET_CONTENT_FORMAT'; payload: string }
-  | { type: 'SET_OUTLINE_TITLE'; payload: string }
-  | { type: 'SET_OUTLINE_SECTIONS'; payload: any }
-  | { type: 'SET_SERP_ANALYSIS_RESULTS'; payload: any }
-  | { type: 'SET_SERP_KEYWORDS_SELECTED'; payload: string[] }
-  | { type: 'SET_SERP_QUESTIONS_SELECTED'; payload: string[] }
-  | { type: 'SET_IS_ANALYZING'; payload: boolean }
-  | { type: 'SET_IS_SAVING'; payload: boolean }
-  | { type: 'SET_IS_PUBLISHING'; payload: boolean }
-  | { type: 'SET_CONTENT'; payload: string }
-  | { type: 'MARK_STEP_COMPLETED'; payload: number }
-  | { type: 'SET_MAIN_KEYWORD'; payload: string }
-  | { type: 'ADD_KEYWORD'; payload: string }
-  | { type: 'REMOVE_KEYWORD'; payload: string }
-  | { type: 'SET_KEYWORDS'; payload: string[] }
-  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
-  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
-  | { type: 'SET_SERP_DATA'; payload: any }
-  | { type: 'ADD_SERP_SELECTION'; payload: SerpSelection }
-  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
-  | { type: 'SET_OUTLINE'; payload: ContentOutlineSection[] }
-  | { type: 'ADD_OUTLINE_SECTION'; payload: ContentOutlineSection }
-  | { type: 'UPDATE_OUTLINE_SECTION'; payload: { id: string; section: Partial<ContentOutlineSection> } }
-  | { type: 'REMOVE_OUTLINE_SECTION'; payload: string }
+  | { type: 'SET_CONTENT_INTENT'; payload: string }
   | { type: 'SET_CONTENT_TITLE'; payload: string }
-  | { type: 'SET_SEO_SCORE'; payload: number }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
-  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
+  | { type: 'SET_IS_ANALYZING'; payload: boolean }
+  | { type: 'SET_SERP_DATA'; payload: any }
+  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
+  | { type: 'SET_OUTLINE'; payload: string[] }
+  | { type: 'SET_IS_GENERATING_OUTLINE'; payload: boolean }
+  | { type: 'SET_CONTENT'; payload: string }
+  | { type: 'SET_IS_GENERATING_CONTENT'; payload: boolean }
+  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: any }
   | { type: 'SET_META_TITLE'; payload: string }
   | { type: 'SET_META_DESCRIPTION'; payload: string }
-  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
-  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics };
+  | { type: 'SET_SEO_SCORE'; payload: number }
+  | { type: 'SET_SELECTED_SOLUTION'; payload: string }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: { mentions: number; contextualReferences: number; naturalness: number } }
+  | { type: 'SET_IS_SAVING'; payload: boolean }
+  | { type: 'MARK_STEP_COMPLETED'; payload: number }
+  | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] };
 
-// Context type definition
-export interface ContentBuilderContextType {
+export type ContentBuilderContextType = {
   state: ContentBuilderState;
   dispatch: React.Dispatch<ContentBuilderAction>;
-  
-  // Navigation actions
-  navigateToStep: (step: number) => void;
-  
   // Keyword actions
-  analyzeKeyword: (keyword: string) => Promise<void>;
-  setPrimaryKeyword: (keyword: string) => void;
+  setMainKeyword: (keyword: string) => void;
   addSecondaryKeyword: (keyword: string) => void;
   removeSecondaryKeyword: (keyword: string) => void;
-  setKeywordClusters: (clusters: { [key: string]: string[] }) => void;
-  
-  // Content type actions
-  setContentType: (contentType: ContentType) => void;
-  setContentFormat: (format: string) => void;
-  
-  // Outline actions
-  setOutlineTitle: (title: string) => void;
-  setOutlineSections: (sections: { id: string; heading: string; content: string }[]) => void;
-  
-  // SERP actions
-  addSerpSelection: (selection: SerpSelection) => void;
-  toggleSerpSelection: (type: string, content: string) => void;
-  addContentFromSerp: (content: string, type: string) => void;
-  generateOutlineFromSelections: () => void;
-  
   // Content actions
-  setContent: (content: string) => void;
-  rewriteContent: (newContent: string, improvementType: string) => void;
-  
-  // Publishing actions
-  saveContentAsDraft: () => Promise<string | null>;
+  setContentType: (contentType: string) => void;
+  setContentTitle: (title: string) => void;
+  setContentIntent: (intent: string) => void;
+  updateContent: (content: string) => void;
+  // SERP actions
+  analyzeKeyword: (keyword: string) => Promise<void>;
+  // Navigation actions
+  navigateToStep: (step: number) => void;
+  // Saving and Publishing actions
+  saveContentToDraft: (content: SaveContentParams) => Promise<string | null>;
+  saveContentToPublished: (content: SaveContentParams) => Promise<string | null>;
+  // Other actions as needed
+};
+
+export interface SaveContentParams {
+  title: string;
+  note?: string;
+  isPublished: boolean;
+  mainKeyword: string;
+  content: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  outline?: string[];
+  seoScore?: number;
 }

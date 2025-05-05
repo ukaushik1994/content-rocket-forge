@@ -25,7 +25,7 @@ export const createNavigationActions = (
     }
     
     // Always mark the current step as visited
-    dispatch({ type: 'MARK_STEP_VISITED', payload: state.activeStep });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
     
     // Normal navigation
     dispatch({ type: 'SET_ACTIVE_STEP', payload: step });
