@@ -1,93 +1,5 @@
-import { ContentBuilderState, ContentBuilderAction, SerpSelection } from './types';
 
-// Helper function to create SERP selections from data
-const createSerpSelectionsFromData = (data: any): SerpSelection[] => {
-  const selections: SerpSelection[] = [];
-  
-  // Process related searches (keywords)
-  if (data.relatedSearches && Array.isArray(data.relatedSearches)) {
-    data.relatedSearches.forEach((item: any) => {
-      selections.push({
-        type: 'keyword',
-        content: item.query || item,
-        source: 'Related searches',
-        selected: false
-      });
-    });
-  }
-  
-  // Process people also ask (questions)
-  if (data.peopleAlsoAsk && Array.isArray(data.peopleAlsoAsk)) {
-    data.peopleAlsoAsk.forEach((item: any) => {
-      selections.push({
-        type: 'question',
-        content: item.question || item,
-        source: item.source || 'People also ask',
-        selected: false
-      });
-    });
-  }
-  
-  // Process top results snippets
-  if (data.topResults && Array.isArray(data.topResults)) {
-    data.topResults.forEach((item: any) => {
-      if (item.title) {
-        selections.push({
-          type: 'heading',
-          content: item.title,
-          source: `Rank ${item.position || '?'}`,
-          selected: false
-        });
-      }
-      if (item.snippet) {
-        selections.push({
-          type: 'snippet',
-          content: item.snippet,
-          source: item.title || `Rank ${item.position || '?'}`,
-          selected: false
-        });
-      }
-    });
-  }
-  
-  // Process entities if available
-  if (data.entities && Array.isArray(data.entities)) {
-    data.entities.forEach((item: any) => {
-      selections.push({
-        type: 'entity',
-        content: typeof item === 'string' ? item : (item.name || item.entity || ''),
-        source: 'Knowledge graph',
-        selected: false
-      });
-    });
-  }
-  
-  // Process content gaps if available
-  if (data.contentGaps && Array.isArray(data.contentGaps)) {
-    data.contentGaps.forEach((item: any) => {
-      selections.push({
-        type: 'contentGap',
-        content: typeof item === 'string' ? item : (item.topic || ''),
-        source: 'Content gap analysis',
-        selected: false
-      });
-    });
-  }
-  
-  // Process headings if available
-  if (data.headings && Array.isArray(data.headings)) {
-    data.headings.forEach((item: any) => {
-      selections.push({
-        type: 'heading',
-        content: typeof item === 'string' ? item : (item.text || ''),
-        source: 'Common headings',
-        selected: false
-      });
-    });
-  }
-  
-  return selections;
-};
+import { ContentBuilderState, ContentBuilderAction, SerpSelection, SeoImprovement } from './types';
 
 // Reducer function to handle state updates
 export const contentBuilderReducer = (
@@ -111,10 +23,6 @@ export const contentBuilderReducer = (
       return { ...state, primaryKeyword: action.payload };
       
     case 'ADD_SECONDARY_KEYWORD':
-      // Avoid duplicates
-      if (state.secondaryKeywords.includes(action.payload)) {
-        return state;
-      }
       return {
         ...state,
         secondaryKeywords: [...state.secondaryKeywords, action.payload],
@@ -130,14 +38,7 @@ export const contentBuilderReducer = (
       return { ...state, keywordClusters: action.payload };
       
     case 'SET_CONTENT_TYPE':
-      // Mark the content type step as completed when a type is selected
-      return { 
-        ...state, 
-        contentType: action.payload,
-        steps: state.steps.map(step =>
-          step.id === 1 ? { ...step, completed: true } : step
-        )
-      };
+      return { ...state, contentType: action.payload };
       
     case 'SET_CONTENT_FORMAT':
       return { ...state, contentFormat: action.payload };
@@ -168,50 +69,19 @@ export const contentBuilderReducer = (
       return { ...state, isPublishing: action.payload };
       
     case 'SET_CONTENT':
-      // Mark content writing step as completed when content is added
-      const contentLength = action.payload?.trim().length || 0;
-      const shouldMarkCompleted = contentLength > 100;
-      
-      return { 
-        ...state, 
-        content: action.payload,
-        steps: shouldMarkCompleted 
-          ? state.steps.map(step =>
-              step.id === 4 ? { ...step, completed: true } : step
-            )
-          : state.steps
-      };
+      return { ...state, content: action.payload };
     
     // Additional action handlers
     case 'MARK_STEP_COMPLETED':
-      // Only update if the step isn't already completed
-      if (state.steps[action.payload].completed) {
-        return state;
-      }
-      
-      // Auto-complete linked steps for improved flow
-      let updatedSteps = [...state.steps];
-      updatedSteps[action.payload] = { ...updatedSteps[action.payload], completed: true };
-      
-      // If marking keyword step complete (step 0) and we have SERP data, also mark SERP step (step 2) complete
-      if (action.payload === 0 && state.serpData) {
-        updatedSteps[2] = { ...updatedSteps[2], completed: true };
-      }
-      
-      // If marking SERP step complete (step 2), also mark keyword step (step 0) complete
-      if (action.payload === 2) {
-        updatedSteps[0] = { ...updatedSteps[0], completed: true };
-      }
-      
-      return { ...state, steps: updatedSteps };
+      return {
+        ...state,
+        steps: state.steps.map(step =>
+          step.id === action.payload ? { ...step, completed: true } : step
+        ),
+      };
       
     case 'SET_MAIN_KEYWORD':
-      // Update both main keyword and page title if not set yet
-      return { 
-        ...state, 
-        mainKeyword: action.payload,
-        contentTitle: state.contentTitle || `Complete Guide to ${action.payload}`
-      };
+      return { ...state, mainKeyword: action.payload };
       
     case 'ADD_KEYWORD':
       if (state.selectedKeywords.includes(action.payload)) {
@@ -240,100 +110,40 @@ export const contentBuilderReducer = (
       };
       
     case 'SELECT_SOLUTION':
-      // Mark solutions step as completed
-      return { 
-        ...state, 
-        selectedSolution: action.payload,
-        steps: state.steps.map(step =>
-          step.id === 1 ? { ...step, completed: true } : step
-        )
-      };
+      return { ...state, selectedSolution: action.payload };
       
-    case 'SET_SERP_DATA': {
+    case 'SET_SERP_DATA':
       const newSelections = createSerpSelectionsFromData(action.payload);
-      
-      // If we already have selections, merge them to preserve selection state
-      let mergedSelections = newSelections;
-      if (state.serpSelections && state.serpSelections.length > 0) {
-        // Create map of existing selections for quick lookup
-        const existingSelectionsMap = new Map(
-          state.serpSelections.map(s => [`${s.type}:${s.content}`, s.selected])
-        );
-        
-        // Update new selections with previous selection state if they exist
-        mergedSelections = newSelections.map(s => {
-          const key = `${s.type}:${s.content}`;
-          if (existingSelectionsMap.has(key)) {
-            return { ...s, selected: existingSelectionsMap.get(key) || false };
-          }
-          return s;
-        });
-      }
       
       return { 
         ...state, 
         serpData: action.payload,
-        serpSelections: mergedSelections
+        serpSelections: newSelections
       };
-    }
       
     case 'ADD_SERP_SELECTION':
-      // Check if we already have this selection
-      const existingIndex = state.serpSelections.findIndex(
-        s => s.type === action.payload.type && s.content === action.payload.content
-      );
+      return {
+        ...state,
+        serpSelections: [...state.serpSelections, action.payload]
+      };
       
-      if (existingIndex >= 0) {
-        // If it exists, update it
-        const updatedSelections = [...state.serpSelections];
-        updatedSelections[existingIndex] = {
-          ...updatedSelections[existingIndex],
-          selected: true
-        };
-        return {
-          ...state,
-          serpSelections: updatedSelections
-        };
-      } else {
-        // Otherwise add it
-        return {
-          ...state,
-          serpSelections: [...state.serpSelections, action.payload]
-        };
-      }
-      
-    case 'TOGGLE_SERP_SELECTION': {
-      const { type, content } = action.payload;
+    case 'TOGGLE_SERP_SELECTION':
       return {
         ...state,
         serpSelections: state.serpSelections.map(item => 
-          item.type === type && item.content === content
+          item.type === action.payload.type && item.content === action.payload.content
             ? { ...item, selected: !item.selected }
             : item
         )
       };
-    }
       
     case 'SET_OUTLINE':
-      // Mark outline step as completed when we have outline sections
-      const hasOutline = action.payload.length > 0;
-      return { 
-        ...state, 
-        outline: action.payload,
-        steps: hasOutline ? state.steps.map(step =>
-          step.id === 3 ? { ...step, completed: true } : step
-        ) : state.steps
-      };
+      return { ...state, outline: action.payload };
       
     case 'ADD_OUTLINE_SECTION':
-      // Mark outline step as completed when we add sections
-      const newOutline = [...state.outline, action.payload];
       return {
         ...state,
-        outline: newOutline,
-        steps: state.steps.map(step =>
-          step.id === 3 ? { ...step, completed: true } : step
-        )
+        outline: [...state.outline, action.payload],
       };
       
     case 'UPDATE_OUTLINE_SECTION': {
@@ -356,58 +166,28 @@ export const contentBuilderReducer = (
       return { ...state, contentTitle: action.payload };
       
     case 'SET_SEO_SCORE':
-      // Auto-complete optimization step if score is high enough
-      const isScoreGoodEnough = action.payload >= 70;
-      
-      return { 
-        ...state, 
-        seoScore: action.payload,
-        steps: isScoreGoodEnough 
-          ? state.steps.map(step =>
-              step.id === 5 ? { ...step, completed: true } : step
-            )
-          : state.steps
-      };
+      return { ...state, seoScore: action.payload };
       
     case 'SET_ADDITIONAL_INSTRUCTIONS':
       return { ...state, additionalInstructions: action.payload };
-      
+
+    // New SEO improvement actions
     case 'SET_SEO_IMPROVEMENTS':
       return { ...state, seoImprovements: action.payload };
       
-    case 'APPLY_SEO_IMPROVEMENT': {
-      // Mark the improvement as applied
-      const updatedImprovements = state.seoImprovements?.map(imp =>
-        imp.id === action.payload ? { ...imp, applied: true } : imp
-      ) || [];
-      
-      // Calculate new SEO score based on applied improvements
-      const appliedImprovementsCount = updatedImprovements.filter(imp => imp.applied).length;
-      const totalImprovementsCount = updatedImprovements.length;
-      
-      let newSeoScore = state.seoScore;
-      if (totalImprovementsCount > 0) {
-        // Increase score based on percentage of applied improvements
-        const baseScore = Math.min(60, state.seoScore); // Cap base score
-        const improvementBonus = 40 * (appliedImprovementsCount / totalImprovementsCount);
-        newSeoScore = Math.min(100, baseScore + improvementBonus);
-      }
-      
-      // Auto-complete optimization step if score is high enough
-      const isScoreGoodEnough = newSeoScore >= 70;
-      
-      return { 
+    case 'APPLY_SEO_IMPROVEMENT':
+      return {
         ...state,
-        seoImprovements: updatedImprovements,
-        seoScore: newSeoScore,
-        steps: isScoreGoodEnough 
-          ? state.steps.map(step =>
-              step.id === 5 ? { ...step, completed: true } : step
+        seoImprovements: state.seoImprovements 
+          ? state.seoImprovements.map(improvement => 
+              improvement.id === action.payload 
+                ? { ...improvement, applied: true } 
+                : improvement
             )
-          : state.steps
+          : []
       };
-    }
       
+    // New action handlers for final review step
     case 'SET_META_TITLE':
       return { ...state, metaTitle: action.payload };
       
@@ -416,7 +196,7 @@ export const contentBuilderReducer = (
       
     case 'SET_DOCUMENT_STRUCTURE':
       return { ...state, documentStructure: action.payload };
-      
+    
     case 'SET_SOLUTION_INTEGRATION_METRICS':
       return { ...state, solutionIntegrationMetrics: action.payload };
       
@@ -424,3 +204,95 @@ export const contentBuilderReducer = (
       return state;
   }
 };
+
+// Helper function to convert SERP data to selectable items
+function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
+  if (!serpData) return [];
+  
+  const newSelections: SerpSelection[] = [];
+  
+  // Convert SERP data to selectable items
+  if (serpData?.peopleAlsoAsk) {
+    serpData.peopleAlsoAsk.forEach((item: any) => {
+      newSelections.push({
+        type: 'question',
+        content: item.question,
+        source: item.source,
+        selected: false
+      });
+    });
+  }
+  
+  if (serpData?.relatedSearches) {
+    serpData.relatedSearches.forEach((item: any) => {
+      newSelections.push({
+        type: 'keyword',
+        content: item.query,
+        selected: false
+      });
+    });
+  }
+  
+  if (serpData?.featuredSnippets) {
+    serpData.featuredSnippets.forEach((item: any) => {
+      newSelections.push({
+        type: 'snippet',
+        content: item.content,
+        source: item.source,
+        selected: false
+      });
+    });
+  }
+
+  if (serpData?.topResults) {
+    serpData.topResults.forEach((item: any) => {
+      if (item.snippet) {
+        newSelections.push({
+          type: 'topRank', // Changed from 'competitor' to 'topRank' for consistency
+          content: item.title, // Using title instead of snippet for better overview
+          source: item.link,
+          selected: false
+        });
+      }
+    });
+  }
+  
+  // Add support for entities
+  if (serpData?.entities) {
+    serpData.entities.forEach((item: any) => {
+      newSelections.push({
+        type: 'entity',
+        content: item.name,
+        source: item.type,
+        selected: false
+      });
+    });
+  }
+  
+  // Add support for headings
+  if (serpData?.headings) {
+    serpData.headings.forEach((item: any) => {
+      newSelections.push({
+        type: 'heading',
+        content: item.text,
+        source: item.level,
+        selected: false
+      });
+    });
+  }
+  
+  // Add support for content gaps
+  if (serpData?.contentGaps) {
+    serpData.contentGaps.forEach((item: any) => {
+      newSelections.push({
+        type: 'contentGap',
+        content: item.topic,
+        source: item.description,
+        selected: false
+      });
+    });
+  }
+  
+  return newSelections;
+}
+
