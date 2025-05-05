@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -8,59 +9,31 @@ import { Button } from '@/components/ui/button';
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
-import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizationStep } from './steps/OptimizationStep';
 import { FinalReviewStep } from './steps/FinalReviewStep';
-import { SaveStep } from './steps/SaveStep';
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
   const { activeStep, steps } = state;
 
-  // Calculate progress percentage - exclude SERP Analysis step
-  const visibleSteps = steps.filter(step => step.id !== 2);
+  // Calculate progress percentage
+  const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
   const completedVisibleSteps = visibleSteps.filter(step => step.completed);
   const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
   // Determine if user can proceed to next step
   const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
   
-  // Handle next step navigation with SERP Analysis skip
+  // Handle next step navigation
   const handleNextStep = () => {
-    // If we're on step 0 (Keywords), go directly to step 1 (Content Type)
-    if (activeStep === 0) {
-      navigateToStep(1); 
-    } 
-    // If we're on step 1 (Content Type), skip step 2 (SERP Analysis) and go to step 3 (Outline)
-    else if (activeStep === 1) {
-      const outlineStepIndex = steps.findIndex(s => s.id === 3);
-      if (outlineStepIndex !== -1) {
-        navigateToStep(outlineStepIndex);
-      } else {
-        navigateToStep(activeStep + 1); // Fallback
-      }
-    } 
-    // Otherwise proceed normally
-    else {
-      navigateToStep(activeStep + 1);
-    }
+    navigateToStep(activeStep + 1);
   };
   
-  // Handle previous step navigation with SERP Analysis skip
+  // Handle previous step navigation
   const handlePrevStep = () => {
-    // If we're on step 3 (Outline), go back to step 1 (Content Type), skipping step 2 (SERP Analysis)
-    if (steps[activeStep].id === 3) {
-      const contentTypeStepIndex = steps.findIndex(s => s.id === 1);
-      if (contentTypeStepIndex !== -1) {
-        navigateToStep(contentTypeStepIndex);
-      } else {
-        navigateToStep(activeStep - 1); // Fallback
-      }
-    } else {
-      navigateToStep(activeStep - 1);
-    }
+    navigateToStep(activeStep - 1);
   };
   
   // Render the current step component
@@ -71,12 +44,10 @@ export const ContentBuilder = () => {
     switch (stepID) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
-      case 2: return <SerpAnalysisStep />; // Keep this for backwards compatibility
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
       case 6: return <FinalReviewStep />;
-      case 7: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -94,6 +65,9 @@ export const ContentBuilder = () => {
   };
   
   const stepInfo = getVisibleStepInfo();
+  
+  // Check if we're on the final step
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 6;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -130,26 +104,28 @@ export const ContentBuilder = () => {
         </div>
         
         {/* Navigation controls */}
-        <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
-          <div className="flex justify-between max-w-5xl mx-auto">
-            <Button
-              variant="outline"
-              onClick={handlePrevStep}
-              disabled={activeStep === 0}
-              className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
-            >
-              <ChevronLeft className="h-4 w-4" /> Previous
-            </Button>
-            
-            <Button
-              onClick={handleNextStep}
-              disabled={!canGoNext}
-              className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </Button>
+        {!isLastStep && (
+          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
+            <div className="flex justify-between max-w-5xl mx-auto">
+              <Button
+                variant="outline"
+                onClick={handlePrevStep}
+                disabled={activeStep === 0}
+                className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
+              >
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              
+              <Button
+                onClick={handleNextStep}
+                disabled={!canGoNext}
+                className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

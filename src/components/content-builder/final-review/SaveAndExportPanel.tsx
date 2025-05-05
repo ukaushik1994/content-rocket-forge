@@ -1,0 +1,137 @@
+
+import React from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, FilePlus, FileCheck, Download, FileOutput, Loader2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+
+interface SaveAndExportPanelProps {
+  completionPercentage: number;
+  onSave: () => void;
+  onPublish: () => void;
+  isSaving: boolean;
+  isSavedToDraft: boolean;
+}
+
+export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
+  completionPercentage,
+  onSave,
+  onPublish,
+  isSaving,
+  isSavedToDraft
+}) => {
+  const isReady = completionPercentage >= 80;
+  const isOkay = completionPercentage >= 60;
+  
+  return (
+    <Card className={cn(
+      "border p-4",
+      isReady 
+        ? "border-green-500/30 bg-gradient-to-br from-green-950/20 to-black/20" 
+        : "border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-black/20"
+    )}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "p-2 rounded-full",
+            isReady ? "bg-green-500/20" : "bg-amber-500/20"
+          )}>
+            {isReady 
+              ? <CheckCircle className="h-5 w-5 text-green-400" />
+              : <AlertTriangle className="h-5 w-5 text-amber-400" />
+            }
+          </div>
+          <div>
+            <h3 className="font-medium">{isReady ? "Ready to Save & Export" : "Content Status"}</h3>
+            <p className="text-sm text-muted-foreground">
+              {isReady 
+                ? "Your content has passed all checks" 
+                : `Content is ${completionPercentage}% optimized, needs improvement`
+              }
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  isReady ? "border-green-500/30 text-green-500" : 
+                  isOkay ? "border-amber-500/30 text-amber-500" : 
+                  "border-red-500/30 text-red-500"
+                )}
+              >
+                {isReady ? "Ready for publishing" : 
+                  isOkay ? "Needs minor improvements" : "Needs major improvements"}
+              </Badge>
+              {isSavedToDraft && (
+                <Badge variant="outline" className="border-blue-500/30 text-blue-500">
+                  <FileCheck className="h-3 w-3 mr-1" />
+                  Saved to drafts
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <Button
+            variant="outline"
+            onClick={onSave}
+            disabled={isSaving}
+            className="border-white/10 hover:bg-white/5"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <FilePlus className="h-4 w-4 mr-2" />
+                Save to Drafts
+              </>
+            )}
+          </Button>
+          
+          <Button
+            onClick={onPublish}
+            disabled={isSaving || completionPercentage < 60}
+            className={cn(
+              "gap-2",
+              isReady 
+                ? "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600" 
+                : "bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-700 hover:to-violet-600"
+            )}
+          >
+            <FileOutput className="h-4 w-4" />
+            {isReady ? "Publish Content" : "Publish Anyway"}
+          </Button>
+        </div>
+      </div>
+      
+      {/* Additional export options as a floating bar */}
+      <div className="flex items-center justify-end mt-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-xs text-muted-foreground"
+        >
+          Export as: 
+          <Button variant="ghost" size="sm" className="text-xs ml-2">
+            <Download className="h-3 w-3 mr-1" />
+            HTML
+          </Button>
+          <Button variant="ghost" size="sm" className="text-xs">
+            <Download className="h-3 w-3 mr-1" />
+            Markdown
+          </Button>
+          <Button variant="ghost" size="sm" className="text-xs">
+            <Download className="h-3 w-3 mr-1" />
+            Text
+          </Button>
+        </motion.div>
+      </div>
+    </Card>
+  );
+};

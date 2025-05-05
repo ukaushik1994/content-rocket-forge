@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
-import { Sparkles, PenLine, ChevronRight, CheckCheck, Loader2 } from 'lucide-react';
+import { Sparkles, PenLine, CheckCheck, Loader2, Info, ListTodo } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Separator } from '@/components/ui/separator';
 
 export function AIOutlineGenerator() {
   const { state, dispatch } = useContentBuilder();
@@ -180,77 +179,81 @@ export function AIOutlineGenerator() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="bg-gradient-to-br from-neon-purple/10 to-neon-blue/5 border border-white/10 rounded-lg p-5">
-        <div className="flex items-start gap-4">
-          <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">AI Outline Generator</h3>
-            <p className="text-sm text-white/70">
-              Let AI create a structured outline based on your {totalSelectedItems > 0 ? `${totalSelectedItems} selected SERP items` : 'keyword research'}
-            </p>
+      {/* Selection Summary Card */}
+      <Card className="border border-purple-500/20 bg-gradient-to-br from-purple-950/20 to-indigo-950/10">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
+              <ListTodo className="h-6 w-6 text-white" />
+            </div>
             
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Badge variant="secondary" className="bg-white/10">
-                Main Keyword: {mainKeyword || "Not set"}
-              </Badge>
+            <div className="space-y-2 flex-1">
+              <h3 className="font-semibold text-lg">Selected Content Items</h3>
+              <p className="text-sm text-white/70">
+                {totalSelectedItems > 0 
+                  ? `You have selected ${totalSelectedItems} SERP items to include in your outline`
+                  : 'You have not selected any SERP items yet. Select items from the keyword research tab.'}
+              </p>
               
-              {itemsByType.keyword.length > 0 && (
-                <Badge variant="secondary" className="bg-white/10 border-blue-500/30">
-                  {itemsByType.keyword.length} keywords
-                </Badge>
-              )}
-              
-              {itemsByType.question.length > 0 && (
-                <Badge variant="secondary" className="bg-white/10 border-purple-500/30">
-                  {itemsByType.question.length} questions
-                </Badge>
-              )}
-              
-              {itemsByType.entity.length > 0 && (
-                <Badge variant="secondary" className="bg-white/10 border-indigo-500/30">
-                  {itemsByType.entity.length} entities
-                </Badge>
-              )}
-              
-              {itemsByType.heading.length > 0 && (
-                <Badge variant="secondary" className="bg-white/10 border-teal-500/30">
-                  {itemsByType.heading.length} headings
-                </Badge>
-              )}
-              
-              {itemsByType.contentGap.length > 0 && (
-                <Badge variant="secondary" className="bg-white/10 border-rose-500/30">
-                  {itemsByType.contentGap.length} content gaps
-                </Badge>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                {Object.entries(itemsByType).map(([type, items]) => (
+                  items.length > 0 && (
+                    <div key={type} className="bg-white/5 rounded-lg p-3">
+                      <div className="text-sm font-medium capitalize mb-1 flex items-center justify-between">
+                        <span>{type}s</span>
+                        <Badge variant="outline" className="text-xs bg-white/10">{items.length}</Badge>
+                      </div>
+                      <div className="max-h-24 overflow-y-auto scrollbar-thin">
+                        {items.map((item, i) => (
+                          <div key={i} className="text-xs py-1 border-b border-white/10 last:border-none truncate">
+                            {item.content}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
       
-      <Card className="bg-white/5 border border-white/10">
+      {/* AI Generator Card */}
+      <Card className="border-neon-purple/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
         <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                <PenLine className="h-4 w-4" /> 
+          <div className="flex items-start gap-4 mb-6">
+            <div className="bg-gradient-to-r from-neon-purple to-neon-blue p-2.5 rounded-lg">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg">AI Outline Generator</h3>
+              <p className="text-sm text-white/70">
+                Generate a structured outline based on your research
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Additional Instructions */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <PenLine className="h-4 w-4 text-neon-purple" /> 
                 Additional Instructions (Optional)
               </div>
               <Textarea
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="Include specific topics, tone preferences, or structure requirements..."
-                className="min-h-[100px] bg-white/5 border-white/10"
+                className="min-h-[100px] bg-white/5 border-white/10 focus:border-neon-purple/50"
               />
-              <div className="flex justify-end mt-2">
+              <div className="flex justify-end">
                 <Button 
                   size="sm"
                   variant="outline" 
                   onClick={handleSaveInstructions}
-                  className="text-xs"
+                  className="text-xs border-neon-purple/30 hover:bg-neon-purple/20"
                 >
                   <CheckCheck className="h-3.5 w-3.5 mr-1" />
                   Save Instructions
@@ -258,7 +261,8 @@ export function AIOutlineGenerator() {
               </div>
             </div>
             
-            <div className="pt-4">
+            {/* Generate Button */}
+            <div className="pt-3">
               <Button 
                 onClick={handleGenerateOutline}
                 disabled={isGenerating || !mainKeyword}
@@ -278,6 +282,12 @@ export function AIOutlineGenerator() {
                 )}
               </Button>
               
+              {totalSelectedItems === 0 && mainKeyword && (
+                <p className="text-xs text-amber-400 mt-2 text-center">
+                  No items selected. We'll generate a standard outline based on your keyword.
+                </p>
+              )}
+              
               {!mainKeyword && (
                 <p className="text-xs text-amber-400 mt-2 text-center">
                   Please set a main keyword before generating an outline
@@ -288,24 +298,17 @@ export function AIOutlineGenerator() {
         </CardContent>
       </Card>
       
-      {/* New Section - Ready to Proceed */}
-      <div className="pt-6">
-        <Separator className="my-4 bg-white/10" />
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-medium mb-1">Ready to proceed?</h4>
-            <p className="text-xs text-white/70">
-              Once you've generated your outline, continue to the next step
+      {/* Info Card */}
+      <Card className="border-white/10 bg-white/5">
+        <CardContent className="pt-4 pb-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Info className="h-4 w-4 text-blue-400" />
+            <p className="text-xs text-muted-foreground">
+              After generating your outline, use the <strong>Next</strong> button at the bottom of the page to proceed to the Content Writing step.
             </p>
           </div>
-          <Button 
-            variant="default" 
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-          >
-            Continue to Content <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

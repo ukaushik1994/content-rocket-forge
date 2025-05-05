@@ -13,9 +13,13 @@ import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 import { useConfetti } from '@/hooks/final-review/useConfetti';
 import { toast } from 'sonner';
+import { SaveContentDialog } from '../steps/writing/SaveContentDialog';
+import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
+import { Button } from '@/components/ui/button';
+import { Loader2, Save, FileCheck } from 'lucide-react';
 
 export const FinalReviewStep = () => {
-  const { state, dispatch } = useContentBuilder();
+  const { state, dispatch, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const { 
     content, 
     mainKeyword, 
@@ -26,7 +30,8 @@ export const FinalReviewStep = () => {
     solutionIntegrationMetrics,
     selectedKeywords,
     seoScore,
-    serpData
+    serpData,
+    outline
   } = state;
   
   const { 
@@ -46,6 +51,13 @@ export const FinalReviewStep = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { confettiShown, triggerConfetti } = useConfetti();
   
+  // State for save functionality
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveTitle, setSaveTitle] = useState(metaTitle || '');
+  const [saveNote, setSaveNote] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavedToDraft, setIsSavedToDraft] = useState(false);
+  
   // Debug current state
   useEffect(() => {
     console.log("[FinalReviewStep] Current state:", { 
@@ -57,7 +69,7 @@ export const FinalReviewStep = () => {
   
   // Set meta information when component mounts if not already set
   useEffect(() => {
-    if (content && mainKeyword && !metaTitle && !metaDescription) {
+    if (content && mainKeyword && (!metaTitle || !metaDescription)) {
       console.log("[FinalReviewStep] No meta information detected, generating...");
       generateMeta();
       toast.info("Generating meta information for your content...");
@@ -78,6 +90,7 @@ export const FinalReviewStep = () => {
     // Update both metaTitle and contentTitle for consistency
     dispatch({ type: 'SET_META_TITLE', payload: value });
     dispatch({ type: 'SET_CONTENT_TITLE', payload: value });
+    setSaveTitle(value); // Update the save dialog title too
   };
   
   const handleMetaDescriptionChange = (value: string) => {
@@ -109,6 +122,83 @@ export const FinalReviewStep = () => {
     }
   };
 
+  // Save content to draft
+  const handleSaveToDraft = async () => {
+    if (!saveTitle.trim()) {
+      toast.error("Please enter a title before saving");
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      await saveContentToDraft({
+        title: saveTitle,
+        note: saveNote,
+        isPublished: false,
+        mainKeyword,
+        content,
+        metaTitle,
+        metaDescription,
+        outline,
+        seoScore
+      });
+      
+      setIsSavedToDraft(true);
+      toast.success("Content saved to drafts");
+      
+      // Close the dialog after saving
+      setShowSaveDialog(false);
+      
+      // Mark the step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+    } catch (error) {
+      console.error("Error saving content:", error);
+      toast.error("Failed to save content. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Publish content directly
+  const handlePublishContent = async () => {
+    if (!metaTitle) {
+      toast.error("Please set a title before publishing");
+      return;
+    }
+    
+    if (completionPercentage < 60) {
+      toast.warning("Your content still needs optimization before publishing");
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      await saveContentToPublished({
+        title: metaTitle,
+        note: "Published from content builder",
+        isPublished: true,
+        mainKeyword,
+        content,
+        metaTitle,
+        metaDescription,
+        outline,
+        seoScore
+      });
+      
+      toast.success("Content published successfully!");
+      
+      // Mark the step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+    } catch (error) {
+      console.error("Error publishing content:", error);
+      toast.error("Failed to publish content. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header with Summary Stats */}
@@ -122,6 +212,21 @@ export const FinalReviewStep = () => {
           passedChecks={passedChecks}
           totalChecks={totalChecks}
           seoScore={seoScore}
+        />
+      </motion.div>
+      
+      {/* Save and Export Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+      >
+        <SaveAndExportPanel
+          completionPercentage={completionPercentage}
+          onSave={() => setShowSaveDialog(true)}
+          onPublish={handlePublishContent}
+          isSaving={isSaving}
+          isSavedToDraft={isSavedToDraft}
         />
       </motion.div>
       
@@ -189,6 +294,21 @@ export const FinalReviewStep = () => {
           </TabsContent>
         </Tabs>
       </motion.div>
+      
+      {/* Save Dialog */}
+      <SaveContentDialog
+        showSaveDialog={showSaveDialog}
+        setShowSaveDialog={setShowSaveDialog}
+        saveTitle={saveTitle}
+        setSaveTitle={setSaveTitle}
+        saveNote={saveNote}
+        setSaveNote={setSaveNote}
+        handleSaveToDraft={handleSaveToDraft}
+        isSaving={isSaving}
+        mainKeyword={mainKeyword}
+        content={content}
+        outlineLength={outline ? outline.length : 0}
+      />
     </div>
   );
 };

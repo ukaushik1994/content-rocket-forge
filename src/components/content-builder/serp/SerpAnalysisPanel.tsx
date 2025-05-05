@@ -4,20 +4,9 @@ import { motion } from 'framer-motion';
 import { SerpAnalysisResult } from '@/types/serp';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag, Heading, FileSearch, Layers } from 'lucide-react';
-
-// Import refactored components
-import { SerpSectionHeader } from '@/components/content/serp-analysis/SerpSectionHeader';
-import { SerpEmptyState } from '@/components/content/serp-analysis/SerpEmptyState';
-import { SerpMetricsSection } from '@/components/content/serp-analysis/SerpMetricsSection';
-import { SerpOverviewSection } from '@/components/content/serp-analysis/SerpOverviewSection';
-import { SerpKeywordsSection } from '@/components/content/serp-analysis/SerpKeywordsSection';
-import { SerpQuestionsSection } from '@/components/content/serp-analysis/SerpQuestionsSection';
-import { SerpCompetitorsSection } from '@/components/content/serp-analysis/SerpCompetitorsSection';
-import { SerpInteractiveCard } from '@/components/content/serp-analysis/SerpInteractiveCard';
-import { SerpEntitiesSection } from '@/components/content/serp-analysis/SerpEntitiesSection';
-import { SerpHeadingsSection } from '@/components/content/serp-analysis/SerpHeadingsSection';
-import { SerpContentGapsSection } from '@/components/content/serp-analysis/SerpContentGapsSection';
+import { Button } from '@/components/ui/button';
+import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag, Heading, FileSearch, Layers, PlusCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -32,7 +21,7 @@ export function SerpAnalysisPanel({
   mainKeyword,
   onAddToContent = () => {}
 }: SerpAnalysisPanelProps) {
-  const [activeTab, setActiveTab] = useState('metrics');
+  const [activeTab, setActiveTab] = useState('keywords');
 
   // Loading state
   if (isLoading) {
@@ -52,11 +41,25 @@ export function SerpAnalysisPanel({
 
   // No data state
   if (!serpData) {
-    return <SerpEmptyState />;
+    return (
+      <div className="flex flex-col items-center justify-center py-16 bg-gradient-to-br from-black/30 to-blue-900/10 backdrop-blur-sm rounded-xl border border-white/10">
+        <Search className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
+        <p className="text-xl font-medium text-center">No SERP data available</p>
+        <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">
+          Enter a keyword in the search box to analyze top-ranking content and get insights
+        </p>
+      </div>
+    );
   }
   
   // Check if data is mock
   const isMockData = serpData.isMockData;
+  
+  // Function to handle adding content
+  const handleAddContent = (content: string, type: string) => {
+    onAddToContent(content, type);
+    toast.success(`Added ${type} to your content plan`);
+  };
   
   return (
     <div className="space-y-6">
@@ -169,7 +172,7 @@ export function SerpAnalysisPanel({
       
       {/* Content Tabs */}
       <Card className="border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden">
-        <Tabs defaultValue="keywords" className="w-full">
+        <Tabs defaultValue="keywords" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
             <TabsTrigger
               value="keywords"
@@ -219,19 +222,22 @@ export function SerpAnalysisPanel({
             <TabsContent value="keywords" className="mt-0">
               <div className="space-y-6">
                 {/* Content Strategy Section */}
-                {serpData.recommendations && serpData.recommendations.length > 0 && (
-                  <div className="space-y-2">
-                    <SerpSectionHeader
-                      title="Content Strategy"
-                      expanded={true}
-                      onToggle={() => {}}
-                      variant="purple"
-                      description="Recommendations for structuring your content"
-                    />
-                    <Card className="border-purple-500/20 bg-gradient-to-br from-purple-900/10 to-black/20 backdrop-blur-sm">
-                      <CardContent className="pt-6">
-                        <div className="space-y-4">
-                          {serpData.recommendations.map((recommendation, index) => (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-purple-600/20">
+                        <Tag className="h-4 w-4 text-purple-400" />
+                      </div>
+                      <h3 className="text-base font-medium">Content Strategy</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Recommendations for structuring your content</p>
+                  </div>
+                  
+                  <Card className="border-purple-500/20 bg-gradient-to-br from-purple-900/10 to-black/20 backdrop-blur-sm">
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        {serpData.recommendations && serpData.recommendations.length > 0 ? (
+                          serpData.recommendations.map((recommendation, index) => (
                             <motion.div 
                               key={index}
                               initial={{ opacity: 0, x: -20 }}
@@ -243,33 +249,42 @@ export function SerpAnalysisPanel({
                                 {index + 1}
                               </div>
                               <p className="text-sm flex-1">{recommendation}</p>
-                              <button 
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-neon-purple/20 text-neon-purple px-2 py-1 rounded-full"
-                                onClick={() => onAddToContent(recommendation, 'recommendation')}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleAddContent(recommendation, 'recommendation')}
                               >
+                                <PlusCircle className="h-4 w-4 mr-1" />
                                 Add
-                              </button>
+                              </Button>
                             </motion.div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
+                          ))
+                        ) : (
+                          <div className="text-center py-6">
+                            <p className="text-muted-foreground">No content strategy recommendations available</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
                 
                 {/* Keywords Section */}
                 <div className="space-y-2">
-                  <SerpSectionHeader
-                    title="Related Keywords"
-                    expanded={true}
-                    onToggle={() => {}}
-                    variant="blue"
-                    description="Keywords to include in your content"
-                    count={serpData.relatedSearches?.length || 0}
-                  />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-blue-600/20">
+                        <Tag className="h-4 w-4 text-blue-400" />
+                      </div>
+                      <h3 className="text-base font-medium">Related Keywords</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Keywords to include in your content</p>
+                  </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {serpData.relatedSearches && serpData.relatedSearches.length > 0 ? (
-                      serpData.relatedSearches.map((keyword, index) => (
+                      serpData.relatedSearches.slice(0, 20).map((keyword, index) => (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, y: 10 }}
@@ -277,21 +292,24 @@ export function SerpAnalysisPanel({
                           transition={{ delay: index * 0.05 }}
                           className="group flex items-center justify-between bg-blue-900/10 hover:bg-blue-900/20 border border-blue-500/20 rounded-lg p-3 transition-all"
                         >
-                          <div className="flex items-center gap-2">
-                            <Tag className="h-4 w-4 text-blue-400" />
-                            <span className="text-sm">{keyword.query}</span>
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <Tag className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                            <span className="text-sm truncate">{keyword.query}</span>
                             {keyword.volume && (
-                              <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-full">
+                              <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-full flex-shrink-0">
                                 {keyword.volume.toLocaleString()}
                               </span>
                             )}
                           </div>
-                          <button 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full"
-                            onClick={() => onAddToContent(keyword.query, 'keyword')}
+                          <Button 
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            onClick={() => handleAddContent(keyword.query, 'keyword')}
                           >
+                            <PlusCircle className="h-4 w-4 mr-1" />
                             Add
-                          </button>
+                          </Button>
                         </motion.div>
                       ))
                     ) : (
@@ -301,24 +319,33 @@ export function SerpAnalysisPanel({
                       </div>
                     )}
                   </div>
+                  
+                  {serpData.relatedSearches && serpData.relatedSearches.length > 20 && (
+                    <div className="text-center mt-3">
+                      <Button variant="outline" size="sm" className="text-xs border-blue-500/20 text-blue-400 hover:bg-blue-900/20">
+                        Show More Keywords
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
             
             <TabsContent value="questions" className="mt-0">
               <div className="space-y-2">
-                <SerpSectionHeader
-                  title="People Also Ask"
-                  expanded={true}
-                  onToggle={() => {}}
-                  variant="amber"
-                  description="Common questions people search about this topic"
-                  count={serpData.peopleAlsoAsk?.length || 0}
-                />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-amber-600/20">
+                      <HelpCircle className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <h3 className="text-base font-medium">People Also Ask</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Common questions people search about this topic</p>
+                </div>
                 
                 <div className="space-y-3">
                   {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 ? (
-                    serpData.peopleAlsoAsk.map((question, index) => (
+                    serpData.peopleAlsoAsk.slice(0, 15).map((question, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
@@ -329,7 +356,7 @@ export function SerpAnalysisPanel({
                         <div className="p-4 flex items-center justify-between group hover:bg-white/5 transition-colors">
                           <div className="flex items-start gap-3">
                             <HelpCircle className="h-5 w-5 text-amber-400 mt-0.5" />
-                            <div>
+                            <div className="flex-1">
                               <h4 className="font-medium text-sm">{question.question}</h4>
                               {question.answer && (
                                 <p className="text-sm text-muted-foreground mt-1">{question.answer}</p>
@@ -343,12 +370,15 @@ export function SerpAnalysisPanel({
                               )}
                             </div>
                           </div>
-                          <button 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full self-start"
-                            onClick={() => onAddToContent(question.question, 'question')}
+                          <Button 
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            onClick={() => handleAddContent(question.question, 'question')}
                           >
+                            <PlusCircle className="h-4 w-4 mr-1" />
                             Add
-                          </button>
+                          </Button>
                         </div>
                       </motion.div>
                     ))
@@ -358,84 +388,224 @@ export function SerpAnalysisPanel({
                       <p className="text-muted-foreground">No questions available for this search term.</p>
                     </div>
                   )}
+                  
+                  {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 15 && (
+                    <div className="text-center mt-3">
+                      <Button variant="outline" size="sm" className="text-xs border-amber-500/20 text-amber-400 hover:bg-amber-900/20">
+                        Show More Questions
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
             
-            {/* New Entities Tab */}
+            {/* Entities Tab */}
             <TabsContent value="entities" className="mt-0">
               <div className="space-y-2">
-                <SerpSectionHeader
-                  title="Key Entities"
-                  expanded={true}
-                  onToggle={() => {}}
-                  variant="indigo"
-                  description="Important entities and concepts related to this topic"
-                  count={serpData.entities?.length || 0}
-                />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-indigo-600/20">
+                      <Layers className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <h3 className="text-base font-medium">Key Entities</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Important entities and concepts related to this topic</p>
+                </div>
                 
-                <SerpEntitiesSection
-                  serpData={serpData}
-                  expanded={true}
-                  onAddToContent={onAddToContent}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {serpData.entities && serpData.entities.length > 0 ? (
+                    serpData.entities.slice(0, 18).map((entity, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group flex flex-col bg-indigo-900/10 hover:bg-indigo-900/20 border border-indigo-500/20 rounded-lg p-3 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-indigo-400" />
+                            <span className="text-sm font-medium">{entity.name}</span>
+                          </div>
+                          <Button 
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleAddContent(entity.name, 'entity')}
+                          >
+                            <PlusCircle className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                        {entity.description && (
+                          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{entity.description}</p>
+                        )}
+                        {entity.type && (
+                          <span className="text-xs bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full mt-2 self-start">
+                            {entity.type}
+                          </span>
+                        )}
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-3 text-center py-10 bg-white/5 rounded-lg border border-white/10">
+                      <Layers className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No entities available for this search term.</p>
+                    </div>
+                  )}
+                </div>
+                
+                {serpData.entities && serpData.entities.length > 18 && (
+                  <div className="text-center mt-3">
+                    <Button variant="outline" size="sm" className="text-xs border-indigo-500/20 text-indigo-400 hover:bg-indigo-900/20">
+                      Show More Entities
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabsContent>
             
-            {/* New Headings Tab */}
+            {/* Headings Tab */}
             <TabsContent value="headings" className="mt-0">
               <div className="space-y-2">
-                <SerpSectionHeader
-                  title="Top Headings"
-                  expanded={true}
-                  onToggle={() => {}}
-                  variant="teal"
-                  description="Common headings used by top-ranking content"
-                  count={serpData.headings?.length || 0}
-                />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-teal-600/20">
+                      <Heading className="h-4 w-4 text-teal-400" />
+                    </div>
+                    <h3 className="text-base font-medium">Top Headings</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Common headings used by top-ranking content</p>
+                </div>
                 
-                <SerpHeadingsSection
-                  serpData={serpData}
-                  expanded={true}
-                  onAddToContent={onAddToContent}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {serpData.headings && serpData.headings.length > 0 ? (
+                    serpData.headings.slice(0, 16).map((heading, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group flex items-center justify-between bg-teal-900/10 hover:bg-teal-900/20 border border-teal-500/20 rounded-lg p-3 transition-all"
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <Heading className="h-4 w-4 text-teal-400 flex-shrink-0" />
+                          <span className="text-sm truncate">{heading.text}</span>
+                          {heading.type && (
+                            <span className="text-xs bg-teal-500/20 text-teal-300 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                              {heading.type}
+                            </span>
+                          )}
+                        </div>
+                        <Button 
+                          size="sm"
+                          variant="ghost"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          onClick={() => handleAddContent(heading.text, 'heading')}
+                        >
+                          <PlusCircle className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center py-10 bg-white/5 rounded-lg border border-white/10">
+                      <Heading className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No headings available for this search term.</p>
+                    </div>
+                  )}
+                </div>
+                
+                {serpData.headings && serpData.headings.length > 16 && (
+                  <div className="text-center mt-3">
+                    <Button variant="outline" size="sm" className="text-xs border-teal-500/20 text-teal-400 hover:bg-teal-900/20">
+                      Show More Headings
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabsContent>
             
-            {/* New Content Gaps Tab */}
+            {/* Content Gaps Tab */}
             <TabsContent value="gaps" className="mt-0">
               <div className="space-y-2">
-                <SerpSectionHeader
-                  title="Content Gaps"
-                  expanded={true}
-                  onToggle={() => {}}
-                  variant="rose"
-                  description="Topics competitors are missing that you can cover"
-                  count={serpData.contentGaps?.length || 0}
-                />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-rose-600/20">
+                      <FileSearch className="h-4 w-4 text-rose-400" />
+                    </div>
+                    <h3 className="text-base font-medium">Content Gaps</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Topics competitors are missing that you can cover</p>
+                </div>
                 
-                <SerpContentGapsSection
-                  serpData={serpData}
-                  expanded={true}
-                  onAddToContent={onAddToContent}
-                />
+                <div className="space-y-3">
+                  {serpData.contentGaps && serpData.contentGaps.length > 0 ? (
+                    serpData.contentGaps.map((gap, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border border-rose-500/20 rounded-lg overflow-hidden bg-gradient-to-br from-rose-900/10 to-black/20"
+                      >
+                        <div className="p-4 group hover:bg-white/5 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <FileSearch className="h-5 w-5 text-rose-400 mt-0.5" />
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm">{gap.content}</h4>
+                                {gap.opportunity && (
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <span className="text-xs bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full">
+                                      Opportunity: {gap.opportunity}
+                                    </span>
+                                  </div>
+                                )}
+                                {gap.source && (
+                                  <p className="text-xs text-muted-foreground mt-1">Source: {gap.source}</p>
+                                )}
+                              </div>
+                            </div>
+                            <Button 
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              onClick={() => handleAddContent(gap.content, 'contentGap')}
+                            >
+                              <PlusCircle className="h-4 w-4 mr-1" />
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 bg-white/5 rounded-lg border border-white/10">
+                      <FileSearch className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No content gaps identified for this search term.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </TabsContent>
             
             <TabsContent value="competitors" className="mt-0">
               <div className="space-y-2">
-                <SerpSectionHeader
-                  title="Competitor Analysis"
-                  expanded={true}
-                  onToggle={() => {}}
-                  variant="green"
-                  description="Learn from top-ranking content for this keyword"
-                  count={serpData.topResults?.length || 0}
-                />
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-green-600/20">
+                      <FileText className="h-4 w-4 text-green-400" />
+                    </div>
+                    <h3 className="text-base font-medium">Top Ranks</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Top-ranking content for this keyword</p>
+                </div>
                 
                 <div className="space-y-4">
                   {serpData.topResults && serpData.topResults.length > 0 ? (
-                    serpData.topResults.map((competitor, index) => (
+                    serpData.topResults.slice(0, 10).map((competitor, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
@@ -448,12 +618,15 @@ export function SerpAnalysisPanel({
                             <div className="bg-green-900/30 text-green-400 text-xs px-2 py-0.5 rounded-full">
                               Rank #{competitor.position}
                             </div>
-                            <button 
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full"
-                              onClick={() => onAddToContent(competitor.snippet, 'competitor')}
+                            <Button 
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleAddContent(competitor.snippet, 'competitor')}
                             >
+                              <PlusCircle className="h-4 w-4 mr-1" />
                               Add
-                            </button>
+                            </Button>
                           </div>
                           <h4 className="font-medium my-2">{competitor.title}</h4>
                           <p className="text-sm text-muted-foreground">{competitor.snippet}</p>
@@ -475,6 +648,14 @@ export function SerpAnalysisPanel({
                     </div>
                   )}
                 </div>
+                
+                {serpData.topResults && serpData.topResults.length > 10 && (
+                  <div className="text-center mt-3">
+                    <Button variant="outline" size="sm" className="text-xs border-green-500/20 text-green-400 hover:bg-green-900/20">
+                      Show More Results
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </CardContent>
@@ -482,4 +663,4 @@ export function SerpAnalysisPanel({
       </Card>
     </div>
   );
-};
+}
