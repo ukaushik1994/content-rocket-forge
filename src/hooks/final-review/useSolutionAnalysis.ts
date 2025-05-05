@@ -41,16 +41,16 @@ export const useSolutionAnalysis = (ctaInfo: { hasCTA: boolean; ctaText: string[
       console.log("[useSolutionAnalysis] Converted painPointsAddressed:", painPointsArray);
       
       const solutionMetrics: SolutionIntegrationMetrics = {
-        mentions: metrics.mentions || 0,
-        contextualReferences: metrics.contextualReferences || 0,
-        naturalness: metrics.naturalness || 0,
+        mentions: metrics.nameMentions || 0,
+        contextualReferences: metrics.positioningScore || 0,
+        naturalness: metrics.audienceAlignment || 0,
         featureIncorporation: metrics.featureIncorporation || 0,
         positioningScore: metrics.positioningScore || 0,
+        overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2),
         nameMentions: metrics.nameMentions || 0,
-        painPointsAddressed: painPointsArray,
         audienceAlignment: metrics.audienceAlignment || 0,
-        ctaMentions: ctaInfo.ctaText.length,
-        overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
+        painPointsAddressed: painPointsArray,
+        ctaMentions: ctaInfo.ctaText.length
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
