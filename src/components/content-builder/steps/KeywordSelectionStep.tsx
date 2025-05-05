@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -48,7 +49,7 @@ export const KeywordSelectionStep = () => {
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
-  const [activeTab, setActiveTab] = useState('research');
+  const [activeTab, setActiveTab] = useState(mainKeyword ? 'analysis' : 'research');
   
   // Get SERP selection statistics for the Analysis tab
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -62,6 +63,16 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
+
+  // Mark SERP Analysis step as completed if we have data and selections
+  useEffect(() => {
+    if (serpData && totalSelected > 0) {
+      dispatch({
+        type: 'MARK_STEP_COMPLETED',
+        payload: 2
+      });
+    }
+  }, [serpData, totalSelected, dispatch]);
   
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
@@ -145,9 +156,7 @@ export const KeywordSelectionStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      setActiveTab('research'); // Switch back to research tab
       await analyzeKeyword(mainKeyword);
-      setActiveTab('analysis'); // Then switch to analysis tab
     }
   };
   
@@ -159,11 +168,29 @@ export const KeywordSelectionStep = () => {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <h3 className="text-lg font-semibold">Start Your Content Journey</h3>
+            <h3 className="text-lg font-semibold">Keyword Analysis & Content Planning</h3>
           </div>
           <p className="text-sm text-muted-foreground">
-            Enter your main keyword below to analyze search trends and discover content opportunities
+            Find the right keyword and analyze top results to plan your content strategy
           </p>
+        </div>
+      </div>
+      
+      {/* Main keyword input - Always visible above tabs */}
+      <div className="space-y-3 backdrop-blur-sm bg-white/5 rounded-lg p-5 border border-white/10 shadow-inner">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="main-keyword" className="text-base font-medium flex items-center gap-2">
+            <Search className="h-4 w-4 text-primary" />
+            Enter Your Main Keyword
+          </Label>
+          {mainKeyword && (
+            <div className="text-xs text-muted-foreground bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              Analyzing: <span className="font-medium text-primary">{mainKeyword}</span>
+            </div>
+          )}
+        </div>
+        <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
+          <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
         </div>
       </div>
       
@@ -188,41 +215,22 @@ export const KeywordSelectionStep = () => {
         {/* Research Tab Content */}
         <TabsContent value="research" className="animate-fade-in">
           <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="main-keyword" className="text-base font-medium flex items-center gap-2">
-                  <Search className="h-4 w-4 text-primary" />
-                  Main Keyword
-                </Label>
-                <div className="text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
-                  Power your content with the right keywords
-                </div>
-              </div>
-              <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
-                <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
+                {/* Selected Keywords */}
+                <div className="animate-fade-in">
+                  <SelectedKeywords keywords={selectedKeywords} onRemoveKeyword={handleRemoveKeyword} />
+                </div>
+                
                 {/* Suggestions */}
                 <div className="animate-fade-in">
                   <KeywordSuggestions suggestions={suggestions} onAddKeyword={handleAddKeyword} />
                 </div>
-                
-                {/* Selected Keywords */}
-                <div className="animate-fade-in" style={{
-                animationDelay: '100ms'
-              }}>
-                  <SelectedKeywords keywords={selectedKeywords} onRemoveKeyword={handleRemoveKeyword} />
-                </div>
               </div>
               
-              {/* Right column for strategy tips */}
+              {/* Right column for strategy tips and clusters */}
               <div className="space-y-4">
-                <div style={{
-                animationDelay: '200ms'
-              }} className="glass-panel border border-white/10 rounded-lg p-4 shadow-lg animate-fade-in px-[16px] py-[30px]">
+                <div className="glass-panel border border-white/10 rounded-lg p-4 shadow-lg animate-fade-in px-[16px] py-[30px]">
                   <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                     <ChevronRight className="h-4 w-4 text-primary" />
                     Content Strategy Tips
@@ -242,8 +250,28 @@ export const KeywordSelectionStep = () => {
                     </li>
                   </ul>
                 </div>
+                
+                {/* Keyword clusters */}
+                <ClusterSelection 
+                  clusters={clusters}
+                  selectedCluster={selectedCluster}
+                  onSelectCluster={handleSelectCluster}
+                  onClearCluster={handleClearCluster}
+                />
               </div>
             </div>
+            
+            {mainKeyword && serpData && !isAnalyzing && (
+              <div className="flex justify-center mt-4">
+                <Button
+                  onClick={() => setActiveTab('analysis')}
+                  className="gap-2 bg-gradient-to-r from-neon-purple to-neon-blue"
+                >
+                  <ChevronRight className="h-4 w-4" /> 
+                  View SERP Analysis
+                </Button>
+              </div>
+            )}
           </div>
         </TabsContent>
         
@@ -288,27 +316,42 @@ export const KeywordSelectionStep = () => {
               </div>
             </div>
             
+            {!mainKeyword && !isAnalyzing && (
+              <div className="bg-white/5 border border-white/10 rounded-lg p-8 text-center">
+                <Search className="h-12 w-12 text-primary/50 mx-auto mb-4" />
+                <h4 className="text-lg font-medium mb-2">Enter a keyword to analyze</h4>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Start by entering a keyword above to analyze search results and discover content opportunities
+                </p>
+                <Button onClick={() => setActiveTab('research')} variant="outline">
+                  Go to Keyword Research
+                </Button>
+              </div>
+            )}
+            
             {/* Analysis Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-3">
-                <SerpAnalysisPanel 
-                  serpData={serpData}
-                  isLoading={isAnalyzing}
-                  mainKeyword={mainKeyword}
-                  onAddToContent={handleAddToContent}
-                />
+            {(mainKeyword || isAnalyzing) && (
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3">
+                  <SerpAnalysisPanel 
+                    serpData={serpData}
+                    isLoading={isAnalyzing}
+                    mainKeyword={mainKeyword}
+                    onAddToContent={handleAddToContent}
+                  />
+                </div>
+                
+                <div className="lg:col-span-1">
+                  <SelectedItemsSidebar 
+                    serpSelections={serpSelections}
+                    totalSelected={totalSelected}
+                    selectedCounts={selectedCounts}
+                    handleToggleSelection={handleToggleSelection}
+                    handleContinueWithSelections={handleContinueWithSelections}
+                  />
+                </div>
               </div>
-              
-              <div className="lg:col-span-1">
-                <SelectedItemsSidebar 
-                  serpSelections={serpSelections}
-                  totalSelected={totalSelected}
-                  selectedCounts={selectedCounts}
-                  handleToggleSelection={handleToggleSelection}
-                  handleContinueWithSelections={handleContinueWithSelections}
-                />
-              </div>
-            </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
