@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,7 +22,7 @@ export function AIOutlineGenerator() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(additionalInstructions || '');
-  const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('openai');
+  const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('gemini'); // Changed default to Gemini
   
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelectedItems = selectedItems.length;
@@ -70,8 +71,8 @@ export function AIOutlineGenerator() {
       
       console.info("AI Generation prompt:", prompt);
       
-      // Call the AI API
-      const chatResponse = await sendChatRequest(aiProvider, {
+      // Try with primary provider first
+      let chatResponse = await sendChatRequest(aiProvider, {
         messages: [
           { role: 'system', content: 'You are an expert content outline creator.' },
           { role: 'user', content: prompt }
@@ -79,8 +80,30 @@ export function AIOutlineGenerator() {
         temperature: 0.7
       });
       
+      // If the first provider fails, try a fallback
       if (!chatResponse?.choices?.[0]?.message?.content) {
-        toast.error(`Failed to generate outline with ${aiProvider}. Please check your API configuration or try another provider.`);
+        const fallbackProvider = aiProvider === 'gemini' ? 'openai' : 'gemini';
+        console.log(`Primary provider ${aiProvider} failed, trying fallback provider ${fallbackProvider}`);
+        
+        // Try with fallback provider
+        chatResponse = await sendChatRequest(fallbackProvider, {
+          messages: [
+            { role: 'system', content: 'You are an expert content outline creator.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7
+        });
+        
+        // If fallback succeeded, update the provider
+        if (chatResponse?.choices?.[0]?.message?.content) {
+          toast.info(`Using ${fallbackProvider} as fallback provider`);
+          setAiProvider(fallbackProvider as 'openai' | 'anthropic' | 'gemini');
+        }
+      }
+      
+      // If both providers failed
+      if (!chatResponse?.choices?.[0]?.message?.content) {
+        toast.error(`Failed to generate outline. Please check your API keys in Settings.`);
         return;
       }
       
