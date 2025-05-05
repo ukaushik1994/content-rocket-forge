@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { ProviderStatusIndicator } from './ProviderStatusIndicator';
-import { AiProvider } from '@/services/aiService/types';
+
+type AiProvider = 'openai' | 'anthropic' | 'gemini';
 
 interface AiProviderSelectorProps {
   aiProvider: AiProvider;
@@ -12,7 +13,7 @@ interface AiProviderSelectorProps {
 export function AiProviderSelector({ 
   aiProvider, 
   setAiProvider,
-  availableProviders = ['openai', 'anthropic', 'gemini', 'mistral']
+  availableProviders = ['openai', 'anthropic', 'gemini']
 }: AiProviderSelectorProps) {
   // Get display names for providers
   const getProviderDisplayName = (provider: string): string => {
@@ -20,7 +21,6 @@ export function AiProviderSelector({
       case 'openai': return 'OpenAI';
       case 'anthropic': return 'Claude';
       case 'gemini': return 'Gemini';
-      case 'mistral': return 'Mistral';
       default: return provider;
     }
   };
@@ -48,7 +48,7 @@ export function AiProviderSelector({
             </button>
           ))
         ) : (
-          ['openai', 'anthropic', 'gemini', 'mistral'].map((provider) => (
+          ['openai', 'anthropic', 'gemini'].map((provider) => (
             <button
               key={provider}
               className="px-3 py-1 text-xs rounded-full bg-white/5 text-white/40 cursor-not-allowed"

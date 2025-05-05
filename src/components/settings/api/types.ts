@@ -49,23 +49,5 @@ export const API_PROVIDERS: ApiProvider[] = [
     link: 'https://aistudio.google.com/app/apikey',
     icon: null, // We'll add icons in the component
     autoDetectable: true
-  },
-  {
-    id: 'mistral',
-    name: 'Mistral AI',
-    description: 'Utilize Mistral\'s powerful language models for content creation and analysis.',
-    serviceKey: 'mistral',
-    link: 'https://console.mistral.ai/api-keys/',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
-  },
-  {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    description: 'Use your local LLM models for content generation with full privacy and control.',
-    serviceKey: 'lmstudio',
-    link: 'https://lmstudio.ai/',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
   }
 ];

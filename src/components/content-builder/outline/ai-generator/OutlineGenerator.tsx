@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
@@ -9,7 +10,6 @@ import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
-import { AiProvider } from '@/services/aiService/types';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -23,29 +23,27 @@ export function OutlineGenerator() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(additionalInstructions || '');
-  const [aiProvider, setAiProvider] = useState<AiProvider>('gemini');
-  const [availableProviders, setAvailableProviders] = useState<AiProvider[]>([]);
+  const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('gemini');
+  const [availableProviders, setAvailableProviders] = useState<('openai' | 'anthropic' | 'gemini')[]>([]);
   
   // Load available providers and default AI provider preference
   useEffect(() => {
     const checkAvailableProviders = async () => {
-      const providers: AiProvider[] = [];
+      const providers: ('openai' | 'anthropic' | 'gemini')[] = [];
       
       // Check which providers have API keys configured
       const openaiKey = await getApiKey('openai');
       const anthropicKey = await getApiKey('anthropic');
       const geminiKey = await getApiKey('gemini');
-      const mistralKey = await getApiKey('mistral');
       
       if (openaiKey) providers.push('openai');
       if (anthropicKey) providers.push('anthropic');
       if (geminiKey) providers.push('gemini');
-      if (mistralKey) providers.push('mistral');
       
       setAvailableProviders(providers);
       
       // Set default provider from preferences or first available
-      const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
+      const defaultProvider = getUserPreference('defaultAiProvider');
       if (defaultProvider && providers.includes(defaultProvider)) {
         setAiProvider(defaultProvider);
       } else if (providers.length > 0 && !providers.includes(aiProvider)) {
@@ -142,7 +140,7 @@ export function OutlineGenerator() {
     `;
   };
   
-  const generateOutlineWithFallback = async (prompt: string, primaryProvider: AiProvider) => {
+  const generateOutlineWithFallback = async (prompt: string, primaryProvider: 'openai' | 'anthropic' | 'gemini') => {
     // Check if fallback is enabled
     const enableFallback = getUserPreference('enableAiFallback') === true;
     
