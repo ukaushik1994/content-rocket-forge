@@ -164,6 +164,29 @@ async function handleApiKeyTest(service: string, apiKey: string) {
       } else {
         throw new Error(data.error?.message || 'Invalid Gemini API key');
       }
+    } else if (service === 'mistral') {
+      // For Mistral, validate format and make a simple test call
+      if (!apiKey.match(/^[a-zA-Z0-9]{32,}$/)) {
+        throw new Error('Invalid Mistral API key format');
+      }
+      
+      const response = await fetch('https://api.mistral.ai/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'Mistral API connection successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error(data.error?.message || 'Invalid Mistral API key');
+      }
     } else {
       throw new Error(`Unsupported service for testing: ${service}`);
     }

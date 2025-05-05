@@ -2,7 +2,7 @@
 import { toast } from "sonner";
 import { getUserPreference } from "@/services/userPreferencesService";
 
-export type AiProviderType = 'openai' | 'anthropic' | 'gemini';
+export type AiProviderType = 'openai' | 'anthropic' | 'gemini' | 'mistral';
 
 /**
  * Check if fallback is enabled and determine the fallback provider
@@ -14,9 +14,10 @@ export function getFallbackConfig() {
   
   // Define fallback order depending on the primary provider
   const fallbackProviders: Record<AiProviderType, AiProviderType[]> = {
-    'openai': ['anthropic', 'gemini'],
-    'anthropic': ['openai', 'gemini'],
-    'gemini': ['openai', 'anthropic']
+    'openai': ['anthropic', 'gemini', 'mistral'],
+    'anthropic': ['openai', 'gemini', 'mistral'],
+    'gemini': ['openai', 'anthropic', 'mistral'],
+    'mistral': ['openai', 'anthropic', 'gemini']
   };
   
   return {

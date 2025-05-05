@@ -1,4 +1,3 @@
-
 import { AiModelInfo } from './types';
 
 // OpenAI models
@@ -88,11 +87,44 @@ export const GEMINI_MODELS: AiModelInfo[] = [
   }
 ];
 
+// Mistral models
+export const MISTRAL_MODELS: AiModelInfo[] = [
+  {
+    id: 'mistral-large-latest',
+    provider: 'mistral',
+    name: 'Mistral Large',
+    description: 'Mistral\'s most powerful model for advanced reasoning and complex tasks',
+    maxTokens: 32768,
+    type: 'chat',
+    capabilities: ['text'],
+    isDefault: true
+  },
+  {
+    id: 'mistral-medium-latest',
+    provider: 'mistral',
+    name: 'Mistral Medium',
+    description: 'Balanced performance for a wide range of general tasks',
+    maxTokens: 32768,
+    type: 'chat',
+    capabilities: ['text']
+  },
+  {
+    id: 'mistral-small-latest',
+    provider: 'mistral',
+    name: 'Mistral Small',
+    description: 'Fast and cost-effective model for simpler tasks',
+    maxTokens: 32768,
+    type: 'chat',
+    capabilities: ['text']
+  }
+];
+
 // Combined list of all models
 export const ALL_AI_MODELS: AiModelInfo[] = [
   ...OPENAI_MODELS,
   ...ANTHROPIC_MODELS,
-  ...GEMINI_MODELS
+  ...GEMINI_MODELS,
+  ...MISTRAL_MODELS
 ];
 
 // Helper function to get default model for a provider

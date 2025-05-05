@@ -5,15 +5,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Server, Key, AlertTriangle, Bell, Check } from 'lucide-react';
+import { Zap, Server, Key, AlertTriangle, Bell, Check, Binary } from 'lucide-react';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 import { testApiKey } from '@/services/apiKeys/testing';
 import { toast } from 'sonner';
 
 interface DefaultAiProviderSelectorProps {
-  defaultAiProvider?: 'openai' | 'anthropic' | 'gemini';
-  onDefaultAiProviderChange: (provider: 'openai' | 'anthropic' | 'gemini') => void;
+  defaultAiProvider?: 'openai' | 'anthropic' | 'gemini' | 'mistral';
+  onDefaultAiProviderChange: (provider: 'openai' | 'anthropic' | 'gemini' | 'mistral') => void;
 }
 
 export function DefaultAiProviderSelector({ 
@@ -24,7 +24,8 @@ export function DefaultAiProviderSelector({
   const [providerStatus, setProviderStatus] = useState<Record<string, boolean>>({
     openai: false,
     anthropic: false,
-    gemini: false
+    gemini: false,
+    mistral: false
   });
   const [checkingStatus, setCheckingStatus] = useState<boolean>(false);
   
@@ -41,11 +42,12 @@ export function DefaultAiProviderSelector({
   const checkProviderStatus = async () => {
     setCheckingStatus(true);
     
-    const providers = ['openai', 'anthropic', 'gemini'];
+    const providers = ['openai', 'anthropic', 'gemini', 'mistral'];
     const statusResults: Record<string, boolean> = {
       openai: false,
       anthropic: false,
-      gemini: false
+      gemini: false,
+      mistral: false
     };
     
     for (const provider of providers) {
@@ -94,6 +96,9 @@ export function DefaultAiProviderSelector({
       case 'gemini':
         icon = <Key className="h-4 w-4 text-emerald-400" />;
         break;
+      case 'mistral':
+        icon = <Binary className="h-4 w-4 text-indigo-400" />;
+        break;
       default:
         icon = <Bell className="h-4 w-4 text-gray-400" />;
     }
@@ -129,8 +134,8 @@ export function DefaultAiProviderSelector({
       <CardContent>
         <RadioGroup
           value={defaultAiProvider}
-          onValueChange={(value) => onDefaultAiProviderChange(value as 'openai' | 'anthropic' | 'gemini')}
-          className="flex flex-col sm:flex-row gap-4"
+          onValueChange={(value) => onDefaultAiProviderChange(value as 'openai' | 'anthropic' | 'gemini' | 'mistral')}
+          className="flex flex-col sm:flex-row gap-4 flex-wrap"
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="openai" id="openai" />
@@ -156,6 +161,15 @@ export function DefaultAiProviderSelector({
               {getProviderDetails('gemini').icon}
               <span>Gemini</span>
               {getProviderDetails('gemini').statusBadge}
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="mistral" id="mistral" />
+            <Label htmlFor="mistral" className="flex items-center gap-2 cursor-pointer">
+              {getProviderDetails('mistral').icon}
+              <span>Mistral</span>
+              {getProviderDetails('mistral').statusBadge}
             </Label>
           </div>
         </RadioGroup>

@@ -1,7 +1,7 @@
 
 // Common types for AI service
 
-export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'other';
+export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'other';
 
 export type AiModelType = 'chat' | 'completion' | 'embedding' | 'image';
 
