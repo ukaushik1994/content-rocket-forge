@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { 
-  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, FileText, FileImage, Mail, Layout, ShoppingBag, FileSpreadsheet, Facebook } from 'lucide-react';
@@ -61,6 +61,7 @@ export const ContentTypeStep = () => {
   const [selectedType, setSelectedType] = useState<ContentType>(contentType || 'article');
   const [selectedFormat, setSelectedFormat] = useState<string>(contentFormat || '');
   const [showFormats, setShowFormats] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   
   // Find the currently selected content type option
   const selectedTypeOption = contentTypes.find(type => type.id === selectedType);
@@ -70,13 +71,26 @@ export const ContentTypeStep = () => {
     if (selectedType && selectedFormat) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
     }
-  }, [selectedType, selectedFormat, dispatch]);
+
+    // Show suggested format after a delay when type is selected but format isn't
+    if (selectedType && !selectedFormat && !showFormats) {
+      const timer = setTimeout(() => {
+        setShowFormats(true);
+      }, 600);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [selectedType, selectedFormat, dispatch, showFormats]);
   
   // Handler for selecting content type
   const handleSelectType = (typeId: ContentType) => {
+    setHasInteracted(true);
     setSelectedType(typeId);
-    setSelectedFormat(''); // Reset format when changing type
+    if (typeId !== contentType) {
+      setSelectedFormat(''); // Reset format when changing type
+    }
     dispatch({ type: 'SET_CONTENT_TYPE', payload: typeId });
+    
     // Show formats after a slight delay for animation
     setTimeout(() => setShowFormats(true), 300);
   };
@@ -100,8 +114,23 @@ export const ContentTypeStep = () => {
   
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0, 
+      transition: { 
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
   };
+
+  const pulseAnimation = selectedType && !selectedFormat && !hasInteracted ? {
+    scale: [1, 1.02, 1],
+    boxShadow: [
+      "0 0 0 rgba(155, 135, 245, 0.2)",
+      "0 0 20px rgba(155, 135, 245, 0.4)",
+      "0 0 0 rgba(155, 135, 245, 0.2)"
+    ]
+  } : {};
   
   return (
     <div className="space-y-8">
@@ -141,9 +170,14 @@ export const ContentTypeStep = () => {
                     </div>
                     
                     {selectedType === type.id && (
-                      <div className="bg-neon-purple/90 text-white p-1 rounded-full">
+                      <motion.div 
+                        className="bg-neon-purple/90 text-white p-1 rounded-full"
+                        initial={{ scale: 0, rotate: -90 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                      >
                         <Check className="h-4 w-4" />
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                   <CardTitle className="mt-3">{type.name}</CardTitle>
@@ -159,27 +193,46 @@ export const ContentTypeStep = () => {
       {selectedTypeOption && showFormats && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          transition={{ duration: 0.3 }}
-          className="space-y-4"
+          animate={{ opacity: 1, height: 'auto', ...pulseAnimation }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="space-y-4 relative"
         >
-          <h3 className="text-lg font-medium">Select Format for {selectedTypeOption.name}</h3>
+          <div className="absolute inset-0 -m-4 rounded-xl bg-gradient-to-r from-neon-purple/5 to-neon-blue/5 -z-10" />
+          
+          <h3 className="text-lg font-medium flex items-center">
+            <span className="text-neon-purple mr-2">→</span>
+            Select Format for {selectedTypeOption.name}
+          </h3>
           <div className="flex flex-wrap gap-2">
-            {selectedTypeOption.formats.map((format) => (
-              <Button
+            {selectedTypeOption.formats.map((format, index) => (
+              <motion.div 
                 key={format}
-                variant={selectedFormat === format ? "default" : "outline"}
-                className={`
-                  ${selectedFormat === format 
-                    ? 'bg-gradient-to-r from-neon-purple to-neon-blue border-none' 
-                    : 'border-white/10 bg-white/5 hover:border-neon-purple/30'
-                  }
-                `}
-                onClick={() => handleSelectFormat(format)}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + (index * 0.05) }}
               >
-                {format}
-                {selectedFormat === format && <Check className="ml-2 h-4 w-4" />}
-              </Button>
+                <Button
+                  variant={selectedFormat === format ? "default" : "outline"}
+                  className={`
+                    ${selectedFormat === format 
+                      ? 'bg-gradient-to-r from-neon-purple to-neon-blue border-none' 
+                      : 'border-white/10 bg-white/5 hover:border-neon-purple/30'
+                    }
+                  `}
+                  onClick={() => handleSelectFormat(format)}
+                >
+                  {format}
+                  {selectedFormat === format && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring" }}
+                    >
+                      <Check className="ml-2 h-4 w-4" />
+                    </motion.span>
+                  )}
+                </Button>
+              </motion.div>
             ))}
           </div>
           
@@ -197,7 +250,13 @@ export const ContentTypeStep = () => {
                   </p>
                 </div>
                 
-                <Check className="h-5 w-5 text-green-500" />
+                <motion.div
+                  initial={{ scale: 0, rotate: -90 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
+                  <Check className="h-5 w-5 text-green-500" />
+                </motion.div>
               </div>
             </motion.div>
           )}
@@ -206,3 +265,5 @@ export const ContentTypeStep = () => {
     </div>
   );
 };
+
+export default ContentTypeStep;

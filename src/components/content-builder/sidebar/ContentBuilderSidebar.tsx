@@ -95,6 +95,10 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
             const isCompleted = step.completed;
             const isClickable = index <= activeStep || isCompleted;
             
+            // Add the first active step that's not completed
+            const isNextActionStep = !isActive && !isCompleted && 
+              index === steps.findIndex((s, i) => i > activeStep && !s.completed);
+            
             return (
               <motion.div 
                 key={step.id} 
@@ -103,11 +107,15 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
                 whileHover={isClickable ? { x: 4 } : {}}
                 transition={{ duration: 0.2 }}
               >
-                {/* Connecting line between steps */}
+                {/* Connecting line between steps - Enhanced to show progress better */}
                 {index > 0 && (
                   <motion.div 
                     className={`absolute left-3.5 -top-4 w-0.5 h-4 ${
-                      steps[index-1].completed ? "bg-green-400" : "bg-white/10"
+                      steps[index-1].completed 
+                        ? "bg-gradient-to-b from-green-400 to-green-400/50" 
+                        : index <= activeStep 
+                          ? "bg-gradient-to-b from-neon-purple/50 to-white/10" 
+                          : "bg-white/10"
                     }`}
                     initial={{ height: 0 }}
                     animate={{ height: '1rem' }}
@@ -121,10 +129,12 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
                     isActive
-                      ? "bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 text-white"
-                      : isClickable
-                        ? "hover:bg-white/5 text-muted-foreground"
-                        : "text-muted-foreground/40 cursor-not-allowed",
+                      ? "bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 text-white border-l-2 border-neon-purple"
+                      : isNextActionStep
+                        ? "hover:bg-white/5 text-muted-foreground border-l-2 border-neon-blue/40"
+                        : isClickable
+                          ? "hover:bg-white/5 text-muted-foreground"
+                          : "text-muted-foreground/40 cursor-not-allowed",
                     isCompleted && !isActive && "text-white/70 hover:text-white"
                   )}
                 >
@@ -132,9 +142,11 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
                     "flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300",
                     isActive
                       ? "bg-gradient-to-r from-neon-purple to-neon-blue"
-                      : isCompleted 
-                        ? "bg-green-400/20" 
-                        : "bg-white/5"
+                      : isNextActionStep
+                        ? "bg-neon-blue/20 animate-pulse"
+                        : isCompleted 
+                          ? "bg-green-400/20" 
+                          : "bg-white/5"
                   )}>
                     <StepIcon 
                       stepId={step.id}
@@ -144,7 +156,10 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
                   </div>
                   
                   <div className="flex-1 text-left">
-                    <div className="font-medium">{step.name}</div>
+                    <div className={cn(
+                      "font-medium",
+                      isNextActionStep && "text-neon-blue"
+                    )}>{step.name}</div>
                     <p className="text-xs text-muted-foreground truncate">
                       {step.description}
                     </p>

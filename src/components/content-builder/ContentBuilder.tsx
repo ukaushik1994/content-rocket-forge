@@ -1,21 +1,34 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Step components
-import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
-import { ContentTypeStep } from './steps/ContentTypeStep';
-import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
-import { OutlineStep } from './steps/OutlineStep';
-import { ContentWritingStep } from './steps/ContentWritingStep';
-import { OptimizationStep } from './steps/OptimizationStep';
-import { FinalReviewStep } from './steps/FinalReviewStep';
-import { SaveStep } from './steps/SaveStep';
+// Lazy load step components
+const KeywordSelectionStep = lazy(() => import('./steps/KeywordSelectionStep').then(mod => ({ default: mod.KeywordSelectionStep })));
+const ContentTypeStep = lazy(() => import('./steps/ContentTypeStep').then(mod => ({ default: mod.ContentTypeStep })));
+const SerpAnalysisStep = lazy(() => import('./steps/SerpAnalysisStep').then(mod => ({ default: mod.SerpAnalysisStep })));
+const OutlineStep = lazy(() => import('./steps/OutlineStep').then(mod => ({ default: mod.OutlineStep })));
+const ContentWritingStep = lazy(() => import('./steps/ContentWritingStep').then(mod => ({ default: mod.ContentWritingStep })));
+const OptimizationStep = lazy(() => import('./steps/OptimizationStep').then(mod => ({ default: mod.OptimizationStep })));
+const FinalReviewStep = lazy(() => import('./steps/FinalReviewStep').then(mod => ({ default: mod.FinalReviewStep })));
+const SaveStep = lazy(() => import('./steps/SaveStep').then(mod => ({ default: mod.SaveStep })));
+
+// Loading component for suspense fallback
+const StepLoadingFallback = () => (
+  <div className="flex flex-col items-center justify-center py-24">
+    <div className="relative">
+      <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-3 w-3 rounded-full bg-primary" />
+      </div>
+    </div>
+    <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
+  </div>
+);
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
@@ -30,36 +43,47 @@ export const ContentBuilder = () => {
   // Animation variants
   const stepVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
     exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
   };
   
   // Render the current step component
   const renderStepContent = () => {
     const stepIndex = steps[activeStep].id;
-    switch (stepIndex) {
-      case 0: return <KeywordSelectionStep />;
-      case 1: return <ContentTypeStep />;
-      case 2: return <SerpAnalysisStep />;
-      case 3: return <OutlineStep />;
-      case 4: return <ContentWritingStep />;
-      case 5: return <OptimizationStep />;
-      case 6: return <FinalReviewStep />; 
-      case 7: return <SaveStep />;
-      default: return <KeywordSelectionStep />;
-    }
+    
+    return (
+      <Suspense fallback={<StepLoadingFallback />}>
+        {stepIndex === 0 && <KeywordSelectionStep />}
+        {stepIndex === 1 && <ContentTypeStep />}
+        {stepIndex === 2 && <SerpAnalysisStep />}
+        {stepIndex === 3 && <OutlineStep />}
+        {stepIndex === 4 && <ContentWritingStep />}
+        {stepIndex === 5 && <OptimizationStep />}
+        {stepIndex === 6 && <FinalReviewStep />}
+        {stepIndex === 7 && <SaveStep />}
+      </Suspense>
+    );
   };
   
   // Calculate the next logical step based on current progress
   const getNextLogicalStep = () => {
-    // If we're on step 0 (keywords) and step 2 (SERP) is completed, skip step 2
-    if (activeStep === 0 && steps[2].completed) {
-      return 1; // Go to Content Type (step 1)
+    const currentStep = steps[activeStep].id;
+    
+    // If we're on keywords (step 0) and SERP (step 2) is completed
+    // Skip SERP analysis and go to content type (step 1)
+    if (currentStep === 0 && steps[2].completed) {
+      return 1; // Go to Content Type
     }
     
-    // If we're on step 2 (SERP) and step 3 (Outline) is not yet started,
-    // but we have SERP selections, auto-generate outline
-    if (activeStep === 2) {
+    // If we're on content type (step 1) and outline (step 3) is completed
+    // Skip outline and go directly to writing (step 4)
+    if (currentStep === 1 && steps[3].completed) {
+      return 4; // Go to Content Writing
+    }
+    
+    // If we're on SERP analysis (step 2) and have selected items
+    // Generate outline and go to outline step (step 3)
+    if (currentStep === 2 && state.serpSelections?.some(s => s.selected)) {
       return 3; // Go to Outline step
     }
     
@@ -119,7 +143,7 @@ export const ContentBuilder = () => {
               )}
             </div>
             
-            {/* Visual step indicator */}
+            {/* Visual step indicator - Enhanced with clearer active state */}
             <div className="hidden md:flex items-center gap-3">
               {steps.map((step, idx) => (
                 <div 
@@ -129,15 +153,36 @@ export const ContentBuilder = () => {
                 >
                   <motion.div 
                     className={`rounded-full cursor-pointer transition-all duration-300 ${
-                      idx === activeStep ? 'w-3 h-3' : 'w-2 h-2'
+                      idx === activeStep ? 'w-3 h-3 ring-2 ring-neon-purple/30 ring-offset-1 ring-offset-black' : 'w-2 h-2'
                     } ${getStepStatusColor(idx)}`}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.9 }}
                     title={step.name}
+                    initial={false}
+                    animate={idx === activeStep ? { 
+                      scale: [1, 1.1, 1], 
+                      opacity: [0.9, 1, 0.9] 
+                    } : {}}
+                    transition={idx === activeStep ? { 
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse" 
+                    } : {}}
                   />
                   
                   {idx < steps.length - 1 && (
-                    <div className="w-4 h-[1px] bg-white/20" />
+                    <motion.div 
+                      className={`w-4 h-[1px] ${
+                        idx < activeStep && steps[idx].completed 
+                          ? "bg-green-400/60" 
+                          : idx === activeStep 
+                            ? "bg-neon-purple/40" 
+                            : "bg-white/20"
+                      }`}
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ delay: 0.3 + (idx * 0.1) }}
+                    />
                   )}
                 </div>
               ))}
@@ -242,3 +287,5 @@ export const ContentBuilder = () => {
     </div>
   );
 };
+
+export default ContentBuilder;
