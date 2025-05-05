@@ -12,7 +12,7 @@ import { createPublishActions } from './publishActions';
 export const createContentBuilderActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
-): Pick<ContentBuilderContextType, Exclude<keyof ContentBuilderContextType, 'state' | 'dispatch'>> => {
+): Omit<ContentBuilderContextType, 'state' | 'dispatch'> => {
   
   // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
@@ -30,4 +30,3 @@ export const createContentBuilderActions = (
     ...publishActions
   };
 };
-

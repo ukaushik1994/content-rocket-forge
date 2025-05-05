@@ -4,10 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ContentOutlineSection } from '@/contexts/content-builder/types';
+import { OutlineSection } from '@/contexts/content-builder/types';
 
 interface ContentSidebarProps {
-  outline: ContentOutlineSection[];
+  outline: OutlineSection[];
   selectedSolution: any;
   additionalInstructions: string;
   handleInstructionsChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -27,7 +27,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
           
           {outline && outline.length > 0 ? (
             <div className="space-y-4">
-              {outline.map((section: ContentOutlineSection) => (
+              {outline.map((section: OutlineSection) => (
                 <div key={section.id} className="space-y-2">
                   <div className="font-medium text-sm">{section.title}</div>
                   

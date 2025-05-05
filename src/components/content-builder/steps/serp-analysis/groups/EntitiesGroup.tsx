@@ -20,21 +20,26 @@ export const EntitiesGroup: React.FC<SelectedItemsGroupProps> = ({
         Entities ({count})
       </h4>
       <div className="flex flex-wrap gap-2">
-        {selectedItems.map((item, i) => (
-          <Badge 
-            key={i} 
-            variant="outline" 
-            className="bg-indigo-950/30 hover:bg-indigo-950/50 border-indigo-500/30 group"
-          >
-            {item.content}
-            <button 
-              className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
-              onClick={() => handleToggleSelection(item.type, item.content)}
+        {selectedItems.map((item, i) => {
+          // Ensure content is a string
+          const content = typeof item.content === 'string' ? item.content : JSON.stringify(item.content);
+          
+          return (
+            <Badge 
+              key={i} 
+              variant="outline" 
+              className="bg-indigo-950/30 hover:bg-indigo-950/50 border-indigo-500/30 group"
             >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
+              {content}
+              <button 
+                className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                onClick={() => handleToggleSelection(item.type, content)}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          );
+        })}
       </div>
     </div>
   );

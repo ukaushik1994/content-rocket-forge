@@ -40,47 +40,52 @@ export const SerpKeywordList: React.FC<SerpKeywordListProps> = ({
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-2 gap-3"
         >
-          {keywords.map((keyword, index) => (
-            <motion.div 
-              key={index} 
-              variants={item}
-              whileHover={{ scale: 1.02 }}
-              className={`flex items-center border rounded-md p-3 transition-all duration-200 group hover:shadow-md ${
-                keyword.selected 
-                  ? "border-blue-500 bg-blue-500/10 shadow-inner" 
-                  : "border-white/10 hover:border-blue-500/30 hover:bg-blue-900/20"
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`keyword-${index}`} 
-                  checked={keyword.selected}
-                  onCheckedChange={() => handleToggleSelection(keyword.type, keyword.content)}
-                  className={`${
-                    keyword.selected 
-                      ? "border-blue-500 bg-blue-500 text-white" 
-                      : "border-white/40 text-transparent"
-                  }`}
-                />
-                <Label 
-                  htmlFor={`keyword-${index}`} 
-                  className="cursor-pointer flex-1 text-sm select-none"
-                >
-                  {keyword.content}
-                </Label>
-              </div>
-              
-              {!keyword.selected && (
-                <span 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-blue-500/10 text-blue-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-blue-500/20"
-                  onClick={() => handleToggleSelection(keyword.type, keyword.content)}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add
-                </span>
-              )}
-            </motion.div>
-          ))}
+          {keywords.map((keyword, index) => {
+            // Ensure content is a string
+            const content = typeof keyword.content === 'string' ? keyword.content : JSON.stringify(keyword.content);
+            
+            return (
+              <motion.div 
+                key={index} 
+                variants={item}
+                whileHover={{ scale: 1.02 }}
+                className={`flex items-center border rounded-md p-3 transition-all duration-200 group hover:shadow-md ${
+                  keyword.selected 
+                    ? "border-blue-500 bg-blue-500/10 shadow-inner" 
+                    : "border-white/10 hover:border-blue-500/30 hover:bg-blue-900/20"
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`keyword-${index}`} 
+                    checked={keyword.selected}
+                    onCheckedChange={() => handleToggleSelection(keyword.type, content)}
+                    className={`${
+                      keyword.selected 
+                        ? "border-blue-500 bg-blue-500 text-white" 
+                        : "border-white/40 text-transparent"
+                    }`}
+                  />
+                  <Label 
+                    htmlFor={`keyword-${index}`} 
+                    className="cursor-pointer flex-1 text-sm select-none"
+                  >
+                    {content}
+                  </Label>
+                </div>
+                
+                {!keyword.selected && (
+                  <span 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-blue-500/10 text-blue-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-blue-500/20"
+                    onClick={() => handleToggleSelection(keyword.type, content)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add
+                  </span>
+                )}
+              </motion.div>
+            );
+          })}
         </motion.div>
         
         {keywords.length === 0 && (

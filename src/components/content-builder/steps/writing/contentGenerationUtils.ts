@@ -1,10 +1,10 @@
 
-import { ContentOutlineSection } from '@/contexts/content-builder/types';
+import { OutlineSection } from '@/contexts/content-builder/types';
 
 export const generateDemoContent = (
   contentTitle: string | null | undefined, 
   mainKeyword: string,
-  outline: ContentOutlineSection[],
+  outline: OutlineSection[],
   selectedSolution: any
 ): string => {
   // Simple demo content generation based on outline
@@ -17,7 +17,7 @@ export const generateDemoContent = (
   }
   
   if (outline && outline.length > 0) {
-    outline.forEach((section: ContentOutlineSection) => {
+    outline.forEach((section: OutlineSection) => {
       demoContent += `## ${section.title}\n\n`;
       
       if (selectedSolution && section.title.includes("Introduction")) {

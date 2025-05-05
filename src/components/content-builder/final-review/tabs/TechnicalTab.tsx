@@ -1,18 +1,10 @@
 
 import React from 'react';
 import { TechnicalTabContent } from '../TechnicalTabContent';
+import { DocumentStructure } from '@/contexts/content-builder/types';
 
 interface TechnicalTabProps {
-  documentStructure: {
-    h1: string[];
-    h2: string[];
-    h3: string[];
-    h4: string[];
-    h5: string[];
-    h6: string[];
-    hasSingleH1: boolean;
-    hasLogicalHierarchy: boolean;
-  } | null;
+  documentStructure: DocumentStructure | null;
   metaTitle: string | null;
   metaDescription: string | null;
   serpData: any;

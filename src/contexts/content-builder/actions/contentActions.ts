@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types';
+import { ContentBuilderState, ContentBuilderAction, OutlineSection } from '../types';
 
 export const createContentActions = (
   state: ContentBuilderState, 
@@ -17,7 +17,7 @@ export const createContentActions = (
     dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
   };
   
-  const setOutlineSections = (sections: any[]) => {
+  const setOutlineSections = (sections: OutlineSection[]) => {
     dispatch({ type: 'SET_OUTLINE', payload: sections });
   };
   

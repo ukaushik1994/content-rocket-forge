@@ -4,7 +4,7 @@ import React from 'react';
 export interface ContentBuilderStep {
   id: number;
   name: string;
-  description: string; // Making this required to match usage
+  description: string;
   completed: boolean;
   visited: boolean;
 }
@@ -14,7 +14,7 @@ export interface SerpSelection {
   type: string;
   content: string;
   selected: boolean;
-  source?: string; // Add source property that's used in components
+  source?: string;
 }
 
 // Document structure for analysis
@@ -27,6 +27,12 @@ export interface DocumentStructure {
   h6: string[];
   hasSingleH1: boolean;
   hasLogicalHierarchy: boolean;
+  headings: any[];
+  paragraphs: any[];
+  lists: any[];
+  images: any[];
+  links: any[];
+  metadata: any;
 }
 
 // Content cluster for keyword grouping
@@ -50,7 +56,7 @@ export interface Solution {
   name: string;
   description: string;
   features: string[];
-  useCases?: string[]; // Add the missing properties
+  useCases?: string[];
   painPoints?: string[];
   targetAudience?: string[];
   logoUrl?: string | null;
@@ -67,7 +73,7 @@ export interface SeoImprovement {
 }
 
 // Content outline section type
-export interface ContentOutlineSection {
+export interface OutlineSection {
   id: string;
   title: string;
   type?: string;
@@ -77,6 +83,9 @@ export interface ContentOutlineSection {
   subsections?: Array<{id: string; title: string}>;
 }
 
+// Alias for backward compatibility
+export type ContentOutlineSection = OutlineSection;
+
 // Solution integration metrics
 export interface SolutionIntegrationMetrics {
   mentions: number;
@@ -84,7 +93,7 @@ export interface SolutionIntegrationMetrics {
   naturalness: number;
   featureIncorporation: number;
   positioningScore: number;
-  overallScore: number; // Add missing properties
+  overallScore: number;
   nameMentions?: number;
   audienceAlignment?: number;
   painPointsAddressed?: string[];
@@ -119,14 +128,14 @@ export interface ContentBuilderState {
   selectedCluster: ContentCluster | null;
   
   // Outline data
-  outline: ContentOutlineSection[] | string[]; // Support both formats
+  outline: OutlineSection[] | string[];
   isGeneratingOutline: boolean;
   
   // Content data
   content: string;
   isGeneratingContent: boolean;
   documentStructure: DocumentStructure | null;
-  additionalInstructions: string; // Add missing property
+  additionalInstructions: string;
   
   // Meta data
   metaTitle: string;
@@ -134,7 +143,7 @@ export interface ContentBuilderState {
   
   // SEO data
   seoScore: number;
-  seoImprovements?: SeoImprovement[]; // Add missing property
+  seoImprovements?: SeoImprovement[];
   
   // Solution integration
   selectedSolution: Solution | null;
@@ -147,8 +156,12 @@ export interface ContentBuilderState {
 // Action types
 export type ContentBuilderAction =
   | { type: 'SET_ACTIVE_STEP'; payload: number }
-  | { type: 'COMPLETE_STEP'; payload: number }
+  | { type: 'SET_CURRENT_STEP'; payload: number }
+  | { type: 'MARK_STEP_COMPLETED'; payload: number }
+  | { type: 'MARK_STEP_VISITED'; payload: number }
+  | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'SET_PRIMARY_KEYWORD'; payload: string }
+  | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
   | { type: 'ADD_SECONDARY_KEYWORD'; payload: string }
   | { type: 'REMOVE_SECONDARY_KEYWORD'; payload: string }
   | { type: 'SET_KEYWORD_CLUSTERS'; payload: Array<{ name: string; keywords: string[] }> }
@@ -156,10 +169,10 @@ export type ContentBuilderAction =
   | { type: 'SET_CONTENT_FORMAT'; payload: string }
   | { type: 'SET_CONTENT_INTENT'; payload: string }
   | { type: 'SET_CONTENT_TITLE'; payload: string }
-  | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'SET_SERP_DATA'; payload: any }
+  | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
-  | { type: 'SET_OUTLINE'; payload: string[] | ContentOutlineSection[] }
+  | { type: 'SET_OUTLINE'; payload: OutlineSection[] | string[] }
   | { type: 'SET_IS_GENERATING_OUTLINE'; payload: boolean }
   | { type: 'SET_CONTENT'; payload: string }
   | { type: 'SET_IS_GENERATING_CONTENT'; payload: boolean }
@@ -168,21 +181,18 @@ export type ContentBuilderAction =
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'SET_SELECTED_SOLUTION'; payload: Solution }
+  | { type: 'SELECT_SOLUTION'; payload: Solution }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
   | { type: 'SET_IS_SAVING'; payload: boolean }
-  | { type: 'MARK_STEP_COMPLETED'; payload: number }
-  | { type: 'MARK_STEP_VISITED'; payload: number }
   | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] }
   | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
   | { type: 'ADD_KEYWORD'; payload: string }
   | { type: 'REMOVE_KEYWORD'; payload: string }
-  | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  | { type: 'SELECT_SOLUTION'; payload: Solution }
   | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
   | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] };
 
-export type ContentBuilderContextType = {
+export interface ContentBuilderContextType {
   state: ContentBuilderState;
   dispatch: React.Dispatch<ContentBuilderAction>;
   // Keyword actions
@@ -195,10 +205,10 @@ export type ContentBuilderContextType = {
   setContentType: (contentType: string) => void;
   setContentTitle: (title: string) => void;
   setContent: (content: string) => void;
-  setContentIntent: (intent: string) => void;
   updateContent: (content: string) => void;
+  setContentIntent: (intent: string) => void;
   setOutlineTitle: (title: string) => void;
-  setOutlineSections: (sections: ContentOutlineSection[]) => void;
+  setOutlineSections: (sections: OutlineSection[]) => void;
   // SERP actions
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
@@ -209,7 +219,7 @@ export type ContentBuilderContextType = {
   saveContentToDraft: (content: SaveContentParams) => Promise<string | null>;
   saveContentToPublished: (content: SaveContentParams) => Promise<string | null>;
   // Other actions as needed
-};
+}
 
 export interface SaveContentParams {
   title: string;
@@ -219,6 +229,6 @@ export interface SaveContentParams {
   content: string;
   metaTitle?: string;
   metaDescription?: string;
-  outline?: string[] | ContentOutlineSection[];
+  outline?: string[] | OutlineSection[];
   seoScore?: number;
 }
