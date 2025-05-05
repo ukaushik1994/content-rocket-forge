@@ -6,7 +6,6 @@ import { KeywordSearch } from '../keyword/KeywordSearch';
 import { KeywordSuggestions } from '../keyword/KeywordSuggestions';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
-import { SavedKeywords } from '../keyword/SavedKeywords';
 import { ContentCluster } from '@/contexts/content-builder/types';
 import { Loader2, Search, ChevronRight, Sparkles } from 'lucide-react';
 
@@ -155,7 +154,7 @@ export const KeywordSelectionStep = () => {
             </div>
           </div>
           
-          {/* Right column for saved keywords or clusters */}
+          {/* Right column for strategy tips */}
           <div className="space-y-4">
             <div style={{
             animationDelay: '200ms'
@@ -179,8 +178,6 @@ export const KeywordSelectionStep = () => {
                 </li>
               </ul>
             </div>
-            
-            <SavedKeywords />
           </div>
         </div>
       </div>
