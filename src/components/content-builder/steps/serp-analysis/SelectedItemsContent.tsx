@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SerpSelection } from '@/contexts/content-builder/types';
-import { SelectedCountsType } from './types';
+import { SelectedCountsType, SelectedItemsContentProps } from './types';
 import { KeywordsGroup } from './groups/KeywordsGroup';
 import { QuestionsGroup } from './groups/QuestionsGroup';
 import { SnippetsGroup } from './groups/SnippetsGroup';
@@ -13,18 +13,13 @@ import { EmptySelectionState } from './EmptySelectionState';
 import { Separator } from '@/components/ui/separator';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface SelectedItemsContentProps {
-  selectedCounts: SelectedCountsType;
-  serpSelections: SerpSelection[];
-  handleToggleSelection: (type: string, content: string) => void;
-  totalSelected: number;
-}
-
 export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
   selectedCounts,
   serpSelections,
   handleToggleSelection,
-  totalSelected
+  totalSelected,
+  selectedTab,
+  setSelectedTab
 }) => {
   const hasEmptySelections = totalSelected === 0;
   
