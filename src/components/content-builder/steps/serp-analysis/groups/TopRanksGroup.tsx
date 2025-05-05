@@ -41,13 +41,3 @@ export const TopRanksGroup: React.FC<SelectedItemsGroupProps> = ({
     </div>
   );
 };
-
-// Add an optional property for backward compatibility
-TopRanksGroup.defaultProps = {
-  competitorCount: 0
-};
-
-// Add TypeScript interface
-interface TopRanksGroupProps extends SelectedItemsGroupProps {
-  competitorCount?: number;
-}

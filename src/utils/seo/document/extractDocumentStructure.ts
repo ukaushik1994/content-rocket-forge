@@ -42,6 +42,36 @@ export const extractDocumentStructure = (htmlContent: string): DocumentStructure
     lastHeadingLevel = level;
   }
   
+  // Extract other required elements for the DocumentStructure interface
+  const headings = headingTags.map(tag => ({
+    level: parseInt(tag.tagName.substring(1)),
+    text: tag.textContent || ''
+  }));
+  
+  const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => ({
+    text: p.textContent || ''
+  }));
+  
+  const lists = Array.from(doc.querySelectorAll('ul, ol')).map(list => ({
+    type: list.tagName.toLowerCase(),
+    items: Array.from(list.querySelectorAll('li')).map(li => li.textContent || '')
+  }));
+  
+  const images = Array.from(doc.querySelectorAll('img')).map(img => ({
+    src: img.getAttribute('src') || '',
+    alt: img.getAttribute('alt') || ''
+  }));
+  
+  const links = Array.from(doc.querySelectorAll('a')).map(a => ({
+    href: a.getAttribute('href') || '',
+    text: a.textContent || ''
+  }));
+  
+  const metadata = {
+    wordCount: htmlContent.split(/\s+/).length,
+    characterCount: htmlContent.length
+  };
+  
   return {
     h1,
     h2,
@@ -50,6 +80,12 @@ export const extractDocumentStructure = (htmlContent: string): DocumentStructure
     h5,
     h6,
     hasSingleH1,
-    hasLogicalHierarchy
+    hasLogicalHierarchy,
+    headings,
+    paragraphs,
+    lists,
+    images,
+    links,
+    metadata
   };
 };
