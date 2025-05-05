@@ -23,7 +23,29 @@ export function AIOutlineGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(additionalInstructions);
   
-  const selectedItems = serpSelections.filter(item => item.selected);
+  // Convert the serpSelections to an array of items with selected property
+  interface SelectedItem {
+    type: string;
+    content: string;
+    selected: boolean;
+    source?: string;
+  }
+  
+  const selectedItems: SelectedItem[] = [];
+  
+  // Extract selected items from serpSelections
+  Object.entries(serpSelections).forEach(([type, items]) => {
+    if (Array.isArray(items) && type !== 'filter') {
+      items.forEach(content => {
+        selectedItems.push({
+          type,
+          content,
+          selected: true
+        });
+      });
+    }
+  });
+  
   const totalSelectedItems = selectedItems.length;
   
   // Generate an AI outline based on selections and keywords
@@ -49,7 +71,7 @@ export function AIOutlineGenerator() {
       const newOutline = await generateOutlineFromSelections(
         mainKeyword,
         selectedItems,
-        customInstructions
+        customInstructions || ''
       );
       
       // Update the outline in state
@@ -74,7 +96,7 @@ export function AIOutlineGenerator() {
   };
   
   const handleSaveInstructions = () => {
-    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: customInstructions });
+    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: customInstructions || '' });
     toast.success("Instructions saved");
   };
 
@@ -104,7 +126,7 @@ export function AIOutlineGenerator() {
           <div className="space-y-6">
             {/* Additional Instructions */}
             <AIInstructionsInput 
-              customInstructions={customInstructions}
+              customInstructions={customInstructions || ''}
               setCustomInstructions={setCustomInstructions}
               onSave={handleSaveInstructions}
             />

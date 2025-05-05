@@ -4,11 +4,17 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { SerpSelection } from '@/contexts/content-builder/types';
 import { Link, Plus } from 'lucide-react';
 
+interface SerpCompetitor {
+  type: string;
+  content: string;
+  selected: boolean;
+  source?: string;
+}
+
 interface SerpCompetitorsListProps {
-  competitors: SerpSelection[];
+  competitors: SerpCompetitor[];
   handleToggleSelection: (type: string, content: string) => void;
 }
 

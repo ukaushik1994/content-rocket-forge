@@ -13,7 +13,7 @@ import { contentBuilderReducer } from './content-builder/reducer';
 import { SerpAnalysisResult } from '@/types/serp';
 
 // The shared context state
-interface ContentBuilderContextState {
+export interface ContentBuilderContextState {
   state: ContentBuilderState;
   dispatch: React.Dispatch<ContentBuilderAction>;
   analyzeKeyword: (keyword: string) => Promise<void>;
@@ -21,6 +21,8 @@ interface ContentBuilderContextState {
   generateOutlineFromSelections: () => void;
   saveContentToDraft?: (data: any) => Promise<void>;
   saveContentToPublished?: (data: any) => Promise<void>;
+  setContent: (content: string) => void;
+  updateContent: (content: string) => void;
 }
 
 // Create the context
@@ -107,6 +109,15 @@ export const ContentBuilderProvider = ({ children }: { children: React.ReactNode
     // In a real implementation, this would call an API
     return Promise.resolve();
   };
+  
+  // Add these two methods that were missing
+  const setContent = (content: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: content });
+  };
+  
+  const updateContent = (content: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: content });
+  };
 
   const value = {
     state,
@@ -115,7 +126,9 @@ export const ContentBuilderProvider = ({ children }: { children: React.ReactNode
     addContentFromSerp,
     generateOutlineFromSelections,
     saveContentToDraft,
-    saveContentToPublished
+    saveContentToPublished,
+    setContent,
+    updateContent
   };
 
   return (

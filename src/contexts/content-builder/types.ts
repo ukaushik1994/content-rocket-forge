@@ -43,12 +43,23 @@ export interface SeoImprovement {
 }
 
 export interface DocumentStructure {
+  // Original properties
   headings: HeadingItem[];
   paragraphs: number;
   lists: ListItem[];
   images: number;
   tables: number;
   totalWords: number;
+  
+  // Additional properties for compatibility with current components
+  h1: string[];
+  h2: string[];
+  h3: string[];
+  h4: string[];
+  h5: string[];
+  h6: string[];
+  hasSingleH1: boolean;
+  hasLogicalHierarchy: boolean;
 }
 
 export interface HeadingItem {
@@ -139,6 +150,9 @@ export interface ContentCluster {
 export interface OutlineSection {
   id: string;
   title: string;
+  type?: string;
+  notes?: string;
+  relatedKeywords?: string[];
 }
 
 export const initialContentBuilderState: ContentBuilderState = {
