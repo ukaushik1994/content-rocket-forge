@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentEditor } from '@/components/content/ContentEditor';
@@ -66,7 +67,7 @@ export const ContentWritingStep = () => {
             if (typeof item === 'string') {
               return `${index + 1}. ${item}`;
             } else if (item && typeof item === 'object' && 'title' in item) {
-              return `${index + 1}. ${item.title}`;
+              return `${index + 1}. ${(item as { title: string }).title}`;
             }
             return '';
           }).filter(Boolean).join('\n')
