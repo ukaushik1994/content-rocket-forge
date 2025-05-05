@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
-// We're integrating SERP Analysis into KeywordSelectionStep
+// We're skipping the dedicated SERP Analysis step and integrating it into KeywordSelectionStep
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizationStep } from './steps/OptimizationStep';
@@ -39,8 +39,6 @@ export const ContentBuilder = () => {
       // Skip step 2 (SERP Analysis) when navigating from step 1
       if (activeStep === 1) {
         navigateToStep(3);
-      } else if (activeStep === 0) {
-        navigateToStep(1);
       } else {
         navigateToStep(activeStep + 1);
       }
@@ -52,8 +50,6 @@ export const ContentBuilder = () => {
     // Skip step 2 (SERP Analysis) when navigating back from step 3
     if (activeStep === 3) {
       navigateToStep(1);
-    } else if (activeStep === 1) {
-      navigateToStep(0);
     } else {
       navigateToStep(activeStep - 1);
     }
@@ -65,7 +61,7 @@ export const ContentBuilder = () => {
     switch (stepIndex) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
-      // We skip case 2 (SERP Analysis) as it's integrated into KeywordSelectionStep
+      // We skip case 2 (SERP Analysis)
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;

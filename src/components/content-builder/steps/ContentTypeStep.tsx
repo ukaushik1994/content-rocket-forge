@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,16 +24,12 @@ export const ContentTypeStep = () => {
         payload: 1
       });
     } else {
-      // If either is missing and the step is currently marked as complete,
-      // we'll need to update the UI state without using MARK_STEP_INCOMPLETE
-      // Instead, we can manually update the steps array
+      // If either is missing, mark the step as incomplete
       if (state.steps[1]?.completed) {
-        const updatedSteps = [...state.steps];
-        updatedSteps[1] = { ...updatedSteps[1], completed: false };
-        
-        // Since there's no direct action for marking incomplete, we can
-        // use a different approach like updating the entire steps array
-        // This is a workaround since we don't have MARK_STEP_INCOMPLETE action
+        dispatch({
+          type: 'MARK_STEP_INCOMPLETE',
+          payload: 1
+        });
       }
     }
   }, [selectedType, selectedFormat, dispatch, state.steps]);
