@@ -369,7 +369,6 @@ export function ApiProviderCard({
                 variant="destructive"
                 onClick={handleDeleteKey}
                 disabled={isDeleting}
-                size="icon-with-text"
               >
                 {isDeleting ? (
                   <>
