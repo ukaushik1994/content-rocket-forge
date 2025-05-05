@@ -27,6 +27,11 @@ export async function detectAiKeyType(key: string): Promise<AiProvider | null> {
     return 'gemini';
   }
   
+  // LM Studio uses a URL format (http://localhost:port)
+  else if (key.startsWith('http://') || key.startsWith('https://')) {
+    return 'lmstudio';
+  }
+  
   // Unknown format
   return null;
 }
@@ -46,6 +51,8 @@ export function getProviderFriendlyName(provider: AiProvider): string {
       return 'Google Gemini';
     case 'mistral':
       return 'Mistral AI';
+    case 'lmstudio':
+      return 'LM Studio';
     default:
       return provider.charAt(0).toUpperCase() + provider.slice(1);
   }

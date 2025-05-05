@@ -64,7 +64,7 @@ export const ANTHROPIC_MODELS: AiModelInfo[] = [
   }
 ];
 
-// Google Gemini models
+// Gemini models
 export const GEMINI_MODELS: AiModelInfo[] = [
   {
     id: 'gemini-1.5-pro',
@@ -119,12 +119,36 @@ export const MISTRAL_MODELS: AiModelInfo[] = [
   }
 ];
 
+// LM Studio models
+export const LMSTUDIO_MODELS: AiModelInfo[] = [
+  {
+    id: 'local-model',
+    provider: 'lmstudio',
+    name: 'Local Model',
+    description: 'Your primary local LLM running in LM Studio',
+    maxTokens: 4096,
+    type: 'chat',
+    capabilities: ['text'],
+    isDefault: true
+  },
+  {
+    id: 'local-model-fast',
+    provider: 'lmstudio',
+    name: 'Local Model (Fast)',
+    description: 'Optimized version of your local model for faster responses',
+    maxTokens: 2048,
+    type: 'chat',
+    capabilities: ['text']
+  }
+];
+
 // Combined list of all models
 export const ALL_AI_MODELS: AiModelInfo[] = [
   ...OPENAI_MODELS,
   ...ANTHROPIC_MODELS,
   ...GEMINI_MODELS,
-  ...MISTRAL_MODELS
+  ...MISTRAL_MODELS,
+  ...LMSTUDIO_MODELS
 ];
 
 // Helper function to get default model for a provider

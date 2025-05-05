@@ -58,5 +58,14 @@ export const API_PROVIDERS: ApiProvider[] = [
     link: 'https://console.mistral.ai/api-keys/',
     icon: null, // We'll add icons in the component
     autoDetectable: true
+  },
+  {
+    id: 'lmstudio',
+    name: 'LM Studio',
+    description: 'Use your local LLM models for content generation with full privacy and control.',
+    serviceKey: 'lmstudio',
+    link: 'https://lmstudio.ai/',
+    icon: null, // We'll add icons in the component
+    autoDetectable: true
   }
 ];

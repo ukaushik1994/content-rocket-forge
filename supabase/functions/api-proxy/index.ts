@@ -6,6 +6,7 @@ const SERP_API_KEY = Deno.env.get("SERP_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +38,8 @@ serve(async (req) => {
       return await handleAnthropicRequest(endpoint, params, apiKey, hasApiKey);
     } else if (service === 'gemini') {
       return await handleGeminiRequest(endpoint, params, apiKey, hasApiKey);
+    } else if (service === 'mistral') {
+      return await handleMistralRequest(endpoint, params, apiKey, hasApiKey);
     } else {
       throw new Error(`Unsupported service: ${service}`);
     }
@@ -497,6 +500,71 @@ async function handleGeminiRequest(endpoint: string, params: any, clientApiKey: 
     }
   } else {
     throw new Error(`Unsupported Gemini endpoint: ${endpoint}`);
+  }
+}
+
+// Handler for Mistral API requests
+async function handleMistralRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
+  // Use client API key if provided, fall back to environment variable
+  const apiKey = clientApiKey || MISTRAL_API_KEY;
+  
+  // If no API key available, return null for frontend to handle
+  if (!apiKey) {
+    console.log('No Mistral API key available, returning null');
+    return new Response(
+      JSON.stringify(null),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  if (endpoint === 'chat') {
+    const { model = 'mistral-small-latest', messages, temperature = 0.7, maxTokens } = params;
+    
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error('Valid messages array is required');
+    }
+
+    try {
+      const requestBody: any = {
+        model,
+        messages,
+        temperature,
+      };
+      
+      // Only add max_tokens if specified
+      if (maxTokens) {
+        requestBody.max_tokens = maxTokens;
+      }
+      
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Mistral API error');
+      }
+
+      return new Response(
+        JSON.stringify(data),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (error: any) {
+      console.error('Mistral API error:', error);
+      throw new Error(`Mistral API error: ${error.message}`);
+    }
+  } else {
+    throw new Error(`Unsupported Mistral endpoint: ${endpoint}`);
   }
 }
 
