@@ -4,8 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { getFallbackConfig } from '@/services/aiService/providerFallback';
 import { Zap, Server, Key, Binary } from 'lucide-react';
 import { getUserPreference } from '@/services/userPreferencesService';
-
-type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral';
+import { AiProvider } from '@/services/aiService/types';
 
 interface ProviderStatusIndicatorProps {
   selectedProvider: AiProvider;
@@ -28,6 +27,7 @@ export function ProviderStatusIndicator({
       case 'anthropic': return <Server className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />;
       case 'gemini': return <Key className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />;
       case 'mistral': return <Binary className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />;
+      default: return <Zap className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />;
     }
   };
   
@@ -37,6 +37,7 @@ export function ProviderStatusIndicator({
       case 'anthropic': return 'Claude';
       case 'gemini': return 'Gemini';
       case 'mistral': return 'Mistral';
+      default: return 'Unknown';
     }
   };
   
@@ -46,6 +47,7 @@ export function ProviderStatusIndicator({
       case 'anthropic': return 'bg-purple-900/20 text-purple-400 border-purple-500/30';
       case 'gemini': return 'bg-emerald-900/20 text-emerald-400 border-emerald-500/30';
       case 'mistral': return 'bg-indigo-900/20 text-indigo-400 border-indigo-500/30';
+      default: return 'bg-gray-900/20 text-gray-400 border-gray-500/30';
     }
   };
   

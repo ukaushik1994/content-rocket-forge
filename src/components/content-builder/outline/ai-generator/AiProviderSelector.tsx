@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { ProviderStatusIndicator } from './ProviderStatusIndicator';
-
-type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral';
+import { AiProvider } from '@/services/aiService/types';
 
 interface AiProviderSelectorProps {
   aiProvider: AiProvider;
