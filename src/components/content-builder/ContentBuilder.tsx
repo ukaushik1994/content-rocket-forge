@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
-// We're skipping the dedicated SERP Analysis step and integrating it into KeywordSelectionStep
+import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizationStep } from './steps/OptimizationStep';
@@ -17,43 +16,14 @@ import { FinalReviewStep } from './steps/FinalReviewStep';
 import { SaveStep } from './steps/SaveStep';
 
 export const ContentBuilder = () => {
-  const { state, navigateToStep, dispatch } = useContentBuilder();
+  const { state, navigateToStep } = useContentBuilder();
   const { activeStep, steps } = state;
 
-  // Calculate progress percentage based on visible steps
-  const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step (index 2)
-  const progressPercentage = visibleSteps.filter(step => step.completed).length / visibleSteps.length * 100;
-  
-  // Update step mapping to skip SERP Analysis
-  const getStepIndex = (activeStepId) => {
-    // If activeStep > 2, subtract 1 to skip the SERP Analysis step
-    return activeStepId > 2 ? activeStepId - 1 : activeStepId;
-  };
+  // Calculate progress percentage
+  const progressPercentage = steps.filter(step => step.completed).length / steps.length * 100;
   
   // Determine if user can proceed to next step
   const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
-  
-  // Handle next step navigation
-  const handleNextStep = () => {
-    if (canGoNext) {
-      // Skip step 2 (SERP Analysis) when navigating from step 1
-      if (activeStep === 1) {
-        navigateToStep(3);
-      } else {
-        navigateToStep(activeStep + 1);
-      }
-    }
-  };
-  
-  // Handle previous step navigation
-  const handlePreviousStep = () => {
-    // Skip step 2 (SERP Analysis) when navigating back from step 3
-    if (activeStep === 3) {
-      navigateToStep(1);
-    } else {
-      navigateToStep(activeStep - 1);
-    }
-  };
   
   // Render the current step component
   const renderStepContent = () => {
@@ -61,11 +31,11 @@ export const ContentBuilder = () => {
     switch (stepIndex) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
-      // We skip case 2 (SERP Analysis)
+      case 2: return <SerpAnalysisStep />;
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
-      case 6: return <FinalReviewStep />; 
+      case 6: return <FinalReviewStep />; // New Final Review step
       case 7: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
@@ -73,10 +43,10 @@ export const ContentBuilder = () => {
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
-      {/* Content Builder Sidebar - We pass filtered steps to hide SERP Analysis */}
+      {/* Content Builder Sidebar */}
       <ContentBuilderSidebar 
-        steps={steps.filter(step => step.id !== 2)} 
-        activeStep={getStepIndex(activeStep)} 
+        steps={steps} 
+        activeStep={activeStep} 
         navigateToStep={navigateToStep} 
       />
       
@@ -92,7 +62,7 @@ export const ContentBuilder = () => {
               </h1>
             </div>
             <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
-              Step {getStepIndex(activeStep) + 1} of {visibleSteps.length}
+              Step {activeStep + 1} of {steps.length}
             </div>
           </div>
           <Progress value={progressPercentage} className="h-1.5 bg-white/5" />
@@ -110,7 +80,7 @@ export const ContentBuilder = () => {
           <div className="flex justify-between max-w-5xl mx-auto">
             <Button
               variant="outline"
-              onClick={handlePreviousStep}
+              onClick={() => navigateToStep(activeStep - 1)}
               disabled={activeStep === 0}
               className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
             >
@@ -118,7 +88,7 @@ export const ContentBuilder = () => {
             </Button>
             
             <Button
-              onClick={handleNextStep}
+              onClick={() => navigateToStep(activeStep + 1)}
               disabled={!canGoNext}
               className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
             >
