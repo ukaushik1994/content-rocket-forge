@@ -1,14 +1,23 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
 import { ContentBuilderState } from '@/contexts/content-builder/types';
+import { getUserPreference } from '@/services/userPreferencesService';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini';
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
+
+  // Load the default AI provider from user preferences
+  useEffect(() => {
+    const defaultProvider = getUserPreference('defaultAiProvider');
+    if (defaultProvider) {
+      setAiProvider(defaultProvider);
+    }
+  }, []);
 
   const generateContent = async (
     state: ContentBuilderState,

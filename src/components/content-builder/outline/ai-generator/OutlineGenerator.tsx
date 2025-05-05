@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +7,7 @@ import { sendChatRequest } from '@/services/aiService';
 import { AIInstructionsInput } from '../AIInstructionsInput';
 import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
+import { getUserPreference } from '@/services/userPreferencesService';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -22,6 +22,14 @@ export function OutlineGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(additionalInstructions || '');
   const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('gemini');
+  
+  // Load the default AI provider from user preferences
+  useEffect(() => {
+    const defaultProvider = getUserPreference('defaultAiProvider');
+    if (defaultProvider) {
+      setAiProvider(defaultProvider);
+    }
+  }, []);
   
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelectedItems = selectedItems.length;
