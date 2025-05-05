@@ -94,9 +94,13 @@ export interface Solution {
 export interface SolutionIntegrationMetrics {
   featureIncorporation: number;
   positioningScore: number;
-  painPointsAddressed: number;
+  painPointsAddressed: string[]; // Changed from number to string[]
   ctaEffectiveness: number;
   overallScore: number;
+  mentions: number; // Added
+  audienceAlignment: number; // Added
+  nameMentions: number;
+  ctaMentions: number; // Added
 }
 
 // Outline Types
@@ -123,6 +127,19 @@ export interface SeoImprovement {
   recommendation: string;
   impact: 'high' | 'medium' | 'low';
   applied: boolean;
+}
+
+// Save Content Parameters
+export interface SaveContentParams {
+  title: string;
+  content: string;
+  note?: string;
+  isPublished?: boolean;
+  mainKeyword?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  outline?: string[] | OutlineSection[];
+  seoScore?: number;
 }
 
 // Content Builder State
@@ -193,7 +210,7 @@ export type ContentBuilderAction =
   | { type: 'SET_SERP_DATA'; payload: any }
   | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
-  | { type: 'SET_OUTLINE'; payload: string[] }
+  | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] } // Updated to accept both types
   | { type: 'SET_OUTLINE_SECTIONS'; payload: OutlineSection[] }
   | { type: 'SET_CONTENT'; payload: string }
   | { type: 'SET_IS_GENERATING'; payload: boolean }
@@ -205,6 +222,7 @@ export type ContentBuilderAction =
   | { type: 'SET_SUGGESTED_TITLES'; payload: string[] }
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'ADD_SEO_IMPROVEMENT'; payload: SeoImprovement }
+  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] } // Added
   | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
@@ -252,7 +270,7 @@ export interface ContentBuilderContextType {
   applySeoImprovement: (id: string) => void;
 
   // Advanced Content Actions
-  saveContentToDraft: (options: any) => Promise<void>;
-  saveContentToPublished: (options: any) => Promise<void>;
+  saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
+  saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
   setAdditionalInstructions: (instructions: string) => void;
 }

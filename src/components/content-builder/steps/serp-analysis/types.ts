@@ -1,5 +1,6 @@
 
 import { SerpSelection } from '@/contexts/content-builder/types';
+import { Dispatch, SetStateAction } from 'react';
 
 export interface SelectedItemsGroupProps {
   count: number;
@@ -24,4 +25,13 @@ export interface SelectedItemsSidebarProps {
   totalSelected: number;
   selectedCounts: SelectedCountsType;
   handleToggleSelection: (type: string, content: string) => void;
+}
+
+export interface SelectedItemsContentProps {
+  serpSelections: SerpSelection[];
+  totalSelected: number;
+  selectedCounts: SelectedCountsType;
+  handleToggleSelection: (type: string, content: string) => void;
+  selectedTab: string;
+  setSelectedTab: Dispatch<SetStateAction<string>>;
 }

@@ -50,7 +50,8 @@ export const useSolutionAnalysis = (ctaInfo: { hasCTA: boolean; ctaText: string[
         nameMentions: metrics.nameMentions || 0,
         audienceAlignment: metrics.audienceAlignment || 0,
         painPointsAddressed: painPointsArray,
-        ctaMentions: ctaInfo.ctaText.length
+        ctaMentions: ctaInfo.ctaText.length,
+        ctaEffectiveness: ctaInfo.hasCTA ? 100 : 0
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });

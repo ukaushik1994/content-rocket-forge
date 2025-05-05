@@ -5,6 +5,7 @@ import { createContentActions } from './contentActions';
 import { createSerpActions } from './serpActions';
 import { createNavigationActions } from './navigationActions';
 import { createPublishActions } from './publishActions';
+import { createSeoActions } from './seoActions';
 
 /**
  * Creates and combines all content builder actions
@@ -20,6 +21,7 @@ export const createContentBuilderActions = (
   const serpActions = createSerpActions(state, dispatch);
   const navigationActions = createNavigationActions(state, dispatch);
   const publishActions = createPublishActions(state, dispatch);
+  const seoActions = createSeoActions(state, dispatch);
 
   // Merge all action groups and return
   return {
@@ -27,6 +29,7 @@ export const createContentBuilderActions = (
     ...contentActions,
     ...serpActions,
     ...navigationActions,
-    ...publishActions
+    ...publishActions,
+    ...seoActions
   };
 };

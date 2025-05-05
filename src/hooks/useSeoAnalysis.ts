@@ -80,6 +80,7 @@ export const useSeoAnalysis = () => {
           id: uuidv4(),
           type: improvementType,
           recommendation,
+          impact: determineImpact(improvementType, keywordUsageScore),
           applied: false
         };
       });
@@ -103,6 +104,15 @@ export const useSeoAnalysis = () => {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+  
+  // Helper function to determine impact level
+  const determineImpact = (type: string, score: number): 'high' | 'medium' | 'low' => {
+    if (type === 'keyword' && score < 50) return 'high';
+    if (type === 'readability' && score < 60) return 'high';
+    if (score < 50) return 'high';
+    if (score < 70) return 'medium';
+    return 'low';
   };
   
   // Get score color based on value
