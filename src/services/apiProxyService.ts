@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { getApiKey } from "./apiKeys";
 
 export type ApiProxyParams = {
-  service: 'serp' | 'openai';
+  service: 'serp' | 'openai' | 'anthropic' | 'gemini';
   endpoint: string;
   params?: Record<string, any>;
 };

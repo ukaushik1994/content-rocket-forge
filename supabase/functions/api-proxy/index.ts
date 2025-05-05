@@ -4,6 +4,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // We'll still use these as fallbacks if available
 const SERP_API_KEY = Deno.env.get("SERP_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +33,10 @@ serve(async (req) => {
       return await handleSerpRequest(endpoint, params, apiKey, hasApiKey);
     } else if (service === 'openai') {
       return await handleOpenAIRequest(endpoint, params, apiKey, hasApiKey);
+    } else if (service === 'anthropic') {
+      return await handleAnthropicRequest(endpoint, params, apiKey, hasApiKey);
+    } else if (service === 'gemini') {
+      return await handleGeminiRequest(endpoint, params, apiKey, hasApiKey);
     } else {
       throw new Error(`Unsupported service: ${service}`);
     }
@@ -46,7 +52,7 @@ serve(async (req) => {
   }
 });
 
-// New handler for API key testing
+// Handler for API key testing
 async function handleApiKeyTest(service: string, apiKey: string) {
   console.log(`Testing ${service} API key`);
   
@@ -96,18 +102,68 @@ async function handleApiKeyTest(service: string, apiKey: string) {
       } else {
         throw new Error(data.error?.message || 'Invalid OpenAI API key');
       }
-    } else if (service === 'anthropic' && apiKey.startsWith('sk-ant-')) {
-      // For Anthropic, we'll just validate the format (basic check)
-      return new Response(
-        JSON.stringify({ success: true, message: 'Anthropic API key format is valid' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else if (service === 'gemini' && apiKey.length > 15) {
-      // For Gemini, we'll just validate the format (basic check)
-      return new Response(
-        JSON.stringify({ success: true, message: 'Gemini API key format is valid' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    } else if (service === 'anthropic') {
+      // For Anthropic, we'll make a test call to validate the key
+      if (!apiKey.startsWith('sk-ant-')) {
+        throw new Error('Invalid Anthropic API key format - must start with "sk-ant-"');
+      }
+      
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'anthropic-version': '2023-06-01',
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 10,
+          messages: [
+            { role: 'user', content: 'Say hi in one word' }
+          ]
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'Anthropic API connection successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error(data.error?.message || 'Invalid Anthropic API key');
+      }
+    } else if (service === 'gemini') {
+      // For Gemini, we'll try to make a test call to validate the key
+      const apiBase = 'https://generativelanguage.googleapis.com/v1beta';
+      const model = 'models/gemini-1.5-flash';
+      const url = `${apiBase}/${model}:generateContent?key=${apiKey}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: 'Say hi in one word'
+            }]
+          }]
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'Gemini API connection successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error(data.error?.message || 'Invalid Gemini API key');
+      }
     } else {
       throw new Error(`Unsupported service for testing: ${service}`);
     }
@@ -120,6 +176,291 @@ async function handleApiKeyTest(service: string, apiKey: string) {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+  }
+}
+
+// Handler for OpenAI API requests
+async function handleOpenAIRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
+  // Use client API key if provided, fall back to environment variable
+  const apiKey = clientApiKey || OPENAI_API_KEY;
+  
+  // If no API key available, return null for frontend to handle
+  if (!apiKey) {
+    console.log('No OpenAI API key available, returning null');
+    return new Response(
+      JSON.stringify(null),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  if (endpoint === 'chat') {
+    const { model = 'gpt-4o-mini', messages, temperature = 0.7, maxTokens } = params;
+    
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error('Valid messages array is required');
+    }
+
+    try {
+      const requestBody: any = {
+        model,
+        messages,
+        temperature,
+      };
+      
+      // Only add max_tokens if specified
+      if (maxTokens) {
+        requestBody.max_tokens = maxTokens;
+      }
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'OpenAI API error');
+      }
+
+      return new Response(
+        JSON.stringify(data),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (error: any) {
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error.message}`);
+    }
+  } else if (endpoint === 'completion') {
+    // Legacy completions endpoint for older models
+    const { model, prompt, temperature = 0.7, maxTokens } = params;
+    
+    if (!prompt) {
+      throw new Error('Prompt is required');
+    }
+
+    try {
+      const requestBody: any = {
+        model,
+        prompt,
+        temperature,
+      };
+      
+      // Only add max_tokens if specified
+      if (maxTokens) {
+        requestBody.max_tokens = maxTokens;
+      }
+      
+      const response = await fetch('https://api.openai.com/v1/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'OpenAI API error');
+      }
+
+      return new Response(
+        JSON.stringify(data),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (error: any) {
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error.message}`);
+    }
+  } else {
+    throw new Error(`Unsupported OpenAI endpoint: ${endpoint}`);
+  }
+}
+
+// Handler for Anthropic API requests
+async function handleAnthropicRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
+  // Use client API key if provided, fall back to environment variable
+  const apiKey = clientApiKey || ANTHROPIC_API_KEY;
+  
+  // If no API key available, return null for frontend to handle
+  if (!apiKey) {
+    console.log('No Anthropic API key available, returning null');
+    return new Response(
+      JSON.stringify(null),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  if (endpoint === 'chat') {
+    const { model = 'claude-3-sonnet-20240229', messages, temperature = 0.7, maxTokens = 1000 } = params;
+    
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error('Valid messages array is required');
+    }
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature,
+          max_tokens: maxTokens
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Anthropic API error');
+      }
+
+      // Transform Anthropic response to match our expected format
+      const transformedResponse = {
+        id: data.id,
+        choices: [{
+          message: {
+            role: 'assistant',
+            content: data.content[0].text
+          },
+          index: 0,
+          finishReason: data.stop_reason
+        }],
+        usage: {
+          promptTokens: data.usage?.input_tokens || 0,
+          completionTokens: data.usage?.output_tokens || 0,
+          totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+        }
+      };
+
+      return new Response(
+        JSON.stringify(transformedResponse),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (error: any) {
+      console.error('Anthropic API error:', error);
+      throw new Error(`Anthropic API error: ${error.message}`);
+    }
+  } else {
+    throw new Error(`Unsupported Anthropic endpoint: ${endpoint}`);
+  }
+}
+
+// Handler for Google Gemini API requests
+async function handleGeminiRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
+  // Use client API key if provided, fall back to environment variable
+  const apiKey = clientApiKey || GEMINI_API_KEY;
+  
+  // If no API key available, return null for frontend to handle
+  if (!apiKey) {
+    console.log('No Gemini API key available, returning null');
+    return new Response(
+      JSON.stringify(null),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+  if (endpoint === 'chat') {
+    const { model = 'gemini-1.5-flash', messages, temperature = 0.7, maxTokens } = params;
+    
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error('Valid messages array is required');
+    }
+
+    // Transform messages to Gemini format
+    const contents = [];
+    for (const message of messages) {
+      contents.push({
+        role: message.role === 'assistant' ? 'model' : message.role,
+        parts: [{ text: message.content }]
+      });
+    }
+
+    try {
+      const apiBase = 'https://generativelanguage.googleapis.com/v1beta';
+      const modelPath = `models/${model}`;
+      const url = `${apiBase}/${modelPath}:generateContent?key=${apiKey}`;
+      
+      const requestBody: any = {
+        contents,
+        generation_config: {
+          temperature
+        }
+      };
+      
+      // Only add max_tokens if specified
+      if (maxTokens) {
+        requestBody.generation_config.max_output_tokens = maxTokens;
+      }
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Gemini API error');
+      }
+
+      // Transform Gemini response to match our expected format
+      const content = data.candidates[0].content.parts[0].text;
+      const transformedResponse = {
+        id: data.candidates[0].content.citation?.citation_sources[0].uri || 'gemini-response',
+        choices: [{
+          message: {
+            role: 'assistant',
+            content: content
+          },
+          index: 0,
+          finishReason: data.candidates[0].finishReason
+        }],
+        usage: {
+          promptTokens: 0, // Gemini doesn't provide token counts
+          completionTokens: 0,
+          totalTokens: 0
+        }
+      };
+
+      return new Response(
+        JSON.stringify(transformedResponse),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (error: any) {
+      console.error('Gemini API error:', error);
+      throw new Error(`Gemini API error: ${error.message}`);
+    }
+  } else {
+    throw new Error(`Unsupported Gemini endpoint: ${endpoint}`);
   }
 }
 
@@ -411,10 +752,7 @@ function transformSerpApiResponse(data: any, keyword: string) {
     // Generate recommendations
     recommendations: [
       `Include "${keyword}" in your page title and H1 heading`,
-      `Create content addressing common questions about ${keyword}`,
-      `Use related keywords throughout your content naturally`,
-      `Include visual elements to explain ${keyword} concepts`,
-      `Add case studies or examples showing successful ${keyword} implementation`
+      `Ensure your content answers common questions about ${keyword}`
     ]
   };
 }
@@ -588,62 +926,4 @@ function generateContentRecommendations(content: string, keywords: string[], ser
   }
   
   return recommendations;
-}
-
-// Handler for OpenAI API requests
-async function handleOpenAIRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
-  // Use client API key if provided, fall back to environment variable
-  const apiKey = clientApiKey || OPENAI_API_KEY;
-  
-  // If no API key available, return null for frontend to handle
-  if (!apiKey) {
-    console.log('No OpenAI API key available, returning null');
-    return new Response(
-      JSON.stringify(null),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-
-  if (endpoint === 'chat') {
-    const { messages, model = 'gpt-4o-mini', temperature = 0.7 } = params;
-    
-    if (!messages || !Array.isArray(messages)) {
-      throw new Error('Valid messages array is required');
-    }
-
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'OpenAI API error');
-      }
-
-      return new Response(
-        JSON.stringify(data),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    } catch (error: any) {
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error.message}`);
-    }
-  } else {
-    throw new Error(`Unsupported OpenAI endpoint: ${endpoint}`);
-  }
 }
