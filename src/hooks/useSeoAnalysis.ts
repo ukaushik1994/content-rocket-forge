@@ -33,8 +33,8 @@ export const useSeoAnalysis = () => {
       setKeywordUsage(usage);
     }
     
-    // Mark step as complete if we have a good SEO score
-    if (seoScore >= 70) {
+    // Mark step as complete if we have any SEO score (making it optional)
+    if (seoScore > 0) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     }
   }, [content, mainKeyword, selectedKeywords, seoScore, dispatch]);
@@ -95,6 +95,10 @@ export const useSeoAnalysis = () => {
       );
       
       dispatch({ type: 'SET_SEO_SCORE', payload: calculatedScore });
+      
+      // Mark this step as completed regardless of score
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+      
       toast.success('SEO analysis completed');
       
     } catch (error) {
@@ -102,6 +106,17 @@ export const useSeoAnalysis = () => {
       toast.error('Failed to analyze content');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+  
+  // Function to skip optimization step
+  const skipOptimization = () => {
+    // Mark step as completed
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    
+    // If no analysis was run, set a default score
+    if (seoScore === 0) {
+      dispatch({ type: 'SET_SEO_SCORE', payload: 50 });
     }
   };
   
@@ -120,6 +135,7 @@ export const useSeoAnalysis = () => {
     scores,
     improvements,
     runSeoAnalysis,
+    skipOptimization,
     getScoreColor
   };
 };

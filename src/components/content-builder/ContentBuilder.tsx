@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -24,10 +23,21 @@ export const ContentBuilder = () => {
   const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
   // Determine if user can proceed to next step
-  const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
+  // For optimization step (id 5), they can proceed after running analysis or explicitly clicking "Skip"
+  const optimizationStep = steps.find(step => step.id === 5);
+  const isOptimizationStepActive = steps[activeStep].id === 5;
+  
+  const canGoNext = activeStep < steps.length - 1 && 
+    (steps[activeStep].completed || 
+    (isOptimizationStepActive && state.content && state.content.length > 300));
   
   // Handle next step navigation
   const handleNextStep = () => {
+    // If on optimization step and not completed but has content, mark as visited
+    if (isOptimizationStepActive && !steps[activeStep].completed && state.content) {
+      dispatch({ type: 'MARK_STEP_VISITED', payload: 5 });
+    }
+    
     navigateToStep(activeStep + 1);
   };
   
