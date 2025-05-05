@@ -1,7 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types';
-import { analyzeKeywordSerp } from '@/services/serpApiService'; // Import the proper API service
-import { toast } from 'sonner';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types';
 
 export const createSerpActions = (
   state: ContentBuilderState, 
@@ -14,16 +12,15 @@ export const createSerpActions = (
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
-      // Use the serpApiService to fetch data (with fallback to mock data)
-      const serpData = await analyzeKeywordSerp(keyword);
+      // In a real implementation, make API call to analyze keyword
+      // For now, simulate with mock data
+      const mockData = await getMockSerpData(keyword);
       
       // Update SERP data in state
-      dispatch({ type: 'SET_SERP_DATA', payload: serpData });
-      
-      toast.success(`SERP data analyzed for: ${keyword}`);
+      dispatch({ type: 'SET_SERP_DATA', payload: mockData });
     } catch (error) {
       console.error('Error analyzing keyword:', error);
-      toast.error('Failed to analyze keyword');
+      // Handle error
     } finally {
       // End loading
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
@@ -38,83 +35,118 @@ export const createSerpActions = (
   };
   
   const generateOutlineFromSelections = () => {
-    if (state.serpSelections.length === 0) {
-      toast.warning("Please select items from SERP analysis first");
-      return;
-    }
+    // In a real implementation, this would process selections and create an outline
+    // For now, just set a basic outline
+    const basicOutline = [
+      "Introduction",
+      "Key Points",
+      "Main Content Section 1",
+      "Main Content Section 2",
+      "Conclusion"
+    ];
     
-    // Start loading
-    dispatch({ type: 'SET_IS_GENERATING_OUTLINE', payload: true });
-    
-    try {
-      // In a real implementation, this would process selections and create an outline
-      // For now, just set a basic outline based on SERP selections
-      const basicOutline = [
-        "Introduction",
-        ...state.serpSelections
-          .filter(item => item.type === 'heading' || item.type === 'question')
-          .slice(0, 5)
-          .map(item => item.content),
-        "Conclusion"
-      ];
-      
-      dispatch({ type: 'SET_OUTLINE', payload: basicOutline });
-      toast.success("Outline generated successfully");
-    } catch (error) {
-      console.error('Error generating outline:', error);
-      toast.error("Failed to generate outline");
-    } finally {
-      // End loading
-      dispatch({ type: 'SET_IS_GENERATING_OUTLINE', payload: false });
-    }
-  };
-  
-  const generateContent = async () => {
-    if (!state.contentTitle || state.outline.length === 0) {
-      toast.warning("Please provide a title and outline first");
-      return;
-    }
-    
-    // Start generating content
-    dispatch({ type: 'SET_IS_GENERATING_CONTENT', payload: true });
-    
-    try {
-      // In a real implementation, we would call an AI service to generate content
-      // For now, simulate content generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create a simple content based on the outline
-      const generatedContent = state.outline.map(section => {
-        if (typeof section === 'string') {
-          return `## ${section}\n\nThis is sample content for the section "${section}". It includes information about ${state.mainKeyword || 'the topic'} and related concepts.\n\n`;
-        } else {
-          return `## ${section.title}\n\nThis is sample content for the section "${section.title}". It includes information about ${state.mainKeyword || 'the topic'} and related concepts.\n\n`;
-        }
-      }).join('\n');
-      
-      // Update the content in state
-      dispatch({ type: 'SET_CONTENT', payload: generatedContent });
-      toast.success("Content generated successfully");
-    } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error("Failed to generate content");
-    } finally {
-      // End content generation
-      dispatch({ type: 'SET_IS_GENERATING_CONTENT', payload: false });
-    }
-  };
-  
-  const updateTitle = (title: string) => {
-    if (!title.trim()) return;
-    dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
+    dispatch({ type: 'SET_OUTLINE', payload: basicOutline });
   };
   
   return {
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
-    generateOutline: generateOutlineFromSelections, // Alias for backward compatibility
-    generateContent,
-    updateTitle,
+  };
+};
+
+// Helper function to get mock SERP data
+const getMockSerpData = async (keyword: string) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  return {
+    keyword,
+    searchVolume: Math.floor(Math.random() * 20000) + 1000,
+    keywordDifficulty: Math.floor(Math.random() * 100),
+    competitionScore: Math.random(),
+    peopleAlsoAsk: [
+      { 
+        question: `What is ${keyword}?`, 
+        answer: `${keyword} is a popular topic in digital marketing that refers to strategies for optimizing content.` 
+      },
+      { 
+        question: `How to improve ${keyword}?`, 
+        answer: `To improve ${keyword}, focus on creating high-quality content, optimizing meta tags, and building backlinks.` 
+      },
+      { 
+        question: `Why is ${keyword} important?`, 
+        answer: `${keyword} is important because it helps websites rank higher in search results, driving more organic traffic.` 
+      },
+    ],
+    relatedSearches: [
+      { query: `${keyword} strategy`, volume: 2500 },
+      { query: `${keyword} tips`, volume: 1800 },
+      { query: `best ${keyword} tools`, volume: 3200 },
+      { query: `${keyword} examples`, volume: 1200 },
+      { query: `how to learn ${keyword}`, volume: 2100 },
+    ],
+    topResults: [
+      { 
+        position: 1,
+        title: `The Ultimate Guide to ${keyword}`,
+        snippet: `Learn everything about ${keyword} with our comprehensive guide covering strategies, tools, and best practices.`,
+        link: 'https://example.com/guide'
+      },
+      { 
+        position: 2,
+        title: `10 ${keyword} Strategies That Work in 2023`,
+        snippet: `Discover the most effective ${keyword} strategies that are working right now, with real-world examples.`,
+        link: 'https://example.com/strategies'
+      },
+      { 
+        position: 3,
+        title: `How To Master ${keyword} in 30 Days`,
+        snippet: `Our step-by-step program shows you exactly how to become proficient in ${keyword} within just one month.`,
+        link: 'https://example.com/course'
+      },
+    ],
+    entities: [
+      { name: 'Google', type: 'Organization', description: 'The most popular search engine' },
+      { name: 'Website Traffic', type: 'Concept', description: 'Visitors to a website' },
+      { name: 'Content Marketing', type: 'Topic', description: 'Creating valuable content to attract audience' },
+      { name: 'Analytics', type: 'Tool', description: 'Tools to measure website performance' },
+    ],
+    headings: [
+      { text: `What is ${keyword}?`, level: 'h2', type: 'question' },
+      { text: `Benefits of ${keyword}`, level: 'h2', type: 'benefit' },
+      { text: `${keyword} Best Practices`, level: 'h2', type: 'guide' },
+      { text: `${keyword} Tools and Resources`, level: 'h2', type: 'resource' },
+    ],
+    contentGaps: [
+      { 
+        topic: `${keyword} for E-commerce`, 
+        description: 'Specialized strategies for online stores',
+        content: 'Detailed information about applying these concepts to e-commerce websites',
+        opportunity: 'high',
+        source: 'Competitor analysis'
+      },
+      { 
+        topic: `${keyword} ROI Calculation`, 
+        description: 'How to measure return on investment',
+        content: 'Methods and formulas for calculating the return on investment',
+        opportunity: 'medium',
+        source: 'User searches'
+      },
+      { 
+        topic: `${keyword} Case Studies`, 
+        description: 'Real-world success stories',
+        content: 'Examples of successful implementations with data and outcomes',
+        opportunity: 'high',
+        source: 'Industry reports'
+      },
+    ],
+    recommendations: [
+      `Focus on long-form content about ${keyword} that addresses user questions`,
+      `Include step-by-step instructions for implementing ${keyword} strategies`,
+      `Create comparison tables showing different ${keyword} approaches`,
+      `Add visual elements like infographics explaining ${keyword} concepts`,
+    ],
+    isMockData: true
   };
 };
