@@ -58,6 +58,22 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
   activeStep,
   navigateToStep
 }) => {
+  // Animation variants for list items
+  const listVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 }
+  };
+
   return (
     <aside className="hidden md:block w-64 bg-black/20 border-r border-white/10 backdrop-blur-lg sticky top-0 h-[calc(100vh-theme(spacing.16))] overflow-y-auto">
       <div className="p-4">
@@ -68,20 +84,34 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
           Create high-quality optimized content
         </p>
         
-        <div className="space-y-1">
+        <motion.div 
+          className="space-y-1"
+          variants={listVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {steps.map((step, index) => {
             const isActive = index === activeStep;
             const isCompleted = step.completed;
             const isClickable = index <= activeStep || isCompleted;
             
             return (
-              <div key={step.id} className="relative">
+              <motion.div 
+                key={step.id} 
+                className="relative"
+                variants={itemVariants}
+                whileHover={isClickable ? { x: 4 } : {}}
+                transition={{ duration: 0.2 }}
+              >
                 {/* Connecting line between steps */}
                 {index > 0 && (
-                  <div 
+                  <motion.div 
                     className={`absolute left-3.5 -top-4 w-0.5 h-4 ${
                       steps[index-1].completed ? "bg-green-400" : "bg-white/10"
                     }`}
+                    initial={{ height: 0 }}
+                    animate={{ height: '1rem' }}
+                    transition={{ duration: 0.3, delay: 0.1 * index }}
                   />
                 )}
                 
@@ -99,7 +129,7 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
                   )}
                 >
                   <div className={cn(
-                    "flex items-center justify-center w-7 h-7 rounded-full",
+                    "flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300",
                     isActive
                       ? "bg-gradient-to-r from-neon-purple to-neon-blue"
                       : isCompleted 
@@ -133,10 +163,10 @@ export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
                     </motion.div>
                   )}
                 </button>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </aside>
   );

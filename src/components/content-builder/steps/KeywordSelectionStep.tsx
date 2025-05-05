@@ -7,10 +7,10 @@ import { KeywordSuggestions } from '../keyword/KeywordSuggestions';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types';
-import { Loader2, Search, ChevronRight, Sparkles } from 'lucide-react';
+import { Loader2, Search, ChevronRight, Sparkles, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -47,6 +47,7 @@ export const KeywordSelectionStep = () => {
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
   const [serpOptionsVisible, setSerpOptionsVisible] = useState(false);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
   
   useEffect(() => {
     // Check if we have completed the requirements to move forward
@@ -56,18 +57,18 @@ export const KeywordSelectionStep = () => {
         payload: 0
       });
 
-      // Also mark SERP analysis step as completed
-      dispatch({
-        type: 'MARK_STEP_COMPLETED',
-        payload: 2
-      });
-      
-      // Show SERP options after keyword is analyzed
-      if (serpData) {
+      if (serpData && hasAnalyzed) {
+        // Also mark SERP analysis step as completed
+        dispatch({
+          type: 'MARK_STEP_COMPLETED',
+          payload: 2
+        });
+        
+        // Show SERP options after keyword is analyzed
         setSerpOptionsVisible(true);
       }
     }
-  }, [mainKeyword, selectedKeywords, dispatch, serpData]);
+  }, [mainKeyword, selectedKeywords, dispatch, serpData, hasAnalyzed]);
   
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
@@ -88,6 +89,12 @@ export const KeywordSelectionStep = () => {
 
     // Automatically start SERP analysis when a keyword is entered
     await analyzeKeyword(keyword);
+    setHasAnalyzed(true);
+    
+    // Automatically switch to SERP tab after analysis is complete
+    setTimeout(() => {
+      if (!isAnalyzing) setActiveTab('serp');
+    }, 1000);
   };
   
   const handleAddKeyword = (kw: string) => {
@@ -139,6 +146,17 @@ export const KeywordSelectionStep = () => {
   const getSelectedCount = () => {
     return serpSelections ? serpSelections.filter(s => s.selected).length : 0;
   };
+
+  // SERP data animations
+  const serpDataVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: 'auto', transition: { duration: 0.5 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+  };
   
   return (
     <div className="space-y-8">
@@ -153,7 +171,19 @@ export const KeywordSelectionStep = () => {
         />
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+            <motion.div
+              animate={{ 
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                duration: 4,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            >
+              <Sparkles className="h-5 w-5 text-primary" />
+            </motion.div>
             <h3 className="text-lg font-semibold">Start Your Content Journey</h3>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -172,10 +202,15 @@ export const KeywordSelectionStep = () => {
           </TabsTrigger>
         </TabsList>
       
-        <TabsContent value="research" className="mt-0">
+        <TabsContent value="research" className="mt-0 space-y-6">
           {/* Keyword search section */}
           <div className="space-y-6">
-            <div className="space-y-3">
+            <motion.div 
+              className="space-y-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
               <div className="flex justify-between items-center">
                 <Label htmlFor="main-keyword" className="text-base font-medium flex items-center gap-2">
                   <Search className="h-4 w-4 text-primary" />
@@ -188,7 +223,7 @@ export const KeywordSelectionStep = () => {
               <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
                 <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
               </div>
-            </div>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
@@ -244,133 +279,218 @@ export const KeywordSelectionStep = () => {
           </div>
           
           {/* SERP preview and continue button */}
-          {serpOptionsVisible && !isAnalyzing && serpData && (
-            <motion.div 
-              className="mt-8 p-4 border border-neon-blue/20 bg-gradient-to-br from-neon-purple/5 to-neon-blue/5 rounded-lg"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium flex items-center">
-                  <Sparkles className="h-4 w-4 mr-2 text-neon-blue" />
-                  SERP Analysis Results
-                </h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveTab('serp')}
-                  className="text-neon-blue hover:text-neon-purple transition-colors"
-                >
-                  See details
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
-              
-              {/* SERP preview metrics */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                  <div className="text-xs text-muted-foreground mb-1">Search Volume</div>
-                  <div className="text-lg font-medium text-neon-purple">
-                    {serpData.searchVolume?.toLocaleString() || 'N/A'}
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                  <div className="text-xs text-muted-foreground mb-1">Keyword Difficulty</div>
-                  <div className="text-lg font-medium text-neon-blue">
-                    {serpData.keywordDifficulty || 'N/A'}%
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                  <div className="text-xs text-muted-foreground mb-1">Related Keywords</div>
-                  <div className="text-lg font-medium text-neon-green">
-                    {serpData.relatedSearches?.length || 0}
-                  </div>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleContinue}
-                className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all"
+          <AnimatePresence>
+            {serpOptionsVisible && !isAnalyzing && serpData && (
+              <motion.div 
+                className="mt-8 p-4 border border-neon-blue/20 bg-gradient-to-br from-neon-purple/5 to-neon-blue/5 rounded-lg"
+                variants={serpDataVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
               >
-                Continue to Content Type
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
-          )}
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-medium flex items-center">
+                    <Sparkles className="h-4 w-4 mr-2 text-neon-blue" />
+                    SERP Analysis Results
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveTab('serp')}
+                    className="text-neon-blue hover:text-neon-purple transition-colors"
+                  >
+                    See details
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {/* SERP preview metrics */}
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="bg-white/5 p-3 rounded-lg border border-white/10"
+                  >
+                    <div className="text-xs text-muted-foreground mb-1">Search Volume</div>
+                    <div className="text-lg font-medium text-neon-purple">
+                      {serpData.searchVolume?.toLocaleString() || 'N/A'}
+                    </div>
+                  </motion.div>
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="bg-white/5 p-3 rounded-lg border border-white/10"
+                    transition={{ delay: 0.1 }}
+                  >
+                    <div className="text-xs text-muted-foreground mb-1">Keyword Difficulty</div>
+                    <div className="text-lg font-medium text-neon-blue">
+                      {serpData.keywordDifficulty || 'N/A'}%
+                    </div>
+                  </motion.div>
+                  <motion.div 
+                    variants={itemVariants} 
+                    className="bg-white/5 p-3 rounded-lg border border-white/10"
+                    transition={{ delay: 0.2 }}
+                  >
+                    <div className="text-xs text-muted-foreground mb-1">Related Keywords</div>
+                    <div className="text-lg font-medium text-neon-green">
+                      {serpData.relatedSearches?.length || 0}
+                    </div>
+                  </motion.div>
+                </div>
+                
+                <motion.div
+                  variants={itemVariants}
+                  transition={{ delay: 0.3 }}
+                >
+                  <Button 
+                    onClick={handleContinue}
+                    className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all"
+                  >
+                    Continue to Content Type
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* Loading state */}
-          {isAnalyzing && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 text-primary animate-spin mr-2" />
-              <p>Analyzing your keyword...</p>
-            </div>
-          )}
+          <AnimatePresence>
+            {isAnalyzing && (
+              <motion.div 
+                className="flex flex-col items-center justify-center py-8 gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                >
+                  <Loader2 className="h-6 w-6 text-primary" />
+                </motion.div>
+                <p>Analyzing your keyword...</p>
+                <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-neon-purple to-neon-blue"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 3 }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </TabsContent>
         
         <TabsContent value="serp" className="mt-0">
-          {serpData ? (
-            <div className="space-y-6">
-              <div className="p-4 border border-white/10 bg-white/5 rounded-lg">
-                <h3 className="text-base font-medium mb-4">Selected SERP Items: {getSelectedCount()}</h3>
-                
-                <div className="space-y-4">
-                  {serpSelections && serpSelections.some(s => s.selected) ? (
-                    <div className="space-y-2">
-                      {serpSelections
-                        .filter(s => s.selected)
-                        .map((selection, idx) => (
-                          <div 
-                            key={idx} 
-                            className="flex items-start justify-between bg-white/5 p-3 rounded-lg border border-white/10"
-                          >
-                            <div className="flex items-start gap-2">
-                              <span className="bg-neon-purple/20 text-neon-purple px-2 py-0.5 rounded text-xs">
-                                {selection.type}
-                              </span>
-                              <span className="text-sm">{selection.content}</span>
-                            </div>
-                            <Button
-                              variant="ghost" 
-                              size="sm"
-                              className="text-muted-foreground hover:text-white"
-                              onClick={() => addContentFromSerp(selection.content, selection.type)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <p className="text-muted-foreground">No SERP items selected yet</p>
-                      <p className="text-sm mt-2">
-                        Switch back to the SERP Analysis tab to select items for your content
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex justify-end mt-6">
-                  <Button 
-                    onClick={() => generateOutlineFromSelections()} 
-                    disabled={getSelectedCount() === 0}
-                    className={`px-6 ${
-                      getSelectedCount() > 0 
-                        ? "bg-gradient-to-r from-neon-purple to-neon-blue" 
-                        : "bg-muted text-muted-foreground"
-                    }`}
+          <AnimatePresence>
+            {serpData ? (
+              <motion.div 
+                className="space-y-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="p-4 border border-white/10 bg-white/5 rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-medium mb-0 flex items-center gap-2">
+                      <CheckCheck className="h-4 w-4 text-neon-purple" />
+                      Selected SERP Items: {getSelectedCount()}
+                    </h3>
+                    
+                    {getSelectedCount() > 0 && (
+                      <div 
+                        className="inline-flex items-center justify-center text-xs text-white/80 px-2 py-1 bg-neon-purple/20 rounded-full"
+                      >
+                        {getSelectedCount()} items selected
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {serpSelections && serpSelections.some(s => s.selected) ? (
+                      <div className="space-y-2">
+                        <AnimatePresence>
+                          {serpSelections
+                            .filter(s => s.selected)
+                            .map((selection, idx) => (
+                              <motion.div 
+                                key={`${selection.type}-${idx}`}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="flex items-start justify-between bg-white/5 p-3 rounded-lg border border-white/10"
+                              >
+                                <div className="flex items-start gap-2">
+                                  <span className="bg-neon-purple/20 text-neon-purple px-2 py-0.5 rounded text-xs">
+                                    {selection.type}
+                                  </span>
+                                  <span className="text-sm">{selection.content}</span>
+                                </div>
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-muted-foreground hover:text-white"
+                                  onClick={() => addContentFromSerp(selection.content, selection.type)}
+                                >
+                                  Remove
+                                </Button>
+                              </motion.div>
+                            ))}
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      <motion.div 
+                        className="text-center py-6"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <p className="text-muted-foreground">No SERP items selected yet</p>
+                        <p className="text-sm mt-2">
+                          Switch back to the SERP Analysis tab to select items for your content
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
+                  
+                  <motion.div 
+                    className="flex justify-end mt-6"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
                   >
-                    Generate Outline with Selected Items
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
+                    <Button 
+                      onClick={() => generateOutlineFromSelections()} 
+                      disabled={getSelectedCount() === 0}
+                      className={`px-6 ${
+                        getSelectedCount() > 0 
+                          ? "bg-gradient-to-r from-neon-purple to-neon-blue" 
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      Generate Outline with Selected Items
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-white/5 rounded-lg border border-white/10">
-              <p>No SERP data available. Please analyze a keyword first.</p>
-            </div>
-          )}
+              </motion.div>
+            ) : (
+              <motion.div 
+                className="text-center py-12 bg-white/5 rounded-lg border border-white/10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <p>No SERP data available. Please analyze a keyword first.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </TabsContent>
       </Tabs>
     </div>

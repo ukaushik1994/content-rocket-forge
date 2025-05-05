@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, ArrowRight } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
@@ -30,7 +30,8 @@ export const ContentBuilder = () => {
   // Animation variants
   const stepVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
   };
   
   // Render the current step component
@@ -65,6 +66,14 @@ export const ContentBuilder = () => {
     // Default behavior: go to next step
     return activeStep + 1;
   };
+
+  // Helper function to get step status color
+  const getStepStatusColor = (index: number) => {
+    if (index < activeStep && steps[index].completed) return "bg-green-400";
+    if (index === activeStep) return "bg-neon-purple";
+    if (index > activeStep && steps[index].completed) return "bg-neon-blue/60";
+    return "bg-white/20";
+  };
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -81,13 +90,32 @@ export const ContentBuilder = () => {
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/40 px-6 py-3">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  repeatDelay: 5
+                }}
+              >
+                <Sparkles className="h-5 w-5 text-primary" />
+              </motion.div>
               <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
                 {steps[activeStep].name}
               </h1>
               
               {steps[activeStep].completed && (
-                <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, type: "spring" }}
+                >
+                  <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+                </motion.div>
               )}
             </div>
             
@@ -97,16 +125,15 @@ export const ContentBuilder = () => {
                 <div 
                   key={idx}
                   className={`flex items-center ${idx > 0 ? 'ml-1' : ''}`}
-                  onClick={() => navigateToStep(idx)}
+                  onClick={() => steps[idx].completed || idx <= activeStep ? navigateToStep(idx) : null}
                 >
-                  <div 
-                    className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-300 ${
-                      idx < activeStep 
-                        ? 'bg-neon-blue' 
-                        : idx === activeStep 
-                          ? 'bg-neon-purple w-3 h-3' 
-                          : 'bg-white/20'
-                    }`}
+                  <motion.div 
+                    className={`rounded-full cursor-pointer transition-all duration-300 ${
+                      idx === activeStep ? 'w-3 h-3' : 'w-2 h-2'
+                    } ${getStepStatusColor(idx)}`}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                    title={step.name}
                   />
                   
                   {idx < steps.length - 1 && (
@@ -143,18 +170,21 @@ export const ContentBuilder = () => {
           </div>
         </div>
         
-        {/* Step content */}
-        <motion.div 
-          key={activeStep}
-          className="flex-1 p-6 overflow-y-auto"
-          variants={stepVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <div className="max-w-5xl mx-auto space-y-6">
-            {renderStepContent()}
-          </div>
-        </motion.div>
+        {/* Step content with improved transitions */}
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={activeStep}
+            className="flex-1 p-6 overflow-y-auto"
+            variants={stepVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <div className="max-w-5xl mx-auto space-y-6">
+              {renderStepContent()}
+            </div>
+          </motion.div>
+        </AnimatePresence>
         
         {/* Navigation controls */}
         <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
@@ -169,34 +199,44 @@ export const ContentBuilder = () => {
             </Button>
             
             {/* Context-aware next button */}
-            <Button
-              onClick={() => navigateToStep(getNextLogicalStep())}
-              disabled={!canGoNext}
-              className={`gap-1 shadow-lg ${
-                canGoNext 
-                  ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' 
-                  : 'opacity-50'
-              }`}
+            <motion.div
+              whileHover={canGoNext ? { scale: 1.02 } : {}}
+              whileTap={canGoNext ? { scale: 0.98 } : {}}
             >
-              {activeStep === steps.length - 1 ? 'Finish' : 'Next'} 
-              {activeStep === steps.length - 1 ? <CheckCircle className="h-4 w-4 ml-1" /> : <ChevronRight className="h-4 w-4" />}
-            </Button>
+              <Button
+                onClick={() => navigateToStep(getNextLogicalStep())}
+                disabled={!canGoNext}
+                className={`gap-1 shadow-lg ${
+                  canGoNext 
+                    ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' 
+                    : 'opacity-50'
+                }`}
+              >
+                {activeStep === steps.length - 1 ? 'Finish' : 'Next'} 
+                {activeStep === steps.length - 1 ? <CheckCircle className="h-4 w-4 ml-1" /> : <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </motion.div>
           </div>
           
           {/* Contextual help */}
-          {!steps[activeStep].completed && (
-            <div className="max-w-5xl mx-auto mt-2">
+          <AnimatePresence>
+            {!steps[activeStep].completed && (
               <motion.div 
-                className="text-xs text-muted-foreground flex items-center justify-end gap-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                className="max-w-5xl mx-auto mt-2"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
                 transition={{ delay: 1 }}
               >
-                <ArrowRight className="h-3 w-3" />
-                <span>Complete this step to continue</span>
+                <div 
+                  className="text-xs text-muted-foreground flex items-center justify-end gap-1"
+                >
+                  <ArrowRight className="h-3 w-3" />
+                  <span>Complete this step to continue</span>
+                </div>
               </motion.div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

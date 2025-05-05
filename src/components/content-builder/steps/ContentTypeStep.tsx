@@ -7,9 +7,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Check, FileText, FileImage, Mail, Layout, ShoppingBag, FileSpreadsheet, Facebook } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ContentType } from '@/contexts/content-builder/types';
 
 type ContentTypeOption = {
-  id: string;
+  id: ContentType;
   name: string;
   icon: React.ReactNode;
   description: string;
@@ -32,7 +33,7 @@ const contentTypes: ContentTypeOption[] = [
     formats: ['Product Launch', 'Lead Generation', 'Event Registration', 'Webinar Signup']
   },
   {
-    id: 'product',
+    id: 'productDescription',
     name: 'Product Description',
     icon: <ShoppingBag className="h-6 w-6" />,
     description: 'Sales-focused content for products',
@@ -57,7 +58,7 @@ const contentTypes: ContentTypeOption[] = [
 export const ContentTypeStep = () => {
   const { state, dispatch } = useContentBuilder();
   const { contentType, contentFormat } = state;
-  const [selectedType, setSelectedType] = useState<string>(contentType || '');
+  const [selectedType, setSelectedType] = useState<ContentType>(contentType || 'article');
   const [selectedFormat, setSelectedFormat] = useState<string>(contentFormat || '');
   const [showFormats, setShowFormats] = useState(false);
   
@@ -72,7 +73,7 @@ export const ContentTypeStep = () => {
   }, [selectedType, selectedFormat, dispatch]);
   
   // Handler for selecting content type
-  const handleSelectType = (typeId: string) => {
+  const handleSelectType = (typeId: ContentType) => {
     setSelectedType(typeId);
     setSelectedFormat(''); // Reset format when changing type
     dispatch({ type: 'SET_CONTENT_TYPE', payload: typeId });
