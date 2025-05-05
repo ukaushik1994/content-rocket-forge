@@ -63,25 +63,25 @@ export const SolutionIntegrationCard = ({
                   
                   {/* Progress arc - using strokeDasharray and strokeDashoffset for animation */}
                   <circle 
-                    className={`${getScoreColor(metrics.overallScore)} transition-all duration-1000 ease-in-out`}
+                    className={`${getScoreColor(metrics.overallScore || 0)} transition-all duration-1000 ease-in-out`}
                     cx="50" 
                     cy="50" 
                     r="45" 
                     strokeWidth="10" 
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 45}`}
-                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - metrics.overallScore / 100)}`}
+                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - (metrics.overallScore || 0) / 100)}`}
                     transform="rotate(-90, 50, 50)"
                     strokeLinecap="round"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                  {metrics.overallScore}
+                  {metrics.overallScore || 0}
                 </div>
               </div>
               
               <div className="mt-2 text-center text-sm text-muted-foreground">
-                {getScoreMessage(metrics.overallScore)}
+                {getScoreMessage(metrics.overallScore || 0)}
               </div>
             </div>
             
@@ -89,9 +89,9 @@ export const SolutionIntegrationCard = ({
               <div>
                 <div className="flex justify-between items-center text-xs mb-1">
                   <span className="font-medium">Name Mentions</span>
-                  <span>{metrics.nameMentions} times</span>
+                  <span>{metrics.mentions || 0} times</span>
                 </div>
-                <Progress value={Math.min(metrics.nameMentions * 20, 100)} className="h-1.5" />
+                <Progress value={Math.min((metrics.mentions || 0) * 20, 100)} className="h-1.5" />
               </div>
               
               <div>
@@ -105,9 +105,9 @@ export const SolutionIntegrationCard = ({
               <div>
                 <div className="flex justify-between items-center text-xs mb-1">
                   <span className="font-medium">Audience Alignment</span>
-                  <span>{metrics.audienceAlignment}%</span>
+                  <span>{metrics.audienceAlignment || 0}%</span>
                 </div>
-                <Progress value={metrics.audienceAlignment} className="h-1.5" />
+                <Progress value={metrics.audienceAlignment || 0} className="h-1.5" />
               </div>
               
               <div>
@@ -119,7 +119,7 @@ export const SolutionIntegrationCard = ({
               </div>
             </div>
             
-            {metrics.painPointsAddressed.length > 0 && (
+            {metrics.painPointsAddressed && metrics.painPointsAddressed.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-xs font-medium">Pain Points Addressed</h4>
                 <div className="flex flex-wrap gap-1">
@@ -134,8 +134,8 @@ export const SolutionIntegrationCard = ({
             
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium">Call-to-Action Mentions</span>
-              <Badge variant={metrics.ctaMentions > 0 ? "default" : "outline"}>
-                {metrics.ctaMentions}
+              <Badge variant={(metrics.ctaMentions || 0) > 0 ? "default" : "outline"}>
+                {metrics.ctaMentions || 0}
               </Badge>
             </div>
           </div>

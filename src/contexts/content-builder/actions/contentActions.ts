@@ -5,7 +5,7 @@ export const createContentActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const setContentType = (contentType: any) => {
+  const setContentType = (contentType: string) => {
     dispatch({ type: 'SET_CONTENT_TYPE', payload: contentType });
   };
   

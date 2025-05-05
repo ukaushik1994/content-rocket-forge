@@ -56,7 +56,12 @@ export const initialState: ContentBuilderState = {
     contextualReferences: 0,
     naturalness: 0,
     featureIncorporation: 0,
-    positioningScore: 0
+    positioningScore: 0,
+    overallScore: 0,
+    nameMentions: 0,
+    audienceAlignment: 0,
+    painPointsAddressed: [],
+    ctaMentions: 0
   },
   
   // UI state

@@ -5,48 +5,56 @@ export const createPublishActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const saveContentToDraft = async (contentParams: SaveContentParams): Promise<string | null> => {
-    dispatch({ type: 'SET_IS_SAVING', payload: true });
-    
+  // Mock implementation for saving content to draft
+  const saveContentToDraft = async (content: SaveContentParams): Promise<string | null> => {
     try {
-      // In a real implementation, this would save to an API/database
-      // Mock implementation for now
+      // Set saving state to true
+      dispatch({ type: 'SET_IS_SAVING', payload: true });
+      
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mark the content as saved
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+      console.log('Saving content to draft:', content);
       
-      // Return mock ID
-      return 'draft-' + Date.now();
-    } catch (error) {
-      console.error('Error saving content:', error);
-      return null;
-    } finally {
+      // In a real implementation, this would call an API to save the content
+      const mockId = 'draft-' + Date.now();
+      
+      // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });
+      
+      return mockId;
+    } catch (error) {
+      console.error('Error saving content to draft:', error);
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
+      return null;
     }
   };
   
-  const saveContentToPublished = async (contentParams: SaveContentParams): Promise<string | null> => {
-    dispatch({ type: 'SET_IS_SAVING', payload: true });
-    
+  // Mock implementation for publishing content
+  const saveContentToPublished = async (content: SaveContentParams): Promise<string | null> => {
     try {
-      // In a real implementation, this would save to an API/database and mark as published
-      // Mock implementation for now
+      // Set saving state to true
+      dispatch({ type: 'SET_IS_SAVING', payload: true });
+      
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Mark the content as saved and complete the step
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+      console.log('Publishing content:', content);
       
-      // Return mock ID
-      return 'published-' + Date.now();
+      // In a real implementation, this would call an API to publish the content
+      const mockId = 'published-' + Date.now();
+      
+      // Set saving state to false
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
+      
+      return mockId;
     } catch (error) {
       console.error('Error publishing content:', error);
-      return null;
-    } finally {
       dispatch({ type: 'SET_IS_SAVING', payload: false });
+      return null;
     }
   };
-  
+
   return {
     saveContentToDraft,
     saveContentToPublished

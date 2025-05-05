@@ -1,11 +1,10 @@
-
 import React from 'react';
 
 // Step definition
 export interface ContentBuilderStep {
   id: number;
   name: string;
-  description?: string;
+  description: string; // Making this required to match usage
   completed: boolean;
   visited: boolean;
 }
@@ -15,6 +14,7 @@ export interface SerpSelection {
   type: string;
   content: string;
   selected: boolean;
+  source?: string; // Add source property that's used in components
 }
 
 // Document structure for analysis
@@ -38,7 +38,7 @@ export interface ContentCluster {
 export interface ContentType {
   id: string;
   name: string;
-  icon: string;
+  icon?: string;
   description: string;
 }
 
@@ -48,14 +48,21 @@ export interface Solution {
   name: string;
   description: string;
   features: string[];
+  useCases?: string[]; // Add the missing properties
+  painPoints?: string[];
+  targetAudience?: string[];
+  logoUrl?: string | null;
+  externalUrl?: string | null;
+  resources?: Array<{title: string; url: string}>;
 }
 
 // Content outline section type
 export interface ContentOutlineSection {
   id: string;
   title: string;
-  type: string;
-  content: string;
+  type?: string;
+  content?: string;
+  notes?: string;
   relatedKeywords?: string[];
   subsections?: Array<{id: string; title: string}>;
 }
@@ -67,6 +74,11 @@ export interface SolutionIntegrationMetrics {
   naturalness: number;
   featureIncorporation: number;
   positioningScore: number;
+  overallScore: number; // Add missing properties
+  nameMentions?: number;
+  audienceAlignment?: number;
+  painPointsAddressed?: string[];
+  ctaMentions?: number;
 }
 
 // Content builder state
@@ -97,14 +109,14 @@ export interface ContentBuilderState {
   selectedCluster: ContentCluster | null;
   
   // Outline data
-  outline: string[];
+  outline: ContentOutlineSection[] | string[]; // Support both formats
   isGeneratingOutline: boolean;
   
   // Content data
   content: string;
   isGeneratingContent: boolean;
   documentStructure: DocumentStructure | null;
-  additionalInstructions: string;
+  additionalInstructions: string; // Add missing property
   
   // Meta data
   metaTitle: string;
@@ -145,7 +157,7 @@ export type ContentBuilderAction =
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'SET_SELECTED_SOLUTION'; payload: Solution }
-  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: { mentions: number; contextualReferences: number; naturalness: number; featureIncorporation: number; positioningScore: number; } }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
   | { type: 'SET_IS_SAVING'; payload: boolean }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
   | { type: 'MARK_STEP_VISITED'; payload: number }
@@ -162,14 +174,18 @@ export type ContentBuilderContextType = {
   dispatch: React.Dispatch<ContentBuilderAction>;
   // Keyword actions
   setMainKeyword: (keyword: string) => void;
+  addKeyword: (keyword: string) => void;
   addSecondaryKeyword: (keyword: string) => void;
+  removeKeyword: (keyword: string) => void;
   removeSecondaryKeyword: (keyword: string) => void;
   // Content actions
   setContentType: (contentType: string) => void;
   setContentTitle: (title: string) => void;
+  setContent: (content: string) => void;
   setContentIntent: (intent: string) => void;
   updateContent: (content: string) => void;
-  setContent: (content: string) => void;
+  setOutlineTitle: (title: string) => void;
+  setOutlineSections: (sections: any[]) => void;
   // SERP actions
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
@@ -190,6 +206,6 @@ export interface SaveContentParams {
   content: string;
   metaTitle?: string;
   metaDescription?: string;
-  outline?: string[];
+  outline?: string[] | ContentOutlineSection[];
   seoScore?: number;
 }
