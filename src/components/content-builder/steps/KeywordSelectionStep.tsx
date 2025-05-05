@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -238,7 +237,6 @@ export const KeywordSelectionStep = () => {
                     totalSelected={totalSelected}
                     selectedCounts={selectedCounts}
                     handleToggleSelection={handleToggleSelection}
-                    handleContinueWithSelections={handleContinueWithSelections}
                   />
                 </div>
                 
