@@ -5,7 +5,6 @@ export interface SelectedItemsGroupProps {
   count: number;
   items: SerpSelection[];
   handleToggleSelection: (type: string, content: string) => void;
-  competitorCount?: number; // Adding optional competitorCount property
 }
 
 export interface SelectedCountsType {

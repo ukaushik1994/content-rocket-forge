@@ -4,9 +4,8 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles, ArrowRight } from 'lucide-react';
+import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 
 // Custom hooks
 import { useSeoAnalysis } from '@/hooks/useSeoAnalysis';
@@ -18,10 +17,9 @@ import { RecommendationsCard } from '@/components/content-builder/optimization/R
 import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
 
 export const OptimizationStep = () => {
-  const { state, dispatch } = useContentBuilder();
+  const { state } = useContentBuilder();
   const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showConfetti, setShowConfetti] = useState(false);
-  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
   
   // Use custom hooks for functionality
   const { 
@@ -29,8 +27,7 @@ export const OptimizationStep = () => {
     recommendations,
     scores,
     runSeoAnalysis,
-    getScoreColor,
-    skipOptimization
+    getScoreColor
   } = useSeoAnalysis();
   
   const {
@@ -69,20 +66,6 @@ export const OptimizationStep = () => {
   const totalCount = recommendationIds.length;
   const progressPercentage = totalCount > 0 ? Math.round((appliedCount / totalCount) * 100) : 0;
   
-  // Handle skip optimization
-  const handleSkipOptimization = () => {
-    if (seoScore > 0 && seoScore < 50) {
-      // If score is low, ask for confirmation
-      if (window.confirm("Your SEO score is low. Are you sure you want to skip optimization?")) {
-        skipOptimization();
-        toast.success("Optimization step skipped");
-      }
-    } else {
-      skipOptimization();
-      toast.success("Optimization step skipped");
-    }
-  };
-  
   return (
     <div className="space-y-6">
       <motion.div 
@@ -101,7 +84,6 @@ export const OptimizationStep = () => {
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
               Analyze your content and apply AI-powered optimizations to increase your SEO score.
-              <span className="text-purple-400 ml-1">(Optional step)</span>
             </p>
           </div>
           
@@ -133,15 +115,6 @@ export const OptimizationStep = () => {
                   {seoScore > 0 ? 'Re-analyze' : 'Analyze Content'}
                 </>
               )}
-            </Button>
-            
-            <Button
-              onClick={handleSkipOptimization}
-              variant="outline"
-              size="sm"
-              className="gap-1 border-purple-500/30 hover:bg-purple-500/10"
-            >
-              Skip <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
