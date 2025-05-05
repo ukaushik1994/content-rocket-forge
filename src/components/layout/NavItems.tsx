@@ -20,7 +20,7 @@ const NavItem: React.FC<NavItemProps> = ({
       {active && <motion.span layoutId="nav-highlight" transition={{
       type: "spring",
       duration: 0.6
-    }} className="absolute inset-0 rounded-lg bg-gradient-to-r from-neon-purple to-neon-blue opacity-10 font-normal text-slate-950 text-base" />}
+    }} className="absolute inset-0 rounded-lg bg-gradient-to-r from-neon-purple to-neon-blue opacity-10 font-normal text-base text-zinc-50" />}
     </Link>;
 };
 export default function NavItems() {
