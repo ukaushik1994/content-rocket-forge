@@ -2,83 +2,63 @@
 import { ContentBuilderState } from './types';
 
 export const initialState: ContentBuilderState = {
-  activeStep: 0,
+  // Steps for the content builder wizard
   steps: [
-    {
-      id: 0,
-      name: 'Selection & Analysis',
-      description: 'Select keywords and analyze search results',
-      completed: false,
-    },
-    {
-      id: 1,
-      name: 'Content Type',
-      description: 'Choose the type and format of content',
-      completed: false,
-    },
-    {
-      id: 2,
-      name: 'SERP Analysis',
-      description: 'Analyze search results for your keywords',
-      completed: false,
-    },
-    {
-      id: 3,
-      name: 'Content Outline',
-      description: 'Create an outline for your content',
-      completed: false,
-    },
-    {
-      id: 4,
-      name: 'Content Writing',
-      description: 'Write your content based on the outline',
-      completed: false,
-    },
-    {
-      id: 5,
-      name: 'SEO Optimization',
-      description: 'Optimize your content for search engines',
-      completed: false,
-    },
-    {
-      id: 6,
-      name: 'Final Review',
-      description: 'Review document structure, meta info and solution integration',
-      completed: false,
-    },
-    {
-      id: 7,
-      name: 'Save & Export',
-      description: 'Save your content to library or export',
-      completed: false,
-    },
+    { id: 0, name: 'Keyword Selection', description: 'Choose main and secondary keywords', completed: false, visited: true },
+    { id: 1, name: 'Content Type', description: 'Select content type and format', completed: false, visited: false },
+    { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
+    { id: 3, name: 'Outline', description: 'Create content structure', completed: false, visited: false },
+    { id: 4, name: 'Content Writing', description: 'Write and edit content', completed: false, visited: false },
+    { id: 5, name: 'Optimization', description: 'Optimize for SEO and readability', completed: false, visited: false },
+    { id: 6, name: 'Final Review', description: 'Review and publish', completed: false, visited: false }
   ],
-  primaryKeyword: '',
-  secondaryKeywords: [],
-  keywordClusters: {},
-  contentType: 'article',
-  contentFormat: '',
-  contentTitle: '',
-  outlineSections: [],
-  serpAnalysisResults: null,
-  serpKeywordsSelected: [],
-  serpQuestionsSelected: [],
-  isAnalyzing: false,
-  isSaving: false,
-  isPublishing: false,
-  content: '',
+  activeStep: 0,
+  
+  // Keyword data
   mainKeyword: '',
+  secondaryKeywords: [],
+  keywordClusters: [],
   selectedKeywords: [],
   selectedCluster: null,
-  selectedSolution: null,
+  
+  // Content type and format
+  contentType: '',
+  contentFormat: '',
+  contentIntent: '',
+  contentTitle: '',
+  
+  // SERP data
+  isAnalyzing: false,
   serpData: null,
   serpSelections: [],
+  
+  // Outline data
   outline: [],
-  seoScore: 0,
+  isGeneratingOutline: false,
+  
+  // Content data
+  content: '',
+  isGeneratingContent: false,
+  documentStructure: null,
   additionalInstructions: '',
-  seoImprovements: [],
+  
+  // Meta data
   metaTitle: '',
   metaDescription: '',
-  documentStructure: null,
-  solutionIntegrationMetrics: null
+  
+  // SEO data
+  seoScore: 0,
+  
+  // Solution integration
+  selectedSolution: null,
+  solutionIntegrationMetrics: {
+    mentions: 0,
+    contextualReferences: 0,
+    naturalness: 0,
+    featureIncorporation: 0,
+    positioningScore: 0
+  },
+  
+  // UI state
+  isSaving: false
 };

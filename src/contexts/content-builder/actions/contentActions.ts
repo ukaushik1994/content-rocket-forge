@@ -14,31 +14,28 @@ export const createContentActions = (
   };
   
   const setOutlineTitle = (title: string) => {
-    dispatch({ type: 'SET_OUTLINE_TITLE', payload: title });
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
   };
   
   const setOutlineSections = (sections: any[]) => {
-    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: sections });
+    dispatch({ type: 'SET_OUTLINE', payload: sections });
   };
   
   const setContent = (content: string) => {
     dispatch({ type: 'SET_CONTENT', payload: content });
   };
   
-  const rewriteContent = (newContent: string, improvementType: string) => {
-    // First update the content
-    dispatch({ type: 'SET_CONTENT', payload: newContent });
-    
-    // Then mark the improvement as applied if it exists
-    if (state.seoImprovements) {
-      const improvement = state.seoImprovements.find(imp => 
-        imp.type === improvementType && !imp.applied
-      );
-      
-      if (improvement) {
-        dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: improvement.id });
-      }
-    }
+  const updateContent = (content: string) => {
+    // This is an alias for setContent for backward compatibility
+    setContent(content);
+  };
+
+  const setContentIntent = (intent: string) => {
+    dispatch({ type: 'SET_CONTENT_INTENT', payload: intent });
+  };
+  
+  const setContentTitle = (title: string) => {
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
   };
   
   return {
@@ -47,6 +44,8 @@ export const createContentActions = (
     setOutlineTitle,
     setOutlineSections,
     setContent,
-    rewriteContent
+    updateContent,
+    setContentIntent,
+    setContentTitle
   };
 };

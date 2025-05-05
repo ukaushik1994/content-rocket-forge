@@ -1,6 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types';
 
 export const createSerpActions = (
   state: ContentBuilderState, 
@@ -28,104 +27,31 @@ export const createSerpActions = (
     }
   };
   
-  const addSerpSelection = (selection: SerpSelection) => {
-    dispatch({ type: 'ADD_SERP_SELECTION', payload: selection });
-  };
-  
   const addContentFromSerp = (content: string, type: string) => {
-    const selection: SerpSelection = {
-      type,
-      content,
-      selected: true
-    };
-    
-    dispatch({ type: 'ADD_SERP_SELECTION', payload: selection });
-  };
-  
-  const toggleSerpSelection = (type: string, content: string) => {
-    dispatch({ type: 'TOGGLE_SERP_SELECTION', payload: { type, content } });
+    dispatch({ 
+      type: 'TOGGLE_SERP_SELECTION', 
+      payload: { type, content } 
+    });
   };
   
   const generateOutlineFromSelections = () => {
-    const { serpSelections } = state;
-    const selectedItems = serpSelections.filter(item => item.selected);
+    // In a real implementation, this would process selections and create an outline
+    // For now, just set a basic outline
+    const basicOutline = [
+      "Introduction",
+      "Key Points",
+      "Main Content Section 1",
+      "Main Content Section 2",
+      "Conclusion"
+    ];
     
-    if (selectedItems.length === 0) return;
-    
-    // Group by type
-    const questionItems = selectedItems.filter(item => item.type === 'question');
-    const keywordItems = selectedItems.filter(item => item.type === 'keyword');
-    const headingItems = selectedItems.filter(item => item.type === 'heading');
-    const contentGapItems = selectedItems.filter(item => item.type === 'contentGap');
-    
-    // Generate outline sections
-    const outlineSections: ContentOutlineSection[] = [];
-    
-    // Add introduction
-    outlineSections.push({
-      id: uuidv4(),
-      title: 'Introduction',
-      type: 'section',
-      content: `Introduction to ${state.mainKeyword}`,
-      relatedKeywords: keywordItems.slice(0, 3).map(item => item.content)
-    });
-    
-    // Add sections from headings
-    headingItems.forEach(item => {
-      outlineSections.push({
-        id: uuidv4(),
-        title: item.content,
-        type: 'section',
-        content: '',
-        relatedKeywords: []
-      });
-    });
-    
-    // Add FAQ section from questions
-    if (questionItems.length > 0) {
-      const faqSection: ContentOutlineSection = {
-        id: uuidv4(),
-        title: 'Frequently Asked Questions',
-        type: 'faq',
-        content: '',
-        subsections: questionItems.map(item => ({
-          id: uuidv4(),
-          title: item.content
-        }))
-      };
-      outlineSections.push(faqSection);
-    }
-    
-    // Add content gaps as sections
-    contentGapItems.forEach(item => {
-      outlineSections.push({
-        id: uuidv4(),
-        title: item.content,
-        type: 'section',
-        content: '',
-        relatedKeywords: []
-      });
-    });
-    
-    // Add conclusion
-    outlineSections.push({
-      id: uuidv4(),
-      title: 'Conclusion',
-      type: 'section',
-      content: `Summary and key takeaways about ${state.mainKeyword}`,
-      relatedKeywords: []
-    });
-    
-    // Update outline in state
-    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
+    dispatch({ type: 'SET_OUTLINE', payload: basicOutline });
   };
   
   return {
     analyzeKeyword,
-    addSerpSelection,
     addContentFromSerp,
-    toggleSerpSelection,
-    generateOutlineFromSelections
+    generateOutlineFromSelections,
   };
 };
 
@@ -181,21 +107,39 @@ const getMockSerpData = async (keyword: string) => {
       },
     ],
     entities: [
-      { name: 'Google', type: 'Organization' },
-      { name: 'Website Traffic', type: 'Concept' },
-      { name: 'Content Marketing', type: 'Topic' },
-      { name: 'Analytics', type: 'Tool' },
+      { name: 'Google', type: 'Organization', description: 'The most popular search engine' },
+      { name: 'Website Traffic', type: 'Concept', description: 'Visitors to a website' },
+      { name: 'Content Marketing', type: 'Topic', description: 'Creating valuable content to attract audience' },
+      { name: 'Analytics', type: 'Tool', description: 'Tools to measure website performance' },
     ],
     headings: [
-      { text: `What is ${keyword}?`, level: 'h2' },
-      { text: `Benefits of ${keyword}`, level: 'h2' },
-      { text: `${keyword} Best Practices`, level: 'h2' },
-      { text: `${keyword} Tools and Resources`, level: 'h2' },
+      { text: `What is ${keyword}?`, level: 'h2', type: 'question' },
+      { text: `Benefits of ${keyword}`, level: 'h2', type: 'benefit' },
+      { text: `${keyword} Best Practices`, level: 'h2', type: 'guide' },
+      { text: `${keyword} Tools and Resources`, level: 'h2', type: 'resource' },
     ],
     contentGaps: [
-      { topic: `${keyword} for E-commerce`, description: 'Specialized strategies for online stores' },
-      { topic: `${keyword} ROI Calculation`, description: 'How to measure return on investment' },
-      { topic: `${keyword} Case Studies`, description: 'Real-world success stories' },
+      { 
+        topic: `${keyword} for E-commerce`, 
+        description: 'Specialized strategies for online stores',
+        content: 'Detailed information about applying these concepts to e-commerce websites',
+        opportunity: 'high',
+        source: 'Competitor analysis'
+      },
+      { 
+        topic: `${keyword} ROI Calculation`, 
+        description: 'How to measure return on investment',
+        content: 'Methods and formulas for calculating the return on investment',
+        opportunity: 'medium',
+        source: 'User searches'
+      },
+      { 
+        topic: `${keyword} Case Studies`, 
+        description: 'Real-world success stories',
+        content: 'Examples of successful implementations with data and outcomes',
+        opportunity: 'high',
+        source: 'Industry reports'
+      },
     ],
     recommendations: [
       `Focus on long-form content about ${keyword} that addresses user questions`,

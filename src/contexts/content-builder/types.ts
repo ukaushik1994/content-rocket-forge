@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Step definition
@@ -7,6 +8,65 @@ export interface ContentBuilderStep {
   description?: string;
   completed: boolean;
   visited: boolean;
+}
+
+// Type definitions for entities in the SERP analysis
+export interface SerpSelection {
+  type: string;
+  content: string;
+  selected: boolean;
+}
+
+// Document structure for analysis
+export interface DocumentStructure {
+  h1: string[];
+  h2: string[];
+  h3: string[];
+  h4: string[];
+  hasSingleH1: boolean;
+  hasLogicalHierarchy: boolean;
+}
+
+// Content cluster for keyword grouping
+export interface ContentCluster {
+  id: string;
+  name: string;
+  keywords: string[];
+}
+
+// Content type
+export interface ContentType {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+}
+
+// Solution type
+export interface Solution {
+  id: string;
+  name: string;
+  description: string;
+  features: string[];
+}
+
+// Content outline section type
+export interface ContentOutlineSection {
+  id: string;
+  title: string;
+  type: string;
+  content: string;
+  relatedKeywords?: string[];
+  subsections?: Array<{id: string; title: string}>;
+}
+
+// Solution integration metrics
+export interface SolutionIntegrationMetrics {
+  mentions: number;
+  contextualReferences: number;
+  naturalness: number;
+  featureIncorporation: number;
+  positioningScore: number;
 }
 
 // Content builder state
@@ -33,9 +93,8 @@ export interface ContentBuilderState {
   // SERP data
   isAnalyzing: boolean;
   serpData: any;
-  serpSelections: {
-    [key: string]: string[];
-  };
+  serpSelections: SerpSelection[];
+  selectedCluster: ContentCluster | null;
   
   // Outline data
   outline: string[];
@@ -44,7 +103,8 @@ export interface ContentBuilderState {
   // Content data
   content: string;
   isGeneratingContent: boolean;
-  documentStructure: any;
+  documentStructure: DocumentStructure | null;
+  additionalInstructions: string;
   
   // Meta data
   metaTitle: string;
@@ -54,12 +114,8 @@ export interface ContentBuilderState {
   seoScore: number;
   
   // Solution integration
-  selectedSolution: string;
-  solutionIntegrationMetrics: {
-    mentions: number;
-    contextualReferences: number;
-    naturalness: number;
-  };
+  selectedSolution: Solution | null;
+  solutionIntegrationMetrics: SolutionIntegrationMetrics;
   
   // UI state
   isSaving: boolean;
@@ -80,7 +136,7 @@ export type ContentBuilderAction =
   | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'SET_SERP_DATA'; payload: any }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
-  | { type: 'SET_OUTLINE'; payload: string[] }
+  | { type: 'SET_OUTLINE'; payload: string[] | ContentOutlineSection[] }
   | { type: 'SET_IS_GENERATING_OUTLINE'; payload: boolean }
   | { type: 'SET_CONTENT'; payload: string }
   | { type: 'SET_IS_GENERATING_CONTENT'; payload: boolean }
@@ -88,11 +144,18 @@ export type ContentBuilderAction =
   | { type: 'SET_META_TITLE'; payload: string }
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_SEO_SCORE'; payload: number }
-  | { type: 'SET_SELECTED_SOLUTION'; payload: string }
-  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: { mentions: number; contextualReferences: number; naturalness: number } }
+  | { type: 'SET_SELECTED_SOLUTION'; payload: Solution }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: { mentions: number; contextualReferences: number; naturalness: number; featureIncorporation: number; positioningScore: number; } }
   | { type: 'SET_IS_SAVING'; payload: boolean }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
-  | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] };
+  | { type: 'MARK_STEP_VISITED'; payload: number }
+  | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] }
+  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
+  | { type: 'ADD_KEYWORD'; payload: string }
+  | { type: 'REMOVE_KEYWORD'; payload: string }
+  | { type: 'SET_MAIN_KEYWORD'; payload: string }
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
+  | { type: 'SELECT_SOLUTION'; payload: Solution };
 
 export type ContentBuilderContextType = {
   state: ContentBuilderState;
@@ -106,8 +169,11 @@ export type ContentBuilderContextType = {
   setContentTitle: (title: string) => void;
   setContentIntent: (intent: string) => void;
   updateContent: (content: string) => void;
+  setContent: (content: string) => void;
   // SERP actions
   analyzeKeyword: (keyword: string) => Promise<void>;
+  addContentFromSerp: (content: string, type: string) => void;
+  generateOutlineFromSelections: () => void;
   // Navigation actions
   navigateToStep: (step: number) => void;
   // Saving and Publishing actions

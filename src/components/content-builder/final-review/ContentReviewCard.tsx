@@ -16,7 +16,7 @@ interface ContentReviewCardProps {
 export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
-  const { setContent } = useContentBuilder();
+  const { updateContent } = useContentBuilder();
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {
@@ -25,7 +25,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
 
   // Save changes
   const handleSave = () => {
-    setContent(editedContent);
+    updateContent(editedContent);
     setIsEditing(false);
     toast.success("Content updated successfully");
   };
