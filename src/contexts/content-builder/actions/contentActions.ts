@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent } from '../types';
+import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent, OutlineSection } from '../types';
 
 export const createContentActions = (
   state: ContentBuilderState, 
@@ -24,8 +24,20 @@ export const createContentActions = (
   const setContent = (content: string) => {
     dispatch({ type: 'SET_CONTENT', payload: content });
   };
+  
+  const setMetaTitle = (title: string) => {
+    dispatch({ type: 'SET_META_TITLE', payload: title });
+  };
+  
+  const setMetaDescription = (description: string) => {
+    dispatch({ type: 'SET_META_DESCRIPTION', payload: description });
+  };
+  
+  const setAdditionalInstructions = (instructions: string) => {
+    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
+  };
 
-  const generateContent = async (outline: any[]) => {
+  const generateContent = async (outline: OutlineSection[]) => {
     dispatch({ type: 'SET_IS_GENERATING', payload: true });
     
     try {
@@ -60,6 +72,50 @@ export const createContentActions = (
       dispatch({ type: 'SET_IS_SAVING', payload: false });
     }
   };
+  
+  const saveContentToDraft = async (options: any) => {
+    dispatch({ type: 'SET_IS_SAVING', payload: true });
+    
+    try {
+      // In a real implementation, this would save to a database
+      console.log('Saving content to draft:', options);
+      
+      // Simulate successful save
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mark the current step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving content to draft:', error);
+      return false;
+    } finally {
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
+    }
+  };
+  
+  const saveContentToPublished = async (options: any) => {
+    dispatch({ type: 'SET_IS_SAVING', payload: true });
+    
+    try {
+      // In a real implementation, this would save to a database
+      console.log('Publishing content:', options);
+      
+      // Simulate successful save
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mark the current step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+      
+      return true;
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      return false;
+    } finally {
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
+    }
+  };
 
   return {
     setContentType,
@@ -68,6 +124,11 @@ export const createContentActions = (
     setContentIntent,
     setContent,
     generateContent,
-    saveContent
+    saveContent,
+    setMetaTitle,
+    setMetaDescription,
+    setAdditionalInstructions,
+    saveContentToDraft,
+    saveContentToPublished
   };
 };

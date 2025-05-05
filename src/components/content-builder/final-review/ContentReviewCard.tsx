@@ -16,7 +16,7 @@ interface ContentReviewCardProps {
 export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
-  const { setContent, updateContent } = useContentBuilder();
+  const { setContent } = useContentBuilder();
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {

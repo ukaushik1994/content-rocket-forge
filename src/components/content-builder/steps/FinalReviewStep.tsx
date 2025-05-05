@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -19,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, FileCheck } from 'lucide-react';
 
 export const FinalReviewStep = () => {
-  const { state, dispatch, saveContentToDraft, saveContentToPublished } = useContentBuilder();
+  const { state, dispatch, saveContentToDraft, saveContentToPublished, setMetaTitle, setMetaDescription } = useContentBuilder();
   const { 
     content, 
     mainKeyword, 
@@ -88,14 +87,14 @@ export const FinalReviewStep = () => {
   const handleMetaTitleChange = (value: string) => {
     console.log("[FinalReviewStep] Setting meta title to:", value);
     // Update both metaTitle and contentTitle for consistency
-    dispatch({ type: 'SET_META_TITLE', payload: value });
+    setMetaTitle(value);
     dispatch({ type: 'SET_CONTENT_TITLE', payload: value });
     setSaveTitle(value); // Update the save dialog title too
   };
   
   const handleMetaDescriptionChange = (value: string) => {
     console.log("[FinalReviewStep] Setting meta description to:", value);
-    dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+    setMetaDescription(value);
   };
   
   // Handler for running necessary checks based on the current tab
@@ -151,7 +150,7 @@ export const FinalReviewStep = () => {
       setShowSaveDialog(false);
       
       // Mark the step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
     } catch (error) {
       console.error("Error saving content:", error);
       toast.error("Failed to save content. Please try again.");
@@ -190,7 +189,7 @@ export const FinalReviewStep = () => {
       toast.success("Content published successfully!");
       
       // Mark the step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
     } catch (error) {
       console.error("Error publishing content:", error);
       toast.error("Failed to publish content. Please try again.");

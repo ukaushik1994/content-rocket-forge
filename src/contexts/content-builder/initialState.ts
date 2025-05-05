@@ -92,5 +92,18 @@ export const initialState: ContentBuilderState = {
   seoImprovements: [],
   
   // Selected Cluster
-  selectedCluster: null
+  selectedCluster: null,
+
+  // Meta Information
+  metaTitle: null,
+  metaDescription: null,
+
+  // Document Structure
+  documentStructure: null,
+
+  // Solution Integration
+  solutionIntegrationMetrics: null,
+
+  // Additional Instructions
+  additionalInstructions: ''
 };

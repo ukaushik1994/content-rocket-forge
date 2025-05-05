@@ -1,127 +1,144 @@
 
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SelectedItemsSidebarProps } from './types';
-import { 
-  KeywordsGroup, 
-  QuestionsGroup, 
-  SnippetsGroup,
-  EntitiesGroup,
-  HeadingsGroup,
-  ContentGapsGroup,
-  TopRanksGroup
-} from './groups';
+import { SerpSelection } from '@/contexts/content-builder/types';
+import { SelectedCountsType } from './types';
+import { KeywordsGroup } from './groups/KeywordsGroup';
+import { QuestionsGroup } from './groups/QuestionsGroup';
+import { SnippetsGroup } from './groups/SnippetsGroup';
+import { EntitiesGroup } from './groups/EntitiesGroup';
+import { HeadingsGroup } from './groups/HeadingsGroup';
+import { ContentGapsGroup } from './groups/ContentGapsGroup';
+import { TopRanksGroup } from './groups/TopRanksGroup';
 import { EmptySelectionState } from './EmptySelectionState';
+import { Separator } from '@/components/ui/separator';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface SelectedItemsContentProps extends SelectedItemsSidebarProps {
-  selectedTab: string;
-  setSelectedTab: (tab: string) => void;
+interface SelectedItemsContentProps {
+  selectedCounts: SelectedCountsType;
+  serpSelections: SerpSelection[];
+  handleToggleSelection: (type: string, content: string) => void;
+  totalSelected: number;
 }
 
 export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
-  serpSelections,
-  totalSelected,
   selectedCounts,
+  serpSelections,
   handleToggleSelection,
-  selectedTab,
-  setSelectedTab
+  totalSelected
 }) => {
-  // Helper function to get items by type
-  function getItemsByType(type: string): any[] {
-    return serpSelections.filter(item => item.type === type);
-  }
+  const hasEmptySelections = totalSelected === 0;
   
-  if (totalSelected === 0) {
-    return <EmptySelectionState />;
-  }
+  // Separate the items by type
+  const keywordItems = serpSelections.filter(item => item.type === 'keyword');
+  const questionItems = serpSelections.filter(item => item.type === 'question');
+  const snippetItems = serpSelections.filter(item => item.type === 'snippet');
+  const competitorItems = serpSelections.filter(item => item.type === 'competitor');
+  const entityItems = serpSelections.filter(item => item.type === 'entity');
+  const headingItems = serpSelections.filter(item => item.type === 'heading');
+  const contentGapItems = serpSelections.filter(item => item.type === 'contentGap');
+  const topRankItems = serpSelections.filter(item => item.type === 'topRank');
 
+  // For safety, convert any content that's not a string to a string
+  const safeHandleToggleSelection = (type: string, content: any) => {
+    const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+    handleToggleSelection(type, contentStr);
+  };
+  
   return (
-    <motion.div
-      key="content"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="h-full"
-    >
-      <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="w-full bg-white/5 border border-white/10">
-          <TabsTrigger value="all" className="flex-1 text-xs data-[state=active]:bg-white/10">
-            All ({totalSelected})
-          </TabsTrigger>
+    <AnimatePresence mode="wait">
+      {hasEmptySelections ? (
+        <EmptySelectionState key="empty" />
+      ) : (
+        <motion.div 
+          key="content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="space-y-4"
+        >
+          {/* Keywords */}
           {selectedCounts.keyword > 0 && (
-            <TabsTrigger value="keywords" className="flex-1 text-xs data-[state=active]:bg-white/10">
-              Keywords ({selectedCounts.keyword})
-            </TabsTrigger>
+            <KeywordsGroup 
+              count={selectedCounts.keyword}
+              items={keywordItems}
+              handleToggleSelection={safeHandleToggleSelection}
+            />
           )}
+          
+          {/* Questions */}
           {selectedCounts.question > 0 && (
-            <TabsTrigger value="questions" className="flex-1 text-xs data-[state=active]:bg-white/10">
-              Q&A ({selectedCounts.question})
-            </TabsTrigger>
+            <>
+              {selectedCounts.keyword > 0 && <Separator />}
+              <QuestionsGroup 
+                count={selectedCounts.question}
+                items={questionItems}
+                handleToggleSelection={safeHandleToggleSelection}
+              />
+            </>
           )}
-        </TabsList>
-      </Tabs>
-      
-      <div className="mt-4 space-y-4 max-h-[400px] overflow-y-auto pr-1 scrollbar-none">
-        {(selectedTab === 'all' || selectedTab === 'keywords') && 
-          selectedCounts.keyword > 0 && (
-          <KeywordsGroup
-            count={selectedCounts.keyword}
-            items={getItemsByType('keyword')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-        
-        {(selectedTab === 'all' || selectedTab === 'questions') && 
-          selectedCounts.question > 0 && (
-          <QuestionsGroup
-            count={selectedCounts.question}
-            items={getItemsByType('question')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-        
-        {selectedTab === 'all' && selectedCounts.snippet > 0 && (
-          <SnippetsGroup
-            count={selectedCounts.snippet}
-            items={getItemsByType('snippet')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-
-        {selectedTab === 'all' && selectedCounts.entity > 0 && (
-          <EntitiesGroup
-            count={selectedCounts.entity}
-            items={getItemsByType('entity')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-
-        {selectedTab === 'all' && selectedCounts.heading > 0 && (
-          <HeadingsGroup
-            count={selectedCounts.heading}
-            items={getItemsByType('heading')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-
-        {selectedTab === 'all' && selectedCounts.contentGap > 0 && (
-          <ContentGapsGroup
-            count={selectedCounts.contentGap}
-            items={getItemsByType('contentGap')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-
-        {selectedTab === 'all' && (selectedCounts.topRank > 0 || selectedCounts.competitor > 0) && (
-          <TopRanksGroup
-            count={selectedCounts.topRank}
-            competitorCount={selectedCounts.competitor}
-            items={getItemsByType('topRank')}
-            handleToggleSelection={handleToggleSelection}
-          />
-        )}
-      </div>
-    </motion.div>
+          
+          {/* Snippets */}
+          {selectedCounts.snippet > 0 && (
+            <>
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0) && <Separator />}
+              <SnippetsGroup 
+                count={selectedCounts.snippet}
+                items={snippetItems}
+                handleToggleSelection={safeHandleToggleSelection}
+              />
+            </>
+          )}
+          
+          {/* Entities */}
+          {selectedCounts.entity > 0 && (
+            <>
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0) && <Separator />}
+              <EntitiesGroup 
+                count={selectedCounts.entity}
+                items={entityItems}
+                handleToggleSelection={safeHandleToggleSelection}
+              />
+            </>
+          )}
+          
+          {/* Headings */}
+          {selectedCounts.heading > 0 && (
+            <>
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0 || selectedCounts.entity > 0) && <Separator />}
+              <HeadingsGroup 
+                count={selectedCounts.heading}
+                items={headingItems}
+                handleToggleSelection={safeHandleToggleSelection}
+              />
+            </>
+          )}
+          
+          {/* Content Gaps */}
+          {selectedCounts.contentGap > 0 && (
+            <>
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0 || selectedCounts.entity > 0 || selectedCounts.heading > 0) && <Separator />}
+              <ContentGapsGroup 
+                count={selectedCounts.contentGap}
+                items={contentGapItems}
+                handleToggleSelection={safeHandleToggleSelection}
+              />
+            </>
+          )}
+          
+          {/* Top Ranks */}
+          {selectedCounts.topRank > 0 && (
+            <>
+              {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0 || selectedCounts.entity > 0 || selectedCounts.heading > 0 || selectedCounts.contentGap > 0) && <Separator />}
+              <TopRanksGroup 
+                count={selectedCounts.topRank}
+                items={topRankItems}
+                handleToggleSelection={safeHandleToggleSelection}
+                competitorCount={selectedCounts.competitor}
+              />
+            </>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

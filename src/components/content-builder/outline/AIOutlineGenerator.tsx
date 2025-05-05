@@ -11,7 +11,7 @@ import { AIOutlineInfo } from './AIOutlineInfo';
 import { generateOutlineFromSelections } from './outlineGenerationUtils';
 
 export function AIOutlineGenerator() {
-  const { state, dispatch } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
   const { 
     mainKeyword, 
     selectedKeywords,
@@ -21,7 +21,7 @@ export function AIOutlineGenerator() {
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
-  const [customInstructions, setCustomInstructions] = useState(additionalInstructions);
+  const [customInstructions, setCustomInstructions] = useState(additionalInstructions || '');
   
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelectedItems = selectedItems.length;
@@ -52,8 +52,11 @@ export function AIOutlineGenerator() {
         customInstructions
       );
       
+      // Convert the outline sections to strings for compatibility
+      const outlineStrings = newOutline.map(section => section.title);
+      
       // Update the outline in state
-      dispatch({ type: 'SET_OUTLINE', payload: newOutline });
+      dispatch({ type: 'SET_OUTLINE', payload: outlineStrings });
       
       // Set a title if none exists
       if (!contentTitle) {
@@ -74,7 +77,7 @@ export function AIOutlineGenerator() {
   };
   
   const handleSaveInstructions = () => {
-    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: customInstructions });
+    setAdditionalInstructions(customInstructions);
     toast.success("Instructions saved");
   };
 

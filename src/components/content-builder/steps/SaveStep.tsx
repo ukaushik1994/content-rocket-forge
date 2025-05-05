@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,6 +166,9 @@ export const SaveStep = () => {
     }, 1000);
   };
   
+  // Get solution name safely
+  const solutionName = selectedSolution ? selectedSolution.name : 'Not specified';
+  
   return (
     <div className="space-y-6">
       {alreadySaved && (
@@ -266,7 +268,7 @@ export const SaveStep = () => {
               
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Solution</p>
-                <p className="font-medium">{selectedSolution?.name || 'Not specified'}</p>
+                <p className="font-medium">{solutionName}</p>
               </div>
               
               <div className="space-y-1">

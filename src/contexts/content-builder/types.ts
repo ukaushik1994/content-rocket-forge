@@ -41,6 +41,7 @@ export interface DocumentImage {
 
 export interface DocumentLink {
   href: string;
+  url: string;
   text: string;
 }
 
@@ -67,9 +68,36 @@ export interface DocumentStructure {
 }
 
 // Content Types
-export type ContentType = 'article' | 'blog' | 'landingPage' | 'productPage' | 'custom';
+export type ContentType = 'article' | 'blog' | 'landingPage' | 'productPage' | 'custom' | 'productDescription' | 'email' | 'social';
 export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'howTo' | 'comparison';
 export type ContentIntent = 'inform' | 'convert' | 'educate' | 'entertain' | 'inspire';
+
+// Solution Types
+export interface SolutionResource {
+  title: string;
+  url: string;
+}
+
+export interface Solution {
+  id: string;
+  name: string;
+  description: string;
+  features: string[];
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
+  logoUrl: string | null;
+  externalUrl: string | null;
+  resources: SolutionResource[];
+}
+
+export interface SolutionIntegrationMetrics {
+  featureIncorporation: number;
+  positioningScore: number;
+  painPointsAddressed: number;
+  ctaEffectiveness: number;
+  overallScore: number;
+}
 
 // Outline Types
 export interface OutlineSection {
@@ -78,6 +106,7 @@ export interface OutlineSection {
   level: number;
   content?: string;
   children?: OutlineSection[];
+  subsections?: OutlineSection[];
 }
 
 // Cluster Types
@@ -113,7 +142,7 @@ export interface ContentBuilderState {
   contentIntent: ContentIntent;
   
   // Solutions
-  selectedSolution: string | null;
+  selectedSolution: Solution | null;
   
   // Titles
   contentTitle: string;
@@ -139,6 +168,19 @@ export interface ContentBuilderState {
   
   // Selected Cluster
   selectedCluster: ContentCluster | null;
+
+  // Meta Information
+  metaTitle: string | null;
+  metaDescription: string | null;
+
+  // Document Structure
+  documentStructure: DocumentStructure | null;
+
+  // Solution Integration
+  solutionIntegrationMetrics: SolutionIntegrationMetrics | null;
+
+  // Additional Instructions
+  additionalInstructions: string;
 }
 
 // Content Builder Actions
@@ -167,7 +209,12 @@ export type ContentBuilderAction =
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
   | { type: 'SET_CONTENT_INTENT'; payload: ContentIntent }
-  | { type: 'SELECT_SOLUTION'; payload: string };
+  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
+  | { type: 'SET_META_TITLE'; payload: string }
+  | { type: 'SET_META_DESCRIPTION'; payload: string }
+  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
 
 // Context Type
 export interface ContentBuilderContextType {
@@ -194,8 +241,18 @@ export interface ContentBuilderContextType {
   setContentIntent: (intent: ContentIntent) => void;
   generateContent: (outline: OutlineSection[]) => Promise<void>;
   saveContent: (options: { title: string; content: string }) => Promise<void>;
+  setContent: (content: string) => void;
+  
+  // Meta Actions
+  setMetaTitle: (title: string) => void;
+  setMetaDescription: (description: string) => void;
   
   // SEO Actions
   analyzeSeo: (content: string) => Promise<void>;
   applySeoImprovement: (id: string) => void;
+
+  // Advanced Content Actions
+  saveContentToDraft: (options: any) => Promise<void>;
+  saveContentToPublished: (options: any) => Promise<void>;
+  setAdditionalInstructions: (instructions: string) => void;
 }

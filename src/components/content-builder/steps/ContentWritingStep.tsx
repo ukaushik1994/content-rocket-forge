@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentEditor } from '@/components/content/ContentEditor';
-import { ContentOutlineSection } from '@/contexts/content-builder/types';
+import { OutlineSection } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
@@ -11,7 +11,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { generateDemoContent } from './writing/contentGenerationUtils';
 
 export const ContentWritingStep = () => {
-  const { state, dispatch } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 
@@ -48,7 +48,7 @@ export const ContentWritingStep = () => {
   };
 
   const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: e.target.value });
+    setAdditionalInstructions(e.target.value);
   };
 
   const handleGenerateContent = async () => {
@@ -58,11 +58,11 @@ export const ContentWritingStep = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Convert outline to ContentOutlineSection[] if it's a string[]
+      // Convert outline to OutlineSection[] if it's a string[]
       const processedOutline = Array.isArray(outline) 
         ? outline.map(item => {
             if (typeof item === 'string') {
-              return { id: Math.random().toString(), title: item };
+              return { id: Math.random().toString(), title: item, level: 2 };
             }
             return item;
           })
@@ -131,10 +131,10 @@ export const ContentWritingStep = () => {
   const processedOutline = Array.isArray(outline) 
     ? outline.map(item => {
         if (typeof item === 'string') {
-          return { id: Math.random().toString(), title: item };
+          return { id: Math.random().toString(), title: item, level: 2 };
         }
-        return item;
-      }) as ContentOutlineSection[]
+        return item as OutlineSection;
+      })
     : [];
 
   return (
