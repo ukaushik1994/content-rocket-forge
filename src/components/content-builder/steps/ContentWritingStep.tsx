@@ -9,6 +9,7 @@ import { ContentSidebar } from './writing/ContentSidebar';
 import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { sendChatRequest } from '@/services/aiService';
+import { useContentGeneration } from './writing/useContentGeneration';
 
 export const ContentWritingStep = () => {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
