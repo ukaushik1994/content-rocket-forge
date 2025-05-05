@@ -26,19 +26,28 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
     }
     
     const userId = user.id;
+    
+    // Make sure the key is valid before saving
+    if (key === 'SERP_API_KEY' || key === 'OPENAI_API_KEY') {
+      throw new Error(`It looks like you're trying to save a placeholder value. Please enter a valid API key.`);
+    }
 
     const { data: existingKey, error: fetchError } = await supabase
       .from('api_keys')
       .select('*')
       .eq('service', service)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       throw fetchError;
     }
 
     const encrypted_key = encryptKey(key);
+    
+    if (!encrypted_key) {
+      throw new Error(`Failed to encrypt the ${service} API key`);
+    }
 
     if (existingKey) {
       // Update existing key
@@ -72,7 +81,6 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
       }
     }
 
-    toast.success(`${service} API key saved successfully`);
     return true;
   } catch (error: any) {
     console.error('Error saving API key:', error);
@@ -92,7 +100,8 @@ export async function getApiKey(service: string): Promise<string | null> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      throw new Error('You must be logged in to retrieve API keys');
+      console.warn('User not logged in while trying to retrieve API key');
+      return null;
     }
     
     const userId = user.id;
@@ -103,14 +112,26 @@ export async function getApiKey(service: string): Promise<string | null> {
       .eq('service', service)
       .eq('user_id', userId)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(`Error fetching ${service} API key:`, error);
       return null;
     }
     
-    return data ? decryptKey(data.encrypted_key) : null;
+    if (!data || !data.encrypted_key) {
+      return null;
+    }
+    
+    const decryptedKey = decryptKey(data.encrypted_key);
+    
+    // Validate decrypted key
+    if (!decryptedKey || decryptedKey === 'SERP_API_KEY' || decryptedKey === 'OPENAI_API_KEY') {
+      console.error(`Invalid ${service} API key retrieved from database`);
+      return null;
+    }
+    
+    return decryptedKey;
   } catch (error) {
     console.error(`Error fetching ${service} API key:`, error);
     return null;
@@ -144,7 +165,6 @@ export async function deleteApiKey(service: string): Promise<boolean> {
       throw error;
     }
     
-    toast.success(`${service} API key deleted successfully`);
     return true;
   } catch (error: any) {
     console.error('Error deleting API key:', error);

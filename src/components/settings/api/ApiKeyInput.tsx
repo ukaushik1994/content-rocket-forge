@@ -30,22 +30,34 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
   const [keyExists, setKeyExists] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [testSuccessful, setTestSuccessful] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const key = await getApiKey(provider.serviceKey);
+        
         if (key) {
           setApiKey(key);
           setKeyExists(true);
           setIsActive(true);
+          
           // Try to test the key when loading
-          const success = await testApiKey(provider.serviceKey, key);
-          setTestSuccessful(success);
+          try {
+            const success = await testApiKey(provider.serviceKey, key);
+            setTestSuccessful(success);
+            if (!success) {
+              console.warn(`${provider.name} API key test failed during initialization`);
+            }
+          } catch (testError) {
+            console.error(`Error testing ${provider.name} API key:`, testError);
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error fetching ${provider.name} API key:`, error);
+        setError(error.message || `Failed to load ${provider.name} API key`);
       } finally {
         setIsLoading(false);
       }
@@ -62,19 +74,31 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
 
     try {
       setIsSaving(true);
+      setError(null);
       const success = await saveApiKey(provider.serviceKey, apiKey);
+      
       if (success) {
         setKeyExists(true);
         setIsActive(true);
         toast.success(`${provider.name} API key saved successfully`);
         
         // Test the key after saving
-        const testSuccess = await testApiKey(provider.serviceKey, apiKey);
-        setTestSuccessful(testSuccess);
+        try {
+          const testSuccess = await testApiKey(provider.serviceKey, apiKey);
+          setTestSuccessful(testSuccess);
+          
+          if (!testSuccess) {
+            setError(`${provider.name} API key was saved but could not be verified.`);
+          }
+        } catch (testError: any) {
+          console.error(`Error testing ${provider.name} API key after save:`, testError);
+          setError(testError.message || `Failed to verify ${provider.name} API key after saving`);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error saving ${provider.name} API key:`, error);
-      toast.error(`Failed to save ${provider.name} API key`);
+      setError(error.message || `Failed to save ${provider.name} API key`);
+      toast.error(error.message || `Failed to save ${provider.name} API key`);
     } finally {
       setIsSaving(false);
     }
@@ -83,16 +107,18 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
   const handleTestConnection = async () => {
     try {
       setIsTesting(true);
+      setError(null);
+      
+      // Always use the current value in the input field for testing
       const success = await testApiKey(provider.serviceKey, apiKey);
       setTestSuccessful(success);
-      if (success) {
-        toast.success(`${provider.name} connection successful`);
-      } else {
-        toast.error(`${provider.name} connection failed`);
+      
+      if (!success) {
+        setError(`${provider.name} API key could not be verified.`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error testing ${provider.name} API key:`, error);
-      toast.error(`Failed to test ${provider.name} API key`);
+      setError(error.message || `Failed to test ${provider.name} API key`);
       setTestSuccessful(false);
     } finally {
       setIsTesting(false);
@@ -102,7 +128,9 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
   const handleDeleteKey = async () => {
     try {
       setIsDeleting(true);
+      setError(null);
       const success = await deleteApiKey(provider.serviceKey);
+      
       if (success) {
         setApiKey("");
         setKeyExists(false);
@@ -110,9 +138,9 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         setTestSuccessful(false);
         toast.success(`${provider.name} API key deleted successfully`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error deleting ${provider.name} API key:`, error);
-      toast.error(`Failed to delete ${provider.name} API key`);
+      setError(error.message || `Failed to delete ${provider.name} API key`);
     } finally {
       setIsDeleting(false);
     }
@@ -126,6 +154,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
 
     try {
       setIsDetecting(true);
+      setError(null);
       const detectedType = await detectApiKeyType(apiKey);
       
       if (detectedType && detectedType !== provider.serviceKey) {
@@ -135,9 +164,9 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       } else {
         toast.error('Unable to detect API key type');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error detecting API key type:', error);
-      toast.error('Failed to detect API key type');
+      setError(error.message || 'Failed to detect API key type');
     } finally {
       setIsDetecting(false);
     }
@@ -160,6 +189,12 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         isActive={isActive}
         setIsActive={setIsActive}
       />
+      
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 p-3 rounded-md text-sm text-red-300">
+          {error}
+        </div>
+      )}
       
       <ApiKeyStatus 
         provider={provider} 

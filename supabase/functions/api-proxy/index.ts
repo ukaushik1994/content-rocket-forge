@@ -21,6 +21,11 @@ serve(async (req) => {
     
     console.log(`API Proxy: ${service} - ${endpoint}`, params);
 
+    // New endpoint for testing API keys
+    if (endpoint === 'test') {
+      return await handleApiKeyTest(service, apiKey);
+    }
+
     // Route to appropriate API service
     if (service === 'serp') {
       return await handleSerpRequest(endpoint, params, apiKey, hasApiKey);
@@ -40,6 +45,83 @@ serve(async (req) => {
     );
   }
 });
+
+// New handler for API key testing
+async function handleApiKeyTest(service: string, apiKey: string) {
+  console.log(`Testing ${service} API key`);
+  
+  try {
+    if (!apiKey) {
+      throw new Error('API key is required for testing');
+    }
+    
+    if (service === 'serp') {
+      // For SERP API, we'll make a test call with minimal parameters
+      const url = new URL('https://serpapi.com/search');
+      url.searchParams.append('q', 'test');
+      url.searchParams.append('engine', 'google');
+      url.searchParams.append('api_key', apiKey);
+      
+      const response = await fetch(url.toString());
+      const data = await response.json();
+      
+      if (response.ok) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'SERP API connection successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error(data.error || 'Invalid SERP API key');
+      }
+    } else if (service === 'openai') {
+      // For OpenAI, validate format and make a simple test call
+      if (!apiKey.startsWith('sk-')) {
+        throw new Error('Invalid OpenAI API key format - must start with "sk-"');
+      }
+      
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'OpenAI API connection successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error(data.error?.message || 'Invalid OpenAI API key');
+      }
+    } else if (service === 'anthropic' && apiKey.startsWith('sk-ant-')) {
+      // For Anthropic, we'll just validate the format (basic check)
+      return new Response(
+        JSON.stringify({ success: true, message: 'Anthropic API key format is valid' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (service === 'gemini' && apiKey.length > 15) {
+      // For Gemini, we'll just validate the format (basic check)
+      return new Response(
+        JSON.stringify({ success: true, message: 'Gemini API key format is valid' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      throw new Error(`Unsupported service for testing: ${service}`);
+    }
+  } catch (error: any) {
+    console.error(`API key test error for ${service}:`, error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message || `${service} API test failed` }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
 
 // Handler for SERP API requests
 async function handleSerpRequest(endpoint: string, params: any, clientApiKey: string | null, hasConfiguredApiKey: boolean) {
@@ -191,7 +273,7 @@ async function handleSerpRequest(endpoint: string, params: any, clientApiKey: st
         competitionScore: Math.random(), // Random score between 0-1
         keywordDifficulty: Math.floor(Math.random() * 100), // Random score between 0-100
         
-        // Extract real data from SERP results
+        // Top organic results
         topResults: (data.organic_results || []).slice(0, 5).map((result: any, index: number) => ({
           title: result.title,
           link: result.link,
@@ -199,22 +281,57 @@ async function handleSerpRequest(endpoint: string, params: any, clientApiKey: st
           position: index + 1
         })),
         
+        // Related searches from SerpAPI
         relatedSearches: (data.related_searches || []).map((search: any) => ({
           query: search.query,
           volume: Math.floor(Math.random() * 5000) + 500 // Random as SerpAPI doesn't provide volume
         })),
         
+        // People also ask questions
         peopleAlsoAsk: (data.related_questions || []).map((question: any) => ({
           question: question.question,
           source: question.source || 'Google Search',
           answer: question.answer || 'No answer available'
         })),
         
-        // Add recommendations based on the content and keywords
-        recommendations: generateContentRecommendations(content, keywords, data),
+        // Featured snippets if available
+        featuredSnippets: data.answer_box ? [
+          {
+            content: data.answer_box.snippet || data.answer_box.answer || '',
+            source: data.answer_box.source || 'Google Search',
+            type: 'definition'
+          }
+        ] : [],
         
-        // Use keywords from the parameters
-        keywords: keywords,
+        // Extract entities from knowledge graph if available
+        entities: data.knowledge_graph ? [
+          { 
+            name: data.knowledge_graph.title || keyword, 
+            type: 'main', 
+            importance: 10,
+            description: data.knowledge_graph.description || ''
+          },
+          ...(data.knowledge_graph.attributes || []).map((attr: any) => ({
+            name: attr.name || '',
+            type: 'attribute',
+            importance: 5
+          }))
+        ] : generateEntities(keyword, data),
+        
+        // Generate headings based on the search results
+        headings: generateHeadings(keyword, data),
+        
+        // Generate content gaps based on the search results
+        contentGaps: generateContentGaps(keyword, data),
+        
+        // Generate recommendations
+        recommendations: [
+          `Include "${mainKeyword}" in your page title and H1 heading`,
+          `Create content addressing common questions about ${mainKeyword}`,
+          `Use related keywords throughout your content naturally`,
+          `Include visual elements to explain ${mainKeyword} concepts`,
+          `Add case studies or examples showing successful ${mainKeyword} implementation`
+        ]
       };
       
       return new Response(

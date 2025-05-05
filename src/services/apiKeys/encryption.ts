@@ -8,7 +8,16 @@
  * @returns The encrypted key
  */
 export const encryptKey = (key: string): string => {
-  return btoa(key); // Base64 encode
+  try {
+    if (!key || typeof key !== 'string') {
+      console.error('Invalid key provided for encryption');
+      return '';
+    }
+    return btoa(key); // Base64 encode
+  } catch (error) {
+    console.error('Error encrypting key:', error);
+    return '';
+  }
 };
 
 /**
@@ -18,8 +27,13 @@ export const encryptKey = (key: string): string => {
  */
 export const decryptKey = (encryptedKey: string): string => {
   try {
+    if (!encryptedKey || typeof encryptedKey !== 'string') {
+      console.error('Invalid encrypted key provided for decryption');
+      return '';
+    }
     return atob(encryptedKey); // Base64 decode
   } catch (error) {
+    console.error('Error decrypting key:', error);
     return '';
   }
 };
