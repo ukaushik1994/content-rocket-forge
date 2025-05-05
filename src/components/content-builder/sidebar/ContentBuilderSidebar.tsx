@@ -1,111 +1,143 @@
 
 import React from 'react';
-import { CheckCircle, ChevronRight, CheckSquare, Settings, Search, FileText, Edit, Sparkles, BarChart4, Upload } from 'lucide-react';
+import { ContentBuilderStep } from '@/contexts/content-builder/types';
+import { 
+  Search, PenTool, Sparkles, FileText, Edit, LineChart, CheckSquare, Save,
+  CheckCircle, ArrowRight, LucideIcon
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ContentBuilderSidebarProps {
-  steps: {
-    id: number;
-    name: string;
-    description: string;
-    completed: boolean;
-  }[];
+  steps: ContentBuilderStep[];
   activeStep: number;
-  navigateToStep: (step: number) => void;
+  navigateToStep: (stepIndex: number) => void;
 }
 
-export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: ContentBuilderSidebarProps) => {
-  // Return the appropriate icon for each step
-  const getStepIcon = (stepId: number) => {
-    switch (stepId) {
-      case 0: return <Search className="h-4 w-4" />;
-      case 1: return <CheckSquare className="h-4 w-4" />;
-      case 2: return <Search className="h-4 w-4" />;
-      case 3: return <FileText className="h-4 w-4" />;
-      case 4: return <Edit className="h-4 w-4" />;
-      case 5: return <BarChart4 className="h-4 w-4" />;
-      case 6: return <Upload className="h-4 w-4" />;
-      default: return <Sparkles className="h-4 w-4" />;
+interface StepIconProps {
+  stepId: number;
+  isActive: boolean;
+  isCompleted: boolean;
+}
+
+const StepIcon: React.FC<StepIconProps> = ({ stepId, isActive, isCompleted }) => {
+  // Map step IDs to their corresponding icons
+  const getStepIcon = (id: number): LucideIcon => {
+    switch (id) {
+      case 0: return Search;
+      case 1: return PenTool;
+      case 2: return Sparkles;
+      case 3: return FileText;
+      case 4: return Edit;
+      case 5: return LineChart;
+      case 6: return CheckSquare;
+      case 7: return Save;
+      default: return Search;
     }
   };
   
+  const IconComponent = getStepIcon(stepId);
+  
+  // Render icon based on step state
+  if (isCompleted) {
+    return <CheckCircle className="h-5 w-5 text-green-400" />;
+  }
+  
   return (
-    <div className="w-72 border-r border-white/10 bg-black/20 backdrop-blur-lg shrink-0 hidden md:block">
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="p-1.5 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <h3 className="font-semibold text-lg">Content Builder</h3>
-        </div>
+    <IconComponent 
+      className={cn(
+        "h-5 w-5",
+        isActive ? "text-white" : "text-muted-foreground"
+      )} 
+    />
+  );
+};
+
+export const ContentBuilderSidebar: React.FC<ContentBuilderSidebarProps> = ({
+  steps,
+  activeStep,
+  navigateToStep
+}) => {
+  return (
+    <aside className="hidden md:block w-64 bg-black/20 border-r border-white/10 backdrop-blur-lg sticky top-0 h-[calc(100vh-theme(spacing.16))] overflow-y-auto">
+      <div className="p-4">
+        <h2 className="font-semibold text-lg mb-1 bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+          Content Builder
+        </h2>
+        <p className="text-xs text-muted-foreground mb-6">
+          Create high-quality optimized content
+        </p>
         
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {steps.map((step, index) => {
-            const isActive = activeStep === index;
+            const isActive = index === activeStep;
             const isCompleted = step.completed;
+            const isClickable = index <= activeStep || isCompleted;
             
             return (
-              <button
-                key={step.id}
-                onClick={() => navigateToStep(index)}
-                disabled={!isCompleted && !isActive && index !== 0}
-                className={cn(
-                  "w-full flex items-center text-left rounded-md px-3 py-2.5 text-sm transition-colors relative overflow-hidden group",
-                  isActive 
-                    ? "bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 text-white"
-                    : isCompleted
-                      ? "text-white/90 hover:bg-white/5"
-                      : "text-white/40 cursor-not-allowed"
-                )}
-              >
-                {isActive && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 opacity-[0.15] animate-pulse"></div>
+              <div key={step.id} className="relative">
+                {/* Connecting line between steps */}
+                {index > 0 && (
+                  <div 
+                    className={`absolute left-3.5 -top-4 w-0.5 h-4 ${
+                      steps[index-1].completed ? "bg-green-400" : "bg-white/10"
+                    }`}
+                  />
                 )}
                 
-                <div className={cn(
-                  "flex items-center justify-center rounded-full h-6 w-6 mr-3 shrink-0",
-                  isActive 
-                    ? "bg-gradient-to-r from-neon-purple to-neon-blue text-white"
-                    : isCompleted
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-white/10 text-white/40"
-                )}>
-                  {isCompleted ? (
-                    <CheckCircle className="h-3.5 w-3.5" />
-                  ) : (
-                    getStepIcon(step.id)
+                <button
+                  onClick={() => isClickable && navigateToStep(index)}
+                  disabled={!isClickable}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                    isActive
+                      ? "bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 text-white"
+                      : isClickable
+                        ? "hover:bg-white/5 text-muted-foreground"
+                        : "text-muted-foreground/40 cursor-not-allowed",
+                    isCompleted && !isActive && "text-white/70 hover:text-white"
                   )}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="font-medium">{step.name}</div>
+                >
                   <div className={cn(
-                    "text-xs line-clamp-1",
-                    isActive ? "text-white/70" : "text-white/50"
+                    "flex items-center justify-center w-7 h-7 rounded-full",
+                    isActive
+                      ? "bg-gradient-to-r from-neon-purple to-neon-blue"
+                      : isCompleted 
+                        ? "bg-green-400/20" 
+                        : "bg-white/5"
                   )}>
-                    {step.description}
+                    <StepIcon 
+                      stepId={step.id}
+                      isActive={isActive}
+                      isCompleted={isCompleted}
+                    />
                   </div>
-                </div>
-                
-                {isActive && (
-                  <ChevronRight className="h-4 w-4 ml-2 text-white/70 animate-bounce" />
-                )}
-              </button>
+                  
+                  <div className="flex-1 text-left">
+                    <div className="font-medium">{step.name}</div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {step.description}
+                    </p>
+                  </div>
+                  
+                  {isActive && (
+                    <motion.div
+                      animate={{ x: [0, 3, 0] }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        duration: 1.5,
+                        repeatType: "reverse"
+                      }}
+                    >
+                      <ArrowRight className="h-4 w-4 text-neon-blue" />
+                    </motion.div>
+                  )}
+                </button>
+              </div>
             );
           })}
         </div>
       </div>
-      
-      <div className="px-3 pb-4 pt-6 mt-auto border-t border-white/10">
-        <div className="bg-white/5 rounded-md p-3 text-xs text-white/70">
-          <p className="font-medium mb-1">Tips</p>
-          <ul className="space-y-1 list-disc pl-4 text-white/60">
-            <li>Complete each step before moving to the next</li>
-            <li>You can go back to previous steps anytime</li>
-            <li>Progress is automatically saved</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    </aside>
   );
 };

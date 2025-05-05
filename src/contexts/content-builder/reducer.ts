@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection, SeoImprovement } from './types';
 
 // Reducer function to handle state updates
@@ -23,6 +22,10 @@ export const contentBuilderReducer = (
       return { ...state, primaryKeyword: action.payload };
       
     case 'ADD_SECONDARY_KEYWORD':
+      // Avoid duplicates
+      if (state.secondaryKeywords.includes(action.payload)) {
+        return state;
+      }
       return {
         ...state,
         secondaryKeywords: [...state.secondaryKeywords, action.payload],
@@ -38,7 +41,14 @@ export const contentBuilderReducer = (
       return { ...state, keywordClusters: action.payload };
       
     case 'SET_CONTENT_TYPE':
-      return { ...state, contentType: action.payload };
+      // Mark the content type step as completed when a type is selected
+      return { 
+        ...state, 
+        contentType: action.payload,
+        steps: state.steps.map(step =>
+          step.id === 1 ? { ...step, completed: true } : step
+        )
+      };
       
     case 'SET_CONTENT_FORMAT':
       return { ...state, contentFormat: action.payload };
@@ -69,19 +79,40 @@ export const contentBuilderReducer = (
       return { ...state, isPublishing: action.payload };
       
     case 'SET_CONTENT':
-      return { ...state, content: action.payload };
+      // Mark content writing step as completed when content is added
+      const contentLength = action.payload?.trim().length || 0;
+      const shouldMarkCompleted = contentLength > 100;
+      
+      return { 
+        ...state, 
+        content: action.payload,
+        steps: shouldMarkCompleted 
+          ? state.steps.map(step =>
+              step.id === 4 ? { ...step, completed: true } : step
+            )
+          : state.steps
+      };
     
     // Additional action handlers
     case 'MARK_STEP_COMPLETED':
+      // Only update if the step isn't already completed
+      if (state.steps[action.payload].completed) {
+        return state;
+      }
       return {
         ...state,
-        steps: state.steps.map(step =>
-          step.id === action.payload ? { ...step, completed: true } : step
+        steps: state.steps.map((step, index) =>
+          index === action.payload ? { ...step, completed: true } : step
         ),
       };
       
     case 'SET_MAIN_KEYWORD':
-      return { ...state, mainKeyword: action.payload };
+      // Update both main keyword and page title
+      return { 
+        ...state, 
+        mainKeyword: action.payload,
+        contentTitle: state.contentTitle || `Complete Guide to ${action.payload}`
+      };
       
     case 'ADD_KEYWORD':
       if (state.selectedKeywords.includes(action.payload)) {
@@ -110,7 +141,14 @@ export const contentBuilderReducer = (
       };
       
     case 'SELECT_SOLUTION':
-      return { ...state, selectedSolution: action.payload };
+      // Mark solutions step as completed
+      return { 
+        ...state, 
+        selectedSolution: action.payload,
+        steps: state.steps.map(step =>
+          step.id === 1 ? { ...step, completed: true } : step
+        )
+      };
       
     case 'SET_SERP_DATA':
       const newSelections = createSerpSelectionsFromData(action.payload);
@@ -138,12 +176,24 @@ export const contentBuilderReducer = (
       };
       
     case 'SET_OUTLINE':
-      return { ...state, outline: action.payload };
+      // Mark outline step as completed when we have outline sections
+      return { 
+        ...state, 
+        outline: action.payload,
+        steps: state.steps.map(step =>
+          step.id === 3 ? { ...step, completed: true } : step
+        )
+      };
       
     case 'ADD_OUTLINE_SECTION':
+      // Mark outline step as completed when we add sections
+      const newOutline = [...state.outline, action.payload];
       return {
         ...state,
-        outline: [...state.outline, action.payload],
+        outline: newOutline,
+        steps: state.steps.map(step =>
+          step.id === 3 ? { ...step, completed: true } : step
+        )
       };
       
     case 'UPDATE_OUTLINE_SECTION': {
@@ -166,7 +216,18 @@ export const contentBuilderReducer = (
       return { ...state, contentTitle: action.payload };
       
     case 'SET_SEO_SCORE':
-      return { ...state, seoScore: action.payload };
+      // Auto-complete optimization step if score is high enough
+      const isScoreGoodEnough = action.payload >= 70;
+      
+      return { 
+        ...state, 
+        seoScore: action.payload,
+        steps: isScoreGoodEnough 
+          ? state.steps.map(step =>
+              step.id === 5 ? { ...step, completed: true } : step
+            )
+          : state.steps
+      };
       
     case 'SET_ADDITIONAL_INSTRUCTIONS':
       return { ...state, additionalInstructions: action.payload };
@@ -175,17 +236,30 @@ export const contentBuilderReducer = (
     case 'SET_SEO_IMPROVEMENTS':
       return { ...state, seoImprovements: action.payload };
       
-    case 'APPLY_SEO_IMPROVEMENT':
+    case 'APPLY_SEO_IMPROVEMENT': {
+      // Mark the optimization step as completed if enough improvements are applied
+      const updatedImprovements = state.seoImprovements 
+        ? state.seoImprovements.map(improvement => 
+            improvement.id === action.payload 
+              ? { ...improvement, applied: true } 
+              : improvement
+          )
+        : [];
+      
+      const appliedCount = updatedImprovements.filter(imp => imp.applied).length;
+      const totalCount = updatedImprovements.length;
+      const shouldMarkCompleted = totalCount > 0 && appliedCount / totalCount >= 0.7; // 70% applied
+      
       return {
         ...state,
-        seoImprovements: state.seoImprovements 
-          ? state.seoImprovements.map(improvement => 
-              improvement.id === action.payload 
-                ? { ...improvement, applied: true } 
-                : improvement
+        seoImprovements: updatedImprovements,
+        steps: shouldMarkCompleted 
+          ? state.steps.map(step =>
+              step.id === 5 ? { ...step, completed: true } : step
             )
-          : []
+          : state.steps
       };
+    }
       
     // New action handlers for final review step
     case 'SET_META_TITLE':
@@ -194,8 +268,16 @@ export const contentBuilderReducer = (
     case 'SET_META_DESCRIPTION':
       return { ...state, metaDescription: action.payload };
       
-    case 'SET_DOCUMENT_STRUCTURE':
-      return { ...state, documentStructure: action.payload };
+    case 'SET_DOCUMENT_STRUCTURE': {
+      // Auto-complete final review step when document structure is set
+      return { 
+        ...state, 
+        documentStructure: action.payload,
+        steps: state.steps.map(step =>
+          step.id === 6 ? { ...step, completed: true } : step
+        )
+      };
+    }
     
     case 'SET_SOLUTION_INTEGRATION_METRICS':
       return { ...state, solutionIntegrationMetrics: action.payload };
@@ -248,8 +330,8 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
     serpData.topResults.forEach((item: any) => {
       if (item.snippet) {
         newSelections.push({
-          type: 'topRank', // Changed from 'competitor' to 'topRank' for consistency
-          content: item.title, // Using title instead of snippet for better overview
+          type: 'topRank', 
+          content: item.title,
           source: item.link,
           selected: false
         });
@@ -257,7 +339,6 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
     });
   }
   
-  // Add support for entities
   if (serpData?.entities) {
     serpData.entities.forEach((item: any) => {
       newSelections.push({
@@ -269,7 +350,6 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
     });
   }
   
-  // Add support for headings
   if (serpData?.headings) {
     serpData.headings.forEach((item: any) => {
       newSelections.push({
@@ -281,7 +361,6 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
     });
   }
   
-  // Add support for content gaps
   if (serpData?.contentGaps) {
     serpData.contentGaps.forEach((item: any) => {
       newSelections.push({
@@ -295,4 +374,3 @@ function createSerpSelectionsFromData(serpData: any): SerpSelection[] {
   
   return newSelections;
 }
-
