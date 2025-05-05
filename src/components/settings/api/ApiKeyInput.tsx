@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { 
@@ -6,7 +5,7 @@ import {
   getApiKey, 
   testApiKey, 
   deleteApiKey,
-  detectApiKeyType 
+  detectApiKeyTypeSync 
 } from "@/services/apiKeyService";
 import { ApiProvider } from './types';
 import { ApiKeyCard } from './ApiKeyCard';
@@ -155,7 +154,8 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
     try {
       setIsDetecting(true);
       setError(null);
-      const detectedType = await detectApiKeyType(apiKey);
+      // Use synchronous version that returns a string directly
+      const detectedType = detectApiKeyTypeSync(apiKey);
       
       if (detectedType && detectedType !== provider.serviceKey) {
         toast.info(`This appears to be a ${detectedType.toUpperCase()} API key. Would you like to use it there instead?`);

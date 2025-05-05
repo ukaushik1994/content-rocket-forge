@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardContent
@@ -26,7 +25,7 @@ import {
   getApiKey, 
   testApiKey, 
   deleteApiKey,
-  detectApiKeyType
+  detectApiKeyTypeSync
 } from '@/services/apiKeyService';
 
 interface ApiProviderCardProps {
@@ -226,7 +225,9 @@ export function ApiProviderCard({
     }
 
     try {
-      const detectedType = detectApiKeyType(apiKey);
+      // Use the synchronous version which returns a string directly
+      const detectedType = detectApiKeyTypeSync(apiKey);
+      
       if (detectedType && detectedType !== provider.serviceKey) {
         toast.info(`This appears to be a ${detectedType.toUpperCase()} API key. Would you like to use it there instead?`);
       } else if (detectedType === provider.serviceKey) {

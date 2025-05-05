@@ -4,5 +4,10 @@
 export * from './types';
 export * from './encryption';
 export * from './crud';
-export * from './testing';
-export * from './validation';
+// Explicitly re-export and rename to avoid naming conflicts
+export { detectApiKeyType as detectApiKeyTypeSync } from './validation';
+export { 
+  testApiKey,
+  detectApiKeyType as detectApiKeyTypeAsync
+} from './testing';
+

@@ -3,3 +3,6 @@
 
 export * from './apiKeys';
 
+// Re-export with the original name for backward compatibility
+export { detectApiKeyTypeSync as detectApiKeyType } from './apiKeys';
+
