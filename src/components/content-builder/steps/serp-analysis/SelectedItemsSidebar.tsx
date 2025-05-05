@@ -17,7 +17,7 @@ export function SelectedItemsSidebar({
   const [selectedTab, setSelectedTab] = useState('all');
   
   return (
-    <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10 backdrop-blur-lg shadow-xl sticky top-4 max-h-[85vh] flex flex-col">
+    <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10 backdrop-blur-lg shadow-xl sticky top-4 h-[calc(100vh-100px)] flex flex-col">
       <CardHeader className="pb-2 border-b border-white/10 bg-gradient-to-r from-blue-900/30 to-purple-900/20 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -46,7 +46,7 @@ export function SelectedItemsSidebar({
       </CardHeader>
       
       <ScrollArea className="flex-1 overflow-y-auto">
-        <CardContent className="pt-4 pb-6 pr-2">
+        <CardContent className="pt-4 pb-6 px-4">
           <AnimatePresence mode="wait">
             <SelectedItemsContent
               serpSelections={serpSelections}

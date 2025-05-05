@@ -65,7 +65,7 @@ export const SerpAnalysisStep = () => {
           />
         </div>
         
-        <div className="lg:col-span-1 relative">
+        <div className="lg:col-span-1 relative h-full">
           <SelectedItemsSidebar 
             serpSelections={serpSelections}
             totalSelected={totalSelected}
