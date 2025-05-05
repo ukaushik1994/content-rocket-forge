@@ -76,19 +76,29 @@ export async function analyzeKeywordSerp(keyword: string): Promise<SerpAnalysisR
     // Check if the response indicates it's mock data
     if (response.isMockData) {
       // If it's already flagged as mock data, just pass it through
+      console.log('Received mock data from the API, still using it');
       const processedData = processSerpResponse(response);
       processedData.isMockData = true;
       serpResultsCache.set(cacheKey, processedData);
+      
+      // Show a toast notification about using mock data
+      toast.info('Using sample data for SERP analysis. Add a valid SERP API key in settings for real data.');
+      
+      return processedData;
+    } else {
+      console.log('Received real data from the SERP API');
+      // We got real data, process it normally
+      const processedData = processSerpResponse(response);
+      processedData.isMockData = false; // Ensure it's marked as real data
+      
+      // Cache the real data result
+      serpResultsCache.set(cacheKey, processedData);
+      
+      // Show success toast for real data
+      toast.success('SERP analysis completed with real data');
+      
       return processedData;
     }
-    
-    // Process data to ensure it has the expected structure
-    const processedData = processSerpResponse(response);
-    
-    // Cache the result
-    serpResultsCache.set(cacheKey, processedData);
-    
-    return processedData;
   } catch (error: any) {
     console.error('Error analyzing keyword:', error);
     
@@ -143,7 +153,16 @@ export async function searchKeywords(params: SerpSearchParams): Promise<any[]> {
     }
     
     // Check if response exists and has results property
-    const results = response && typeof response === 'object' ? (response as any).results : [];
+    const results = response && typeof response === 'object' ? 
+      (response.results || response) : [];
+    
+    // Check if the data is mock
+    const isMockData = response && response.isMockData === true;
+    
+    if (isMockData) {
+      toast.info('Using sample data for keyword suggestions. Add a valid SERP API key for real data.');
+    }
+    
     const processedResults = Array.isArray(results) ? results : [];
     
     // Cache results
@@ -207,6 +226,13 @@ export async function analyzeContent(content: string, keywords: string[] = []): 
       return mockResult;
     }
     
+    // Check if the response indicates it's mock data
+    if (response.isMockData) {
+      toast.info('Using sample data for content analysis. Add a valid SERP API key for real data.');
+    } else {
+      toast.success('Content analysis completed with real data');
+    }
+    
     const processedResult = processSerpResponse(response);
     
     // Cache the result
@@ -235,6 +261,7 @@ function getMockContentAnalysis(content: string, keywords: string[] = []): SerpA
     searchVolume: Math.floor(Math.random() * 5000) + 1000,
     competitionScore: Math.random(),
     keywordDifficulty: Math.floor(Math.random() * 100),
+    isMockData: true,
     keywords: keywords || [mainKeyword, `${mainKeyword} strategy`, `${mainKeyword} tips`],
     recommendations: [
       'Include more specific details about the main topic',
