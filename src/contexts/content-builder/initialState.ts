@@ -6,8 +6,8 @@ export const initialState: ContentBuilderState = {
   steps: [
     {
       id: 0,
-      name: 'Keyword Selection',
-      description: 'Select target keywords for your content',
+      name: 'Selection & Analysis',
+      description: 'Select keywords and analyze search results',
       completed: false,
     },
     {

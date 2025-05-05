@@ -18,7 +18,7 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
   // Return the appropriate icon for each step
   const getStepIcon = (stepId: number) => {
     switch (stepId) {
-      case 0: return <Search className="h-4 w-4" />;
+      case 0: return <Sparkles className="h-4 w-4" />; // Changed from Search to Sparkles
       case 1: return <CheckSquare className="h-4 w-4" />;
       case 2: return <Search className="h-4 w-4" />;
       case 3: return <FileText className="h-4 w-4" />;

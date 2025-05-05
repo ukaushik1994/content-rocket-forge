@@ -1,58 +1,52 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentType } from '../types';
-import { toast } from 'sonner';
+import { ContentBuilderState, ContentBuilderAction } from '../types';
 
-/**
- * Actions related to content type, format and structure
- */
 export const createContentActions = (
-  state: ContentBuilderState,
+  state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  // Set content type with proper typing
-  const setContentType = (contentType: ContentType) => {
+  const setContentType = (contentType: any) => {
     dispatch({ type: 'SET_CONTENT_TYPE', payload: contentType });
   };
-
-  // Set content format
+  
   const setContentFormat = (format: string) => {
     dispatch({ type: 'SET_CONTENT_FORMAT', payload: format });
   };
-
-  // Set outline title
+  
   const setOutlineTitle = (title: string) => {
     dispatch({ type: 'SET_OUTLINE_TITLE', payload: title });
   };
-
-  // Set outline sections
-  const setOutlineSections = (sections: { id: string; heading: string; content: string }[]) => {
+  
+  const setOutlineSections = (sections: any[]) => {
     dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: sections });
   };
-
-  // Set content
+  
   const setContent = (content: string) => {
     dispatch({ type: 'SET_CONTENT', payload: content });
   };
-
-  // Add content from SERP to current draft
-  const addContentFromSerp = (content: string, type: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: state.content + '\n\n' + content });
-    toast.success(`Added ${type} to your content draft`);
-  };
-
-  // Rewrite content based on SEO recommendations
+  
   const rewriteContent = (newContent: string, improvementType: string) => {
+    // First update the content
     dispatch({ type: 'SET_CONTENT', payload: newContent });
-    toast.success(`Content has been optimized for better ${improvementType}`);
+    
+    // Then mark the improvement as applied if it exists
+    if (state.seoImprovements) {
+      const improvement = state.seoImprovements.find(imp => 
+        imp.type === improvementType && !imp.applied
+      );
+      
+      if (improvement) {
+        dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: improvement.id });
+      }
+    }
   };
-
+  
   return {
     setContentType,
     setContentFormat,
     setOutlineTitle,
     setOutlineSections,
     setContent,
-    addContentFromSerp,
     rewriteContent
   };
 };

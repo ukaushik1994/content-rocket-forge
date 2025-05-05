@@ -7,7 +7,13 @@ import { KeywordSuggestions } from '../keyword/KeywordSuggestions';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types';
-import { Loader2, Search, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
+import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
+import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -23,6 +29,7 @@ const mockClusters: ContentCluster[] = [{
   name: 'Social Media',
   keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
 }];
+
 export const KeywordSelectionStep = () => {
   const {
     state,
@@ -31,16 +38,23 @@ export const KeywordSelectionStep = () => {
     addContentFromSerp,
     generateOutlineFromSelections
   } = useContentBuilder();
+  
   const {
     mainKeyword,
     selectedKeywords,
     selectedCluster,
     serpData,
+    serpSelections,
     isAnalyzing
   } = state;
+  
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
+  const [hasSearched, setHasSearched] = useState(false);
+  
+  // Get selection statistics for the SERP data
+  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
   
   useEffect(() => {
     // Check if we have completed the requirements to move forward
@@ -76,6 +90,7 @@ export const KeywordSelectionStep = () => {
     }
 
     // Automatically start SERP analysis when a keyword is entered
+    setHasSearched(true);
     await analyzeKeyword(keyword);
   };
   
@@ -107,20 +122,62 @@ export const KeywordSelectionStep = () => {
     });
   };
   
-  return <div className="space-y-8">
+  // Helper function to toggle selection state
+  const handleToggleSelection = (type: string, content: string) => {
+    dispatch({
+      type: 'TOGGLE_SERP_SELECTION',
+      payload: { type, content }
+    });
+  };
+  
+  // Function to handle adding content from SERP items
+  const handleAddToContent = (content: string, type: string) => {
+    handleToggleSelection(type, content);
+  };
+  
+  // Handle continuing with selected items
+  const handleContinueWithSelections = () => {
+    if (totalSelected === 0) return;
+    
+    // Mark the step as completed
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
+    
+    // Generate outline from selections
+    generateOutlineFromSelections();
+  };
+  
+  // Helper function to get items by type
+  const getItemsByType = (type: string) => {
+    return serpSelections.filter(item => item.type === type);
+  };
+  
+  // Handle reanalyzing the current keyword
+  const handleReanalyze = async () => {
+    if (mainKeyword) {
+      await analyzeKeyword(mainKeyword);
+    }
+  };
+  
+  return (
+    <div className="space-y-8">
       {/* Header with animation */}
-      <div className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5">
+      <motion.div 
+        className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <h3 className="text-lg font-semibold">Start Your Content Journey</h3>
+            <h3 className="text-lg font-semibold">Selection & Analysis</h3>
           </div>
           <p className="text-sm text-muted-foreground">
             Enter your main keyword below to analyze search trends and discover content opportunities
           </p>
         </div>
-      </div>
+      </motion.div>
       
       {/* Keyword search section */}
       <div className="space-y-6">
@@ -139,47 +196,77 @@ export const KeywordSelectionStep = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-            {/* Suggestions */}
-            <div className="animate-fade-in">
-              <KeywordSuggestions suggestions={suggestions} onAddKeyword={handleAddKeyword} />
-            </div>
-            
-            {/* Selected Keywords */}
-            <div className="animate-fade-in" style={{
-            animationDelay: '100ms'
-          }}>
-              <SelectedKeywords keywords={selectedKeywords} onRemoveKeyword={handleRemoveKeyword} />
-            </div>
-          </div>
+        <AnimatePresence>
+          {!hasSearched && (
+            <motion.div 
+              className="flex flex-col items-center justify-center py-16 text-center"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              key="initial-state"
+            >
+              <div className="rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-6 mb-4">
+                <Sparkles className="h-8 w-8 text-neon-purple" />
+              </div>
+              <h3 className="text-xl font-medium mb-2">Search to analyze your keyword</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Enter your main keyword above to see search insights, 
+                related keywords, and content suggestions from top-ranking pages
+              </p>
+            </motion.div>
+          )}
           
-          {/* Right column for strategy tips */}
-          <div className="space-y-4">
-            <div style={{
-            animationDelay: '200ms'
-          }} className="glass-panel border border-white/10 rounded-lg p-4 shadow-lg animate-fade-in px-[16px] py-[30px]">
-              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <ChevronRight className="h-4 w-4 text-primary" />
-                Content Strategy Tips
-              </h4>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="bg-primary/20 text-primary rounded-full w-4 h-4 flex items-center justify-center text-[10px] mt-0.5">1</span>
-                  <span>Choose a primary keyword with good search volume</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="bg-primary/20 text-primary rounded-full w-4 h-4 flex items-center justify-center text-[10px] mt-0.5">2</span>
-                  <span>Select related keywords to expand your content's reach</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="bg-primary/20 text-primary rounded-full w-4 h-4 flex items-center justify-center text-[10px] mt-0.5">3</span>
-                  <span>Analyze SERP data to understand what content performs best</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+          {hasSearched && (
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              key="results-state"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left column - Keyword selections */}
+                <div className="lg:col-span-1 space-y-6">
+                  {/* Keyword Suggestions */}
+                  <div className="animate-fade-in">
+                    <KeywordSuggestions 
+                      suggestions={suggestions} 
+                      onAddKeyword={handleAddKeyword} 
+                    />
+                  </div>
+                  
+                  {/* Selected Keywords */}
+                  <div className="animate-fade-in" style={{
+                    animationDelay: '100ms'
+                  }}>
+                    <SelectedKeywords 
+                      keywords={selectedKeywords} 
+                      onRemoveKeyword={handleRemoveKeyword} 
+                    />
+                  </div>
+                  
+                  {/* Selected Items Sidebar */}
+                  <SelectedItemsSidebar 
+                    serpSelections={serpSelections}
+                    totalSelected={totalSelected}
+                    selectedCounts={selectedCounts}
+                    handleToggleSelection={handleToggleSelection}
+                    handleContinueWithSelections={handleContinueWithSelections}
+                  />
+                </div>
+                
+                {/* Right column - SERP Analysis */}
+                <div className="lg:col-span-2">
+                  <SerpAnalysisPanel 
+                    serpData={serpData}
+                    isLoading={isAnalyzing}
+                    mainKeyword={mainKeyword}
+                    onAddToContent={handleAddToContent}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>;
+    </div>
+  );
 };

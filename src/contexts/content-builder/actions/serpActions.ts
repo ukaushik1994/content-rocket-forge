@@ -1,190 +1,203 @@
 
-import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { toast } from 'sonner';
-import { v4 as uuid } from 'uuid';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection, ContentOutlineSection } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Actions related to SERP analysis and selection in the content builder
- */
 export const createSerpActions = (
-  state: ContentBuilderState,
+  state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  // Add SERP selection
-  const addSerpSelection = (selection: SerpSelection) => {
-    dispatch({ type: 'ADD_SERP_SELECTION', payload: selection });
-  };
-
-  // Toggle SERP selection
-  const toggleSerpSelection = (type: string, content: string) => {
-    dispatch({
-      type: 'TOGGLE_SERP_SELECTION',
-      payload: { type, content }
-    });
-  };
-
-  // Analyze keyword for SERP data
   const analyzeKeyword = async (keyword: string) => {
-    if (!keyword) {
-      toast.error('Please enter a keyword to analyze');
-      return;
-    }
-
+    if (!keyword) return;
+    
+    // Start loading
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
-      // Call API to analyze keyword
-      const data = await analyzeKeywordSerp(keyword);
-      
-      // Set main keyword if not already set
-      if (!state.mainKeyword) {
-        dispatch({ type: 'SET_MAIN_KEYWORD', payload: keyword });
-      }
+      // In a real implementation, make API call to analyze keyword
+      // For now, simulate with mock data
+      const mockData = await getMockSerpData(keyword);
       
       // Update SERP data in state
-      if (data) {
-        dispatch({ type: 'SET_SERP_DATA', payload: data });
-        
-        // Mark current step as completed if we have SERP data
-        dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
-        
-        // Show success message
-        if (data.isMockData) {
-          toast.info(`Analysis completed for ${keyword} (using demo data)`);
-        } else {
-          toast.success(`Analysis completed for ${keyword}`);
-        }
-      }
+      dispatch({ type: 'SET_SERP_DATA', payload: mockData });
     } catch (error) {
-      console.error("Error analyzing keyword:", error);
-      toast.error("Failed to analyze keyword. Please try again.");
+      console.error('Error analyzing keyword:', error);
+      // Handle error
     } finally {
+      // End loading
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
   };
-
-  // Add content from SERP to outline
+  
   const addContentFromSerp = (content: string, type: string) => {
-    toggleSerpSelection(type, content);
-    toast.success(`Added ${type} to selected items`);
+    const selection: SerpSelection = {
+      type,
+      content,
+      selected: true
+    };
+    
+    dispatch({ type: 'ADD_SERP_SELECTION', payload: selection });
   };
-
-  // Generate outline from selected SERP items
+  
+  const toggleSerpSelection = (type: string, content: string) => {
+    dispatch({ type: 'TOGGLE_SERP_SELECTION', payload: { type, content } });
+  };
+  
   const generateOutlineFromSelections = () => {
-    const { serpSelections, contentTitle } = state;
+    const { serpSelections } = state;
     const selectedItems = serpSelections.filter(item => item.selected);
     
-    if (selectedItems.length === 0) {
-      toast.error("Please select items to include in your outline");
-      return;
+    if (selectedItems.length === 0) return;
+    
+    // Group by type
+    const questionItems = selectedItems.filter(item => item.type === 'question');
+    const keywordItems = selectedItems.filter(item => item.type === 'keyword');
+    const headingItems = selectedItems.filter(item => item.type === 'heading');
+    const contentGapItems = selectedItems.filter(item => item.type === 'contentGap');
+    
+    // Generate outline sections
+    const outlineSections: ContentOutlineSection[] = [];
+    
+    // Add introduction
+    outlineSections.push({
+      id: uuidv4(),
+      title: 'Introduction',
+      type: 'section',
+      content: `Introduction to ${state.mainKeyword}`,
+      relatedKeywords: keywordItems.slice(0, 3).map(item => item.content)
+    });
+    
+    // Add sections from headings
+    headingItems.forEach(item => {
+      outlineSections.push({
+        id: uuidv4(),
+        title: item.content,
+        type: 'section',
+        content: '',
+        relatedKeywords: []
+      });
+    });
+    
+    // Add FAQ section from questions
+    if (questionItems.length > 0) {
+      const faqSection: ContentOutlineSection = {
+        id: uuidv4(),
+        title: 'Frequently Asked Questions',
+        type: 'faq',
+        content: '',
+        subsections: questionItems.map(item => ({
+          id: uuidv4(),
+          title: item.content
+        }))
+      };
+      outlineSections.push(faqSection);
     }
     
-    // Create sections for the outline based on selections
-    const keywords = selectedItems.filter(item => item.type === 'keyword');
-    const questions = selectedItems.filter(item => item.type === 'question');
-    const snippets = selectedItems.filter(item => item.type === 'snippet');
-    const entities = selectedItems.filter(item => item.type === 'entity');
-    const headings = selectedItems.filter(item => item.type === 'heading');
-    const contentGaps = selectedItems.filter(item => item.type === 'contentGap');
-    const topRanks = selectedItems.filter(item => item.type === 'topRank');
+    // Add content gaps as sections
+    contentGapItems.forEach(item => {
+      outlineSections.push({
+        id: uuidv4(),
+        title: item.content,
+        type: 'section',
+        content: '',
+        relatedKeywords: []
+      });
+    });
     
-    try {
-      // Create outline sections
-      const newOutline = [];
-      
-      // Use headings as primary structure if available
-      if (headings.length > 0) {
-        headings.forEach(heading => {
-          newOutline.push({
-            id: uuid(),
-            title: heading.content,
-            type: 'heading',
-            notes: 'From top-ranking content headings'
-          });
-        });
-      }
-      
-      // Use questions as main sections
-      questions.forEach(question => {
-        newOutline.push({
-          id: uuid(),
-          title: question.content,
-          type: 'question',
-          notes: 'Based on commonly asked questions'
-        });
-      });
-      
-      // Add content gaps as sections
-      contentGaps.forEach(gap => {
-        newOutline.push({
-          id: uuid(),
-          title: gap.content,
-          notes: gap.source || 'Content opportunity from gap analysis', 
-          type: 'contentGap'
-        });
-      });
-      
-      // Add a section for keywords
-      if (keywords.length > 0) {
-        newOutline.push({
-          id: uuid(),
-          title: "Key Concepts & Definitions",
-          type: 'keywords',
-          notes: 'Define these important terms for your readers',
-          relatedKeywords: keywords.map(k => k.content)
-        });
-      }
-      
-      // Add a section for entities if present
-      if (entities.length > 0) {
-        newOutline.push({
-          id: uuid(),
-          title: "Important Entities & Concepts",
-          type: 'entities',
-          notes: 'Cover these key topics for comprehensiveness',
-          relatedKeywords: entities.map(e => e.content)
-        });
-      }
-      
-      // Add top-ranked content insights if available
-      if (topRanks.length > 0) {
-        newOutline.push({
-          id: uuid(),
-          title: "Insights from Top-Ranked Content",
-          type: 'topRanks',
-          notes: "Incorporate learnings from competitor content",
-          relatedKeywords: topRanks.map(t => t.content)
-        });
-      }
-      
-      // Set the outline in state
-      dispatch({ type: 'SET_OUTLINE', payload: newOutline });
-      
-      // Create a title if one doesn't exist
-      if (!contentTitle && state.mainKeyword) {
-        const suggestedTitle = `Complete Guide to ${state.mainKeyword}`;
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
-      }
-      
-      // Mark SERP analysis step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
-      
-      // Navigate to outline step
-      dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 });
-      
-      toast.success(`Outline generated with ${newOutline.length} sections`);
-    } catch (error) {
-      console.error("Error generating outline:", error);
-      toast.error("Failed to generate outline. Please try again.");
-    }
+    // Add conclusion
+    outlineSections.push({
+      id: uuidv4(),
+      title: 'Conclusion',
+      type: 'section',
+      content: `Summary and key takeaways about ${state.mainKeyword}`,
+      relatedKeywords: []
+    });
+    
+    // Update outline in state
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
   };
-
+  
   return {
-    addSerpSelection,
-    toggleSerpSelection,
     analyzeKeyword,
     addContentFromSerp,
+    toggleSerpSelection,
     generateOutlineFromSelections
+  };
+};
+
+// Helper function to get mock SERP data
+const getMockSerpData = async (keyword: string) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  return {
+    keyword,
+    searchVolume: Math.floor(Math.random() * 20000) + 1000,
+    keywordDifficulty: Math.floor(Math.random() * 100),
+    competitionScore: Math.random(),
+    peopleAlsoAsk: [
+      { 
+        question: `What is ${keyword}?`, 
+        answer: `${keyword} is a popular topic in digital marketing that refers to strategies for optimizing content.` 
+      },
+      { 
+        question: `How to improve ${keyword}?`, 
+        answer: `To improve ${keyword}, focus on creating high-quality content, optimizing meta tags, and building backlinks.` 
+      },
+      { 
+        question: `Why is ${keyword} important?`, 
+        answer: `${keyword} is important because it helps websites rank higher in search results, driving more organic traffic.` 
+      },
+    ],
+    relatedSearches: [
+      { query: `${keyword} strategy`, volume: 2500 },
+      { query: `${keyword} tips`, volume: 1800 },
+      { query: `best ${keyword} tools`, volume: 3200 },
+      { query: `${keyword} examples`, volume: 1200 },
+      { query: `how to learn ${keyword}`, volume: 2100 },
+    ],
+    topResults: [
+      { 
+        position: 1,
+        title: `The Ultimate Guide to ${keyword}`,
+        snippet: `Learn everything about ${keyword} with our comprehensive guide covering strategies, tools, and best practices.`,
+        link: 'https://example.com/guide'
+      },
+      { 
+        position: 2,
+        title: `10 ${keyword} Strategies That Work in 2023`,
+        snippet: `Discover the most effective ${keyword} strategies that are working right now, with real-world examples.`,
+        link: 'https://example.com/strategies'
+      },
+      { 
+        position: 3,
+        title: `How To Master ${keyword} in 30 Days`,
+        snippet: `Our step-by-step program shows you exactly how to become proficient in ${keyword} within just one month.`,
+        link: 'https://example.com/course'
+      },
+    ],
+    entities: [
+      { name: 'Google', type: 'Organization' },
+      { name: 'Website Traffic', type: 'Concept' },
+      { name: 'Content Marketing', type: 'Topic' },
+      { name: 'Analytics', type: 'Tool' },
+    ],
+    headings: [
+      { text: `What is ${keyword}?`, level: 'h2' },
+      { text: `Benefits of ${keyword}`, level: 'h2' },
+      { text: `${keyword} Best Practices`, level: 'h2' },
+      { text: `${keyword} Tools and Resources`, level: 'h2' },
+    ],
+    contentGaps: [
+      { topic: `${keyword} for E-commerce`, description: 'Specialized strategies for online stores' },
+      { topic: `${keyword} ROI Calculation`, description: 'How to measure return on investment' },
+      { topic: `${keyword} Case Studies`, description: 'Real-world success stories' },
+    ],
+    recommendations: [
+      `Focus on long-form content about ${keyword} that addresses user questions`,
+      `Include step-by-step instructions for implementing ${keyword} strategies`,
+      `Create comparison tables showing different ${keyword} approaches`,
+      `Add visual elements like infographics explaining ${keyword} concepts`,
+    ],
+    isMockData: true
   };
 };

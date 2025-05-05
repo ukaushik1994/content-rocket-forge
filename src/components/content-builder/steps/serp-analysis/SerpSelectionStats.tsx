@@ -1,15 +1,15 @@
 
 import { SerpSelection } from '@/contexts/content-builder/types';
 
-export interface SerpSelectionStatsResult {
+interface SerpSelectionStatsResult {
   selectedCounts: {
     keyword: number;
     question: number;
     snippet: number;
+    competitor: number;
     entity: number;
     heading: number;
     contentGap: number;
-    competitor: number; // Added for backward compatibility
     topRank: number;
   };
   totalSelected: number;
@@ -17,20 +17,19 @@ export interface SerpSelectionStatsResult {
 
 export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSelection[] }): SerpSelectionStatsResult => {
   const selectedItems = serpSelections.filter(item => item.selected);
-  
+  const totalSelected = selectedItems.length;
+
   const selectedCounts = {
     keyword: selectedItems.filter(item => item.type === 'keyword').length,
     question: selectedItems.filter(item => item.type === 'question').length,
     snippet: selectedItems.filter(item => item.type === 'snippet').length,
+    competitor: selectedItems.filter(item => item.type === 'competitor').length,
     entity: selectedItems.filter(item => item.type === 'entity').length,
     heading: selectedItems.filter(item => item.type === 'heading').length,
     contentGap: selectedItems.filter(item => item.type === 'contentGap').length,
-    competitor: selectedItems.filter(item => item.type === 'topRank').length, // Count topRank items as competitors for backward compatibility
-    topRank: selectedItems.filter(item => item.type === 'topRank').length
+    topRank: selectedItems.filter(item => item.type === 'topRank').length,
   };
-  
-  const totalSelected = selectedItems.length;
-  
+
   return {
     selectedCounts,
     totalSelected

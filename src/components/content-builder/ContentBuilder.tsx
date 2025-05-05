@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -25,17 +26,38 @@ export const ContentBuilder = () => {
   // Determine if user can proceed to next step
   const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
   
+  // Handle next step navigation with SERP Analysis skip
+  const handleNextStep = () => {
+    // If we're on the first step (Selection & Analysis), skip the SERP Analysis step (id: 2)
+    if (activeStep === 0) {
+      navigateToStep(1); // Go to Content Type
+    } else if (activeStep === 1) {
+      navigateToStep(3); // Skip SERP Analysis (id: 2) and go to Outline
+    } else {
+      navigateToStep(activeStep + 1);
+    }
+  };
+  
+  // Handle previous step navigation with SERP Analysis skip
+  const handlePrevStep = () => {
+    if (activeStep === 3) {
+      navigateToStep(1); // If we're on Outline, go back to Content Type (skipping SERP Analysis)
+    } else {
+      navigateToStep(activeStep - 1);
+    }
+  };
+  
   // Render the current step component
   const renderStepContent = () => {
     const stepIndex = steps[activeStep].id;
     switch (stepIndex) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
-      case 2: return <SerpAnalysisStep />;
+      case 2: return <SerpAnalysisStep />; // Keep this for backwards compatibility
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
-      case 6: return <FinalReviewStep />; // New Final Review step
+      case 6: return <FinalReviewStep />;
       case 7: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
@@ -80,7 +102,7 @@ export const ContentBuilder = () => {
           <div className="flex justify-between max-w-5xl mx-auto">
             <Button
               variant="outline"
-              onClick={() => navigateToStep(activeStep - 1)}
+              onClick={handlePrevStep}
               disabled={activeStep === 0}
               className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
             >
@@ -88,7 +110,7 @@ export const ContentBuilder = () => {
             </Button>
             
             <Button
-              onClick={() => navigateToStep(activeStep + 1)}
+              onClick={handleNextStep}
               disabled={!canGoNext}
               className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
             >
