@@ -66,10 +66,11 @@ export const ContentWritingStep = () => {
         ? outline.map((item, index) => {
             if (typeof item === 'string') {
               return `${index + 1}. ${item}`;
-            } else {
+            } else if (item && typeof item === 'object') {
               return `${index + 1}. ${item.title}`;
             }
-          }).join('\n')
+            return '';
+          }).filter(Boolean).join('\n')
         : '';
         
       // Prepare secondary keywords

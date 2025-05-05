@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIInstructionsInput } from './AIInstructionsInput';
 import { AIGenerateButton } from './AIGenerateButton';
