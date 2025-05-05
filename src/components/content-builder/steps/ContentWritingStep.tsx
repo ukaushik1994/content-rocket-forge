@@ -8,7 +8,7 @@ import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
 import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
-import { generateDemoContent } from './writing/contentGenerationUtils';
+import { sendChatRequest } from '@/services/aiService';
 
 export const ContentWritingStep = () => {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -29,6 +29,7 @@ export const ContentWritingStep = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
   const [saveNote, setSaveNote] = useState('');
+  const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('openai');
 
   // Mark this step as complete when we have content
   useEffect(() => {
@@ -52,31 +53,72 @@ export const ContentWritingStep = () => {
   };
 
   const handleGenerateContent = async () => {
+    if (!mainKeyword) {
+      toast.error("Please set a main keyword first");
+      return;
+    }
+    
     setIsGenerating(true);
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Convert outline to OutlineSection[] if it's a string[]
-      const processedOutline = Array.isArray(outline) 
-        ? outline.map(item => {
+      // Convert outline to a formatted string for the prompt
+      const outlineText = Array.isArray(outline) 
+        ? outline.map((item, index) => {
             if (typeof item === 'string') {
-              return { id: Math.random().toString(), title: item, level: 2 };
+              return `${index + 1}. ${item}`;
+            } else {
+              return `${index + 1}. ${item.title}`;
             }
-            return item;
-          })
-        : [];
+          }).join('\n')
+        : '';
+        
+      // Prepare secondary keywords
+      const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
       
-      // Generate demo content
-      const generatedContent = generateDemoContent(contentTitle, mainKeyword, processedOutline, selectedSolution);
+      // Create a detailed prompt for the AI
+      const prompt = `
+      Write comprehensive, high-quality content for an article about "${mainKeyword}".
       
-      dispatch({ type: 'SET_CONTENT', payload: generatedContent });
-      toast.success('Content generated successfully');
+      Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
+      Primary Keyword: ${mainKeyword}
+      ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
+      
+      Use this outline structure:
+      ${outlineText}
+      
+      ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
+      
+      ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
+      
+      Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
+      Include a compelling introduction and a strong conclusion. 
+      Optimize the content for readability and search engines.
+      `;
+      
+      // Call the AI API via our service
+      console.info("AI Content Generation prompt:", prompt);
+      
+      const chatResponse = await sendChatRequest(aiProvider, {
+        messages: [
+          { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        maxTokens: 4000
+      });
+      
+      if (chatResponse?.choices?.[0]?.message?.content) {
+        // Use the AI-generated content
+        const generatedContent = chatResponse.choices[0].message.content;
+        dispatch({ type: 'SET_CONTENT', payload: generatedContent });
+        toast.success('Content generated successfully');
+      } else {
+        toast.error('Failed to generate content. Please check your API key configuration or try another provider.');
+      }
       
     } catch (error) {
       console.error('Error generating content:', error);
-      toast.error('Failed to generate content. Please try again.');
+      toast.error('Failed to generate content. Please try again or check your API configuration.');
     } finally {
       setIsGenerating(false);
     }
@@ -126,6 +168,10 @@ export const ContentWritingStep = () => {
       setIsSaving(false);
     }
   };
+  
+  const handleAiProviderChange = (provider: 'openai' | 'anthropic' | 'gemini') => {
+    setAiProvider(provider);
+  };
 
   // Convert outline to the appropriate format for the sidebar component
   const processedOutline = Array.isArray(outline) 
@@ -146,6 +192,8 @@ export const ContentWritingStep = () => {
         handleToggleGenerator={handleToggleGenerator}
         showOutline={showOutline}
         outlineLength={outline.length}
+        aiProvider={aiProvider}
+        onAiProviderChange={handleAiProviderChange}
       />
       
       {showGenerator && (

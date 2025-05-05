@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { AIInstructionsInput } from './AIInstructionsInput';
 import { AIGenerateButton } from './AIGenerateButton';
 import { AIOutlineInfo } from './AIOutlineInfo';
-import { generateOutlineFromSelections } from './outlineGenerationUtils';
 import { sendChatRequest } from '@/services/aiService';
 
 export function AIOutlineGenerator() {
@@ -70,10 +69,9 @@ export function AIOutlineGenerator() {
       (and so on)
       `;
       
-      // In a real implementation, this would call an API to generate the outline
       console.info("AI Generation prompt:", prompt);
       
-      // First try using our AI API integration
+      // Call the AI API
       const chatResponse = await sendChatRequest(aiProvider, {
         messages: [
           { role: 'system', content: 'You are an expert content outline creator.' },
@@ -82,23 +80,13 @@ export function AIOutlineGenerator() {
         temperature: 0.7
       });
       
-      let outlineText: string;
-      
-      if (chatResponse?.choices?.[0]?.message?.content) {
-        // Use the AI-generated outline
-        outlineText = chatResponse.choices[0].message.content;
-      } else {
-        // Fall back to utility function if AI response fails
-        console.warn('Falling back to local outline generation due to API failure');
-        const newOutline = await generateOutlineFromSelections(
-          mainKeyword,
-          selectedItems,
-          customInstructions
-        );
-        
-        // Convert the outline sections to strings
-        outlineText = newOutline.map((section, i) => `${i+1}. ${section.title}`).join('\n');
+      if (!chatResponse?.choices?.[0]?.message?.content) {
+        toast.error(`Failed to generate outline with ${aiProvider}. Please check your API configuration or try another provider.`);
+        return;
       }
+      
+      // Use the AI-generated outline
+      const outlineText = chatResponse.choices[0].message.content;
       
       // Parse the outline into an array of strings (one per line)
       const outlineArray = outlineText
@@ -106,6 +94,11 @@ export function AIOutlineGenerator() {
         .map(line => line.trim())
         .filter(line => line.match(/^\d+\.\s/) || line.match(/^[IVX]+\.\s/)) // Only include numbered lines
         .map(line => line.replace(/^\d+\.\s/, '').replace(/^[IVX]+\.\s/, '')); // Remove numbering
+      
+      if (outlineArray.length === 0) {
+        toast.error("Could not parse the generated outline. Please try again.");
+        return;
+      }
       
       // Update the outline in state
       dispatch({ type: 'SET_OUTLINE', payload: outlineArray });
@@ -122,7 +115,7 @@ export function AIOutlineGenerator() {
       toast.success(`AI outline generated with ${outlineArray.length} sections`);
     } catch (error) {
       console.error("Error generating AI outline:", error);
-      toast.error("Failed to generate outline. Please try again.");
+      toast.error("Failed to generate outline. Please check your API configuration or try again.");
     } finally {
       setIsGenerating(false);
     }
