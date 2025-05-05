@@ -9,7 +9,7 @@ import { getImprovementType, generateRewrittenContent } from '@/utils/seo/conten
  */
 export const useContentRewriter = () => {
   const { state, setContent, dispatch } = useContentBuilder();
-  const { content, mainKeyword, seoImprovements } = state;
+  const { content, mainKeyword, seoImprovements = [] } = state;
   
   const [showRewriteDialog, setShowRewriteDialog] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
@@ -25,9 +25,9 @@ export const useContentRewriter = () => {
   
   // Check if a recommendation has been applied
   const isRecommendationApplied = (recommendationId: string) => {
-    if (!state.seoImprovements) return false;
+    if (!seoImprovements || seoImprovements.length === 0) return false;
     
-    return state.seoImprovements.some(improvement => 
+    return seoImprovements.some(improvement => 
       improvement.id === recommendationId && improvement.applied
     );
   };

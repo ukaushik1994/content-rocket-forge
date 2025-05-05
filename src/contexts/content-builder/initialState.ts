@@ -48,6 +48,7 @@ export const initialState: ContentBuilderState = {
   
   // SEO data
   seoScore: 0,
+  seoImprovements: [],
   
   // Solution integration
   selectedSolution: null,

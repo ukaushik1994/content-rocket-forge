@@ -198,6 +198,22 @@ export const contentBuilderReducer = (
         isSaving: action.payload
       };
       
+    case 'SET_SEO_IMPROVEMENTS':
+      return {
+        ...state,
+        seoImprovements: action.payload
+      };
+      
+    case 'APPLY_SEO_IMPROVEMENT':
+      return {
+        ...state,
+        seoImprovements: state.seoImprovements?.map(improvement =>
+          improvement.id === action.payload
+            ? { ...improvement, applied: true }
+            : improvement
+        ) || []
+      };
+      
     default:
       return state;
   }

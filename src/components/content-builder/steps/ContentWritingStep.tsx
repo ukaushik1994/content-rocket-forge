@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentEditor } from '@/components/content/ContentEditor';
+import { ContentOutlineSection } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
@@ -57,8 +58,18 @@ export const ContentWritingStep = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Convert outline to ContentOutlineSection[] if it's a string[]
+      const processedOutline = Array.isArray(outline) 
+        ? outline.map(item => {
+            if (typeof item === 'string') {
+              return { id: Math.random().toString(), title: item };
+            }
+            return item;
+          })
+        : [];
+      
       // Generate demo content
-      const generatedContent = generateDemoContent(contentTitle, mainKeyword, outline, selectedSolution);
+      const generatedContent = generateDemoContent(contentTitle, mainKeyword, processedOutline, selectedSolution);
       
       dispatch({ type: 'SET_CONTENT', payload: generatedContent });
       toast.success('Content generated successfully');
@@ -116,6 +127,16 @@ export const ContentWritingStep = () => {
     }
   };
 
+  // Convert outline to the appropriate format for the sidebar component
+  const processedOutline = Array.isArray(outline) 
+    ? outline.map(item => {
+        if (typeof item === 'string') {
+          return { id: Math.random().toString(), title: item };
+        }
+        return item;
+      }) as ContentOutlineSection[]
+    : [];
+
   return (
     <div className="space-y-6">
       <ContentGenerationHeader
@@ -139,7 +160,7 @@ export const ContentWritingStep = () => {
         {showOutline && (
           <div className="lg:col-span-1 space-y-4">
             <ContentSidebar
-              outline={outline}
+              outline={processedOutline}
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}

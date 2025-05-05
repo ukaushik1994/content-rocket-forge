@@ -23,6 +23,8 @@ export interface DocumentStructure {
   h2: string[];
   h3: string[];
   h4: string[];
+  h5: string[];
+  h6: string[];
   hasSingleH1: boolean;
   hasLogicalHierarchy: boolean;
 }
@@ -54,6 +56,14 @@ export interface Solution {
   logoUrl?: string | null;
   externalUrl?: string | null;
   resources?: Array<{title: string; url: string}>;
+}
+
+// SEO Improvement
+export interface SeoImprovement {
+  id: string;
+  type: string;
+  recommendation: string;
+  applied: boolean;
 }
 
 // Content outline section type
@@ -124,6 +134,7 @@ export interface ContentBuilderState {
   
   // SEO data
   seoScore: number;
+  seoImprovements?: SeoImprovement[]; // Add missing property
   
   // Solution integration
   selectedSolution: Solution | null;
@@ -167,7 +178,9 @@ export type ContentBuilderAction =
   | { type: 'REMOVE_KEYWORD'; payload: string }
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  | { type: 'SELECT_SOLUTION'; payload: Solution };
+  | { type: 'SELECT_SOLUTION'; payload: Solution }
+  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
+  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] };
 
 export type ContentBuilderContextType = {
   state: ContentBuilderState;
@@ -185,7 +198,7 @@ export type ContentBuilderContextType = {
   setContentIntent: (intent: string) => void;
   updateContent: (content: string) => void;
   setOutlineTitle: (title: string) => void;
-  setOutlineSections: (sections: any[]) => void;
+  setOutlineSections: (sections: ContentOutlineSection[]) => void;
   // SERP actions
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;

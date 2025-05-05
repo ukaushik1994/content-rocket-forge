@@ -1,5 +1,7 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 
@@ -38,12 +40,15 @@ export const useSolutionAnalysis = (ctaInfo: { hasCTA: boolean; ctaText: string[
       console.log("[useSolutionAnalysis] Raw metrics from analysis:", metrics);
       console.log("[useSolutionAnalysis] Converted painPointsAddressed:", painPointsArray);
       
-      const solutionMetrics = {
-        featureIncorporation: metrics.featureIncorporation,
-        positioningScore: metrics.positioningScore,
-        nameMentions: metrics.nameMentions,
+      const solutionMetrics: SolutionIntegrationMetrics = {
+        mentions: metrics.mentions || 0,
+        contextualReferences: metrics.contextualReferences || 0,
+        naturalness: metrics.naturalness || 0,
+        featureIncorporation: metrics.featureIncorporation || 0,
+        positioningScore: metrics.positioningScore || 0,
+        nameMentions: metrics.nameMentions || 0,
         painPointsAddressed: painPointsArray,
-        audienceAlignment: metrics.audienceAlignment,
+        audienceAlignment: metrics.audienceAlignment || 0,
         ctaMentions: ctaInfo.ctaText.length,
         overallScore: Math.round((metrics.featureIncorporation + metrics.positioningScore) / 2)
       };
