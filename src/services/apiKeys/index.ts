@@ -4,10 +4,8 @@
 export * from './types';
 export * from './encryption';
 export * from './crud';
-// Explicitly re-export and rename to avoid naming conflicts
-export { detectApiKeyType as detectApiKeyTypeSync } from './validation';
-export { 
-  testApiKey,
-  detectApiKeyType as detectApiKeyTypeAsync
-} from './testing';
+// Export only the named functions from testing, excluding detectApiKeyType which we'll
+// get from validation to avoid conflicts
+export { testApiKey } from './testing';
+export * from './validation';
 
