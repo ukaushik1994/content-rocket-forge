@@ -1,24 +1,37 @@
 
 import { SerpSelection } from '@/contexts/content-builder/types';
 
-interface SerpSelectionStatsProps {
-  serpSelections: SerpSelection;
+interface SerpSelectionStatsResult {
+  selectedCounts: {
+    keyword: number;
+    question: number;
+    snippet: number;
+    competitor: number;
+    entity: number;
+    heading: number;
+    contentGap: number;
+    topRank: number;
+  };
+  totalSelected: number;
 }
 
-export const SerpSelectionStats = ({ serpSelections }: SerpSelectionStatsProps) => {
-  // Convert the selection object to an array of arrays and calculate counts
-  const selectionCounts = Object.entries(serpSelections)
-    .filter(([key]) => key !== 'filter') // Filter out non-array properties
-    .map(([key, values]) => ({
-      type: key,
-      count: Array.isArray(values) ? values.length : 0
-    }));
-  
-  // Calculate total count of all selections
-  const totalCount = selectionCounts.reduce((sum, item) => sum + item.count, 0);
-  
+export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSelection[] }): SerpSelectionStatsResult => {
+  const selectedItems = serpSelections.filter(item => item.selected);
+  const totalSelected = selectedItems.length;
+
+  const selectedCounts = {
+    keyword: selectedItems.filter(item => item.type === 'keyword').length,
+    question: selectedItems.filter(item => item.type === 'question').length,
+    snippet: selectedItems.filter(item => item.type === 'snippet').length,
+    competitor: selectedItems.filter(item => item.type === 'competitor').length,
+    entity: selectedItems.filter(item => item.type === 'entity').length,
+    heading: selectedItems.filter(item => item.type === 'heading').length,
+    contentGap: selectedItems.filter(item => item.type === 'contentGap').length,
+    topRank: selectedItems.filter(item => item.type === 'topRank').length,
+  };
+
   return {
-    selectedCounts: selectionCounts,
-    totalSelected: totalCount
+    selectedCounts,
+    totalSelected
   };
 };

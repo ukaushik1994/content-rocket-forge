@@ -1,27 +1,25 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { SerpAnalysisResult } from '@/types/serp';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag, Heading, FileSearch, Layers, PlusCircle, AlertTriangle } from 'lucide-react';
+import { Search, HelpCircle, FileText, Sparkles, TrendingUp, Tag, Heading, FileSearch, Layers, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
 
 export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
   isLoading: boolean;
   mainKeyword: string;
   onAddToContent?: (content: string, type: string) => void;
-  error?: string | null;
 }
 
 export function SerpAnalysisPanel({ 
   serpData, 
   isLoading, 
   mainKeyword,
-  onAddToContent = () => {},
-  error = null
+  onAddToContent = () => {}
 }: SerpAnalysisPanelProps) {
   const [activeTab, setActiveTab] = useState('keywords');
 
@@ -41,87 +39,27 @@ export function SerpAnalysisPanel({
     );
   }
 
-  // Error state - API key missing
-  if (error && error.includes('API key not configured')) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 bg-gradient-to-br from-black/30 to-amber-900/10 backdrop-blur-sm rounded-xl border border-amber-500/20">
-        <AlertTriangle className="h-16 w-16 text-amber-500 mb-4" />
-        <p className="text-xl font-medium text-center text-amber-400">SERP API Key Missing</p>
-        <p className="text-sm text-muted-foreground mt-2 text-center max-w-md mb-6">
-          To analyze keywords and get search insights, you need to add your SERP API key in the settings.
-        </p>
-        <Button asChild variant="outline" className="border-amber-500/50 text-amber-400 hover:text-amber-300 hover:bg-amber-950/20">
-          <Link to="/settings">
-            Go to Settings
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  // General error state
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 bg-gradient-to-br from-black/30 to-red-900/10 backdrop-blur-sm rounded-xl border border-red-500/20">
-        <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
-        <p className="text-xl font-medium text-center text-red-400">SERP Analysis Error</p>
-        <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">
-          {error}
-        </p>
-      </div>
-    );
-  }
-
   // No data state
-  if (!serpData || (
-    !serpData.topResults?.length && 
-    !serpData.relatedSearches?.length && 
-    !serpData.peopleAlsoAsk?.length &&
-    !serpData.recommendations?.length
-  )) {
+  if (!serpData) {
     return (
       <div className="flex flex-col items-center justify-center py-16 bg-gradient-to-br from-black/30 to-blue-900/10 backdrop-blur-sm rounded-xl border border-white/10">
         <Search className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
-        <p className="text-xl font-medium text-center">No Results Found</p>
+        <p className="text-xl font-medium text-center">No SERP data available</p>
         <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">
-          {mainKeyword 
-            ? `No data available for "${mainKeyword}". Try another keyword.` 
-            : "Enter a keyword in the search box to analyze top-ranking content and get insights."}
+          Enter a keyword in the search box to analyze top-ranking content and get insights
         </p>
       </div>
     );
   }
+  
+  // Check if data is mock
+  const isMockData = serpData.isMockData;
   
   // Function to handle adding content
   const handleAddContent = (content: string, type: string) => {
     onAddToContent(content, type);
     toast.success(`Added ${type} to your content plan`);
   };
-  
-  // Empty data check for each tab
-  const hasKeywords = serpData.relatedSearches && serpData.relatedSearches.length > 0;
-  const hasQuestions = serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0;
-  const hasEntities = serpData.entities && serpData.entities.length > 0;
-  const hasHeadings = serpData.headings && serpData.headings.length > 0;
-  const hasGaps = serpData.contentGaps && serpData.contentGaps.length > 0;
-  const hasCompetitors = serpData.topResults && serpData.topResults.length > 0;
-  
-  // If the current tab has no data, switch to a tab that has data
-  if (
-    (activeTab === 'keywords' && !hasKeywords) ||
-    (activeTab === 'questions' && !hasQuestions) ||
-    (activeTab === 'entities' && !hasEntities) ||
-    (activeTab === 'headings' && !hasHeadings) ||
-    (activeTab === 'gaps' && !hasGaps) ||
-    (activeTab === 'competitors' && !hasCompetitors)
-  ) {
-    if (hasKeywords) setActiveTab('keywords');
-    else if (hasQuestions) setActiveTab('questions');
-    else if (hasEntities) setActiveTab('entities');
-    else if (hasHeadings) setActiveTab('headings');
-    else if (hasGaps) setActiveTab('gaps');
-    else if (hasCompetitors) setActiveTab('competitors');
-  }
   
   return (
     <div className="space-y-6">
@@ -179,7 +117,9 @@ export function SerpAnalysisPanel({
                 Analysis for: <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">{mainKeyword}</span>
               </h3>
               <p className="text-sm text-muted-foreground">
-                Interactive insights from top-ranking content
+                {isMockData ? 
+                  "Using demonstration data - add API key for real-time results" : 
+                  "Interactive insights from top-ranking content"}
               </p>
             </div>
           </div>
@@ -189,7 +129,7 @@ export function SerpAnalysisPanel({
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
               <div className="text-sm text-muted-foreground mb-1">Search Volume</div>
               <div className="text-2xl font-bold text-neon-purple">
-                {serpData.searchVolume ? serpData.searchVolume.toLocaleString() : 'N/A'}
+                {serpData.searchVolume?.toLocaleString() || 'N/A'}
               </div>
             </div>
             
@@ -199,14 +139,14 @@ export function SerpAnalysisPanel({
                 <div className="text-2xl font-bold text-neon-blue">
                   {serpData.keywordDifficulty || 'N/A'}
                 </div>
-                {serpData.keywordDifficulty ? (
+                {serpData.keywordDifficulty && (
                   <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-green-500 to-neon-blue rounded-full"
                       style={{ width: `${serpData.keywordDifficulty}%` }}
                     />
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
             
@@ -216,14 +156,14 @@ export function SerpAnalysisPanel({
                 <div className="text-2xl font-bold text-green-400">
                   {serpData.competitionScore ? `${(serpData.competitionScore * 100).toFixed(0)}%` : 'N/A'}
                 </div>
-                {serpData.competitionScore ? (
+                {serpData.competitionScore && (
                   <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-green-500 to-neon-purple rounded-full"
                       style={{ width: `${serpData.competitionScore * 100}%` }}
                     />
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           </div>
@@ -232,13 +172,12 @@ export function SerpAnalysisPanel({
       
       {/* Content Tabs */}
       <Card className="border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden">
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="keywords" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
             <TabsTrigger
               value="keywords"
               className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('keywords')}
-              disabled={!hasKeywords}
             >
               <Tag className="h-4 w-4 mr-2" /> Keywords
             </TabsTrigger>
@@ -246,7 +185,6 @@ export function SerpAnalysisPanel({
               value="questions"
               className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('questions')}
-              disabled={!hasQuestions}
             >
               <HelpCircle className="h-4 w-4 mr-2" /> Questions
             </TabsTrigger>
@@ -254,7 +192,6 @@ export function SerpAnalysisPanel({
               value="entities"
               className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('entities')}
-              disabled={!hasEntities}
             >
               <Layers className="h-4 w-4 mr-2" /> Entities
             </TabsTrigger>
@@ -262,7 +199,6 @@ export function SerpAnalysisPanel({
               value="headings"
               className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('headings')}
-              disabled={!hasHeadings}
             >
               <Heading className="h-4 w-4 mr-2" /> Headings
             </TabsTrigger>
@@ -270,7 +206,6 @@ export function SerpAnalysisPanel({
               value="gaps"
               className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('gaps')}
-              disabled={!hasGaps}
             >
               <FileSearch className="h-4 w-4 mr-2" /> Gaps
             </TabsTrigger>
@@ -278,7 +213,6 @@ export function SerpAnalysisPanel({
               value="competitors"
               className="rounded-none data-[state=active]:bg-white/5"
               onClick={() => setActiveTab('competitors')}
-              disabled={!hasCompetitors}
             >
               <FileText className="h-4 w-4 mr-2" /> Competitors
             </TabsTrigger>

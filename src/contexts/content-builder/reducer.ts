@@ -1,179 +1,209 @@
 
 import { ContentBuilderState, ContentBuilderAction } from './types';
+import { initialState } from './initialState';
 
-export function contentBuilderReducer(
+export const contentBuilderReducer = (
   state: ContentBuilderState,
   action: ContentBuilderAction
-): ContentBuilderState {
+): ContentBuilderState => {
   switch (action.type) {
-    case 'SET_CURRENT_STEP':
+    case 'SET_ACTIVE_STEP':
       return {
         ...state,
-        steps: {
-          ...state.steps,
-          current: action.payload,
-        },
+        activeStep: action.payload
       };
+    
     case 'MARK_STEP_COMPLETED':
       return {
         ...state,
-        steps: {
-          ...state.steps,
-          completed: state.steps.completed.includes(action.payload)
-            ? state.steps.completed
-            : [...state.steps.completed, action.payload],
-        },
+        steps: state.steps.map((step, index) => 
+          index === action.payload ? { ...step, completed: true } : step
+        )
       };
+
     case 'MARK_STEP_VISITED':
-      // Handle the new action type
-      return state;
+      return {
+        ...state,
+        steps: state.steps.map((step, index) => 
+          index === action.payload ? { ...step, visited: true } : step
+        )
+      };
+      
     case 'SET_MAIN_KEYWORD':
       return {
         ...state,
-        mainKeyword: action.payload,
+        mainKeyword: action.payload
       };
-    case 'ADD_SEARCHED_KEYWORD':
-      return {
-        ...state,
-        searchedKeywords: state.searchedKeywords.includes(action.payload)
-          ? state.searchedKeywords
-          : [...state.searchedKeywords, action.payload],
-      };
-    case 'SET_SERP_DATA':
-      return {
-        ...state,
-        serpData: action.payload,
-        serpError: null,
-      };
-    case 'SET_IS_ANALYZING':
-      return {
-        ...state,
-        isAnalyzing: action.payload,
-      };
-    case 'TOGGLE_SERP_SELECTION':
-      const { type, content } = action.payload;
-      const currentSelections = [...state.serpSelections[type]];
-      const index = currentSelections.indexOf(content);
-
-      if (index === -1) {
-        currentSelections.push(content);
-      } else {
-        currentSelections.splice(index, 1);
-      }
-
-      return {
-        ...state,
-        serpSelections: {
-          ...state.serpSelections,
-          [type]: currentSelections,
-        },
-      };
-    case 'SET_OUTLINE':
-      return {
-        ...state,
-        outline: action.payload,
-      };
-    case 'SET_CONTENT':
-      return {
-        ...state,
-        content: action.payload,
-      };
-    case 'SET_TITLE':
-      return {
-        ...state,
-        title: action.payload,
-      };
-    case 'SET_IS_GENERATING':
-      return {
-        ...state,
-        isGenerating: action.payload,
-      };
-    case 'SET_SERP_ERROR':
-      return {
-        ...state,
-        serpError: action.payload,
-      };
+      
     case 'ADD_KEYWORD':
+      if (state.selectedKeywords.includes(action.payload)) {
+        return state;
+      }
       return {
         ...state,
-        keywords: state.keywords.includes(action.payload)
-          ? state.keywords
-          : [...state.keywords, action.payload],
-        selectedKeywords: state.selectedKeywords?.includes(action.payload)
-          ? state.selectedKeywords
-          : [...(state.selectedKeywords || []), action.payload],
+        selectedKeywords: [...state.selectedKeywords, action.payload]
       };
+      
     case 'REMOVE_KEYWORD':
       return {
         ...state,
-        keywords: state.keywords.filter(kw => kw !== action.payload),
-        selectedKeywords: state.selectedKeywords?.filter(kw => kw !== action.payload) || [],
+        selectedKeywords: state.selectedKeywords.filter(keyword => keyword !== action.payload)
       };
+      
+    case 'SET_SELECTED_KEYWORDS':
+      return {
+        ...state,
+        selectedKeywords: action.payload
+      };
+
     case 'SELECT_CLUSTER':
       return {
         ...state,
-        selectedCluster: action.payload,
+        selectedCluster: action.payload
       };
-    case 'SET_CLUSTERS':
+
+    case 'SET_CONTENT_TYPE':
       return {
         ...state,
-        clusters: action.payload,
+        contentType: action.payload
       };
+      
+    case 'SELECT_SOLUTION':
+      return {
+        ...state,
+        selectedSolution: action.payload
+      };
+
+    case 'SET_CONTENT_FORMAT':
+      return {
+        ...state,
+        contentFormat: action.payload
+      };
+      
+    case 'SET_CONTENT_INTENT':
+      return {
+        ...state,
+        contentIntent: action.payload
+      };
+      
     case 'SET_CONTENT_TITLE':
       return {
         ...state,
-        contentTitle: action.payload,
+        contentTitle: action.payload
       };
-    case 'SET_ADDITIONAL_INSTRUCTIONS':
+      
+    case 'SET_IS_ANALYZING':
       return {
         ...state,
-        additionalInstructions: action.payload,
+        isAnalyzing: action.payload
       };
-    case 'SET_META_TITLE':
+      
+    case 'SET_SERP_DATA':
       return {
         ...state,
-        metaTitle: action.payload,
+        serpData: action.payload
       };
-    case 'SET_META_DESCRIPTION':
+      
+    case 'TOGGLE_SERP_SELECTION':
+      const { type, content } = action.payload;
+      const selectionExists = state.serpSelections.some(
+        item => item.type === type && item.content === content
+      );
+      
+      if (selectionExists) {
+        // Remove it if it exists
+        return {
+          ...state,
+          serpSelections: state.serpSelections.filter(
+            item => !(item.type === type && item.content === content)
+          )
+        };
+      } else {
+        // Add it if it doesn't exist
+        return {
+          ...state,
+          serpSelections: [...state.serpSelections, { type, content, selected: true }]
+        };
+      }
+      
+    case 'SET_OUTLINE':
       return {
         ...state,
-        metaDescription: action.payload,
+        outline: Array.isArray(action.payload) ? action.payload : []
       };
-    case 'SET_SEO_SCORE':
-      return {
-        ...state,
-        seoScore: action.payload,
-      };
+      
     case 'SET_IS_GENERATING_OUTLINE':
       return {
         ...state,
-        isGeneratingOutline: action.payload,
+        isGeneratingOutline: action.payload
       };
+      
+    case 'SET_CONTENT':
+      return {
+        ...state,
+        content: action.payload
+      };
+      
     case 'SET_IS_GENERATING_CONTENT':
       return {
         ...state,
-        isGeneratingContent: action.payload,
+        isGeneratingContent: action.payload
       };
+      
     case 'SET_DOCUMENT_STRUCTURE':
       return {
         ...state,
-        documentStructure: action.payload,
+        documentStructure: action.payload
       };
+      
+    case 'SET_ADDITIONAL_INSTRUCTIONS':
+      return {
+        ...state,
+        additionalInstructions: action.payload
+      };
+      
+    case 'SET_META_TITLE':
+      return {
+        ...state,
+        metaTitle: action.payload
+      };
+      
+    case 'SET_META_DESCRIPTION':
+      return {
+        ...state,
+        metaDescription: action.payload
+      };
+      
+    case 'SET_SEO_SCORE':
+      return {
+        ...state,
+        seoScore: action.payload
+      };
+      
     case 'SET_SELECTED_SOLUTION':
       return {
         ...state,
-        selectedSolution: action.payload,
+        selectedSolution: action.payload
       };
+      
     case 'SET_SOLUTION_INTEGRATION_METRICS':
       return {
         ...state,
-        solutionIntegrationMetrics: action.payload,
+        solutionIntegrationMetrics: action.payload
       };
+      
+    case 'SET_IS_SAVING':
+      return {
+        ...state,
+        isSaving: action.payload
+      };
+      
     case 'SET_SEO_IMPROVEMENTS':
       return {
         ...state,
-        seoImprovements: action.payload,
+        seoImprovements: action.payload
       };
+      
     case 'APPLY_SEO_IMPROVEMENT':
       return {
         ...state,
@@ -183,7 +213,8 @@ export function contentBuilderReducer(
             : improvement
         ) || []
       };
+      
     default:
       return state;
   }
-}
+};

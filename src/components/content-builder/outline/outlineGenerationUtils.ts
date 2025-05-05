@@ -1,12 +1,13 @@
 
 import { v4 as uuid } from 'uuid';
-import { OutlineSection } from '@/contexts/content-builder/types';
+import { SerpSelection } from '@/contexts/content-builder/types';
 
-interface SerpSelection {
-  type: string;
-  content: string;
-  selected?: boolean;
-  source?: string;
+interface OutlineSection {
+  id: string;
+  title: string;
+  type?: string;
+  notes?: string;
+  relatedKeywords?: string[];
 }
 
 interface GroupedItems {
@@ -22,7 +23,7 @@ export async function generateOutlineFromSelections(
   mainKeyword: string,
   selectedItems: SerpSelection[],
   customInstructions: string
-): Promise<string[]> {
+): Promise<OutlineSection[]> {
   // Group selected items by type for better organization
   const itemsByType = {
     keyword: selectedItems.filter(item => item.type === 'keyword'),
@@ -36,10 +37,7 @@ export async function generateOutlineFromSelections(
   // Simulate API delay (in a real implementation, this would call an API)
   await new Promise(resolve => setTimeout(resolve, 3000));
   
-  const sections = createOutlineSections(mainKeyword, itemsByType);
-  
-  // Convert the structured outline sections to string[] for compatibility
-  return sections.map(section => section.title);
+  return createOutlineSections(mainKeyword, itemsByType);
 }
 
 function createOutlineSections(
@@ -113,25 +111,23 @@ function createOutlineSections(
   
   // Add a section for keywords if present
   if (itemsByType.keyword.length > 0) {
-    const keywordsList: string[] = itemsByType.keyword.map(k => k.content);
     newOutline.push({
       id: uuid(),
       title: "Key Terms & Definitions",
       type: 'keywords',
       notes: 'Define these important terms for your readers',
-      relatedKeywords: keywordsList
+      relatedKeywords: itemsByType.keyword.map(k => k.content)
     });
   }
   
   // Add a section for entities if present
   if (itemsByType.entity.length > 0) {
-    const entitiesList: string[] = itemsByType.entity.map(e => e.content);
     newOutline.push({
       id: uuid(),
       title: "Important Entities & Concepts",
       type: 'entities',
       notes: 'Cover these key topics for comprehensiveness',
-      relatedKeywords: entitiesList
+      relatedKeywords: itemsByType.entity.map(e => e.content)
     });
   }
   

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
-import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
@@ -16,39 +15,46 @@ import { OptimizationStep } from './steps/OptimizationStep';
 import { FinalReviewStep } from './steps/FinalReviewStep';
 
 export const ContentBuilder = () => {
-  const { state, dispatch } = useContentBuilder();
-  
-  // This is a simplified version that works with the current state structure
-  const activeStep = state.steps.current;
-  const completedSteps = state.steps.completed;
-  
-  // Calculate progress percentage - simplified for now
-  const totalSteps = 7; // Total number of steps
-  const progressPercentage = (completedSteps.length / totalSteps) * 100;
+  const { state, navigateToStep, dispatch } = useContentBuilder();
+  const { activeStep, steps } = state;
+
+  // Calculate progress percentage
+  const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
+  const completedVisibleSteps = visibleSteps.filter(step => step.completed);
+  const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
   // Determine if user can proceed to next step
-  const canGoNext = activeStep < totalSteps - 1 && completedSteps.includes(activeStep);
+  // For optimization step (id 5), they can proceed after running analysis or explicitly clicking "Skip"
+  const optimizationStep = steps.find(step => step.id === 5);
+  const isOptimizationStepActive = steps[activeStep].id === 5;
+  
+  const canGoNext = activeStep < steps.length - 1 && 
+    (steps[activeStep].completed || 
+    (isOptimizationStepActive && state.content && state.content.length > 300));
   
   // Handle next step navigation
   const handleNextStep = () => {
-    if (canGoNext) {
-      dispatch({ type: 'SET_CURRENT_STEP', payload: activeStep + 1 });
+    // If on optimization step and not completed but has content, mark as visited
+    if (isOptimizationStepActive && !steps[activeStep].completed && state.content) {
+      dispatch({ type: 'MARK_STEP_VISITED', payload: 5 });
     }
+    
+    navigateToStep(activeStep + 1);
   };
   
   // Handle previous step navigation
   const handlePrevStep = () => {
-    if (activeStep > 0) {
-      dispatch({ type: 'SET_CURRENT_STEP', payload: activeStep - 1 });
-    }
+    navigateToStep(activeStep - 1);
   };
   
   // Render the current step component
   const renderStepContent = () => {
-    switch (activeStep) {
+    // Get step ID of the active step
+    const stepID = steps[activeStep].id;
+    
+    switch (stepID) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
-      case 2: return <SerpAnalysisStep />;
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizationStep />;
@@ -57,48 +63,31 @@ export const ContentBuilder = () => {
     }
   };
   
-  // Array of step names for display
-  const stepNames = [
-    "Keyword Selection",
-    "Content Type",
-    "SERP Analysis",
-    "Outline",
-    "Content Writing",
-    "Optimization",
-    "Final Review"
-  ];
+  // Get visible step count and position for UI display
+  const getVisibleStepInfo = () => {
+    // Calculate the visible step number (excluding the SERP Analysis step)
+    const currentStepID = steps[activeStep].id;
+    const visibleStepNumber = visibleSteps.findIndex(step => step.id === currentStepID) + 1;
+    
+    return {
+      current: visibleStepNumber,
+      total: visibleSteps.length
+    };
+  };
+  
+  const stepInfo = getVisibleStepInfo();
+  
+  // Check if we're on the final step
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 6;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
-      {/* Content Builder Sidebar - simplified */}
-      <div className="w-64 border-r bg-muted/10 p-4 hidden md:block">
-        <div className="space-y-2">
-          {stepNames.map((name, index) => (
-            <div
-              key={index}
-              className={`p-2 rounded-md cursor-pointer ${
-                activeStep === index ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
-              }`}
-              onClick={() => dispatch({ type: 'SET_CURRENT_STEP', payload: index })}
-            >
-              <div className="flex items-center gap-2">
-                {completedSteps.includes(index) ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <div 
-                    className={`h-4 w-4 rounded-full flex items-center justify-center text-xs ${
-                      activeStep === index ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {index + 1}
-                  </div>
-                )}
-                <span>{name}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Content Builder Sidebar */}
+      <ContentBuilderSidebar 
+        steps={steps} 
+        activeStep={activeStep} 
+        navigateToStep={navigateToStep} 
+      />
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
@@ -107,12 +96,12 @@ export const ContentBuilder = () => {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-                {stepNames[activeStep]}
+              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+                {steps[activeStep].name}
               </h1>
             </div>
             <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
-              Step {activeStep + 1} of {totalSteps}
+              Step {stepInfo.current} of {stepInfo.total}
             </div>
           </div>
           <Progress value={progressPercentage} className="h-1.5 bg-white/5" />
@@ -126,26 +115,28 @@ export const ContentBuilder = () => {
         </div>
         
         {/* Navigation controls */}
-        <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
-          <div className="flex justify-between max-w-5xl mx-auto">
-            <Button
-              variant="outline"
-              onClick={handlePrevStep}
-              disabled={activeStep === 0}
-              className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
-            >
-              <ChevronLeft className="h-4 w-4" /> Previous
-            </Button>
-            
-            <Button
-              onClick={handleNextStep}
-              disabled={!canGoNext}
-              className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' : 'opacity-50'}`}
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </Button>
+        {!isLastStep && (
+          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
+            <div className="flex justify-between max-w-5xl mx-auto">
+              <Button
+                variant="outline"
+                onClick={handlePrevStep}
+                disabled={activeStep === 0}
+                className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
+              >
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              
+              <Button
+                onClick={handleNextStep}
+                disabled={!canGoNext}
+                className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
