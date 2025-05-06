@@ -9,6 +9,13 @@ export type ContentItemType = {
   seo_score: number;
   keywords: string[];
   user_id: string;
+  metadata?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    outline?: string[];
+    serpSelections?: any[];
+    serpData?: any;
+  };
 };
 
 export type ContentContextType = {

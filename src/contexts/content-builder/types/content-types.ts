@@ -26,4 +26,9 @@ export interface SaveContentParams {
   // Optional fields
   seoScore?: number;
   outlineJson?: string;
+  
+  // Adding missing properties
+  outline?: string[];
+  serpSelections?: any[];
+  serpData?: any;
 }
