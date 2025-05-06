@@ -38,6 +38,9 @@ export const createSeoActions = (
     
     // Also mark the step as completed so we can move forward
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    
+    // Force completion to ensure we can move forward
+    console.log('Optimization step skipped and marked as completed');
   };
   
   return {

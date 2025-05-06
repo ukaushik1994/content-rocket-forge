@@ -33,8 +33,9 @@ export interface ContentBuilderContextType {
   setContentFormat: (format: ContentFormat) => void;
   setContentIntent: (intent: ContentIntent) => void;
   generateContent: (outline: OutlineSection[]) => Promise<void>;
-  saveContent: (options: { title: string; content: string }) => Promise<void>;
+  saveContent: (options: { title: string; content: string }) => Promise<boolean>;
   setContent: (content: string) => void;
+  updateContent: (content: string) => void;
   
   // Meta Actions
   setMetaTitle: (title: string) => void;

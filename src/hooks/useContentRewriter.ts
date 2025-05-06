@@ -8,7 +8,7 @@ import { getImprovementType, getRewriteInstructions } from '@/utils/seo/contentR
  * Custom hook for content rewriting functionality
  */
 export const useContentRewriter = () => {
-  const { state, dispatch, updateContent } = useContentBuilder();
+  const { state, dispatch, setContent } = useContentBuilder();
   const { content, seoImprovements } = state;
   
   const [showRewriteDialog, setShowRewriteDialog] = useState(false);
@@ -118,10 +118,10 @@ export const useContentRewriter = () => {
   // Apply the rewritten content and mark improvement as applied
   const applyRewrittenContent = useCallback(() => {
     // Update content in context
-    if (updateContent) {
-      updateContent(rewrittenContent);
+    if (setContent) {
+      setContent(rewrittenContent);
     } else {
-      // Fallback if updateContent not available
+      // Fallback if setContent not available
       dispatch({ type: 'SET_CONTENT', payload: rewrittenContent });
     }
     
@@ -144,7 +144,7 @@ export const useContentRewriter = () => {
     
     // Show success notification
     toast.success('Content optimization applied');
-  }, [rewrittenContent, selectedRecommendationId, dispatch, updateContent, state.seoImprovements]);
+  }, [rewrittenContent, selectedRecommendationId, dispatch, setContent, state.seoImprovements]);
   
   // Check if a recommendation has been applied
   const isRecommendationApplied = useCallback((id: string) => {

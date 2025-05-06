@@ -1,21 +1,22 @@
 
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { OutlineSection } from '../types/outline-types';
+import { ContentType, ContentFormat, ContentIntent } from '../types/content-types';
 
 export const createContentActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const setContentType = (contentType: string) => {
+  const setContentType = (contentType: ContentType) => {
     dispatch({ type: 'SET_CONTENT_TYPE', payload: contentType });
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
   };
   
-  const setContentFormat = (format: string) => {
+  const setContentFormat = (format: ContentFormat) => {
     dispatch({ type: 'SET_CONTENT_FORMAT', payload: format });
   };
   
-  const setContentIntent = (intent: string) => {
+  const setContentIntent = (intent: ContentIntent) => {
     dispatch({ type: 'SET_CONTENT_INTENT', payload: intent });
   };
   
@@ -42,7 +43,7 @@ export const createContentActions = (
     dispatch({ type: 'SET_CONTENT', payload: content });
   };
 
-  const generateContent = async (outline: OutlineSection[]) => {
+  const generateContent = async (outline: OutlineSection[]): Promise<void> => {
     dispatch({ type: 'SET_IS_GENERATING', payload: true });
     
     try {
@@ -58,17 +59,14 @@ export const createContentActions = (
       
       // Mark content writing step as completed
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
-      
-      return content;
     } catch (error) {
       console.error('Error generating content:', error);
-      return null;
     } finally {
       dispatch({ type: 'SET_IS_GENERATING', payload: false });
     }
   };
   
-  const saveContent = async (options: { title: string; content: string }) => {
+  const saveContent = async (options: { title: string; content: string }): Promise<boolean> => {
     dispatch({ type: 'SET_IS_SAVING', payload: true });
     
     try {
