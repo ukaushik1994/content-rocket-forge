@@ -7,13 +7,11 @@ import { useContentRewriter } from '@/hooks/useContentRewriter';
 import { SeoAnalysisHeader } from '@/components/content-builder/optimization/SeoAnalysisHeader';
 import { ProgressBar } from '@/components/content-builder/optimization/ProgressBar';
 import { SkipWarning } from '@/components/content-builder/optimization/SkipWarning';
-import { Confetti } from '@/components/content-builder/optimization/Confetti';
 import { ContentOptimizationContainer } from '@/components/content-builder/optimization/ContentOptimizationContainer';
 
 export const OptimizationStep = () => {
   const { state, skipOptimizationStep } = useContentBuilder();
   const { content, mainKeyword, seoScore, seoImprovements } = state;
-  const [showConfetti, setShowConfetti] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   
   // Use custom hooks for functionality
@@ -43,15 +41,6 @@ export const OptimizationStep = () => {
       runSeoAnalysis();
     }
   }, [content, seoScore, runSeoAnalysis]);
-
-  // Show confetti effect when score is high
-  useEffect(() => {
-    if (seoScore >= 80) {
-      setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [seoScore]);
   
   // Check if analysis has been run
   const hasRunAnalysis = state.steps[5] && state.steps[5].analyzed;
@@ -123,8 +112,6 @@ export const OptimizationStep = () => {
         isRewriting={isRewriting}
         onApplyContent={applyRewrittenContent}
       />
-      
-      <Confetti show={showConfetti} />
     </div>
   );
 };
