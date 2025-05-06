@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
 
 /**
  * Custom hook for content rewriting functionality
@@ -68,11 +69,12 @@ export const useContentRewriter = () => {
         
         // Add improvement if not exists
         if (!seoImprovements.some(imp => imp.id === selectedRecommendationId)) {
-          const newImprovement = {
+          // Fix: Use a type-safe literal for impact instead of a generic string
+          const newImprovement: SeoImprovement = {
             id: selectedRecommendationId || uuidv4(),
             type,
             recommendation,
-            impact: 'high',
+            impact: "high", // Use the literal type: "high", "medium", or "low"
             applied: false
           };
           
