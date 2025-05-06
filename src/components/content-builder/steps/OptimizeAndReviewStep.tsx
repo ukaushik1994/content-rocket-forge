@@ -141,6 +141,10 @@ export const OptimizeAndReviewStep = () => {
             onMetaTitleChange={onMetaTitleChange}
             onMetaDescriptionChange={onMetaDescriptionChange}
             onGenerateMeta={generateMeta}
+            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+            selectedSolution={state.selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
           />
         </TabsContent>
         

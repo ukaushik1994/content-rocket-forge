@@ -3,6 +3,7 @@ import React from 'react';
 import { ContentReviewCard } from '../ContentReviewCard';
 import { FinalChecklistCard } from '../FinalChecklistCard';
 import { MetaInformationCard } from '../MetaInformationCard';
+import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { motion } from 'framer-motion';
 
 interface OverviewTabProps {
@@ -17,6 +18,10 @@ interface OverviewTabProps {
   onMetaTitleChange: (value: string) => void;
   onMetaDescriptionChange: (value: string) => void;
   onGenerateMeta: () => void;
+  solutionIntegrationMetrics: any | null;
+  selectedSolution: any | null;
+  isAnalyzing: boolean;
+  onAnalyze: () => void;
 }
 
 export const OverviewTab = ({
@@ -27,7 +32,11 @@ export const OverviewTab = ({
   metaDescription,
   onMetaTitleChange,
   onMetaDescriptionChange,
-  onGenerateMeta
+  onGenerateMeta,
+  solutionIntegrationMetrics,
+  selectedSolution,
+  isAnalyzing,
+  onAnalyze
 }: OverviewTabProps) => {
   const container = {
     hidden: { opacity: 0 },
@@ -69,6 +78,15 @@ export const OverviewTab = ({
             onMetaTitleChange={onMetaTitleChange}
             onMetaDescriptionChange={onMetaDescriptionChange}
             onGenerateMeta={onGenerateMeta}
+          />
+        </motion.div>
+
+        <motion.div variants={item}>
+          <SolutionIntegrationCard
+            metrics={solutionIntegrationMetrics}
+            solution={selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={onAnalyze}
           />
         </motion.div>
       </motion.div>

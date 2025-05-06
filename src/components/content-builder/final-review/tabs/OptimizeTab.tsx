@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { KeywordUsageSummaryCard } from '../KeywordUsageSummaryCard';
-import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { TitleSuggestionsCard } from '../TitleSuggestionsCard';
 import { FinalChecklistCard } from '../FinalChecklistCard';
 import { Button } from '@/components/ui/button';
@@ -126,13 +125,6 @@ export const OptimizeTab = ({
       
       {/* Side panel */}
       <motion.div variants={item} className="space-y-6">
-        <SolutionIntegrationCard 
-          metrics={solutionIntegrationMetrics}
-          solution={selectedSolution}
-          isAnalyzing={isAnalyzing}
-          onAnalyze={onAnalyze}
-        />
-        
         {/* Quick actions specific to optimization */}
         <div className="bg-card border border-purple-500/20 rounded-lg p-6 shadow-md">
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
