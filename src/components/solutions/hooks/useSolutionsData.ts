@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
@@ -203,6 +202,7 @@ export function useSolutionsData() {
     targetAudience: string[];
     externalUrl?: string | null;
     resources?: Array<{ title: string; url: string; }>;
+    category?: string; // Add optional category parameter
   }, logoUrl?: string): Promise<boolean> => {
     // Input validation
     if (!solutionData.name || solutionData.name.trim() === '') {
@@ -224,7 +224,8 @@ export function useSolutionsData() {
         pain_points: solutionData.painPoints.filter(p => p && p.trim() !== ''),
         target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== ''),
         external_url: solutionData.externalUrl || null,
-        resources: solutionData.resources || []
+        resources: solutionData.resources || [],
+        category: solutionData.category || "Business Solution" // Add category with default
       };
       
       // Only update logo_url if a new one is provided
@@ -248,6 +249,7 @@ export function useSolutionsData() {
         useCases: solutionData.useCases,
         painPoints: solutionData.painPoints,
         targetAudience: solutionData.targetAudience,
+        category: solutionData.category || s.category || "Business Solution", // Update category
         logoUrl: logoUrl !== undefined ? logoUrl : s.logoUrl,
         externalUrl: solutionData.externalUrl || null,
         resources: solutionData.resources || []

@@ -74,6 +74,7 @@ export const ContentTypeStep = () => {
             ? solution.target_audience.map(t => String(t)) 
             : [],
           description: `${solution.name} - Business Solution`,
+          category: solution.category || "Business Solution", // Add category with default value
           logoUrl: solution.logo_url,
           externalUrl: solution.external_url,
           resources: Array.isArray(solution.resources) 
@@ -101,6 +102,7 @@ export const ContentTypeStep = () => {
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"],
+        category: "Business Solution", // Add category
         logoUrl: null,
         externalUrl: null,
         resources: []

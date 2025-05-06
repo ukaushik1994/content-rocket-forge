@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2 } from 'lucide-react';
@@ -108,10 +107,10 @@ const Solutions = () => {
     </motion.div>;
 };
 
-export default Solutions;
-
 // Import missing components
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
+export default Solutions;
