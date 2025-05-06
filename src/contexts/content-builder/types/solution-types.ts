@@ -1,0 +1,34 @@
+
+/**
+ * Solution related type definitions
+ */
+
+export interface SolutionResource {
+  title: string;
+  url: string;
+}
+
+export interface Solution {
+  id: string;
+  name: string;
+  description: string;
+  features: string[];
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
+  logoUrl: string | null;
+  externalUrl: string | null;
+  resources: SolutionResource[];
+}
+
+export interface SolutionIntegrationMetrics {
+  featureIncorporation: number;
+  positioningScore: number;
+  painPointsAddressed: string[];
+  ctaEffectiveness: number;
+  overallScore: number;
+  mentions: number;
+  audienceAlignment: number;
+  nameMentions: number;
+  ctaMentions: number;
+}

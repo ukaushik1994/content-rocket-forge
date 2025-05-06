@@ -1,4 +1,4 @@
-import { ContentBuilderState, ContentBuilderAction, OutlineSection } from './types';
+import { ContentBuilderState, ContentBuilderAction } from './types';
 
 export const contentBuilderReducer = (
   state: ContentBuilderState,
