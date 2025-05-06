@@ -72,7 +72,7 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
                 <Plus className="h-4 w-4 mr-1" /> Add Section
               </Button>
               <Button 
-                variant="primary" 
+                variant="default" 
                 size="sm" 
                 onClick={handleSaveOutline}
               >
