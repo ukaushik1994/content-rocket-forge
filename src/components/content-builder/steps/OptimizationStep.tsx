@@ -8,6 +8,22 @@ import { SeoAnalysisHeader } from '@/components/content-builder/optimization/Seo
 import { ProgressBar } from '@/components/content-builder/optimization/ProgressBar';
 import { SkipWarning } from '@/components/content-builder/optimization/SkipWarning';
 import { ContentOptimizationContainer } from '@/components/content-builder/optimization/ContentOptimizationContainer';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+
+const ErrorFallback = ({ error, resetErrorBoundary }) => (
+  <div className="p-6 rounded-lg border border-red-200 bg-red-50 text-red-800">
+    <h3 className="text-lg font-medium mb-2">Something went wrong</h3>
+    <p className="mb-4">{error.message || "An unexpected error occurred in the optimization step"}</p>
+    <div className="flex gap-3">
+      <button 
+        onClick={resetErrorBoundary} 
+        className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-md text-red-700 transition-colors"
+      >
+        Try again
+      </button>
+    </div>
+  </div>
+);
 
 export const OptimizationStep = () => {
   const { state, skipOptimizationStep } = useContentBuilder();
@@ -20,7 +36,9 @@ export const OptimizationStep = () => {
     recommendations,
     scores,
     runSeoAnalysis,
-    getScoreColor
+    getScoreColor,
+    analysisError,
+    forceSkipAnalysis
   } = useSeoAnalysis();
   
   const {
@@ -37,13 +55,22 @@ export const OptimizationStep = () => {
   
   // Run initial analysis if we have content but no SEO score - with proper dependency array
   useEffect(() => {
-    if (content && content.length > 300 && seoScore === 0) {
-      // Prevent multiple runs by checking isAnalyzing
-      if (!isAnalyzing) {
+    const shouldRunAnalysis = 
+      content && 
+      content.length > 300 && 
+      seoScore === 0 && 
+      !isAnalyzing && 
+      !showSkipWarning;
+    
+    if (shouldRunAnalysis) {
+      // Small delay to allow UI to render before starting analysis
+      const timer = setTimeout(() => {
         runSeoAnalysis();
-      }
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [content, seoScore, runSeoAnalysis, isAnalyzing]);
+  }, [content, seoScore, runSeoAnalysis, isAnalyzing, showSkipWarning]);
   
   // Check if analysis has been run
   const hasRunAnalysis = state.steps[5] && state.steps[5].analyzed;
@@ -72,55 +99,64 @@ export const OptimizationStep = () => {
     return { appliedCount: applied, totalCount: total, progressPercentage: percentage };
   }, [seoImprovements, recommendationIds]);
   
+  // Reset error boundary handler
+  const handleResetError = () => {
+    window.location.reload();
+  };
+  
   return (
-    <div className="space-y-6">
-      <SeoAnalysisHeader
-        seoScore={seoScore}
-        isAnalyzing={isAnalyzing}
-        runSeoAnalysis={runSeoAnalysis}
-        hasRunAnalysis={hasRunAnalysis}
-        skipOptimizationStep={skipOptimizationStep}
-        content={content}
-      />
-      
-      {totalCount > 0 && (
-        <ProgressBar 
-          appliedCount={appliedCount} 
-          totalCount={totalCount} 
-          progressPercentage={progressPercentage} 
+    <ErrorBoundary FallbackComponent={ErrorFallback} onReset={handleResetError}>
+      <div className="space-y-6">
+        <SeoAnalysisHeader
+          seoScore={seoScore}
+          isAnalyzing={isAnalyzing}
+          runSeoAnalysis={runSeoAnalysis}
+          hasRunAnalysis={hasRunAnalysis}
+          skipOptimizationStep={skipOptimizationStep}
+          content={content}
         />
-      )}
-      
-      {/* Skip Warning Card */}
-      {showSkipWarning && (
-        <SkipWarning 
-          onSkip={skipOptimizationStep} 
-          onCancel={() => setShowSkipWarning(false)} 
+        
+        {totalCount > 0 && (
+          <ProgressBar 
+            appliedCount={appliedCount} 
+            totalCount={totalCount} 
+            progressPercentage={progressPercentage} 
+          />
+        )}
+        
+        {/* Skip Warning Card */}
+        {showSkipWarning && (
+          <SkipWarning 
+            onSkip={skipOptimizationStep} 
+            onCancel={() => setShowSkipWarning(false)} 
+          />
+        )}
+        
+        <ContentOptimizationContainer
+          recommendations={recommendations}
+          recommendationIds={recommendationIds}
+          scores={scores}
+          seoScore={seoScore}
+          isAnalyzing={isAnalyzing}
+          handleRewriteContent={handleRewriteContent}
+          isRecommendationApplied={isRecommendationApplied}
+          getScoreColor={getScoreColor}
+          hasRunAnalysis={hasRunAnalysis}
+          handleSkipConfirm={handleSkipConfirm}
+          analysisError={analysisError}
+          forceSkipAnalysis={forceSkipAnalysis}
         />
-      )}
-      
-      <ContentOptimizationContainer
-        recommendations={recommendations}
-        recommendationIds={recommendationIds}
-        scores={scores}
-        seoScore={seoScore}
-        isAnalyzing={isAnalyzing}
-        handleRewriteContent={handleRewriteContent}
-        isRecommendationApplied={isRecommendationApplied}
-        getScoreColor={getScoreColor}
-        hasRunAnalysis={hasRunAnalysis}
-        handleSkipConfirm={handleSkipConfirm}
-      />
-      
-      <ContentRewriteDialog
-        open={showRewriteDialog}
-        onOpenChange={setShowRewriteDialog}
-        selectedRecommendation={selectedRecommendation}
-        rewriteType={rewriteType}
-        rewrittenContent={rewrittenContent}
-        isRewriting={isRewriting}
-        onApplyContent={applyRewrittenContent}
-      />
-    </div>
+        
+        <ContentRewriteDialog
+          open={showRewriteDialog}
+          onOpenChange={setShowRewriteDialog}
+          selectedRecommendation={selectedRecommendation}
+          rewriteType={rewriteType}
+          rewrittenContent={rewrittenContent}
+          isRewriting={isRewriting}
+          onApplyContent={applyRewrittenContent}
+        />
+      </div>
+    </ErrorBoundary>
   );
 };

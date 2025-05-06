@@ -1,5 +1,5 @@
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, RefreshCw, Wand2, Check, Copy, Eye } from 'lucide-react';
+import { ArrowRight, RefreshCw, Wand2, Check, Copy, Eye, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -37,6 +37,25 @@ export const ContentRewriteDialog = memo(({
   onApplyContent
 }: ContentRewriteDialogProps) => {
   const [showDiff, setShowDiff] = useState(false);
+  const [longOperationWarning, setLongOperationWarning] = useState(false);
+  
+  // Timer to show warning after extended processing time
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    
+    if (isRewriting) {
+      setLongOperationWarning(false);
+      timer = setTimeout(() => {
+        setLongOperationWarning(true);
+      }, 5000); // Show warning after 5 seconds
+    } else {
+      setLongOperationWarning(false);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isRewriting]);
 
   const copyToClipboard = () => {
     if (rewrittenContent) {
@@ -54,8 +73,14 @@ export const ContentRewriteDialog = memo(({
     }
   };
 
+  const handleClose = () => {
+    if (!isRewriting || longOperationWarning) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleClose}>
       <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-purple-500/20 shadow-xl">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
@@ -82,6 +107,19 @@ export const ContentRewriteDialog = memo(({
               <p className="text-center text-muted-foreground mt-4 max-w-md">
                 AI is optimizing your content for better <span className="font-medium text-purple-500">{rewriteType}</span>...
               </p>
+              
+              {/* Warning for long-running operations */}
+              {longOperationWarning && (
+                <div className="mt-4 p-3 border border-amber-300 rounded-md bg-amber-50 max-w-sm">
+                  <div className="flex items-start gap-2 text-amber-700">
+                    <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-sm">Taking longer than expected</p>
+                      <p className="text-xs mt-1">You can cancel and try again, or wait a bit longer.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <motion.div 
@@ -133,8 +171,9 @@ export const ContentRewriteDialog = memo(({
           <AlertDialogCancel 
             className="border-purple-500/30 text-muted-foreground hover:text-foreground hover:bg-purple-500/5"
             onClick={() => onOpenChange(false)}
+            disabled={isRewriting && !longOperationWarning}
           >
-            Cancel
+            {isRewriting && !longOperationWarning ? "Processing..." : "Cancel"}
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={() => {

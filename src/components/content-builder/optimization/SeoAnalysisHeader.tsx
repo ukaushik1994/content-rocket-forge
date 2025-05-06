@@ -13,6 +13,7 @@ interface SeoAnalysisHeaderProps {
   hasRunAnalysis: boolean;
   skipOptimizationStep: () => void;
   content: string;
+  analysisError?: string | null;
 }
 
 // Use memo to prevent unnecessary re-renders
@@ -22,7 +23,8 @@ export const SeoAnalysisHeader = memo(({
   runSeoAnalysis,
   hasRunAnalysis,
   skipOptimizationStep,
-  content
+  content,
+  analysisError
 }: SeoAnalysisHeaderProps) => {
   // Don't allow analysis if content is too short or analysis is already in progress
   const canAnalyze = !isAnalyzing && content && content.length >= 300;
@@ -50,7 +52,11 @@ export const SeoAnalysisHeader = memo(({
             </span>
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Analyze your content and apply AI-powered optimizations to increase your SEO score.
+            {isAnalyzing 
+              ? "Analyzing your content..."
+              : analysisError
+                ? "Analysis failed. You can try again or continue without optimization." 
+                : "Analyze your content and apply AI-powered optimizations to increase your SEO score."}
           </p>
         </div>
         
