@@ -11,7 +11,7 @@ export const createSerpActions = (
     if (!keyword) return;
     
     // Start loading
-    dispatch({ type: 'SET_ANALYZING', payload: true });
+    dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
       // Make API call to analyze keyword
@@ -34,41 +34,14 @@ export const createSerpActions = (
       toast.error("Failed to analyze keyword. Please check your API key and try again.");
     } finally {
       // End loading
-      dispatch({ type: 'SET_ANALYZING', payload: false });
-    }
-  };
-  
-  const toggleSerpSelection = (type: string, content: string) => {
-    // Find if this item is already in the selections
-    const existingIndex = state.serpSelections.findIndex(
-      item => item.type === type && item.content === content
-    );
-    
-    if (existingIndex >= 0) {
-      // Item exists, toggle its 'selected' state
-      const updatedSelections = [...state.serpSelections];
-      updatedSelections[existingIndex] = {
-        ...updatedSelections[existingIndex],
-        selected: !updatedSelections[existingIndex].selected
-      };
-      
-      dispatch({ 
-        type: 'SET_SERP_SELECTIONS', 
-        payload: updatedSelections 
-      });
-    } else {
-      // Item doesn't exist, add it as selected
-      dispatch({ 
-        type: 'ADD_SERP_SELECTION', 
-        payload: { type, content, selected: true } 
-      });
+      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
   };
   
   const addContentFromSerp = (content: string, type: string) => {
     dispatch({ 
-      type: 'ADD_SERP_SELECTION', 
-      payload: { type, content, selected: true } 
+      type: 'TOGGLE_SERP_SELECTION', 
+      payload: { type, content } 
     });
   };
   
@@ -115,14 +88,14 @@ export const createSerpActions = (
     
     dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     
-    // Navigate to the next step
-    dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 });
+    // Navigate to the next step - fix the action type here
+    dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
   };
   
   return {
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
-    toggleSerpSelection,
   };
 };
+

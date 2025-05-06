@@ -18,12 +18,12 @@ export function SelectedSerpItemsCard() {
   
   // Group selected items by type
   const itemsByType = {
-    keyword: selectedItems.filter(item => item.type === 'keyword' || item.type === 'relatedSearch'),
-    question: selectedItems.filter(item => item.type === 'question' || item.type === 'peopleAlsoAsk'),
+    keyword: selectedItems.filter(item => item.type === 'keyword'),
+    question: selectedItems.filter(item => item.type === 'question'),
     entity: selectedItems.filter(item => item.type === 'entity'),
     heading: selectedItems.filter(item => item.type === 'heading'),
     contentGap: selectedItems.filter(item => item.type === 'contentGap'),
-    topRank: selectedItems.filter(item => item.type === 'topRank' || item.type === 'competitor')
+    topRank: selectedItems.filter(item => item.type === 'topRank')
   };
   
   // Get counts for each type
@@ -37,7 +37,7 @@ export function SelectedSerpItemsCard() {
   };
 
   return (
-    <Card className="border shadow-sm">
+    <Card className="border border-white/10">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-green-400" />
@@ -52,7 +52,7 @@ export function SelectedSerpItemsCard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Keywords Section */}
             {counts.keyword > 0 && (
-              <Card className="bg-white/5 border border-blue-500/10">
+              <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
                     <Tag className="h-3.5 w-3.5 text-blue-400" />
@@ -71,7 +71,7 @@ export function SelectedSerpItemsCard() {
 
             {/* Questions Section */}
             {counts.question > 0 && (
-              <Card className="bg-white/5 border border-purple-500/10">
+              <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
                     <HelpCircle className="h-3.5 w-3.5 text-purple-400" />
@@ -90,7 +90,7 @@ export function SelectedSerpItemsCard() {
 
             {/* Entities Section */}
             {counts.entity > 0 && (
-              <Card className="bg-white/5 border border-indigo-500/10">
+              <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
                     <Tag className="h-3.5 w-3.5 text-indigo-400" />
@@ -109,7 +109,7 @@ export function SelectedSerpItemsCard() {
 
             {/* Headings Section */}
             {counts.heading > 0 && (
-              <Card className="bg-white/5 border border-teal-500/10">
+              <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
                     <Heading className="h-3.5 w-3.5 text-teal-400" />
@@ -128,7 +128,7 @@ export function SelectedSerpItemsCard() {
 
             {/* Content Gaps Section */}
             {counts.contentGap > 0 && (
-              <Card className="bg-white/5 border border-rose-500/10">
+              <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
                     <FileSearch className="h-3.5 w-3.5 text-rose-400" />
@@ -147,7 +147,7 @@ export function SelectedSerpItemsCard() {
 
             {/* Top Ranks Section */}
             {counts.topRank > 0 && (
-              <Card className="bg-white/5 border border-green-500/10">
+              <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5 text-green-400" />

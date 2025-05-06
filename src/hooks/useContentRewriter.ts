@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
@@ -77,7 +78,7 @@ export const useContentRewriter = () => {
             applied: false
           };
           
-          dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: [...seoImprovements, newImprovement] });
+          dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovement });
         }
       } catch (error) {
         console.error('Error generating rewritten content:', error);

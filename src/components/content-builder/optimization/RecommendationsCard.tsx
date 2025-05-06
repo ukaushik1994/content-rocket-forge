@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BookOpen, CheckCircle, Heading2, KeyRound, Wand2, Sparkles, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
 
 interface RecommendationsCardProps {
   recommendations: string[];
@@ -15,7 +14,6 @@ interface RecommendationsCardProps {
   isRecommendationApplied: (id: string) => boolean;
   showRecoveryOption?: boolean;
   onForceSkip?: () => void;
-  improvements?: SeoImprovement[];
 }
 
 export const RecommendationsCard = memo(({ 
@@ -25,51 +23,36 @@ export const RecommendationsCard = memo(({
   handleRewriteContent,
   isRecommendationApplied,
   showRecoveryOption,
-  onForceSkip,
-  improvements = []
+  onForceSkip
 }: RecommendationsCardProps) => {
   
-  // Get appropriate icon based on recommendation type
-  const getRecommendationIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'keyword':
-        return <KeyRound className="h-4 w-4 text-blue-500" />;
-      case 'content':
-      case 'readability':
-        return <BookOpen className="h-4 w-4 text-green-500" />;
-      case 'structure':
-        return <Heading2 className="h-4 w-4 text-purple-500" />;
-      default:
-        return <Sparkles className="h-4 w-4 text-indigo-500" />;
-    }
+  // Get appropriate icon based on recommendation
+  const getRecommendationIcon = (recommendation: string) => {
+    if (recommendation.toLowerCase().includes('keyword')) 
+      return <KeyRound className="h-4 w-4 text-blue-500" />;
+    if (recommendation.toLowerCase().includes('sentence') || recommendation.toLowerCase().includes('paragraph')) 
+      return <BookOpen className="h-4 w-4 text-green-500" />;
+    if (recommendation.toLowerCase().includes('heading')) 
+      return <Heading2 className="h-4 w-4 text-purple-500" />;
+    return <Sparkles className="h-4 w-4 text-indigo-500" />;
   };
   
-  // Get appropriate background class based on recommendation type
-  const getRecommendationBg = (type: string, impact: string, isApplied: boolean) => {
+  // Get appropriate background class based on recommendation
+  const getRecommendationBg = (recommendation: string, isApplied: boolean) => {
     if (isApplied) return 'bg-green-500/5 border-green-500/20';
     
-    // Impact colors
-    if (impact === 'high') {
-      return 'border-red-500/20 hover:bg-red-500/5';
-    }
-    
-    // Type colors
-    switch (type.toLowerCase()) {
-      case 'keyword':
-        return 'border-blue-500/20 hover:bg-blue-500/5';
-      case 'content':
-      case 'readability':
-        return 'border-green-500/20 hover:bg-green-500/5';
-      case 'structure':
-        return 'border-purple-500/20 hover:bg-purple-500/5';
-      default:
-        return 'border-indigo-500/20 hover:bg-indigo-500/5';
-    }
+    if (recommendation.toLowerCase().includes('keyword')) 
+      return 'border-blue-500/20 hover:bg-blue-500/5';
+    if (recommendation.toLowerCase().includes('sentence') || recommendation.toLowerCase().includes('paragraph')) 
+      return 'border-green-500/20 hover:bg-green-500/5';
+    if (recommendation.toLowerCase().includes('heading')) 
+      return 'border-purple-500/20 hover:bg-purple-500/5';
+    return 'border-indigo-500/20 hover:bg-indigo-500/5';
   };
 
   // Show limited number of recommendations to improve performance
-  const visibleRecommendations = improvements.slice(0, 5);
-  const hasMoreRecommendations = improvements.length > visibleRecommendations.length;
+  const visibleRecommendations = recommendations.slice(0, 5);
+  const hasMoreRecommendations = recommendations.length > visibleRecommendations.length;
   
   return (
     <Card className="shadow-xl bg-gradient-to-br from-background to-purple-950/5 border border-purple-500/20">
@@ -93,14 +76,13 @@ export const RecommendationsCard = memo(({
               animate={{ opacity: 1 }}
               transition={{ staggerChildren: 0.1 }}
             >
-              {visibleRecommendations.map((improvement, index) => {
-                const isApplied = isRecommendationApplied(improvement.id);
-                const { recommendation, type, impact } = improvement;
+              {visibleRecommendations.map((recommendation, index) => {
+                const isApplied = isRecommendationApplied(recommendationIds[index] || '');
                 
                 return (
                   <motion.li 
                     key={index} 
-                    className={`flex items-start gap-2 p-3 border rounded-md transition-all ${getRecommendationBg(type, impact, isApplied)} ${isApplied ? 'opacity-70' : ''}`}
+                    className={`flex items-start gap-2 p-3 border rounded-md transition-all ${getRecommendationBg(recommendation, isApplied)} ${isApplied ? 'opacity-70' : ''}`}
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -108,45 +90,26 @@ export const RecommendationsCard = memo(({
                     <div className="mt-0.5">
                       {isApplied ? 
                         <CheckCircle className="h-5 w-5 text-green-500" /> : 
-                        getRecommendationIcon(type)
+                        getRecommendationIcon(recommendation)
                       }
                     </div>
                     <div className="flex-1">
                       <span className={`text-sm ${isApplied ? 'text-muted-foreground' : ''}`}>
                         {recommendation}
                       </span>
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        {isApplied ? (
+                      {isApplied && (
+                        <div className="mt-1">
                           <Badge variant="outline" className="text-xs text-green-500 border-green-500/30 bg-green-500/10">
                             Optimization Applied
                           </Badge>
-                        ) : (
-                          <>
-                            <Badge variant="outline" className={`text-xs ${
-                              impact === 'high' ? 'text-red-500 border-red-500/30 bg-red-500/10' :
-                              impact === 'medium' ? 'text-amber-500 border-amber-500/30 bg-amber-500/10' :
-                              'text-blue-500 border-blue-500/30 bg-blue-500/10'
-                            }`}>
-                              {impact === 'high' ? 'High Impact' : 
-                               impact === 'medium' ? 'Medium Impact' : 'Low Impact'}
-                            </Badge>
-                            
-                            <Badge variant="outline" className={`text-xs ${
-                              type === 'keyword' ? 'text-blue-500 border-blue-500/30 bg-blue-500/5' :
-                              type === 'structure' ? 'text-purple-500 border-purple-500/30 bg-purple-500/5' :
-                              'text-green-500 border-green-500/30 bg-green-500/5'
-                            }`}>
-                              {type.charAt(0).toUpperCase() + type.slice(1)}
-                            </Badge>
-                          </>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                     <Button 
                       size="sm" 
                       variant="ghost"
                       className={`${isApplied ? 'opacity-0 pointer-events-none' : 'opacity-100'} gap-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/30`}
-                      onClick={() => handleRewriteContent(recommendation, improvement.id)}
+                      onClick={() => handleRewriteContent(recommendation, recommendationIds[index] || '')}
                       disabled={isApplied}
                     >
                       <Wand2 className="h-3.5 w-3.5" />
@@ -160,7 +123,7 @@ export const RecommendationsCard = memo(({
             {hasMoreRecommendations && (
               <div className="mt-4 text-center text-sm text-muted-foreground">
                 <Badge variant="outline" className="bg-gray-100">
-                  + {improvements.length - visibleRecommendations.length} more suggestions
+                  + {recommendations.length - visibleRecommendations.length} more suggestions
                 </Badge>
               </div>
             )}

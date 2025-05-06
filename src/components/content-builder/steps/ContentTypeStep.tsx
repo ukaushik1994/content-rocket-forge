@@ -115,8 +115,7 @@ export const ContentTypeStep = () => {
   };
   
   const handleSelectSolution = (solution: Solution) => {
-    // Fix: Use SET_SELECTED_SOLUTION instead of SELECT_SOLUTION
-    dispatch({ type: 'SET_SELECTED_SOLUTION', payload: solution });
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
     toast.success(`Selected solution: ${solution.name}`);
   };
 
@@ -194,7 +193,7 @@ export const ContentTypeStep = () => {
               <Card 
                 key={solution.id} 
                 className={`cursor-pointer transition-all hover:shadow-md hover:border-primary overflow-hidden
-                  ${selectedSolution && selectedSolution.id === solution.id ? 'border-primary bg-primary/5' : ''}`}
+                  ${selectedSolution?.id === solution.id ? 'border-primary bg-primary/5' : ''}`}
                 onClick={() => handleSelectSolution(solution)}
               >
                 <CardContent className="p-4 flex gap-4">

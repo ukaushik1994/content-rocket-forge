@@ -2,73 +2,46 @@
 /**
  * Action-related type definitions
  */
-import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
-import { OutlineSection } from './outline-types';
-import { Solution } from './solution-types';
-import { SeoImprovement, SeoOptimizationMetrics } from './seo-types';
-import { SerpSelection } from './serp-types';
+
+import { ContentType, ContentFormat, ContentIntent } from './content-types';
+import { Solution, SolutionIntegrationMetrics } from './solution-types';
+import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
+import { OutlineSection } from './outline-types';
 import { DocumentStructure } from './document-types';
 
 // Content Builder Actions
 export type ContentBuilderAction =
-  // Navigation Actions
-  | { type: 'SET_ACTIVE_STEP'; payload: number }
+  | { type: 'SET_CURRENT_STEP'; payload: number }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
-  | { type: 'MARK_STEP_ANALYZED'; payload: number }
   | { type: 'MARK_STEP_VISITED'; payload: number }
-  
-  // Keyword Actions
+  | { type: 'MARK_STEP_ANALYZED'; payload: number }
+  | { type: 'SKIP_OPTIMIZATION_STEP' }
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
+  | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
+  | { type: 'SET_SERP_DATA'; payload: any }
+  | { type: 'SET_IS_ANALYZING'; payload: boolean }
+  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
+  | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] }
+  | { type: 'SET_OUTLINE_SECTIONS'; payload: OutlineSection[] }
+  | { type: 'SET_CONTENT'; payload: string }
+  | { type: 'SET_IS_GENERATING'; payload: boolean }
+  | { type: 'SET_IS_SAVING'; payload: boolean }
   | { type: 'ADD_KEYWORD'; payload: string }
   | { type: 'REMOVE_KEYWORD'; payload: string }
-  | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
-  
-  // SERP Actions
-  | { type: 'SET_ANALYZING'; payload: boolean }
-  | { type: 'SET_SERP_DATA'; payload: any }
-  | { type: 'ADD_SERP_SELECTION'; payload: SerpSelection }
-  | { type: 'REMOVE_SERP_SELECTION'; payload: string }
-  | { type: 'CLEAR_SERP_SELECTIONS' }
-  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
-  
-  // Content Type Actions
+  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
+  | { type: 'SET_CONTENT_TITLE'; payload: string }
+  | { type: 'SET_SUGGESTED_TITLES'; payload: string[] }
+  | { type: 'SET_SEO_SCORE'; payload: number }
+  | { type: 'ADD_SEO_IMPROVEMENT'; payload: SeoImprovement }
+  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
+  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
   | { type: 'SET_CONTENT_INTENT'; payload: ContentIntent }
-  
-  // Outline Actions
-  | { type: 'SET_OUTLINE'; payload: string[] }
-  | { type: 'SET_OUTLINE_SECTIONS'; payload: OutlineSection[] }
-  
-  // Content Actions
-  | { type: 'SET_GENERATING'; payload: boolean }
-  | { type: 'SET_CONTENT'; payload: string }
-  | { type: 'UPDATE_CONTENT'; payload: string }
-  | { type: 'SET_CONTENT_TITLE'; payload: string }
+  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_META_TITLE'; payload: string }
   | { type: 'SET_META_DESCRIPTION'; payload: string }
-  | { type: 'SET_SAVING'; payload: boolean }
-  
-  // Solution Actions
-  | { type: 'SET_SELECTED_SOLUTION'; payload: Solution | null }
-  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
-  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: any }
-  
-  // SEO Actions
-  | { type: 'SET_SEO_SCORE'; payload: number }
-  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
-  | { type: 'SET_SEO_ANALYSIS_RESULTS'; payload: { keywordScore: number; readabilityScore: number; contentLengthScore: number; structureScore: number } }
-  | { type: 'SET_SEO_OPTIMIZATION_METRICS'; payload: SeoOptimizationMetrics }
-  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
-  | { type: 'SKIP_OPTIMIZATION_STEP' }
-  
-  // Document Structure
-  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure | null }
-  
-  // Additional Instructions
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  
-  // Cluster Actions
-  | { type: 'SET_SELECTED_CLUSTER'; payload: ContentCluster | null }
-  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null };
+  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -84,7 +85,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   // Function to handle using a solution in content
   const handleUseInContent = (solution: Solution) => {
     // Store the solution in the content builder context
-    dispatch({ type: 'SET_SELECTED_SOLUTION', payload: solution });
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
     
     // Navigate to the content builder page
     toast.success(`${solution.name} selected for content creation`);

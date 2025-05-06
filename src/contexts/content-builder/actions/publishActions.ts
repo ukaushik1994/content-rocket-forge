@@ -10,7 +10,7 @@ export const createPublishActions = (
   const saveContentToDraft = async (content: SaveContentParams): Promise<string | null> => {
     try {
       // Set saving state to true
-      dispatch({ type: 'SET_SAVING', payload: true });
+      dispatch({ type: 'SET_IS_SAVING', payload: true });
       
       console.log('Saving content to draft:', content);
       
@@ -38,12 +38,12 @@ export const createPublishActions = (
       }
       
       // Set saving state to false
-      dispatch({ type: 'SET_SAVING', payload: false });
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
       
       return mockId;
     } catch (error) {
       console.error('Error saving content to draft:', error);
-      dispatch({ type: 'SET_SAVING', payload: false });
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
       return null;
     }
   };
@@ -52,7 +52,7 @@ export const createPublishActions = (
   const saveContentToPublished = async (content: SaveContentParams): Promise<string | null> => {
     try {
       // Set saving state to true
-      dispatch({ type: 'SET_SAVING', payload: true });
+      dispatch({ type: 'SET_IS_SAVING', payload: true });
       
       console.log('Publishing content:', content);
       
@@ -80,12 +80,12 @@ export const createPublishActions = (
       }
       
       // Set saving state to false
-      dispatch({ type: 'SET_SAVING', payload: false });
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
       
       return mockId;
     } catch (error) {
       console.error('Error publishing content:', error);
-      dispatch({ type: 'SET_SAVING', payload: false });
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
       return null;
     }
   };
