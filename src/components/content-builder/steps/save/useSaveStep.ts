@@ -21,7 +21,7 @@ export const useSaveStep = () => {
     content
   } = state;
   
-  const { contentItems } = useContent();
+  const { contentItems, refreshContent } = useContent();
   const navigate = useNavigate();
   const { handlePublish, handleSaveToDraft } = useSaveContent();
   
@@ -38,6 +38,7 @@ export const useSaveStep = () => {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveCompleted, setSaveCompleted] = useState(false);
   
   // Update the local state when global state changes
   useEffect(() => {
@@ -116,6 +117,10 @@ export const useSaveStep = () => {
       
       await handleSaveToDraft();
       
+      // Force refresh content before navigating
+      await refreshContent();
+      
+      setSaveCompleted(true);
       toast.success("Content saved to library");
       
       // Navigate to content library after a short delay
@@ -163,6 +168,7 @@ export const useSaveStep = () => {
     solutionName: selectedSolution ? selectedSolution.name : 'Not specified',
     seoScore,
     contentType,
-    content
+    content,
+    saveCompleted
   };
 };

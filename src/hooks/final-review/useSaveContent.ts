@@ -13,7 +13,7 @@ export const useSaveContent = () => {
   const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
-  const { addContentItem, refreshContent } = useContent(); // Import refreshContent from the content context
+  const { addContentItem, refreshContent } = useContent();
   const navigate = useNavigate();
 
   const handleSaveToDraft = async (): Promise<void> => {
@@ -33,11 +33,14 @@ export const useSaveContent = () => {
         notes: ''
       };
       
+      console.log('[useSaveContent] Saving content with params:', saveParams);
+      
       // Try saving using content builder context first
-      const contentId = await saveContentToDraft(saveParams);
+      let contentId = await saveContentToDraft(saveParams);
       
       // If that doesn't work, use the content context directly
       if (!contentId) {
+        console.log('[useSaveContent] No content ID returned, adding directly to content repository');
         await addContentItem({
           title: saveParams.title,
           content: saveParams.content || '',
@@ -45,10 +48,10 @@ export const useSaveContent = () => {
           seo_score: state.seoScore,
           keywords: [state.mainKeyword, ...state.selectedKeywords],
         });
-        
-        // Force refresh the content list to make sure it shows up
-        await refreshContent();
       }
+      
+      // Force refresh the content list to make sure it shows up
+      await refreshContent();
       
       setIsSavedToDraft(true);
       toast.success('Content saved to drafts successfully');
@@ -78,23 +81,25 @@ export const useSaveContent = () => {
         seoScore: state.seoScore
       };
       
+      console.log('[useSaveContent] Publishing content with params:', publishParams);
+      
       // Try publishing using content builder context
       let contentId = await saveContentToPublished(publishParams);
       
       // If that doesn't work, use the content context directly
       if (!contentId) {
+        console.log('[useSaveContent] No content ID returned, adding directly to content repository');
         await addContentItem({
           title: publishParams.title,
           content: publishParams.content || '',
           status: 'published',
           seo_score: state.seoScore,
           keywords: [state.mainKeyword, ...state.selectedKeywords],
-          // We're removing meta_description as it's not part of the accepted type
         });
-        
-        // Force refresh the content list to make sure it shows up
-        await refreshContent();
       }
+      
+      // Force refresh the content list
+      await refreshContent();
       
       toast.success('Content published successfully');
       

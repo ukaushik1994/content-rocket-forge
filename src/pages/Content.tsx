@@ -1,17 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { ContentRepository } from '@/components/content/ContentRepository';
 import { useContent } from '@/contexts/content';
 import { PlusCircle, Loader2, Inbox } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const Content = () => {
-  const { contentItems, loading } = useContent();
+  const { contentItems, loading, refreshContent } = useContent();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Check if we need to refresh content when coming from content builder
+  useEffect(() => {
+    if (location.state?.contentRefresh) {
+      console.log('[Content] contentRefresh detected in location state, refreshing content');
+      refreshContent();
+      // Clear the state to prevent persistent refreshing
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, refreshContent]);
   
   const handleCreateContent = () => {
     setIsCreating(true);

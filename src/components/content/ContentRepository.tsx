@@ -41,20 +41,25 @@ export function ContentRepository() {
 
   // Function to handle refresh
   const handleRefresh = useCallback(() => {
+    console.log('[ContentRepository] Handling refresh');
     setRefreshKey(prevKey => prevKey + 1);
     // Reset to first page and maintain current filters
     handlePageChange(1);
-  }, [handlePageChange]);
+    // Explicitly refresh content
+    refreshContent();
+  }, [handlePageChange, refreshContent]);
   
   // Check if we should refresh content or highlight a specific item from navigation
   useEffect(() => {
     if (location.state?.contentRefresh) {
+      console.log('[ContentRepository] contentRefresh detected in location state, refreshing content');
       refreshContent();
       // Clear the state to prevent persistent refreshing
       window.history.replaceState({}, document.title);
     }
     
     if (location.state?.highlightId) {
+      console.log('[ContentRepository] highlightId detected in location state:', location.state.highlightId);
       setSelectedContentId(location.state.highlightId);
       // Clear the state to prevent persistent highlighting
       window.history.replaceState({}, document.title);
@@ -63,7 +68,19 @@ export function ContentRepository() {
   
   // Force a refresh when component mounts to ensure we have latest content
   useEffect(() => {
+    console.log('[ContentRepository] Component mounted, refreshing content');
     refreshContent();
+  }, [refreshContent]);
+  
+  // After coming from content builder, ensure we refresh
+  useEffect(() => {
+    const fromContentBuilder = sessionStorage.getItem('from_content_builder');
+    if (fromContentBuilder === 'true') {
+      console.log('[ContentRepository] Coming from content builder, forcing refresh');
+      refreshContent();
+      // Clear the flag
+      sessionStorage.removeItem('from_content_builder');
+    }
   }, [refreshContent]);
   
   // Set the first content item as selected by default when items load

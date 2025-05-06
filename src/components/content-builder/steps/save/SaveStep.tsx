@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SaveAlreadyExistsAlert } from './SaveAlreadyExistsAlert';
 import { SaveStepOptimizationsAlert } from './SaveStepOptimizationsAlert';
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSaveStep } from './useSaveStep';
+import { toast } from 'sonner';
 
 export const SaveStep = () => {
   const { state } = useContentBuilder();
@@ -29,8 +30,18 @@ export const SaveStep = () => {
     setSocialShare,
     handleSaveContent,
     isSubmitting,
-    handleDownload
+    handleDownload,
+    saveCompleted
   } = useSaveStep();
+  
+  // Set a flag in session storage when saving and navigating to content library
+  useEffect(() => {
+    if (saveCompleted) {
+      console.log('[SaveStep] Save completed, setting session storage flag');
+      sessionStorage.setItem('from_content_builder', 'true');
+      toast.success('Content saved successfully! Navigating to content library...');
+    }
+  }, [saveCompleted]);
   
   // Validate that we have content before showing the form
   if (!content || content.trim().length === 0) {
