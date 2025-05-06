@@ -1,25 +1,39 @@
-
 /**
  * Utility functions for SEO analysis
  */
 
 /**
- * Helper function to determine impact level of improvements
+ * Gets the appropriate color class based on a score
  */
-export const determineImpact = (type: string, score: number): 'high' | 'medium' | 'low' => {
-  if (type === 'keyword' && score < 50) return 'high';
-  if (type === 'readability' && score < 60) return 'high';
-  if (score < 50) return 'high';
-  if (score < 70) return 'medium';
-  return 'low';
+export const getScoreColor = (score: number): string => {
+  if (score >= 80) return 'text-green-500';
+  if (score >= 60) return 'text-amber-500';
+  if (score >= 40) return 'text-orange-500';
+  return 'text-red-500';
 };
 
 /**
- * Get score color based on value
+ * Determine impact level based on improvement type and current score
  */
-export const getScoreColor = (score: number): string => {
-  if (score >= 90) return 'stroke-green-500';
-  if (score >= 70) return 'stroke-yellow-500';
-  if (score >= 50) return 'stroke-orange-500';
-  return 'stroke-red-500';
+export const determineImpact = (
+  improvementType: string, 
+  currentScore: number
+): 'high' | 'medium' | 'low' => {
+  // If score is already high, impact will be lower
+  if (currentScore >= 85) return 'low';
+  
+  // If score is very low, most improvements will be high impact
+  if (currentScore <= 40) return 'high';
+  
+  // Otherwise base it on the type
+  switch (improvementType) {
+    case 'keyword':
+      return currentScore < 60 ? 'high' : 'medium';
+    case 'structure':
+      return 'medium';
+    case 'readability':
+      return currentScore < 50 ? 'high' : 'medium';
+    default:
+      return 'medium';
+  }
 };

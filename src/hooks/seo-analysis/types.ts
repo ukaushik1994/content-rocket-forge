@@ -1,13 +1,7 @@
 
 /**
- * Types for SEO analysis
+ * Type definitions for SEO analysis functionality
  */
-
-export interface SeoAnalysisScores {
-  keywordUsage: number;
-  contentLength: number;
-  readability: number;
-}
 
 export interface KeywordUsage {
   keyword: string;
@@ -15,13 +9,18 @@ export interface KeywordUsage {
   density: string;
 }
 
-export interface SeoAnalysisState {
-  isAnalyzing: boolean;
-  keywordUsage: KeywordUsage[];
-  recommendations: string[];
-  scores: SeoAnalysisScores;
-  improvements: any[]; // Using the SeoImprovement type from content-builder/types
-  analysisError: string | null;
+export interface SeoAnalysisScores {
+  keywordUsage: number;
+  contentLength: number;
+  readability: number;
+}
+
+export interface SeoImprovement {
+  id: string;
+  type: string;
+  recommendation: string;
+  impact: 'high' | 'medium' | 'low';
+  applied: boolean;
 }
 
 export interface UseSeoAnalysisReturn {
@@ -29,9 +28,11 @@ export interface UseSeoAnalysisReturn {
   keywordUsage: KeywordUsage[];
   recommendations: string[];
   scores: SeoAnalysisScores;
-  improvements: any[];
+  improvements: SeoImprovement[];
   analysisError: string | null;
   runSeoAnalysis: () => void;
   getScoreColor: (score: number) => string;
   forceSkipAnalysis: () => void;
 }
+
+export const ANALYSIS_TIMEOUT = 20000; // 20 seconds

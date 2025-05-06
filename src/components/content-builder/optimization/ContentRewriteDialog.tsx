@@ -11,10 +11,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, RefreshCw, Wand2, Check, Copy, Eye, AlertCircle } from 'lucide-react';
+import { ArrowRight, RefreshCw, Wand2, Check, Copy, Eye, AlertCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ContentRewriteDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface ContentRewriteDialogProps {
   rewrittenContent: string;
   isRewriting: boolean;
   onApplyContent: () => void;
+  error?: string | null;
 }
 
 // Use memo to prevent unnecessary re-renders
@@ -34,7 +36,8 @@ export const ContentRewriteDialog = memo(({
   rewriteType,
   rewrittenContent,
   isRewriting,
-  onApplyContent
+  onApplyContent,
+  error
 }: ContentRewriteDialogProps) => {
   const [showDiff, setShowDiff] = useState(false);
   const [longOperationWarning, setLongOperationWarning] = useState(false);
@@ -79,9 +82,20 @@ export const ContentRewriteDialog = memo(({
     }
   };
 
+  // Function to retry the operation if it fails
+  const handleRetry = () => {
+    // Re-trigger the rewrite operation
+    if (selectedRecommendation && !isRewriting) {
+      // This would trigger a rewrite from the parent component
+      // Here we just close the dialog so the parent can handle it
+      onOpenChange(false);
+      toast.info("Please try the optimization again");
+    }
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>
-      <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-purple-500/20 shadow-xl">
+      <AlertDialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-purple-500/20 shadow-xl">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
             <Wand2 className="h-5 w-5 text-purple-500" />
@@ -98,6 +112,35 @@ export const ContentRewriteDialog = memo(({
         </AlertDialogHeader>
         
         <div className="py-4 space-y-4">
+          {/* Error display area */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex justify-between items-center">
+                    <span>{error}</span>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={handleRetry}
+                      className="ml-2"
+                      disabled={isRewriting}
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRewriting ? 'animate-spin' : ''}`} />
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
           {isRewriting ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="relative">
@@ -139,6 +182,7 @@ export const ContentRewriteDialog = memo(({
                     size="sm" 
                     className="h-8 gap-1 text-xs"
                     onClick={copyToClipboard}
+                    disabled={!rewrittenContent}
                   >
                     <Copy className="h-3.5 w-3.5" />
                     Copy
@@ -148,6 +192,7 @@ export const ContentRewriteDialog = memo(({
                     size="sm" 
                     className="h-8 gap-1 text-xs"
                     onClick={() => setShowDiff(!showDiff)}
+                    disabled={!rewrittenContent}
                   >
                     <Eye className="h-3.5 w-3.5" />
                     {showDiff ? 'Simple View' : 'Show Changes'}
@@ -155,14 +200,22 @@ export const ContentRewriteDialog = memo(({
                 </div>
               </div>
               
-              <div className="border rounded-md p-4 bg-black/50 relative overflow-hidden shadow-inner">
-                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500/20 to-blue-500/20 text-xs px-2 py-0.5">
-                  Optimized for {rewriteType}
+              {rewrittenContent ? (
+                <div className="border rounded-md p-4 bg-black/50 relative overflow-hidden shadow-inner">
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500/20 to-blue-500/20 text-xs px-2 py-0.5">
+                    Optimized for {rewriteType}
+                  </div>
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed overflow-auto max-h-[300px]">
+                    {rewrittenContent}
+                  </pre>
                 </div>
-                <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed overflow-auto max-h-[300px]">
-                  {rewrittenContent || "No preview available"}
-                </pre>
-              </div>
+              ) : (
+                <div className="p-8 border border-dashed rounded-md flex flex-col items-center justify-center text-muted-foreground">
+                  <AlertCircle className="h-8 w-8 mb-2 text-amber-500" />
+                  <p>No content preview available</p>
+                  <p className="text-xs mt-1">There was an issue generating the optimized content</p>
+                </div>
+              )}
             </motion.div>
           )}
         </div>
