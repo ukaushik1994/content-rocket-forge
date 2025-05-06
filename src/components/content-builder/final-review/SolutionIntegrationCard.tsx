@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BarChart4, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { SolutionIntegrationMetrics, Solution } from '@/contexts/content-builder/types';
+import { Progress } from '@/components/ui/progress';
+import { Puzzle, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Solution, SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
 
 interface SolutionIntegrationCardProps {
   metrics: SolutionIntegrationMetrics | null;
@@ -22,173 +22,172 @@ export const SolutionIntegrationCard = ({
 }: SolutionIntegrationCardProps) => {
   if (!solution) {
     return (
-      <Card className="h-full">
-        <CardHeader className="pb-2 border-b">
+      <Card className="border-purple-500/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-purple-500"></span>
+            <span className="bg-neon-purple h-2 w-2 rounded-full"></span>
             Solution Integration
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[250px]">
-          <p className="text-muted-foreground text-sm text-center">No solution selected.</p>
+        <CardContent>
+          <div className="flex items-center justify-center py-6">
+            <div className="text-center space-y-2">
+              <Puzzle className="h-10 w-10 mx-auto text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">No solution selected</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
   }
   
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2 border-b">
+    <Card className="border-purple-500/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
+      <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-purple-500"></span>
-          Solution Integration: {solution.name}
+          <span className="bg-neon-purple h-2 w-2 rounded-full"></span>
+          Solution Integration
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4 overflow-hidden">
-        {metrics ? (
-          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
-            <div className="flex flex-col items-center justify-center p-4">
-              <div className="relative h-24 w-24">
-                {/* SVG circular progress */}
-                <svg className="h-full w-full" viewBox="0 0 100 100">
-                  {/* Background circle */}
-                  <circle 
-                    className="stroke-secondary/50" 
-                    cx="50" 
-                    cy="50" 
-                    r="45" 
-                    strokeWidth="10" 
-                    fill="none" 
-                  />
-                  
-                  {/* Progress arc - using strokeDasharray and strokeDashoffset for animation */}
-                  <circle 
-                    className={`${getScoreColor(metrics.overallScore || 0)} transition-all duration-1000 ease-in-out`}
-                    cx="50" 
-                    cy="50" 
-                    r="45" 
-                    strokeWidth="10" 
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 45}`}
-                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - (metrics.overallScore || 0) / 100)}`}
-                    transform="rotate(-90, 50, 50)"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                  {metrics.overallScore || 0}
-                </div>
-              </div>
-              
-              <div className="mt-2 text-center text-sm text-muted-foreground">
-                {getScoreMessage(metrics.overallScore || 0)}
-              </div>
+      <CardContent className="space-y-4">
+        {/* Solution Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-medium">{solution.name}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {solution.category}
+            </p>
+          </div>
+          {metrics && (
+            <div className={`rounded-full px-2 py-1 text-xs font-medium ${
+              metrics.overallScore >= 70 
+                ? 'bg-green-500/20 text-green-400' 
+                : metrics.overallScore >= 40 
+                  ? 'bg-amber-500/20 text-amber-400' 
+                  : 'bg-rose-500/20 text-rose-400'
+            }`}>
+              {metrics.overallScore >= 70 
+                ? 'Well Integrated' 
+                : metrics.overallScore >= 40 
+                  ? 'Partial Integration' 
+                  : 'Poor Integration'}
+            </div>
+          )}
+        </div>
+
+        {/* Content Quality Checklist Reminder */}
+        <div className="bg-purple-900/20 border border-purple-500/30 rounded-md p-3 mb-2">
+          <h4 className="text-xs font-medium text-purple-300 mb-1">Content Quality Checklist</h4>
+          <ul className="text-xs text-purple-200/80 space-y-1 list-disc pl-4">
+            <li>Include at least one call-to-action</li>
+            <li>Incorporate solution features naturally</li>
+            <li>Maintain primary keyword density (0.5% - 3%)</li>
+            <li>Include all selected secondary keywords</li>
+          </ul>
+        </div>
+        
+        {!metrics ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="h-20 bg-white/5 rounded-md animate-pulse"></div>
             </div>
             
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between items-center text-xs mb-1">
-                  <span className="font-medium">Name Mentions</span>
-                  <span>{typeof metrics.nameMentions === 'number' ? metrics.nameMentions : 0} times</span>
-                </div>
-                <Progress 
-                  value={Math.min(
-                    typeof metrics.nameMentions === 'number' ? metrics.nameMentions * 20 : 0, 
-                    100
-                  )} 
-                  className="h-1.5" 
-                />
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center text-xs mb-1">
-                  <span className="font-medium">Feature Coverage</span>
-                  <span>{metrics.featureIncorporation}%</span>
-                </div>
-                <Progress value={metrics.featureIncorporation} className="h-1.5" />
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center text-xs mb-1">
-                  <span className="font-medium">Audience Alignment</span>
-                  <span>{metrics.audienceAlignment || 0}%</span>
-                </div>
-                <Progress value={metrics.audienceAlignment || 0} className="h-1.5" />
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center text-xs mb-1">
-                  <span className="font-medium">Positioning Score</span>
-                  <span>{metrics.positioningScore}%</span>
-                </div>
-                <Progress value={metrics.positioningScore} className="h-1.5" />
-              </div>
-            </div>
-            
-            {metrics.painPointsAddressed && metrics.painPointsAddressed.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium">Pain Points Addressed</h4>
-                <div className="flex flex-wrap gap-1">
-                  {metrics.painPointsAddressed.map((point, i) => (
-                    <Badge key={i} variant="outline" className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" /> {point}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium">Call-to-Action Mentions</span>
-              <Badge variant={(metrics.ctaMentions || 0) > 0 ? "default" : "outline"}>
-                {metrics.ctaMentions || 0}
-              </Badge>
-            </div>
+            <Button 
+              onClick={onAnalyze} 
+              disabled={isAnalyzing}
+              className="w-full flex items-center gap-2 bg-secondary/20 hover:bg-secondary/40"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Analyzing Content...
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4" />
+                  Analyze Content Structure
+                </>
+              )}
+            </Button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[250px] text-center space-y-4">
-            <div className="text-muted-foreground text-sm">
-              Click analyze to check solution integration metrics.
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-4"
+          >
+            {/* Feature Integration Score */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Feature Integration</span>
+                <span className="font-medium">{metrics.featureIncorporation}%</span>
+              </div>
+              <Progress value={metrics.featureIncorporation} className="h-2" />
+              {metrics.featureIncorporation < 50 && (
+                <p className="text-xs text-amber-400 mt-1">
+                  Include more solution features in your content
+                </p>
+              )}
             </div>
-            <div className="p-4 rounded-full bg-secondary/20">
-              <BarChart4 className="h-8 w-8 text-muted-foreground" />
+            
+            {/* Positioning Score */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Strategic Positioning</span>
+                <span className="font-medium">{metrics.positioningScore}%</span>
+              </div>
+              <Progress value={metrics.positioningScore} className="h-2" />
+              {metrics.positioningScore < 50 && (
+                <p className="text-xs text-amber-400 mt-1">
+                  Position your solution more effectively
+                </p>
+              )}
             </div>
-          </div>
+
+            {/* Feature Mentions */}
+            <div>
+              <h4 className="text-xs mb-2">Feature Mentions</h4>
+              <div className="grid grid-cols-2 gap-1">
+                {solution.features.slice(0, 4).map((feature, index) => (
+                  <div 
+                    key={index}
+                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
+                      metrics.mentionedFeatures.includes(feature)
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-gray-500/20 text-gray-400'
+                    }`}
+                  >
+                    {metrics.mentionedFeatures.includes(feature) ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <AlertCircle className="h-3 w-3" />
+                    )}
+                    <span className="truncate">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <Button 
+              onClick={onAnalyze} 
+              disabled={isAnalyzing}
+              className="w-full flex items-center gap-2 bg-secondary/20 hover:bg-secondary/40"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Reanalyzing...
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4" />
+                  Reanalyze Content
+                </>
+              )}
+            </Button>
+          </motion.div>
         )}
       </CardContent>
-      <CardFooter>
-        <Button 
-          variant="outline" 
-          className="w-full flex items-center gap-2 bg-secondary/20 hover:bg-secondary/40"
-          onClick={onAnalyze}
-          disabled={isAnalyzing}
-        >
-          {isAnalyzing ? (
-            <>
-              <RefreshCw className="h-4 w-4 animate-spin" /> Analyzing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-4 w-4" /> Analyze Solution Integration
-            </>
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   );
-};
-
-// Helper functions
-const getScoreColor = (score: number): string => {
-  if (score >= 80) return 'stroke-green-500';
-  if (score >= 60) return 'stroke-yellow-500';
-  if (score >= 40) return 'stroke-orange-500';
-  return 'stroke-red-500';
-};
-
-const getScoreMessage = (score: number): string => {
-  if (score >= 80) return 'Excellent solution integration';
-  if (score >= 60) return 'Good solution integration';
-  if (score >= 40) return 'Average solution integration';
-  return 'Poor solution integration';
 };
