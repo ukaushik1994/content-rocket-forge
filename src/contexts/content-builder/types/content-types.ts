@@ -1,23 +1,29 @@
 
 /**
- * Content type definitions
+ * Content-related type definitions
  */
 
-import { OutlineSection } from './outline-types';
+// Content Type Options
+export type ContentType = 'article' | 'blog' | 'landing' | 'product';
 
-export type ContentType = 'article' | 'blog' | 'landingPage' | 'productPage' | 'custom' | 'productDescription' | 'email' | 'social';
-export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'howTo' | 'comparison';
-export type ContentIntent = 'inform' | 'convert' | 'educate' | 'entertain' | 'inspire';
+// Content Format Options
+export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to';
 
-// Save Content Parameters
+// Content Intent Options
+export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';
+
+// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
-  note?: string;
-  isPublished?: boolean;
-  mainKeyword?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  outline?: string[] | OutlineSection[];
+  mainKeyword: string;
+  secondaryKeywords: string[];
+  contentType: ContentType;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  status: 'draft' | 'published' | 'archived';
+  notes: string;
+  // Optional fields
   seoScore?: number;
+  outlineJson?: string;
 }

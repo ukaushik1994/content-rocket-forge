@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, FilePlus, FileCheck, Download, FileOutput, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface SaveAndExportPanelProps {
   completionPercentage: number;
-  onSave: () => void;
-  onPublish: () => void;
+  onSave: () => Promise<void>;
+  onPublish: () => Promise<void>;
   isSaving: boolean;
   isSavedToDraft: boolean;
 }
@@ -24,6 +25,24 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
 }) => {
   const isReady = completionPercentage >= 80;
   const isOkay = completionPercentage >= 60;
+  
+  const handleSave = async () => {
+    try {
+      await onSave();
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast.error('Failed to save content to drafts');
+    }
+  };
+  
+  const handlePublish = async () => {
+    try {
+      await onPublish();
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      toast.error('Failed to publish content');
+    }
+  };
   
   return (
     <Card className={cn(
@@ -76,7 +95,7 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <Button
             variant="outline"
-            onClick={onSave}
+            onClick={handleSave}
             disabled={isSaving}
             className="border-white/10 hover:bg-white/5"
           >
@@ -94,7 +113,7 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
           </Button>
           
           <Button
-            onClick={onPublish}
+            onClick={handlePublish}
             disabled={isSaving || completionPercentage < 60}
             className={cn(
               "gap-2",
