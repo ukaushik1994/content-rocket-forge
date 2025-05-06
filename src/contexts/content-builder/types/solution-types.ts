@@ -27,7 +27,7 @@ export interface SolutionIntegrationMetrics {
   painPointsAddressed: string[];
   ctaEffectiveness: number;
   overallScore: number;
-  mentions: number;
+  mentions: number | string;
   audienceAlignment: number;
   nameMentions: number;
   ctaMentions: number;

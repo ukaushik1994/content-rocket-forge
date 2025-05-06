@@ -3,43 +3,77 @@
  * Utility for analyzing solution integration in content
  */
 
+import { SolutionIntegrationMetrics } from "@/contexts/content-builder/types";
+
 interface SolutionData {
   name: string;
   features: string[];
-}
-
-interface SolutionMetrics {
-  featureIncorporation: number;
-  positioningScore: number;
-  nameMentions: number;
-  painPointsAddressed: number;
-  audienceAlignment: number;
+  painPoints?: string[];
+  targetAudience?: string[];
 }
 
 /**
  * Analyze solution integration within the content
  */
-export const analyzeSolutionIntegration = (content: string, selectedSolution: SolutionData): SolutionMetrics => {
-  const { name, features } = selectedSolution;
+export const analyzeSolutionIntegration = (content: string, selectedSolution: SolutionData): any => {
+  if (!content || !selectedSolution) {
+    return {
+      featureIncorporation: 0,
+      positioningScore: 0,
+      nameMentions: 0,
+      painPointsAddressed: 0,
+      audienceAlignment: 0
+    };
+  }
+  
+  const { name, features, painPoints = [], targetAudience = [] } = selectedSolution;
+  const contentLower = content.toLowerCase();
   
   // Calculate how many solution features are incorporated
   const featureIncorporation = features.reduce((count, feature) => {
-    if (content.toLowerCase().includes(feature.toLowerCase())) {
+    if (contentLower.includes(feature.toLowerCase())) {
       return count + 1;
     }
     return count;
   }, 0);
   
-  const featureIncorporationPercentage = (featureIncorporation / features.length) * 100;
+  const featureIncorporationPercentage = features.length > 0 ? 
+    (featureIncorporation / features.length) * 100 : 0;
   
-  // Calculate how well the solution is positioned (e.g., mentioned early, often, and in a positive context)
-  let positioningScore = 50;
+  // Calculate pain points addressed
+  const painPointsAddressed = painPoints.reduce((count, painPoint) => {
+    if (contentLower.includes(painPoint.toLowerCase())) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
   
-  if (content.toLowerCase().indexOf(name.toLowerCase()) < content.length / 3) {
+  const painPointsAddressedPercentage = painPoints.length > 0 ?
+    (painPointsAddressed / painPoints.length) * 100 : 0;
+    
+  // Calculate audience targeting alignment
+  const audienceAlignmentCount = targetAudience.reduce((count, audience) => {
+    if (contentLower.includes(audience.toLowerCase())) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
+  
+  const audienceAlignmentPercentage = targetAudience.length > 0 ?
+    (audienceAlignmentCount / targetAudience.length) * 100 : 0;
+  
+  // Calculate how well the solution is positioned
+  let positioningScore = 50; // Default middle score
+  
+  // Check if solution is mentioned early in the content
+  if (contentLower.indexOf(name.toLowerCase()) < content.length / 3) {
     positioningScore += 20; // Mentioned early in content
   }
   
-  const nameMentions = (content.toLowerCase().match(new RegExp(name.toLowerCase(), 'g')) || []).length;
+  // Count name mentions
+  const nameMentionMatches = contentLower.match(new RegExp(name.toLowerCase(), 'g'));
+  const nameMentions = nameMentionMatches ? nameMentionMatches.length : 0;
+  
   if (nameMentions >= 3) {
     positioningScore += 15; // Mentioned multiple times
   }
@@ -65,15 +99,12 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
     positioningScore += 15; // Mentioned in positive contexts
   }
   
-  // Simple estimate for pain points addressed and audience alignment
-  const painPointsAddressed = Math.min(100, Math.round(featureIncorporationPercentage * 1.2));
-  const audienceAlignment = Math.min(100, Math.round((positioningScore + featureIncorporationPercentage) / 2));
-  
+  // Calculate overall metrics with caps to ensure values are within 0-100 range
   return {
-    featureIncorporation: Math.round(featureIncorporationPercentage),
-    positioningScore,
+    featureIncorporation: Math.min(100, Math.round(featureIncorporationPercentage)),
+    positioningScore: Math.min(100, positioningScore),
     nameMentions,
-    painPointsAddressed,
-    audienceAlignment
+    painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),
+    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2))
   };
 };
