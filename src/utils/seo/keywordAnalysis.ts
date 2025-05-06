@@ -19,12 +19,14 @@ export const calculateKeywordUsage = (
   const words = content.toLowerCase().split(/\s+/);
   const wordCount = words.length;
   
-  // Combined unique keywords list
-  const uniqueKeywords = Array.from(new Set([mainKeyword, ...selectedKeywords]))
-    .filter(Boolean); // Remove empty strings
+  // Ensure we have the main keyword first, followed by secondary keywords
+  const orderedKeywords = [
+    mainKeyword,
+    ...selectedKeywords.filter(kw => kw !== mainKeyword)
+  ].filter(Boolean); // Remove empty strings
   
   // Calculate usage for each keyword
-  return uniqueKeywords.map(keyword => {
+  return orderedKeywords.map(keyword => {
     const keywordLower = keyword.toLowerCase();
     
     // Count occurrences (including partial word matches)
@@ -36,10 +38,19 @@ export const calculateKeywordUsage = (
       ? ((count / wordCount) * 100).toFixed(2) + '%'
       : '0.00%';
     
+    // Determine if this is the primary keyword
+    const isPrimary = keyword === mainKeyword;
+    
+    // For primary keyword, check if density is within optimal range (0.5% - 3%)
+    const densityValue = parseFloat(densityPercent);
+    const isOptimalDensity = isPrimary ? (densityValue >= 0.5 && densityValue <= 3) : true;
+    
     return {
       keyword,
       count,
-      density: densityPercent
+      density: densityPercent,
+      isPrimary,
+      isOptimalDensity
     };
   });
 };
@@ -66,10 +77,32 @@ export const calculateKeywordUsageScore = (
   const densityStr = mainKeywordUsage.density;
   const density = parseFloat(densityStr.replace('%', ''));
   
-  // Calculate score based on ideal density range (1% - 3%)
+  // Calculate score based on ideal density range (0.5% - 3%)
   if (density < 0.5) return 40; // Too low
   if (density < 1) return 60; // Below optimal
   if (density <= 3) return 100; // Optimal
   if (density <= 5) return 70; // Above optimal but acceptable
   return 40; // Too high, keyword stuffing
+};
+
+/**
+ * Check if all secondary keywords are present in content
+ */
+export const checkSecondaryKeywordsPresence = (
+  keywordUsage: KeywordUsage[],
+  mainKeyword: string
+): { allPresent: boolean; missingKeywords: string[] } => {
+  // Filter out the main keyword and check which secondary keywords are missing
+  const secondaryKeywordUsage = keywordUsage.filter(item => 
+    item.keyword.toLowerCase() !== mainKeyword.toLowerCase()
+  );
+  
+  const missingKeywords = secondaryKeywordUsage
+    .filter(item => item.count === 0)
+    .map(item => item.keyword);
+    
+  return {
+    allPresent: missingKeywords.length === 0,
+    missingKeywords
+  };
 };
