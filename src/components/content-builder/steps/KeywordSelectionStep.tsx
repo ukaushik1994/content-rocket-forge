@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
 import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
-import { ContentCluster } from '@/contexts/content-builder/types';
+import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
 import { Search, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { motion, AnimatePresence } from 'framer-motion';

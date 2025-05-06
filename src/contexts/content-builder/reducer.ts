@@ -1,4 +1,6 @@
+
 import { ContentBuilderState, ContentBuilderAction } from './types';
+import { OutlineSection } from './types/outline-types';
 
 export const contentBuilderReducer = (
   state: ContentBuilderState,

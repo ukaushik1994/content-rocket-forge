@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { ContentCluster } from '@/contexts/content-builder/types';
+import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
 
 interface ClusterSelectionProps {
   clusters: ContentCluster[];
