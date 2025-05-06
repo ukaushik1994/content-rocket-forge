@@ -15,7 +15,7 @@ import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { state } = useContentBuilder();
+  const { state, dispatch } = useContentBuilder();
   
   const {
     isAnalyzing,
@@ -117,8 +117,8 @@ export const OptimizeAndReviewStep = () => {
             onRunAllChecks={runAllChecks}
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
-            onMetaTitleChange={(value) => state.dispatch({ type: 'SET_META_TITLE', payload: value })}
-            onMetaDescriptionChange={(value) => state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onMetaTitleChange={(value) => dispatch({ type: 'SET_META_TITLE', payload: value })}
+            onMetaDescriptionChange={(value) => dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
             onGenerateMeta={generateMeta}
           />
         </TabsContent>
@@ -130,8 +130,8 @@ export const OptimizeAndReviewStep = () => {
             selectedKeywords={state.selectedKeywords}
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
-            onMetaTitleChange={(value) => state.dispatch({ type: 'SET_META_TITLE', payload: value })}
-            onMetaDescriptionChange={(value) => state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onMetaTitleChange={(value) => dispatch({ type: 'SET_META_TITLE', payload: value })}
+            onMetaDescriptionChange={(value) => dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
             onGenerateMeta={generateMeta}
             solutionIntegrationMetrics={state.solutionIntegrationMetrics}
             selectedSolution={state.selectedSolution}
@@ -151,8 +151,8 @@ export const OptimizeAndReviewStep = () => {
             selectedKeywords={state.selectedKeywords}
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
-            onMetaTitleChange={(value) => state.dispatch({ type: 'SET_META_TITLE', payload: value })}
-            onMetaDescriptionChange={(value) => state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onMetaTitleChange={(value) => dispatch({ type: 'SET_META_TITLE', payload: value })}
+            onMetaDescriptionChange={(value) => dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
             onGenerateMeta={generateMeta}
             solutionIntegrationMetrics={state.solutionIntegrationMetrics}
             selectedSolution={state.selectedSolution}
