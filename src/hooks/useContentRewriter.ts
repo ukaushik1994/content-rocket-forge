@@ -78,7 +78,7 @@ export const useContentRewriter = () => {
           
         case 'length':
           // Add a conclusion paragraph
-          improved = improved + '\n\n' + 'In conclusion, this content demonstrates the key points discussed above. It's important to consider all aspects of this topic for a comprehensive understanding.';
+          improved = improved + '\n\n' + "In conclusion, this content demonstrates the key points discussed above. It's important to consider all aspects of this topic for a comprehensive understanding.";
           break;
       }
       
