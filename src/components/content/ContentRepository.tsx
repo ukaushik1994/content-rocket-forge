@@ -14,7 +14,7 @@ export function ContentRepository() {
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Get content data and loading state
-  const { contentItems, loading } = useContent();
+  const { contentItems, loading, refreshContent } = useContent();
   const location = useLocation();
   
   // Use custom hooks for filtering and actions
@@ -46,14 +46,25 @@ export function ContentRepository() {
     handlePageChange(1);
   }, [handlePageChange]);
   
-  // Check if we should highlight a specific item from navigation
+  // Check if we should refresh content or highlight a specific item from navigation
   useEffect(() => {
+    if (location.state?.contentRefresh) {
+      refreshContent();
+      // Clear the state to prevent persistent refreshing
+      window.history.replaceState({}, document.title);
+    }
+    
     if (location.state?.highlightId) {
       setSelectedContentId(location.state.highlightId);
       // Clear the state to prevent persistent highlighting
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, setSelectedContentId]);
+  }, [location.state, setSelectedContentId, refreshContent]);
+  
+  // Force a refresh when component mounts to ensure we have latest content
+  useEffect(() => {
+    refreshContent();
+  }, [refreshContent]);
   
   // Set the first content item as selected by default when items load
   useEffect(() => {

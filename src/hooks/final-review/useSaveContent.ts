@@ -13,7 +13,7 @@ export const useSaveContent = () => {
   const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
-  const { addContentItem } = useContent(); // Import addContentItem from the content context
+  const { addContentItem, refreshContent } = useContent(); // Import refreshContent from the content context
   const navigate = useNavigate();
 
   const handleSaveToDraft = async (): Promise<void> => {
@@ -45,6 +45,9 @@ export const useSaveContent = () => {
           seo_score: state.seoScore,
           keywords: [state.mainKeyword, ...state.selectedKeywords],
         });
+        
+        // Force refresh the content list to make sure it shows up
+        await refreshContent();
       }
       
       setIsSavedToDraft(true);
@@ -80,7 +83,6 @@ export const useSaveContent = () => {
       
       // If that doesn't work, use the content context directly
       if (!contentId) {
-        // Remove the meta_description field as it's not part of ContentItemType
         await addContentItem({
           title: publishParams.title,
           content: publishParams.content || '',
@@ -89,12 +91,18 @@ export const useSaveContent = () => {
           keywords: [state.mainKeyword, ...state.selectedKeywords],
           // We're removing meta_description as it's not part of the accepted type
         });
+        
+        // Force refresh the content list to make sure it shows up
+        await refreshContent();
       }
       
       toast.success('Content published successfully');
-      // Navigate back to content library
+      
+      // Navigate back to content library with a highlight parameter
       setTimeout(() => {
-        navigate('/content');
+        navigate('/content', { 
+          state: { contentRefresh: true }
+        });
       }, 1000);
     } catch (error) {
       console.error('Error publishing content:', error);

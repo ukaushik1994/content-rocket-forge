@@ -22,6 +22,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
+import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 
 export const SaveStep = () => {
   const { state } = useContentBuilder();
@@ -31,7 +32,7 @@ export const SaveStep = () => {
     contentType, 
     seoScore, 
     selectedSolution, 
-    isSaving,
+    isSaving: isBuilderSaving,
     metaTitle,
     metaDescription,
     contentTitle,
@@ -39,8 +40,9 @@ export const SaveStep = () => {
     selectedKeywords
   } = state;
   
-  const { addContentItem, contentItems } = useContent();
+  const { addContentItem, contentItems, refreshContent } = useContent();
   const navigate = useNavigate();
+  const { handlePublish, handleSaveToDraft, isSaving, isSavedToDraft } = useSaveContent();
   
   // Track optimizations
   const hasAppliedOptimizations = React.useMemo(() => {
@@ -140,17 +142,22 @@ export const SaveStep = () => {
         status: 'draft' as 'draft' | 'published' | 'archived',
         seo_score: seoScore,
         keywords: [mainKeyword, ...(selectedKeywords || [])],
-        meta_description: description, // Store the meta description
+        // meta_description is not in ContentItemType so we don't include it
         optimized: hasAppliedOptimizations // Track if optimizations were applied
       };
       
       await addContentItem(contentItem);
       
+      // Force refresh the content list
+      await refreshContent();
+      
       toast.success("Content saved to library");
       
       // Navigate to content library after a short delay
       setTimeout(() => {
-        navigate('/content');
+        navigate('/content', { 
+          state: { contentRefresh: true }
+        });
       }, 800);
     } catch (error) {
       console.error('Error saving content:', error);
