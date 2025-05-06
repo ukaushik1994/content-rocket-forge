@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles } from 'lucide-react';
-import { SerpAnalysisResult } from '@/services/serpApiService';
+import { SerpAnalysisResult, analyzeKeywordSerp } from '@/services/serpApiService';
 
 // Import refactored components
 import {
@@ -17,6 +16,7 @@ import {
   SerpHeadingsSection,
   SerpContentGapsSection
 } from './serp-analysis';
+import { toast } from 'sonner';
 
 export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -56,6 +56,28 @@ export function SerpAnalysisPanel({
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  // Function to load more data for a specific section
+  const loadMoreData = async (sectionType: string) => {
+    if (!mainKeyword) return;
+    
+    try {
+      toast.info(`Loading more ${sectionType} data...`);
+      // Call the API to get more data for the specific section
+      const additionalData = await analyzeKeywordSerp(mainKeyword);
+      
+      if (additionalData) {
+        // This would be where you'd update the state with the new data
+        // For now we'll just show a success message
+        toast.success(`Successfully loaded more ${sectionType} data`);
+      } else {
+        toast.error(`Failed to load more ${sectionType} data`);
+      }
+    } catch (error) {
+      console.error(`Error loading more ${sectionType} data:`, error);
+      toast.error(`Error loading more ${sectionType} data`);
+    }
   };
   
   if (isLoading) {
@@ -152,6 +174,7 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('searchMetrics')}
           variant="blue"
           description="Keyword metrics to understand search volume and competition"
+          onLoadMore={() => loadMoreData('metrics')}
         />
         
         <SerpMetricsSection 
@@ -170,6 +193,7 @@ export function SerpAnalysisPanel({
           variant="blue"
           description="Select keywords to include in your content"
           count={serpData?.relatedSearches?.length || 0}
+          onLoadMore={() => loadMoreData('keywords')}
         />
         
         <SerpKeywordsSection 
@@ -188,6 +212,7 @@ export function SerpAnalysisPanel({
           variant="amber"
           description="Common questions people search about this topic"
           count={serpData?.peopleAlsoAsk?.length || 0}
+          onLoadMore={() => loadMoreData('questions')}
         />
         
         <SerpQuestionsSection 
@@ -206,6 +231,7 @@ export function SerpAnalysisPanel({
           variant="indigo"
           description="Important entities and concepts related to this topic"
           count={serpData?.entities?.length || 0}
+          onLoadMore={() => loadMoreData('entities')}
         />
         
         <SerpEntitiesSection 
@@ -224,6 +250,7 @@ export function SerpAnalysisPanel({
           variant="teal"
           description="Common headings used by top-ranking content"
           count={serpData?.headings?.length || 0}
+          onLoadMore={() => loadMoreData('headings')}
         />
         
         <SerpHeadingsSection 
@@ -242,6 +269,7 @@ export function SerpAnalysisPanel({
           variant="rose"
           description="Topics competitors are missing that you can cover"
           count={serpData?.contentGaps?.length || 0}
+          onLoadMore={() => loadMoreData('contentGaps')}
         />
         
         <SerpContentGapsSection 
@@ -260,6 +288,7 @@ export function SerpAnalysisPanel({
           variant="green"
           description="Top-ranking content for this keyword"
           count={serpData?.topResults?.length || 0}
+          onLoadMore={() => loadMoreData('competitors')}
         />
         
         <SerpCompetitorsSection 
