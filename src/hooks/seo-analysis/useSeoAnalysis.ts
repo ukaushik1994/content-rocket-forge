@@ -8,7 +8,7 @@ import { getScoreColor } from './utils';
 import { KeywordUsage, SeoAnalysisScores, UseSeoAnalysisReturn } from './types';
 
 /**
- * Enhanced SEO analysis hook with improved error handling and recovery options
+ * Custom hook for SEO analysis functionality with improved performance and error handling
  */
 export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
   const { state, dispatch } = useContentBuilder();
@@ -24,7 +24,6 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
   });
   const [improvements, setImprovements] = useState<any[]>([]);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(null);
   
   const { runAnalysis, abortAnalysis, cleanup } = useAnalysisOperation();
   
@@ -59,11 +58,6 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
   
   // Run SEO analysis with proper timeout and error handling
   const runSeoAnalysis = useCallback(() => {
-    // Reset error state
-    setAnalysisError(null);
-    setAnalysisStartTime(Date.now());
-    
-    // Run analysis with enhanced error handling
     runAnalysis(
       setIsAnalyzing,
       setKeywordUsage,
@@ -71,31 +65,8 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
       setScores,
       setImprovements,
       setAnalysisError
-    ).catch((error) => {
-      // This catch handles any uncaught exceptions from the analysis process
-      console.error("Uncaught analysis error:", error);
-      setAnalysisError(`Unexpected error: ${error.message}`);
-      setIsAnalyzing(false);
-    });
+    );
   }, [runAnalysis]);
-  
-  // Monitor analysis duration for potentially stuck processes
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    
-    if (isAnalyzing && analysisStartTime) {
-      timer = setTimeout(() => {
-        // If analysis is still running after 30 seconds, show a warning
-        if (isAnalyzing) {
-          toast.warning("Analysis is taking longer than expected. You can continue waiting or skip this step.");
-        }
-      }, 30000); // 30 seconds
-    }
-    
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isAnalyzing, analysisStartTime]);
   
   // Force skip analysis if it's taking too long
   const forceSkipAnalysis = useCallback(() => {

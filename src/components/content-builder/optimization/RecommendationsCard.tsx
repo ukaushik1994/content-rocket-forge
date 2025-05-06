@@ -14,7 +14,6 @@ interface RecommendationsCardProps {
   isRecommendationApplied: (id: string) => boolean;
   showRecoveryOption?: boolean;
   onForceSkip?: () => void;
-  timeoutMessage?: string;
 }
 
 export const RecommendationsCard = memo(({ 
@@ -24,8 +23,7 @@ export const RecommendationsCard = memo(({
   handleRewriteContent,
   isRecommendationApplied,
   showRecoveryOption,
-  onForceSkip,
-  timeoutMessage = 'Analysis is taking longer than expected'
+  onForceSkip
 }: RecommendationsCardProps) => {
   
   // Get appropriate icon based on recommendation
@@ -64,11 +62,9 @@ export const RecommendationsCard = memo(({
             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
             Optimization Suggestions
           </span>
-          {visibleRecommendations.length > 0 && (
-            <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-400/30">
-              Click suggestions to optimize
-            </Badge>
-          )}
+          <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-400/30">
+            Click suggestions to optimize
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -137,7 +133,7 @@ export const RecommendationsCard = memo(({
               <div className="mt-4 p-3 border border-red-200 rounded-md bg-red-50">
                 <div className="flex items-center gap-2 mb-2 text-red-600">
                   <AlertCircle className="h-4 w-4" />
-                  <p className="text-sm font-medium">{timeoutMessage}</p>
+                  <p className="text-sm font-medium">Is your analysis stuck?</p>
                 </div>
                 <Button
                   size="sm"
@@ -163,7 +159,7 @@ export const RecommendationsCard = memo(({
                     <div className="p-3 border border-red-200 rounded-md bg-red-50">
                       <div className="flex items-center gap-2 mb-2 text-red-600">
                         <AlertCircle className="h-4 w-4" />
-                        <p className="text-sm font-medium">{timeoutMessage}</p>
+                        <p className="text-sm font-medium">Analysis is taking too long</p>
                       </div>
                       <p className="text-xs text-red-700 mb-3">
                         You can skip this step and continue with your content.

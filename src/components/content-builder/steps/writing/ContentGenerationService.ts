@@ -2,9 +2,6 @@
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
 import { AiProvider } from '@/services/aiService/types';
-import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
-import { KeywordUsage } from '@/hooks/seo-analysis/types';
-import { getSeoRecommendationsAsInstructions } from '@/utils/seo/recommendationsToInstructions';
 
 export async function generateContent(
   aiProvider: AiProvider,
@@ -15,9 +12,7 @@ export async function generateContent(
   selectedSolution: any,
   additionalInstructions: string,
   setIsGenerating: (value: boolean) => void,
-  setContent: (content: string) => void,
-  seoRecommendations?: SeoImprovement[],
-  keywordUsage?: KeywordUsage[]
+  setContent: (content: string) => void
 ) {
   if (!mainKeyword) {
     toast.error("Please set a main keyword first");
@@ -27,14 +22,6 @@ export async function generateContent(
   setIsGenerating(true);
   
   try {
-    // Convert SEO recommendations to instructions if available
-    const seoInstructions = seoRecommendations && seoRecommendations.length > 0
-      ? getSeoRecommendationsAsInstructions(
-          seoRecommendations.filter(rec => !rec.applied),
-          keywordUsage
-        )
-      : '';
-    
     // Create a detailed prompt for the AI
     const prompt = `
     Write comprehensive, high-quality content for an article about "${mainKeyword}".
@@ -47,8 +34,6 @@ export async function generateContent(
     ${outlineText}
     
     ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
-    
-    ${seoInstructions ? seoInstructions : ''}
     
     ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
     

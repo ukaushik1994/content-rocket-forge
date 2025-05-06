@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
@@ -8,9 +8,6 @@ import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
-import { useSeoRecommendations } from '@/hooks/seo-analysis/useSeoRecommendations';
-import { Badge } from '@/components/ui/badge';
-import { CheckSquare } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -41,15 +38,6 @@ export const ContentWritingStep = () => {
     handleAiProviderChange
   } = useWritingStep();
 
-  // Get SEO recommendations that can be applied
-  const { 
-    recommendations: seoRecommendations,
-    seoInstructions,
-    unappliedRecommendationsCount
-  } = useSeoRecommendations();
-
-  const useSeoOptimizations = state.seoImprovements && state.seoImprovements.length > 0;
-
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
       toast.error("Please set a main keyword first");
@@ -71,9 +59,6 @@ export const ContentWritingStep = () => {
     // Prepare secondary keywords
     const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
     
-    // Pass SEO recommendations if they exist and haven't been applied yet
-    const unappliedSeoRecommendations = seoRecommendations?.filter(rec => !rec.applied) || [];
-    
     await generateContent(
       aiProvider,
       mainKeyword,
@@ -83,9 +68,7 @@ export const ContentWritingStep = () => {
       selectedSolution,
       additionalInstructions,
       setIsGenerating,
-      handleContentChange,
-      useSeoOptimizations ? unappliedSeoRecommendations : undefined,
-      state.keywordUsage
+      handleContentChange
     );
   };
   
@@ -113,19 +96,6 @@ export const ContentWritingStep = () => {
         onAiProviderChange={handleAiProviderChange}
       />
       
-      {/* SEO Recommendations Badge */}
-      {useSeoOptimizations && unappliedRecommendationsCount > 0 && (
-        <div className="flex items-center justify-center">
-          <Badge 
-            variant="outline" 
-            className="bg-green-50 text-green-700 border-green-200 px-3 py-1 flex items-center gap-2"
-          >
-            <CheckSquare className="h-4 w-4 text-green-500" />
-            {unappliedRecommendationsCount} SEO recommendations will be applied when generating content
-          </Badge>
-        </div>
-      )}
-      
       {showGenerator && (
         <ContentTemplateCard
           serpData={state.serpData}
@@ -142,8 +112,6 @@ export const ContentWritingStep = () => {
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}
-              seoInstructions={seoInstructions}
-              unappliedRecommendationsCount={unappliedRecommendationsCount}
             />
           </div>
         )}

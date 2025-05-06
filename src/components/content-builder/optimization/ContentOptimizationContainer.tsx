@@ -1,14 +1,10 @@
 
-import React, { memo, useCallback, useState, useEffect } from 'react';
+import React, { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { SeoScoreCard } from './SeoScoreCard';
 import { RecommendationsCard } from './RecommendationsCard'; 
 import { Button } from '@/components/ui/button';
-import { KeywordUsageSummary } from './KeywordUsageSummary';
 import { AlertCircle, ArrowRight } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { KeywordUsage } from '@/hooks/seo-analysis/types';
-import { ApplySeoRecommendationsCard } from './ApplySeoRecommendationsCard';
 
 interface ContentOptimizationContainerProps {
   recommendations: string[];
@@ -23,8 +19,6 @@ interface ContentOptimizationContainerProps {
   handleSkipConfirm: () => void;
   analysisError?: string | null;
   forceSkipAnalysis?: () => void;
-  keywordUsage: KeywordUsage[];
-  contentLength: number;
 }
 
 // Use memo to prevent unnecessary re-renders
@@ -40,38 +34,25 @@ export const ContentOptimizationContainer = memo(({
   hasRunAnalysis,
   handleSkipConfirm,
   analysisError,
-  forceSkipAnalysis,
-  keywordUsage,
-  contentLength
+  forceSkipAnalysis
 }: ContentOptimizationContainerProps) => {
   // When analysis has been running for too long, show a recovery button
-  const [showRecoveryOption, setShowRecoveryOption] = useState(false);
-  const [timeoutMessage, setTimeoutMessage] = useState('');
+  const [showRecoveryOption, setShowRecoveryOption] = React.useState(false);
   
-  // Progressive timeout warnings
-  useEffect(() => {
-    let timerShort: ReturnType<typeof setTimeout>;
-    let timerLong: ReturnType<typeof setTimeout>;
+  // If analysis is running for over 15 seconds, show recovery option
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     
     if (isAnalyzing) {
-      // First timeout after 15 seconds
-      timerShort = setTimeout(() => {
+      timer = setTimeout(() => {
         setShowRecoveryOption(true);
-        setTimeoutMessage("Analysis is taking longer than expected");
-      }, 15000);
-      
-      // Second message after 30 seconds
-      timerLong = setTimeout(() => {
-        setTimeoutMessage("Analysis may be stuck. Consider skipping this step");
-      }, 30000);
+      }, 15000); // 15 seconds
     } else {
       setShowRecoveryOption(false);
-      setTimeoutMessage('');
     }
     
     return () => {
-      clearTimeout(timerShort);
-      clearTimeout(timerLong);
+      if (timer) clearTimeout(timer);
     };
   }, [isAnalyzing]);
   
@@ -84,23 +65,8 @@ export const ContentOptimizationContainer = memo(({
     }
   }, [forceSkipAnalysis, handleSkipConfirm]);
   
-  // Content is too short to analyze
-  const isContentTooShort = contentLength < 300;
-  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {isContentTooShort && !isAnalyzing && (
-        <div className="lg:col-span-3">
-          <Alert variant="destructive" className="mb-4 bg-yellow-50 border-yellow-300 text-yellow-800">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Content is too short</AlertTitle>
-            <AlertDescription>
-              Your content needs to be at least 300 characters long for effective SEO analysis. Currently you have {contentLength} characters.
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-      
       <div className="lg:col-span-2">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -131,29 +97,15 @@ export const ContentOptimizationContainer = memo(({
               isRecommendationApplied={isRecommendationApplied}
               showRecoveryOption={showRecoveryOption}
               onForceSkip={handleForceSkip}
-              timeoutMessage={timeoutMessage}
             />
           )}
         </motion.div>
-        
-        {/* Keyword usage summary */}
-        {keywordUsage.length > 0 && !isAnalyzing && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6"
-          >
-            <KeywordUsageSummary keywordUsage={keywordUsage} />
-          </motion.div>
-        )}
       </div>
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="space-y-6"
       >
         <SeoScoreCard 
           seoScore={seoScore} 
@@ -161,18 +113,13 @@ export const ContentOptimizationContainer = memo(({
           getScoreColor={getScoreColor}
         />
         
-        {/* Apply SEO Recommendations Card */}
-        {hasRunAnalysis && !isAnalyzing && (
-          <ApplySeoRecommendationsCard />
-        )}
-        
         {/* Skip button card - shown when no analysis has run or as a recovery option */}
         {(!hasRunAnalysis || showRecoveryOption) && (
-          <div className="p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+          <div className="mt-4 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
                 {showRecoveryOption 
-                  ? timeoutMessage
+                  ? "Analysis is taking longer than expected."
                   : "Don't want to optimize your content now?"}
               </p>
               <Button 

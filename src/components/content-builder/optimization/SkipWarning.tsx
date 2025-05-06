@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 interface SkipWarningProps {
   onSkip: () => void;
@@ -13,37 +12,35 @@ interface SkipWarningProps {
 export const SkipWarning = ({ onSkip, onCancel }: SkipWarningProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
+      className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg"
     >
-      <Alert variant="destructive" className="border-yellow-300 bg-yellow-50">
-        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-        <AlertTitle className="text-yellow-800">SEO Optimization Skipped</AlertTitle>
-        <AlertDescription className="text-yellow-700 mt-1">
-          Are you sure you want to skip the optimization step? This may result in lower search rankings and visibility.
-        </AlertDescription>
-        
-        <div className="flex items-center gap-3 mt-4">
-          <Button 
-            onClick={onSkip} 
-            variant="default" 
-            size="sm"
-            className="bg-yellow-600 hover:bg-yellow-700 text-white"
-          >
-            <Check className="h-4 w-4 mr-1" /> Skip Anyway
-          </Button>
-          <Button 
-            onClick={onCancel} 
-            variant="outline" 
-            size="sm"
-            className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
-          >
-            <X className="h-4 w-4 mr-1" /> Cancel
-          </Button>
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="space-y-2">
+          <p className="text-sm">
+            You haven't run the content analysis yet. For the best SEO performance, we recommend analyzing your content before moving to the next step.
+          </p>
+          <div className="flex gap-3">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-white border-amber-200 hover:bg-amber-50 text-amber-700"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button 
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={onSkip}
+            >
+              Skip Anyway
+            </Button>
+          </div>
         </div>
-      </Alert>
+      </div>
     </motion.div>
   );
 };

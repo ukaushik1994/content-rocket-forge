@@ -11,7 +11,6 @@ import { OutlineSection } from './outline-types';
 import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { DocumentStructure } from './document-types';
-import { KeywordUsage } from '@/hooks/seo-analysis/types';
 
 // Content Builder State
 export interface ContentBuilderState {
@@ -54,7 +53,6 @@ export interface ContentBuilderState {
   seoScore: number;
   seoImprovements: SeoImprovement[];
   optimizationSkipped: boolean; // New field to track if optimization was skipped
-  keywordUsage: KeywordUsage[]; // Added missing property for keyword usage stats
   
   // Selected Cluster
   selectedCluster: ContentCluster | null;

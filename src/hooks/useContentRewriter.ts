@@ -4,10 +4,10 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
 import { getImprovementType } from '@/utils/seo/contentRewriter';
 
-const REWRITE_TIMEOUT = 12000; // 12 seconds timeout for generating content
+const REWRITE_TIMEOUT = 8000; // 8 seconds timeout for generating content
 
 /**
- * Enhanced hook for content rewriting with improved error handling and recovery options
+ * Custom hook for content rewriting functionality with improved performance and error handling
  */
 export const useContentRewriter = () => {
   const { state, setContent, dispatch } = useContentBuilder();
@@ -19,8 +19,6 @@ export const useContentRewriter = () => {
   const [rewrittenContent, setRewrittenContent] = useState<string>('');
   const [isRewriting, setIsRewriting] = useState(false);
   const [currentRecommendationId, setCurrentRecommendationId] = useState<string | null>(null);
-  const [rewriteError, setRewriteError] = useState<string | null>(null);
-  const [rewriteStartTime, setRewriteStartTime] = useState<number | null>(null);
   
   // Add abort controller ref to cancel operations
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -43,16 +41,15 @@ export const useContentRewriter = () => {
     );
   }, [seoImprovements]);
   
-  // Handle rewrite content with improved error handling
+  // Handle rewrite content - memoized to prevent recreations that cause re-renders
   const handleRewriteContent = useCallback((recommendation: string, recommendationId: string) => {
-    // Reset error state
-    setRewriteError(null);
-    
     // First check if already applied to avoid unnecessary processing
     if (isRecommendationApplied(recommendationId)) {
       toast.info("This recommendation has already been applied");
       return;
     }
+    
+    console.log("[useContentRewriter] Handling content rewrite:", { recommendation, recommendationId });
     
     setSelectedRecommendation(recommendation);
     setCurrentRecommendationId(recommendationId);
@@ -77,7 +74,7 @@ export const useContentRewriter = () => {
   // Generate rewritten content asynchronously with timeout and cancellation
   const generateRewrittenContent = useCallback(async (recommendation: string, type: string) => {
     if (!content) {
-      setRewriteError("No content available to rewrite");
+      toast.error("No content available to rewrite");
       setIsRewriting(false);
       return;
     }
@@ -93,7 +90,6 @@ export const useContentRewriter = () => {
     
     setIsRewriting(true);
     setRewrittenContent(''); // Clear previous content
-    setRewriteStartTime(Date.now());
     
     try {
       // Create a timeout promise
@@ -102,27 +98,22 @@ export const useContentRewriter = () => {
       });
       
       // Create the content generation promise that checks for abort signals
-      const contentPromise = new Promise<string>(async (resolve, reject) => {
+      const contentPromise = new Promise<string>(async (resolve) => {
+        // Import the function dynamically to reduce initial load time
+        const { generateRewrittenContent } = await import('@/utils/seo/contentRewriter');
+        
+        // Check if aborted during import
+        if (signal.aborted) {
+          return;
+        }
+        
         try {
-          // Import the function dynamically to reduce initial load time
-          const { generateRewrittenContent } = await import('@/utils/seo/contentRewriter');
-          
-          // Check if aborted during import
-          if (signal.aborted) {
-            reject(new Error('Operation cancelled'));
-            return;
-          }
-          
           // Generate content
           const newContent = generateRewrittenContent(content, recommendation, type, mainKeyword);
-          
-          // Add artificial delay to prevent flashing for very fast operations
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
           resolve(newContent);
         } catch (error) {
           console.error('Error in content generation:', error);
-          reject(error);
+          resolve(content); // Fallback to original content
         }
       });
       
@@ -131,20 +122,14 @@ export const useContentRewriter = () => {
       
       // Check if operation was aborted
       if (!signal.aborted) {
+        console.log("[useContentRewriter] Generated rewritten content");
         setRewrittenContent(newContent);
       }
     } catch (error) {
       console.error('Error generating content rewrite:', error);
       
       if (!signal.aborted) {
-        const errorMessage = error.message || 'Failed to rewrite content';
-        setRewriteError(errorMessage);
-        
-        if (errorMessage.includes('timed out')) {
-          toast.error('Content rewrite operation timed out. Try again or skip this recommendation.');
-        } else {
-          toast.error(`Rewrite error: ${errorMessage}`);
-        }
+        toast.error('Content rewrite operation timed out. Try again or skip this recommendation.');
       }
     } finally {
       if (!signal.aborted) {
@@ -153,32 +138,15 @@ export const useContentRewriter = () => {
     }
   }, [content, mainKeyword]);
   
-  // Monitor rewrite duration for potentially stuck processes
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    
-    if (isRewriting && rewriteStartTime) {
-      timer = setTimeout(() => {
-        // If rewriting is still running after 10 seconds, show a warning
-        if (isRewriting) {
-          setRewriteError("Operation is taking longer than expected. You can wait or cancel.");
-        }
-      }, 10000); // 10 seconds
-    }
-    
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isRewriting, rewriteStartTime]);
-  
   // Apply rewritten content - memoized
   const applyRewrittenContent = useCallback(() => {
     if (!rewrittenContent || !currentRecommendationId) {
-      setRewriteError("Cannot apply rewritten content - missing content or recommendation ID");
+      console.warn("[useContentRewriter] Cannot apply rewritten content - missing content or recommendation ID");
       return;
     }
     
     // Apply the rewritten content
+    console.log("[useContentRewriter] Applying rewritten content for recommendation:", currentRecommendationId);
     setContent(rewrittenContent);
     
     // Mark the improvement as applied in state
@@ -204,7 +172,6 @@ export const useContentRewriter = () => {
     
     setIsRewriting(false);
     setShowRewriteDialog(false);
-    setRewriteError(null);
   }, [isRewriting]);
   
   return {
@@ -216,7 +183,6 @@ export const useContentRewriter = () => {
     handleRewriteContent,
     applyRewrittenContent,
     setShowRewriteDialog: handleCloseDialog,
-    isRecommendationApplied,
-    rewriteError
+    isRecommendationApplied
   };
 };
