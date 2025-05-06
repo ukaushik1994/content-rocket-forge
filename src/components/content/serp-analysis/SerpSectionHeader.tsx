@@ -1,198 +1,77 @@
 
 import React from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableBody,
-  TableCell
-} from '@/components/ui/table';
-import { toast } from 'sonner';
 
-interface SerpSectionHeaderProps {
+type SectionVariant = "blue" | "green" | "purple" | "amber" | "indigo" | "teal" | "rose";
+
+export interface SerpSectionHeaderProps {
   title: string;
   expanded: boolean;
   onToggle: () => void;
-  variant?: 'blue' | 'green' | 'amber' | 'rose' | 'indigo' | 'teal';
+  variant?: SectionVariant;
   description?: string;
   count?: number;
-  onLoadMore?: () => Promise<void>;
 }
 
-const variantClasses = {
-  blue: 'text-blue-600',
-  green: 'text-emerald-600',
-  amber: 'text-amber-600',
-  rose: 'text-rose-600',
-  indigo: 'text-indigo-600',
-  teal: 'text-teal-600',
-};
-
-const variantBgClasses = {
-  blue: 'bg-blue-50 border-blue-200',
-  green: 'bg-emerald-50 border-emerald-200',
-  amber: 'bg-amber-50 border-amber-200',
-  rose: 'bg-rose-50 border-rose-200',
-  indigo: 'bg-indigo-50 border-indigo-200',
-  teal: 'bg-teal-50 border-teal-200',
-};
-
-const variantHoverClasses = {
-  blue: 'hover:bg-blue-100',
-  green: 'hover:bg-emerald-100',
-  amber: 'hover:bg-amber-100',
-  rose: 'hover:bg-rose-100',
-  indigo: 'hover:bg-indigo-100',
-  teal: 'hover:bg-teal-100',
-};
-
-const variantSelectedClasses = {
-  blue: 'bg-blue-100',
-  green: 'bg-emerald-100',
-  amber: 'bg-amber-100',
-  rose: 'bg-rose-100',
-  indigo: 'bg-indigo-100',
-  teal: 'bg-teal-100',
-};
-
-export function SerpSectionHeader({
-  title,
-  expanded,
-  onToggle,
-  variant = 'blue',
+export function SerpSectionHeader({ 
+  title, 
+  expanded, 
+  onToggle, 
+  variant = "purple",
   description,
-  count = 0,
-  onLoadMore
+  count
 }: SerpSectionHeaderProps) {
-  const [selectedItems, setSelectedItems] = React.useState<number[]>([]);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-
-  const handleLoadMore = async () => {
-    if (!onLoadMore) {
-      toast.error("Load more functionality not available for this section");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await onLoadMore();
-      toast.success(`More ${title} items loaded successfully`);
-    } catch (error) {
-      console.error("Failed to load more items:", error);
-      toast.error("Failed to load more items. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleItemSelection = (index: number) => {
-    setSelectedItems(prev => {
-      if (prev.includes(index)) {
-        return prev.filter(i => i !== index);
-      }
-      return [...prev, index];
-    });
+  // Determine variant classes
+  const variantClasses = {
+    purple: "from-purple-900/10 to-purple-800/5 border-purple-500/20 hover:bg-purple-900/10",
+    blue: "from-blue-900/10 to-blue-800/5 border-blue-500/20 hover:bg-blue-900/10",
+    green: "from-green-900/10 to-green-800/5 border-green-500/20 hover:bg-green-900/10",
+    amber: "from-amber-900/10 to-amber-800/5 border-amber-500/20 hover:bg-amber-900/10",
+    indigo: "from-indigo-900/10 to-indigo-800/5 border-indigo-500/20 hover:bg-indigo-900/10",
+    teal: "from-teal-900/10 to-teal-800/5 border-teal-500/20 hover:bg-teal-900/10",
+    rose: "from-rose-900/10 to-rose-800/5 border-rose-500/20 hover:bg-rose-900/10"
   };
   
-  const dummyItems = count > 0 ? Array.from({ length: Math.min(count, 5) }) : [1, 2, 3];
-
+  // Icon color classes
+  const iconColorClasses = {
+    purple: "text-purple-400",
+    blue: "text-blue-400",
+    green: "text-green-400",
+    amber: "text-amber-400",
+    indigo: "text-indigo-400",
+    teal: "text-teal-400",
+    rose: "text-rose-400"
+  };
+  
   return (
-    <div className="w-full">
-      <div 
-        className={cn(
-          "flex items-center justify-between p-3 rounded-lg cursor-pointer mb-2 transition-colors",
-          variantBgClasses[variant],
-          "border"
-        )}
-        onClick={onToggle}
-      >
+    <div 
+      className={cn(
+        "flex justify-between items-center p-3 rounded-lg cursor-pointer border bg-gradient-to-br transition-all",
+        variantClasses[variant]
+      )}
+      onClick={onToggle}
+    >
+      <div className="flex-1">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded-full bg-white/80">
-            {expanded ? (
-              <ChevronDown className={cn("h-4 w-4", variantClasses[variant])} />
-            ) : (
-              <ChevronRight className={cn("h-4 w-4", variantClasses[variant])} />
-            )}
-          </div>
-          <div>
-            <h4 className={cn("text-sm font-medium", variantClasses[variant])}>{title}</h4>
-            {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
-            )}
-          </div>
-        </div>
-        {count > 0 && (
-          <div className="bg-white/80 text-xs font-medium py-1 px-2 rounded-full">
-            {count}
-          </div>
-        )}
-      </div>
-
-      {expanded && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow className={cn(variantBgClasses[variant], "border")}>
-                <TableHead className="w-8 text-center">#</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dummyItems.map((_, index) => (
-                <TableRow 
-                  key={index}
-                  className={cn(
-                    "cursor-pointer transition-colors",
-                    selectedItems.includes(index) ? variantSelectedClasses[variant] : "",
-                    variantHoverClasses[variant]
-                  )}
-                  onClick={() => toggleItemSelection(index)}
-                >
-                  <TableCell className="text-center font-medium">{index + 1}</TableCell>
-                  <TableCell>Sample {title} Item {index + 1}</TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.info(`Action for ${title} item ${index + 1}`);
-                      }}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {count > 5 && (
-            <div className="flex justify-center mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(variantClasses[variant])}
-                onClick={handleLoadMore}
-                disabled={isLoading}
-              >
-                {isLoading ? "Loading..." : `Load More ${title}`}
-              </Button>
+          <h3 className="font-medium">{title}</h3>
+          {count !== undefined && (
+            <div className={`px-2 py-0.5 text-xs rounded-full bg-white/10 ${iconColorClasses[variant]}`}>
+              {count}
             </div>
           )}
-        </motion.div>
-      )}
+        </div>
+        {description && (
+          <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+        )}
+      </div>
+      <div className={cn("h-6 w-6 flex items-center justify-center rounded-full transition-colors", iconColorClasses[variant])}>
+        {expanded ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </div>
     </div>
   );
 }
