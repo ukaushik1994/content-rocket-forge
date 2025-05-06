@@ -33,13 +33,13 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-4 h-full">
       {/* Outline Card */}
-      <Card className="h-96 overflow-hidden border">
+      <Card className="flex-1 flex flex-col border">
         <CardHeader className="px-4 py-3 border-b">
           <CardTitle className="text-sm font-medium">Content Outline</CardTitle>
         </CardHeader>
-        <ScrollArea className="h-80">
+        <ScrollArea className="flex-1">
           <CardContent className="p-4 space-y-2">
             {outline.length > 0 ? (
               outline.map((section, index) => renderOutlineItem(section, index))
@@ -103,6 +103,6 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
           />
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 };

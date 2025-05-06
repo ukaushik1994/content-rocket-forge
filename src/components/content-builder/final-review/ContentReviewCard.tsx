@@ -99,7 +99,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </div>
         
         <TabsContent value="preview" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-          <ScrollArea className="flex-1 p-5">
+          <ScrollArea className="flex-1 p-5 h-[50vh]">
             <div className="prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none">
               {content.split('\n\n').map((paragraph, idx) => (
                 paragraph.startsWith('# ') ? (
@@ -124,7 +124,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </TabsContent>
         
         <TabsContent value="source" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 h-[50vh]">
             <pre className="p-5 text-xs font-mono whitespace-pre-wrap bg-secondary/10">{content}</pre>
           </ScrollArea>
         </TabsContent>

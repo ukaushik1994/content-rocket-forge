@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
 export const ContentEditor = ({
   content,
   onContentChange
@@ -31,26 +33,37 @@ export const ContentEditor = ({
     html = html.split('\n\n').map(p => `<p>${p}</p>`).join('');
     return html;
   };
-  return <Card className="border border-muted">
-      <Tabs defaultValue="write">
+  
+  return (
+    <Card className="border border-muted h-full flex-1 flex flex-col">
+      <Tabs defaultValue="write" className="flex-1 flex flex-col">
         <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="write">Write</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="write">
-          <Textarea value={content} onChange={handleChange} placeholder="Write your content here..." className="min-h-[1000px] border-0 focus-visible:ring-0 resize-none p-4" />
+        <TabsContent value="write" className="flex-1 m-0 data-[state=active]:flex flex-col">
+          <Textarea 
+            value={content} 
+            onChange={handleChange} 
+            placeholder="Write your content here..." 
+            className="min-h-[60vh] border-0 focus-visible:ring-0 resize-none p-4 flex-1" 
+          />
         </TabsContent>
         
-        <TabsContent value="preview">
-          <CardContent className="p-4">
-            <ScrollArea className="h-[500px]">
-              <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{
-              __html: renderMarkdown(content)
-            }} />
+        <TabsContent value="preview" className="flex-1 m-0 data-[state=active]:flex flex-col">
+          <CardContent className="p-4 flex-1">
+            <ScrollArea className="h-[60vh]">
+              <div 
+                className="prose prose-sm max-w-none dark:prose-invert" 
+                dangerouslySetInnerHTML={{
+                  __html: renderMarkdown(content)
+                }} 
+              />
             </ScrollArea>
           </CardContent>
         </TabsContent>
       </Tabs>
-    </Card>;
+    </Card>
+  );
 };

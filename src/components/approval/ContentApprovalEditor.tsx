@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -233,7 +232,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
               </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="min-h-[400px]">
+                <div className="h-[60vh]">
                   <ContentEditor
                     content={editedContent}
                     onContentChange={handleContentChange}
@@ -242,7 +241,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
               </TabsContent>
               
               <TabsContent value="preview" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                <div className="min-h-[400px] p-6 prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
+                <div className="h-[60vh] p-6 overflow-y-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none text-white/90">
                   {editedContent.split('\n\n').map((paragraph, idx) => (
                     paragraph.startsWith('# ') ? (
                       <h1 key={idx}>{paragraph.substring(2)}</h1>

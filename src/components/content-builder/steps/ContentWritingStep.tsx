@@ -84,7 +84,7 @@ export const ContentWritingStep = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full flex flex-col">
       <ContentGenerationHeader
         isGenerating={isGenerating}
         handleGenerateContent={handleGenerateContent}
@@ -104,9 +104,9 @@ export const ContentWritingStep = () => {
         />
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {showOutline && (
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
               outline={outline}
               selectedSolution={selectedSolution}
@@ -116,7 +116,7 @@ export const ContentWritingStep = () => {
           </div>
         )}
         
-        <div className={showOutline ? 'lg:col-span-2' : 'lg:col-span-3'}>
+        <div className={`${showOutline ? 'lg:col-span-2' : 'lg:col-span-3'} h-full flex`}>
           <ContentEditor
             content={content}
             onContentChange={handleContentChange}
