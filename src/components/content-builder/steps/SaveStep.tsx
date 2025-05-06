@@ -18,7 +18,8 @@ import {
   Mail,
   Loader2,
   Info,
-  CheckCircle
+  CheckCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 
