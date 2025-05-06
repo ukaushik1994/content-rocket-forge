@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
@@ -11,6 +11,7 @@ import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
+import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -31,33 +32,27 @@ export const OptimizeAndReviewStep = () => {
   } = useFinalReview();
   
   const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
+  const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems();
   
-  // Calculate completion percentage based on various completion factors
-  const getCompletionPercentage = () => {
-    let score = 0;
-    
-    // Check if meta title exists
-    if (state.metaTitle) score += 25;
-    
-    // Check if meta description exists
-    if (state.metaDescription) score += 25;
-    
-    // Check if document structure has been analyzed
-    if (state.documentStructure) score += 20;
-    
-    // Check if SEO score is above threshold
-    if (state.seoScore > 70) score += 20;
-    else if (state.seoScore > 50) score += 15;
-    else if (state.seoScore > 30) score += 10;
-    
-    // Check if solution integration has been done
-    if (state.solutionIntegrationMetrics) score += 10;
-    
-    // Cap at 100
-    return Math.min(score, 100);
+  // Handler for running checks specific to the current tab
+  const handleRunTabChecks = () => {
+    switch(activeTab) {
+      case 'overview':
+        runAllChecks();
+        break;
+      case 'optimize':
+        analyzeSolutionUsage();
+        break;
+      case 'seo':
+        analyzeSolutionUsage();
+        break;
+      case 'technical':
+        generateTitleSuggestions();
+        break;
+      default:
+        runAllChecks();
+    }
   };
-  
-  const completionPercentage = getCompletionPercentage();
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -65,7 +60,12 @@ export const OptimizeAndReviewStep = () => {
   
   return (
     <div className="space-y-8">
-      <FinalReviewHeader />
+      <FinalReviewHeader 
+        completionPercentage={completionPercentage} 
+        passedChecks={passedChecks}
+        totalChecks={totalChecks}
+        seoScore={state.seoScore}
+      />
       
       <SaveAndExportPanel 
         completionPercentage={completionPercentage}
@@ -77,7 +77,9 @@ export const OptimizeAndReviewStep = () => {
       
       <FinalReviewQuickActions 
         isRunningAllChecks={isRunningAllChecks}
-        runAllChecks={runAllChecks}
+        onRunAllChecks={runAllChecks}
+        activeTab={activeTab}
+        onRunTabChecks={handleRunTabChecks}
       />
       
       <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange}>
@@ -109,25 +111,65 @@ export const OptimizeAndReviewStep = () => {
         </TabsList>
         
         <TabsContent value="overview">
-          <OverviewTab />
+          <OverviewTab
+            content={state.content}
+            checklistItems={checklistItems}
+            onRunAllChecks={runAllChecks}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            onMetaTitleChange={(value) => state.dispatch({ type: 'SET_META_TITLE', payload: value })}
+            onMetaDescriptionChange={(value) => state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onGenerateMeta={generateMeta}
+          />
         </TabsContent>
         
         <TabsContent value="optimize">
-          <OptimizeTab />
+          <OptimizeTab
+            keywordUsage={keywordUsage}
+            mainKeyword={state.mainKeyword}
+            selectedKeywords={state.selectedKeywords}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            onMetaTitleChange={(value) => state.dispatch({ type: 'SET_META_TITLE', payload: value })}
+            onMetaDescriptionChange={(value) => state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onGenerateMeta={generateMeta}
+            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+            selectedSolution={state.selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
+            titleSuggestions={titleSuggestions}
+            isGeneratingTitles={isGeneratingTitles}
+            onGenerateTitleSuggestions={generateTitleSuggestions}
+            completionPercentage={completionPercentage}
+          />
         </TabsContent>
         
         <TabsContent value="seo">
           <SeoTabContent 
-            keywordUsage={keywordUsage} 
+            keywordUsage={keywordUsage}
+            mainKeyword={state.mainKeyword}
+            selectedKeywords={state.selectedKeywords}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            onMetaTitleChange={(value) => state.dispatch({ type: 'SET_META_TITLE', payload: value })}
+            onMetaDescriptionChange={(value) => state.dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onGenerateMeta={generateMeta}
+            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+            selectedSolution={state.selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
+            titleSuggestions={titleSuggestions}
+            isGeneratingTitles={isGeneratingTitles}
+            onGenerateTitleSuggestions={generateTitleSuggestions}
           />
         </TabsContent>
         
         <TabsContent value="technical">
           <TechnicalTabContent
-            isGeneratingTitles={isGeneratingTitles}
-            titleSuggestions={titleSuggestions}
-            generateTitleSuggestions={generateTitleSuggestions}
-            generateMeta={generateMeta}
+            documentStructure={state.documentStructure}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            serpData={serpData}
           />
         </TabsContent>
       </Tabs>
