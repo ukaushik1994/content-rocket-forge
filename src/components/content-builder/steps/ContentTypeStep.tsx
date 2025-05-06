@@ -30,7 +30,7 @@ const contentTypes = [
     formats: ['Product Page', 'Service Page', 'Lead Generation', 'Feature Highlight']
   },
   {
-    id: 'seo',
+    id: 'article',
     title: 'SEO Content',
     description: 'Keyword-optimized content designed to rank well in search results',
     icon: <Search className="h-5 w-5" />,
@@ -122,7 +122,7 @@ export const ContentTypeStep = () => {
     // Set content type in context (properly typed)
     dispatch({
       type: 'SET_CONTENT_TYPE',
-      payload: typeId as 'article' | 'landing-page' | 'blog' | 'seo' // Cast to expected ContentType
+      payload: typeId as 'article' | 'blog' | 'landing' | 'product' // Cast to allowed ContentType values
     });
     
     // Find the selected type to get available formats
@@ -139,7 +139,7 @@ export const ContentTypeStep = () => {
     setSelectedFormat(format);
     dispatch({
       type: 'SET_CONTENT_FORMAT',
-      payload: format as 'long-form' | 'short-form' | 'how-to' | 'list' // Cast to expected ContentFormat
+      payload: format as 'long-form' | 'short-form' | 'how-to' | 'listicle' // Cast to allowed ContentFormat values
     });
   };
   

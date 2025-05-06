@@ -1,134 +1,130 @@
 
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
-import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Custom hook to manage solutions data
- */
-export function useSolutionsData() {
+export const useSolutionsData = () => {
   const [solutions, setSolutions] = useState<Solution[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  /**
-   * Fetch solutions from API or use mock data
-   */
+  // Fetch all solutions
   const fetchSolutions = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Replace with actual API call when ready
-      // For now, use mock data with a small delay to simulate API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockData = [
-        {
-          id: '1',
-          name: 'Content Marketing Platform',
-          description: 'All-in-one solution for content creation and distribution',
-          features: ['AI content generation', 'SEO optimization', 'Content calendar'],
-          useCases: ['Marketing teams', 'Content creators'],
-          painPoints: ['Time-consuming content creation', 'Poor SEO performance'],
-          targetAudience: ['Marketing managers', 'Content strategists'],
-          category: 'Marketing', // Added required category
-          logoUrl: '',
-          externalUrl: '',
-          resources: [
-            { title: 'Getting Started', url: '#' },
-            { title: 'Case Study', url: '#' }
-          ]
-        },
-        {
-          id: '2',
-          name: 'SEO Analytics Suite',
-          description: 'Comprehensive SEO tracking and optimization tools',
-          features: ['Keyword tracking', 'Competitor analysis', 'Backlink monitoring'],
-          useCases: ['SEO agencies', 'Marketing departments'],
-          painPoints: ['Lack of visibility into SEO performance', 'Manual reporting'],
-          targetAudience: ['SEO specialists', 'Digital marketers'],
-          category: 'Analytics', // Added required category
-          logoUrl: '',
-          externalUrl: '',
-          resources: []
-        }
-      ];
-      
-      setSolutions(mockData);
+      const { data, error: fetchError } = await supabase
+        .from('solutions')
+        .select('*');
+
+      if (fetchError) throw fetchError;
+
+      if (data) {
+        const formattedSolutions: Solution[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          features: item.features || [],
+          useCases: item.use_cases || [],
+          painPoints: item.pain_points || [],
+          targetAudience: item.target_audience || [],
+          category: item.category || 'Other', // Ensure category has a default
+          logoUrl: item.logo_url,
+          externalUrl: item.external_url,
+          resources: item.resources || []
+        }));
+        
+        setSolutions(formattedSolutions);
+      }
     } catch (err) {
       console.error('Error fetching solutions:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch solutions'));
-      toast.error('Failed to load solutions');
     } finally {
       setIsLoading(false);
     }
   }, []);
-
-  /**
-   * Add a new solution
-   */
-  const addSolution = useCallback(async (solution: Omit<Solution, 'id'>) => {
+  
+  // Add a new solution
+  const addSolution = async (solution: Omit<Solution, 'id'>, logoUrl?: string): Promise<string> => {
     try {
-      // Create new solution with ID
-      const newSolution: Solution = {
-        ...solution,
-        id: `sol_${Date.now()}`,
-        // Ensure category has a value even if not provided
-        category: solution.category || 'Other',
-        resources: solution.resources || []
-      };
+      const newId = uuidv4();
       
-      setSolutions(prev => [...prev, newSolution]);
-      toast.success('Solution added successfully');
-      return newSolution.id;
+      const { error: insertError } = await supabase
+        .from('solutions')
+        .insert({
+          id: newId,
+          name: solution.name,
+          description: solution.description,
+          features: solution.features,
+          use_cases: solution.useCases, 
+          pain_points: solution.painPoints,
+          target_audience: solution.targetAudience,
+          category: solution.category,
+          logo_url: logoUrl || solution.logoUrl,
+          external_url: solution.externalUrl,
+          resources: solution.resources
+        });
+
+      if (insertError) throw insertError;
+      
+      // Refresh the list
+      await fetchSolutions();
+      
+      return newId;
     } catch (err) {
       console.error('Error adding solution:', err);
-      toast.error('Failed to add solution');
-      throw err;
+      throw err instanceof Error ? err : new Error('Failed to add solution');
     }
-  }, []);
-
-  /**
-   * Update an existing solution
-   */
-  const updateSolution = useCallback(async (id: string, solution: Partial<Solution>) => {
+  };
+  
+  // Update a solution
+  const updateSolution = async (id: string, solution: Partial<Solution>, logoUrl?: string): Promise<void> => {
     try {
-      setSolutions(prev => 
-        prev.map(sol => 
-          sol.id === id 
-            ? { 
-                ...sol, 
-                ...solution,
-                // Ensure category has a value even if not provided
-                category: solution.category || sol.category || 'Other'
-              } 
-            : sol
-        )
-      );
-      toast.success('Solution updated successfully');
-      return true;
+      const { error: updateError } = await supabase
+        .from('solutions')
+        .update({
+          name: solution.name,
+          description: solution.description,
+          features: solution.features,
+          use_cases: solution.useCases, 
+          pain_points: solution.painPoints,
+          target_audience: solution.targetAudience,
+          category: solution.category,
+          logo_url: logoUrl || solution.logoUrl,
+          external_url: solution.externalUrl,
+          resources: solution.resources
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+      
+      // Refresh the list
+      await fetchSolutions();
     } catch (err) {
       console.error('Error updating solution:', err);
-      toast.error('Failed to update solution');
-      return false;
+      throw err instanceof Error ? err : new Error('Failed to update solution');
     }
-  }, []);
-
-  /**
-   * Delete a solution by id
-   */
-  const deleteSolution = useCallback(async (id: string) => {
+  };
+  
+  // Delete a solution
+  const deleteSolution = async (id: string): Promise<void> => {
     try {
-      setSolutions(prev => prev.filter(sol => sol.id !== id));
-      toast.success('Solution deleted successfully');
-      return true;
+      const { error: deleteError } = await supabase
+        .from('solutions')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      
+      // Update local state instead of refetching
+      setSolutions(solutions.filter(solution => solution.id !== id));
     } catch (err) {
       console.error('Error deleting solution:', err);
-      toast.error('Failed to delete solution');
-      return false;
+      throw err instanceof Error ? err : new Error('Failed to delete solution');
     }
-  }, []);
+  };
 
   return {
     solutions,
@@ -139,4 +135,4 @@ export function useSolutionsData() {
     updateSolution,
     deleteSolution
   };
-}
+};
