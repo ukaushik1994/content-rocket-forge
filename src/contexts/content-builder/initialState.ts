@@ -48,6 +48,13 @@ export const initialState: ContentBuilderState = {
   seoScore: 0,
   seoImprovements: [],
   optimizationSkipped: false,
+  seoAnalysisResults: {
+    keywordScore: 0,
+    readabilityScore: 0,
+    contentLengthScore: 0,
+    structureScore: 0
+  },
+  seoOptimizationMetrics: null,
   
   // Selected Cluster
   selectedCluster: null,

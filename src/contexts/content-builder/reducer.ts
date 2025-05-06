@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 
 export const contentBuilderReducer = (
@@ -77,7 +76,7 @@ export const contentBuilderReducer = (
       return {
         ...state,
         serpSelections: state.serpSelections.filter(
-          selection => selection.id !== action.payload
+          selection => selection.content !== action.payload
         )
       };
       

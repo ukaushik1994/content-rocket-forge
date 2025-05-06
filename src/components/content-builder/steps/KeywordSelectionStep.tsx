@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -125,7 +124,7 @@ export const KeywordSelectionStep = () => {
   const handleToggleSelection = (type: string, content: string) => {
     dispatch({
       type: 'ADD_SERP_SELECTION',
-      payload: { type, content }
+      payload: { type, content, selected: true }
     });
   };
   

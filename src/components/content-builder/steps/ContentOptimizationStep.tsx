@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentOptimization } from '@/hooks/useContentOptimization';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
@@ -75,7 +74,7 @@ export const ContentOptimizationStep = () => {
         scores={scores}
         seoScore={seoScore}
         isAnalyzing={isAnalyzing}
-        handleApplyImprovement={handleApplyImprovement}
+        handleApplyImprovement={(id) => handleApplyImprovement(id)}
         isImprovementApplied={isImprovementApplied}
         getScoreColor={getScoreColor}
         hasRunAnalysis={hasRunAnalysis}

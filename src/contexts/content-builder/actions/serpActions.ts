@@ -11,7 +11,7 @@ export const createSerpActions = (
     if (!keyword) return;
     
     // Start loading
-    dispatch({ type: 'SET_IS_ANALYZING', payload: true });
+    dispatch({ type: 'SET_ANALYZING', payload: true });
     
     try {
       // Make API call to analyze keyword
@@ -34,14 +34,14 @@ export const createSerpActions = (
       toast.error("Failed to analyze keyword. Please check your API key and try again.");
     } finally {
       // End loading
-      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
+      dispatch({ type: 'SET_ANALYZING', payload: false });
     }
   };
   
   const addContentFromSerp = (content: string, type: string) => {
     dispatch({ 
-      type: 'TOGGLE_SERP_SELECTION', 
-      payload: { type, content } 
+      type: 'ADD_SERP_SELECTION', 
+      payload: { type, content, selected: true } 
     });
   };
   
@@ -88,8 +88,8 @@ export const createSerpActions = (
     
     dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     
-    // Navigate to the next step - fix the action type here
-    dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
+    // Navigate to the next step
+    dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 });
   };
   
   return {
@@ -98,4 +98,3 @@ export const createSerpActions = (
     generateOutlineFromSelections,
   };
 };
-

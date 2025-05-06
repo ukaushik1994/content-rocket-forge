@@ -35,6 +35,24 @@ export interface UseSeoAnalysisProps {
   selectedKeywords: string[];
 }
 
+export interface SeoAnalysisScores {
+  keywordUsage: number;
+  contentLength: number;
+  readability: number;
+}
+
+export interface UseSeoAnalysisReturn {
+  isAnalyzing: boolean;
+  keywordUsage: KeywordUsage[];
+  recommendations: string[];
+  scores: SeoAnalysisScores;
+  improvements: any[];
+  analysisError: string | null;
+  runSeoAnalysis: () => void;
+  getScoreColor: (score: number) => string;
+  forceSkipAnalysis: () => void;
+}
+
 export interface UseSeoAnalysisResult {
   isAnalyzing: boolean;
   hasAnalyzed: boolean;
