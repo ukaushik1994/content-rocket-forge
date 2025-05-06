@@ -80,13 +80,14 @@ export const useSaveContent = () => {
       
       // If that doesn't work, use the content context directly
       if (!contentId) {
+        // Remove the meta_description field as it's not part of ContentItemType
         await addContentItem({
           title: publishParams.title,
           content: publishParams.content || '',
           status: 'published',
           seo_score: state.seoScore,
           keywords: [state.mainKeyword, ...state.selectedKeywords],
-          meta_description: state.metaDescription || undefined,
+          // We're removing meta_description as it's not part of the accepted type
         });
       }
       
