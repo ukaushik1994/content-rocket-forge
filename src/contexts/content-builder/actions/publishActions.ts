@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, SaveContentParams } from '../types';
+import { ContentBuilderState, ContentBuilderAction, SaveContentParams } from '../types/index';
 
 export const createPublishActions = (
   state: ContentBuilderState, 
@@ -60,3 +60,4 @@ export const createPublishActions = (
     saveContentToPublished
   };
 };
+

@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types';
+import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 
 export const createSeoActions = (
   state: ContentBuilderState, 
@@ -34,3 +34,4 @@ export const createSeoActions = (
     skipOptimizationStep
   };
 };
+

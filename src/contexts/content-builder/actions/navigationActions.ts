@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types';
+import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 
 export const createNavigationActions = (
   state: ContentBuilderState, 
@@ -35,3 +35,4 @@ export const createNavigationActions = (
     navigateToStep
   };
 };
+

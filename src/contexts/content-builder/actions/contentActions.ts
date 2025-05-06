@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent, OutlineSection } from '../types';
+import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent, OutlineSection } from '../types/index';
 
 export const createContentActions = (
   state: ContentBuilderState, 
@@ -132,3 +132,4 @@ export const createContentActions = (
     saveContentToPublished
   };
 };
+

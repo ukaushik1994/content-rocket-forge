@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types';
+import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 
 export const createKeywordActions = (
   state: ContentBuilderState, 
@@ -23,3 +23,4 @@ export const createKeywordActions = (
     removeKeyword
   };
 };
+

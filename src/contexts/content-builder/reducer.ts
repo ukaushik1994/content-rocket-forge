@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from './types';
+import { ContentBuilderState, ContentBuilderAction } from './types/index';
 import { OutlineSection } from './types/outline-types';
 
 export const contentBuilderReducer = (
@@ -258,3 +258,4 @@ export const contentBuilderReducer = (
       return state;
   }
 };
+

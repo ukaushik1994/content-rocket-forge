@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 
@@ -98,3 +98,4 @@ export const createSerpActions = (
     generateOutlineFromSelections,
   };
 };
+

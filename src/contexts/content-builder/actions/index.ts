@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from '../types';
+import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from '../types/index';
 import { createKeywordActions } from './keywordActions';
 import { createContentActions } from './contentActions';
 import { createSerpActions } from './serpActions';
@@ -33,3 +33,4 @@ export const createContentBuilderActions = (
     ...seoActions
   };
 };
+

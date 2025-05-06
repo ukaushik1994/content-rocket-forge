@@ -3,7 +3,7 @@ import React, { createContext, useContext, useReducer } from 'react';
 import { contentBuilderReducer } from './reducer';
 import { initialState } from './initialState';
 import { createContentBuilderActions } from './actions';
-import { ContentBuilderContextType, ContentBuilderState, ContentBuilderAction } from './types';
+import { ContentBuilderContextType, ContentBuilderState, ContentBuilderAction } from './types/index';
 
 // Create the context
 const ContentBuilderContext = createContext<ContentBuilderContextType | undefined>(undefined);
@@ -36,3 +36,4 @@ export const useContentBuilder = () => {
   }
   return context;
 };
+
