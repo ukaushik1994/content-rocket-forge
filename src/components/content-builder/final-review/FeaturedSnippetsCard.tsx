@@ -48,7 +48,9 @@ export const FeaturedSnippetsCard = ({ snippets }: FeaturedSnippetsCardProps) =>
               </div>
               <p className="text-sm mb-2">{snippet.content}</p>
               <div className="text-xs text-muted-foreground">
-                Source: <a href={snippet.source} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{new URL(snippet.source).hostname}</a>
+                Source: <a href={snippet.source} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
+                  {getDisplayUrl(snippet.source)}
+                </a>
               </div>
             </div>
           ))}
@@ -60,4 +62,22 @@ export const FeaturedSnippetsCard = ({ snippets }: FeaturedSnippetsCardProps) =>
       </CardContent>
     </Card>
   );
+};
+
+// Helper function to safely extract display URL
+const getDisplayUrl = (urlString: string): string => {
+  try {
+    // Check if the URL starts with http:// or https://
+    if (!urlString.startsWith('http://') && !urlString.startsWith('https://')) {
+      // Add https:// if missing
+      urlString = 'https://' + urlString;
+    }
+    
+    const url = new URL(urlString);
+    return url.hostname;
+  } catch (error) {
+    // If URL parsing fails, return the original string or a fallback
+    console.warn('Invalid URL:', urlString);
+    return urlString.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] || 'unknown source';
+  }
 };
