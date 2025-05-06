@@ -18,7 +18,7 @@ export const SkipWarning = ({ onSkip, onCancel }: SkipWarningProps) => {
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <Alert variant="warning" className="border-yellow-300 bg-yellow-50">
+      <Alert variant="destructive" className="border-yellow-300 bg-yellow-50">
         <AlertTriangle className="h-4 w-4 text-yellow-600" />
         <AlertTitle className="text-yellow-800">SEO Optimization Skipped</AlertTitle>
         <AlertDescription className="text-yellow-700 mt-1">

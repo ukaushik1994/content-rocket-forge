@@ -7,4 +7,5 @@ export * from './useSeoAnalysis';
 export * from './useAnalysisOperation';
 export * from './types';
 export * from './utils';
-export * from './constants';
+// Export constants explicitly to avoid duplicate exports
+export { ANALYSIS_TIMEOUT } from './constants';

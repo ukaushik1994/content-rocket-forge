@@ -90,7 +90,7 @@ export const ContentOptimizationContainer = memo(({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {isContentTooShort && !isAnalyzing && (
         <div className="lg:col-span-3">
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="destructive" className="mb-4 bg-yellow-50 border-yellow-300 text-yellow-800">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Content is too short</AlertTitle>
             <AlertDescription>
