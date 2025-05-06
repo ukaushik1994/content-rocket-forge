@@ -1,20 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles, ArrowRight, AlertTriangle } from 'lucide-react';
-import { motion } from 'framer-motion';
-
-// Custom hooks
+import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
 import { useSeoAnalysis } from '@/hooks/useSeoAnalysis';
 import { useContentRewriter } from '@/hooks/useContentRewriter';
-
-// Components
-import { SeoScoreCard } from '@/components/content-builder/optimization/SeoScoreCard';
-import { RecommendationsCard } from '@/components/content-builder/optimization/RecommendationsCard';
-import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
+import { SeoAnalysisHeader } from '@/components/content-builder/optimization/SeoAnalysisHeader';
+import { ProgressBar } from '@/components/content-builder/optimization/ProgressBar';
+import { SkipWarning } from '@/components/content-builder/optimization/SkipWarning';
+import { Confetti } from '@/components/content-builder/optimization/Confetti';
+import { ContentOptimizationContainer } from '@/components/content-builder/optimization/ContentOptimizationContainer';
 
 export const OptimizationStep = () => {
   const { state, skipOptimizationStep } = useContentBuilder();
@@ -82,171 +76,43 @@ export const OptimizationStep = () => {
   
   return (
     <div className="space-y-6">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-purple-900/20 via-blue-900/10 to-blue-900/5 border border-purple-500/20 rounded-xl p-6 shadow-xl"
-      >
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h3 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
-              <span className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-500" />
-                SEO Content Optimization
-              </span>
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Analyze your content and apply AI-powered optimizations to increase your SEO score.
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {seoScore > 0 && (
-              <Badge variant="outline" className="bg-card px-3 py-1.5 text-xs font-medium flex items-center gap-1.5">
-                <BarChart2 className="h-3.5 w-3.5 text-purple-500" />
-                <span>Score: </span>
-                <span className={`font-bold ${seoScore >= 70 ? 'text-green-500' : seoScore >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
-                  {seoScore}
-                </span>
-              </Badge>
-            )}
-            
-            {/* Skip button or Continue button depending on status */}
-            {hasRunAnalysis && seoScore < 70 && (
-              <Button
-                onClick={skipOptimizationStep}
-                className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600"
-                size="sm"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Continue Anyway
-              </Button>
-            )}
-            
-            <Button
-              onClick={runSeoAnalysis}
-              disabled={isAnalyzing || !content || content.length < 300}
-              className={seoScore > 0 ? 'gap-2' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-2 shadow-md shadow-purple-500/20'}
-              size="sm"
-            >
-              {isAnalyzing ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4" />
-                  {seoScore > 0 ? 'Re-analyze' : 'Analyze Content'}
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-        
-        {/* Progress indicator for applied recommendations */}
-        {totalCount > 0 && (
-          <div className="mt-4 pt-4 border-t border-purple-500/10">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Optimizations Applied</span>
-              <span className="text-xs font-medium">{appliedCount}/{totalCount}</span>
-            </div>
-            <div className="h-1.5 w-full bg-purple-900/20 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-purple-600 to-blue-600"
-                style={{ width: `${progressPercentage}%` }}
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercentage}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </div>
-        )}
-      </motion.div>
+      <SeoAnalysisHeader
+        seoScore={seoScore}
+        isAnalyzing={isAnalyzing}
+        runSeoAnalysis={runSeoAnalysis}
+        hasRunAnalysis={hasRunAnalysis}
+        skipOptimizationStep={skipOptimizationStep}
+        content={content}
+      />
+      
+      {totalCount > 0 && (
+        <ProgressBar 
+          appliedCount={appliedCount} 
+          totalCount={totalCount} 
+          progressPercentage={progressPercentage} 
+        />
+      )}
       
       {/* Skip Warning Card */}
       {showSkipWarning && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg"
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div className="space-y-2">
-              <p className="text-sm">
-                You haven't run the content analysis yet. For the best SEO performance, we recommend analyzing your content before moving to the next step.
-              </p>
-              <div className="flex gap-3">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="bg-white border-amber-200 hover:bg-amber-50 text-amber-700"
-                  onClick={() => setShowSkipWarning(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  size="sm"
-                  className="bg-amber-500 hover:bg-amber-600 text-white"
-                  onClick={skipOptimizationStep}
-                >
-                  Skip Anyway
-                </Button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        <SkipWarning 
+          onSkip={skipOptimizationStep} 
+          onCancel={() => setShowSkipWarning(false)} 
+        />
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <RecommendationsCard 
-              recommendations={recommendations} 
-              recommendationIds={recommendationIds}
-              isAnalyzing={isAnalyzing}
-              handleRewriteContent={handleRewriteContent}
-              isRecommendationApplied={isRecommendationApplied}
-            />
-          </motion.div>
-        </div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <SeoScoreCard 
-            seoScore={seoScore} 
-            scores={scores} 
-            getScoreColor={getScoreColor}
-          />
-          
-          {/* Skip button card */}
-          {!hasRunAnalysis && (
-            <div className="mt-4 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Don't want to optimize your content now?
-                </p>
-                <Button 
-                  onClick={handleSkipConfirm} 
-                  variant="outline" 
-                  className="w-full border-gray-300"
-                >
-                  Skip Optimization <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </div>
+      <ContentOptimizationContainer
+        recommendations={recommendations}
+        recommendationIds={recommendationIds}
+        scores={scores}
+        seoScore={seoScore}
+        isAnalyzing={isAnalyzing}
+        handleRewriteContent={handleRewriteContent}
+        isRecommendationApplied={isRecommendationApplied}
+        getScoreColor={getScoreColor}
+        hasRunAnalysis={hasRunAnalysis}
+        handleSkipConfirm={handleSkipConfirm}
+      />
       
       <ContentRewriteDialog
         open={showRewriteDialog}
@@ -258,33 +124,7 @@ export const OptimizationStep = () => {
         onApplyContent={applyRewrittenContent}
       />
       
-      {/* Confetti effect for high scores */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none flex justify-center">
-          <div className="w-full h-full max-w-5xl">
-            {[...Array(50)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 rounded-full"
-                style={{
-                  background: `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`,
-                  top: `${Math.random() * -20}%`,
-                  left: `${Math.random() * 100}%`
-                }}
-                animate={{
-                  y: ['0vh', '100vh'],
-                  x: [`${Math.random() * 10 - 5}px`, `${Math.random() * 100 - 50}px`]
-                }}
-                transition={{
-                  duration: Math.random() * 2 + 1,
-                  ease: "easeOut",
-                  delay: Math.random() * 0.5
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <Confetti show={showConfetti} />
     </div>
   );
 };
