@@ -89,9 +89,15 @@ export const SolutionIntegrationCard = ({
               <div>
                 <div className="flex justify-between items-center text-xs mb-1">
                   <span className="font-medium">Name Mentions</span>
-                  <span>{metrics.mentions || 0} times</span>
+                  <span>{typeof metrics.nameMentions === 'number' ? metrics.nameMentions : 0} times</span>
                 </div>
-                <Progress value={Math.min((metrics.mentions || 0) * 20, 100)} className="h-1.5" />
+                <Progress 
+                  value={Math.min(
+                    typeof metrics.nameMentions === 'number' ? metrics.nameMentions * 20 : 0, 
+                    100
+                  )} 
+                  className="h-1.5" 
+                />
               </div>
               
               <div>
