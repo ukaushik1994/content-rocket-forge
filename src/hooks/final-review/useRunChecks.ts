@@ -7,7 +7,6 @@ import { useMetaGenerator } from './useMetaGenerator';
 import { useSolutionAnalysis } from './useSolutionAnalysis';
 import { useStepCompletion } from './useStepCompletion';
 import { useTitleSuggestions } from './useTitleSuggestions';
-import { useConfetti } from './useConfetti';
 
 // Standard toast configuration
 const toastConfig = {
@@ -30,7 +29,6 @@ export const useRunChecks = () => {
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
   const { analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
   const { checkStepCompletion } = useStepCompletion();
-  const { triggerConfetti } = useConfetti();
   
   // Run all checks at once
   const runAllChecks = async () => {
@@ -57,7 +55,7 @@ export const useRunChecks = () => {
         toast.success("Title suggestions generated", { id: "titles-generated" });
       }
       
-      // Check if all checks pass to trigger confetti
+      // Check if all checks pass
       const allPassed = checkStepCompletion();
       
       if (allPassed) {
@@ -65,9 +63,6 @@ export const useRunChecks = () => {
           id: "all-checks-passed",
           duration: 5000,
         });
-        
-        // Show confetti for a delightful experience
-        setTimeout(() => triggerConfetti(), 500);
       } else {
         toast.info("Checks completed. Some items need attention.", {
           id: "checks-with-issues",

@@ -9,7 +9,6 @@ import { useMetaGenerator } from './final-review/useMetaGenerator';
 import { useSolutionAnalysis } from './final-review/useSolutionAnalysis';
 import { useStepCompletion } from './final-review/useStepCompletion';
 import { useTitleSuggestions } from './final-review/useTitleSuggestions';
-import { useConfetti } from './final-review/useConfetti';
 import { useDocumentAnalysis } from './final-review/useDocumentAnalysis';
 import { useRunChecks } from './final-review/useRunChecks';
 import { useDebugLogging } from './final-review/useDebugLogging';

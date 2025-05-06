@@ -11,8 +11,7 @@ import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
-import { OptimizationStep } from './steps/OptimizationStep';
-import { FinalReviewStep } from './steps/FinalReviewStep';
+import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
@@ -32,15 +31,6 @@ export const ContentBuilder = () => {
   const handleNextStep = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
-    console.log("Optimization skipped:", state.optimizationSkipped);
-    
-    // For optimization step (id 5), check if we need to skip it
-    if (steps[activeStep].id === 5 && !steps[activeStep].completed && state.optimizationSkipped) {
-      // If optimization is skipped, move to next step
-      console.log("Optimization was skipped, moving to next step");
-      navigateToStep(activeStep + 1);
-      return;
-    }
     
     navigateToStep(activeStep + 1);
   };
@@ -54,8 +44,7 @@ export const ContentBuilder = () => {
   useEffect(() => {
     console.log("Current step:", steps[activeStep]);
     console.log("Steps status:", steps.map(s => `${s.id}: ${s.name} - Completed: ${s.completed}, Analyzed: ${s.analyzed}`));
-    console.log("Optimization skipped:", state.optimizationSkipped);
-  }, [activeStep, steps, state.optimizationSkipped]);
+  }, [activeStep, steps]);
   
   // Render the current step component
   const renderStepContent = () => {
@@ -67,8 +56,7 @@ export const ContentBuilder = () => {
       case 1: return <ContentTypeStep />;
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
-      case 5: return <OptimizationStep />;
-      case 6: return <FinalReviewStep />;
+      case 5: return <OptimizeAndReviewStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -88,7 +76,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 6;
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">

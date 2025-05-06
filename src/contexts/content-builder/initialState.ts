@@ -10,8 +10,7 @@ export const initialState: ContentBuilderState = {
     { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
     { id: 3, name: 'Content Outline', description: 'Create your outline', completed: false, visited: false },
     { id: 4, name: 'Content Writing', description: 'Write your content', completed: false, visited: false },
-    { id: 5, name: 'Optimization', description: 'Optimize for search', completed: false, visited: false, analyzed: false },
-    { id: 6, name: 'Final Review', description: 'Review and publish', completed: false, visited: false }
+    { id: 5, name: 'Optimize & Review', description: 'Optimize and review your content', completed: false, visited: false, analyzed: false }
   ],
   
   // Keywords

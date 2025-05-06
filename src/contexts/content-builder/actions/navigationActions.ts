@@ -19,12 +19,6 @@ export const createNavigationActions = (
     
     // Check if trying to navigate forward
     if (step > state.activeStep) {
-      // Special case: Allow navigation to final review if optimization is skipped
-      if (targetStep.id === 6 && state.optimizationSkipped) {
-        dispatch({ type: 'SET_CURRENT_STEP', payload: step });
-        return;
-      }
-      
       // Check if all previous steps are completed before allowing forward navigation
       // First get all steps with IDs less than the target step's ID
       const previousSteps = state.steps.filter(s => s.id < targetStep.id);

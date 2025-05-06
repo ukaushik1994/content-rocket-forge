@@ -12,7 +12,7 @@ export const useStepCompletion = () => {
     const { metaTitle, metaDescription, documentStructure } = state;
     
     if (metaTitle && metaDescription && documentStructure) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
       return true;
     }
     
