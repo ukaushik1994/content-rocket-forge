@@ -5,55 +5,13 @@ export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
   steps: [
-    {
-      id: 0,
-      name: 'Keyword Research',
-      description: 'Research and select keywords for your content',
-      completed: false,
-      visited: true
-    },
-    {
-      id: 1,
-      name: 'Content Type',
-      description: 'Choose the type of content you want to create',
-      completed: false,
-      visited: false
-    },
-    {
-      id: 2,
-      name: 'SERP Analysis',
-      description: 'Analyze search results for your keywords',
-      completed: false,
-      visited: false
-    },
-    {
-      id: 3,
-      name: 'Content Outline',
-      description: 'Create an outline for your content',
-      completed: false,
-      visited: false
-    },
-    {
-      id: 4,
-      name: 'Content Writing',
-      description: 'Write or generate your content',
-      completed: false,
-      visited: false
-    },
-    {
-      id: 5,
-      name: 'Optimization',
-      description: 'Optimize your content for SEO',
-      completed: false,
-      visited: false
-    },
-    {
-      id: 6,
-      name: 'Final Review',
-      description: 'Review and finalize your content',
-      completed: false,
-      visited: false
-    }
+    { id: 0, name: 'Keyword Selection', description: 'Choose your target keywords', completed: false, visited: true },
+    { id: 1, name: 'Content Type', description: 'Select content type and format', completed: false, visited: false },
+    { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
+    { id: 3, name: 'Content Outline', description: 'Create your outline', completed: false, visited: false },
+    { id: 4, name: 'Content Writing', description: 'Write your content', completed: false, visited: false },
+    { id: 5, name: 'Optimization', description: 'Optimize for search', completed: false, visited: false, analyzed: false },
+    { id: 6, name: 'Final Review', description: 'Review and publish', completed: false, visited: false }
   ],
   
   // Keywords
@@ -90,20 +48,21 @@ export const initialState: ContentBuilderState = {
   // SEO
   seoScore: 0,
   seoImprovements: [],
+  optimizationSkipped: false,
   
   // Selected Cluster
   selectedCluster: null,
-
+  
   // Meta Information
   metaTitle: null,
   metaDescription: null,
-
+  
   // Document Structure
   documentStructure: null,
-
+  
   // Solution Integration
   solutionIntegrationMetrics: null,
-
+  
   // Additional Instructions
   additionalInstructions: ''
 };

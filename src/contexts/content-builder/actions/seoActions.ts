@@ -14,14 +14,23 @@ export const createSeoActions = (
     
     // Set a dummy SEO score for now
     dispatch({ type: 'SET_SEO_SCORE', payload: 75 });
+    
+    // Mark step as analyzed regardless of score
+    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
   };
   
   const applySeoImprovement = (id: string) => {
     dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: id });
   };
   
+  const skipOptimizationStep = () => {
+    dispatch({ type: 'SKIP_OPTIMIZATION_STEP' });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+  };
+  
   return {
     analyzeSeo,
-    applySeoImprovement
+    applySeoImprovement,
+    skipOptimizationStep
   };
 };

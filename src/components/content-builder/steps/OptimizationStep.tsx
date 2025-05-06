@@ -4,7 +4,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles } from 'lucide-react';
+import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles, ArrowRight, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Custom hooks
@@ -17,9 +17,10 @@ import { RecommendationsCard } from '@/components/content-builder/optimization/R
 import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
 
 export const OptimizationStep = () => {
-  const { state } = useContentBuilder();
+  const { state, skipOptimizationStep } = useContentBuilder();
   const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showSkipWarning, setShowSkipWarning] = useState(false);
   
   // Use custom hooks for functionality
   const { 
@@ -57,6 +58,19 @@ export const OptimizationStep = () => {
       return () => clearTimeout(timer);
     }
   }, [seoScore]);
+  
+  // Check if analysis has been run
+  const hasRunAnalysis = state.steps[5] && state.steps[5].analyzed;
+  
+  // Handle skip with confirmation
+  const handleSkipConfirm = () => {
+    if (!hasRunAnalysis && !showSkipWarning) {
+      setShowSkipWarning(true);
+    } else {
+      skipOptimizationStep();
+      setShowSkipWarning(false);
+    }
+  };
   
   // Get recommendation IDs from the state
   const recommendationIds = seoImprovements ? seoImprovements.map(item => item.id) : [];
@@ -96,6 +110,18 @@ export const OptimizationStep = () => {
                   {seoScore}
                 </span>
               </Badge>
+            )}
+            
+            {/* Skip button or Continue button depending on status */}
+            {hasRunAnalysis && seoScore < 70 && (
+              <Button
+                onClick={skipOptimizationStep}
+                className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600"
+                size="sm"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Continue Anyway
+              </Button>
             )}
             
             <Button
@@ -139,6 +165,41 @@ export const OptimizationStep = () => {
         )}
       </motion.div>
       
+      {/* Skip Warning Card */}
+      {showSkipWarning && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm">
+                You haven't run the content analysis yet. For the best SEO performance, we recommend analyzing your content before moving to the next step.
+              </p>
+              <div className="flex gap-3">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white border-amber-200 hover:bg-amber-50 text-amber-700"
+                  onClick={() => setShowSkipWarning(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm"
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  onClick={skipOptimizationStep}
+                >
+                  Skip Anyway
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <motion.div 
@@ -166,6 +227,24 @@ export const OptimizationStep = () => {
             scores={scores} 
             getScoreColor={getScoreColor}
           />
+          
+          {/* Skip button card */}
+          {!hasRunAnalysis && (
+            <div className="mt-4 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Don't want to optimize your content now?
+                </p>
+                <Button 
+                  onClick={handleSkipConfirm} 
+                  variant="outline" 
+                  className="w-full border-gray-300"
+                >
+                  Skip Optimization <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
       

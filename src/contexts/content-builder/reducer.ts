@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, OutlineSection } from './types';
 
 export const contentBuilderReducer = (
@@ -29,6 +28,20 @@ export const contentBuilderReducer = (
         steps: state.steps.map((step, index) => 
           step.id === action.payload ? { ...step, visited: true } : step
         )
+      };
+      
+    case 'MARK_STEP_ANALYZED':
+      return {
+        ...state,
+        steps: state.steps.map((step, index) => 
+          step.id === action.payload ? { ...step, analyzed: true } : step
+        )
+      };
+      
+    case 'SKIP_OPTIMIZATION_STEP':
+      return {
+        ...state,
+        optimizationSkipped: true
       };
       
     case 'SET_MAIN_KEYWORD':

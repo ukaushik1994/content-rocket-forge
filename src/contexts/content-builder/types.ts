@@ -8,6 +8,7 @@ export interface ContentBuilderStep {
   description: string;
   completed: boolean;
   visited: boolean;
+  analyzed?: boolean; // New field to track if analysis has been run
 }
 
 // SERP Selection Types
@@ -182,6 +183,7 @@ export interface ContentBuilderState {
   // SEO
   seoScore: number;
   seoImprovements: SeoImprovement[];
+  optimizationSkipped: boolean; // New field to track if optimization was skipped
   
   // Selected Cluster
   selectedCluster: ContentCluster | null;
@@ -205,6 +207,8 @@ export type ContentBuilderAction =
   | { type: 'SET_CURRENT_STEP'; payload: number }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
   | { type: 'MARK_STEP_VISITED'; payload: number }
+  | { type: 'MARK_STEP_ANALYZED'; payload: number } // New action type
+  | { type: 'SKIP_OPTIMIZATION_STEP' } // New action type
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
   | { type: 'SET_SERP_DATA'; payload: any }
@@ -268,6 +272,7 @@ export interface ContentBuilderContextType {
   // SEO Actions
   analyzeSeo: (content: string) => Promise<void>;
   applySeoImprovement: (id: string) => void;
+  skipOptimizationStep: () => void; // New method
 
   // Advanced Content Actions
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;

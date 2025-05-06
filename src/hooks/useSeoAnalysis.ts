@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export const useSeoAnalysis = () => {
   const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, selectedKeywords, seoScore } = state;
+  const { content, mainKeyword, selectedKeywords, seoScore, seoImprovements } = state;
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
@@ -33,11 +33,11 @@ export const useSeoAnalysis = () => {
       setKeywordUsage(usage);
     }
     
-    // Mark step as complete if we have a good SEO score
-    if (seoScore >= 70) {
+    // Mark step as complete if we have a good SEO score or step has been analyzed
+    if (seoScore >= 70 || (state.steps[5] && state.steps[5].analyzed)) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     }
-  }, [content, mainKeyword, selectedKeywords, seoScore, dispatch]);
+  }, [content, mainKeyword, selectedKeywords, seoScore, dispatch, state.steps]);
   
   // Run SEO analysis
   const runSeoAnalysis = async () => {
@@ -96,6 +96,10 @@ export const useSeoAnalysis = () => {
       );
       
       dispatch({ type: 'SET_SEO_SCORE', payload: calculatedScore });
+      
+      // Mark step as analyzed regardless of score
+      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+      
       toast.success('SEO analysis completed');
       
     } catch (error) {
