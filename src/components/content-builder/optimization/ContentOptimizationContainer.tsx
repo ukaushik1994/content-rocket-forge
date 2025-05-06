@@ -47,7 +47,7 @@ export const ContentOptimizationContainer = memo(({
   forceSkipAnalysis,
   optimizationMetrics
 }: ContentOptimizationContainerProps) => {
-  // When analysis has been running for too long, show a recovery button
+  // When analysis has been running for too long, show a recovery option
   const [showRecoveryOption, setShowRecoveryOption] = React.useState(false);
   
   // Extract recommendations from improvements
@@ -79,6 +79,11 @@ export const ContentOptimizationContainer = memo(({
       handleSkipConfirm();
     }
   }, [forceSkipAnalysis, handleSkipConfirm]);
+  
+  // Adapt handler to match the RecommendationsCard expectation
+  const handleRecommendationApply = useCallback((recommendation: string, id: string) => {
+    handleApplyImprovement(id);
+  }, [handleApplyImprovement]);
   
   // Check if all improvements are applied
   const allImprovementsApplied = improvements.length > 0 && 
@@ -127,7 +132,7 @@ export const ContentOptimizationContainer = memo(({
               recommendations={recommendations} 
               recommendationIds={recommendationIds}
               isAnalyzing={isAnalyzing}
-              handleRewriteContent={handleApplyImprovement}
+              handleRewriteContent={handleRecommendationApply}
               isRecommendationApplied={isImprovementApplied}
               showRecoveryOption={showRecoveryOption}
               onForceSkip={handleForceSkip}

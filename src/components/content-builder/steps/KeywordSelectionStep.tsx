@@ -109,14 +109,14 @@ export const KeywordSelectionStep = () => {
   
   const handleSelectCluster = (cluster: ContentCluster) => {
     dispatch({
-      type: 'SELECT_CLUSTER',
+      type: 'SET_SELECTED_CLUSTER',
       payload: cluster
     });
   };
   
   const handleClearCluster = () => {
     dispatch({
-      type: 'SELECT_CLUSTER',
+      type: 'SET_SELECTED_CLUSTER',
       payload: null
     });
   };
@@ -124,7 +124,7 @@ export const KeywordSelectionStep = () => {
   // Helper function to toggle selection state
   const handleToggleSelection = (type: string, content: string) => {
     dispatch({
-      type: 'TOGGLE_SERP_SELECTION',
+      type: 'ADD_SERP_SELECTION',
       payload: { type, content }
     });
   };

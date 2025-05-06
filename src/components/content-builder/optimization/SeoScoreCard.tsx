@@ -56,7 +56,6 @@ export const SeoScoreCard = ({ seoScore, scores, getScoreColor }: SeoScoreCardPr
           <Progress 
             value={seoScore} 
             className={`h-4 bg-${seoScoreColor}-100`} 
-            indicatorClassName={`bg-${seoScoreColor}-500`} 
           />
           
           {/* Animated dots */}
@@ -108,7 +107,6 @@ export const SeoScoreCard = ({ seoScore, scores, getScoreColor }: SeoScoreCardPr
                 <Progress 
                   value={scores.keywordScore} 
                   className="h-1 mt-1 bg-blue-100" 
-                  indicatorClassName="bg-blue-500" 
                 />
               </div>
             </div>
@@ -126,7 +124,6 @@ export const SeoScoreCard = ({ seoScore, scores, getScoreColor }: SeoScoreCardPr
                 <Progress 
                   value={scores.readabilityScore} 
                   className="h-1 mt-1 bg-green-100" 
-                  indicatorClassName="bg-green-500" 
                 />
               </div>
             </div>
@@ -144,7 +141,6 @@ export const SeoScoreCard = ({ seoScore, scores, getScoreColor }: SeoScoreCardPr
                 <Progress 
                   value={scores.contentLengthScore} 
                   className="h-1 mt-1 bg-amber-100" 
-                  indicatorClassName="bg-amber-500" 
                 />
               </div>
             </div>
@@ -162,7 +158,6 @@ export const SeoScoreCard = ({ seoScore, scores, getScoreColor }: SeoScoreCardPr
                 <Progress 
                   value={scores.structureScore} 
                   className="h-1 mt-1 bg-purple-100" 
-                  indicatorClassName="bg-purple-500" 
                 />
               </div>
             </div>

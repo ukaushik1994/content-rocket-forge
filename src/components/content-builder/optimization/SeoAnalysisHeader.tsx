@@ -85,7 +85,7 @@ export const SeoAnalysisHeader = memo(({
           
           <Button
             onClick={handleAnalyzeClick}
-            disabled={!canAnalyze}
+            disabled={!isAnalyzing && !canAnalyze}
             className={seoScore > 0 ? 'gap-2' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-2 shadow-md shadow-purple-500/20'}
             size="sm"
           >

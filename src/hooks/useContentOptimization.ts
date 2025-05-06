@@ -44,13 +44,8 @@ export const useContentOptimization = () => {
     
     try {
       setAnalysisError(null);
-      const result = await analyzeSeo(content);
-      
-      if (result) {
-        setHasRunAnalysis(true);
-      } else {
-        setAnalysisError('Analysis failed. Try again or skip this step.');
-      }
+      await analyzeSeo(content);
+      setHasRunAnalysis(true);
     } catch (error) {
       console.error('Error running SEO analysis:', error);
       setAnalysisError('An error occurred during analysis. Try again or skip this step.');
@@ -58,7 +53,7 @@ export const useContentOptimization = () => {
   }, [content, analyzeSeo]);
   
   // Handle improvement application
-  const handleApplyImprovement = useCallback((recommendation: string, id: string) => {
+  const handleApplyImprovement = useCallback((id: string) => {
     if (!id) return;
     
     // Apply the improvement

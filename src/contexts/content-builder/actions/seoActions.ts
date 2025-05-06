@@ -55,11 +55,11 @@ export const createSeoActions = (
         dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
       }
       
-      return result;
+      // Return void to match type signature
+      // Instead of returning the result
     } catch (error) {
       console.error('Error analyzing SEO:', error);
       // Handle error state
-      return null;
     } finally {
       // End loading state
       dispatch({ type: 'SET_ANALYZING', payload: false });

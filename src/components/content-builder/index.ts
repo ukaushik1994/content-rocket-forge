@@ -1,4 +1,3 @@
-
 // Main components
 export { ContentBuilder } from './ContentBuilder';
 export { ContentTypeStep } from './steps/ContentTypeStep';
@@ -11,11 +10,5 @@ export { SaveStep } from './steps/save';
 
 // Layout components
 export { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
-export { ContentBuilderHeader } from './layout/ContentBuilderHeader';
-export { ContentBuilderFooter } from './layout/ContentBuilderFooter';
 
-// Utility components
-export { KeywordBadge } from './keywords/KeywordBadge';
-export { KeywordInput } from './keywords/KeywordInput';
-export { OutlineEditor } from './outline/OutlineEditor';
-export { ContentEditor } from './content/ContentEditor';
+// Other exports can be added back when the components are created

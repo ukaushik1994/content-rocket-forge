@@ -16,6 +16,7 @@ export type ContentBuilderAction =
   | { type: 'SET_ACTIVE_STEP'; payload: number }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
   | { type: 'MARK_STEP_ANALYZED'; payload: number }
+  | { type: 'MARK_STEP_VISITED'; payload: number }
   
   // Keyword Actions
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
@@ -29,6 +30,7 @@ export type ContentBuilderAction =
   | { type: 'ADD_SERP_SELECTION'; payload: SerpSelection }
   | { type: 'REMOVE_SERP_SELECTION'; payload: string }
   | { type: 'CLEAR_SERP_SELECTIONS' }
+  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
   
   // Content Type Actions
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
@@ -50,6 +52,7 @@ export type ContentBuilderAction =
   
   // Solution Actions
   | { type: 'SET_SELECTED_SOLUTION'; payload: Solution | null }
+  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: any }
   
   // SEO Actions
@@ -67,4 +70,5 @@ export type ContentBuilderAction =
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
   
   // Cluster Actions
-  | { type: 'SET_SELECTED_CLUSTER'; payload: ContentCluster | null };
+  | { type: 'SET_SELECTED_CLUSTER'; payload: ContentCluster | null }
+  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null };
