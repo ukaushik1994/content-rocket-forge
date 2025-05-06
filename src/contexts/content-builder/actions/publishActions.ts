@@ -28,6 +28,16 @@ export const createPublishActions = (
       // In a real implementation, this would call an API to save the content
       const mockId = 'draft-' + Date.now();
       
+      // Save SERP selections if available
+      if (state.serpSelections && state.serpSelections.length > 0) {
+        content.serpSelections = state.serpSelections;
+      }
+      
+      // Save outline if available
+      if (state.outline && state.outline.length > 0) {
+        content.outline = state.outline;
+      }
+      
       // Update state with saved content info
       if (content.metaTitle) {
         dispatch({ type: 'SET_META_TITLE', payload: content.metaTitle });
@@ -69,6 +79,16 @@ export const createPublishActions = (
         });
         toast.error('Missing required fields for publishing content');
         return null;
+      }
+      
+      // Save SERP selections if available
+      if (state.serpSelections && state.serpSelections.length > 0) {
+        content.serpSelections = state.serpSelections;
+      }
+      
+      // Save outline if available
+      if (state.outline && state.outline.length > 0) {
+        content.outline = state.outline;
       }
       
       // In a real implementation, this would call an API to publish the content

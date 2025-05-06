@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Content from "./pages/Content";
+import Drafts from "./pages/Drafts";
 import ContentBuilder from "./pages/ContentBuilder";
 import ContentApproval from "./pages/ContentApproval";
 import Solutions from "./pages/Solutions";
@@ -35,7 +35,7 @@ const App = () => (
                 
                 {/* Protected routes */}
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/content" element={<ProtectedRoute><Content /></ProtectedRoute>} />
+                <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
                 <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
                 <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
@@ -55,4 +55,3 @@ const App = () => (
 );
 
 export default App;
-
