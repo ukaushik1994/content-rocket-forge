@@ -51,11 +51,17 @@ export function ContentRepository() {
   
   // Check if we should refresh content or highlight a specific item from navigation
   useEffect(() => {
-    if (location.state?.contentRefresh) {
-      console.log('[ContentRepository] contentRefresh detected in location state, refreshing content');
-      refreshContent();
+    // Check for signals to refresh from location state or session storage
+    const fromContentBuilder = sessionStorage.getItem('from_content_builder');
+    const contentRefresh = location.state?.contentRefresh;
+    
+    if (contentRefresh || fromContentBuilder === 'true') {
+      console.log('[ContentRepository] Content refresh detected, refreshing content');
+      handleRefresh();
       // Clear the state to prevent persistent refreshing
-      window.history.replaceState({}, document.title);
+      if (location.state?.contentRefresh) {
+        window.history.replaceState({}, document.title);
+      }
     }
     
     if (location.state?.highlightId) {
@@ -64,24 +70,17 @@ export function ContentRepository() {
       // Clear the state to prevent persistent highlighting
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, setSelectedContentId, refreshContent]);
+  }, [location.state, setSelectedContentId, handleRefresh]);
   
   // Force a refresh when component mounts to ensure we have latest content
   useEffect(() => {
     console.log('[ContentRepository] Component mounted, refreshing content');
-    refreshContent();
-  }, [refreshContent]);
-  
-  // After coming from content builder, ensure we refresh
-  useEffect(() => {
-    const fromContentBuilder = sessionStorage.getItem('from_content_builder');
-    if (fromContentBuilder === 'true') {
-      console.log('[ContentRepository] Coming from content builder, forcing refresh');
-      refreshContent();
-      // Clear the flag
-      sessionStorage.removeItem('from_content_builder');
-    }
-  }, [refreshContent]);
+    handleRefresh();
+    
+    // Clear any session storage flags
+    sessionStorage.removeItem('from_content_builder');
+    sessionStorage.removeItem('content_save_timestamp');
+  }, [handleRefresh]);
   
   // Set the first content item as selected by default when items load
   useEffect(() => {

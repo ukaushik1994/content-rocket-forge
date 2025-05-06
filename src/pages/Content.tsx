@@ -16,13 +16,34 @@ const Content = () => {
   
   // Check if we need to refresh content when coming from content builder
   useEffect(() => {
-    if (location.state?.contentRefresh) {
-      console.log('[Content] contentRefresh detected in location state, refreshing content');
+    // First check session storage
+    const fromContentBuilder = sessionStorage.getItem('from_content_builder');
+    const saveTimestamp = sessionStorage.getItem('content_save_timestamp');
+    
+    // Then check location state
+    const needsRefresh = location.state?.contentRefresh || (fromContentBuilder === 'true');
+    
+    if (needsRefresh) {
+      console.log('[Content] Content refresh detected, refreshing content');
       refreshContent();
-      // Clear the state to prevent persistent refreshing
+      
+      // Clear the flags to prevent persistent refreshing
+      sessionStorage.removeItem('from_content_builder');
+      sessionStorage.removeItem('content_save_timestamp');
       window.history.replaceState({}, document.title);
+      
+      // Show toast if coming after a save
+      if (saveTimestamp) {
+        toast.success('Content library updated with your latest content');
+      }
     }
   }, [location.state, refreshContent]);
+  
+  // Second effect to always refresh content when mounting
+  useEffect(() => {
+    console.log('[Content] Component mounted, refreshing content');
+    refreshContent();
+  }, [refreshContent]);
   
   const handleCreateContent = () => {
     setIsCreating(true);

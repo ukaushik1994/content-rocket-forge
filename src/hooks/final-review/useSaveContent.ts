@@ -96,14 +96,17 @@ export const useSaveContent = () => {
           seo_score: state.seoScore,
           keywords: [state.mainKeyword, ...state.selectedKeywords],
         });
+        
+        // Force refresh the content list
+        await refreshContent();
       }
-      
-      // Force refresh the content list
-      await refreshContent();
       
       toast.success('Content published successfully');
       
-      // Navigate back to content library with a highlight parameter
+      // Navigate back to content library with a refresh parameter
+      sessionStorage.setItem('from_content_builder', 'true');
+      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+      
       setTimeout(() => {
         navigate('/content', { 
           state: { contentRefresh: true }

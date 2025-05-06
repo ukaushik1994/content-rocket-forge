@@ -128,7 +128,7 @@ export const useSaveStep = () => {
         navigate('/content', { 
           state: { contentRefresh: true }
         });
-      }, 800);
+      }, 1000);
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');

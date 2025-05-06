@@ -37,6 +37,10 @@ export const createPublishActions = (
         dispatch({ type: 'SET_META_DESCRIPTION', payload: content.metaDescription });
       }
       
+      if (content.title) {
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: content.title });
+      }
+      
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });
       
@@ -77,6 +81,10 @@ export const createPublishActions = (
       
       if (content.metaDescription) {
         dispatch({ type: 'SET_META_DESCRIPTION', payload: content.metaDescription });
+      }
+      
+      if (content.title) {
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: content.title });
       }
       
       // Set saving state to false

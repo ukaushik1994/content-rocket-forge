@@ -17,6 +17,7 @@ export const SaveStepOptimizationsAlert: React.FC = () => {
         <p className="font-medium">Content has been optimized</p>
         <p className="text-sm">
           {appliedOptimizationsCount} out of {totalOptimizationsCount} SEO improvements have been applied.
+          Your content is ready to be saved to the library.
         </p>
       </div>
     </div>

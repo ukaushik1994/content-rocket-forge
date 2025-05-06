@@ -39,6 +39,7 @@ export const SaveStep = () => {
     if (saveCompleted) {
       console.log('[SaveStep] Save completed, setting session storage flag');
       sessionStorage.setItem('from_content_builder', 'true');
+      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
       toast.success('Content saved successfully! Navigating to content library...');
     }
   }, [saveCompleted]);
