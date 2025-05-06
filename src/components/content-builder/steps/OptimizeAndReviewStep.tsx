@@ -8,6 +8,7 @@ import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { OptimizeTab } from '../final-review/tabs/OptimizeTab';
 import { SeoTabContent } from '../final-review/tabs/SeoTabContent';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
+import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
@@ -36,6 +37,9 @@ export const OptimizeAndReviewStep = () => {
   // Handler for running checks specific to the current tab
   const handleRunTabChecks = () => {
     switch(activeTab) {
+      case 'overview':
+        runAllChecks();
+        break;
       case 'optimize':
         analyzeSolutionUsage();
         break;
@@ -61,8 +65,6 @@ export const OptimizeAndReviewStep = () => {
         passedChecks={passedChecks}
         totalChecks={totalChecks}
         seoScore={state.seoScore}
-        onRunAllChecks={runAllChecks}
-        isRunningChecks={isRunningAllChecks}
       />
       
       <SaveAndExportPanel 
@@ -71,6 +73,13 @@ export const OptimizeAndReviewStep = () => {
         onPublish={handlePublish}
         isSaving={isSaving}
         isSavedToDraft={isSavedToDraft}
+      />
+      
+      <FinalReviewQuickActions 
+        isRunningAllChecks={isRunningAllChecks}
+        onRunAllChecks={runAllChecks}
+        activeTab={activeTab}
+        onRunTabChecks={handleRunTabChecks}
       />
       
       <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange}>
