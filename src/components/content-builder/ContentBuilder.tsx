@@ -12,6 +12,7 @@ import { ContentTypeStep } from './steps/ContentTypeStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
+import { SaveStep } from './steps/save';
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
