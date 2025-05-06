@@ -23,11 +23,19 @@ export const ContentBuilder = () => {
   const completedVisibleSteps = visibleSteps.filter(step => step.completed);
   const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
-  // Determine if user can proceed to next step
-  const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
+  // Check current step status
+  const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
+  const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || state.activeStep === 0);
   
   // Handle next step navigation
   const handleNextStep = () => {
+    // For optimization step (id 5), check if we need to skip it
+    if (steps[activeStep].id === 5 && !steps[activeStep].completed && state.optimizationSkipped) {
+      // If optimization is skipped, move to next step
+      navigateToStep(activeStep + 1);
+      return;
+    }
+    
     navigateToStep(activeStep + 1);
   };
   
@@ -35,6 +43,12 @@ export const ContentBuilder = () => {
   const handlePrevStep = () => {
     navigateToStep(activeStep - 1);
   };
+  
+  // Debug step completion status
+  useEffect(() => {
+    console.log("Current step:", steps[activeStep]);
+    console.log("Steps status:", steps.map(s => `${s.id}: ${s.name} - Completed: ${s.completed}`));
+  }, [activeStep, steps]);
   
   // Render the current step component
   const renderStepContent = () => {

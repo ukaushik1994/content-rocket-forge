@@ -128,6 +128,15 @@ export const useContentRewriter = () => {
     // Mark recommendation as applied
     if (selectedRecommendationId) {
       dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: selectedRecommendationId });
+      
+      // Check if this is the last improvement or if enough improvements have been applied
+      const totalImprovements = state.seoImprovements.length;
+      const appliedImprovements = state.seoImprovements.filter(imp => imp.applied).length + 1; // +1 for current
+      
+      // Mark step as completed if more than 60% of improvements are applied or at least 3
+      if (appliedImprovements >= Math.max(3, Math.ceil(totalImprovements * 0.6))) {
+        dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+      }
     }
     
     // Close dialog
@@ -135,7 +144,7 @@ export const useContentRewriter = () => {
     
     // Show success notification
     toast.success('Content optimization applied');
-  }, [rewrittenContent, selectedRecommendationId, dispatch, updateContent]);
+  }, [rewrittenContent, selectedRecommendationId, dispatch, updateContent, state.seoImprovements]);
   
   // Check if a recommendation has been applied
   const isRecommendationApplied = useCallback((id: string) => {
@@ -143,6 +152,12 @@ export const useContentRewriter = () => {
     const improvement = seoImprovements.find(item => item.id === id);
     return improvement ? improvement.applied : false;
   }, [seoImprovements]);
+  
+  // Force complete the optimization step
+  const forceCompleteOptimization = useCallback(() => {
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    toast.success('Optimization step marked as completed');
+  }, [dispatch]);
   
   return {
     showRewriteDialog,
@@ -153,6 +168,7 @@ export const useContentRewriter = () => {
     handleRewriteContent,
     applyRewrittenContent,
     setShowRewriteDialog,
-    isRecommendationApplied
+    isRecommendationApplied,
+    forceCompleteOptimization
   };
 };

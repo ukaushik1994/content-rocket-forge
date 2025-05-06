@@ -10,6 +10,8 @@ import { SkipWarning } from '@/components/content-builder/optimization/SkipWarni
 import { ContentOptimizationContainer } from '@/components/content-builder/optimization/ContentOptimizationContainer';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { ChevronRight } from 'lucide-react';
 
 const ErrorFallback = ({ error, resetErrorBoundary }) => (
   <div className="p-6 rounded-lg border border-red-200 bg-red-50 text-red-800">
@@ -27,7 +29,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }) => (
 );
 
 export const OptimizationStep = () => {
-  const { state, skipOptimizationStep } = useContentBuilder();
+  const { state, skipOptimizationStep, navigateToStep } = useContentBuilder();
   const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const [initialAnalysisAttempted, setInitialAnalysisAttempted] = useState(false);
@@ -52,7 +54,8 @@ export const OptimizationStep = () => {
     handleRewriteContent,
     applyRewrittenContent,
     setShowRewriteDialog,
-    isRecommendationApplied
+    isRecommendationApplied,
+    forceCompleteOptimization
   } = useContentRewriter();
   
   // Run initial analysis if we have content but no SEO score - with improved condition checks
@@ -82,6 +85,9 @@ export const OptimizationStep = () => {
   // Check if analysis has been run
   const hasRunAnalysis = state.steps[5] && state.steps[5].analyzed;
   
+  // Check if optimization step is completed
+  const isOptimizationCompleted = state.steps[5] && state.steps[5].completed;
+  
   // Handle skip with confirmation - with proper safeguards
   const handleSkipConfirm = () => {
     if (!hasRunAnalysis && !showSkipWarning) {
@@ -91,6 +97,12 @@ export const OptimizationStep = () => {
       setShowSkipWarning(false);
       toast.success('Optimization step skipped. Proceeding to next step.');
     }
+  };
+  
+  // Force complete the step and navigate to next
+  const handleCompleteAndContinue = () => {
+    forceCompleteOptimization();
+    navigateToStep(state.activeStep + 1);
   };
   
   // Get recommendation IDs from the state - memoized to prevent recalculation
@@ -165,6 +177,16 @@ export const OptimizationStep = () => {
           isRewriting={isRewriting}
           onApplyContent={applyRewrittenContent}
         />
+        
+        {/* Continue to Final Review button */}
+        <div className="flex justify-end pt-4 border-t border-gray-200">
+          <Button 
+            onClick={handleCompleteAndContinue}
+            className="gap-2 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 shadow-lg"
+          >
+            Continue to Final Review <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </ErrorBoundary>
   );

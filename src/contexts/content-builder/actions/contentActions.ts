@@ -38,6 +38,57 @@ export const createContentActions = (
     }
   };
   
+  const setContent = (content: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: content });
+  };
+
+  const generateContent = async (outline: OutlineSection[]) => {
+    dispatch({ type: 'SET_IS_GENERATING', payload: true });
+    
+    try {
+      // In a real implementation, this would call an AI service
+      // For now we'll simulate content generation with a delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Generate placeholder content based on outline
+      const content = generatePlaceholderContent(outline);
+      
+      // Set the generated content
+      dispatch({ type: 'SET_CONTENT', payload: content });
+      
+      // Mark content writing step as completed
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+      
+      return content;
+    } catch (error) {
+      console.error('Error generating content:', error);
+      return null;
+    } finally {
+      dispatch({ type: 'SET_IS_GENERATING', payload: false });
+    }
+  };
+  
+  const saveContent = async (options: { title: string; content: string }) => {
+    dispatch({ type: 'SET_IS_SAVING', payload: true });
+    
+    try {
+      // In a real implementation, this would save to a database
+      // For now we'll just simulate saving with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Set title and content
+      dispatch({ type: 'SET_CONTENT_TITLE', payload: options.title });
+      dispatch({ type: 'SET_CONTENT', payload: options.content });
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving content:', error);
+      return false;
+    } finally {
+      dispatch({ type: 'SET_IS_SAVING', payload: false });
+    }
+  };
+  
   const setAdditionalInstructions = (instructions: string) => {
     dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
   };
@@ -57,6 +108,13 @@ export const createContentActions = (
   const setMetaDescription = (description: string) => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: description });
   };
+  
+  // Helper function to generate placeholder content
+  const generatePlaceholderContent = (outline: OutlineSection[]): string => {
+    return outline.map(section => {
+      return `# ${section.title}\n\nThis section will discuss ${section.title.toLowerCase()}. It will cover various aspects and provide valuable insights for the reader.\n\n`;
+    }).join('\n');
+  };
 
   return {
     setContentType,
@@ -65,6 +123,9 @@ export const createContentActions = (
     setOutline,
     setOutlineSections,
     updateContent,
+    setContent,
+    generateContent,
+    saveContent,
     setAdditionalInstructions,
     setContentTitle,
     setSuggestedTitles,

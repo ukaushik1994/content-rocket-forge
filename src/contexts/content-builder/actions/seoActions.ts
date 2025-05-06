@@ -21,10 +21,22 @@ export const createSeoActions = (
   
   const applySeoImprovement = (id: string) => {
     dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: id });
+    
+    // Check if enough improvements have been applied to complete the step
+    const totalImprovements = state.seoImprovements.length;
+    const appliedImprovements = state.seoImprovements.filter(imp => imp.applied || imp.id === id).length;
+    
+    // Mark step as completed if more than 60% of improvements are applied or at least 3
+    if (appliedImprovements >= Math.max(3, Math.ceil(totalImprovements * 0.6))) {
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    }
   };
   
   const skipOptimizationStep = () => {
+    // Mark the step as skipped
     dispatch({ type: 'SKIP_OPTIMIZATION_STEP' });
+    
+    // Also mark the step as completed so we can move forward
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
   };
   
@@ -34,4 +46,3 @@ export const createSeoActions = (
     skipOptimizationStep
   };
 };
-
