@@ -1,13 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Solution } from '@/contexts/content-builder/types';
 import { useSolutionsData } from '@/components/solutions/hooks/useSolutionsData';
-import { SolutionCard } from '@/components/solutions/SolutionCard';
 import { Sparkles, FileText, LayoutGrid, Search, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -84,7 +82,7 @@ const mockSolutions: Solution[] = [
 ];
 
 export const ContentTypeStep = () => {
-  const { state, dispatch, setContentType, setSelectedSolution } = useContentBuilder();
+  const { state, dispatch } = useContentBuilder();
   const { solutions, isLoading, fetchSolutions } = useSolutionsData();
   
   const [selectedType, setSelectedType] = useState(state.contentType || '');
@@ -120,7 +118,12 @@ export const ContentTypeStep = () => {
   // Handle content type selection
   const handleTypeSelect = (typeId: string) => {
     setSelectedType(typeId);
-    setContentType(typeId);
+    
+    // Set content type in context (properly typed)
+    dispatch({
+      type: 'SET_CONTENT_TYPE',
+      payload: typeId as 'article' | 'landing-page' | 'blog' | 'seo' // Cast to expected ContentType
+    });
     
     // Find the selected type to get available formats
     const selectedTypeObj = contentTypes.find(type => type.id === typeId);
@@ -136,13 +139,16 @@ export const ContentTypeStep = () => {
     setSelectedFormat(format);
     dispatch({
       type: 'SET_CONTENT_FORMAT',
-      payload: format
+      payload: format as 'long-form' | 'short-form' | 'how-to' | 'list' // Cast to expected ContentFormat
     });
   };
   
   // Handle solution selection
   const handleSolutionSelect = (solution: Solution | null) => {
-    setSelectedSolution(solution);
+    dispatch({
+      type: 'SELECT_SOLUTION',
+      payload: solution
+    });
     
     if (solution) {
       toast.success(`Selected solution: ${solution.name}`);
