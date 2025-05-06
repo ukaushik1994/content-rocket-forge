@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Info, Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { sendChatRequest } from '@/services/aiService';
+import { toast } from 'sonner';
 
 interface MetaInformationCardProps {
   metaTitle: string;
@@ -21,6 +23,22 @@ export const MetaInformationCard = ({
   onMetaDescriptionChange,
   onGenerateMeta
 }: MetaInformationCardProps) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const handleGenerateWithAI = async () => {
+    setIsGenerating(true);
+    try {
+      // Call the existing onGenerateMeta function that was passed as prop
+      onGenerateMeta();
+      // This is handled by the parent component's useMetaGenerator hook
+    } catch (error) {
+      console.error('Error generating meta information:', error);
+      toast.error('Failed to generate meta information');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
   return (
     <Card className="h-full">
       <CardHeader className="pb-2 border-b">
@@ -67,9 +85,18 @@ export const MetaInformationCard = ({
         <Button 
           variant="outline" 
           className="w-full flex items-center gap-2 bg-secondary/20 hover:bg-secondary/40"
-          onClick={onGenerateMeta}
+          onClick={handleGenerateWithAI}
+          disabled={isGenerating}
         >
-          <Sparkles className="h-4 w-4" /> Generate Meta Info
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Generating...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" /> Generate Meta Info
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>
