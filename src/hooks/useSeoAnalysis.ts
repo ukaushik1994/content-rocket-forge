@@ -19,7 +19,6 @@ export const useSeoAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
   const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [hasRunAnalysis, setHasRunAnalysis] = useState(false);
   const [scores, setScores] = useState({
     keywordUsage: 0,
     contentLength: 0,
@@ -34,11 +33,11 @@ export const useSeoAnalysis = () => {
       setKeywordUsage(usage);
     }
     
-    // Mark step as complete if we have a good SEO score or if analysis has been run
-    if (seoScore >= 70 || hasRunAnalysis) {
+    // Mark step as complete if we have a good SEO score
+    if (seoScore >= 70) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     }
-  }, [content, mainKeyword, selectedKeywords, seoScore, hasRunAnalysis, dispatch]);
+  }, [content, mainKeyword, selectedKeywords, seoScore, dispatch]);
   
   // Run SEO analysis
   const runSeoAnalysis = async () => {
@@ -99,26 +98,12 @@ export const useSeoAnalysis = () => {
       dispatch({ type: 'SET_SEO_SCORE', payload: calculatedScore });
       toast.success('SEO analysis completed');
       
-      // Mark that we've run the analysis at least once
-      setHasRunAnalysis(true);
-      
-      // Mark the step as completed after running analysis
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-      
     } catch (error) {
       console.error('Error analyzing content:', error);
       toast.error('Failed to analyze content');
     } finally {
       setIsAnalyzing(false);
     }
-  };
-  
-  // Skip SEO optimization
-  const skipOptimization = () => {
-    // Mark step as completed
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-    toast.info('SEO optimization skipped');
-    setHasRunAnalysis(true);
   };
   
   // Helper function to determine impact level
@@ -144,9 +129,7 @@ export const useSeoAnalysis = () => {
     recommendations,
     scores,
     improvements,
-    hasRunAnalysis,
     runSeoAnalysis,
-    skipOptimization,
     getScoreColor
   };
 };

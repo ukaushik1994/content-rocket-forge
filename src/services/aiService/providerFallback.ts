@@ -1,8 +1,7 @@
 
 import { toast } from "sonner";
 import { getUserPreference } from "@/services/userPreferencesService";
-
-export type AiProviderType = 'openai' | 'anthropic' | 'gemini';
+import { AiProvider } from "./types";
 
 /**
  * Check if fallback is enabled and determine the fallback provider
@@ -10,13 +9,16 @@ export type AiProviderType = 'openai' | 'anthropic' | 'gemini';
  */
 export function getFallbackConfig() {
   const fallbackEnabled = getUserPreference('enableAiFallback') === true;
-  const defaultProvider = getUserPreference('defaultAiProvider') as AiProviderType || 'openai';
+  const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openai';
   
   // Define fallback order depending on the primary provider
-  const fallbackProviders: Record<AiProviderType, AiProviderType[]> = {
-    'openai': ['anthropic', 'gemini'],
-    'anthropic': ['openai', 'gemini'],
-    'gemini': ['openai', 'anthropic']
+  const fallbackProviders: Record<AiProvider, AiProvider[]> = {
+    'openai': ['anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'anthropic': ['openai', 'gemini', 'mistral', 'lmstudio'],
+    'gemini': ['openai', 'anthropic', 'mistral', 'lmstudio'],
+    'mistral': ['openai', 'anthropic', 'gemini', 'lmstudio'],
+    'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral'],
+    'other': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
   };
   
   return {
@@ -34,7 +36,7 @@ export function getFallbackConfig() {
  * @returns Result of the fallback callback or null
  */
 export async function handleProviderError<T>(
-  provider: AiProviderType,
+  provider: AiProvider,
   error: any,
   fallbackCallback?: () => Promise<T | null>
 ): Promise<T | null> {
@@ -97,7 +99,7 @@ function isQuotaLimitError(error: any): boolean {
 /**
  * Show a notification about AI provider fallback
  */
-export function notifyProviderFallback(originalProvider: AiProviderType, newProvider: AiProviderType) {
+export function notifyProviderFallback(originalProvider: AiProvider, newProvider: AiProvider) {
   toast.info(
     `Using ${newProvider.toUpperCase()} as a fallback because ${originalProvider.toUpperCase()} was unavailable.`,
     { duration: 4000 }

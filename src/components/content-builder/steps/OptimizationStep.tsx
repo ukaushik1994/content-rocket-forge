@@ -4,7 +4,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles, ArrowRight } from 'lucide-react';
+import { RefreshCw, Search, Wand2, CheckCircle, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Custom hooks
@@ -17,8 +17,8 @@ import { RecommendationsCard } from '@/components/content-builder/optimization/R
 import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
 
 export const OptimizationStep = () => {
-  const { state, navigateToStep } = useContentBuilder();
-  const { content, mainKeyword, seoScore, seoImprovements, activeStep } = state;
+  const { state } = useContentBuilder();
+  const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showConfetti, setShowConfetti] = useState(false);
   
   // Use custom hooks for functionality
@@ -27,8 +27,6 @@ export const OptimizationStep = () => {
     recommendations,
     scores,
     runSeoAnalysis,
-    skipOptimization,
-    hasRunAnalysis,
     getScoreColor
   } = useSeoAnalysis();
   
@@ -68,11 +66,6 @@ export const OptimizationStep = () => {
   const totalCount = recommendationIds.length;
   const progressPercentage = totalCount > 0 ? Math.round((appliedCount / totalCount) * 100) : 0;
   
-  // Function to proceed to the next step
-  const handleContinue = () => {
-    navigateToStep(activeStep + 1);
-  };
-  
   return (
     <div className="space-y-6">
       <motion.div 
@@ -94,7 +87,7 @@ export const OptimizationStep = () => {
             </p>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3">
             {seoScore > 0 && (
               <Badge variant="outline" className="bg-card px-3 py-1.5 text-xs font-medium flex items-center gap-1.5">
                 <BarChart2 className="h-3.5 w-3.5 text-purple-500" />
@@ -123,16 +116,6 @@ export const OptimizationStep = () => {
                 </>
               )}
             </Button>
-            
-            <Button
-              onClick={skipOptimization}
-              variant="outline"
-              size="sm"
-              className="gap-2 border-purple-500/30 hover:bg-purple-500/10"
-            >
-              <ArrowRight className="h-4 w-4" />
-              Skip Optimization
-            </Button>
           </div>
         </div>
         
@@ -152,18 +135,6 @@ export const OptimizationStep = () => {
                 transition={{ duration: 0.5 }}
               />
             </div>
-          </div>
-        )}
-        
-        {/* Continue button if analysis has been run */}
-        {hasRunAnalysis && (
-          <div className="mt-4 pt-4 border-t border-purple-500/10 flex justify-end">
-            <Button
-              onClick={handleContinue}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-2"
-            >
-              Continue to Next Step <ArrowRight className="h-4 w-4" />
-            </Button>
           </div>
         )}
       </motion.div>
