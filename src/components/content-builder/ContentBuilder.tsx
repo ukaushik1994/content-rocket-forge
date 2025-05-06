@@ -11,6 +11,7 @@ import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeStep } from './steps/ContentTypeStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
+import { ContentOptimizationStep } from './steps/ContentOptimizationStep';
 import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SaveStep } from './steps/save';
 
@@ -57,7 +58,9 @@ export const ContentBuilder = () => {
       case 1: return <ContentTypeStep />;
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
-      case 5: return <OptimizeAndReviewStep />;
+      case 5: return <ContentOptimizationStep />;
+      case 6: return <OptimizeAndReviewStep />;
+      case 7: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -77,7 +80,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
+  const isLastStep = activeStep === steps.length - 1;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -107,33 +110,34 @@ export const ContentBuilder = () => {
         </div>
         
         {/* Step content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-5xl mx-auto space-y-6">
-            {renderStepContent()}
-          </div>
+        <div className="flex-1 px-6 py-6 overflow-y-auto">
+          {renderStepContent()}
         </div>
         
-        {/* Navigation controls */}
-        {!isLastStep && (
-          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
-            <div className="flex justify-between max-w-5xl mx-auto">
-              <Button
-                variant="outline"
-                onClick={handlePrevStep}
-                disabled={activeStep === 0}
-                className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
-              >
-                <ChevronLeft className="h-4 w-4" /> Previous
-              </Button>
-              
-              <Button
-                onClick={handleNextStep}
-                disabled={!canGoNext}
-                className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
-              >
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+        {/* Step navigation */}
+        {steps[activeStep].id !== 5 && steps[activeStep].id !== 6 && steps[activeStep].id !== 7 && (
+          <div className="px-6 py-4 border-t border-border/40 flex justify-between">
+            <Button
+              variant="ghost"
+              onClick={handlePrevStep}
+              disabled={activeStep === 0}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <Button
+              onClick={handleNextStep}
+              disabled={!canGoNext}
+              className="gap-1"
+            >
+              {currentStepComplete && (
+                <CheckCircle className="h-4 w-4 mr-1" />
+              )}
+              {isLastStep ? 'Finish' : 'Next'}
+              {!isLastStep && <ChevronRight className="h-4 w-4" />}
+            </Button>
           </div>
         )}
       </div>

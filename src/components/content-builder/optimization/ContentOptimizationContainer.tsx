@@ -1,46 +1,61 @@
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { SeoScoreCard } from './SeoScoreCard';
 import { RecommendationsCard } from './RecommendationsCard'; 
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowRight, BarChart2, Info } from 'lucide-react';
+import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
+import { SaveStepOptimizationsAlert } from '../steps/save/SaveStepOptimizationsAlert';
 
 interface ContentOptimizationContainerProps {
-  recommendations: string[];
-  recommendationIds: string[];
-  scores: { keywordUsage: number; contentLength: number; readability: number };
+  improvements: SeoImprovement[];
+  scores: { 
+    keywordScore: number; 
+    contentLengthScore: number; 
+    readabilityScore: number;
+    structureScore: number;
+  };
   seoScore: number;
   isAnalyzing: boolean;
-  handleRewriteContent: (recommendation: string, id: string) => void;
-  isRecommendationApplied: (id: string) => boolean;
+  handleApplyImprovement: (id: string) => void;
+  isImprovementApplied: (id: string) => boolean;
   getScoreColor: (score: number) => string;
   hasRunAnalysis: boolean;
   handleSkipConfirm: () => void;
   analysisError?: string | null;
   forceSkipAnalysis?: () => void;
+  optimizationMetrics?: {
+    originalScore: number;
+    currentScore: number;
+    appliedImprovements: number;
+    totalImprovements: number;
+  } | null;
 }
 
-// Use memo to prevent unnecessary re-renders
 export const ContentOptimizationContainer = memo(({
-  recommendations,
-  recommendationIds,
+  improvements,
   scores,
   seoScore,
   isAnalyzing,
-  handleRewriteContent,
-  isRecommendationApplied,
+  handleApplyImprovement,
+  isImprovementApplied,
   getScoreColor,
   hasRunAnalysis,
   handleSkipConfirm,
   analysisError,
-  forceSkipAnalysis
+  forceSkipAnalysis,
+  optimizationMetrics
 }: ContentOptimizationContainerProps) => {
   // When analysis has been running for too long, show a recovery button
   const [showRecoveryOption, setShowRecoveryOption] = React.useState(false);
   
+  // Extract recommendations from improvements
+  const recommendations = improvements.map(imp => imp.recommendation);
+  const recommendationIds = improvements.map(imp => imp.id);
+  
   // If analysis is running for over 15 seconds, show recovery option
-  React.useEffect(() => {
+  useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     
     if (isAnalyzing) {
@@ -65,6 +80,10 @@ export const ContentOptimizationContainer = memo(({
     }
   }, [forceSkipAnalysis, handleSkipConfirm]);
   
+  // Check if all improvements are applied
+  const allImprovementsApplied = improvements.length > 0 && 
+    improvements.every(imp => isImprovementApplied(imp.id));
+    
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
@@ -88,18 +107,67 @@ export const ContentOptimizationContainer = memo(({
                 Skip Analysis & Continue
               </Button>
             </div>
+          ) : allImprovementsApplied && improvements.length > 0 ? (
+            <div className="border border-green-200 rounded-lg p-6 bg-green-50 space-y-4">
+              <div className="flex items-center gap-3 text-green-600">
+                <Info className="h-5 w-5" />
+                <h3 className="font-medium">All Optimizations Applied</h3>
+              </div>
+              <SaveStepOptimizationsAlert />
+              <Button 
+                onClick={handleForceSkip}
+                className="mt-2 bg-green-600 hover:bg-green-700"
+              >
+                Continue to Next Step
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
           ) : (
             <RecommendationsCard 
               recommendations={recommendations} 
               recommendationIds={recommendationIds}
               isAnalyzing={isAnalyzing}
-              handleRewriteContent={handleRewriteContent}
-              isRecommendationApplied={isRecommendationApplied}
+              handleRewriteContent={handleApplyImprovement}
+              isRecommendationApplied={isImprovementApplied}
               showRecoveryOption={showRecoveryOption}
               onForceSkip={handleForceSkip}
+              improvements={improvements}
             />
           )}
         </motion.div>
+        
+        {/* Show optimization metrics if available */}
+        {optimizationMetrics && hasRunAnalysis && !isAnalyzing && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart2 className="h-5 w-5 text-blue-500" />
+              <h3 className="font-medium text-sm">Optimization Progress</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <div className="p-2 bg-white rounded border border-blue-100">
+                <p className="text-xs text-muted-foreground">Initial Score</p>
+                <p className="font-medium">{optimizationMetrics.originalScore}%</p>
+              </div>
+              <div className="p-2 bg-white rounded border border-blue-100">
+                <p className="text-xs text-muted-foreground">Current Score</p>
+                <p className="font-medium">{optimizationMetrics.currentScore}%</p>
+              </div>
+              <div className="p-2 bg-white rounded border border-blue-100">
+                <p className="text-xs text-muted-foreground">Improvements</p>
+                <p className="font-medium">{optimizationMetrics.appliedImprovements} of {optimizationMetrics.totalImprovements}</p>
+              </div>
+              <div className="p-2 bg-white rounded border border-blue-100">
+                <p className="text-xs text-muted-foreground">Improvement</p>
+                <p className="font-medium">+{optimizationMetrics.currentScore - optimizationMetrics.originalScore}%</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
       
       <motion.div 

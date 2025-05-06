@@ -1,28 +1,44 @@
 
 /**
- * Type definitions for SEO analysis
+ * Type definitions for SEO analysis hooks
  */
 
 export interface KeywordUsage {
   keyword: string;
   count: number;
   density: string;
+  prominence?: number;
+  qualityScore?: number;
 }
 
-export interface SeoAnalysisScores {
-  keywordUsage: number;
-  contentLength: number;
-  readability: number;
+export interface ReadabilityMetrics {
+  score: number;
+  grade: string;
+  simpleWords: number;
+  complexWords: number;
+  avgSentenceLength: number;
+  avgWordLength: number;
 }
 
-export interface UseSeoAnalysisReturn {
-  isAnalyzing: boolean;
+export interface ContentAnalysis {
+  seoScore: number;
   keywordUsage: KeywordUsage[];
+  readabilityMetrics: ReadabilityMetrics;
   recommendations: string[];
-  scores: SeoAnalysisScores;
-  improvements: any[];
-  analysisError: string | null;
-  runSeoAnalysis: () => void;
-  getScoreColor: (score: number) => string;
-  forceSkipAnalysis: () => void;
+  contentLengthScore: number;
+  structureScore: number;
+}
+
+export interface UseSeoAnalysisProps {
+  content: string;
+  mainKeyword: string;
+  selectedKeywords: string[];
+}
+
+export interface UseSeoAnalysisResult {
+  isAnalyzing: boolean;
+  hasAnalyzed: boolean;
+  analysis: ContentAnalysis | null;
+  analyzeContent: () => Promise<void>;
+  error: Error | null;
 }
