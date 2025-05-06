@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,8 @@ interface ContentRewriteDialogProps {
   onApplyContent: () => void;
 }
 
-export const ContentRewriteDialog = ({
+// Use memo to prevent unnecessary re-renders
+export const ContentRewriteDialog = memo(({
   open,
   onOpenChange,
   selectedRecommendation,
@@ -36,13 +37,6 @@ export const ContentRewriteDialog = ({
   onApplyContent
 }: ContentRewriteDialogProps) => {
   const [showDiff, setShowDiff] = useState(false);
-  
-  // Debug logging when content changes
-  React.useEffect(() => {
-    if (rewrittenContent) {
-      console.log("[ContentRewriteDialog] Rewritten content available for type:", rewriteType);
-    }
-  }, [rewrittenContent, rewriteType]);
 
   const copyToClipboard = () => {
     if (rewrittenContent) {
@@ -127,7 +121,7 @@ export const ContentRewriteDialog = ({
                 <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500/20 to-blue-500/20 text-xs px-2 py-0.5">
                   Optimized for {rewriteType}
                 </div>
-                <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed">
+                <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed overflow-auto max-h-[300px]">
                   {rewrittenContent || "No preview available"}
                 </pre>
               </div>
@@ -136,9 +130,18 @@ export const ContentRewriteDialog = ({
         </div>
         
         <AlertDialogFooter>
-          <AlertDialogCancel className="border-purple-500/30 text-muted-foreground hover:text-foreground hover:bg-purple-500/5">Cancel</AlertDialogCancel>
+          <AlertDialogCancel 
+            className="border-purple-500/30 text-muted-foreground hover:text-foreground hover:bg-purple-500/5"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onApplyContent} 
+            onClick={() => {
+              if (!isRewriting && rewrittenContent) {
+                onApplyContent();
+              }
+            }} 
             disabled={isRewriting || !rewrittenContent}
             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-1"
           >
@@ -153,4 +156,7 @@ export const ContentRewriteDialog = ({
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+});
+
+// Add display name for React devtools
+ContentRewriteDialog.displayName = 'ContentRewriteDialog';

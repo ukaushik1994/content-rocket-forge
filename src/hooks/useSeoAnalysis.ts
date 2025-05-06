@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SeoImprovement } from '@/contexts/content-builder/types';
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
@@ -26,23 +26,36 @@ export const useSeoAnalysis = () => {
   });
   const [improvements, setImprovements] = useState<SeoImprovement[]>([]);
   
-  // Calculate keyword usage on content change
+  // Calculate keyword usage on content change - with debounce
   useEffect(() => {
-    if (content && mainKeyword) {
+    if (!content || !mainKeyword) return;
+    
+    // Use a small timeout to prevent excessive calculations
+    const timer = setTimeout(() => {
       const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
       setKeywordUsage(usage);
-    }
+    }, 300);
     
-    // Mark step as complete if we have a good SEO score or step has been analyzed
+    return () => clearTimeout(timer);
+  }, [content, mainKeyword, selectedKeywords]);
+  
+  // Mark step as complete based on score - memoized effect
+  useEffect(() => {
     if (seoScore >= 70 || (state.steps[5] && state.steps[5].analyzed)) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     }
-  }, [content, mainKeyword, selectedKeywords, seoScore, dispatch, state.steps]);
+  }, [seoScore, dispatch, state.steps]);
   
-  // Run SEO analysis
-  const runSeoAnalysis = async () => {
+  // Run SEO analysis - memoized callback
+  const runSeoAnalysis = useCallback(async () => {
     if (!content || !mainKeyword) {
       toast.error('Content or keywords are missing');
+      return;
+    }
+    
+    // Prevent multiple analysis runs
+    if (isAnalyzing) {
+      console.log('SEO analysis already in progress');
       return;
     }
     
@@ -108,7 +121,7 @@ export const useSeoAnalysis = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [content, mainKeyword, selectedKeywords, isAnalyzing, dispatch]);
   
   // Helper function to determine impact level
   const determineImpact = (type: string, score: number): 'high' | 'medium' | 'low' => {
@@ -119,13 +132,13 @@ export const useSeoAnalysis = () => {
     return 'low';
   };
   
-  // Get score color based on value
-  const getScoreColor = (score: number) => {
+  // Get score color based on value - memoized
+  const getScoreColor = useCallback((score: number) => {
     if (score >= 90) return 'stroke-green-500';
     if (score >= 70) return 'stroke-yellow-500';
     if (score >= 50) return 'stroke-orange-500';
     return 'stroke-red-500';
-  };
+  }, []);
 
   return {
     isAnalyzing,

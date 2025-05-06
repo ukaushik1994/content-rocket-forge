@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { memo } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,8 @@ interface SeoAnalysisHeaderProps {
   content: string;
 }
 
-export const SeoAnalysisHeader = ({ 
+// Use memo to prevent unnecessary re-renders
+export const SeoAnalysisHeader = memo(({ 
   seoScore, 
   isAnalyzing, 
   runSeoAnalysis,
@@ -23,6 +24,16 @@ export const SeoAnalysisHeader = ({
   skipOptimizationStep,
   content
 }: SeoAnalysisHeaderProps) => {
+  // Don't allow analysis if content is too short or analysis is already in progress
+  const canAnalyze = !isAnalyzing && content && content.length >= 300;
+  
+  // Handle analyze click with error prevention
+  const handleAnalyzeClick = () => {
+    if (canAnalyze) {
+      runSeoAnalysis();
+    }
+  };
+  
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -67,8 +78,8 @@ export const SeoAnalysisHeader = ({
           )}
           
           <Button
-            onClick={runSeoAnalysis}
-            disabled={isAnalyzing || !content || content.length < 300}
+            onClick={handleAnalyzeClick}
+            disabled={!canAnalyze}
             className={seoScore > 0 ? 'gap-2' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-2 shadow-md shadow-purple-500/20'}
             size="sm"
           >
@@ -88,4 +99,7 @@ export const SeoAnalysisHeader = ({
       </div>
     </motion.div>
   );
-};
+});
+
+// Add display name for React devtools
+SeoAnalysisHeader.displayName = 'SeoAnalysisHeader';

@@ -14,7 +14,7 @@ export const OptimizationStep = () => {
   const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   
-  // Use custom hooks for functionality
+  // Use custom hooks for functionality with memoization to prevent unnecessary re-renders
   const { 
     isAnalyzing,
     recommendations,
@@ -35,17 +35,20 @@ export const OptimizationStep = () => {
     isRecommendationApplied
   } = useContentRewriter();
   
-  // Run initial analysis if we have content but no SEO score
+  // Run initial analysis if we have content but no SEO score - with proper dependency array
   useEffect(() => {
     if (content && content.length > 300 && seoScore === 0) {
-      runSeoAnalysis();
+      // Prevent multiple runs by checking isAnalyzing
+      if (!isAnalyzing) {
+        runSeoAnalysis();
+      }
     }
-  }, [content, seoScore, runSeoAnalysis]);
+  }, [content, seoScore, runSeoAnalysis, isAnalyzing]);
   
   // Check if analysis has been run
   const hasRunAnalysis = state.steps[5] && state.steps[5].analyzed;
   
-  // Handle skip with confirmation
+  // Handle skip with confirmation - with proper safeguards
   const handleSkipConfirm = () => {
     if (!hasRunAnalysis && !showSkipWarning) {
       setShowSkipWarning(true);
@@ -55,13 +58,19 @@ export const OptimizationStep = () => {
     }
   };
   
-  // Get recommendation IDs from the state
-  const recommendationIds = seoImprovements ? seoImprovements.map(item => item.id) : [];
+  // Get recommendation IDs from the state - memoized to prevent recalculation
+  const recommendationIds = React.useMemo(() => {
+    return seoImprovements ? seoImprovements.map(item => item.id) : [];
+  }, [seoImprovements]);
   
-  // Calculate how many recommendations have been applied
-  const appliedCount = seoImprovements ? seoImprovements.filter(item => item.applied).length : 0;
-  const totalCount = recommendationIds.length;
-  const progressPercentage = totalCount > 0 ? Math.round((appliedCount / totalCount) * 100) : 0;
+  // Calculate how many recommendations have been applied - memoized
+  const { appliedCount, totalCount, progressPercentage } = React.useMemo(() => {
+    const applied = seoImprovements ? seoImprovements.filter(item => item.applied).length : 0;
+    const total = recommendationIds.length;
+    const percentage = total > 0 ? Math.round((applied / total) * 100) : 0;
+    
+    return { appliedCount: applied, totalCount: total, progressPercentage: percentage };
+  }, [seoImprovements, recommendationIds]);
   
   return (
     <div className="space-y-6">

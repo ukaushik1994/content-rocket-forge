@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { SeoScoreCard } from './SeoScoreCard';
 import { RecommendationsCard } from './RecommendationsCard'; 
@@ -19,7 +19,8 @@ interface ContentOptimizationContainerProps {
   handleSkipConfirm: () => void;
 }
 
-export const ContentOptimizationContainer = ({
+// Use memo to prevent unnecessary re-renders
+export const ContentOptimizationContainer = memo(({
   recommendations,
   recommendationIds,
   scores,
@@ -80,4 +81,7 @@ export const ContentOptimizationContainer = ({
       </motion.div>
     </div>
   );
-};
+});
+
+// Add display name for React devtools
+ContentOptimizationContainer.displayName = 'ContentOptimizationContainer';
