@@ -9,3 +9,4 @@ export * from './types';
 export * from './utils';
 // Export constants explicitly to avoid duplicate exports
 export { ANALYSIS_TIMEOUT } from './constants';
+export * from './useSeoRecommendations';

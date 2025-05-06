@@ -8,6 +8,7 @@ import { KeywordUsageSummary } from './KeywordUsageSummary';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { KeywordUsage } from '@/hooks/seo-analysis/types';
+import { ApplySeoRecommendationsCard } from './ApplySeoRecommendationsCard';
 
 interface ContentOptimizationContainerProps {
   recommendations: string[];
@@ -159,6 +160,11 @@ export const ContentOptimizationContainer = memo(({
           scores={scores} 
           getScoreColor={getScoreColor}
         />
+        
+        {/* Apply SEO Recommendations Card */}
+        {hasRunAnalysis && !isAnalyzing && (
+          <ApplySeoRecommendationsCard />
+        )}
         
         {/* Skip button card - shown when no analysis has run or as a recovery option */}
         {(!hasRunAnalysis || showRecoveryOption) && (

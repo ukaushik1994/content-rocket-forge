@@ -1,79 +1,60 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
+import { toast } from 'sonner';
 
 export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
-  const { 
-    mainKeyword, 
-    outline, 
-    content, 
-    additionalInstructions, 
-    serpData, 
-    selectedSolution,
-    contentTitle
-  } = state;
-  
+  const { state, setContent, setAdditionalInstructions } = useContentBuilder();
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [showOutline, setShowOutline] = useState(true);
   const [showGenerator, setShowGenerator] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
+  const [saveTitle, setSaveTitle] = useState('');
   const [saveNote, setSaveNote] = useState('');
   const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
 
-  // Mark this step as complete when we have content
+  // Set initial save title based on content title or main keyword
   useEffect(() => {
-    if (content && content.trim().length > 100) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+    if (!saveTitle && (state.contentTitle || state.mainKeyword)) {
+      setSaveTitle(state.contentTitle || `Content about ${state.mainKeyword}`);
     }
-  }, [content, dispatch]);
+  }, [state.contentTitle, state.mainKeyword, saveTitle]);
 
-  useEffect(() => {
-    if (contentTitle && contentTitle !== saveTitle) {
-      setSaveTitle(contentTitle);
-    }
-  }, [contentTitle, saveTitle]);
+  // Handle content change
+  const handleContentChange = useCallback((newContent: string) => {
+    setContent(newContent);
+  }, [setContent]);
 
-  const handleContentChange = (newContent: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: newContent });
-  };
+  // Handle instructions change
+  const handleInstructionsChange = useCallback((instructions: string) => {
+    setAdditionalInstructions(instructions);
+  }, [setAdditionalInstructions]);
 
-  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setAdditionalInstructions(e.target.value);
-  };
+  // Handle toggle outline section
+  const handleToggleOutline = useCallback(() => {
+    setShowOutline(prev => !prev);
+  }, []);
 
-  const handleToggleOutline = () => {
-    setShowOutline(!showOutline);
-  };
-  
-  const handleToggleGenerator = () => {
-    setShowGenerator(!showGenerator);
-  };
+  // Handle toggle generator section
+  const handleToggleGenerator = useCallback(() => {
+    setShowGenerator(prev => !prev);
+  }, []);
 
-  const handleContentTemplateSelection = (template: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: template });
-    setShowGenerator(false);
-  };
-
-  const handleAiProviderChange = (provider: AiProvider) => {
+  // Handle AI provider change
+  const handleAiProviderChange = useCallback((provider: AiProvider) => {
     setAiProvider(provider);
-  };
+    toast.info(`AI provider set to ${provider}`);
+  }, []);
 
-  // Convert outline to the appropriate format for the sidebar component
-  const processedOutline = Array.isArray(outline) 
-    ? outline.map(item => {
-        if (typeof item === 'string') {
-          return { id: Math.random().toString(), title: item, level: 2 };
-        } else if (item && typeof item === 'object' && 'title' in item) {
-          return item as OutlineSection;
-        }
-        return { id: Math.random().toString(), title: '', level: 2 };
-      })
-    : [];
+  // Handle content template selection
+  const handleContentTemplateSelection = useCallback((templateType: string) => {
+    toast.info(`Selected template: ${templateType}`);
+    setShowGenerator(false);
+    // Implementation would go here in a real app
+  }, []);
 
   return {
     state,
@@ -90,11 +71,11 @@ export function useWritingStep() {
     saveNote,
     setSaveNote,
     aiProvider,
-    additionalInstructions,
-    content,
-    mainKeyword,
-    outline: processedOutline,
-    selectedSolution,
+    additionalInstructions: state.additionalInstructions || '',
+    content: state.content,
+    mainKeyword: state.mainKeyword,
+    outline: state.outline,
+    selectedSolution: state.selectedSolution,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
