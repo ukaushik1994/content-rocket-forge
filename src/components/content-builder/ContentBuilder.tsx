@@ -23,8 +23,11 @@ export const ContentBuilder = () => {
   const completedVisibleSteps = visibleSteps.filter(step => step.completed);
   const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
+  // Get current step
+  const currentStep = steps[activeStep];
+  
   // Determine if user can proceed to next step
-  const canGoNext = activeStep < steps.length - 1 && steps[activeStep].completed;
+  const canGoNext = activeStep < steps.length - 1 && currentStep.completed;
   
   // Handle next step navigation
   const handleNextStep = () => {
