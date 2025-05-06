@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
 import { useSeoAnalysis } from '@/hooks/seo-analysis';
@@ -29,7 +29,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }) => (
 );
 
 export const OptimizationStep = () => {
-  const { state, skipOptimizationStep, navigateToStep } = useContentBuilder();
+  const { state, skipOptimizationStep, navigateToStep, dispatch } = useContentBuilder();
   const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const [initialAnalysisAttempted, setInitialAnalysisAttempted] = useState(false);
@@ -58,6 +58,26 @@ export const OptimizationStep = () => {
     forceCompleteOptimization
   } = useContentRewriter();
   
+  // Debugging function to check the state of the step
+  const debugStepState = useCallback(() => {
+    const stepIndex = state.steps.findIndex(step => step.id === 5); // Optimization step has ID 5
+    if (stepIndex >= 0) {
+      const step = state.steps[stepIndex];
+      console.log("Optimization step state:", {
+        completed: step.completed,
+        analyzed: step.analyzed,
+        id: step.id,
+        name: step.name,
+      });
+      console.log("Current active step index:", state.activeStep);
+      console.log("SEO Score:", seoScore);
+      console.log("Optimization skipped:", state.optimizationSkipped);
+      console.log("Can navigate to next step:", state.activeStep < state.steps.length - 1);
+    } else {
+      console.error("Could not find optimization step");
+    }
+  }, [state.steps, state.activeStep, seoScore, state.optimizationSkipped]);
+  
   // Run initial analysis if we have content but no SEO score - with improved condition checks
   useEffect(() => {
     // Check if we should run analysis automatically
@@ -72,6 +92,8 @@ export const OptimizationStep = () => {
     if (shouldRunAnalysis) {
       // Mark that we've attempted initial analysis to prevent loops
       setInitialAnalysisAttempted(true);
+      
+      console.log("Starting initial SEO analysis for content...");
       
       // Small delay to allow UI to render before starting analysis
       const timer = setTimeout(() => {
@@ -88,6 +110,19 @@ export const OptimizationStep = () => {
   // Check if optimization step is completed
   const isOptimizationCompleted = state.steps[5] && state.steps[5].completed;
   
+  // Debug on component mount and when optimization status changes
+  useEffect(() => {
+    debugStepState();
+  }, [debugStepState, hasRunAnalysis, isOptimizationCompleted, state.optimizationSkipped]);
+  
+  // Ensure we can move forward if analysis errors out
+  useEffect(() => {
+    if (analysisError && !state.steps[5]?.completed && !state.optimizationSkipped) {
+      console.log("Analysis error detected, marking step as analyzed to allow progression");
+      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+    }
+  }, [analysisError, dispatch, state.steps, state.optimizationSkipped]);
+  
   // Handle skip with confirmation - with proper safeguards
   const handleSkipConfirm = () => {
     if (!hasRunAnalysis && !showSkipWarning) {
@@ -96,13 +131,26 @@ export const OptimizationStep = () => {
       skipOptimizationStep();
       setShowSkipWarning(false);
       toast.success('Optimization step skipped. Proceeding to next step.');
+      
+      // Add a small delay before attempting navigation
+      setTimeout(() => {
+        navigateToStep(state.activeStep + 1);
+      }, 100);
     }
   };
   
   // Force complete the step and navigate to next
   const handleCompleteAndContinue = () => {
-    forceCompleteOptimization();
-    navigateToStep(state.activeStep + 1);
+    console.log("Force completing optimization step and continuing...");
+    
+    // First, ensure the step is marked as analyzed and completed
+    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    
+    // Adding a small delay to ensure state updates before navigation
+    setTimeout(() => {
+      navigateToStep(state.activeStep + 1);
+    }, 100);
   };
   
   // Get recommendation IDs from the state - memoized to prevent recalculation

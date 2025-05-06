@@ -17,6 +17,9 @@ export const createSeoActions = (
     
     // Mark step as analyzed regardless of score
     dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+    
+    // Also mark step as completed if we've analyzed it
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
   };
   
   const applySeoImprovement = (id: string) => {
@@ -36,7 +39,8 @@ export const createSeoActions = (
     // Mark the step as skipped
     dispatch({ type: 'SKIP_OPTIMIZATION_STEP' });
     
-    // Also mark the step as completed so we can move forward
+    // Also mark the step as analyzed and completed so we can move forward
+    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     
     // Force completion to ensure we can move forward

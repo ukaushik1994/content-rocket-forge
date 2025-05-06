@@ -49,14 +49,26 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
     return () => clearTimeout(timer);
   }, [content, mainKeyword, selectedKeywords]);
   
-  // Mark step as complete based on score - fixed with proper dependency check and conditions
+  // Ensure step is marked as analyzed when we have recommendations
   useEffect(() => {
-    // Only mark as completed if we have a good score or the step was analyzed
-    // Adding a check to prevent repeated dispatches which can cause infinite loops
-    const shouldMarkComplete = seoScore >= 70;
-    const stepAnalyzed = state.steps[5] && state.steps[5].analyzed;
-    
-    if ((shouldMarkComplete || stepAnalyzed) && !state.steps[5]?.completed) {
+    if (recommendations.length > 0) {
+      console.log('Marking step as analyzed due to recommendations presence');
+      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+    }
+  }, [recommendations, dispatch]);
+  
+  // Mark step as complete based on score or analysis - ensure we only run this once
+  useEffect(() => {
+    // Only mark as analyzed and completed if we have a good score
+    // This prevents loops from repeatedly dispatching actions
+    if (seoScore >= 70 && !state.steps[5]?.completed) {
+      console.log('Marking step as analyzed and completed due to good score:', seoScore);
+      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    } 
+    // If step was analyzed but not completed, and we have a minimum score, mark as completed
+    else if (state.steps[5]?.analyzed && !state.steps[5]?.completed && seoScore >= 50) {
+      console.log('Marking step as completed due to minimum score:', seoScore);
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     }
   }, [seoScore, dispatch, state.steps]);
@@ -69,6 +81,8 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
     // Show loading toast
     toast.loading('Analyzing your content...', { id: 'seo-analysis' });
     
+    console.log('Starting SEO analysis run...');
+    
     runAnalysis(
       setIsAnalyzing,
       setKeywordUsage,
@@ -77,7 +91,10 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
       setImprovements,
       setAnalysisError
     );
-  }, [runAnalysis, isAnalyzing]);
+    
+    // Always mark step as analyzed after running analysis
+    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+  }, [runAnalysis, isAnalyzing, dispatch]);
   
   // Force skip analysis if it's taking too long
   const forceSkipAnalysis = useCallback(() => {
@@ -86,6 +103,8 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
     
     setIsAnalyzing(false);
     setAnalysisError(null);
+    
+    console.log('Force skipping analysis...');
     
     // Mark step as analyzed and completed so user can continue
     dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });

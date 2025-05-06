@@ -1,8 +1,8 @@
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
-import { getImprovementType, getRewriteInstructions } from '@/utils/seo/contentRewriter';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Custom hook for content rewriting functionality
@@ -18,105 +18,80 @@ export const useContentRewriter = () => {
   const [rewrittenContent, setRewrittenContent] = useState('');
   const [isRewriting, setIsRewriting] = useState(false);
   
-  // Mock function to simulate AI rewriting content
-  const simulateContentRewrite = async (content: string, instructions: string) => {
-    // In a real implementation, this would call an AI service
-    // For now we'll just simulate some improvements to the content
-    
-    setIsRewriting(true);
-    
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      let improved = content;
-      
-      // Simulate different improvements based on recommendation type
-      switch (rewriteType) {
-        case 'keyword':
-          // Add some keyword mentions
-          const keywordMatch = instructions.match(/keyword "([^"]+)"/i);
-          const keyword = keywordMatch ? keywordMatch[1] : '';
-          if (keyword) {
-            improved = `${keyword} - ${improved}`;
-            improved = improved.replace(/\.$/, `. This relates to ${keyword}.`);
-          }
-          break;
-          
-        case 'heading':
-          // Add some headings
-          const paragraphs = improved.split('\n\n');
-          if (paragraphs.length >= 2) {
-            improved = `# ${paragraphs[0].trim()}\n\n` + 
-                      paragraphs.slice(1).map(p => p.trim()).join('\n\n');
-            
-            // Add subheadings if content is long enough
-            if (paragraphs.length >= 4) {
-              const midIndex = Math.floor(paragraphs.length / 2);
-              improved = improved.split('\n\n').map((p, i) => {
-                if (i === midIndex) return `\n\n## Additional Information\n\n${p}`;
-                return p;
-              }).join('\n\n');
-            }
-          }
-          break;
-          
-        case 'content':
-        case 'readability':
-          // Break up long paragraphs
-          improved = improved.split('\n\n').map(p => {
-            if (p.length > 300) {
-              const midPoint = Math.floor(p.length / 2);
-              const breakPoint = p.indexOf('. ', midPoint);
-              if (breakPoint !== -1) {
-                return p.substring(0, breakPoint + 1) + '\n\n' + p.substring(breakPoint + 2);
-              }
-            }
-            return p;
-          }).join('\n\n');
-          break;
-          
-        case 'length':
-          // Add a conclusion paragraph
-          improved = improved + '\n\n' + "In conclusion, this content demonstrates the key points discussed above. It's important to consider all aspects of this topic for a comprehensive understanding.";
-          break;
-      }
-      
-      setRewrittenContent(improved);
-    } catch (error) {
-      console.error('Error rewriting content:', error);
-      toast.error('Failed to generate optimized content');
-      setRewrittenContent(content); // Use original content as fallback
-    } finally {
-      setIsRewriting(false);
-    }
-  };
-  
-  // Handle rewriting content based on a recommendation
+  // Handle rewrite content button click
   const handleRewriteContent = useCallback((recommendation: string, id: string) => {
-    // Skip if already rewriting
-    if (isRewriting) return;
-    
-    // Set selected recommendation
     setSelectedRecommendation(recommendation);
     setSelectedRecommendationId(id);
     
-    // Determine rewrite type
-    const type = getImprovementType(recommendation);
+    // Determine rewrite type based on recommendation text
+    let type = 'content';
+    if (recommendation.toLowerCase().includes('keyword')) {
+      type = 'keyword';
+    } else if (recommendation.toLowerCase().includes('heading')) {
+      type = 'heading';
+    }
     setRewriteType(type);
     
-    // Get rewrite instructions
-    const instructions = getRewriteInstructions(type, recommendation);
+    // Generate improved content
+    generateRewrittenContent(recommendation, type);
     
     // Show dialog
     setShowRewriteDialog(true);
+  }, []);
+  
+  // Generate improved content based on recommendation
+  const generateRewrittenContent = useCallback((recommendation: string, type: string) => {
+    setIsRewriting(true);
     
-    // Start rewriting process
-    simulateContentRewrite(content, instructions);
-  }, [content, isRewriting]);
+    // In a real implementation, this would call an AI service
+    console.log(`Generating improved ${type} content based on recommendation:`, recommendation);
+    
+    // For now, simulate API call with a delay
+    setTimeout(() => {
+      let newContent = content;
+      
+      try {
+        // Simplified implementation for demo purposes
+        if (type === 'keyword') {
+          // For keyword issues, add the missing keywords
+          const missingKeyword = recommendation.match(/include ["']([^"']+)["']/)?.[1] || 'key topic';
+          newContent = addKeywordToContent(content, missingKeyword);
+        } else if (type === 'heading') {
+          // For heading issues, improve headings
+          newContent = improveHeadings(content);
+        } else {
+          // For general content issues, improve readability
+          newContent = improveContent(content, recommendation);
+        }
+        
+        setRewrittenContent(newContent);
+        
+        // Add improvement if not exists
+        if (!seoImprovements.some(imp => imp.id === selectedRecommendationId)) {
+          const newImprovement = {
+            id: selectedRecommendationId || uuidv4(),
+            type,
+            recommendation,
+            impact: 'high',
+            applied: false
+          };
+          
+          dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovement });
+        }
+      } catch (error) {
+        console.error('Error generating rewritten content:', error);
+        toast.error('Failed to generate improved content. Please try again.');
+        setRewrittenContent(content); // Fallback to original content
+      } finally {
+        setIsRewriting(false);
+      }
+    }, 1500); // Simulated delay
+  }, [content, selectedRecommendationId, dispatch, seoImprovements]);
   
   // Apply the rewritten content and mark improvement as applied
   const applyRewrittenContent = useCallback(() => {
+    console.log('Applying rewritten content...');
+    
     // Update content in context
     if (setContent) {
       setContent(rewrittenContent);
@@ -125,22 +100,32 @@ export const useContentRewriter = () => {
       dispatch({ type: 'SET_CONTENT', payload: rewrittenContent });
     }
     
-    // Mark recommendation as applied
+    // Mark the improvement as applied if it exists
     if (selectedRecommendationId) {
       dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: selectedRecommendationId });
-      
-      // Check if this is the last improvement or if enough improvements have been applied
-      const totalImprovements = state.seoImprovements.length;
-      const appliedImprovements = state.seoImprovements.filter(imp => imp.applied).length + 1; // +1 for current
-      
-      // Mark step as completed if more than 60% of improvements are applied or at least 3
-      if (appliedImprovements >= Math.max(3, Math.ceil(totalImprovements * 0.6))) {
-        dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-      }
     }
     
-    // Close dialog
+    // Close the dialog
     setShowRewriteDialog(false);
+    
+    // Reset states
+    setSelectedRecommendation('');
+    setRewriteType('');
+    
+    // If we've applied improvements, ensure that the step can be completed
+    const updatedImprovements = state.seoImprovements.map(improvement => 
+      improvement.id === selectedRecommendationId 
+        ? { ...improvement, applied: true } 
+        : improvement
+    );
+    
+    const appliedCount = updatedImprovements.filter(imp => imp.applied).length;
+    const totalCount = updatedImprovements.length;
+    
+    // If we've applied enough improvements (60% or at least 3), mark the step as completed
+    if (appliedCount >= Math.max(3, Math.ceil(totalCount * 0.6))) {
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
+    }
     
     // Show success notification
     toast.success('Content optimization applied');
@@ -148,16 +133,58 @@ export const useContentRewriter = () => {
   
   // Check if a recommendation has been applied
   const isRecommendationApplied = useCallback((id: string) => {
-    if (!seoImprovements) return false;
-    const improvement = seoImprovements.find(item => item.id === id);
-    return improvement ? improvement.applied : false;
-  }, [seoImprovements]);
+    return state.seoImprovements.some(imp => imp.id === id && imp.applied);
+  }, [state.seoImprovements]);
   
   // Force complete the optimization step
   const forceCompleteOptimization = useCallback(() => {
+    console.log('Force completing optimization step...');
+    
+    // Mark step as analyzed and completed
+    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-    toast.success('Optimization step marked as completed');
+    
+    toast.success('Optimization step completed. Moving to final review.');
   }, [dispatch]);
+  
+  // Helper functions for content modification
+  const addKeywordToContent = (originalContent: string, keyword: string): string => {
+    const paragraphs = originalContent.split('\n\n');
+    
+    // Add keyword to first paragraph if it doesn't contain it
+    if (!paragraphs[0].toLowerCase().includes(keyword.toLowerCase())) {
+      paragraphs[0] += ` This addresses ${keyword} in a comprehensive way.`;
+    }
+    
+    return paragraphs.join('\n\n');
+  };
+  
+  const improveHeadings = (originalContent: string): string => {
+    const lines = originalContent.split('\n');
+    
+    // Simple implementation: add a "#" to lines that seem like they should be headings
+    return lines.map(line => {
+      const trimmed = line.trim();
+      if (trimmed.length > 0 && 
+          trimmed.length < 60 && 
+          !trimmed.startsWith('#') && 
+          !trimmed.endsWith('.') &&
+          !trimmed.includes(':')) {
+        return `## ${trimmed}`;
+      }
+      return line;
+    }).join('\n');
+  };
+  
+  const improveContent = (originalContent: string, recommendation: string): string => {
+    // Simple example: add a paragraph addressing the recommendation
+    const paragraphs = originalContent.split('\n\n');
+    
+    // Add a paragraph after the first one
+    paragraphs.splice(1, 0, `To address a key aspect: ${recommendation.replace('Consider', 'We have improved')}.`);
+    
+    return paragraphs.join('\n\n');
+  };
   
   return {
     showRewriteDialog,
