@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentRewriteDialog } from '@/components/content-builder/optimization/ContentRewriteDialog';
-import { useSeoAnalysis } from '@/hooks/useSeoAnalysis';
+import { useSeoAnalysis } from '@/hooks/seo-analysis';
 import { useContentRewriter } from '@/hooks/useContentRewriter';
 import { SeoAnalysisHeader } from '@/components/content-builder/optimization/SeoAnalysisHeader';
 import { ProgressBar } from '@/components/content-builder/optimization/ProgressBar';
