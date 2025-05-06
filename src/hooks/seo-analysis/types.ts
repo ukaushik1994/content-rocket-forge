@@ -20,6 +20,26 @@ export interface ContentScores {
   readability: number;
 }
 
+// For backward compatibility with existing code
+export interface SeoAnalysisScores {
+  keywordUsage: number;
+  contentLength: number;
+  readability: number;
+}
+
+// Return type for the useSeoAnalysis hook
+export interface UseSeoAnalysisReturn {
+  isAnalyzing: boolean;
+  keywordUsage: KeywordUsage[];
+  recommendations: string[];
+  scores: SeoAnalysisScores;
+  improvements: any[]; // Using any[] to match existing implementation
+  analysisError: string | null;
+  runSeoAnalysis: () => void;
+  getScoreColor: (score: number) => string;
+  forceSkipAnalysis: () => void;
+}
+
 // SEO analysis operation types
 export type AnalysisOperation = 
   | 'start'
