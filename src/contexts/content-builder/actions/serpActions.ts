@@ -38,6 +38,33 @@ export const createSerpActions = (
     }
   };
   
+  const toggleSerpSelection = (type: string, content: string) => {
+    // Find if this item is already in the selections
+    const existingIndex = state.serpSelections.findIndex(
+      item => item.type === type && item.content === content
+    );
+    
+    if (existingIndex >= 0) {
+      // Item exists, toggle its 'selected' state
+      const updatedSelections = [...state.serpSelections];
+      updatedSelections[existingIndex] = {
+        ...updatedSelections[existingIndex],
+        selected: !updatedSelections[existingIndex].selected
+      };
+      
+      dispatch({ 
+        type: 'SET_SERP_SELECTIONS', 
+        payload: updatedSelections 
+      });
+    } else {
+      // Item doesn't exist, add it as selected
+      dispatch({ 
+        type: 'ADD_SERP_SELECTION', 
+        payload: { type, content, selected: true } 
+      });
+    }
+  };
+  
   const addContentFromSerp = (content: string, type: string) => {
     dispatch({ 
       type: 'ADD_SERP_SELECTION', 
@@ -96,5 +123,6 @@ export const createSerpActions = (
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
+    toggleSerpSelection,
   };
 };

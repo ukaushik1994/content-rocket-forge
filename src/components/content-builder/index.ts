@@ -11,4 +11,7 @@ export { SaveStep } from './steps/save';
 // Layout components
 export { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 
+// Outline components
+export { SelectedSerpItemsCard } from './outline/SelectedSerpItemsCard';
+
 // Other exports will be added back when the components are created

@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 
 export const contentBuilderReducer = (
@@ -67,16 +68,47 @@ export const contentBuilderReducer = (
       return { ...state, serpData: action.payload };
       
     case 'ADD_SERP_SELECTION':
-      return { 
-        ...state, 
-        serpSelections: [...state.serpSelections, action.payload] 
+      // Check if this item already exists
+      const existingItem = state.serpSelections.find(
+        item => item.type === action.payload.type && item.content === action.payload.content
+      );
+      
+      if (existingItem) {
+        // If it exists, toggle its selected state
+        return {
+          ...state,
+          serpSelections: state.serpSelections.map(item => 
+            (item.type === action.payload.type && item.content === action.payload.content)
+              ? { ...item, selected: action.payload.selected }
+              : item
+          )
+        };
+      } else {
+        // If it doesn't exist, add it
+        return { 
+          ...state, 
+          serpSelections: [...state.serpSelections, action.payload] 
+        };
+      }
+      
+    case 'SET_SERP_SELECTIONS':
+      return { ...state, serpSelections: action.payload };
+      
+    case 'TOGGLE_SERP_SELECTION':
+      return {
+        ...state,
+        serpSelections: state.serpSelections.map(item => 
+          (item.type === action.payload.type && item.content === action.payload.content)
+            ? { ...item, selected: !item.selected }
+            : item
+        )
       };
       
     case 'REMOVE_SERP_SELECTION':
       return {
         ...state,
         serpSelections: state.serpSelections.filter(
-          selection => selection.content !== action.payload
+          selection => !(selection.type === action.payload.type && selection.content === action.payload.content)
         )
       };
       

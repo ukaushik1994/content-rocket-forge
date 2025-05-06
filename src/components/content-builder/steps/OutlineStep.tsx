@@ -7,7 +7,7 @@ import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 
 export const OutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
-  const { outline } = state;
+  const { outline, serpSelections } = state;
   
   useEffect(() => {
     // Mark as complete if we have an outline with at least 3 sections
@@ -15,6 +15,9 @@ export const OutlineStep = () => {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
     }
   }, [outline, dispatch]);
+  
+  // Check if we have any selected SERP items
+  const hasSelectedItems = serpSelections.some(item => item.selected);
   
   return (
     <div className="space-y-6">
@@ -31,7 +34,7 @@ export const OutlineStep = () => {
       <ContentTitleCard />
 
       {/* Selected Items Summary - Now appears ABOVE AI Outline Generator */}
-      <SelectedSerpItemsCard />
+      {hasSelectedItems && <SelectedSerpItemsCard />}
 
       {/* AI Outline Generator */}
       <AIOutlineGenerator />
