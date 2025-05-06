@@ -12,6 +12,7 @@ import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
+import { toast } from 'sonner';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -33,6 +34,18 @@ export const OptimizeAndReviewStep = () => {
   
   const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
   const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems();
+  
+  // Debug the state when component loads
+  useEffect(() => {
+    console.log("OptimizeAndReviewStep - Current state:", {
+      content: state.content?.substring(0, 50) + '...',
+      mainKeyword: state.mainKeyword,
+      metaTitle: state.metaTitle,
+      metaDescription: state.metaDescription,
+      selectedKeywords: state.selectedKeywords,
+      seoScore: state.seoScore
+    });
+  }, [state]);
   
   // Handler for running checks specific to the current tab
   const handleRunTabChecks = () => {
@@ -56,6 +69,14 @@ export const OptimizeAndReviewStep = () => {
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+  };
+
+  const onMetaTitleChange = (value: string) => {
+    dispatch({ type: 'SET_META_TITLE', payload: value });
+  };
+  
+  const onMetaDescriptionChange = (value: string) => {
+    dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
   
   return (
@@ -117,8 +138,8 @@ export const OptimizeAndReviewStep = () => {
             onRunAllChecks={runAllChecks}
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
-            onMetaTitleChange={(value) => dispatch({ type: 'SET_META_TITLE', payload: value })}
-            onMetaDescriptionChange={(value) => dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
             onGenerateMeta={generateMeta}
           />
         </TabsContent>
@@ -130,8 +151,8 @@ export const OptimizeAndReviewStep = () => {
             selectedKeywords={state.selectedKeywords}
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
-            onMetaTitleChange={(value) => dispatch({ type: 'SET_META_TITLE', payload: value })}
-            onMetaDescriptionChange={(value) => dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
             onGenerateMeta={generateMeta}
             solutionIntegrationMetrics={state.solutionIntegrationMetrics}
             selectedSolution={state.selectedSolution}
@@ -151,8 +172,8 @@ export const OptimizeAndReviewStep = () => {
             selectedKeywords={state.selectedKeywords}
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
-            onMetaTitleChange={(value) => dispatch({ type: 'SET_META_TITLE', payload: value })}
-            onMetaDescriptionChange={(value) => dispatch({ type: 'SET_META_DESCRIPTION', payload: value })}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
             onGenerateMeta={generateMeta}
             solutionIntegrationMetrics={state.solutionIntegrationMetrics}
             selectedSolution={state.selectedSolution}

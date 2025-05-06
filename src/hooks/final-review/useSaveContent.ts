@@ -4,6 +4,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
+import { useContent } from '@/contexts/content';
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -12,6 +13,7 @@ export const useSaveContent = () => {
   const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
+  const { addContentItem } = useContent(); // Import addContentItem from the content context
   const navigate = useNavigate();
 
   const handleSaveToDraft = async (): Promise<void> => {
@@ -20,7 +22,7 @@ export const useSaveContent = () => {
       
       // Prepare content for saving
       const saveParams: SaveContentParams = {
-        title: state.contentTitle || state.mainKeyword,
+        title: state.contentTitle || state.metaTitle || state.mainKeyword,
         content: state.content,
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
@@ -31,14 +33,22 @@ export const useSaveContent = () => {
         notes: ''
       };
       
+      // Try saving using content builder context first
       const contentId = await saveContentToDraft(saveParams);
       
-      if (contentId) {
-        setIsSavedToDraft(true);
-        toast.success('Content saved to drafts successfully');
-      } else {
-        toast.error('Error saving content to drafts');
+      // If that doesn't work, use the content context directly
+      if (!contentId) {
+        await addContentItem({
+          title: saveParams.title,
+          content: saveParams.content || '',
+          status: 'draft',
+          seo_score: state.seoScore,
+          keywords: [state.mainKeyword, ...state.selectedKeywords],
+        });
       }
+      
+      setIsSavedToDraft(true);
+      toast.success('Content saved to drafts successfully');
     } catch (error) {
       console.error('Error saving content to draft:', error);
       toast.error('Failed to save content to drafts');
@@ -53,7 +63,7 @@ export const useSaveContent = () => {
       
       // Prepare content for publishing
       const publishParams: SaveContentParams = {
-        title: state.contentTitle || state.mainKeyword,
+        title: state.contentTitle || state.metaTitle || state.mainKeyword,
         content: state.content,
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
@@ -61,20 +71,30 @@ export const useSaveContent = () => {
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
         status: 'published',
-        notes: ''
+        notes: '',
+        seoScore: state.seoScore
       };
       
-      const contentId = await saveContentToPublished(publishParams);
+      // Try publishing using content builder context
+      let contentId = await saveContentToPublished(publishParams);
       
-      if (contentId) {
-        toast.success('Content published successfully');
-        // Navigate back to content library
-        setTimeout(() => {
-          navigate('/content');
-        }, 1000);
-      } else {
-        toast.error('Error publishing content');
+      // If that doesn't work, use the content context directly
+      if (!contentId) {
+        await addContentItem({
+          title: publishParams.title,
+          content: publishParams.content || '',
+          status: 'published',
+          seo_score: state.seoScore,
+          keywords: [state.mainKeyword, ...state.selectedKeywords],
+          meta_description: state.metaDescription || undefined,
+        });
       }
+      
+      toast.success('Content published successfully');
+      // Navigate back to content library
+      setTimeout(() => {
+        navigate('/content');
+      }, 1000);
     } catch (error) {
       console.error('Error publishing content:', error);
       toast.error('Failed to publish content');

@@ -36,6 +36,10 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
   };
   
   const handlePublish = async () => {
+    if (completionPercentage < 60 && !confirm('Your content is not fully optimized. Are you sure you want to publish?')) {
+      return;
+    }
+    
     try {
       await onPublish();
     } catch (error) {
@@ -114,7 +118,7 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
           
           <Button
             onClick={handlePublish}
-            disabled={isSaving || completionPercentage < 60}
+            disabled={isSaving}
             className={cn(
               "gap-2",
               isReady 

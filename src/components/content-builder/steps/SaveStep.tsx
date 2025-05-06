@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,10 +34,11 @@ export const SaveStep = () => {
     metaTitle,
     metaDescription,
     contentTitle,
-    seoImprovements
+    seoImprovements,
+    selectedKeywords
   } = state;
   
-  const { addContentItem, contentItems, getContentItem } = useContent();
+  const { addContentItem, contentItems } = useContent();
   const navigate = useNavigate();
   
   // Track optimizations
@@ -53,6 +55,7 @@ export const SaveStep = () => {
   const [socialShare, setSocialShare] = useState(true);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Update the local state when global state changes
   useEffect(() => {
@@ -92,6 +95,7 @@ export const SaveStep = () => {
       if (similarContent) {
         setAlreadySaved(true);
         setExistingContentId(similarContent.id);
+        console.log("[SaveStep] Found similar content:", similarContent);
       } else {
         setAlreadySaved(false);
         setExistingContentId(null);
@@ -123,6 +127,7 @@ export const SaveStep = () => {
 
     // Save to content library
     try {
+      setIsSubmitting(true);
       console.log("[SaveStep] Saving content with title:", title);
       console.log("[SaveStep] Using description:", description);
       console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
@@ -133,7 +138,7 @@ export const SaveStep = () => {
         content: content,
         status: 'draft' as 'draft' | 'published' | 'archived',
         seo_score: seoScore,
-        keywords: [mainKeyword, ...(state.selectedKeywords || [])],
+        keywords: [mainKeyword, ...(selectedKeywords || [])],
         meta_description: description, // Store the meta description
         optimized: hasAppliedOptimizations // Track if optimizations were applied
       };
@@ -149,6 +154,8 @@ export const SaveStep = () => {
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -168,6 +175,22 @@ export const SaveStep = () => {
   
   // Get solution name safely
   const solutionName = selectedSolution ? selectedSolution.name : 'Not specified';
+  
+  // Validate that we have content before showing the form
+  if (!content || content.trim().length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">No Content Available</h2>
+        <p className="text-muted-foreground mb-6">
+          You need to generate content before you can save or publish.
+        </p>
+        <Button onClick={() => navigate('/content-builder')}>
+          Return to Content Builder
+        </Button>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -346,9 +369,9 @@ export const SaveStep = () => {
             : 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple'
           } min-w-[150px]`}
           onClick={handleSaveContent}
-          disabled={isSaving || !content || !mainKeyword}
+          disabled={isSubmitting || !content || !mainKeyword || !title.trim()}
         >
-          {isSaving ? (
+          {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
