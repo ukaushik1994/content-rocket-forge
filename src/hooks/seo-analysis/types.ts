@@ -1,38 +1,29 @@
 
 /**
- * Type definitions for SEO analysis functionality
+ * SEO analysis types
  */
 
+// Analysis timeout in milliseconds
+export const ANALYSIS_TIMEOUT = 45000;
+
+// Keyword usage metrics
 export interface KeywordUsage {
   keyword: string;
   count: number;
-  density: string;
+  density: string; // Formatted as percentage string with %
 }
 
-export interface SeoAnalysisScores {
+// Analysis scores for different content aspects
+export interface ContentScores {
   keywordUsage: number;
   contentLength: number;
   readability: number;
 }
 
-export interface SeoImprovement {
-  id: string;
-  type: string;
-  recommendation: string;
-  impact: 'high' | 'medium' | 'low';
-  applied: boolean;
-}
-
-export interface UseSeoAnalysisReturn {
-  isAnalyzing: boolean;
-  keywordUsage: KeywordUsage[];
-  recommendations: string[];
-  scores: SeoAnalysisScores;
-  improvements: SeoImprovement[];
-  analysisError: string | null;
-  runSeoAnalysis: () => void;
-  getScoreColor: (score: number) => string;
-  forceSkipAnalysis: () => void;
-}
-
-export const ANALYSIS_TIMEOUT = 20000; // 20 seconds
+// SEO analysis operation types
+export type AnalysisOperation = 
+  | 'start'
+  | 'analyze'
+  | 'cancel'
+  | 'reset'
+  | 'apply';

@@ -49,6 +49,7 @@ export const initialState: ContentBuilderState = {
   seoScore: 0,
   seoImprovements: [],
   optimizationSkipped: false,
+  keywordUsage: [], // Initialize as empty array
   
   // Selected Cluster
   selectedCluster: null,
