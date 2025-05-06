@@ -1,22 +1,26 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Solution, OutlineSection } from '@/contexts/content-builder/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 interface ContentSidebarProps {
   outline: OutlineSection[];
   selectedSolution: Solution | null;
   additionalInstructions: string;
   handleInstructionsChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
+
 export const ContentSidebar: React.FC<ContentSidebarProps> = ({
   outline,
   selectedSolution,
   additionalInstructions,
   handleInstructionsChange
 }) => {
-  return <div className="flex flex-col gap-4 h-full">
+  return (
+    <div className="flex flex-col gap-4 h-full">
       {/* Outline Card */}
       <Card className="flex-1 flex flex-col border">
         <CardHeader className="px-4 py-3 border-b">
@@ -32,14 +36,20 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {outline.length > 0 ? outline.map((section, index) => <TableRow key={section.id || index}>
+                {outline.length > 0 ? (
+                  outline.map((section, index) => (
+                    <TableRow key={section.id || index}>
                       <TableCell className="font-medium">{index + 1}</TableCell>
                       <TableCell>{typeof section === 'string' ? section : section.title}</TableCell>
-                    </TableRow>) : <TableRow>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
                     <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
                       No outline sections yet
                     </TableCell>
-                  </TableRow>}
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -47,7 +57,8 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
       </Card>
       
       {/* Solution Info Card */}
-      {selectedSolution && <Card className="border">
+      {selectedSolution && (
+        <Card className="border">
           <CardHeader className="px-4 py-3 border-b">
             <CardTitle className="text-sm font-medium">Solution Reference</CardTitle>
           </CardHeader>
@@ -57,23 +68,45 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
               <p className="text-xs text-muted-foreground">{selectedSolution.description}</p>
             </div>
             
-            {selectedSolution.features.length > 0 && <div>
+            {selectedSolution.features.length > 0 && (
+              <div>
                 <h4 className="text-xs font-medium mb-1">Features</h4>
                 <ul className="text-xs list-disc pl-4 space-y-1">
-                  {selectedSolution.features.slice(0, 3).map((feature, index) => <li key={index}>{feature}</li>)}
+                  {selectedSolution.features.slice(0, 3).map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
                 </ul>
-              </div>}
+              </div>
+            )}
             
-            {selectedSolution.useCases.length > 0 && <div>
+            {selectedSolution.useCases.length > 0 && (
+              <div>
                 <h4 className="text-xs font-medium mb-1">Use Cases</h4>
                 <ul className="text-xs list-disc pl-4 space-y-1">
-                  {selectedSolution.useCases.slice(0, 2).map((useCase, index) => <li key={index}>{useCase}</li>)}
+                  {selectedSolution.useCases.slice(0, 2).map((useCase, index) => (
+                    <li key={index}>{useCase}</li>
+                  ))}
                 </ul>
-              </div>}
+              </div>
+            )}
           </CardContent>
-        </Card>}
+        </Card>
+      )}
       
       {/* Additional Instructions Card */}
-      
-    </div>;
+      <Card className="border">
+        <CardHeader className="px-4 py-3 border-b">
+          <CardTitle className="text-sm font-medium">Additional Instructions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <Textarea
+            placeholder="Add any specific instructions for content generation..."
+            className="resize-none h-24"
+            value={additionalInstructions}
+            onChange={handleInstructionsChange}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
