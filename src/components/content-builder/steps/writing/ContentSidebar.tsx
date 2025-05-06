@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Solution, OutlineSection } from '@/contexts/content-builder/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ContentSidebarProps {
   outline: OutlineSection[];
@@ -18,20 +19,6 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
   additionalInstructions,
   handleInstructionsChange
 }) => {
-  const renderOutlineItem = (item: OutlineSection, index: number) => {
-    return (
-      <div key={item.id || index} className="ml-4 border-l pl-4 py-1">
-        <div className="font-medium">{item.title}</div>
-        {/* Handle children sections if they exist */}
-        {item.children && item.children.length > 0 && (
-          <div className="ml-4 mt-1 space-y-2">
-            {item.children.map((child, childIndex) => renderOutlineItem(child, childIndex))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Outline Card */}
@@ -40,14 +27,31 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
           <CardTitle className="text-sm font-medium">Content Outline</CardTitle>
         </CardHeader>
         <ScrollArea className="flex-1">
-          <CardContent className="p-4 space-y-2">
-            {outline.length > 0 ? (
-              outline.map((section, index) => renderOutlineItem(section, index))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No outline sections yet</p>
-              </div>
-            )}
+          <CardContent className="p-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Section</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {outline.length > 0 ? (
+                  outline.map((section, index) => (
+                    <TableRow key={section.id || index}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell>{typeof section === 'string' ? section : section.title}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
+                      No outline sections yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </ScrollArea>
       </Card>

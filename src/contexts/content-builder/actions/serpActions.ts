@@ -2,6 +2,7 @@
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
+import { v4 as uuid } from 'uuid';
 
 export const createSerpActions = (
   state: ContentBuilderState, 
@@ -51,45 +52,86 @@ export const createSerpActions = (
       return;
     }
     
-    // Create a basic outline from selected items
+    // Create a more structured outline from selected items
     const selectedItems = state.serpSelections.filter(item => item.selected);
     
     // Group items by type
     const headings = selectedItems.filter(item => item.type === 'heading').map(item => item.content);
     const questions = selectedItems.filter(item => item.type === 'question').map(item => item.content);
     const contentGaps = selectedItems.filter(item => item.type === 'contentGap').map(item => item.content);
+    const entities = selectedItems.filter(item => item.type === 'entity').map(item => item.content);
     
-    // Create outline sections
-    const outlineSections = [
-      "Introduction",
-    ];
+    // Create outline sections based on selected items
+    let outlineSections = [];
     
-    // Add headings if available
+    // Start with introduction
+    outlineSections.push("Introduction");
+    
+    // Add headings as main structure if available
     if (headings.length > 0) {
-      outlineSections.push(...headings);
+      outlineSections = [...outlineSections, ...headings];
     }
     
-    // Add questions if available
+    // Add content gaps as unique sections
+    if (contentGaps.length > 0) {
+      contentGaps.forEach(gap => {
+        if (!outlineSections.includes(gap)) {
+          outlineSections.push(gap);
+        }
+      });
+    }
+    
+    // Add questions as sections or a FAQ section
     if (questions.length > 0) {
-      if (questions.length === 1) {
-        outlineSections.push(questions[0]);
+      if (questions.length <= 2) {
+        // If only 1-2 questions, add them directly
+        questions.forEach(question => {
+          if (!outlineSections.includes(question)) {
+            outlineSections.push(question);
+          }
+        });
       } else {
+        // If more than 2 questions, create a FAQ section
         outlineSections.push("Frequently Asked Questions");
       }
     }
     
-    // Add content gaps if available
-    if (contentGaps.length > 0) {
-      outlineSections.push("Additional Information");
+    // Add entities if they're not already included
+    if (entities.length > 0) {
+      // Check if we need a separate section for entities or if they're already covered
+      const entitySectionNeeded = entities.some(entity => 
+        !outlineSections.some(section => 
+          section.toLowerCase().includes(entity.toLowerCase())
+        )
+      );
+      
+      if (entitySectionNeeded) {
+        outlineSections.push("Key Concepts and Definitions");
+      }
     }
     
     // Always add conclusion
-    outlineSections.push("Conclusion");
+    if (!outlineSections.includes("Conclusion")) {
+      outlineSections.push("Conclusion");
+    }
     
+    // Set the outline in state
     dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
     
-    // Navigate to the next step - fix the action type here
+    // Create an array of outline sections with IDs for the new table format
+    const outlineSectionsWithIds = outlineSections.map(title => ({
+      id: uuid(),
+      title,
+      level: 1,
+    }));
+    
+    // Set the structured outline sections in state
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: outlineSectionsWithIds });
+    
+    // Navigate to the outline step
     dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
+    
+    toast.success(`Generated outline with ${outlineSections.length} sections based on your selected items`);
   };
   
   return {
@@ -98,4 +140,3 @@ export const createSerpActions = (
     generateOutlineFromSelections,
   };
 };
-

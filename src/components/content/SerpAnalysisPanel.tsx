@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles } from 'lucide-react';
@@ -9,7 +10,6 @@ import {
   SerpEmptyState,
   SerpNoDataFound,
   SerpMetricsSection,
-  SerpOverviewSection,
   SerpKeywordsSection,
   SerpQuestionsSection,
   SerpCompetitorsSection,
@@ -35,7 +35,6 @@ export function SerpAnalysisPanel({
 }: SerpAnalysisPanelProps) {
   const [expandedSections, setExpandedSections] = useState<{
     searchMetrics: boolean;
-    overview: boolean;
     keywords: boolean;
     questions: boolean;
     competitors: boolean;
@@ -44,7 +43,6 @@ export function SerpAnalysisPanel({
     contentGaps: boolean;
   }>({
     searchMetrics: true,
-    overview: true,
     keywords: false,
     questions: false,
     competitors: false,
@@ -163,24 +161,6 @@ export function SerpAnalysisPanel({
         />
       </motion.div>
 
-      {/* Content Overview Section */}
-      <div className="space-y-4">
-        <SerpSectionHeader 
-          title="Content Strategy" 
-          expanded={expandedSections.overview}
-          onToggle={() => toggleSection('overview')}
-          variant="purple"
-          description="Strategic recommendations for structuring your content"
-        />
-        
-        <SerpOverviewSection 
-          serpData={serpData}
-          mainKeyword={mainKeyword}
-          expanded={expandedSections.overview}
-          onAddToContent={onAddToContent}
-        />
-      </div>
-      
       {/* Related Keywords Section */}
       <div className="space-y-4">
         <SerpSectionHeader 
