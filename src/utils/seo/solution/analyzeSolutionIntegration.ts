@@ -22,7 +22,8 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
       positioningScore: 0,
       nameMentions: 0,
       painPointsAddressed: 0,
-      audienceAlignment: 0
+      audienceAlignment: 0,
+      mentionedFeatures: []
     };
   }
   
@@ -36,6 +37,11 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
     }
     return count;
   }, 0);
+  
+  // Track which features are mentioned
+  const mentionedFeatures = features.filter(feature => 
+    contentLower.includes(feature.toLowerCase())
+  );
   
   const featureIncorporationPercentage = features.length > 0 ? 
     (featureIncorporation / features.length) * 100 : 0;
@@ -105,6 +111,7 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
     positioningScore: Math.min(100, positioningScore),
     nameMentions,
     painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),
-    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2))
+    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2)),
+    mentionedFeatures
   };
 };

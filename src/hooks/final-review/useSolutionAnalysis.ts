@@ -56,6 +56,7 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
               6. Number of Solution Name Mentions
               7. Number of CTA Mentions
               8. Audience Alignment (0-100): How well does the content align with the target audience?
+              9. Mentioned Features: List of solution features that are mentioned in the content
               
               Return your analysis as a JSON object with these metrics.
             `
@@ -84,6 +85,11 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
             // Ensure we have all required properties
             if (!solutionMetrics.featureIncorporation || !solutionMetrics.positioningScore) {
               throw new Error('Incomplete metrics in AI response');
+            }
+            
+            // Add empty array for mentionedFeatures if not provided
+            if (!solutionMetrics.mentionedFeatures) {
+              solutionMetrics.mentionedFeatures = [];
             }
           } else {
             throw new Error('Could not extract valid JSON from AI response');
@@ -119,7 +125,8 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
         mentions: localMetrics.featureIncorporation > 50 ? 'High' : 'Low',
         audienceAlignment: localMetrics.audienceAlignment,
         nameMentions: localMetrics.nameMentions,
-        ctaMentions: ctaInfo?.ctaCount || 0
+        ctaMentions: ctaInfo?.ctaCount || 0,
+        mentionedFeatures: localMetrics.mentionedFeatures || []
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: fallbackMetrics });
