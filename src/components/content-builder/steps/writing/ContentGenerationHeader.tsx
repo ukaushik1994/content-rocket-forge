@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Sparkles, EyeOff, Eye } from "lucide-react";
+import { Sparkles, Clipboard, EyeOff, Eye } from "lucide-react";
 import { AiProviderSelector } from "@/components/content-builder/outline/ai-generator/AiProviderSelector";
 import { AiProvider } from '@/services/aiService/types';
 
@@ -37,6 +37,16 @@ export function ContentGenerationHeader({
         >
           <Sparkles className="h-4 w-4 mr-2" />
           {isGenerating ? 'Generating...' : 'Generate Content'}
+        </Button>
+        
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-glass border border-white/10 hover:border-white/20"
+          onClick={handleToggleGenerator}
+        >
+          <Clipboard className="h-4 w-4 mr-2" />
+          Templates
         </Button>
       </div>
       
