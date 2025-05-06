@@ -1,178 +1,148 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
-import { getImprovementType } from '@/utils/seo/contentRewriter';
-
-const REWRITE_TIMEOUT = 8000; // 8 seconds timeout for generating content
+import { getImprovementType, getRewriteInstructions } from '@/utils/seo/contentRewriter';
 
 /**
- * Custom hook for content rewriting functionality with improved performance and error handling
+ * Custom hook for content rewriting functionality
  */
 export const useContentRewriter = () => {
-  const { state, setContent, dispatch } = useContentBuilder();
-  const { content, mainKeyword, seoImprovements = [] } = state;
+  const { state, dispatch, updateContent } = useContentBuilder();
+  const { content, seoImprovements } = state;
   
   const [showRewriteDialog, setShowRewriteDialog] = useState(false);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
-  const [rewriteType, setRewriteType] = useState<string>('');
-  const [rewrittenContent, setRewrittenContent] = useState<string>('');
+  const [selectedRecommendation, setSelectedRecommendation] = useState('');
+  const [selectedRecommendationId, setSelectedRecommendationId] = useState('');
+  const [rewriteType, setRewriteType] = useState('');
+  const [rewrittenContent, setRewrittenContent] = useState('');
   const [isRewriting, setIsRewriting] = useState(false);
-  const [currentRecommendationId, setCurrentRecommendationId] = useState<string | null>(null);
   
-  // Add abort controller ref to cancel operations
-  const abortControllerRef = useRef<AbortController | null>(null);
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-  
-  // Check if a recommendation has been applied - memoized
-  const isRecommendationApplied = useCallback((recommendationId: string) => {
-    if (!seoImprovements || seoImprovements.length === 0) return false;
-    
-    return seoImprovements.some(improvement => 
-      improvement.id === recommendationId && improvement.applied
-    );
-  }, [seoImprovements]);
-  
-  // Handle rewrite content - memoized to prevent recreations that cause re-renders
-  const handleRewriteContent = useCallback((recommendation: string, recommendationId: string) => {
-    // First check if already applied to avoid unnecessary processing
-    if (isRecommendationApplied(recommendationId)) {
-      toast.info("This recommendation has already been applied");
-      return;
-    }
-    
-    console.log("[useContentRewriter] Handling content rewrite:", { recommendation, recommendationId });
-    
-    setSelectedRecommendation(recommendation);
-    setCurrentRecommendationId(recommendationId);
-    const improvementType = getImprovementType(recommendation);
-    
-    let type = 'general';
-    if (improvementType === 'keyword') type = 'keyword optimization';
-    if (improvementType === 'readability') type = 'readability';
-    if (improvementType === 'structure') type = 'structure';
-    
-    setRewriteType(type);
-    
-    // Show dialog before generating to improve UX
-    setShowRewriteDialog(true);
-    
-    // Small timeout to ensure dialog is shown before starting the heavy operation
-    setTimeout(() => {
-      generateRewrittenContent(recommendation, type);
-    }, 100);
-  }, [isRecommendationApplied]);
-  
-  // Generate rewritten content asynchronously with timeout and cancellation
-  const generateRewrittenContent = useCallback(async (recommendation: string, type: string) => {
-    if (!content) {
-      toast.error("No content available to rewrite");
-      setIsRewriting(false);
-      return;
-    }
-    
-    // Cancel any existing operations
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create a new abort controller for this operation
-    abortControllerRef.current = new AbortController();
-    const { signal } = abortControllerRef.current;
+  // Mock function to simulate AI rewriting content
+  const simulateContentRewrite = async (content: string, instructions: string) => {
+    // In a real implementation, this would call an AI service
+    // For now we'll just simulate some improvements to the content
     
     setIsRewriting(true);
-    setRewrittenContent(''); // Clear previous content
     
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise<string>((_, reject) => {
-        setTimeout(() => reject(new Error('Content rewriting timed out')), REWRITE_TIMEOUT);
-      });
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Create the content generation promise that checks for abort signals
-      const contentPromise = new Promise<string>(async (resolve) => {
-        // Import the function dynamically to reduce initial load time
-        const { generateRewrittenContent } = await import('@/utils/seo/contentRewriter');
-        
-        // Check if aborted during import
-        if (signal.aborted) {
-          return;
-        }
-        
-        try {
-          // Generate content
-          const newContent = generateRewrittenContent(content, recommendation, type, mainKeyword);
-          resolve(newContent);
-        } catch (error) {
-          console.error('Error in content generation:', error);
-          resolve(content); // Fallback to original content
-        }
-      });
+      let improved = content;
       
-      // Race the content generation against the timeout
-      const newContent = await Promise.race([contentPromise, timeoutPromise]);
-      
-      // Check if operation was aborted
-      if (!signal.aborted) {
-        console.log("[useContentRewriter] Generated rewritten content");
-        setRewrittenContent(newContent);
+      // Simulate different improvements based on recommendation type
+      switch (rewriteType) {
+        case 'keyword':
+          // Add some keyword mentions
+          const keywordMatch = instructions.match(/keyword "([^"]+)"/i);
+          const keyword = keywordMatch ? keywordMatch[1] : '';
+          if (keyword) {
+            improved = `${keyword} - ${improved}`;
+            improved = improved.replace(/\.$/, `. This relates to ${keyword}.`);
+          }
+          break;
+          
+        case 'heading':
+          // Add some headings
+          const paragraphs = improved.split('\n\n');
+          if (paragraphs.length >= 2) {
+            improved = `# ${paragraphs[0].trim()}\n\n` + 
+                      paragraphs.slice(1).map(p => p.trim()).join('\n\n');
+            
+            // Add subheadings if content is long enough
+            if (paragraphs.length >= 4) {
+              const midIndex = Math.floor(paragraphs.length / 2);
+              improved = improved.split('\n\n').map((p, i) => {
+                if (i === midIndex) return `\n\n## Additional Information\n\n${p}`;
+                return p;
+              }).join('\n\n');
+            }
+          }
+          break;
+          
+        case 'content':
+        case 'readability':
+          // Break up long paragraphs
+          improved = improved.split('\n\n').map(p => {
+            if (p.length > 300) {
+              const midPoint = Math.floor(p.length / 2);
+              const breakPoint = p.indexOf('. ', midPoint);
+              if (breakPoint !== -1) {
+                return p.substring(0, breakPoint + 1) + '\n\n' + p.substring(breakPoint + 2);
+              }
+            }
+            return p;
+          }).join('\n\n');
+          break;
+          
+        case 'length':
+          // Add a conclusion paragraph
+          improved = improved + '\n\n' + 'In conclusion, this content demonstrates the key points discussed above. It's important to consider all aspects of this topic for a comprehensive understanding.';
+          break;
       }
+      
+      setRewrittenContent(improved);
     } catch (error) {
-      console.error('Error generating content rewrite:', error);
-      
-      if (!signal.aborted) {
-        toast.error('Content rewrite operation timed out. Try again or skip this recommendation.');
-      }
+      console.error('Error rewriting content:', error);
+      toast.error('Failed to generate optimized content');
+      setRewrittenContent(content); // Use original content as fallback
     } finally {
-      if (!signal.aborted) {
-        setIsRewriting(false);
-      }
+      setIsRewriting(false);
     }
-  }, [content, mainKeyword]);
+  };
   
-  // Apply rewritten content - memoized
+  // Handle rewriting content based on a recommendation
+  const handleRewriteContent = useCallback((recommendation: string, id: string) => {
+    // Skip if already rewriting
+    if (isRewriting) return;
+    
+    // Set selected recommendation
+    setSelectedRecommendation(recommendation);
+    setSelectedRecommendationId(id);
+    
+    // Determine rewrite type
+    const type = getImprovementType(recommendation);
+    setRewriteType(type);
+    
+    // Get rewrite instructions
+    const instructions = getRewriteInstructions(type, recommendation);
+    
+    // Show dialog
+    setShowRewriteDialog(true);
+    
+    // Start rewriting process
+    simulateContentRewrite(content, instructions);
+  }, [content, isRewriting]);
+  
+  // Apply the rewritten content and mark improvement as applied
   const applyRewrittenContent = useCallback(() => {
-    if (!rewrittenContent || !currentRecommendationId) {
-      console.warn("[useContentRewriter] Cannot apply rewritten content - missing content or recommendation ID");
-      return;
+    // Update content in context
+    if (updateContent) {
+      updateContent(rewrittenContent);
+    } else {
+      // Fallback if updateContent not available
+      dispatch({ type: 'SET_CONTENT', payload: rewrittenContent });
     }
     
-    // Apply the rewritten content
-    console.log("[useContentRewriter] Applying rewritten content for recommendation:", currentRecommendationId);
-    setContent(rewrittenContent);
+    // Mark recommendation as applied
+    if (selectedRecommendationId) {
+      dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: selectedRecommendationId });
+    }
     
-    // Mark the improvement as applied in state
-    dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: currentRecommendationId });
-    
-    toast.success(`Content optimized for ${rewriteType}`);
-    
-    // Close the dialog
+    // Close dialog
     setShowRewriteDialog(false);
     
-    // Clear the abort controller
-    if (abortControllerRef.current) {
-      abortControllerRef.current = null;
-    }
-  }, [rewrittenContent, currentRecommendationId, setContent, dispatch, rewriteType]);
+    // Show success notification
+    toast.success('Content optimization applied');
+  }, [rewrittenContent, selectedRecommendationId, dispatch, updateContent]);
   
-  // Cancel operation when dialog is closed
-  const handleCloseDialog = useCallback(() => {
-    if (isRewriting && abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    
-    setIsRewriting(false);
-    setShowRewriteDialog(false);
-  }, [isRewriting]);
+  // Check if a recommendation has been applied
+  const isRecommendationApplied = useCallback((id: string) => {
+    if (!seoImprovements) return false;
+    const improvement = seoImprovements.find(item => item.id === id);
+    return improvement ? improvement.applied : false;
+  }, [seoImprovements]);
   
   return {
     showRewriteDialog,
@@ -182,7 +152,7 @@ export const useContentRewriter = () => {
     isRewriting,
     handleRewriteContent,
     applyRewrittenContent,
-    setShowRewriteDialog: handleCloseDialog,
+    setShowRewriteDialog,
     isRecommendationApplied
   };
 };

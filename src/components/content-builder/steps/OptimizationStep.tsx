@@ -9,6 +9,7 @@ import { ProgressBar } from '@/components/content-builder/optimization/ProgressB
 import { SkipWarning } from '@/components/content-builder/optimization/SkipWarning';
 import { ContentOptimizationContainer } from '@/components/content-builder/optimization/ContentOptimizationContainer';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { toast } from 'sonner';
 
 const ErrorFallback = ({ error, resetErrorBoundary }) => (
   <div className="p-6 rounded-lg border border-red-200 bg-red-50 text-red-800">
@@ -29,6 +30,7 @@ export const OptimizationStep = () => {
   const { state, skipOptimizationStep } = useContentBuilder();
   const { content, mainKeyword, seoScore, seoImprovements } = state;
   const [showSkipWarning, setShowSkipWarning] = useState(false);
+  const [initialAnalysisAttempted, setInitialAnalysisAttempted] = useState(false);
   
   // Use custom hooks for functionality with memoization to prevent unnecessary re-renders
   const { 
@@ -53,16 +55,21 @@ export const OptimizationStep = () => {
     isRecommendationApplied
   } = useContentRewriter();
   
-  // Run initial analysis if we have content but no SEO score - with proper dependency array
+  // Run initial analysis if we have content but no SEO score - with improved condition checks
   useEffect(() => {
+    // Check if we should run analysis automatically
     const shouldRunAnalysis = 
       content && 
       content.length > 300 && 
       seoScore === 0 && 
       !isAnalyzing && 
-      !showSkipWarning;
+      !showSkipWarning &&
+      !initialAnalysisAttempted;
     
     if (shouldRunAnalysis) {
+      // Mark that we've attempted initial analysis to prevent loops
+      setInitialAnalysisAttempted(true);
+      
       // Small delay to allow UI to render before starting analysis
       const timer = setTimeout(() => {
         runSeoAnalysis();
@@ -70,7 +77,7 @@ export const OptimizationStep = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [content, seoScore, runSeoAnalysis, isAnalyzing, showSkipWarning]);
+  }, [content, seoScore, runSeoAnalysis, isAnalyzing, showSkipWarning, initialAnalysisAttempted]);
   
   // Check if analysis has been run
   const hasRunAnalysis = state.steps[5] && state.steps[5].analyzed;
@@ -82,6 +89,7 @@ export const OptimizationStep = () => {
     } else {
       skipOptimizationStep();
       setShowSkipWarning(false);
+      toast.success('Optimization step skipped. Proceeding to next step.');
     }
   };
   
@@ -114,6 +122,7 @@ export const OptimizationStep = () => {
           hasRunAnalysis={hasRunAnalysis}
           skipOptimizationStep={skipOptimizationStep}
           content={content}
+          analysisError={analysisError}
         />
         
         {totalCount > 0 && (

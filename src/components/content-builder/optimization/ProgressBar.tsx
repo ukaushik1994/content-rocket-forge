@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle } from 'lucide-react';
 
 interface ProgressBarProps {
   appliedCount: number;
@@ -8,23 +9,30 @@ interface ProgressBarProps {
   progressPercentage: number;
 }
 
-export const ProgressBar = ({ appliedCount, totalCount, progressPercentage }: ProgressBarProps) => {
-  if (totalCount === 0) return null;
-  
+export const ProgressBar: React.FC<ProgressBarProps> = ({ 
+  appliedCount, 
+  totalCount, 
+  progressPercentage 
+}) => {
   return (
-    <div className="mt-4 pt-4 border-t border-purple-500/10">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground">Optimizations Applied</span>
-        <span className="text-xs font-medium">{appliedCount}/{totalCount}</span>
+    <div className="bg-white/50 border border-gray-100 rounded-lg p-4 shadow-sm">
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium">Optimization Progress</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium">{appliedCount}</span>
+          <span className="text-sm text-muted-foreground">of</span>
+          <span className="text-sm font-medium">{totalCount}</span>
+          <span className="text-xs text-muted-foreground">optimizations applied</span>
+        </div>
       </div>
-      <div className="h-1.5 w-full bg-purple-900/20 rounded-full overflow-hidden">
-        <motion.div 
-          className="h-full bg-gradient-to-r from-purple-600 to-blue-600"
-          style={{ width: `${progressPercentage}%` }}
-          initial={{ width: 0 }}
-          animate={{ width: `${progressPercentage}%` }}
-          transition={{ duration: 0.5 }}
-        />
+      <Progress value={progressPercentage} className="h-2" />
+      <div className="flex justify-end mt-1">
+        <span className="text-xs text-muted-foreground">
+          {progressPercentage}% complete
+        </span>
       </div>
     </div>
   );

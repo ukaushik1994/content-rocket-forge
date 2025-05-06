@@ -49,15 +49,26 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
     return () => clearTimeout(timer);
   }, [content, mainKeyword, selectedKeywords]);
   
-  // Mark step as complete based on score - memoized effect with proper dependencies
+  // Mark step as complete based on score - fixed with proper dependency check and conditions
   useEffect(() => {
-    if (seoScore >= 70 || (state.steps[5] && state.steps[5].analyzed)) {
+    // Only mark as completed if we have a good score or the step was analyzed
+    // Adding a check to prevent repeated dispatches which can cause infinite loops
+    const shouldMarkComplete = seoScore >= 70;
+    const stepAnalyzed = state.steps[5] && state.steps[5].analyzed;
+    
+    if ((shouldMarkComplete || stepAnalyzed) && !state.steps[5]?.completed) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     }
   }, [seoScore, dispatch, state.steps]);
   
   // Run SEO analysis with proper timeout and error handling
   const runSeoAnalysis = useCallback(() => {
+    // Prevent duplicate analysis runs
+    if (isAnalyzing) return;
+    
+    // Show loading toast
+    toast.loading('Analyzing your content...', { id: 'seo-analysis' });
+    
     runAnalysis(
       setIsAnalyzing,
       setKeywordUsage,
@@ -66,7 +77,7 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
       setImprovements,
       setAnalysisError
     );
-  }, [runAnalysis]);
+  }, [runAnalysis, isAnalyzing]);
   
   // Force skip analysis if it's taking too long
   const forceSkipAnalysis = useCallback(() => {
@@ -76,11 +87,11 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
     setIsAnalyzing(false);
     setAnalysisError(null);
     
-    // Mark step as analyzed so user can continue
+    // Mark step as analyzed and completed so user can continue
     dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     
-    toast.info('Optimization step skipped. You can continue to the next step.');
+    toast.success('Optimization step skipped. You can continue to the next step.');
   }, [dispatch, abortAnalysis]);
 
   return {

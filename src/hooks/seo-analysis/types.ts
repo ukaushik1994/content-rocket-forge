@@ -1,13 +1,7 @@
 
 /**
- * Types for SEO analysis
+ * Type definitions for SEO analysis
  */
-
-export interface SeoAnalysisScores {
-  keywordUsage: number;
-  contentLength: number;
-  readability: number;
-}
 
 export interface KeywordUsage {
   keyword: string;
@@ -15,13 +9,10 @@ export interface KeywordUsage {
   density: string;
 }
 
-export interface SeoAnalysisState {
-  isAnalyzing: boolean;
-  keywordUsage: KeywordUsage[];
-  recommendations: string[];
-  scores: SeoAnalysisScores;
-  improvements: any[]; // Using the SeoImprovement type from content-builder/types
-  analysisError: string | null;
+export interface SeoAnalysisScores {
+  keywordUsage: number;
+  contentLength: number;
+  readability: number;
 }
 
 export interface UseSeoAnalysisReturn {

@@ -1,28 +1,53 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent, OutlineSection } from '../types/index';
+import { ContentBuilderState, ContentBuilderAction } from '../types/index';
+import { OutlineSection } from '../types/outline-types';
 
 export const createContentActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const setContentType = (type: ContentType) => {
-    dispatch({ type: 'SET_CONTENT_TYPE', payload: type });
+  const setContentType = (contentType: string) => {
+    dispatch({ type: 'SET_CONTENT_TYPE', payload: contentType });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
   };
-
-  const setContentFormat = (format: ContentFormat) => {
+  
+  const setContentFormat = (format: string) => {
     dispatch({ type: 'SET_CONTENT_FORMAT', payload: format });
   };
-
+  
+  const setContentIntent = (intent: string) => {
+    dispatch({ type: 'SET_CONTENT_INTENT', payload: intent });
+  };
+  
+  const setOutline = (outline: string[]) => {
+    dispatch({ type: 'SET_OUTLINE', payload: outline });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
+  };
+  
+  const setOutlineSections = (sections: OutlineSection[]) => {
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: sections });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
+  };
+  
+  const updateContent = (content: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: content });
+    
+    // Mark content writing step as completed if there's enough content
+    if (content && content.length >= 300) {
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+    }
+  };
+  
+  const setAdditionalInstructions = (instructions: string) => {
+    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
+  };
+  
   const setContentTitle = (title: string) => {
     dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
   };
-
-  const setContentIntent = (intent: ContentIntent) => {
-    dispatch({ type: 'SET_CONTENT_INTENT', payload: intent });
-  };
-
-  const setContent = (content: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: content });
+  
+  const setSuggestedTitles = (titles: string[]) => {
+    dispatch({ type: 'SET_SUGGESTED_TITLES', payload: titles });
   };
   
   const setMetaTitle = (title: string) => {
@@ -32,104 +57,18 @@ export const createContentActions = (
   const setMetaDescription = (description: string) => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: description });
   };
-  
-  const setAdditionalInstructions = (instructions: string) => {
-    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
-  };
-
-  const generateContent = async (outline: OutlineSection[]) => {
-    dispatch({ type: 'SET_IS_GENERATING', payload: true });
-    
-    try {
-      // In a real implementation, this would call an API to generate content
-      // For now, just set a placeholder
-      const generatedContent = `# ${state.contentTitle}\n\n` + 
-        outline.map(section => `## ${section.title}\n\nContent for ${section.title} would be generated here.\n\n`).join('');
-      
-      dispatch({ type: 'SET_CONTENT', payload: generatedContent });
-    } catch (error) {
-      console.error('Error generating content:', error);
-    } finally {
-      dispatch({ type: 'SET_IS_GENERATING', payload: false });
-    }
-  };
-
-  const saveContent = async (options: { title: string; content: string }) => {
-    dispatch({ type: 'SET_IS_SAVING', payload: true });
-    
-    try {
-      // In a real implementation, this would save to a database
-      console.log('Saving content:', options);
-      
-      // Simulate successful save
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mark the current step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
-    } catch (error) {
-      console.error('Error saving content:', error);
-    } finally {
-      dispatch({ type: 'SET_IS_SAVING', payload: false });
-    }
-  };
-  
-  const saveContentToDraft = async (options: any) => {
-    dispatch({ type: 'SET_IS_SAVING', payload: true });
-    
-    try {
-      // In a real implementation, this would save to a database
-      console.log('Saving content to draft:', options);
-      
-      // Simulate successful save
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mark the current step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
-      
-      return true;
-    } catch (error) {
-      console.error('Error saving content to draft:', error);
-      return false;
-    } finally {
-      dispatch({ type: 'SET_IS_SAVING', payload: false });
-    }
-  };
-  
-  const saveContentToPublished = async (options: any) => {
-    dispatch({ type: 'SET_IS_SAVING', payload: true });
-    
-    try {
-      // In a real implementation, this would save to a database
-      console.log('Publishing content:', options);
-      
-      // Simulate successful save
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mark the current step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: state.activeStep });
-      
-      return true;
-    } catch (error) {
-      console.error('Error publishing content:', error);
-      return false;
-    } finally {
-      dispatch({ type: 'SET_IS_SAVING', payload: false });
-    }
-  };
 
   return {
     setContentType,
     setContentFormat,
-    setContentTitle,
     setContentIntent,
-    setContent,
-    generateContent,
-    saveContent,
-    setMetaTitle,
-    setMetaDescription,
+    setOutline,
+    setOutlineSections,
+    updateContent,
     setAdditionalInstructions,
-    saveContentToDraft,
-    saveContentToPublished
+    setContentTitle,
+    setSuggestedTitles,
+    setMetaTitle,
+    setMetaDescription
   };
 };
-
