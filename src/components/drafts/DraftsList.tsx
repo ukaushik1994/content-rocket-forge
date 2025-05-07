@@ -95,6 +95,18 @@ export function DraftsList() {
             <TabsTrigger value="drafts">Drafts ({drafts.length})</TabsTrigger>
             <TabsTrigger value="published">Published ({publishedItems.length})</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="all">
+            {renderContentItems(contentItems)}
+          </TabsContent>
+          
+          <TabsContent value="drafts">
+            {renderContentItems(drafts)}
+          </TabsContent>
+          
+          <TabsContent value="published">
+            {renderContentItems(publishedItems)}
+          </TabsContent>
         </Tabs>
         <Button 
           variant="outline" 
@@ -106,85 +118,90 @@ export function DraftsList() {
           Refresh
         </Button>
       </div>
-
-      <TabsContent value={selectedTab} className="mt-0">
-        {getDisplayedItems().length === 0 ? (
-          <div className="bg-card/40 border border-border rounded-lg p-8 text-center">
-            <p className="text-lg font-medium">No {selectedTab === 'all' ? 'content items' : selectedTab} found</p>
-            <p className="text-muted-foreground mt-2">
-              Create content in the builder to see it here.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {getDisplayedItems().map(item => (
-              <Card key={item.id} className="overflow-hidden border border-border bg-card/50 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg line-clamp-2">{item.title}</CardTitle>
-                    <Badge variant={item.status === 'draft' ? 'outline' : 'default'}>
-                      {item.status === 'draft' ? 'Draft' : 'Published'}
-                    </Badge>
-                  </div>
-                  <CardDescription className="flex items-center gap-2 text-xs mt-2">
-                    <span>Created: {formatDate(item.created_at)}</span>
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="pb-2">
-                  <div className="line-clamp-3 text-sm opacity-80">
-                    {item.content ? (
-                      <div dangerouslySetInnerHTML={{ 
-                        __html: item.content?.substring(0, 150) + '...'
-                      }} />
-                    ) : (
-                      <span className="text-muted-foreground italic">No content</span>
-                    )}
-                  </div>
-                  
-                  {item.keywords && item.keywords.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {item.keywords.map((keyword, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {keyword}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-                
-                <CardFooter className="pt-2 flex justify-end gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => handleView(item.id)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => handleEdit(item.id)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </TabsContent>
     </div>
   );
+
+  // Helper function to render content items
+  function renderContentItems(items: any[]) {
+    if (items.length === 0) {
+      return (
+        <div className="bg-card/40 border border-border rounded-lg p-8 text-center">
+          <p className="text-lg font-medium">No {selectedTab === 'all' ? 'content items' : selectedTab} found</p>
+          <p className="text-muted-foreground mt-2">
+            Create content in the builder to see it here.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map(item => (
+          <Card key={item.id} className="overflow-hidden border border-border bg-card/50 backdrop-blur-sm">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg line-clamp-2">{item.title}</CardTitle>
+                <Badge variant={item.status === 'draft' ? 'outline' : 'default'}>
+                  {item.status === 'draft' ? 'Draft' : 'Published'}
+                </Badge>
+              </div>
+              <CardDescription className="flex items-center gap-2 text-xs mt-2">
+                <span>Created: {formatDate(item.created_at)}</span>
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="pb-2">
+              <div className="line-clamp-3 text-sm opacity-80">
+                {item.content ? (
+                  <div dangerouslySetInnerHTML={{ 
+                    __html: item.content?.substring(0, 150) + '...'
+                  }} />
+                ) : (
+                  <span className="text-muted-foreground italic">No content</span>
+                )}
+              </div>
+              
+              {item.keywords && item.keywords.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-3">
+                  {item.keywords.map((keyword: string, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
+                      {keyword}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            
+            <CardFooter className="pt-2 flex justify-end gap-2">
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => handleView(item.id)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                View
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => handleEdit(item.id)}
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="text-destructive hover:bg-destructive/10"
+                onClick={() => handleDelete(item.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 }
