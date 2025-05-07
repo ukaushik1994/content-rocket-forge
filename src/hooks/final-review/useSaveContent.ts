@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +16,7 @@ export const useSaveContent = () => {
   const { addContentItem, refreshContent } = useContent();
   const navigate = useNavigate();
 
-  const handleSaveToDraft = async (): Promise<void> => {
+  const handleSaveToDraft = async (): Promise<string | null> => {
     try {
       setIsSaving(true);
       console.log('[useSaveContent] Starting save to draft process');
@@ -46,7 +47,7 @@ export const useSaveContent = () => {
       });
       
       // Try saving using content builder context first
-      let contentId = await saveContentToDraft(saveParams);
+      let contentId: string | null = await saveContentToDraft(saveParams);
       console.log('[useSaveContent] saveContentToDraft returned ID:', contentId);
       
       // If that doesn't work, use the content context directly
@@ -66,7 +67,7 @@ export const useSaveContent = () => {
           }
         });
         console.log('[useSaveContent] Content added directly, result:', addedItem);
-        contentId = addedItem;
+        contentId = addedItem as string;
       }
       
       // Force refresh the content list to make sure it shows up
@@ -98,7 +99,7 @@ export const useSaveContent = () => {
     }
   };
 
-  const handlePublish = async (): Promise<void> => {
+  const handlePublish = async (): Promise<string | null> => {
     try {
       setIsSaving(true);
       
@@ -127,7 +128,7 @@ export const useSaveContent = () => {
       // If that doesn't work, use the content context directly
       if (!contentId) {
         console.log('[useSaveContent] No content ID returned, adding directly to content repository');
-        await addContentItem({
+        const addedItem = await addContentItem({
           title: publishParams.title,
           content: publishParams.content || '',
           status: 'published',
@@ -143,6 +144,7 @@ export const useSaveContent = () => {
         
         // Force refresh the content list
         await refreshContent();
+        return addedItem as string;
       }
       
       toast.success('Content published successfully');
@@ -156,9 +158,12 @@ export const useSaveContent = () => {
           state: { contentRefresh: true }
         });
       }, 1000);
+      
+      return contentId;
     } catch (error) {
       console.error('Error publishing content:', error);
       toast.error('Failed to publish content');
+      return null;
     } finally {
       setIsSaving(false);
     }
