@@ -36,28 +36,13 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     deleteSolution
   } = useSolutionsData();
   
-  // Fix the typings in the custom hook usage
   const solutionForm = useSolutionForm({
-    addSolution: (data: any, logoUrl?: string) => {
-      return addSolution(data, logoUrl)
-        .then(id => {
-          // Convert string return to boolean success
-          return id ? true : false;
-        });
-    },
-    updateSolution: (id: string, data: any, logoUrl?: string) => {
-      return updateSolution(id, data, logoUrl)
-        .then(() => true)
-        .catch(() => false);
-    }
+    addSolution,
+    updateSolution
   });
 
   const deleteHandler = useDeleteSolution({
-    deleteSolution: (id: string) => {
-      return deleteSolution(id)
-        .then(() => true)
-        .catch(() => false);
-    }
+    deleteSolution
   });
 
   // Update local filter when search term changes
@@ -116,7 +101,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   }
   
   if (error) {
-    return <ErrorDisplay error={error.toString()} onRetry={fetchSolutions} />;
+    return <ErrorDisplay error={error} onRetry={fetchSolutions} />;
   }
   
   return (

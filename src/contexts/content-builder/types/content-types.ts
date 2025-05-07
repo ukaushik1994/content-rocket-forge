@@ -4,7 +4,7 @@
  */
 
 // Content Type Options
-export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'productDescription' | 'email' | 'social';
+export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'landingPage' | 'productDescription' | 'email' | 'social';
 
 // Content Format Options
 export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to';
