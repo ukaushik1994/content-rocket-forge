@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
@@ -58,6 +59,7 @@ export function useSolutionsData() {
               ? solution.target_audience.filter(a => a).map(a => String(a)) 
               : [],
             description: `${solution.name || 'Unnamed Solution'} - Business Solution`, // Default description
+            category: solution.category || "Business Solution", // Ensure category always has a value
             logoUrl: solution.logo_url,
             externalUrl: solution.external_url,
             resources: Array.isArray(solution.resources) 
@@ -98,6 +100,7 @@ export function useSolutionsData() {
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"],
+        category: "Business Solution", // Add default category
         logoUrl: null,
         externalUrl: null,
         resources: []
@@ -118,6 +121,7 @@ export function useSolutionsData() {
     targetAudience: string[];
     externalUrl?: string | null;
     resources?: Array<{ title: string; url: string; }>;
+    category?: string; // Add category parameter
   }, logoUrl?: string): Promise<boolean> => {
     // Input validation
     if (!solutionData.name || solutionData.name.trim() === '') {
@@ -142,6 +146,7 @@ export function useSolutionsData() {
         external_url: solutionData.externalUrl || null,
         logo_url: logoUrl || null,
         resources: solutionData.resources || [],
+        category: solutionData.category || "Business Solution", // Use provided category or default
         user_id: user.id
       };
       
@@ -169,6 +174,7 @@ export function useSolutionsData() {
             ? data[0].target_audience.map(String) 
             : [],
           description: `${data[0].name} - Business Solution`,
+          category: data[0].category || "Business Solution", // Ensure category
           logoUrl: data[0].logo_url,
           externalUrl: data[0].external_url,
           resources: Array.isArray(data[0].resources) 
