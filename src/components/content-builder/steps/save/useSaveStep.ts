@@ -4,6 +4,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContent } from '@/contexts/content';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 
 export const useSaveStep = () => {
@@ -123,9 +124,13 @@ export const useSaveStep = () => {
       setSaveCompleted(true);
       toast.success("Content saved to library");
       
-      // Navigate to content library after a short delay
+      // Set a consistent flag for content draft saved
+      sessionStorage.setItem('content_draft_saved', 'true');
+      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+      
+      // Navigate to drafts page after a short delay 
       setTimeout(() => {
-        navigate('/content', { 
+        navigate('/drafts', { 
           state: { contentRefresh: true }
         });
       }, 1000);

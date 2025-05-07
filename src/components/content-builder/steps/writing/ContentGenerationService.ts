@@ -149,8 +149,8 @@ export async function saveContentToDraft(
     toast.success('Content saved successfully to your repository');
     setShowSaveDialog(false);
     
-    // Signal content was saved for refresh
-    sessionStorage.setItem('from_content_builder', 'true');
+    // Signal content was saved for refresh - use clear flag names
+    sessionStorage.setItem('content_draft_saved', 'true');
     sessionStorage.setItem('content_save_timestamp', Date.now().toString());
     
     console.log('Saved content:', {

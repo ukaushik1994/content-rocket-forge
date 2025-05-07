@@ -6,11 +6,13 @@ import { DraftsList } from '@/components/drafts/DraftsList';
 import { DraftDetailView } from '@/components/drafts/DraftDetailView';
 import { useContent } from '@/contexts/content';
 import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 
 const Drafts = () => {
   const {
     contentItems,
-    refreshContent
+    refreshContent,
+    loading
   } = useContent();
   const [selectedDraft, setSelectedDraft] = useState<any | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
@@ -21,16 +23,22 @@ const Drafts = () => {
     refreshContent();
 
     // Check if we're coming from the content builder
-    const fromContentBuilder = sessionStorage.getItem('from_content_builder');
-    if (fromContentBuilder === 'true') {
-      console.log('Coming from content builder, refreshing content...');
+    const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
+    if (contentDraftSaved === 'true') {
+      console.log('Content draft saved, refreshing content...');
+      
+      // Show a loading toast while we refresh
+      const toastId = toast.loading('Loading your new draft...');
+      
       // Double-check with a slight delay to ensure DB operations have completed
-      setTimeout(() => {
-        refreshContent();
+      setTimeout(async () => {
+        await refreshContent();
+        toast.success('Draft loaded successfully', { id: toastId });
       }, 1000);
     }
 
     // Clear any session storage flags that might have been set by ContentBuilder
+    sessionStorage.removeItem('content_draft_saved');
     sessionStorage.removeItem('from_content_builder');
     sessionStorage.removeItem('content_save_timestamp');
   }, [refreshContent]);
@@ -50,7 +58,9 @@ const Drafts = () => {
       
       <main className="flex-1 container py-8">
         <DraftsHeader />
-        <DraftsList />
+        <DraftsList 
+          onOpenDetailView={handleOpenDetailView}
+        />
         
         <DraftDetailView 
           open={detailViewOpen} 

@@ -9,7 +9,11 @@ import { Eye, Edit, Trash2, RefreshCcw, List, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-export function DraftsList() {
+interface DraftsListProps {
+  onOpenDetailView?: (draft: any) => void;
+}
+
+export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   const { contentItems, loading, deleteContentItem, refreshContent } = useContent();
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState('all');
@@ -32,11 +36,10 @@ export function DraftsList() {
 
   // Check for updates from content builder
   useEffect(() => {
-    const fromContentBuilder = sessionStorage.getItem('from_content_builder');
-    if (fromContentBuilder === 'true') {
+    const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
+    if (contentDraftSaved === 'true') {
       refreshContent();
-      sessionStorage.removeItem('from_content_builder');
-      sessionStorage.removeItem('content_save_timestamp');
+      sessionStorage.removeItem('content_draft_saved');
     }
   }, [refreshContent]);
 
@@ -59,8 +62,14 @@ export function DraftsList() {
   };
 
   const handleView = (id: string) => {
-    // Navigate to draft preview with the selected draft
-    toast.info('Preview functionality will be implemented soon');
+    // If we have a detail view handler, use it
+    const itemToView = contentItems.find(item => item.id === id);
+    if (onOpenDetailView && itemToView) {
+      onOpenDetailView(itemToView);
+    } else {
+      // Fallback to toast
+      toast.info('Preview functionality will be implemented soon');
+    }
   };
 
   const handleDelete = async (id: string) => {
