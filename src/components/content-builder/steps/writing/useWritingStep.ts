@@ -13,7 +13,8 @@ export function useWritingStep() {
     additionalInstructions, 
     serpData, 
     selectedSolution,
-    contentTitle
+    contentTitle,
+    selectedKeywords
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -93,6 +94,7 @@ export function useWritingStep() {
     additionalInstructions,
     content,
     mainKeyword,
+    secondaryKeywords: selectedKeywords,
     outline: processedOutline,
     selectedSolution,
     handleContentChange,

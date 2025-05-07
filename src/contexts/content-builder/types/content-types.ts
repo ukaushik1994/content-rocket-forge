@@ -4,10 +4,10 @@
  */
 
 // Content Type Options
-export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'landingPage' | 'productDescription' | 'email' | 'social';
+export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'seo';
 
 // Content Format Options
-export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to';
+export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'list';
 
 // Content Intent Options
 export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';

@@ -28,6 +28,7 @@ export const ContentWritingStep = () => {
     additionalInstructions,
     content,
     mainKeyword,
+    secondaryKeywords,
     outline,
     selectedSolution,
     handleContentChange,
@@ -57,14 +58,14 @@ export const ContentWritingStep = () => {
       : '';
         
     // Prepare secondary keywords
-    const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
+    const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
     
     await generateContent(
       aiProvider,
       mainKeyword,
       state.contentTitle,
       outlineText,
-      secondaryKeywords,
+      secondaryKeywordsStr,
       selectedSolution,
       additionalInstructions,
       setIsGenerating,
@@ -77,7 +78,9 @@ export const ContentWritingStep = () => {
       saveTitle,
       content,
       mainKeyword,
+      secondaryKeywords || [],
       saveNote,
+      Array.isArray(outline) ? outline.map(item => typeof item === 'string' ? item : item.title) : [],
       setIsSaving,
       setShowSaveDialog
     );
@@ -134,6 +137,7 @@ export const ContentWritingStep = () => {
         handleSaveToDraft={handleSaveToDraft}
         isSaving={isSaving}
         mainKeyword={mainKeyword}
+        secondaryKeywords={secondaryKeywords || []}
         content={content}
         outlineLength={state.outline.length}
       />

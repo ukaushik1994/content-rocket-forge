@@ -17,6 +17,7 @@ interface SaveContentDialogProps {
   handleSaveToDraft: () => Promise<void>;
   isSaving: boolean;
   mainKeyword: string;
+  secondaryKeywords: string[];
   content: string;
   outlineLength: number;
 }
@@ -31,6 +32,7 @@ export const SaveContentDialog: React.FC<SaveContentDialogProps> = ({
   handleSaveToDraft,
   isSaving,
   mainKeyword,
+  secondaryKeywords,
   content,
   outlineLength
 }) => {
