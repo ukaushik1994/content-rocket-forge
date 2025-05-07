@@ -15,6 +15,8 @@ export type ContentItemType = {
     outline?: string[];
     serpSelections?: any[];
     serpData?: any;
+    notes?: string;
+    [key: string]: any;  // Allow for additional properties
   };
 };
 

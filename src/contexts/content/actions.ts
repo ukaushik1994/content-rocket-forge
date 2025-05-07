@@ -100,7 +100,8 @@ export const createContentActions = (
           ...data,
           keywords: item.keywords || [],
           content: data.content || '',
-          status: data.status as 'draft' | 'published' | 'archived'
+          status: data.status as 'draft' | 'published' | 'archived',
+          metadata: (data.metadata as ContentItemType['metadata']) || {}
         };
         
         setContentItems(prev => [createdItem, ...prev]);

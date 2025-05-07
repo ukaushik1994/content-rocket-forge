@@ -48,7 +48,7 @@ export const createAddContentAction = (
           keywords: item.keywords || [],
           content: data.content || '',
           status: data.status as 'draft' | 'published' | 'archived',
-          metadata: data.metadata || {}
+          metadata: (data.metadata as ContentItemType['metadata']) || {}
         };
         
         setContentItems(prev => [createdItem, ...prev]);

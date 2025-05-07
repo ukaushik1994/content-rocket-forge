@@ -4,6 +4,7 @@ import { sendChatRequest } from '@/services/aiService';
 import { AiProvider } from '@/services/aiService/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { ContentItemType } from '@/contexts/content/types';
 
 export async function generateContent(
   aiProvider: AiProvider,
@@ -105,7 +106,7 @@ export async function saveContentToDraft(
     }
     
     // Create metadata object with outline and SERP selections
-    const metadata = {
+    const metadata: ContentItemType['metadata'] = {
       outline: outline || [],
       serpSelections: serpSelections || [],
       notes: saveNote
