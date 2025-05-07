@@ -212,6 +212,7 @@ export type Database = {
       }
       solutions: {
         Row: {
+          category: string | null
           created_at: string
           external_url: string | null
           features: Json | null
@@ -226,6 +227,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           external_url?: string | null
           features?: Json | null
@@ -240,6 +242,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           external_url?: string | null
           features?: Json | null
