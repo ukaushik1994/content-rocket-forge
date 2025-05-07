@@ -1,18 +1,18 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContent } from '@/contexts/content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2, RefreshCcw } from 'lucide-react';
+import { Eye, Edit, Trash2, RefreshCcw, List, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function DraftsList() {
   const { contentItems, loading, deleteContentItem, refreshContent } = useContent();
   const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = React.useState('all');
+  const [selectedTab, setSelectedTab] = useState('all');
 
   // Filter drafts from content items
   const drafts = contentItems.filter(item => item.status === 'draft');
@@ -86,27 +86,17 @@ export function DraftsList() {
     );
   }
 
+  const displayedItems = getDisplayedItems();
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab} className="flex-1">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1">
           <TabsList className="grid grid-cols-3 w-full max-w-md mb-4">
             <TabsTrigger value="all">All ({contentItems.length})</TabsTrigger>
             <TabsTrigger value="drafts">Drafts ({drafts.length})</TabsTrigger>
             <TabsTrigger value="published">Published ({publishedItems.length})</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="all">
-            {renderContentItems(contentItems)}
-          </TabsContent>
-          
-          <TabsContent value="drafts">
-            {renderContentItems(drafts)}
-          </TabsContent>
-          
-          <TabsContent value="published">
-            {renderContentItems(publishedItems)}
-          </TabsContent>
         </Tabs>
         <Button 
           variant="outline" 
@@ -118,6 +108,8 @@ export function DraftsList() {
           Refresh
         </Button>
       </div>
+      
+      {renderContentItems(displayedItems)}
     </div>
   );
 
@@ -161,6 +153,7 @@ export function DraftsList() {
                 )}
               </div>
               
+              {/* Display keywords */}
               {item.keywords && item.keywords.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-3">
                   {item.keywords.map((keyword: string, idx: number) => (
@@ -168,6 +161,22 @@ export function DraftsList() {
                       {keyword}
                     </Badge>
                   ))}
+                </div>
+              )}
+              
+              {/* Display SERP selection count if available */}
+              {item.metadata?.serpSelections && item.metadata.serpSelections.length > 0 && (
+                <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
+                  <Tag className="h-3 w-3" />
+                  <span>{item.metadata.serpSelections.filter((s: any) => s.selected).length} SERP selections</span>
+                </div>
+              )}
+              
+              {/* Display outline count if available */}
+              {item.metadata?.outline && item.metadata.outline.length > 0 && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                  <List className="h-3 w-3" />
+                  <span>{item.metadata.outline.length} outline sections</span>
                 </div>
               )}
             </CardContent>

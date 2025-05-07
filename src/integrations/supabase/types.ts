@@ -44,6 +44,7 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
+          metadata: Json | null
           seo_score: number | null
           status: string
           title: string
@@ -54,6 +55,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          metadata?: Json | null
           seo_score?: number | null
           status?: string
           title: string
@@ -64,6 +66,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          metadata?: Json | null
           seo_score?: number | null
           status?: string
           title?: string

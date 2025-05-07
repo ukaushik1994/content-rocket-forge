@@ -84,7 +84,8 @@ export async function saveContentToDraft(
   saveNote: string,
   outline: string[],
   setIsSaving: (value: boolean) => void,
-  setShowSaveDialog: (value: boolean) => void
+  setShowSaveDialog: (value: boolean) => void,
+  serpSelections?: any[]
 ) {
   if (!saveTitle.trim()) {
     toast.error('Please enter a title');
@@ -103,6 +104,13 @@ export async function saveContentToDraft(
       return;
     }
     
+    // Create metadata object with outline and SERP selections
+    const metadata = {
+      outline: outline || [],
+      serpSelections: serpSelections || [],
+      notes: saveNote
+    };
+
     // Save to database
     const { data, error } = await supabase
       .from('content_items')
@@ -111,7 +119,7 @@ export async function saveContentToDraft(
         content: content,
         status: 'draft',
         user_id: user.id,
-        notes: saveNote
+        metadata: metadata
       })
       .select()
       .single();
@@ -150,13 +158,14 @@ export async function saveContentToDraft(
       content,
       keyword: mainKeyword,
       secondaryKeywords,
-      note: saveNote,
-      outline
+      metadata
     });
     
+    return data.id;
   } catch (error: any) {
     console.error('Error saving content:', error);
     toast.error('Failed to save content: ' + (error.message || 'Please try again'));
+    return null;
   } finally {
     setIsSaving(false);
   }
