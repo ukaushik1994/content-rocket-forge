@@ -119,7 +119,9 @@ export const useSaveStep = () => {
       await handleSaveToDraft();
       
       // Force refresh content before navigating
+      console.log("[SaveStep] Draft saved, refreshing content...");
       await refreshContent();
+      console.log("[SaveStep] Content refreshed, found items:", contentItems.length);
       
       setSaveCompleted(true);
       toast.success("Content saved to library");
@@ -127,9 +129,11 @@ export const useSaveStep = () => {
       // Set a consistent flag for content draft saved
       sessionStorage.setItem('content_draft_saved', 'true');
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+      console.log("[SaveStep] Session storage flags set for draft saved");
       
       // Navigate to drafts page after a short delay 
       setTimeout(() => {
+        console.log("[SaveStep] Navigating to drafts page...");
         navigate('/drafts', { 
           state: { contentRefresh: true }
         });

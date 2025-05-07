@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContent } from '@/contexts/content';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   const { contentItems, loading, deleteContentItem, refreshContent } = useContent();
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState('all');
+  const [refreshCount, setRefreshCount] = useState(0);
 
   // Filter drafts from content items
   const drafts = contentItems.filter(item => item.status === 'draft');
@@ -37,11 +37,25 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   // Check for updates from content builder
   useEffect(() => {
     const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
+    const timestamp = sessionStorage.getItem('content_save_timestamp');
+    
+    console.log('[DraftsList] Checking for saved draft flag:', contentDraftSaved);
+    console.log('[DraftsList] Content save timestamp:', timestamp);
+    console.log('[DraftsList] Current content items:', contentItems.length);
+    
     if (contentDraftSaved === 'true') {
-      refreshContent();
+      console.log('[DraftsList] Draft saved flag found, refreshing content...');
+      
+      const toastId = toast.loading('Updating drafts list...');
+      refreshContent().then(() => {
+        console.log('[DraftsList] Content refreshed after draft saved');
+        toast.success('Drafts list updated', { id: toastId });
+        setRefreshCount(prev => prev + 1);
+      });
+      
       sessionStorage.removeItem('content_draft_saved');
     }
-  }, [refreshContent]);
+  }, [refreshContent, contentItems.length]);
 
   // Function to get displayed items based on selected tab
   const getDisplayedItems = () => {
@@ -83,8 +97,12 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   };
 
   const handleRefresh = () => {
-    refreshContent();
-    toast.info('Refreshing content...');
+    const toastId = toast.loading('Refreshing content...');
+    refreshContent().then(() => {
+      console.log('[DraftsList] Content manually refreshed, found items:', contentItems.length);
+      toast.success('Content refreshed successfully', { id: toastId });
+      setRefreshCount(prev => prev + 1);
+    });
   };
 
   if (loading) {
@@ -96,6 +114,7 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   }
 
   const displayedItems = getDisplayedItems();
+  console.log('[DraftsList] Displaying items:', displayedItems.length);
 
   return (
     <div className="space-y-4">

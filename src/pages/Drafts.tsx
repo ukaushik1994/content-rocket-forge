@@ -21,27 +21,39 @@ const Drafts = () => {
   useEffect(() => {
     // Force refresh of content items when the page loads
     refreshContent();
+    console.log('[Drafts] Component mounted, refreshing content...');
+    console.log('[Drafts] Content items at load:', contentItems.length);
 
     // Check if we're coming from the content builder
     const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
+    const saveTimestamp = sessionStorage.getItem('content_save_timestamp');
+    
+    console.log('[Drafts] contentDraftSaved flag:', contentDraftSaved);
+    console.log('[Drafts] saveTimestamp:', saveTimestamp);
+    
     if (contentDraftSaved === 'true') {
-      console.log('Content draft saved, refreshing content...');
+      console.log('[Drafts] Content draft saved, refreshing content...');
       
       // Show a loading toast while we refresh
       const toastId = toast.loading('Loading your new draft...');
       
       // Double-check with a slight delay to ensure DB operations have completed
       setTimeout(async () => {
+        console.log('[Drafts] Refreshing content after timeout');
         await refreshContent();
+        console.log('[Drafts] Content items after refresh:', contentItems.length);
         toast.success('Draft loaded successfully', { id: toastId });
       }, 1000);
     }
 
     // Clear any session storage flags that might have been set by ContentBuilder
-    sessionStorage.removeItem('content_draft_saved');
-    sessionStorage.removeItem('from_content_builder');
-    sessionStorage.removeItem('content_save_timestamp');
-  }, [refreshContent]);
+    return () => {
+      sessionStorage.removeItem('content_draft_saved');
+      sessionStorage.removeItem('from_content_builder');
+      sessionStorage.removeItem('content_save_timestamp');
+      console.log('[Drafts] Cleanup: session storage flags cleared');
+    };
+  }, [refreshContent, contentItems.length]);
 
   const handleOpenDetailView = (draft: any) => {
     setSelectedDraft(draft);

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +18,7 @@ export const useSaveContent = () => {
   const handleSaveToDraft = async (): Promise<void> => {
     try {
       setIsSaving(true);
+      console.log('[useSaveContent] Starting save to draft process');
       
       // Prepare content for saving with extended metadata
       const saveParams: SaveContentParams = {
@@ -36,15 +36,23 @@ export const useSaveContent = () => {
         serpData: state.serpData
       };
       
-      console.log('[useSaveContent] Saving content with params:', saveParams);
+      console.log('[useSaveContent] Saving content with params:', {
+        title: saveParams.title,
+        contentLength: saveParams.content?.length,
+        mainKeyword: saveParams.mainKeyword,
+        secondaryKeywords: saveParams.secondaryKeywords?.length,
+        outline: saveParams.outline?.length,
+        serpSelections: saveParams.serpSelections?.length
+      });
       
       // Try saving using content builder context first
       let contentId = await saveContentToDraft(saveParams);
+      console.log('[useSaveContent] saveContentToDraft returned ID:', contentId);
       
       // If that doesn't work, use the content context directly
       if (!contentId) {
         console.log('[useSaveContent] No content ID returned, adding directly to content repository');
-        await addContentItem({
+        const addedItem = await addContentItem({
           title: saveParams.title,
           content: saveParams.content || '',
           status: 'draft',
@@ -57,21 +65,34 @@ export const useSaveContent = () => {
             serpSelections: state.serpSelections
           }
         });
+        console.log('[useSaveContent] Content added directly, result:', addedItem);
+        contentId = addedItem;
       }
       
       // Force refresh the content list to make sure it shows up
+      console.log('[useSaveContent] Refreshing content after save');
       await refreshContent();
       
       setIsSavedToDraft(true);
       toast.success('Content saved to drafts successfully');
+      console.log('[useSaveContent] Save completed successfully, ID:', contentId);
+      
+      // Set session storage flags for the drafts page to detect
+      sessionStorage.setItem('content_draft_saved', 'true');
+      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+      console.log('[useSaveContent] Set session storage flags for draft saved');
       
       // Navigate to drafts page
       setTimeout(() => {
+        console.log('[useSaveContent] Navigating to drafts page...');
         navigate('/drafts', { state: { contentRefresh: true } });
       }, 1000);
+      
+      return contentId;
     } catch (error) {
       console.error('Error saving content to draft:', error);
       toast.error('Failed to save content to drafts');
+      return null;
     } finally {
       setIsSaving(false);
     }
