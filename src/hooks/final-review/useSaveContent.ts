@@ -33,6 +33,7 @@ export const useSaveContent = () => {
         status: 'draft',
         notes: '',
         outline: state.outline,
+        seoScore: state.seoScore,
         serpSelections: state.serpSelections,
         serpData: state.serpData
       };

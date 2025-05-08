@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -77,6 +76,14 @@ export const OptimizeAndReviewStep = () => {
   
   const onMetaDescriptionChange = (value: string) => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+  };
+  
+  const handleSaveWithVoidReturn = async (): Promise<void> => {
+    await handleSaveToDraft();
+  };
+  
+  const handlePublishWithVoidReturn = async (): Promise<void> => {
+    await handlePublish();
   };
   
   return (

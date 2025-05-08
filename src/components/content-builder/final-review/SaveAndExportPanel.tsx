@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +9,8 @@ import { toast } from 'sonner';
 
 interface SaveAndExportPanelProps {
   completionPercentage: number;
-  onSave: () => Promise<void>;
-  onPublish: () => Promise<void>;
+  onSave: () => Promise<string | null>;
+  onPublish: () => Promise<string | null>;
   isSaving: boolean;
   isSavedToDraft: boolean;
 }
