@@ -1,41 +1,48 @@
 
 import React from 'react';
-import { Lightbulb, CheckSquare } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LightbulbIcon } from 'lucide-react';
 
-export const ContentStrategyTips: React.FC = () => {
+export function ContentStrategyTips() {
+  const tips = [
+    {
+      title: "Mix templates for comprehensive coverage",
+      description: "Combine different content types to fully address your topic from multiple angles."
+    },
+    {
+      title: "Include entities for better topical relevance",
+      description: "Google recognizes entities related to your topic. Including them helps establish authority."
+    },
+    {
+      title: "Address user intent with different formats",
+      description: "Some users prefer step-by-step guides, while others want quick lists or in-depth analysis."
+    },
+    {
+      title: "Refresh for better insights",
+      description: "Use the refresh buttons to get new variations and insights for each content section."
+    }
+  ];
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4, duration: 0.5 }}
-      className="pt-6 mt-4 border-t border-white/10"
-    >
-      <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 p-4 rounded-lg border border-white/10">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="h-4 w-4 text-amber-400" />
-          <h4 className="text-sm font-medium">Content Strategy Tips</h4>
+    <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-amber-500/20 rounded-full">
+            <LightbulbIcon className="h-4 w-4 text-amber-400" />
+          </div>
+          <CardTitle className="text-base text-white/90">Content Strategy Tips</CardTitle>
         </div>
-        
-        <ul className="space-y-3 text-sm">
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Use keywords from SERP analysis in headings (H2, H3) for better ranking</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Include related keywords throughout your content for semantic relevance</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Add a FAQ section using "People Also Ask" questions to target featured snippets</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckSquare className="h-4 w-4 text-green-500 mt-0.5" />
-            <span>Use tables, lists, and structured data to increase chances of rich snippets</span>
-          </li>
-        </ul>
-      </div>
-    </motion.div>
+      </CardHeader>
+      <CardContent className="pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tips.map((tip, index) => (
+            <div key={index} className="space-y-1">
+              <h4 className="text-sm font-medium text-amber-300">{tip.title}</h4>
+              <p className="text-xs text-white/70">{tip.description}</p>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
-};
+}

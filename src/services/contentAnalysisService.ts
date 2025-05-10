@@ -1,5 +1,5 @@
 
-import { analyzeKeywordSerp, analyzeContent as analyzeSerpContent } from './serpApiService';
+import { analyzeKeywordSerp } from './serpApiService';
 import { callApiProxy } from './apiProxyService';
 import { toast } from 'sonner';
 import { SerpAnalysisResult } from '@/types/serp';
@@ -17,8 +17,9 @@ export interface ContentAnalysis {
 
 export async function analyzeContent(content: string, targetKeywords: string[] = []): Promise<ContentAnalysis> {
   try {
-    // First, get keyword analysis from SERP API
-    const serpAnalysis = await analyzeSerpContent(content, targetKeywords);
+    // For now, we'll just use the keyword analysis since the actual content analysis is missing
+    // This is a placeholder that matches the expected return type
+    const serpAnalysis = await analyzeKeywordSerp(targetKeywords[0] || '');
     
     // Then get AI analysis for readability and quality score
     const aiAnalysis = await callApiProxy<{
@@ -51,12 +52,12 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
   }
 }
 
-export async function analyzeKeyword(keyword: string): Promise<ContentAnalysis> {
+export async function analyzeKeyword(keyword: string, refresh?: boolean): Promise<ContentAnalysis> {
   try {
     console.log(`Analyzing keyword: ${keyword}`);
     
     // Get comprehensive SERP data for the keyword
-    const serpData = await analyzeKeywordSerp(keyword);
+    const serpData = await analyzeKeywordSerp(keyword, refresh);
     
     console.log('SERP data received:', serpData);
     
