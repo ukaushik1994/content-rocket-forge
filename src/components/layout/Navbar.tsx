@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { toast } from 'sonner';
-import NavItems, { mainNavItems } from './NavItems';
+import NavItems from './NavItems';
 
 const Navbar = () => {
   const location = useLocation();
