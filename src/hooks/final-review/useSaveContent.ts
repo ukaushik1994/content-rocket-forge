@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +12,7 @@ export const useSaveContent = () => {
   const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
-  const { addContentItem, refreshContent } = useContent();
+  const { refreshContent } = useContent();
   const navigate = useNavigate();
 
   const handleSaveToDraft = async (): Promise<string | null> => {
@@ -33,7 +32,6 @@ export const useSaveContent = () => {
         status: 'draft',
         notes: '',
         outline: state.outline,
-        seoScore: state.seoScore,
         serpSelections: state.serpSelections,
         serpData: state.serpData
       };
@@ -47,28 +45,12 @@ export const useSaveContent = () => {
         serpSelections: saveParams.serpSelections?.length
       });
       
-      // Try saving using content builder context first
-      let contentId: string | null = await saveContentToDraft(saveParams);
+      // Save using content builder context
+      const contentId = await saveContentToDraft(saveParams);
       console.log('[useSaveContent] saveContentToDraft returned ID:', contentId);
       
-      // If that doesn't work, use the content context directly
       if (!contentId) {
-        console.log('[useSaveContent] No content ID returned, adding directly to content repository');
-        const addedItem = await addContentItem({
-          title: saveParams.title,
-          content: saveParams.content || '',
-          status: 'draft',
-          seo_score: state.seoScore,
-          keywords: [state.mainKeyword, ...state.selectedKeywords],
-          metadata: {
-            metaTitle: state.metaTitle,
-            metaDescription: state.metaDescription,
-            outline: state.outline,
-            serpSelections: state.serpSelections
-          }
-        });
-        console.log('[useSaveContent] Content added directly, result:', addedItem);
-        contentId = addedItem as string;
+        throw new Error('Failed to save content to draft');
       }
       
       // Force refresh the content list to make sure it shows up
@@ -126,27 +108,12 @@ export const useSaveContent = () => {
       // Try publishing using content builder context
       let contentId = await saveContentToPublished(publishParams);
       
-      // If that doesn't work, use the content context directly
       if (!contentId) {
-        console.log('[useSaveContent] No content ID returned, adding directly to content repository');
-        const addedItem = await addContentItem({
-          title: publishParams.title,
-          content: publishParams.content || '',
-          status: 'published',
-          seo_score: state.seoScore,
-          keywords: [state.mainKeyword, ...state.selectedKeywords],
-          metadata: {
-            metaTitle: state.metaTitle,
-            metaDescription: state.metaDescription,
-            outline: state.outline,
-            serpSelections: state.serpSelections
-          }
-        });
-        
-        // Force refresh the content list
-        await refreshContent();
-        return addedItem as string;
+        throw new Error('Failed to publish content');
       }
+      
+      // Force refresh the content list
+      await refreshContent();
       
       toast.success('Content published successfully');
       

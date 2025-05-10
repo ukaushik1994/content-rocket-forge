@@ -1,7 +1,7 @@
-
 import { ContentBuilderState, ContentBuilderAction, SaveContentParams } from '../types/index';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const createPublishActions = (
   state: ContentBuilderState, 
@@ -25,106 +25,86 @@ export const createPublishActions = (
         toast.error('Missing required fields for saving content');
         return null;
       }
-      
-      // Save SERP selections if available
-      if (state.serpSelections && state.serpSelections.length > 0) {
-        content.serpSelections = state.serpSelections;
-      }
-      
-      // Save outline if available
-      if (state.outline && state.outline.length > 0) {
-        content.outline = state.outline;
-      }
-      
-      // Prepare metadata for storing in the database
-      const metadata = {
-        metaTitle: content.metaTitle,
-        metaDescription: content.metaDescription,
-        outline: content.outline || [],
-        serpSelections: content.serpSelections || [],
-        serpData: content.serpData || {},
-        mainKeyword: content.mainKeyword,
-        secondaryKeywords: content.secondaryKeywords || []
-      };
-      
-      // Get the current authenticated user
+
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('No authenticated user found');
-        toast.error('You need to be logged in to save content');
+        toast.error('You must be logged in to save content');
         return null;
       }
-      
-      // Save to Supabase database
+
+      // Prepare content data for database
+      const contentData = {
+        title: content.title,
+        content: content.content,
+        status: 'draft',
+        seo_score: content.seoScore || 0,
+        user_id: user.id,
+        metadata: {
+          mainKeyword: content.mainKeyword,
+          secondaryKeywords: content.secondaryKeywords || [],
+          contentType: content.contentType,
+          metaTitle: content.metaTitle,
+          metaDescription: content.metaDescription,
+          outline: content.outline || [],
+          serpSelections: content.serpSelections || [],
+          serpData: content.serpData
+        }
+      };
+
+      // Save to database
       const { data, error } = await supabase
         .from('content_items')
-        .insert({
-          title: content.title,
-          content: content.content,
-          status: 'draft',
-          seo_score: content.seoScore || 0,
-          metadata: metadata,
-          user_id: user.id
-        })
-        .select('id')
+        .insert(contentData)
+        .select()
         .single();
-        
-      if (error) {
-        console.error('Error saving content to Supabase:', error);
-        toast.error('Failed to save content to draft');
-        
-        // Return null on error
-        return null;
-      }
-      
-      console.log('Content saved to database with ID:', data?.id);
-      
-      // Add keywords to the content if they exist
+
+      if (error) throw error;
+
+      // Save keywords if available
       if (content.mainKeyword || (content.secondaryKeywords && content.secondaryKeywords.length > 0)) {
-        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean);
+        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])];
         
-        for (const keywordText of keywords) {
-          // First check if keyword exists
+        for (const keyword of keywords) {
+          // Check if keyword exists
           const { data: existingKeyword } = await supabase
             .from('keywords')
             .select('id')
-            .eq('keyword', keywordText)
+            .eq('keyword', keyword)
             .eq('user_id', user.id)
-            .maybeSingle();
-            
+            .single();
+
           let keywordId;
           
           if (!existingKeyword) {
-            // Create the keyword if it doesn't exist
+            // Create new keyword
             const { data: newKeyword, error: keywordError } = await supabase
               .from('keywords')
               .insert({
-                keyword: keywordText,
+                keyword,
                 user_id: user.id
               })
               .select('id')
               .single();
-              
-            if (keywordError) {
-              console.error('Error creating keyword:', keywordError);
-              continue;
-            }
-            
+
+            if (keywordError) throw keywordError;
             keywordId = newKeyword.id;
           } else {
             keywordId = existingKeyword.id;
           }
-          
-          // Create the relationship between content item and keyword
-          await supabase
+
+          // Create content-keyword relationship
+          const { error: relationError } = await supabase
             .from('content_keywords')
             .insert({
               content_id: data.id,
               keyword_id: keywordId
             });
+
+          if (relationError) throw relationError;
         }
       }
-      
+
       // Update state with saved content info
       if (content.metaTitle) {
         dispatch({ type: 'SET_META_TITLE', payload: content.metaTitle });
@@ -137,16 +117,17 @@ export const createPublishActions = (
       if (content.title) {
         dispatch({ type: 'SET_CONTENT_TITLE', payload: content.title });
       }
+
+      toast.success('Content saved as draft successfully');
       
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });
       
-      toast.success('Content saved to drafts successfully');
       return data.id;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving content to draft:', error);
       dispatch({ type: 'SET_IS_SAVING', payload: false });
-      toast.error('Error saving content to draft');
+      toast.error(error.message || 'Failed to save content as draft');
       return null;
     }
   };
@@ -169,106 +150,86 @@ export const createPublishActions = (
         toast.error('Missing required fields for publishing content');
         return null;
       }
-      
-      // Save SERP selections if available
-      if (state.serpSelections && state.serpSelections.length > 0) {
-        content.serpSelections = state.serpSelections;
-      }
-      
-      // Save outline if available
-      if (state.outline && state.outline.length > 0) {
-        content.outline = state.outline;
-      }
-      
-      // Prepare metadata for storing in the database
-      const metadata = {
-        metaTitle: content.metaTitle,
-        metaDescription: content.metaDescription,
-        outline: content.outline || [],
-        serpSelections: content.serpSelections || [],
-        serpData: content.serpData || {},
-        mainKeyword: content.mainKeyword,
-        secondaryKeywords: content.secondaryKeywords || []
-      };
-      
-      // Get the current authenticated user
+
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('No authenticated user found');
-        toast.error('You need to be logged in to publish content');
+        toast.error('You must be logged in to publish content');
         return null;
       }
-      
-      // Save to Supabase database
+
+      // Prepare content data for database
+      const contentData = {
+        title: content.title,
+        content: content.content,
+        status: 'published',
+        seo_score: content.seoScore || 0,
+        user_id: user.id,
+        metadata: {
+          mainKeyword: content.mainKeyword,
+          secondaryKeywords: content.secondaryKeywords || [],
+          contentType: content.contentType,
+          metaTitle: content.metaTitle,
+          metaDescription: content.metaDescription,
+          outline: content.outline || [],
+          serpSelections: content.serpSelections || [],
+          serpData: content.serpData
+        }
+      };
+
+      // Save to database
       const { data, error } = await supabase
         .from('content_items')
-        .insert({
-          title: content.title,
-          content: content.content,
-          status: 'published', // Status set to published
-          seo_score: content.seoScore || 0,
-          metadata: metadata,
-          user_id: user.id
-        })
-        .select('id')
+        .insert(contentData)
+        .select()
         .single();
-        
-      if (error) {
-        console.error('Error publishing content to Supabase:', error);
-        toast.error('Failed to publish content');
-        
-        // Return null on error
-        return null;
-      }
-      
-      console.log('Content published to database with ID:', data?.id);
-      
-      // Add keywords to the content if they exist
+
+      if (error) throw error;
+
+      // Save keywords if available
       if (content.mainKeyword || (content.secondaryKeywords && content.secondaryKeywords.length > 0)) {
-        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])].filter(Boolean);
+        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])];
         
-        for (const keywordText of keywords) {
-          // First check if keyword exists
+        for (const keyword of keywords) {
+          // Check if keyword exists
           const { data: existingKeyword } = await supabase
             .from('keywords')
             .select('id')
-            .eq('keyword', keywordText)
+            .eq('keyword', keyword)
             .eq('user_id', user.id)
-            .maybeSingle();
-            
+            .single();
+
           let keywordId;
           
           if (!existingKeyword) {
-            // Create the keyword if it doesn't exist
+            // Create new keyword
             const { data: newKeyword, error: keywordError } = await supabase
               .from('keywords')
               .insert({
-                keyword: keywordText,
+                keyword,
                 user_id: user.id
               })
               .select('id')
               .single();
-              
-            if (keywordError) {
-              console.error('Error creating keyword:', keywordError);
-              continue;
-            }
-            
+
+            if (keywordError) throw keywordError;
             keywordId = newKeyword.id;
           } else {
             keywordId = existingKeyword.id;
           }
-          
-          // Create the relationship between content item and keyword
-          await supabase
+
+          // Create content-keyword relationship
+          const { error: relationError } = await supabase
             .from('content_keywords')
             .insert({
               content_id: data.id,
               keyword_id: keywordId
             });
+
+          if (relationError) throw relationError;
         }
       }
-      
+
       // Update state with published content info
       if (content.metaTitle) {
         dispatch({ type: 'SET_META_TITLE', payload: content.metaTitle });
@@ -281,16 +242,17 @@ export const createPublishActions = (
       if (content.title) {
         dispatch({ type: 'SET_CONTENT_TITLE', payload: content.title });
       }
+
+      toast.success('Content published successfully');
       
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });
       
-      toast.success('Content published successfully');
       return data.id;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error publishing content:', error);
       dispatch({ type: 'SET_IS_SAVING', payload: false });
-      toast.error('Error publishing content');
+      toast.error(error.message || 'Failed to publish content');
       return null;
     }
   };

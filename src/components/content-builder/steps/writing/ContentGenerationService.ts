@@ -1,10 +1,10 @@
-
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
 import { AiProvider } from '@/services/aiService/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ContentItemType } from '@/contexts/content/types';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 export async function generateContent(
   aiProvider: AiProvider,
@@ -172,48 +172,46 @@ export async function saveContentToDraft(
   }
 }
 
-// Helper function to add a keyword to a content item
 async function addKeyword(contentId: string, keyword: string, userId: string) {
   try {
     // Check if keyword exists
-    let { data: existingKeyword } = await supabase
+    const { data: existingKeyword } = await supabase
       .from('keywords')
       .select('id')
       .eq('keyword', keyword)
       .eq('user_id', userId)
-      .maybeSingle();
-    
+      .single();
+
     let keywordId;
     
     if (!existingKeyword) {
-      // Create keyword if it doesn't exist
+      // Create new keyword
       const { data: newKeyword, error: keywordError } = await supabase
         .from('keywords')
         .insert({
-          keyword: keyword,
+          keyword,
           user_id: userId
         })
         .select('id')
         .single();
-        
+
       if (keywordError) throw keywordError;
       keywordId = newKeyword.id;
     } else {
       keywordId = existingKeyword.id;
     }
-    
-    // Create relationship between content and keyword
+
+    // Simply insert the relationship without checking for duplicates
     const { error: relationError } = await supabase
       .from('content_keywords')
       .insert({
         content_id: contentId,
         keyword_id: keywordId
       });
-      
+
     if (relationError) throw relationError;
-    
   } catch (error) {
     console.error('Error adding keyword:', error);
-    // Don't throw here so we don't break the main content saving flow
+    throw error;
   }
 }
