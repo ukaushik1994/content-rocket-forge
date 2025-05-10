@@ -211,7 +211,7 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
       ...countries.map(country => `Create localized content for ${country.toUpperCase()} market`)
     ],
     isMockData: true,
-    searchCountries: countries
+    searchCountries: countries  // Property explicitly added to match type
   };
 }
 

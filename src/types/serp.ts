@@ -55,4 +55,5 @@ export interface SerpAnalysisResult {
     opportunity?: string; // Added missing field
     source?: string; // Added missing field
   }>;
+  searchCountries?: string[]; // Added the missing searchCountries property
 }
