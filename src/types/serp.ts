@@ -15,6 +15,7 @@ export interface SerpAnalysisResult {
     link: string;
     snippet: string;
     position: number;
+    country?: string;  // Added country field
   }>;
   relatedSearches?: Array<{
     query: string;
