@@ -1,358 +1,367 @@
 
 import React from 'react';
-import { toast } from 'sonner';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { RefreshButton } from '@/components/ui/refresh-button';
+import { SerpAnalysisResult } from '@/types/serp';
 import { 
   FileText, 
-  ListOrdered, 
-  CheckSquare, 
-  Table, 
-  Layout, 
-  BarChart3 
+  ListChecks, 
+  HelpCircle, 
+  Layers,
+  FileQuestion,
+  Tag,
+  Heading,
+  Component
 } from 'lucide-react';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
-import { motion } from 'framer-motion';
-import { ContentTemplate } from './ContentTemplate';
-import { SerpAnalysisResult } from '@/types/serp';
 
 interface ContentTemplatesGridProps {
   serpData: SerpAnalysisResult;
   onGenerateContent: (template: string) => void;
   mainKeyword: string;
+  onRefreshSection: (section: 'keywords' | 'headings' | 'questions' | 'entities') => void;
+  isRefreshingKeywords: boolean;
+  isRefreshingHeadings: boolean;
+  isRefreshingQuestions: boolean;
+  isRefreshingEntities: boolean;
 }
 
-export const ContentTemplatesGrid: React.FC<ContentTemplatesGridProps> = ({
-  serpData,
+export function ContentTemplatesGrid({ 
+  serpData, 
   onGenerateContent,
-  mainKeyword
-}) => {
-  const generateFeaturedSnippetTemplate = () => {
-    if (!serpData.featuredSnippets || serpData.featuredSnippets.length === 0) {
-      toast.error("No featured snippet data available");
-      return;
-    }
-
-    const snippet = serpData.featuredSnippets[0];
-    
-    let template = `# The Ultimate Guide to ${mainKeyword}\n\n`;
-    
-    // Use optional chaining for the type property
-    if (snippet.type === 'definition') {
-      template += `## What is ${mainKeyword}?\n\n${snippet.content}\n\n`;
-      template += `## Why ${mainKeyword} Matters\n\n[Explain why this topic is important...]\n\n`;
-    } else if (snippet.type === 'list') {
-      template += `## Essential Steps for ${mainKeyword}\n\n${snippet.content}\n\n`;
-      template += `## Detailed Breakdown\n\n[Expand on each point from the list with details...]\n\n`;
-    } else {
-      template += `## Understanding ${mainKeyword}\n\n${snippet.content}\n\n`;
-    }
-    
-    template += `## Key Benefits\n\n- Benefit 1\n- Benefit 2\n- Benefit 3\n\n`;
-    template += `## Conclusion\n\n[Summarize the main points...]\n\n`;
-    
-    onGenerateContent(template);
-    toast.success("Featured snippet template created!");
-  };
-
-  const generateListArticleTemplate = () => {
-    const relatedTopics = serpData.relatedSearches?.map(item => item.query) || [];
-    
-    let template = `# Top 10 ${mainKeyword} Solutions in 2025\n\n`;
-    template += `## Introduction\n\n[Introduce the concept of ${mainKeyword} and why it matters...]\n\n`;
-    
-    // Add list items
-    for (let i = 1; i <= 10; i++) {
-      template += `## ${i}. [Solution Name]\n\n`;
-      template += `### Key Features:\n- Feature 1\n- Feature 2\n- Feature 3\n\n`;
-      template += `### Pricing: [Price details]\n\n`;
-      template += `### Best For: [Target audience]\n\n`;
-    }
-    
-    // Add comparison table
-    template += `## Comparison Table\n\n`;
-    template += `| Solution | Key Feature | Price | Best For |\n`;
-    template += `| --- | --- | --- | --- |\n`;
-    template += `| Solution 1 | Feature | $XX | Audience |\n`;
-    template += `| Solution 2 | Feature | $XX | Audience |\n\n`;
-    
-    // Add FAQ using People Also Ask
-    if (serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0) {
-      template += `## Frequently Asked Questions\n\n`;
-      serpData.peopleAlsoAsk.forEach(item => {
-        template += `### ${item.question}\n\n[Your answer...]\n\n`;
-      });
-    }
-    
-    // Add related topics
-    if (relatedTopics.length > 0) {
-      template += `## Related Topics\n\n`;
-      relatedTopics.slice(0, 3).forEach(topic => {
-        template += `- ${topic}\n`;
-      });
-      template += `\n`;
-    }
-    
-    template += `## Conclusion\n\n[Summarize key takeaways and provide a final recommendation...]\n\n`;
-    
-    onGenerateContent(template);
-    toast.success("List article template created!");
-  };
-
-  const generateHowToGuideTemplate = () => {
-    const questions = serpData.peopleAlsoAsk?.map(item => item.question) || [];
-    
-    let template = `# How to Master ${mainKeyword}: Step-by-Step Guide\n\n`;
-    template += `## Introduction\n\n[Explain the importance of ${mainKeyword} and what readers will learn...]\n\n`;
-    template += `## Prerequisites\n\n- Required item/knowledge 1\n- Required item/knowledge 2\n\n`;
-    
-    // Add steps
-    template += `## Step 1: Getting Started\n\n[Detailed explanation of the first step...]\n\n`;
-    template += `## Step 2: [Second Step Name]\n\n[Detailed explanation...]\n\n`;
-    template += `## Step 3: [Third Step Name]\n\n[Detailed explanation...]\n\n`;
-    template += `## Step 4: [Fourth Step Name]\n\n[Detailed explanation...]\n\n`;
-    template += `## Step 5: [Fifth Step Name]\n\n[Detailed explanation...]\n\n`;
-    
-    // Add troubleshooting
-    template += `## Common Issues and Troubleshooting\n\n`;
-    template += `### Issue 1: [Common Problem]\n\n[Solution...]\n\n`;
-    template += `### Issue 2: [Common Problem]\n\n[Solution...]\n\n`;
-    
-    // Add FAQ using People Also Ask
-    if (questions.length > 0) {
-      template += `## Frequently Asked Questions\n\n`;
-      questions.forEach(question => {
-        template += `### ${question}\n\n[Your answer...]\n\n`;
-      });
-    }
-    
-    template += `## Conclusion\n\n[Summarize the guide and next steps...]\n\n`;
-    
-    onGenerateContent(template);
-    toast.success("How-to guide template created!");
-  };
-
-  const generateComparisonTemplate = () => {
-    let template = `# ${mainKeyword} Comparison: Which Option Is Best in 2025?\n\n`;
-    template += `## Introduction\n\n[Introduce the concept of ${mainKeyword} and explain the importance of choosing the right option...]\n\n`;
-    
-    // Add comparison sections
-    template += `## Methodology\n\n[Explain how the comparison was conducted and what criteria were used...]\n\n`;
-    
-    template += `## Option 1: [First Option]\n\n`;
-    template += `### Pros:\n- Advantage 1\n- Advantage 2\n- Advantage 3\n\n`;
-    template += `### Cons:\n- Disadvantage 1\n- Disadvantage 2\n\n`;
-    
-    template += `## Option 2: [Second Option]\n\n`;
-    template += `### Pros:\n- Advantage 1\n- Advantage 2\n- Advantage 3\n\n`;
-    template += `### Cons:\n- Disadvantage 1\n- Disadvantage 2\n\n`;
-    
-    template += `## Option 3: [Third Option]\n\n`;
-    template += `### Pros:\n- Advantage 1\n- Advantage 2\n- Advantage 3\n\n`;
-    template += `### Cons:\n- Disadvantage 1\n- Disadvantage 2\n\n`;
-    
-    // Add comparison table
-    template += `## Feature Comparison\n\n`;
-    template += `| Feature | Option 1 | Option 2 | Option 3 |\n`;
-    template += `| --- | --- | --- | --- |\n`;
-    template += `| Feature 1 | ✅ | ✅ | ❌ |\n`;
-    template += `| Feature 2 | ✅ | ❌ | ✅ |\n`;
-    template += `| Feature 3 | ❌ | ✅ | ✅ |\n`;
-    template += `| Price | $XX | $XX | $XX |\n\n`;
-    
-    template += `## Best For Different Use Cases\n\n`;
-    template += `### Best for Beginners: [Option]\n\n[Explanation...]\n\n`;
-    template += `### Best for Advanced Users: [Option]\n\n[Explanation...]\n\n`;
-    template += `### Best Value for Money: [Option]\n\n[Explanation...]\n\n`;
-    
-    template += `## Conclusion and Recommendations\n\n[Summarize findings and provide final recommendations based on different user needs...]\n\n`;
-    
-    onGenerateContent(template);
-    toast.success("Comparison template created!");
-  };
-
-  const generateUltimateGuideTemplate = () => {
-    const keywords = serpData.keywords || [];
-    const relatedTopics = serpData.relatedSearches?.map(item => item.query) || [];
-    
-    let template = `# The Ultimate Guide to ${mainKeyword} in 2025\n\n`;
-    template += `## Introduction\n\n[Provide a comprehensive introduction to ${mainKeyword}, including its importance and relevance in 2025...]\n\n`;
-    
-    // Add definition section
-    template += `## What is ${mainKeyword}?\n\n[Provide a clear and detailed definition...]\n\n`;
-    
-    // Add key concepts section
-    template += `## Key Concepts You Need to Understand\n\n`;
-    if (keywords.length > 0) {
-      keywords.forEach((keyword, index) => {
-        if (index < 5) {
-          template += `### ${keyword.charAt(0).toUpperCase() + keyword.slice(1)}\n\n[Explanation of this concept...]\n\n`;
-        }
-      });
-    } else {
-      template += `### Concept 1\n\n[Explanation...]\n\n`;
-      template += `### Concept 2\n\n[Explanation...]\n\n`;
-      template += `### Concept 3\n\n[Explanation...]\n\n`;
-    }
-    
-    // Add history/evolution section
-    template += `## The Evolution of ${mainKeyword}\n\n[Trace the history and development...]\n\n`;
-    
-    // Add best practices
-    template += `## Best Practices for ${mainKeyword}\n\n`;
-    template += `### Best Practice 1\n\n[Detailed explanation...]\n\n`;
-    template += `### Best Practice 2\n\n[Detailed explanation...]\n\n`;
-    template += `### Best Practice 3\n\n[Detailed explanation...]\n\n`;
-    
-    // Add case studies
-    template += `## Case Studies\n\n`;
-    template += `### Case Study 1: [Company/Example Name]\n\n[Detailed case study...]\n\n`;
-    template += `### Case Study 2: [Company/Example Name]\n\n[Detailed case study...]\n\n`;
-    
-    // Add tools and resources
-    template += `## Tools and Resources for ${mainKeyword}\n\n`;
-    template += `### Tools\n\n- Tool 1: [Description]\n- Tool 2: [Description]\n- Tool 3: [Description]\n\n`;
-    template += `### Resources\n\n- Resource 1: [Description]\n- Resource 2: [Description]\n- Resource 3: [Description]\n\n`;
-    
-    // Add future trends
-    template += `## Future Trends in ${mainKeyword}\n\n[Discuss upcoming trends and predictions...]\n\n`;
-    
-    // Add related topics
-    if (relatedTopics.length > 0) {
-      template += `## Related Topics\n\n`;
-      relatedTopics.forEach(topic => {
-        template += `### ${topic.charAt(0).toUpperCase() + topic.slice(1)}\n\n[Brief explanation of how this relates to ${mainKeyword}...]\n\n`;
-      });
-    }
-    
-    // Add FAQ using People Also Ask
-    if (serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0) {
-      template += `## Frequently Asked Questions\n\n`;
-      serpData.peopleAlsoAsk.forEach(item => {
-        template += `### ${item.question}\n\n[Your answer...]\n\n`;
-      });
-    }
-    
-    template += `## Conclusion\n\n[Comprehensive summary and final thoughts...]\n\n`;
-    
-    onGenerateContent(template);
-    toast.success("Ultimate guide template created!");
-  };
-
+  mainKeyword,
+  onRefreshSection,
+  isRefreshingKeywords,
+  isRefreshingHeadings,
+  isRefreshingQuestions,
+  isRefreshingEntities
+}: ContentTemplatesGridProps) {
   return (
-    <TooltipProvider>
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Featured Snippet" 
-                  description="Optimized for position zero" 
-                  icon={<FileText className="h-5 w-5 text-primary" />} 
-                  onClick={generateFeaturedSnippetTemplate}
-                />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* Guide Template */}
+      <Card className="border-neon-purple/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-neon-purple/20 rounded-full">
+                <FileText className="h-4 w-4 text-neon-purple" />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates content optimized to win featured snippets</p>
-            </TooltipContent>
-          </Tooltip>
+              <div>
+                <CardTitle className="text-base text-white/90">Comprehensive Guide</CardTitle>
+                <p className="text-xs text-white/60">Complete educational content</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-neon-purple/20 text-neon-purple border-neon-purple/30">Guide</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-sm text-white/70">In-depth guide about {mainKeyword} with complete sections covering all aspects.</p>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="List Article" 
-                  description="Top 10 style content" 
-                  icon={<ListOrdered className="h-5 w-5 text-primary" />} 
-                  onClick={generateListArticleTemplate}
-                />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {serpData.headings?.slice(0, 3).map((heading, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {heading.text}
+              </Badge>
+            ))}
+            {serpData.headings && serpData.headings.length > 3 && (
+              <Badge variant="outline" className="text-xs bg-white/5 border-white/20">
+                +{serpData.headings.length - 3} more
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-xs text-white/50">~2,500 words</p>
+            <RefreshButton 
+              isRefreshing={isRefreshingHeadings} 
+              onClick={() => onRefreshSection('headings')}
+              size="sm"
+              className="h-7"
+            >
+              Refresh Headings
+            </RefreshButton>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-2">
+          <Button 
+            onClick={() => onGenerateContent('guide')} 
+            className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+          >
+            Generate Guide
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* List Article Template */}
+      <Card className="border-neon-blue/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-neon-blue/20 rounded-full">
+                <ListChecks className="h-4 w-4 text-neon-blue" />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates a ranked list of items with comparisons</p>
-            </TooltipContent>
-          </Tooltip>
+              <div>
+                <CardTitle className="text-base text-white/90">List Article</CardTitle>
+                <p className="text-xs text-white/60">Scannable list format</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-neon-blue/20 text-neon-blue border-neon-blue/30">List</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-sm text-white/70">Organized list of top {mainKeyword} items, tips, or resources with detailed explanations.</p>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="How-to Guide" 
-                  description="Step-by-step tutorial" 
-                  icon={<CheckSquare className="h-5 w-5 text-primary" />} 
-                  onClick={generateHowToGuideTemplate}
-                />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {serpData.keywords?.slice(0, 3).map((keyword, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {keyword}
+              </Badge>
+            ))}
+            {serpData.keywords && serpData.keywords.length > 3 && (
+              <Badge variant="outline" className="text-xs bg-white/5 border-white/20">
+                +{serpData.keywords.length - 3} more
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-xs text-white/50">~1,800 words</p>
+            <RefreshButton 
+              isRefreshing={isRefreshingKeywords} 
+              onClick={() => onRefreshSection('keywords')}
+              size="sm"
+              className="h-7"
+            >
+              Refresh Keywords
+            </RefreshButton>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-2">
+          <Button 
+            onClick={() => onGenerateContent('list')} 
+            className="w-full bg-gradient-to-r from-neon-blue to-blue-500 hover:from-blue-500 hover:to-neon-blue"
+          >
+            Generate List Article
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* FAQ Article Template */}
+      <Card className="border-amber-500/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-amber-500/20 rounded-full">
+                <HelpCircle className="h-4 w-4 text-amber-500" />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates instructional content with clear steps</p>
-            </TooltipContent>
-          </Tooltip>
+              <div>
+                <CardTitle className="text-base text-white/90">FAQ Article</CardTitle>
+                <p className="text-xs text-white/60">Question-based content</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-amber-500/20 text-amber-500 border-amber-500/30">FAQ</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-sm text-white/70">Comprehensive FAQ covering common questions about {mainKeyword} with detailed answers.</p>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Comparison" 
-                  description="Product/service comparison" 
-                  icon={<Table className="h-5 w-5 text-primary" />} 
-                  onClick={generateComparisonTemplate}
-                />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {serpData.peopleAlsoAsk?.slice(0, 2).map((question, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {question.question.length > 30 ? question.question.substring(0, 30) + '...' : question.question}
+              </Badge>
+            ))}
+            {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 2 && (
+              <Badge variant="outline" className="text-xs bg-white/5 border-white/20">
+                +{serpData.peopleAlsoAsk.length - 2} more
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-xs text-white/50">~2,000 words</p>
+            <RefreshButton 
+              isRefreshing={isRefreshingQuestions} 
+              onClick={() => onRefreshSection('questions')}
+              size="sm"
+              className="h-7"
+            >
+              Refresh Questions
+            </RefreshButton>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-2">
+          <Button 
+            onClick={() => onGenerateContent('faq')} 
+            className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-yellow-500 hover:to-amber-500"
+          >
+            Generate FAQ Article
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* Comparison Article */}
+      <Card className="border-green-500/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-green-500/20 rounded-full">
+                <Layers className="h-4 w-4 text-green-500" />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates side-by-side comparison content</p>
-            </TooltipContent>
-          </Tooltip>
+              <div>
+                <CardTitle className="text-base text-white/90">Comparison Article</CardTitle>
+                <p className="text-xs text-white/60">Side-by-side analysis</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-green-500/20 text-green-500 border-green-500/30">Compare</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-sm text-white/70">Detailed comparison of different approaches, solutions, or products related to {mainKeyword}.</p>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Ultimate Guide" 
-                  description="Comprehensive resource" 
-                  icon={<Layout className="h-5 w-5 text-primary" />} 
-                  onClick={generateUltimateGuideTemplate}
-                  featured={true}
-                />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {serpData.entities?.slice(0, 3).map((entity, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {entity.name}
+              </Badge>
+            ))}
+            {serpData.entities && serpData.entities.length > 3 && (
+              <Badge variant="outline" className="text-xs bg-white/5 border-white/20">
+                +{serpData.entities.length - 3} more
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-xs text-white/50">~2,200 words</p>
+            <RefreshButton 
+              isRefreshing={isRefreshingEntities} 
+              onClick={() => onRefreshSection('entities')}
+              size="sm"
+              className="h-7"
+            >
+              Refresh Entities
+            </RefreshButton>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-2">
+          <Button 
+            onClick={() => onGenerateContent('comparison')} 
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-emerald-500 hover:to-green-500"
+          >
+            Generate Comparison
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* Tutorial Template */}
+      <Card className="border-indigo-500/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-indigo-500/20 rounded-full">
+                <Component className="h-4 w-4 text-indigo-500" />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Creates a comprehensive long-form guide</p>
-            </TooltipContent>
-          </Tooltip>
+              <div>
+                <CardTitle className="text-base text-white/90">Tutorial</CardTitle>
+                <p className="text-xs text-white/60">Step-by-step guide</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-indigo-500/20 text-indigo-500 border-indigo-500/30">How-to</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-sm text-white/70">Detailed tutorial teaching readers how to implement or use {mainKeyword} with clear steps.</p>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <ContentTemplate 
-                  title="Custom Template" 
-                  description="Create your own" 
-                  icon={<BarChart3 className="h-5 w-5 text-primary" />} 
-                  onClick={() => {
-                    toast("Coming soon!", {
-                      description: "Custom template generator will be available soon."
-                    });
-                  }}
-                  className="border-dashed"
-                />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {serpData.headings?.slice(0, 2).map((heading, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {heading.text}
+              </Badge>
+            ))}
+            {serpData.keywords?.slice(0, 1).map((keyword, idx) => (
+              <Badge key={`kw-${idx}`} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {keyword}
+              </Badge>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-xs text-white/50">~1,800 words</p>
+            <RefreshButton 
+              isRefreshing={isRefreshingHeadings} 
+              onClick={() => onRefreshSection('headings')}
+              size="sm"
+              className="h-7"
+            >
+              Refresh Headings
+            </RefreshButton>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-2">
+          <Button 
+            onClick={() => onGenerateContent('tutorial')} 
+            className="w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-violet-500 hover:to-indigo-500"
+          >
+            Generate Tutorial
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* Q&A Analysis Template */}
+      <Card className="border-rose-500/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <div className="p-2 bg-rose-500/20 rounded-full">
+                <FileQuestion className="h-4 w-4 text-rose-500" />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Create a custom template (coming soon)</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </motion.div>
-    </TooltipProvider>
+              <div>
+                <CardTitle className="text-base text-white/90">Expert Analysis</CardTitle>
+                <p className="text-xs text-white/60">In-depth expert answers</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-rose-500/20 text-rose-500 border-rose-500/30">Analysis</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-sm text-white/70">Expert analysis providing authoritative answers on complex aspects of {mainKeyword}.</p>
+          
+          <div className="flex flex-wrap gap-1 mt-2">
+            {serpData.peopleAlsoAsk?.slice(0, 1).map((question, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {question.question.length > 30 ? question.question.substring(0, 30) + '...' : question.question}
+              </Badge>
+            ))}
+            {serpData.entities?.slice(0, 2).map((entity, idx) => (
+              <Badge key={`ent-${idx}`} variant="outline" className="text-xs bg-white/5 border-white/20">
+                {entity.name}
+              </Badge>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center mt-4">
+            <p className="text-xs text-white/50">~3,000 words</p>
+            <RefreshButton 
+              isRefreshing={isRefreshingQuestions} 
+              onClick={() => onRefreshSection('questions')}
+              size="sm"
+              className="h-7"
+            >
+              Refresh Questions
+            </RefreshButton>
+          </div>
+        </CardContent>
+        <CardFooter className="pt-2">
+          <Button 
+            onClick={() => onGenerateContent('analysis')} 
+            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-pink-500 hover:to-rose-500"
+          >
+            Generate Analysis
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
-};
+}

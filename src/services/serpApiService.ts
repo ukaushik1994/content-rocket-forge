@@ -80,20 +80,23 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
     if (!apiKey) {
       console.warn('No SERP API key found in settings, using mock data');
       // Return mock data instead of null for testing
-      return generateMockSerpData(keyword);
+      return generateMockSerpData(keyword, refresh);
     }
     
     // Mock data for now - in production, this would call the actual API
-    return generateMockSerpData(keyword);
+    return generateMockSerpData(keyword, refresh);
   } catch (error) {
     console.error('Error analyzing keyword:', error);
-    return generateMockSerpData(keyword);
+    return generateMockSerpData(keyword, refresh);
   }
 };
 
 // Helper function to generate mock SERP data
-function generateMockSerpData(keyword: string): SerpAnalysisResult {
-  // Generate mock data based on the keyword
+function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
+  // Create variations based on refresh parameter
+  const variationFactor = refresh ? Math.random() : 0.5;
+  
+  // Generate mock data based on the keyword with potential variations
   return {
     keyword,
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
@@ -103,20 +106,38 @@ function generateMockSerpData(keyword: string): SerpAnalysisResult {
       { name: `${keyword} platform`, type: 'platform' },
       { name: `${keyword} strategy`, type: 'strategy' },
       { name: `${keyword} tools`, type: 'tools' },
-      { name: `${keyword} metrics`, type: 'metrics' }
+      { name: `${keyword} metrics`, type: 'metrics' },
+      // Add new entities if refreshing
+      ...(refresh ? [
+        { name: `${keyword} analytics`, type: 'analytics' },
+        { name: `${keyword} framework`, type: 'framework' },
+        { name: `${keyword} automation`, type: 'automation' }
+      ] : [])
     ],
     peopleAlsoAsk: [
       { question: `How does ${keyword} work?`, source: 'search' },
       { question: `What is the best ${keyword} tool?`, source: 'search' },
       { question: `Why is ${keyword} important for SEO?`, source: 'search' },
-      { question: `When should I use ${keyword}?`, source: 'search' }
+      { question: `When should I use ${keyword}?`, source: 'search' },
+      // Add new questions if refreshing
+      ...(refresh ? [
+        { question: `What are the advantages of ${keyword}?`, source: 'search' },
+        { question: `How much does ${keyword} cost on average?`, source: 'search' },
+        { question: `Can ${keyword} be integrated with other systems?`, source: 'search' }
+      ] : [])
     ],
     headings: [
       { text: `Understanding ${keyword}`, level: 'h2' },
       { text: `Benefits of ${keyword}`, level: 'h2' },
       { text: `How to Implement ${keyword}`, level: 'h3' },
       { text: `${keyword} Best Practices`, level: 'h2' },
-      { text: `${keyword} Case Studies`, level: 'h2' }
+      { text: `${keyword} Case Studies`, level: 'h2' },
+      // Add new headings if refreshing
+      ...(refresh ? [
+        { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' },
+        { text: `Advanced ${keyword} Techniques`, level: 'h2' },
+        { text: `${keyword} ROI Calculation`, level: 'h3' }
+      ] : [])
     ],
     contentGaps: [
       { topic: `${keyword} for beginners`, description: 'Beginner guide', recommendation: 'Create a 101 guide' },
@@ -152,7 +173,14 @@ function generateMockSerpData(keyword: string): SerpAnalysisResult {
       { query: `${keyword} tutorial` },
       { query: `${keyword} examples` },
       { query: `${keyword} techniques` },
-      { query: `${keyword} trends` }
+      { query: `${keyword} trends` },
+      // Add new related searches if refreshing
+      ...(refresh ? [
+        { query: `affordable ${keyword} solutions` },
+        { query: `${keyword} for small business` },
+        { query: `enterprise ${keyword} options` },
+        { query: `${keyword} certification` }
+      ] : [])
     ],
     keywords: [
       `${keyword} strategy`,
@@ -162,7 +190,14 @@ function generateMockSerpData(keyword: string): SerpAnalysisResult {
       `${keyword} tutorial`,
       `${keyword} examples`,
       `${keyword} techniques`,
-      `${keyword} trends`
+      `${keyword} trends`,
+      // Add new keywords if refreshing
+      ...(refresh ? [
+        `${keyword} certification`,
+        `${keyword} for startups`,
+        `${keyword} ROI`,
+        `${keyword} software comparison`
+      ] : [])
     ],
     recommendations: [
       `Create a comprehensive guide on ${keyword}`,
