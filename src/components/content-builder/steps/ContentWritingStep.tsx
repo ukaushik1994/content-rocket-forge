@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
@@ -8,6 +8,7 @@ import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
+import { Link } from 'react-router-dom';
 
 export const ContentWritingStep = () => {
   const {
@@ -39,6 +40,9 @@ export const ContentWritingStep = () => {
     handleAiProviderChange
   } = useWritingStep();
 
+  // Add state for selected countries
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(['us']);
+
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
       toast.error("Please set a main keyword first");
@@ -69,7 +73,8 @@ export const ContentWritingStep = () => {
       selectedSolution,
       additionalInstructions,
       setIsGenerating,
-      handleContentChange
+      handleContentChange,
+      selectedCountries // Pass selected countries
     );
   };
   
@@ -97,6 +102,8 @@ export const ContentWritingStep = () => {
         outlineLength={state.outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
+        selectedCountries={selectedCountries}
+        onCountriesChange={setSelectedCountries}
       />
       
       {showGenerator && (
