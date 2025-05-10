@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles } from 'lucide-react';
-import { SerpAnalysisResult } from '@/services/serpApiService';
+import { SerpAnalysisResult } from '@/types/serp';
 
 // Import refactored components
 import {

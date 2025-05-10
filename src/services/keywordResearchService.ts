@@ -30,7 +30,7 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
     // Get SERP data for the keyword
     const serpResults = await searchKeywords({
       query: keyword,
-      num: 10
+      limit: 10  // Use limit instead of num to match the SearchKeywordParams interface
     });
     
     console.log('SERP results received:', serpResults.length);

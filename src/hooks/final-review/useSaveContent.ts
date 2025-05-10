@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useContent } from '@/contexts/content';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -45,12 +47,93 @@ export const useSaveContent = () => {
         serpSelections: saveParams.serpSelections?.length
       });
       
-      // Save using content builder context
-      const contentId = await saveContentToDraft(saveParams);
-      console.log('[useSaveContent] saveContentToDraft returned ID:', contentId);
+      // Save to database
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) {
+        throw new Error('User not authenticated');
+      }
       
-      if (!contentId) {
-        throw new Error('Failed to save content to draft');
+      // Save the content item first
+      const { data: contentItem, error: contentError } = await supabase
+        .from('content_items')
+        .insert({
+          title: saveParams.title,
+          content: saveParams.content,
+          user_id: user.user.id,
+          status: 'draft',
+          seo_score: state.seoScore || 0,
+          metadata: {
+            contentType: saveParams.contentType,
+            metaTitle: saveParams.metaTitle,
+            metaDescription: saveParams.metaDescription,
+            outline: saveParams.outline,
+            serpSelections: saveParams.serpSelections,
+          }
+        })
+        .select()
+        .single();
+        
+      if (contentError || !contentItem) {
+        console.error('[useSaveContent] Error saving content:', contentError);
+        throw new Error(contentError?.message || 'Failed to save content');
+      }
+      
+      const contentId = contentItem.id as string;
+      console.log('[useSaveContent] Content saved, ID:', contentId);
+      
+      // Now save the keywords if any
+      if (saveParams.mainKeyword || (saveParams.secondaryKeywords && saveParams.secondaryKeywords.length > 0)) {
+        const allKeywords = [
+          saveParams.mainKeyword,
+          ...(saveParams.secondaryKeywords || [])
+        ].filter(Boolean) as string[];
+        
+        // Save any new keywords
+        const keywords = [];
+        for (const keyword of allKeywords) {
+          // Check if keyword exists first
+          const { data: existingKeyword } = await supabase
+            .from('keywords')
+            .select('id')
+            .eq('keyword', keyword)
+            .eq('user_id', user.user.id)
+            .single();
+            
+          if (existingKeyword) {
+            keywords.push(existingKeyword.id);
+          } else {
+            // Insert new keyword
+            const { data: newKeyword, error: keywordError } = await supabase
+              .from('keywords')
+              .insert({
+                keyword: keyword,
+                user_id: user.user.id
+              })
+              .select('id')
+              .single();
+              
+            if (!keywordError && newKeyword) {
+              keywords.push(newKeyword.id);
+            }
+          }
+        }
+        
+        // Link keywords to content
+        if (keywords.length > 0) {
+          const contentKeywords = keywords.map(keywordId => ({
+            content_id: contentId,
+            keyword_id: keywordId
+          }));
+          
+          await supabase
+            .from('content_keywords')
+            .insert(contentKeywords);
+        }
+      }
+      
+      // Save using content builder context (legacy)
+      if (saveContentToDraft) {
+        await saveContentToDraft(saveParams);
       }
       
       // Force refresh the content list to make sure it shows up
@@ -105,11 +188,91 @@ export const useSaveContent = () => {
       
       console.log('[useSaveContent] Publishing content with params:', publishParams);
       
-      // Try publishing using content builder context
-      let contentId = await saveContentToPublished(publishParams);
+      // Save to database
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) {
+        throw new Error('User not authenticated');
+      }
       
-      if (!contentId) {
-        throw new Error('Failed to publish content');
+      // Save the content item first
+      const { data: contentItem, error: contentError } = await supabase
+        .from('content_items')
+        .insert({
+          title: publishParams.title,
+          content: publishParams.content,
+          user_id: user.user.id,
+          status: 'published',
+          seo_score: publishParams.seoScore || 0,
+          metadata: {
+            contentType: publishParams.contentType,
+            metaTitle: publishParams.metaTitle,
+            metaDescription: publishParams.metaDescription,
+            outline: publishParams.outline,
+            serpSelections: publishParams.serpSelections,
+          }
+        })
+        .select()
+        .single();
+        
+      if (contentError || !contentItem) {
+        throw new Error(contentError?.message || 'Failed to publish content');
+      }
+      
+      const contentId = contentItem.id as string;
+      
+      // Now save the keywords if any
+      if (publishParams.mainKeyword || (publishParams.secondaryKeywords && publishParams.secondaryKeywords.length > 0)) {
+        const allKeywords = [
+          publishParams.mainKeyword,
+          ...(publishParams.secondaryKeywords || [])
+        ].filter(Boolean) as string[];
+        
+        // Save any new keywords
+        const keywords = [];
+        for (const keyword of allKeywords) {
+          // Check if keyword exists first
+          const { data: existingKeyword } = await supabase
+            .from('keywords')
+            .select('id')
+            .eq('keyword', keyword)
+            .eq('user_id', user.user.id)
+            .single();
+            
+          if (existingKeyword) {
+            keywords.push(existingKeyword.id);
+          } else {
+            // Insert new keyword
+            const { data: newKeyword, error: keywordError } = await supabase
+              .from('keywords')
+              .insert({
+                keyword: keyword,
+                user_id: user.user.id
+              })
+              .select('id')
+              .single();
+              
+            if (!keywordError && newKeyword) {
+              keywords.push(newKeyword.id);
+            }
+          }
+        }
+        
+        // Link keywords to content
+        if (keywords.length > 0) {
+          const contentKeywords = keywords.map(keywordId => ({
+            content_id: contentId,
+            keyword_id: keywordId
+          }));
+          
+          await supabase
+            .from('content_keywords')
+            .insert(contentKeywords);
+        }
+      }
+      
+      // Try publishing using content builder context (legacy)
+      if (saveContentToPublished) {
+        await saveContentToPublished(publishParams);
       }
       
       // Force refresh the content list
