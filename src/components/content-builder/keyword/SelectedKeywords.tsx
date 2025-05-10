@@ -8,11 +8,13 @@ import { motion } from 'framer-motion';
 interface SelectedKeywordsProps {
   keywords: string[];
   onRemoveKeyword: (keyword: string) => void;
+  title?: string;
 }
 
 export const SelectedKeywords: React.FC<SelectedKeywordsProps> = ({
   keywords,
-  onRemoveKeyword
+  onRemoveKeyword,
+  title = "Primary Keywords"
 }) => {
   if (!keywords.length) return null;
 
@@ -21,7 +23,7 @@ export const SelectedKeywords: React.FC<SelectedKeywordsProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-green-400" />
-          Primary Keywords
+          {title}
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -1,104 +1,186 @@
 
-import React from 'react';
-import { ContentItemType } from '@/contexts/content/types';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useApproval } from '../context/ApprovalContext';
-import { InterLinkingItem } from './InterLinkingItem';
-import { FileText, Link as LinkIcon, Lightbulb } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { motion } from 'framer-motion';
+import { ContentItemType } from '@/contexts/content/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Link, ArrowRight, CheckCircle2, PlusCircle, RefreshCw } from 'lucide-react';
+import { useContent } from '@/contexts/content';
+import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface InterLinkingSuggestionsProps {
   content: ContentItemType;
 }
 
 export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = ({ content }) => {
-  const { interLinkingSuggestions } = useApproval();
+  const { contentItems } = useContent();
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState('relevant');
+  
+  // Generate interlinking suggestions based on content keywords and other content
+  useEffect(() => {
+    generateSuggestions();
+  }, [content, contentItems]);
+  
+  const generateSuggestions = () => {
+    setIsLoading(true);
+    
+    try {
+      // Filter out the current content
+      const otherContent = contentItems.filter(item => item.id !== content.id);
+      
+      // Extract keywords from the current content
+      const keywords = content.metadata?.mainKeyword 
+        ? [content.metadata.mainKeyword, ...(content.metadata.secondaryKeywords || [])]
+        : [];
+      
+      // Find relevant content by matching keywords
+      const relevantContent = otherContent.filter(item => {
+        const itemKeywords = item.metadata?.mainKeyword 
+          ? [item.metadata.mainKeyword, ...(item.metadata.secondaryKeywords || [])]
+          : [];
+        
+        return itemKeywords.some(kw => 
+          keywords.some(keyword => 
+            keyword && kw && keyword.toLowerCase().includes(kw.toLowerCase()) || 
+            kw.toLowerCase().includes(keyword.toLowerCase())
+          )
+        );
+      });
+      
+      // Find popular content (placeholder - in a real app this would be based on metrics)
+      const popularContent = [...otherContent]
+        .sort((a, b) => (b.metadata?.seoScore || 0) - (a.metadata?.seoScore || 0))
+        .slice(0, 5);
+      
+      // Find recent content
+      const recentContent = [...otherContent]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5);
+      
+      setSuggestions({
+        relevant: relevantContent,
+        popular: popularContent,
+        recent: recentContent
+      });
+    } catch (error) {
+      console.error('Error generating interlinking suggestions:', error);
+      toast.error('Failed to generate interlinking suggestions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleRefresh = () => {
+    generateSuggestions();
+    toast.success('Refreshed interlinking suggestions');
+  };
+  
+  const renderContentCard = (item: ContentItemType) => {
+    return (
+      <Card key={item.id} className="mb-4 bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-md font-medium mb-1">{item.title}</h3>
+              <div className="flex gap-1 mb-2 flex-wrap">
+                {item.metadata?.mainKeyword && (
+                  <Badge variant="outline" className="bg-blue-900/30 border-blue-500/30 text-blue-300 text-xs">
+                    {item.metadata.mainKeyword}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-400 line-clamp-2">
+                {item.content?.substring(0, 120)}...
+              </p>
+            </div>
+            <Button size="sm" className="shrink-0 bg-white/10 hover:bg-white/20 border border-white/10">
+              <Link className="h-4 w-4 mr-2" />
+              Add Link
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
   
   return (
-    <div className="space-y-6">
-      <motion.div
-        className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-5"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-neon-blue/20 flex items-center justify-center">
-            <LinkIcon className="h-5 w-5 text-neon-blue" />
+    <Card className="border border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-white/10">
+        <CardTitle className="text-md flex items-center gap-2">
+          <div className="p-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full">
+            <Link className="h-4 w-4 text-white" />
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-white/90">Interlinking Opportunities</h2>
-            <p className="text-white/60 mt-1">
-              Connect your content with other published articles to improve SEO and user navigation.
-            </p>
-          </div>
-        </div>
-      </motion.div>
+          Content Interlinking Suggestions
+        </CardTitle>
+        
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading} className="gap-1">
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </CardHeader>
       
-      {interLinkingSuggestions.length > 0 ? (
-        <motion.div 
-          className="grid gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          {interLinkingSuggestions.map((suggestion, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
-            >
-              <InterLinkingItem 
-                suggestion={suggestion}
-                sourceContent={content}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white/80">
-                <Lightbulb className="h-4 w-4 text-amber-400" />
-                No Interlinking Suggestions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Alert className="border-blue-600/30 bg-blue-600/10">
-                <FileText className="h-4 w-4 text-blue-400" />
-                <AlertDescription className="text-blue-200">
-                  No interlinking opportunities found. This could be because there are no published articles with matching keywords or topics.
-                </AlertDescription>
-              </Alert>
-              
-              <div className="mt-4 bg-white/5 border border-white/10 rounded-lg p-4">
-                <h4 className="font-medium text-white/80 mb-2">Tips to improve interlinking</h4>
-                <ul className="space-y-2 text-sm text-white/60">
-                  <li className="flex items-start gap-2">
-                    <span className="bg-neon-blue/20 text-neon-blue h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-                    <span>Create more content with related keywords</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="bg-neon-blue/20 text-neon-blue h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-                    <span>Add more specific keywords to this content</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="bg-neon-blue/20 text-neon-blue h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-                    <span>Publish other draft articles to create linking opportunities</span>
-                  </li>
-                </ul>
+      <CardContent className="pt-4">
+        <Tabs defaultValue="relevant" value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="relevant">
+              Most Relevant
+            </TabsTrigger>
+            <TabsTrigger value="popular">
+              Popular
+            </TabsTrigger>
+            <TabsTrigger value="recent">
+              Recent
+            </TabsTrigger>
+          </TabsList>
+          
+          <ScrollArea className="h-[500px] pr-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-    </div>
+            ) : (
+              <>
+                <TabsContent value="relevant" className="mt-0">
+                  {suggestions.relevant?.length > 0 ? (
+                    suggestions.relevant.map(renderContentCard)
+                  ) : (
+                    <div className="text-center py-8 bg-white/5 border border-white/10 rounded-lg">
+                      <Link className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400">No relevant content found to link to</p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="popular" className="mt-0">
+                  {suggestions.popular?.length > 0 ? (
+                    suggestions.popular.map(renderContentCard)
+                  ) : (
+                    <div className="text-center py-8 bg-white/5 border border-white/10 rounded-lg">
+                      <Link className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400">No popular content found to link to</p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="recent" className="mt-0">
+                  {suggestions.recent?.length > 0 ? (
+                    suggestions.recent.map(renderContentCard)
+                  ) : (
+                    <div className="text-center py-8 bg-white/5 border border-white/10 rounded-lg">
+                      <Link className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400">No recent content found to link to</p>
+                    </div>
+                  )}
+                </TabsContent>
+              </>
+            )}
+          </ScrollArea>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };

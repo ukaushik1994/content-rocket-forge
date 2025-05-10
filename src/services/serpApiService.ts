@@ -127,16 +127,16 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       ] : [])
     ],
     headings: [
-      { text: `Understanding ${keyword}`, level: 'h2' },
-      { text: `Benefits of ${keyword}`, level: 'h2' },
-      { text: `How to Implement ${keyword}`, level: 'h3' },
-      { text: `${keyword} Best Practices`, level: 'h2' },
-      { text: `${keyword} Case Studies`, level: 'h2' },
+      { text: `Understanding ${keyword}`, level: 'h2' as const },
+      { text: `Benefits of ${keyword}`, level: 'h2' as const },
+      { text: `How to Implement ${keyword}`, level: 'h3' as const },
+      { text: `${keyword} Best Practices`, level: 'h2' as const },
+      { text: `${keyword} Case Studies`, level: 'h2' as const },
       // Add new headings if refreshing
       ...(refresh ? [
-        { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' },
-        { text: `Advanced ${keyword} Techniques`, level: 'h2' },
-        { text: `${keyword} ROI Calculation`, level: 'h3' }
+        { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' as const },
+        { text: `Advanced ${keyword} Techniques`, level: 'h2' as const },
+        { text: `${keyword} ROI Calculation`, level: 'h3' as const }
       ] : [])
     ],
     contentGaps: [

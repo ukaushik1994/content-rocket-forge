@@ -50,7 +50,7 @@ export function SerpContentGenerator({
     }
 
     try {
-      // Fetch new SERP data
+      // Fetch new SERP data with refresh flag set to true
       const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
       
       if (newSerpData) {

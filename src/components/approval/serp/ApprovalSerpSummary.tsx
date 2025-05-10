@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, HelpCircle, FileText, Tag, Heading, FileSearch } from 'lucide-react';
+import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { SerpAnalysisResult } from '@/types/serp';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { toast } from 'sonner';
 import {
   SerpSectionHeader,
   SerpKeywordsSection,
@@ -29,6 +32,55 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
   className = ''
 }) => {
   const [activeTab, setActiveTab] = useState('keywords');
+  const [localSerpData, setLocalSerpData] = useState<SerpAnalysisResult | null>(serpData);
+  const [isRefreshingSection, setIsRefreshingSection] = useState(false);
+
+  const refreshCurrentSection = async () => {
+    if (!mainKeyword || isRefreshingSection) return;
+    
+    setIsRefreshingSection(true);
+    
+    try {
+      // Fetch new SERP data with refresh flag set to true
+      const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
+      
+      if (newSerpData && localSerpData) {
+        // Create updated data by merging the new section data with existing data
+        const updatedData = { ...localSerpData } as SerpAnalysisResult;
+        
+        switch(activeTab) {
+          case 'keywords':
+            updatedData.keywords = newSerpData.keywords;
+            updatedData.relatedSearches = newSerpData.relatedSearches;
+            toast.success('Keywords refreshed successfully');
+            break;
+          case 'questions':
+            updatedData.peopleAlsoAsk = newSerpData.peopleAlsoAsk;
+            toast.success('Questions refreshed successfully');
+            break;
+          case 'entities':
+            updatedData.entities = newSerpData.entities;
+            toast.success('Entities refreshed successfully');
+            break;
+          case 'headings':
+            updatedData.headings = newSerpData.headings;
+            toast.success('Headings refreshed successfully');
+            break;
+        }
+        
+        // Update the local state
+        setLocalSerpData(updatedData);
+      }
+    } catch (error) {
+      console.error(`Error refreshing ${activeTab}:`, error);
+      toast.error(`Failed to refresh ${activeTab}`);
+    } finally {
+      setIsRefreshingSection(false);
+    }
+  };
+
+  // Use localSerpData if available, otherwise use the prop
+  const displayData = localSerpData || serpData;
 
   if (isLoading) {
     return (
@@ -41,7 +93,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
     );
   }
 
-  if (!serpData) {
+  if (!displayData) {
     return (
       <div className={`p-4 bg-white/5 border border-white/10 rounded-lg ${className}`}>
         <div className="flex flex-col items-center justify-center py-6">
@@ -55,11 +107,24 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
   return (
     <Card className={`border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden ${className}`}>
       <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-        <div className="flex items-center gap-2">
-          <Search className="h-4 w-4 text-neon-purple" />
-          <h3 className="text-sm font-medium">
-            SERP Analysis: <span className="text-neon-purple">{mainKeyword}</span>
-          </h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-neon-purple" />
+            <h3 className="text-sm font-medium">
+              SERP Analysis: <span className="text-neon-purple">{mainKeyword}</span>
+            </h3>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={refreshCurrentSection}
+            disabled={isRefreshingSection}
+            className="h-7 px-2 text-xs text-white/70 hover:text-white"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshingSection ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -98,7 +163,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
         <CardContent className="pt-2 max-h-[400px] overflow-y-auto">
           <TabsContent value="keywords" className="mt-0 py-2">
             <SerpKeywordsSection
-              serpData={serpData}
+              serpData={displayData}
               expanded={true}
               onAddToContent={onAddToContent}
             />
@@ -106,7 +171,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
           
           <TabsContent value="questions" className="mt-0 py-2">
             <SerpQuestionsSection
-              serpData={serpData}
+              serpData={displayData}
               expanded={true}
               onAddToContent={onAddToContent}
             />
@@ -114,7 +179,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
           
           <TabsContent value="entities" className="mt-0 py-2">
             <SerpEntitiesSection
-              serpData={serpData}
+              serpData={displayData}
               expanded={true}
               onAddToContent={onAddToContent}
             />
@@ -122,7 +187,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
           
           <TabsContent value="headings" className="mt-0 py-2">
             <SerpHeadingsSection
-              serpData={serpData}
+              serpData={displayData}
               expanded={true}
               onAddToContent={onAddToContent}
             />
