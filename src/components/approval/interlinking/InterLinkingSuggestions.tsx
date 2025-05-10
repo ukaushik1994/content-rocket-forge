@@ -14,9 +14,20 @@ interface InterLinkingSuggestionsProps {
   content: ContentItemType;
 }
 
+// Define interfaces for our suggestions state
+interface SuggestionGroups {
+  relevant: ContentItemType[];
+  popular: ContentItemType[];
+  recent: ContentItemType[];
+}
+
 export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = ({ content }) => {
   const { contentItems } = useContent();
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestionGroups>({
+    relevant: [],
+    popular: [],
+    recent: []
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('relevant');
   
@@ -61,6 +72,7 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5);
       
+      // Update state with properly structured data
       setSuggestions({
         relevant: relevantContent,
         popular: popularContent,
