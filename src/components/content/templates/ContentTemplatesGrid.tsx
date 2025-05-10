@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/tooltip';
 import { motion } from 'framer-motion';
 import { ContentTemplate } from './ContentTemplate';
-import { SerpAnalysisResult } from '@/services/serpApiService';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface ContentTemplatesGridProps {
   serpData: SerpAnalysisResult;

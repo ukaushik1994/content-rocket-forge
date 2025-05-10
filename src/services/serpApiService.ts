@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 
@@ -7,6 +6,8 @@ interface SearchKeywordParams {
   limit?: number;
   refresh?: boolean;
 }
+
+export { SerpAnalysisResult }; // Explicitly export the type from types/serp
 
 export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
