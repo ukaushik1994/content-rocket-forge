@@ -1,10 +1,11 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
+import { useLocation } from 'react-router-dom';
+import { useContent } from '@/contexts/content';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
@@ -15,7 +16,9 @@ import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SaveStep } from './steps/save';
 
 export const ContentBuilder = () => {
-  const { state, navigateToStep } = useContentBuilder();
+  const { state, navigateToStep, setMainKeyword, addKeyword, setContentTitle, setContentType, setContentFormat, setContentIntent, setContent, setMetaTitle, setMetaDescription, setOutline, setOutlineSections, updateContent, setAdditionalInstructions } = useContentBuilder();
+  const { contentItems, loading } = useContent();
+  const location = useLocation();
   const { activeStep, steps } = state;
 
   // Calculate progress percentage
@@ -78,6 +81,39 @@ export const ContentBuilder = () => {
   
   // Check if we're on the final step
   const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
+  
+  // --- Load draft data if editing ---
+  React.useEffect(() => {
+    // Only run on mount and when content items are loaded
+    if (loading) return;
+    
+    const navState = location.state as { contentId?: string } | undefined;
+    const contentId = navState?.contentId;
+    if (!contentId) return;
+
+    // Find the draft in contentItems
+    const draft = contentItems.find(item => item.id === contentId);
+    if (!draft) return;
+
+    // Populate context state with draft data
+    setMainKeyword(draft.metadata?.mainKeyword || '');
+    (draft.metadata?.secondaryKeywords || []).forEach((kw: string) => addKeyword(kw));
+    setContentTitle(draft.title || '');
+    setContentType(draft.metadata?.contentType || 'article');
+    setContentFormat(draft.metadata?.contentFormat || 'long-form');
+    setContentIntent(draft.metadata?.contentIntent || 'inform');
+    setContent(draft.content || '');
+    setMetaTitle(draft.metadata?.metaTitle || '');
+    setMetaDescription(draft.metadata?.metaDescription || '');
+    if (typeof draft.metadata?.outline !== 'undefined') {
+      setOutline(draft.metadata.outline);
+    }
+    if (typeof draft.metadata?.outlineSections !== 'undefined') {
+      setOutlineSections(draft.metadata.outlineSections);
+    }
+    setAdditionalInstructions(draft.metadata?.additionalInstructions || '');
+    // Add more fields as needed
+  }, [location.state, contentItems, loading]);
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">

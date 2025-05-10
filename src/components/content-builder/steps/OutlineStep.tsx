@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
@@ -14,12 +13,13 @@ export const OutlineStep = () => {
   
   useEffect(() => {
     // Mark as complete if we have an outline with at least 3 sections
-    if (outline.length >= 3) {
+    if (outline && outline.length >= 3) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
     }
   }, [outline, dispatch]);
   
-  const handleSaveOutline = (updatedOutline: string[]) => {
+  const handleSaveOutline = (updatedOutline: any[]) => {
+    console.log('Saving outline:', updatedOutline);
     dispatch({ type: 'SET_OUTLINE', payload: updatedOutline });
   };
 
@@ -49,7 +49,7 @@ export const OutlineStep = () => {
       <Card>
         <CardContent className="pt-6">
           <OutlineTable 
-            outline={outline} 
+            outline={outline || []} 
             onSave={handleSaveOutline} 
           />
         </CardContent>

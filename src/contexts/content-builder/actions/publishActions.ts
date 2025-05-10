@@ -93,15 +93,48 @@ export const createPublishActions = (
             keywordId = existingKeyword.id;
           }
 
-          // Create content-keyword relationship
-          const { error: relationError } = await supabase
+          // Check if content-keyword relationship already exists
+          const { data: existingRelation } = await supabase
             .from('content_keywords')
-            .insert({
-              content_id: data.id,
-              keyword_id: keywordId
-            });
+            .select('*')
+            .eq('content_id', data.id)
+            .eq('keyword_id', keywordId)
+            .single();
 
-          if (relationError) throw relationError;
+          if (existingRelation) {
+            // Ask user for confirmation
+            const shouldUpsert = window.confirm(
+              `A relationship between this content and keyword "${keyword}" already exists. Would you like to update it?`
+            );
+
+            if (shouldUpsert) {
+              // Update existing relationship
+              const { error: updateError } = await supabase
+                .from('content_keywords')
+                .update({
+                  content_id: data.id,
+                  keyword_id: keywordId
+                })
+                .eq('content_id', data.id)
+                .eq('keyword_id', keywordId);
+
+              if (updateError) throw updateError;
+            } else {
+              // Skip this keyword
+              console.log(`Skipping keyword "${keyword}" as per user choice`);
+              continue;
+            }
+          } else {
+            // Create new content-keyword relationship
+            const { error: relationError } = await supabase
+              .from('content_keywords')
+              .insert({
+                content_id: data.id,
+                keyword_id: keywordId
+              });
+
+            if (relationError) throw relationError;
+          }
         }
       }
 

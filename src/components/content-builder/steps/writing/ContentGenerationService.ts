@@ -131,18 +131,23 @@ export async function saveContentToDraft(
     
     // If we have keywords, save them too
     if (mainKeyword || (secondaryKeywords && secondaryKeywords.length > 0)) {
-      // Add main keyword first
-      if (mainKeyword) {
-        await addKeyword(data.id, mainKeyword, user.id);
-      }
-      
-      // Add secondary keywords
-      if (secondaryKeywords && secondaryKeywords.length > 0) {
-        for (const keyword of secondaryKeywords) {
-          if (keyword && keyword !== mainKeyword) {
-            await addKeyword(data.id, keyword, user.id);
+      try {
+        // Add main keyword first
+        if (mainKeyword) {
+          await addKeyword(data.id, mainKeyword, user.id);
+        }
+        
+        // Add secondary keywords
+        if (secondaryKeywords && secondaryKeywords.length > 0) {
+          for (const keyword of secondaryKeywords) {
+            if (keyword && keyword !== mainKeyword) {
+              await addKeyword(data.id, keyword, user.id);
+            }
           }
         }
+      } catch (keywordError) {
+        // Log the error but don't fail the whole save operation
+        console.warn('Warning: Some keywords could not be saved:', keywordError);
       }
     }
     
@@ -195,7 +200,10 @@ async function addKeyword(contentId: string, keyword: string, userId: string) {
         .select('id')
         .single();
 
-      if (keywordError) throw keywordError;
+      if (keywordError) {
+        console.warn('Warning: Could not create new keyword:', keywordError);
+        return;
+      }
       keywordId = newKeyword.id;
     } else {
       keywordId = existingKeyword.id;
@@ -209,9 +217,10 @@ async function addKeyword(contentId: string, keyword: string, userId: string) {
         keyword_id: keywordId
       });
 
-    if (relationError) throw relationError;
+    if (relationError) {
+      console.warn('Warning: Could not create keyword relationship:', relationError);
+    }
   } catch (error) {
-    console.error('Error adding keyword:', error);
-    throw error;
+    console.warn('Warning: Error in addKeyword:', error);
   }
 }

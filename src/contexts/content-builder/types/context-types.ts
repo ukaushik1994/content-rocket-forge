@@ -1,4 +1,3 @@
-
 /**
  * Context-related type definitions
  */
@@ -36,6 +35,8 @@ export interface ContentBuilderContextType {
   saveContent: (options: { title: string; content: string }) => Promise<boolean>;
   setContent: (content: string) => void;
   updateContent: (content: string) => void;
+  setOutline: (outline: string[]) => void;
+  setOutlineSections: (sections: OutlineSection[]) => void;
   
   // Meta Actions
   setMetaTitle: (title: string) => void;

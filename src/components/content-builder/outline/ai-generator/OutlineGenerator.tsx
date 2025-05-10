@@ -220,8 +220,15 @@ export function OutlineGenerator() {
       return;
     }
     
-    // Update the outline in state
-    dispatch({ type: 'SET_OUTLINE', payload: outlineArray });
+    // Convert the outline array into structured sections with IDs and levels
+    const structuredOutline = outlineArray.map((title, index) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      title,
+      level: 1
+    }));
+    
+    // Update the outline in state with structured sections
+    dispatch({ type: 'SET_OUTLINE', payload: structuredOutline });
     
     // Set a title if none exists
     if (!contentTitle) {
