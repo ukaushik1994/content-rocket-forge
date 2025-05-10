@@ -1,57 +1,50 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Drafts from "./pages/Drafts";
-import ContentBuilder from "./pages/ContentBuilder";
-import ContentApproval from "./pages/ContentApproval";
-import Solutions from "./pages/Solutions";
-import Settings from "./pages/Settings";
-import Analytics from "./pages/Analytics";
-import NotFound from "./pages/NotFound";
-import { ContentProvider } from "./contexts/content";
-import { AuthProvider } from "./contexts/AuthContext";
-import { FeedbackProvider } from "./contexts/FeedbackContext";
-import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ContentProvider } from './contexts/content/ContentProvider';
+import Dashboard from './pages/Dashboard';
+import ContentBuilderPage from './pages/ContentBuilder';
+import ContentLibrary from './pages/ContentLibrary';
+import Drafts from './pages/Drafts';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import ProtectedRoute from './components/ProtectedRoute';
+import FeedbackProvider from './contexts/FeedbackContext';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { HelmetProvider } from 'react-helmet-async';
+import { Toaster } from 'sonner';
+import InterlinkingPage from './pages/InterlinkingPage';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <ContentProvider>
-          <FeedbackProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                
-                {/* Protected routes */}
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
-                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
-                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
-                <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-                
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <FloatingFeedbackButton />
-            </BrowserRouter>
-          </FeedbackProvider>
-        </ContentProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <AuthProvider>
+      <ContentProvider>
+        <FeedbackProvider>
+          <QueryClientProvider client={queryClient}>
+            <HelmetProvider>
+              <Router>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/" element={<LoginPage />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
+                  <Route path="/content" element={<ProtectedRoute><ContentLibrary /></ProtectedRoute>} />
+                  <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                  <Route path="/interlinking" element={<ProtectedRoute><InterlinkingPage /></ProtectedRoute>} />
+                </Routes>
+              </Router>
+              <Toaster position="top-right" />
+            </HelmetProvider>
+          </QueryClientProvider>
+        </FeedbackProvider>
+      </ContentProvider>
+    </AuthProvider>
+  );
+}
 
 export default App;
