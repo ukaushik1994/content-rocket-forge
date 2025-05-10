@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 
 interface SearchKeywordParams {
   query: string;
@@ -64,7 +65,7 @@ interface AnalyzeKeywordParams {
   refresh?: boolean;
 }
 
-export const analyzeKeywordSerp = async (keyword: string) => {
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult> => {
   try {
     // Get the SERP API key from the user's settings
     const { data: apiKey } = await supabase
@@ -84,59 +85,91 @@ export const analyzeKeywordSerp = async (keyword: string) => {
     return generateMockSerpData(keyword);
   } catch (error) {
     console.error('Error analyzing keyword:', error);
-    return null;
+    return generateMockSerpData(keyword);
   }
 };
 
 // Helper function to generate mock SERP data
-function generateMockSerpData(keyword: string) {
+function generateMockSerpData(keyword: string): SerpAnalysisResult {
   // Generate mock data based on the keyword
   return {
     keyword,
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
-    difficulty: Math.floor(Math.random() * 100),
+    competitionScore: Math.random() * 0.8,
+    keywordDifficulty: Math.floor(Math.random() * 100),
     entities: [
-      `${keyword} platform`,
-      `${keyword} strategy`,
-      `${keyword} tools`,
-      `${keyword} metrics`,
+      { name: `${keyword} platform`, type: 'platform' },
+      { name: `${keyword} strategy`, type: 'strategy' },
+      { name: `${keyword} tools`, type: 'tools' },
+      { name: `${keyword} metrics`, type: 'metrics' }
     ],
-    questions: [
-      `How does ${keyword} work?`,
-      `What is the best ${keyword} tool?`,
-      `Why is ${keyword} important for SEO?`,
-      `When should I use ${keyword}?`,
+    peopleAlsoAsk: [
+      { question: `How does ${keyword} work?`, source: 'search' },
+      { question: `What is the best ${keyword} tool?`, source: 'search' },
+      { question: `Why is ${keyword} important for SEO?`, source: 'search' },
+      { question: `When should I use ${keyword}?`, source: 'search' }
     ],
     headings: [
-      `Understanding ${keyword}`,
-      `Benefits of ${keyword}`,
-      `How to Implement ${keyword}`,
-      `${keyword} Best Practices`,
-      `${keyword} Case Studies`,
+      { text: `Understanding ${keyword}`, level: 'h2' },
+      { text: `Benefits of ${keyword}`, level: 'h2' },
+      { text: `How to Implement ${keyword}`, level: 'h3' },
+      { text: `${keyword} Best Practices`, level: 'h2' },
+      { text: `${keyword} Case Studies`, level: 'h2' }
     ],
     contentGaps: [
-      `${keyword} for beginners`,
-      `Advanced ${keyword} techniques`,
-      `${keyword} ROI measurement`,
-      `${keyword} vs competitors`,
+      { topic: `${keyword} for beginners`, description: 'Beginner guide', recommendation: 'Create a 101 guide' },
+      { topic: `Advanced ${keyword} techniques`, description: 'For experts', recommendation: 'Share advanced tips' },
+      { topic: `${keyword} ROI measurement`, description: 'Measuring success', recommendation: 'Create calculator' },
+      { topic: `${keyword} vs competitors`, description: 'Comparison', recommendation: 'Create comparison chart' }
     ],
-    topRanks: [
+    topResults: [
       {
         title: `The Ultimate Guide to ${keyword}`,
-        url: `https://example.com/${keyword}-guide`,
-        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide.`
+        link: `https://example.com/${keyword}-guide`,
+        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide.`,
+        position: 1
       },
       {
         title: `How to Use ${keyword} Effectively`,
-        url: `https://example.com/${keyword}-tutorial`,
-        snippet: `Step-by-step tutorial on implementing ${keyword} for maximum results.`
+        link: `https://example.com/${keyword}-tutorial`,
+        snippet: `Step-by-step tutorial on implementing ${keyword} for maximum results.`,
+        position: 2
       },
       {
         title: `${keyword} Tips and Tricks`,
-        url: `https://example.com/${keyword}-tips`,
-        snippet: `Expert advice on getting the most out of your ${keyword} strategy.`
+        link: `https://example.com/${keyword}-tips`,
+        snippet: `Expert advice on getting the most out of your ${keyword} strategy.`,
+        position: 3
       }
-    ]
+    ],
+    relatedSearches: [
+      { query: `${keyword} strategy` },
+      { query: `${keyword} tools` },
+      { query: `best ${keyword} practices` },
+      { query: `${keyword} guide` },
+      { query: `${keyword} tutorial` },
+      { query: `${keyword} examples` },
+      { query: `${keyword} techniques` },
+      { query: `${keyword} trends` }
+    ],
+    keywords: [
+      `${keyword} strategy`,
+      `${keyword} tools`,
+      `best ${keyword} practices`,
+      `${keyword} guide`,
+      `${keyword} tutorial`,
+      `${keyword} examples`,
+      `${keyword} techniques`,
+      `${keyword} trends`
+    ],
+    recommendations: [
+      `Create a comprehensive guide on ${keyword}`,
+      `Include step-by-step instructions for implementing ${keyword}`,
+      `Add visual examples of ${keyword} in action`,
+      `Compare ${keyword} with alternative approaches`,
+      `Include case studies showing successful ${keyword} implementation`
+    ],
+    isMockData: true
   };
 }
 

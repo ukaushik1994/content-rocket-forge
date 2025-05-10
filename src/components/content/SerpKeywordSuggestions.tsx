@@ -58,8 +58,8 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
     
     setIsLoading(true);
     try {
-      // Add a refresh parameter to get different results
-      const result = await analyzeKeyword(primaryKeyword.trim(), { refresh: true });
+      // Add a refresh parameter using an options object
+      const result = await analyzeKeyword(primaryKeyword.trim(), true);
       
       // If we got new keywords, update the state
       if (result.keywords && result.keywords.length > 0) {

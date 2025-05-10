@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SerpAnalysisResult } from '@/services/serpApiService';
+import { SerpAnalysisResult } from '@/types/serp';
 import { ContentTemplatesHeader } from './templates/ContentTemplatesHeader';
 import { ContentTemplatesGrid } from './templates/ContentTemplatesGrid';
 import { ContentStrategyTips } from './templates/ContentStrategyTips';

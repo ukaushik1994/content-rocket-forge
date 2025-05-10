@@ -79,6 +79,27 @@ export const OptimizeAndReviewStep = () => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
   
+  // Wrapper functions to convert Promise<string | null> to Promise<void>
+  const handleSaveToDraftWrapper = async () => {
+    try {
+      await handleSaveToDraft();
+      // Don't need to return anything for void
+    } catch (error) {
+      console.error("Error saving to draft:", error);
+      toast.error("Failed to save to draft");
+    }
+  };
+  
+  const handlePublishWrapper = async () => {
+    try {
+      await handlePublish();
+      // Don't need to return anything for void
+    } catch (error) {
+      console.error("Error publishing:", error);
+      toast.error("Failed to publish content");
+    }
+  };
+  
   return (
     <div className="space-y-8">
       <FinalReviewHeader 
@@ -90,8 +111,8 @@ export const OptimizeAndReviewStep = () => {
       
       <SaveAndExportPanel 
         completionPercentage={completionPercentage}
-        onSave={handleSaveToDraft}
-        onPublish={handlePublish}
+        onSave={handleSaveToDraftWrapper}
+        onPublish={handlePublishWrapper}
         isSaving={isSaving}
         isSavedToDraft={isSavedToDraft}
       />
