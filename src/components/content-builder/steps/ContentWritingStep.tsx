@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -10,6 +9,7 @@ import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InterLinkingSuggestions } from '@/components/approval/interlinking/InterLinkingSuggestions';
+import { Link as LinkIcon } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -167,7 +167,7 @@ export const ContentWritingStep = () => {
                 
                 {showInterlinking && (!content || content.length <= 100) && (
                   <div className="text-center p-6 bg-white/5 border border-white/10 rounded-lg">
-                    <Link className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                    <LinkIcon className="h-6 w-6 text-gray-400 mx-auto mb-2" />
                     <p className="text-gray-400">Add more content to see interlinking suggestions</p>
                   </div>
                 )}

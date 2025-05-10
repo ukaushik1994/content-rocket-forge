@@ -117,7 +117,7 @@ const InterlinkingPage: React.FC = () => {
                     >
                       <h3 className="font-medium mb-1 line-clamp-2">{item.title}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={item.status === 'published' ? 'success' : 'outline'} className="text-xs">
+                        <Badge variant={item.status === 'published' ? 'secondary' : 'outline'} className="text-xs">
                           {item.status}
                         </Badge>
                         {item.keywords && item.keywords.length > 0 && (

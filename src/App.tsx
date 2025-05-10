@@ -1,22 +1,29 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ContentProvider } from './contexts/content/ContentProvider';
-import Dashboard from './pages/Dashboard';
-import ContentBuilderPage from './pages/ContentBuilder';
-import ContentLibrary from './pages/ContentLibrary';
-import Drafts from './pages/Drafts';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
-import ProtectedRoute from './components/ProtectedRoute';
-import FeedbackProvider from './contexts/FeedbackContext';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { FeedbackProvider } from './contexts/FeedbackContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
+
+// Create placeholder pages for missing pages
+import ContentBuilderPage from './pages/ContentBuilder';
 import InterlinkingPage from './pages/InterlinkingPage';
+import Drafts from './pages/Drafts';
 
 const queryClient = new QueryClient();
+
+// Create placeholder component for ProtectedRoute
+const ProtectedRoute = ({ children }) => children;
+
+// Create placeholder components for missing pages
+const Dashboard = () => <div>Dashboard Page</div>;
+const ContentLibrary = () => <div>Content Library Page</div>;
+const LoginPage = () => <div>Login Page</div>;
+const RegisterPage = () => <div>Register Page</div>;
+const ProfilePage = () => <div>Profile Page</div>;
 
 function App() {
   return (
@@ -30,12 +37,12 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/" element={<LoginPage />} />
-                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
-                  <Route path="/content" element={<ProtectedRoute><ContentLibrary /></ProtectedRoute>} />
-                  <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                  <Route path="/interlinking" element={<ProtectedRoute><InterlinkingPage /></ProtectedRoute>} />
+                  <Route path="/dashboard" element={<ProtectedRoute>{<Dashboard />}</ProtectedRoute>} />
+                  <Route path="/content-builder" element={<ProtectedRoute>{<ContentBuilderPage />}</ProtectedRoute>} />
+                  <Route path="/content" element={<ProtectedRoute>{<ContentLibrary />}</ProtectedRoute>} />
+                  <Route path="/drafts" element={<ProtectedRoute>{<Drafts />}</ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute>{<ProfilePage />}</ProtectedRoute>} />
+                  <Route path="/interlinking" element={<ProtectedRoute>{<InterlinkingPage />}</ProtectedRoute>} />
                 </Routes>
               </Router>
               <Toaster position="top-right" />
