@@ -15,6 +15,45 @@ export const createSeoActions = (
     // Set a dummy SEO score for now
     dispatch({ type: 'SET_SEO_SCORE', payload: 75 });
     
+    // Create mock SEO improvements using the correct interface
+    const improvements = [
+      {
+        id: '1',
+        title: 'Add more internal links',
+        description: 'Your content could benefit from additional internal links to other relevant pages.',
+        priority: 'medium',
+        applied: false,
+        suggestion: 'Add 2-3 internal links to related articles.',
+        type: 'links',
+        recommendation: 'Add more internal links',
+        impact: 'medium' as const
+      },
+      {
+        id: '2',
+        title: 'Improve keyword density',
+        description: `The main keyword "${state.mainKeyword}" appears too infrequently.`,
+        priority: 'high',
+        applied: false,
+        suggestion: `Try to mention "${state.mainKeyword}" a few more times naturally throughout the content.`,
+        type: 'keywords',
+        recommendation: 'Improve keyword density',
+        impact: 'high' as const
+      },
+      {
+        id: '3',
+        title: 'Add more headings',
+        description: 'Break up your content with additional subheadings for better readability.',
+        priority: 'low',
+        applied: false,
+        suggestion: 'Add H3 subheadings to break up longer sections.',
+        type: 'structure',
+        recommendation: 'Add more headings',
+        impact: 'low' as const
+      }
+    ];
+    
+    dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: improvements });
+    
     // Mark step as analyzed regardless of score
     dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
     

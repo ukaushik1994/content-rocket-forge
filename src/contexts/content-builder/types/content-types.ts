@@ -40,6 +40,12 @@ export interface SaveContentParams {
   seoScore?: number;
   outlineSections?: any[];
   note?: string;
+  contentType?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  outline?: any[];
+  serpSelections?: any[];
+  serpData?: any;
 }
 
 // Search Countries
@@ -81,4 +87,12 @@ export interface KeywordUsage {
   keyword: string;
   count: number;
   density: string; // percentage as string e.g. "1.5%"
+  usageCount?: number;
+  isPrimary?: boolean;
+  usedIn?: Array<{
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }>;
 }

@@ -8,14 +8,28 @@ import { KeywordUsage } from '@/contexts/content-builder/types/content-types';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+interface ExtendedKeywordUsage {
+  keyword: string;
+  count: number;
+  density: string;
+  usageCount: number;
+  isPrimary: boolean;
+  usedIn: Array<{
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }>;
+}
+
 export function KeywordRepository() {
   const { contentItems, refreshContent } = useContent();
-  const [keywordUsage, setKeywordUsage] = useState<KeywordUsage[]>([]);
+  const [keywordUsage, setKeywordUsage] = useState<ExtendedKeywordUsage[]>([]);
   const [selectedTab, setSelectedTab] = useState('all');
 
   // Process content items to extract keywords and their usage
   useEffect(() => {
-    const keywordMap = new Map<string, KeywordUsage>();
+    const keywordMap = new Map<string, ExtendedKeywordUsage>();
     
     // Process each content item
     contentItems.forEach(item => {
@@ -30,6 +44,8 @@ export function KeywordRepository() {
         if (!keywordMap.has(mainKeyword)) {
           keywordMap.set(mainKeyword, {
             keyword: mainKeyword,
+            count: 0,
+            density: "0%",
             usageCount: 0,
             isPrimary: true,
             usedIn: []
@@ -51,6 +67,8 @@ export function KeywordRepository() {
         if (!keywordMap.has(keyword)) {
           keywordMap.set(keyword, {
             keyword,
+            count: 0,
+            density: "0%",
             usageCount: 0,
             isPrimary: false,
             usedIn: []

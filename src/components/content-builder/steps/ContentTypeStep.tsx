@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -116,7 +115,7 @@ const contentIntents = [
 ];
 
 export const ContentTypeStep = () => {
-  const { state, setContentType, setContentFormat, setContentIntent, navigateToStep, selectSolution } = useContentBuilder();
+  const { state, setContentType, setContentFormat, setContentIntent, navigateToStep } = useContentBuilder();
   const [activeTab, setActiveTab] = useState('content-type');
   const [selectedType, setSelectedType] = useState(state.contentType || '');
   const [selectedFormat, setSelectedFormat] = useState(state.contentFormat || '');
@@ -138,7 +137,7 @@ export const ContentTypeStep = () => {
       return;
     }
     
-    // Save selections to context
+    // Save selections to context - cast to proper enum types
     setContentType(selectedType as ContentType);
     setContentFormat(selectedFormat as ContentFormat);
     setContentIntent(selectedIntent as ContentIntent);
@@ -249,7 +248,7 @@ export const ContentTypeStep = () => {
         <TabsContent value="solution" className="mt-6">
           <SolutionSelection 
             selectedSolution={state.selectedSolution}
-            onSolutionSelect={selectSolution}
+            onSolutionSelect={(solution) => state.dispatch({ type: 'SELECT_SOLUTION', payload: solution })}
           />
           
           <div className="flex justify-between mt-6">

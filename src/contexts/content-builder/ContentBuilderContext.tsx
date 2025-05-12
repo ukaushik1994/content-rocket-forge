@@ -15,11 +15,24 @@ export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = (
   // Create actions
   const actions = createContentBuilderActions(state, dispatch);
 
+  // Add the missing saveContent function
+  const saveContent = async (options: { title: string; content: string }): Promise<boolean> => {
+    try {
+      dispatch({ type: 'SET_CONTENT_TITLE', payload: options.title });
+      dispatch({ type: 'SET_CONTENT', payload: options.content });
+      return true;
+    } catch (error) {
+      console.error("Error saving content", error);
+      return false;
+    }
+  };
+
   return (
     <ContentBuilderContext.Provider
       value={{ 
         state, 
-        dispatch, 
+        dispatch,
+        saveContent, // Add the missing function
         ...actions
       }}
     >
@@ -36,4 +49,3 @@ export const useContentBuilder = () => {
   }
   return context;
 };
-

@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types';
 import { ContentType, ContentFormat, ContentIntent } from './types/content-types';
 import { ContentCluster } from './types/cluster-types';
@@ -6,7 +5,37 @@ import { Solution, SolutionIntegrationMetrics } from './types/solution-types';
 import { OutlineSection } from './types/outline-types';
 import { generateContent } from '@/components/content-builder/steps/writing/ContentGenerationService';
 import { AiProvider } from '@/services/aiService/types';
-import { analyzeSolution } from '@/utils/seo/solution/analyzeSolutionService';
+
+// Replace the import with inline function to avoid the missing module
+const analyzeSolution = (
+  content: string,
+  solution: Solution
+): { score: number; details: any } => {
+  // This is a placeholder implementation
+  // In a real implementation, this would use NLP to analyze how well the solution is integrated
+  
+  // Check if solution name is mentioned in content
+  const nameMentioned = content.toLowerCase().includes(solution.name.toLowerCase());
+  
+  // Check if features are mentioned
+  const featureMentions = solution.features.filter(feature => 
+    content.toLowerCase().includes(feature.toLowerCase())
+  );
+  
+  // Calculate a basic score
+  const nameScore = nameMentioned ? 25 : 0;
+  const featureScore = Math.min(75, featureMentions.length / solution.features.length * 75);
+  const totalScore = nameScore + featureScore;
+  
+  return {
+    score: Math.round(totalScore),
+    details: {
+      nameMentioned,
+      featureMentions,
+      featureCoverage: `${Math.round(featureMentions.length / solution.features.length * 100)}%`
+    }
+  };
+};
 
 export const createContentBuilderActions = (
   state: ContentBuilderState,
@@ -200,7 +229,10 @@ export const createContentBuilderActions = (
           description: 'Your content could benefit from additional internal links to other relevant pages.',
           priority: 'medium',
           applied: false,
-          suggestion: 'Add 2-3 internal links to related articles.'
+          suggestion: 'Add 2-3 internal links to related articles.',
+          type: 'links',
+          recommendation: 'Add more internal links',
+          impact: 'medium' as const
         },
         {
           id: '2',
@@ -208,7 +240,10 @@ export const createContentBuilderActions = (
           description: `The main keyword "${state.mainKeyword}" appears too infrequently.`,
           priority: 'high',
           applied: false,
-          suggestion: `Try to mention "${state.mainKeyword}" a few more times naturally throughout the content.`
+          suggestion: `Try to mention "${state.mainKeyword}" a few more times naturally throughout the content.`,
+          type: 'keywords',
+          recommendation: 'Improve keyword density',
+          impact: 'high' as const
         },
         {
           id: '3',
@@ -216,7 +251,10 @@ export const createContentBuilderActions = (
           description: 'Break up your content with additional subheadings for better readability.',
           priority: 'low',
           applied: false,
-          suggestion: 'Add H3 subheadings to break up longer sections.'
+          suggestion: 'Add H3 subheadings to break up longer sections.',
+          type: 'structure',
+          recommendation: 'Add more headings',
+          impact: 'low' as const
         }
       ];
       
