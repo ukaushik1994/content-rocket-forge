@@ -54,5 +54,5 @@ export interface ContentBuilderContextType {
   setAdditionalInstructions: (instructions: string) => void;
   
   // SERP Region Settings
-  setSelectedRegions?: (regions: string[]) => void;
+  setSelectedRegions: (regions: string[]) => void;
 }

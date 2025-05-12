@@ -10,8 +10,8 @@ export const createSerpActions = (
   const analyzeKeyword = async (keyword: string, regions?: string[]) => {
     if (!keyword) return;
     
-    // Use provided regions or default to UK, US, MEA
-    const searchRegions = regions || ['uk', 'us', 'mea'];
+    // Use provided regions or default to UK, US, MEA, global
+    const searchRegions = regions || ['uk', 'us', 'mea', 'global'];
     
     // Start loading
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
@@ -136,9 +136,15 @@ export const createSerpActions = (
     toast.success(`Generated outline with ${outlineSections.length} sections based on your selected items`);
   };
   
+  // Add a function to set selected regions
+  const setSelectedRegions = (regions: string[]) => {
+    dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions });
+  };
+
   return {
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
+    setSelectedRegions
   };
 };
