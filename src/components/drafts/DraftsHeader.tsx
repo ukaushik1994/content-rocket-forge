@@ -1,43 +1,43 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Plus } from 'lucide-react';
 import { useContent } from '@/contexts/content';
 
 export function DraftsHeader() {
   const navigate = useNavigate();
   const { contentItems } = useContent();
   
-  // Filter drafts from content items
-  const drafts = contentItems.filter(item => item.status === 'draft');
-  
-  const handleCreateNew = () => {
-    navigate('/content-builder');
-  };
-  
+  // Count drafts and published content
+  const draftsCount = contentItems.filter(item => item.status === 'draft').length;
+  const publishedCount = contentItems.filter(item => item.status === 'published').length;
+
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-1 flex items-center gap-2">
-          <FileText className="h-8 w-8 text-primary" />
-          Content Drafts
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your content drafts and published pieces
-        </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          {drafts.length} draft{drafts.length !== 1 ? 's' : ''} available
-        </p>
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Content Library</h1>
+          <p className="text-muted-foreground">
+            Manage your content drafts and explore your keyword usage across content
+          </p>
+        </div>
+        <Button onClick={() => navigate('/content-builder')}>
+          <Plus className="mr-2 h-4 w-4" /> New Content
+        </Button>
       </div>
       
-      <Button 
-        onClick={handleCreateNew}
-        className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Create New Content
-      </Button>
+      <div className="flex gap-3 text-sm mt-1">
+        <div className="text-muted-foreground">
+          <span className="font-medium text-foreground">{draftsCount}</span> drafts
+        </div>
+        <div className="text-muted-foreground">
+          <span className="font-medium text-foreground">{publishedCount}</span> published
+        </div>
+        <div className="text-muted-foreground">
+          <span className="font-medium text-foreground">{contentItems.filter(item => item.metadata?.mainKeyword).length}</span> with keywords
+        </div>
+      </div>
     </div>
   );
 }

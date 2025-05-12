@@ -66,3 +66,16 @@ export const AVAILABLE_COUNTRIES: SearchCountry[] = [
   { code: 'mea', name: 'Middle East', flag: '🌍' },
   { code: 'global', name: 'Global', flag: '🌎' }
 ];
+
+// Keyword Usage Types for KeywordRepository
+export interface KeywordUsage {
+  keyword: string;
+  usageCount: number;
+  isPrimary: boolean;
+  usedIn: {
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }[];
+}
