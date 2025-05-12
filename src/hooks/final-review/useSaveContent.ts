@@ -28,11 +28,27 @@ export const useSaveContent = () => {
       return String(item || '');
     });
   };
+  
+  // Extract headings from content
+  const extractHeadings = (content: string) => {
+    if (!content) return { h1: [], h2: [] };
+    
+    const h1Regex = /^# (.+)$/gm;
+    const h2Regex = /^## (.+)$/gm;
+    
+    const h1 = [...(content.match(h1Regex) || [])].map(match => match.replace(/^# /, ''));
+    const h2 = [...(content.match(h2Regex) || [])].map(match => match.replace(/^## /, ''));
+    
+    return { h1, h2 };
+  };
 
   const handleSaveToDraft = async (): Promise<string | null> => {
     try {
       setIsSaving(true);
       console.log('[useSaveContent] Starting save to draft process');
+      
+      // Extract headings from content
+      const headings = extractHeadings(state.content);
       
       // Prepare content for saving with extended metadata
       const saveParams: SaveContentParams = {
@@ -41,13 +57,22 @@ export const useSaveContent = () => {
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
         contentType: state.contentType,
+        contentFormat: state.contentFormat,
+        contentIntent: state.contentIntent,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
         status: 'draft',
         notes: '',
         outline: normalizeOutline(state.outline || []),
         serpSelections: state.serpSelections,
-        serpData: state.serpData
+        serpData: state.serpData,
+        headings,
+        solutionInfo: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          category: state.selectedSolution.category
+        } : null,
+        solutionMetrics: state.solutionIntegrationMetrics
       };
       
       console.log('[useSaveContent] Saving content with params:', {
@@ -56,7 +81,9 @@ export const useSaveContent = () => {
         mainKeyword: saveParams.mainKeyword,
         secondaryKeywords: saveParams.secondaryKeywords?.length,
         outline: saveParams.outline?.length,
-        serpSelections: saveParams.serpSelections?.length
+        serpSelections: saveParams.serpSelections?.length,
+        headings,
+        solutionInfo: saveParams.solutionInfo
       });
       
       // Save to database
@@ -76,10 +103,16 @@ export const useSaveContent = () => {
           seo_score: state.seoScore || 0,
           metadata: {
             contentType: saveParams.contentType,
+            contentFormat: saveParams.contentFormat,
+            contentIntent: saveParams.contentIntent,
             metaTitle: saveParams.metaTitle,
             metaDescription: saveParams.metaDescription,
             outline: saveParams.outline,
             serpSelections: saveParams.serpSelections,
+            headings: headings,
+            solutionInfo: saveParams.solutionInfo,
+            solutionMetrics: saveParams.solutionMetrics,
+            additionalInstructions: state.additionalInstructions
           }
         })
         .select()
@@ -181,6 +214,9 @@ export const useSaveContent = () => {
     try {
       setIsSaving(true);
       
+      // Extract headings from content
+      const headings = extractHeadings(state.content);
+      
       // Prepare content for publishing with extended metadata
       const publishParams: SaveContentParams = {
         title: state.contentTitle || state.metaTitle || state.mainKeyword,
@@ -188,6 +224,8 @@ export const useSaveContent = () => {
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
         contentType: state.contentType,
+        contentFormat: state.contentFormat,
+        contentIntent: state.contentIntent,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
         status: 'published',
@@ -195,7 +233,14 @@ export const useSaveContent = () => {
         seoScore: state.seoScore,
         outline: normalizeOutline(state.outline || []),
         serpSelections: state.serpSelections,
-        serpData: state.serpData
+        serpData: state.serpData,
+        headings,
+        solutionInfo: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          category: state.selectedSolution.category
+        } : null,
+        solutionMetrics: state.solutionIntegrationMetrics
       };
       
       console.log('[useSaveContent] Publishing content with params:', publishParams);
@@ -217,10 +262,16 @@ export const useSaveContent = () => {
           seo_score: publishParams.seoScore || 0,
           metadata: {
             contentType: publishParams.contentType,
+            contentFormat: publishParams.contentFormat,
+            contentIntent: publishParams.contentIntent,
             metaTitle: publishParams.metaTitle,
             metaDescription: publishParams.metaDescription,
             outline: publishParams.outline,
             serpSelections: publishParams.serpSelections,
+            headings: headings,
+            solutionInfo: publishParams.solutionInfo,
+            solutionMetrics: publishParams.solutionMetrics,
+            additionalInstructions: state.additionalInstructions
           }
         })
         .select()

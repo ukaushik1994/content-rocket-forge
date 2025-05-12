@@ -1,81 +1,73 @@
 
+// Import the SolutionIntegrationMetrics interface
+import { SolutionIntegrationMetrics } from './solution-types';
+
 /**
- * Content-related type definitions
+ * Content Types
  */
 
-// Content Type Options
+// Content Type enum
 export enum ContentType {
-  BLOG_POST = 'blog',
+  BLOG_POST = 'blog_post',
+  LANDING_PAGE = 'landing_page',
+  PRODUCT_DESCRIPTION = 'product_description',
   ARTICLE = 'article',
-  LANDING_PAGE = 'landingPage',
-  PRODUCT_DESCRIPTION = 'productDescription',
   EMAIL = 'email',
-  SOCIAL = 'social',
-  SEO = 'seo'
+  SOCIAL_POST = 'social_post'
 }
 
-// Content Format Options
+// Content Format enum
 export enum ContentFormat {
-  ARTICLE = 'long-form',
-  SHORT_FORM = 'short-form',
+  ARTICLE = 'article',
   LISTICLE = 'listicle',
-  HOW_TO = 'how-to',
-  LIST = 'list'
+  HOW_TO = 'how_to',
+  COMPARISON = 'comparison',
+  CASE_STUDY = 'case_study',
+  OPINION = 'opinion'
 }
 
-// Content Intent Options
+// Content Intent enum
 export enum ContentIntent {
   INFORM = 'inform',
   CONVERT = 'convert',
   ENTERTAIN = 'entertain',
-  EDUCATE = 'educate'
+  EDUCATE = 'educate',
+  INSPIRE = 'inspire'
 }
 
-// Save Content Params
+// Parameters for saving content
 export interface SaveContentParams {
   title: string;
   content: string;
   mainKeyword: string;
   secondaryKeywords: string[];
+  status: 'draft' | 'published';
+  notes?: string;
   contentType: string;
-  metaTitle: string | null;
-  metaDescription: string | null;
-  status: 'draft' | 'published' | 'archived';
-  notes: string;
-  // Optional fields
-  seoScore?: number;
-  outlineJson?: string;
-  
-  // Adding missing properties
+  contentFormat?: string;
+  contentIntent?: string;
+  metaTitle?: string;
+  metaDescription?: string;
   outline?: string[];
   serpSelections?: any[];
   serpData?: any;
+  seoScore?: number;
+  headings?: {
+    h1: string[];
+    h2: string[];
+  };
+  solutionInfo?: {
+    id: string;
+    name: string;
+    category?: string;
+  } | null;
+  solutionMetrics?: SolutionIntegrationMetrics;
 }
 
-// Define SearchCountry type for use in the SERP analysis
-export interface SearchCountry {
-  code: string;
-  name: string;
-  flag?: string;
-}
-
-// Available countries for SERP analysis
-export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { code: 'us', name: 'United States', flag: '🇺🇸' },
-  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'mea', name: 'Middle East', flag: '🌍' },
-  { code: 'global', name: 'Global', flag: '🌎' }
-];
-
-// Keyword Usage Types for KeywordRepository
-export interface KeywordUsage {
-  keyword: string;
-  usageCount: number;
-  isPrimary: boolean;
-  usedIn: {
-    contentId: string;
-    contentTitle: string;
-    isPrimary: boolean;
-    status: string;
-  }[];
+// Simple content reference
+export interface ContentReference {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
 }

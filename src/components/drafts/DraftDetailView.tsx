@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ContentType } from '@/contexts/content-builder/types/content-types';
-import { CheckCircle2, Edit2, FileText, Tag, Clock, Heading } from 'lucide-react';
+import { CheckCircle2, Edit2, FileText, Tag, Clock, Heading, FileSearch, Box, Layers, Target, PencilRuler } from 'lucide-react';
 
 interface DraftDetailViewProps {
   open: boolean;
@@ -28,20 +27,26 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     }).format(date);
   };
 
-  // Extract document headings from content
-  const extractHeadings = (content: string) => {
-    if (!content) return { h1: [], h2: [] };
+  // Extract headings from metadata or directly from content
+  const getHeadings = () => {
+    // First check if headings are stored in metadata
+    if (draft.metadata?.headings) {
+      return draft.metadata.headings;
+    }
+    
+    // Otherwise extract from content
+    if (!draft.content) return { h1: [], h2: [] };
     
     const h1Regex = /^# (.+)$/gm;
     const h2Regex = /^## (.+)$/gm;
     
-    const h1 = [...(content.matchAll(h1Regex) || [])].map(match => match[1]);
-    const h2 = [...(content.matchAll(h2Regex) || [])].map(match => match[1]);
+    const h1 = [...(draft.content.match(h1Regex) || [])].map(match => match.replace(/^# /, ''));
+    const h2 = [...(draft.content.match(h2Regex) || [])].map(match => match.replace(/^## /, ''));
     
     return { h1, h2 };
   };
 
-  const headings = extractHeadings(draft.content);
+  const headings = getHeadings();
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -139,6 +144,81 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                   </div>
                 </div>
                 
+                {/* Content Type Information */}
+                <div className="bg-card p-4 rounded-lg border">
+                  <h3 className="font-medium flex items-center">
+                    <PencilRuler className="w-4 h-4 mr-2" /> 
+                    Content Format
+                  </h3>
+                  <div className="mt-2 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Content Type:</span>
+                      <Badge variant="outline">{draft.metadata?.contentType || 'Not specified'}</Badge>
+                    </div>
+                    {draft.metadata?.contentFormat && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Format:</span>
+                        <Badge variant="outline">{draft.metadata.contentFormat}</Badge>
+                      </div>
+                    )}
+                    {draft.metadata?.contentIntent && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Intent:</span>
+                        <Badge variant="outline">{draft.metadata.contentIntent}</Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Solution Information */}
+                {draft.metadata?.solutionInfo && (
+                  <div className="bg-card p-4 rounded-lg border">
+                    <h3 className="font-medium flex items-center">
+                      <Box className="w-4 h-4 mr-2" /> 
+                      Solution Information
+                    </h3>
+                    <div className="mt-2 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Solution:</span>
+                        <span>{draft.metadata.solutionInfo.name}</span>
+                      </div>
+                      {draft.metadata.solutionInfo.category && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Category:</span>
+                          <span>{draft.metadata.solutionInfo.category}</span>
+                        </div>
+                      )}
+                      {draft.metadata.solutionMetrics && (
+                        <div className="mt-2 pt-2 border-t border-border">
+                          <h4 className="text-xs font-medium mb-1">Integration Metrics</h4>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                            {draft.metadata.solutionMetrics.overallScore && (
+                              <div className="flex justify-between col-span-2">
+                                <span className="text-muted-foreground">Overall Score:</span>
+                                <Badge variant={draft.metadata.solutionMetrics.overallScore > 70 ? "success" : "default"}>
+                                  {draft.metadata.solutionMetrics.overallScore}%
+                                </Badge>
+                              </div>
+                            )}
+                            {draft.metadata.solutionMetrics.nameMentions !== undefined && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Name Mentions:</span>
+                                <span>{draft.metadata.solutionMetrics.nameMentions}</span>
+                              </div>
+                            )}
+                            {draft.metadata.solutionMetrics.featureIncorporation !== undefined && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Feature Coverage:</span>
+                                <span>{draft.metadata.solutionMetrics.featureIncorporation}%</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="bg-card p-4 rounded-lg border">
                   <h3 className="font-medium flex items-center">
                     <Clock className="w-4 h-4 mr-2" /> 
@@ -163,44 +243,68 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                   </h3>
                   <div className="mt-2 space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Content Type:</span>
-                      <span>{draft.contentType || 'Not specified'}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Status:</span>
                       <Badge variant={draft.status === 'draft' ? 'outline' : 'default'}>
                         {draft.status === 'draft' ? 'Draft' : 'Published'}
                       </Badge>
                     </div>
+                    {draft.seo_score !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">SEO Score:</span>
+                        <Badge variant={draft.seo_score > 80 ? "success" : "outline"}>
+                          {draft.seo_score}/100
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
               
               {/* Meta Information Section */}
-              {(draft.metaTitle || draft.metaDescription) && (
+              {(draft.metadata?.metaTitle || draft.metadata?.metaDescription) && (
                 <div className="bg-card p-4 rounded-lg border">
                   <h3 className="font-medium mb-2">Meta Information</h3>
-                  {draft.metaTitle && (
+                  {draft.metadata?.metaTitle && (
                     <div className="mb-2">
                       <div className="text-xs text-muted-foreground">Meta Title</div>
-                      <div className="text-sm">{draft.metaTitle}</div>
+                      <div className="text-sm">{draft.metadata.metaTitle}</div>
                     </div>
                   )}
-                  {draft.metaDescription && (
+                  {draft.metadata?.metaDescription && (
                     <div>
                       <div className="text-xs text-muted-foreground">Meta Description</div>
-                      <div className="text-sm">{draft.metaDescription}</div>
+                      <div className="text-sm">{draft.metadata.metaDescription}</div>
                     </div>
                   )}
+                </div>
+              )}
+              
+              {/* Outline Section */}
+              {draft.metadata?.outline && draft.metadata.outline.length > 0 && (
+                <div className="bg-card p-4 rounded-lg border">
+                  <h3 className="font-medium flex items-center mb-2">
+                    <Layers className="h-4 w-4 mr-2" />
+                    Content Outline
+                  </h3>
+                  <ol className="list-decimal pl-5 space-y-1">
+                    {draft.metadata.outline.map((item: string, idx: number) => (
+                      <li key={idx} className="text-sm">{item}</li>
+                    ))}
+                  </ol>
                 </div>
               )}
               
               {/* SERP Items Section */}
               {draft.metadata?.serpSelections && draft.metadata.serpSelections.length > 0 && (
                 <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium mb-2">SERP Items Used</h3>
+                  <h3 className="font-medium flex items-center mb-2">
+                    <FileSearch className="h-4 w-4 mr-2" />
+                    SERP Items Used
+                  </h3>
                   <div className="space-y-2">
-                    {draft.metadata.serpSelections.map((item: any, index: number) => (
+                    {draft.metadata.serpSelections
+                      .filter((item: any) => item.selected)
+                      .map((item: any, index: number) => (
                       <div key={index} className="border-t border-border pt-2">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">
@@ -213,7 +317,21 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                         <p className="text-sm mt-1 line-clamp-2">{item.content}</p>
                       </div>
                     ))}
+                    {!draft.metadata.serpSelections.some((item: any) => item.selected) && (
+                      <p className="text-sm text-muted-foreground">No SERP items were selected</p>
+                    )}
                   </div>
+                </div>
+              )}
+              
+              {/* Additional Instructions Section */}
+              {draft.metadata?.additionalInstructions && (
+                <div className="bg-card p-4 rounded-lg border">
+                  <h3 className="font-medium flex items-center mb-2">
+                    <Target className="h-4 w-4 mr-2" />
+                    Additional Instructions
+                  </h3>
+                  <p className="text-sm whitespace-pre-wrap">{draft.metadata.additionalInstructions}</p>
                 </div>
               )}
             </div>
