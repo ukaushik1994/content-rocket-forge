@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -8,15 +7,18 @@ export const createSerpActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const analyzeKeyword = async (keyword: string) => {
+  const analyzeKeyword = async (keyword: string, regions?: string[]) => {
     if (!keyword) return;
+    
+    // Use provided regions or default to UK, US, MEA
+    const searchRegions = regions || ['uk', 'us', 'mea'];
     
     // Start loading
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
-      // Make API call to analyze keyword
-      const serpData = await analyzeKeywordSerp(keyword);
+      // Make API call to analyze keyword with specified regions
+      const serpData = await analyzeKeywordSerp(keyword, false, searchRegions);
       
       // Update SERP data in state - will be null if no data is found
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });

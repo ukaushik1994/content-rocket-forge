@@ -41,7 +41,10 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
   const [localSerpData, setLocalSerpData] = useState<SerpAnalysisResult | null>(serpData);
   const [isRefreshingSection, setIsRefreshingSection] = useState(false);
   const [selectedCountries, setSelectedCountries] = useState<string[]>(
-    serpData?.searchCountries || ['us']
+    // Include UK, US, MEA by default along with any saved countries
+    serpData?.searchCountries ? 
+      Array.from(new Set([...['uk', 'us', 'mea'], ...serpData.searchCountries])) : 
+      ['uk', 'us', 'mea']
   );
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState(false);
 
@@ -170,14 +173,14 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
                   <Globe className="h-3.5 w-3.5 mr-1" />
                   {selectedCountries.length === 1 
                     ? AVAILABLE_COUNTRIES.find(c => c.code === selectedCountries[0])?.name
-                    : `${selectedCountries.length} Countries`}
+                    : `${selectedCountries.length} Regions`}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-2" align="end">
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Select Search Countries</h4>
+                  <h4 className="font-medium text-sm">Select Search Regions</h4>
                   <p className="text-xs text-muted-foreground">
-                    Data will be fetched from selected countries
+                    Data will be fetched from selected regions
                   </p>
                   
                   <ScrollArea className="h-60 pr-4 mt-2">
