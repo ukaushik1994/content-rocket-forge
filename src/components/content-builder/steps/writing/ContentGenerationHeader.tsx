@@ -25,6 +25,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Add export for types and countries
+export type SearchCountry = {
+  value: string;
+  label: string;
+};
+
+export const AVAILABLE_COUNTRIES: SearchCountry[] = [
+  { value: 'us', label: '🇺🇸 US' },
+  { value: 'uk', label: '🇬🇧 UK' },
+  { value: 'mea', label: '🌍 MEA' },
+  { value: 'global', label: '🌐 Global' }
+];
+
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
   handleGenerateContent: () => Promise<void>;
@@ -50,12 +63,7 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   selectedCountries,
   onCountriesChange
 }) => {
-  const countries = [
-    { value: 'us', label: '🇺🇸 US' },
-    { value: 'uk', label: '🇬🇧 UK' },
-    { value: 'mea', label: '🌍 MEA' },
-    { value: 'global', label: '🌐 Global' }
-  ];
+  const countries = AVAILABLE_COUNTRIES;
   
   const toggleCountry = (country: string) => {
     if (selectedCountries.includes(country)) {

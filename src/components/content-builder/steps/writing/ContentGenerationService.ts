@@ -1,10 +1,10 @@
+
 import { toast } from 'sonner';
 import { generatePrompt } from './contentGenerationUtils';
 import { ContentBuilderState } from '@/contexts/content-builder/types';
 import { Solution } from '@/contexts/content-builder/types/solution-types';
 import { AiProvider } from '@/services/aiService/types';
 import { sendChatRequest } from '@/services/aiService';
-import { ContentItem } from '@/contexts/content/types';
 
 export const generateContent = async (
   aiProvider: AiProvider,

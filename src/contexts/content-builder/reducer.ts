@@ -1,18 +1,24 @@
 
-import { ContentBuilderState, ContentBuilderAction } from './types/index';
-import { OutlineSection } from './types/outline-types';
+import { ContentBuilderState, ContentBuilderAction } from './types';
+import { v4 as uuid } from 'uuid';
 
+/**
+ * Main reducer for the Content Builder
+ */
 export const contentBuilderReducer = (
-  state: ContentBuilderState,
+  state: ContentBuilderState, 
   action: ContentBuilderAction
 ): ContentBuilderState => {
   switch (action.type) {
     case 'SET_CURRENT_STEP':
       return {
         ...state,
-        activeStep: action.payload,
+        currentStep: action.payload,
+        // Mark the step as visited once navigated to it
         steps: state.steps.map((step, index) => 
-          index === action.payload ? { ...step, visited: true } : step
+          index === action.payload 
+            ? { ...step, visited: true } 
+            : step
         )
       };
       
@@ -20,7 +26,9 @@ export const contentBuilderReducer = (
       return {
         ...state,
         steps: state.steps.map((step, index) => 
-          step.id === action.payload ? { ...step, completed: true } : step
+          index === action.payload 
+            ? { ...step, completed: true, visited: true } 
+            : step
         )
       };
       
@@ -28,7 +36,9 @@ export const contentBuilderReducer = (
       return {
         ...state,
         steps: state.steps.map((step, index) => 
-          step.id === action.payload ? { ...step, visited: true } : step
+          index === action.payload 
+            ? { ...step, visited: true } 
+            : step
         )
       };
       
@@ -36,14 +46,20 @@ export const contentBuilderReducer = (
       return {
         ...state,
         steps: state.steps.map((step, index) => 
-          step.id === action.payload ? { ...step, analyzed: true } : step
+          index === action.payload 
+            ? { ...step, analyzed: true } 
+            : step
         )
       };
       
     case 'SKIP_OPTIMIZATION_STEP':
       return {
         ...state,
-        optimizationSkipped: true
+        steps: state.steps.map((step, index) => 
+          index === 5 
+            ? { ...step, completed: true, visited: true } 
+            : step
+        )
       };
       
     case 'SET_MAIN_KEYWORD':
@@ -53,13 +69,14 @@ export const contentBuilderReducer = (
       };
       
     case 'ADD_SEARCHED_KEYWORD':
-      if (state.searchedKeywords.includes(action.payload)) {
-        return state;
+      // Only add if the keyword doesn't already exist in the list
+      if (!state.searchedKeywords.includes(action.payload)) {
+        return {
+          ...state,
+          searchedKeywords: [action.payload, ...state.searchedKeywords].slice(0, 10)  // Keep most recent 10
+        };
       }
-      return {
-        ...state,
-        searchedKeywords: [...state.searchedKeywords, action.payload]
-      };
+      return state;
       
     case 'SET_SERP_DATA':
       return {
@@ -76,30 +93,31 @@ export const contentBuilderReducer = (
     case 'TOGGLE_SERP_SELECTION': {
       const { type, content } = action.payload;
       
-      // Check if this item already exists in serpSelections
-      const existingItemIndex = state.serpSelections.findIndex(
+      // Check if this item already exists in selections
+      const existingIndex = state.serpSelections.findIndex(
         item => item.type === type && item.content === content
       );
       
       let updatedSelections;
       
-      if (existingItemIndex >= 0) {
+      if (existingIndex >= 0) {
         // Item exists, toggle its selection state
         updatedSelections = [...state.serpSelections];
-        updatedSelections[existingItemIndex] = {
-          ...updatedSelections[existingItemIndex],
-          selected: !updatedSelections[existingItemIndex].selected
+        updatedSelections[existingIndex] = {
+          ...updatedSelections[existingIndex],
+          selected: !updatedSelections[existingIndex].selected
         };
-        
-        // If deselected, remove it from the list
-        if (!updatedSelections[existingItemIndex].selected) {
-          updatedSelections = updatedSelections.filter((_, i) => i !== existingItemIndex);
-        }
       } else {
         // Item doesn't exist, add it as selected
         updatedSelections = [
           ...state.serpSelections,
-          { type, content, selected: true }
+          {
+            id: uuid(),
+            type,
+            content,
+            selected: true,
+            timestamp: new Date().toISOString()
+          }
         ];
       }
       
@@ -110,15 +128,9 @@ export const contentBuilderReducer = (
     }
       
     case 'SET_OUTLINE':
-      // Convert OutlineSection[] to string[] if needed
-      const outlineValue = Array.isArray(action.payload) && action.payload.length > 0 && 
-        typeof action.payload[0] !== 'string' 
-          ? (action.payload as OutlineSection[]).map(section => section.title) 
-          : action.payload;
-          
       return {
         ...state,
-        outline: outlineValue as string[]
+        outline: action.payload
       };
       
     case 'SET_OUTLINE_SECTIONS':
@@ -142,17 +154,18 @@ export const contentBuilderReducer = (
     case 'SET_IS_SAVING':
       return {
         ...state,
-        isSaving: action.payload
+        isSavingData: action.payload
       };
       
     case 'ADD_KEYWORD':
-      if (state.selectedKeywords.includes(action.payload)) {
-        return state;
+      // Only add if not already present
+      if (!state.selectedKeywords.includes(action.payload)) {
+        return {
+          ...state,
+          selectedKeywords: [...state.selectedKeywords, action.payload]
+        };
       }
-      return {
-        ...state,
-        selectedKeywords: [...state.selectedKeywords, action.payload]
-      };
+      return state;
       
     case 'REMOVE_KEYWORD':
       return {
@@ -190,15 +203,23 @@ export const contentBuilderReducer = (
         seoImprovements: [...state.seoImprovements, action.payload]
       };
       
-    case 'APPLY_SEO_IMPROVEMENT':
+    case 'SET_SEO_IMPROVEMENTS':
       return {
         ...state,
-        seoImprovements: state.seoImprovements.map(improvement => 
-          improvement.id === action.payload 
-            ? { ...improvement, applied: true } 
+        seoImprovements: action.payload
+      };
+      
+    case 'APPLY_SEO_IMPROVEMENT': {
+      const id = action.payload;
+      return {
+        ...state,
+        seoImprovements: state.seoImprovements.map(improvement =>
+          improvement.id === id 
+            ? { ...improvement, applied: true }
             : improvement
         )
       };
+    }
       
     case 'SET_CONTENT_TYPE':
       return {
@@ -223,39 +244,38 @@ export const contentBuilderReducer = (
         ...state,
         selectedSolution: action.payload
       };
-
+      
     case 'SET_META_TITLE':
       return {
         ...state,
         metaTitle: action.payload
       };
-
+      
     case 'SET_META_DESCRIPTION':
       return {
         ...state,
         metaDescription: action.payload
       };
-
-    case 'SET_DOCUMENT_STRUCTURE':
-      return {
-        ...state,
-        documentStructure: action.payload
-      };
-
-    case 'SET_SOLUTION_INTEGRATION_METRICS':
-      return {
-        ...state,
-        solutionIntegrationMetrics: action.payload
-      };
-
+      
     case 'SET_ADDITIONAL_INSTRUCTIONS':
       return {
         ...state,
         additionalInstructions: action.payload
       };
       
+    case 'SET_SOLUTION_INTEGRATION_METRICS':
+      return {
+        ...state,
+        solutionIntegrationMetrics: action.payload
+      };
+      
+    case 'SET_SELECTED_REGIONS':
+      return {
+        ...state,
+        selectedRegions: action.payload
+      };
+      
     default:
       return state;
   }
 };
-
