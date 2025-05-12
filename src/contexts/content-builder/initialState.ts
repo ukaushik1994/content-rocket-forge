@@ -76,7 +76,14 @@ export const initialState: ContentBuilderState = {
   solutionIntegrationMetrics: {
     keywordMatches: 0,
     featureCoverage: 0,
-    naturalIntegration: 0
+    naturalIntegration: 0,
+    overallScore: 0,
+    featureIncorporation: 0,
+    positioningScore: 0,
+    mentionedFeatures: [],
+    painPointsAddressed: [],
+    nameMentions: 0,
+    audienceAlignment: 0
   },
   selectedRegions: ['uk', 'us', 'mea', 'global']
 };

@@ -152,12 +152,12 @@ export const SolutionIntegrationCard = ({
                   <div 
                     key={index}
                     className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
-                      metrics.mentionedFeatures.includes(feature)
+                      metrics.mentionedFeatures && metrics.mentionedFeatures.includes(feature)
                         ? 'bg-green-500/20 text-green-400'
                         : 'bg-gray-500/20 text-gray-400'
                     }`}
                   >
-                    {metrics.mentionedFeatures.includes(feature) ? (
+                    {metrics.mentionedFeatures && metrics.mentionedFeatures.includes(feature) ? (
                       <CheckCircle className="h-3 w-3" />
                     ) : (
                       <AlertCircle className="h-3 w-3" />

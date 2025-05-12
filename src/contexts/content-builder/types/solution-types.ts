@@ -31,6 +31,9 @@ export interface SolutionIntegrationMetrics {
   featureIncorporation?: number;
   positioningScore?: number;
   mentionedFeatures?: string[];
+  painPointsAddressed?: string[];
+  nameMentions?: number;
+  audienceAlignment?: number;
 }
 
 // Solution Analysis Result
