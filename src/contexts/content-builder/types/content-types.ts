@@ -54,15 +54,14 @@ export interface SaveContentParams {
 
 // Define SearchCountry type for use in the SERP analysis
 export interface SearchCountry {
-  code: string;
-  name: string;
-  flag?: string;
+  value: string;
+  label: string;
 }
 
 // Available countries for SERP analysis
 export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { code: 'us', name: 'United States', flag: '🇺🇸' },
-  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'mea', name: 'Middle East', flag: '🌍' },
-  { code: 'global', name: 'Global', flag: '🌎' }
+  { value: 'us', label: '🇺🇸 US' },
+  { value: 'uk', label: '🇬🇧 UK' },
+  { value: 'mea', label: '🌍 MEA' },
+  { value: 'global', label: '🌐 Global' }
 ];

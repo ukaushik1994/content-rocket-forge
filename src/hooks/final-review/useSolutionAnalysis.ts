@@ -119,14 +119,16 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
       const fallbackMetrics: SolutionIntegrationMetrics = {
         featureIncorporation: localMetrics.featureIncorporation,
         positioningScore: localMetrics.positioningScore,
-        painPointsAddressed: [`${localMetrics.painPointsAddressed}% of pain points addressed`],
-        ctaEffectiveness: ctaInfo?.ctaCount ? 75 : 25,  // Simple heuristic based on CTA presence
-        overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.painPointsAddressed + localMetrics.audienceAlignment) / 4),
+        keywordMatches: localMetrics.nameMentions || 0,
+        featureCoverage: localMetrics.featureIncorporation > 50 ? 70 : 30,
+        naturalIntegration: localMetrics.audienceAlignment || 50,
+        overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + (localMetrics.painPointsAddressed || 0) + (localMetrics.audienceAlignment || 0)) / 4),
         mentions: localMetrics.featureIncorporation > 50 ? 'High' : 'Low',
         audienceAlignment: localMetrics.audienceAlignment,
         nameMentions: localMetrics.nameMentions,
         ctaMentions: ctaInfo?.ctaCount || 0,
-        mentionedFeatures: localMetrics.mentionedFeatures || []
+        mentionedFeatures: localMetrics.mentionedFeatures || [],
+        painPointsAddressed: [`${localMetrics.painPointsAddressed}% of pain points addressed`]
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: fallbackMetrics });

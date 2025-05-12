@@ -9,9 +9,9 @@ export interface Solution {
   name: string;
   description: string;
   features: string[];
-  benefits: string[];
+  benefits?: string[]; // Making this optional
+  tags?: string[];     // Making this optional
   category: string;
-  tags: string[];
   url?: string;
   imageUrl?: string;
   logoUrl?: string;
@@ -31,6 +31,12 @@ export interface SolutionIntegrationMetrics {
   featureIncorporation?: number;
   positioningScore?: number;
   mentionedFeatures?: string[];
+  painPointsAddressed?: string[] | any; // Adding missing property
+  ctaEffectiveness?: number;
+  audienceAlignment?: number;
+  nameMentions?: number;
+  ctaMentions?: number;
+  mentions?: string;
 }
 
 // Solution Analysis Result
