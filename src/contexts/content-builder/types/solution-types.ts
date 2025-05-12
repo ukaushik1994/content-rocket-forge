@@ -14,8 +14,8 @@ export interface Solution {
   tags: string[];
   url?: string;
   imageUrl?: string;
-  logoUrl?: string | null;
-  externalUrl?: string | null;
+  logoUrl?: string;
+  externalUrl?: string;
   useCases?: string[];
   painPoints?: string[];
   targetAudience?: string[];
@@ -24,19 +24,13 @@ export interface Solution {
 
 // Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
-  keywordMatches?: number;
-  featureCoverage?: number;
-  naturalIntegration?: number;
+  keywordMatches: number;
+  featureCoverage: number;
+  naturalIntegration: number;
   overallScore?: number;
-  featureIncorporation: number;
-  positioningScore: number;
-  mentionedFeatures: string[];
-  painPointsAddressed: number;
-  audienceAlignment: number;
-  ctaEffectiveness?: number;
-  mentions?: string;
-  nameMentions?: number;
-  ctaMentions?: number;
+  featureIncorporation?: number;
+  positioningScore?: number;
+  mentionedFeatures?: string[];
 }
 
 // Solution Analysis Result

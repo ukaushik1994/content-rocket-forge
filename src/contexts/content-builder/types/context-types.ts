@@ -8,7 +8,6 @@ import { ContentBuilderAction } from './action-types';
 import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
 import { Solution } from './solution-types';
 import { OutlineSection } from './outline-types';
-import { SolutionIntegrationMetrics } from './solution-types';
 
 // Context Type
 export interface ContentBuilderContextType {
@@ -24,7 +23,7 @@ export interface ContentBuilderContextType {
   removeKeyword: (keyword: string) => void;
   
   // SERP Actions
-  analyzeKeyword: (keyword: string, regions?: string[]) => Promise<any>;
+  analyzeKeyword: (keyword: string, regions?: string[]) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
   
@@ -48,10 +47,6 @@ export interface ContentBuilderContextType {
   analyzeSeo: (content: string) => Promise<void>;
   applySeoImprovement: (id: string) => void;
   skipOptimizationStep: () => void;
-
-  // Solution Actions
-  selectSolution: (solution: Solution | null) => void;
-  setSolutionIntegrationMetrics: (metrics: SolutionIntegrationMetrics) => void;
 
   // Advanced Content Actions
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;

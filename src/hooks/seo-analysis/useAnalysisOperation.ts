@@ -1,168 +1,173 @@
-import { useState, useCallback } from 'react';
-import { KeywordUsage } from '@/contexts/content-builder/types/content-types';
-import { SeoAnalysisScores, UseSeoAnalysisReturn } from './types';
-import { createSeoImprovements } from '@/utils/seo/improvement/createSeoImprovement';
 
-interface AnalysisOperation {
-  content: string;
-  mainKeyword: string;
-  secondaryKeywords: string[];
-}
+import React, { useRef, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { calculateKeywordUsage, calculateKeywordUsageScore } from '@/utils/seo/keywordAnalysis';
+import { calculateContentLengthScore, calculateReadabilityScore, generateRecommendations } from '@/utils/seo/contentAnalysis';
+import { getImprovementType } from '@/utils/seo/contentRewriter';
+import { ANALYSIS_TIMEOUT } from './constants';
+import { determineImpact } from './utils';
+import { KeywordUsage, SeoAnalysisScores } from './types';
 
-export const useAnalysisOperation = ({ content, mainKeyword, secondaryKeywords }: AnalysisOperation): UseSeoAnalysisReturn => {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [keywordUsage, setKeywordUsage] = useState<KeywordUsage[]>([]);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [scores, setScores] = useState<SeoAnalysisScores>({
-    keywordUsage: 0,
-    contentLength: 0,
-    readability: 0
-  });
-  const [improvements, setImprovements] = useState<any[]>([]);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-
-  const calculateKeywordUsage = useCallback(() => {
-    if (!content || !mainKeyword) return [];
-
-    const allKeywords = [mainKeyword, ...secondaryKeywords].filter(Boolean);
-    const keywordData = allKeywords.map(keyword => {
-      const regex = new RegExp(keyword, 'gi');
-      const matches = content.match(regex) || [];
-      const count = matches.length;
-      const density = ((count / content.split(/\s+/).length) * 100).toFixed(2) + '%';
-
-      return {
-        keyword: keyword,
-        count: count,
-        density: density
-      };
-    });
-
-    setKeywordUsage(keywordData);
-    return keywordData;
-  }, [content, mainKeyword, secondaryKeywords]);
-
-  const calculateContentLengthScore = useCallback(() => {
-    const contentLength = content.split(/\s+/).length;
-    let score = 0;
-
-    if (contentLength < 300) score = 20;
-    else if (contentLength < 600) score = 50;
-    else if (contentLength < 1200) score = 80;
-    else score = 100;
-
-    return score;
-  }, [content]);
-
-  const calculateReadabilityScore = useCallback(() => {
-    // Placeholder for readability calculation
-    // Implement Flesch Reading Ease or similar
-    return 70;
-  }, []);
-
-  const generateRecommendations = useCallback(() => {
-    const newRecommendations: string[] = [];
-
-    if (scores.keywordUsage < 60) {
-      newRecommendations.push("Improve keyword density in your content.");
+/**
+ * Hook to handle the actual SEO analysis operation
+ */
+export const useAnalysisOperation = () => {
+  const { state, dispatch } = useContentBuilder();
+  const { content, mainKeyword, selectedKeywords } = state;
+  
+  // Abort controller reference for cancellable operations
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Run SEO analysis with proper timeout and error handling
+  const runAnalysis = useCallback(async (
+    setIsAnalyzing: (value: boolean) => void,
+    setKeywordUsage: (usage: KeywordUsage[]) => void,
+    setRecommendations: (recs: string[]) => void,
+    setScores: (scores: SeoAnalysisScores) => void,
+    setImprovements: (improvements: any[]) => void,
+    setAnalysisError: (error: string | null) => void
+  ) => {
+    if (!content || !mainKeyword) {
+      toast.error('Content or keywords are missing');
+      return;
     }
-
-    if (scores.contentLength < 60) {
-      newRecommendations.push("Increase the length of your content.");
+    
+    // Prevent multiple analysis runs
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
-
-    setRecommendations(newRecommendations);
-    return newRecommendations;
-  }, [scores]);
-
-  const runSeoAnalysis = useCallback(async () => {
+    
+    // Create a new abort controller
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+    
     setIsAnalyzing(true);
     setAnalysisError(null);
-
-    try {
-      const keywordData = calculateKeywordUsage();
-      const keywordUsageScore = keywordData.reduce((acc, curr) => acc + (curr.count > 0 ? 25 : 0), 0);
-      const contentLengthScore = calculateContentLengthScore();
-      const readabilityScore = calculateReadabilityScore();
-
-      setScores({
-        keywordUsage: keywordUsageScore,
-        contentLength: contentLengthScore,
-        readability: readabilityScore
-      });
-
-      const newRecommendations = generateRecommendations();
-
-      // Use the helper to create properly typed SEO improvements
-      const seoImprovements = createSeoImprovements([
-        {
-          id: '1',
-          title: 'Optimize meta title',
-          description: 'Your meta title could be more compelling',
-          type: 'meta',
-          recommendation: 'Optimize meta title',
-          impact: 'high',
-          applied: false,
-          suggestion: 'Make your meta title more specific and include the primary keyword',
-          priority: 'high'
-        },
-        {
-          id: '2',
-          title: 'Improve keyword density',
-          description: 'Increase the usage and density of your primary keyword',
-          type: 'keyword',
-          recommendation: 'Improve keyword density',
-          impact: 'medium',
-          applied: false,
-          suggestion: 'Incorporate the primary keyword naturally throughout the content',
-          priority: 'medium'
-        },
-        {
-          id: '3',
-          title: 'Enhance content readability',
-          description: 'Improve the readability and clarity of your content',
-          type: 'readability',
-          recommendation: 'Enhance content readability',
-          impact: 'medium',
-          applied: false,
-          suggestion: 'Use shorter sentences and simpler language to improve readability',
-          priority: 'medium'
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Analysis timed out')), ANALYSIS_TIMEOUT);
+    });
+    
+    // Create the analysis promise
+    const analysisPromise = (async () => {
+      try {
+        // Calculate various scores
+        const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
+        
+        // Check if operation was aborted after keyword usage
+        if (signal.aborted) return;
+        
+        const keywordUsageScore = calculateKeywordUsageScore(usage, mainKeyword);
+        const contentLengthScore = calculateContentLengthScore(content);
+        const readabilityScore = calculateReadabilityScore(content);
+        
+        // Check if operation was aborted after scores calculation
+        if (signal.aborted) return;
+        
+        // Generate recommendations based on analysis
+        const contentRecommendations = generateRecommendations(
+          content,
+          keywordUsageScore, 
+          contentLengthScore, 
+          readabilityScore,
+          usage,
+          mainKeyword
+        );
+        
+        // Check if operation was aborted after recommendations
+        if (signal.aborted) return;
+        
+        setKeywordUsage(usage);
+        setRecommendations(contentRecommendations);
+        setScores({
+          keywordUsage: keywordUsageScore,
+          contentLength: contentLengthScore,
+          readability: readabilityScore
+        });
+        
+        // Create SEO improvements with unique IDs
+        const newImprovements = contentRecommendations.map(recommendation => {
+          const improvementType = getImprovementType(recommendation);
+          return {
+            id: uuidv4(),
+            type: improvementType,
+            recommendation,
+            impact: determineImpact(improvementType, keywordUsageScore),
+            applied: false
+          };
+        });
+        
+        setImprovements(newImprovements);
+        dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: newImprovements });
+        
+        // Weighted average
+        const calculatedScore = Math.round(
+          (keywordUsageScore * 0.4) + 
+          (contentLengthScore * 0.3) + 
+          (readabilityScore * 0.3)
+        );
+        
+        dispatch({ type: 'SET_SEO_SCORE', payload: calculatedScore });
+        
+        // Mark step as analyzed regardless of score
+        dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+        
+        toast.success('SEO analysis completed');
+      } catch (error) {
+        if (!signal.aborted) {
+          console.error('Error analyzing content:', error);
+          setAnalysisError('Analysis failed. Please try again.');
+          throw error;
         }
-      ]);
-
-      setImprovements(seoImprovements);
-    } catch (error: any) {
-      console.error("SEO analysis error", error);
-      setAnalysisError(error.message || "An error occurred during SEO analysis.");
+      }
+    })();
+    
+    try {
+      // Race the analysis against the timeout
+      await Promise.race([analysisPromise, timeoutPromise]);
+    } catch (error) {
+      console.error('SEO analysis error:', error);
+      
+      if (!signal.aborted) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to analyze content';
+        setAnalysisError(errorMessage);
+        
+        // Even if analysis fails, mark as analyzed so user can continue
+        dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+        
+        toast.error(errorMessage === 'Analysis timed out' 
+          ? 'Analysis took too long. You can continue without optimization.' 
+          : 'Failed to analyze content. You can continue without optimization.');
+      }
     } finally {
-      setIsAnalyzing(false);
+      // Only update state if the operation wasn't aborted
+      if (!signal.aborted) {
+        setIsAnalyzing(false);
+        abortControllerRef.current = null;
+      }
     }
-  }, [
-    calculateKeywordUsage,
-    calculateContentLengthScore,
-    calculateReadabilityScore,
-    generateRecommendations
-  ]);
+  }, [content, mainKeyword, selectedKeywords, dispatch]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-500';
-    if (score >= 60) return 'text-yellow-500';
-    return 'text-red-500';
-  };
+  const abortAnalysis = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, []);
 
-  const forceSkipAnalysis = () => {
-    setIsAnalyzing(false);
-  };
+  // Cleanup on unmount
+  const cleanup = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, []);
 
   return {
-    isAnalyzing,
-    keywordUsage,
-    recommendations,
-    scores,
-    improvements,
-    analysisError,
-    runSeoAnalysis,
-    getScoreColor,
-    forceSkipAnalysis
+    runAnalysis,
+    abortAnalysis,
+    cleanup
   };
 };

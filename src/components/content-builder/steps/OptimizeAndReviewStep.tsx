@@ -1,171 +1,224 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useFinalReview } from '@/hooks/useFinalReview';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { ContentOptimizationContainer } from '../optimization/ContentOptimizationContainer';
-import { ContentRewriteDialog } from '../optimization/ContentRewriteDialog';
-import { SolutionIntegrationCard } from '../final-review/SolutionIntegrationCard';
-import { SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SkipWarning } from '../optimization/SkipWarning';
+import { FinalReviewHeader } from '../final-review/FinalReviewHeader';
+import { OverviewTab } from '../final-review/tabs/OverviewTab';
+import { OptimizeTab } from '../final-review/tabs/OptimizeTab';
+import { SeoTabContent } from '../final-review/tabs/SeoTabContent';
+import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
+import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
+import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
+import { useSaveContent } from '@/hooks/final-review/useSaveContent';
+import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
+import { toast } from 'sonner';
 
 export const OptimizeAndReviewStep = () => {
-  const { 
-    state, 
-    analyzeSeo, 
-    updateContent, 
-    setContent,
-    skipOptimizationStep,
-    navigateToStep,
-    dispatch
-  } = useContentBuilder();
+  const [activeTab, setActiveTab] = useState('overview');
+  const { state, dispatch } = useContentBuilder();
   
-  const { 
-    content, 
-    seoScore, 
-    isGenerating, 
-    selectedSolution,
-    seoImprovements,
-    solutionIntegrationMetrics
-  } = state;
+  const {
+    isAnalyzing,
+    isGeneratingTitles,
+    isRunningAllChecks,
+    keywordUsage,
+    ctaInfo,
+    titleSuggestions,
+    serpData,
+    generateMeta,
+    generateTitleSuggestions,
+    analyzeSolutionUsage,
+    runAllChecks
+  } = useFinalReview();
   
-  const [showRewriteDialog, setShowRewriteDialog] = useState(false);
-  const [isAnalyzingSolution, setIsAnalyzingSolution] = useState(false);
-  const [skipWarningVisible, setSkipWarningVisible] = useState(false);
-  const [tab, setTab] = useState('seo');
+  const { isSaving, isSavedToDraft, handleSaveToDraft, handlePublish } = useSaveContent();
+  const { checklistItems, passedChecks, totalChecks, completionPercentage } = useChecklistItems();
   
-  const handleAnalyzeSeo = async () => {
-    await analyzeSeo(content);
-  };
+  // Debug the state when component loads
+  useEffect(() => {
+    console.log("OptimizeAndReviewStep - Current state:", {
+      content: state.content?.substring(0, 50) + '...',
+      mainKeyword: state.mainKeyword,
+      metaTitle: state.metaTitle,
+      metaDescription: state.metaDescription,
+      selectedKeywords: state.selectedKeywords,
+      seoScore: state.seoScore
+    });
+  }, [state]);
   
-  const handleSkipOptimization = () => {
-    setSkipWarningVisible(true);
-  };
-  
-  const confirmSkip = () => {
-    skipOptimizationStep();
-    setSkipWarningVisible(false);
-    navigateToStep(state.steps.length - 1);
-  };
-  
-  const handleAnalyzeSolution = async () => {
-    if (!selectedSolution || !content) return;
-    
-    setIsAnalyzingSolution(true);
-    try {
-      // Calculate metrics
-      const metrics = {
-        nameMentions: 3,
-        featureIncorporation: 75,
-        positioningScore: 85,
-        audienceAlignment: 80,
-        overallScore: 80,
-        keywordMatches: 3,
-        featureCoverage: 75,
-        naturalIntegration: 85
-      };
-      
-      // Update the metrics in state
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics });
-    } catch (error) {
-      console.error("Error analyzing solution integration:", error);
-    } finally {
-      setIsAnalyzingSolution(false);
+  // Handler for running checks specific to the current tab
+  const handleRunTabChecks = () => {
+    switch(activeTab) {
+      case 'overview':
+        runAllChecks();
+        break;
+      case 'optimize':
+        analyzeSolutionUsage();
+        break;
+      case 'seo':
+        analyzeSolutionUsage();
+        break;
+      case 'technical':
+        generateTitleSuggestions();
+        break;
+      default:
+        runAllChecks();
     }
   };
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
+  const onMetaTitleChange = (value: string) => {
+    dispatch({ type: 'SET_META_TITLE', payload: value });
+  };
+  
+  const onMetaDescriptionChange = (value: string) => {
+    dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
+  };
+  
+  // Wrapper functions to convert Promise<string | null> to Promise<void>
+  const handleSaveToDraftWrapper = async () => {
+    try {
+      await handleSaveToDraft();
+      // Don't need to return anything for void
+    } catch (error) {
+      console.error("Error saving to draft:", error);
+      toast.error("Failed to save to draft");
+    }
+  };
+  
+  const handlePublishWrapper = async () => {
+    try {
+      await handlePublish();
+      // Don't need to return anything for void
+    } catch (error) {
+      console.error("Error publishing:", error);
+      toast.error("Failed to publish content");
+    }
+  };
+  
   return (
-    <div className="space-y-6">
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="seo">SEO Optimization</TabsTrigger>
-          <TabsTrigger value="solution" disabled={!selectedSolution}>
-            Solution Integration
+    <div className="space-y-8">
+      <FinalReviewHeader 
+        completionPercentage={completionPercentage} 
+        passedChecks={passedChecks}
+        totalChecks={totalChecks}
+        seoScore={state.seoScore}
+      />
+      
+      <SaveAndExportPanel 
+        completionPercentage={completionPercentage}
+        onSave={handleSaveToDraftWrapper}
+        onPublish={handlePublishWrapper}
+        isSaving={isSaving}
+        isSavedToDraft={isSavedToDraft}
+      />
+      
+      <FinalReviewQuickActions 
+        isRunningAllChecks={isRunningAllChecks}
+        onRunAllChecks={runAllChecks}
+        activeTab={activeTab}
+        onRunTabChecks={handleRunTabChecks}
+      />
+      
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="mb-2 w-full gap-4 h-auto p-1 bg-transparent">
+          <TabsTrigger 
+            value="overview"
+            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger 
+            value="optimize"
+            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
+          >
+            Optimize
+          </TabsTrigger>
+          <TabsTrigger 
+            value="seo"
+            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
+          >
+            SEO
+          </TabsTrigger>
+          <TabsTrigger 
+            value="technical"
+            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
+          >
+            Technical
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="seo" className="pt-6">
-          <ContentOptimizationContainer 
-            content={content}
-            seoScore={seoScore}
-            isAnalyzing={isGenerating}
-            seoImprovements={seoImprovements}
-            analyzeSeo={handleAnalyzeSeo}
-            updateContent={updateContent}
-            onRewriteOpen={() => setShowRewriteDialog(true)}
+        <TabsContent value="overview">
+          <OverviewTab
+            content={state.content}
+            checklistItems={checklistItems}
+            onRunAllChecks={runAllChecks}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
+            onGenerateMeta={generateMeta}
+            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+            selectedSolution={state.selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
           />
-          
-          <div className="mt-6 flex justify-end gap-4">
-            <Button 
-              variant="outline" 
-              onClick={handleSkipOptimization}
-            >
-              Skip Optimization
-            </Button>
-            
-            <Button 
-              onClick={() => {
-                if (selectedSolution) {
-                  setTab('solution');
-                } else {
-                  navigateToStep(state.steps.length - 1);
-                }
-              }}
-            >
-              {selectedSolution ? 'Next: Solution Review' : 'Continue to Save'}
-            </Button>
-          </div>
         </TabsContent>
         
-        <TabsContent value="solution" className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <SolutionIntegrationCard 
-                metrics={solutionIntegrationMetrics}
-                solution={selectedSolution}
-                isAnalyzing={isAnalyzingSolution}
-                onAnalyze={handleAnalyzeSolution}
-              />
-            </div>
-            
-            <div className="border rounded-lg p-4 bg-card">
-              <h3 className="text-lg font-medium mb-3">Content Preview</h3>
-              <div className="prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary">
-                <div dangerouslySetInnerHTML={{ __html: content }} />
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setTab('seo')}
-            >
-              Back to SEO
-            </Button>
-            
-            <Button 
-              onClick={() => navigateToStep(state.steps.length - 1)}
-            >
-              Continue to Save
-            </Button>
-          </div>
+        <TabsContent value="optimize">
+          <OptimizeTab
+            keywordUsage={keywordUsage}
+            mainKeyword={state.mainKeyword}
+            selectedKeywords={state.selectedKeywords}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
+            onGenerateMeta={generateMeta}
+            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+            selectedSolution={state.selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
+            titleSuggestions={titleSuggestions}
+            isGeneratingTitles={isGeneratingTitles}
+            onGenerateTitleSuggestions={generateTitleSuggestions}
+            completionPercentage={completionPercentage}
+          />
+        </TabsContent>
+        
+        <TabsContent value="seo">
+          <SeoTabContent 
+            keywordUsage={keywordUsage}
+            mainKeyword={state.mainKeyword}
+            selectedKeywords={state.selectedKeywords}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
+            onGenerateMeta={generateMeta}
+            solutionIntegrationMetrics={state.solutionIntegrationMetrics}
+            selectedSolution={state.selectedSolution}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={analyzeSolutionUsage}
+            titleSuggestions={titleSuggestions}
+            isGeneratingTitles={isGeneratingTitles}
+            onGenerateTitleSuggestions={generateTitleSuggestions}
+          />
+        </TabsContent>
+        
+        <TabsContent value="technical">
+          <TechnicalTabContent
+            documentStructure={state.documentStructure}
+            metaTitle={state.metaTitle}
+            metaDescription={state.metaDescription}
+            serpData={serpData}
+          />
         </TabsContent>
       </Tabs>
-
-      {/* Rewrite Dialog */}
-      <ContentRewriteDialog
-        open={showRewriteDialog}
-        onOpenChange={setShowRewriteDialog}
-        content={content}
-        onContentChange={setContent}
-      />
-      
-      {/* Skip Warning */}
-      <SkipWarning
-        open={skipWarningVisible}
-        onOpenChange={setSkipWarningVisible}
-        onConfirm={confirmSkip}
-      />
     </div>
   );
 };

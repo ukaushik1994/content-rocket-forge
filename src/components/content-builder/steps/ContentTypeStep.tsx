@@ -1,271 +1,278 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ContentType, ContentFormat, ContentIntent } from '@/contexts/content-builder/types/content-types';
-import { ContentTypeCard } from './content-type/ContentTypeCard';
-import { ContentFormatCard } from './content-type/ContentFormatCard';
-import { ContentIntentCard } from './content-type/ContentIntentCard';
+
+import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { SolutionSelection } from './solutions/SolutionSelection';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { 
+  FileText, 
+  LayoutDashboard, 
+  ShoppingBag, 
+  Newspaper, 
+  Mail, 
+  MessageCircle,
+  Loader2,
+  ExternalLink
+} from 'lucide-react';
+import { ContentType, Solution } from '@/contexts/content-builder/types';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const contentTypes = [
-  {
-    type: ContentType.BLOG_POST,
-    title: 'Blog Post',
-    description: 'Create an engaging article for your blog',
-    icon: '📝'
-  },
-  {
-    type: ContentType.ARTICLE,
-    title: 'Article',
-    description: 'In-depth informative content with research',
-    icon: '📚'
-  },
-  {
-    type: ContentType.LANDING_PAGE,
-    title: 'Landing Page',
-    description: 'High-converting page focused on a CTA',
-    icon: '🚀'
-  },
-  {
-    type: ContentType.PRODUCT_PAGE,
-    title: 'Product Page',
-    description: 'Showcase your product features and benefits',
-    icon: '🛍️'
-  },
-  {
-    type: ContentType.EMAIL,
-    title: 'Email',
-    description: 'Engaging email content for campaigns',
-    icon: '📧'
-  },
-  {
-    type: ContentType.SOCIAL_POST,
-    title: 'Social Post',
-    description: 'Content optimized for social media platforms',
-    icon: '📱'
-  }
-];
-
-const contentFormats = [
-  {
-    format: ContentFormat.ARTICLE,
-    title: 'Article',
-    description: 'Standard article format with paragraphs and sections',
-    icon: '📄'
-  },
-  {
-    format: ContentFormat.LISTICLE,
-    title: 'Listicle',
-    description: 'Content organized in a numbered list format',
-    icon: '🔢'
-  },
-  {
-    format: ContentFormat.HOW_TO,
-    title: 'How-to Guide',
-    description: 'Step-by-step instructions for processes or tasks',
-    icon: '🔍'
-  },
-  {
-    format: ContentFormat.COMPARISON,
-    title: 'Comparison',
-    description: 'Side-by-side analysis of different options',
-    icon: '⚖️'
-  },
-  {
-    format: ContentFormat.CASE_STUDY,
-    title: 'Case Study',
-    description: 'In-depth examination of a specific example',
-    icon: '🔬'
-  },
-  {
-    format: ContentFormat.INTERVIEW,
-    title: 'Interview',
-    description: 'Q&A style format with expert insights',
-    icon: '🎙️'
-  }
-];
-
-const contentIntents = [
-  {
-    intent: ContentIntent.INFORM,
-    title: 'Inform',
-    description: 'Educate your audience with valuable information',
-    icon: '📚'
-  },
-  {
-    intent: ContentIntent.PERSUADE,
-    title: 'Persuade',
-    description: 'Convince your audience to take a specific action',
-    icon: '🎯'
-  },
-  {
-    intent: ContentIntent.ENTERTAIN,
-    title: 'Entertain',
-    description: 'Engage your audience with interesting content',
-    icon: '🎭'
-  },
-  {
-    intent: ContentIntent.CONVERT,
-    title: 'Convert',
-    description: 'Turn visitors into leads or customers',
-    icon: '💰'
-  }
+const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
+  { value: 'blog', label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
+  { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
+  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
+  { value: 'article', label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
+  { value: 'email', label: 'Email', icon: Mail, description: 'Content for email marketing campaigns' },
+  { value: 'social', label: 'Social Media', icon: MessageCircle, description: 'Engaging posts for social platforms' }
 ];
 
 export const ContentTypeStep = () => {
-  const { state, setContentType, setContentFormat, setContentIntent, navigateToStep } = useContentBuilder();
-  const [activeTab, setActiveTab] = useState('content-type');
-  const [selectedType, setSelectedType] = useState(state.contentType || '');
-  const [selectedFormat, setSelectedFormat] = useState(state.contentFormat || '');
-  const [selectedIntent, setSelectedIntent] = useState(state.contentIntent || '');
+  const { state, dispatch } = useContentBuilder();
+  const { contentType, selectedSolution } = state;
+  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   
-  const handleContinue = () => {
-    if (!selectedType) {
-      toast.error('Please select a content type');
-      return;
+  useEffect(() => {
+    if (contentType && selectedSolution) {
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
     }
-    
-    if (!selectedFormat) {
-      toast.error('Please select a content format');
-      return;
+  }, [contentType, selectedSolution, dispatch]);
+  
+  useEffect(() => {
+    fetchSolutions();
+  }, []);
+
+  const fetchSolutions = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('solutions')
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Transform the data from jsonb columns to the expected format with validation
+        const formattedSolutions: Solution[] = data.map(solution => ({
+          id: solution.id,
+          name: solution.name,
+          features: Array.isArray(solution.features) 
+            ? solution.features.map(f => String(f)) 
+            : [],
+          useCases: Array.isArray(solution.use_cases) 
+            ? solution.use_cases.map(u => String(u)) 
+            : [],
+          painPoints: Array.isArray(solution.pain_points) 
+            ? solution.pain_points.map(p => String(p)) 
+            : [],
+          targetAudience: Array.isArray(solution.target_audience) 
+            ? solution.target_audience.map(t => String(t)) 
+            : [],
+          description: `${solution.name} - Business Solution`,
+          category: solution.category || "Business Solution", // Using the category from DB with fallback
+          logoUrl: solution.logo_url,
+          externalUrl: solution.external_url,
+          resources: Array.isArray(solution.resources) 
+            ? solution.resources.map(resource => {
+                if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
+                  return {
+                    title: String(resource.title || ''),
+                    url: String(resource.url || '')
+                  };
+                }
+                return { title: '', url: '' };
+              }).filter(r => r.title && r.url)
+            : []
+        }));
+        setSolutions(formattedSolutions);
+      }
+    } catch (error) {
+      console.error("Error fetching solutions:", error);
+      // Fallback to some default data if there's an error or no solutions
+      setSolutions([{
+        id: '1',
+        name: 'Demo Solution',
+        description: 'Demo solution for content creation',
+        features: ["Feature 1", "Feature 2", "Feature 3"],
+        useCases: ["Use case 1", "Use case 2"],
+        painPoints: ["Pain point 1", "Pain point 2"],
+        targetAudience: ["Audience 1", "Audience 2"],
+        category: "Business Solution", // Default category 
+        logoUrl: null,
+        externalUrl: null,
+        resources: []
+      }]);
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (!selectedIntent) {
-      toast.error('Please select a content intent');
-      return;
-    }
-    
-    // Save selections to context - cast to proper enum types
-    setContentType(selectedType as ContentType);
-    setContentFormat(selectedFormat as ContentFormat);
-    setContentIntent(selectedIntent as ContentIntent);
-    
-    // Mark step as completed and go to the next step
-    navigateToStep(2);
+  };
+  
+  const handleSelectContentType = (value: string) => {
+    dispatch({ type: 'SET_CONTENT_TYPE', payload: value as ContentType });
+  };
+  
+  const handleSelectSolution = (solution: Solution) => {
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
+    toast.success(`Selected solution: ${solution.name}`);
+  };
+
+  const handleNavigateToSolutions = () => {
+    navigate('/solutions');
+  };
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
-    <div className="space-y-6">
-      <Tabs 
-        defaultValue="content-type" 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="w-full"
-      >
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="content-type">Content Type</TabsTrigger>
-          <TabsTrigger value="content-format">Content Format</TabsTrigger>
-          <TabsTrigger value="content-intent">Content Intent</TabsTrigger>
-          <TabsTrigger value="solution">Solution Integration</TabsTrigger>
-        </TabsList>
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Content Type</h3>
+        <p className="text-sm text-muted-foreground">
+          Select the type of content you want to create.
+        </p>
         
-        <TabsContent value="content-type" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contentTypes.map((item) => (
-              <ContentTypeCard
-                key={item.title}
-                title={item.title}
-                description={item.description}
-                icon={item.icon}
-                selected={selectedType === item.type}
-                onClick={() => setSelectedType(item.type)}
+        <RadioGroup 
+          value={contentType || ''} 
+          onValueChange={handleSelectContentType}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          {contentTypes.map((type) => (
+            <div key={type.value} className="relative">
+              <RadioGroupItem
+                value={type.value}
+                id={`content-type-${type.value}`}
+                className="sr-only peer"
               />
+              <Label
+                htmlFor={`content-type-${type.value}`}
+                className={`flex flex-col items-center justify-center h-32 p-4 rounded-lg border-2 cursor-pointer
+                transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/50
+                ${contentType === type.value ? 'border-primary bg-primary/5' : 'border-muted'}`}
+              >
+                <type.icon className="h-8 w-8 mb-2" />
+                <div className="font-medium text-center">{type.label}</div>
+                <div className="text-xs text-center text-muted-foreground mt-1">{type.description}</div>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Select a Solution</h3>
+          <Button
+            variant="outline"
+            onClick={handleNavigateToSolutions}
+            className="text-xs"
+          >
+            Manage Solutions
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Choose which business solution this content should promote or reference.
+        </p>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {solutions.map((solution) => (
+              <Card 
+                key={solution.id} 
+                className={`cursor-pointer transition-all hover:shadow-md hover:border-primary overflow-hidden
+                  ${selectedSolution?.id === solution.id ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => handleSelectSolution(solution)}
+              >
+                <CardContent className="p-4 flex gap-4">
+                  <div className="flex-shrink-0">
+                    <Avatar className="h-12 w-12 rounded-md border">
+                      {solution.logoUrl ? (
+                        <AvatarImage 
+                          src={solution.logoUrl} 
+                          alt={solution.name}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <AvatarFallback className="rounded-md bg-primary/10 text-primary font-medium">
+                          {getInitials(solution.name)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">{solution.name}</h4>
+                      {solution.externalUrl && (
+                        <a 
+                          href={solution.externalUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                    
+                    {solution.features && solution.features.length > 0 && (
+                      <div className="mt-3">
+                        <span className="text-xs font-medium">Features:</span>
+                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
+                          {solution.features.slice(0, 3).map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                          {solution.features.length > 3 && (
+                            <li className="text-xs text-primary">+{solution.features.length - 3} more features</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                    {solution.useCases && solution.useCases.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-xs font-medium">Use Cases:</span>
+                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
+                          {solution.useCases.slice(0, 2).map((useCase, idx) => (
+                            <li key={idx}>{useCase}</li>
+                          ))}
+                          {solution.useCases.length > 2 && (
+                            <li className="text-xs text-primary">+{solution.useCases.length - 2} more use cases</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {solution.resources && solution.resources.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-xs font-medium">Resources:</span>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {solution.resources.length} resource(s) available
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-          
-          <div className="flex justify-end mt-6">
-            <Button 
-              onClick={() => setActiveTab('content-format')}
-              disabled={!selectedType}
-            >
-              Next: Format
-            </Button>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="content-format" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contentFormats.map((item) => (
-              <ContentFormatCard
-                key={item.title}
-                title={item.title}
-                description={item.description}
-                icon={item.icon}
-                selected={selectedFormat === item.format}
-                onClick={() => setSelectedFormat(item.format)}
-              />
-            ))}
-          </div>
-          
-          <div className="flex justify-between mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setActiveTab('content-type')}
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={() => setActiveTab('content-intent')}
-              disabled={!selectedFormat}
-            >
-              Next: Intent
-            </Button>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="content-intent" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {contentIntents.map((item) => (
-              <ContentIntentCard
-                key={item.title}
-                title={item.title}
-                description={item.description}
-                icon={item.icon}
-                selected={selectedIntent === item.intent}
-                onClick={() => setSelectedIntent(item.intent)}
-              />
-            ))}
-          </div>
-          
-          <div className="flex justify-between mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setActiveTab('content-format')}
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={() => setActiveTab('solution')}
-              disabled={!selectedIntent}
-            >
-              Next: Solution
-            </Button>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="solution" className="mt-6">
-          <SolutionSelection 
-            selectedSolution={state.selectedSolution}
-            onSolutionSelect={(solution) => dispatch({ type: 'SELECT_SOLUTION', payload: solution })}
-          />
-          
-          <div className="flex justify-between mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setActiveTab('content-intent')}
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={handleContinue}
-            >
-              Continue
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 };

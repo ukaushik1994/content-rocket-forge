@@ -1,141 +1,141 @@
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { SeoScoreCard } from './SeoScoreCard';
+import { RecommendationsCard } from './RecommendationsCard'; 
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
-import { CircleAlert, RotateCw, PenLine } from 'lucide-react';
+import { AlertCircle, ArrowRight } from 'lucide-react';
 
-export interface ContentOptimizationContainerProps {
-  content: string;
+interface ContentOptimizationContainerProps {
+  recommendations: string[];
+  recommendationIds: string[];
+  scores: { keywordUsage: number; contentLength: number; readability: number };
   seoScore: number;
   isAnalyzing: boolean;
-  seoImprovements: SeoImprovement[];
-  analyzeSeo: () => Promise<void>;
-  updateContent: (content: string) => void;
-  onRewriteOpen: () => void;
+  handleRewriteContent: (recommendation: string, id: string) => void;
+  isRecommendationApplied: (id: string) => boolean;
+  getScoreColor: (score: number) => string;
+  hasRunAnalysis: boolean;
+  handleSkipConfirm: () => void;
+  analysisError?: string | null;
+  forceSkipAnalysis?: () => void;
 }
 
-export const ContentOptimizationContainer: React.FC<ContentOptimizationContainerProps> = ({
-  content,
+// Use memo to prevent unnecessary re-renders
+export const ContentOptimizationContainer = memo(({
+  recommendations,
+  recommendationIds,
+  scores,
   seoScore,
   isAnalyzing,
-  seoImprovements,
-  analyzeSeo,
-  updateContent,
-  onRewriteOpen
-}) => {
-  // Get the score color based on the SEO score
-  const getScoreColor = () => {
-    if (seoScore >= 80) return 'text-green-500';
-    if (seoScore >= 60) return 'text-yellow-500';
-    return 'text-red-500';
-  };
-
-  // Get the progress color based on the SEO score
-  const getProgressColor = () => {
-    if (seoScore >= 80) return 'bg-green-500';
-    if (seoScore >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
+  handleRewriteContent,
+  isRecommendationApplied,
+  getScoreColor,
+  hasRunAnalysis,
+  handleSkipConfirm,
+  analysisError,
+  forceSkipAnalysis
+}: ContentOptimizationContainerProps) => {
+  // When analysis has been running for too long, show a recovery button
+  const [showRecoveryOption, setShowRecoveryOption] = React.useState(false);
+  
+  // If analysis is running for over 15 seconds, show recovery option
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    
+    if (isAnalyzing) {
+      timer = setTimeout(() => {
+        setShowRecoveryOption(true);
+      }, 15000); // 15 seconds
+    } else {
+      setShowRecoveryOption(false);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isAnalyzing]);
+  
+  // Skip optimization and continue
+  const handleForceSkip = useCallback(() => {
+    if (forceSkipAnalysis) {
+      forceSkipAnalysis();
+    } else {
+      handleSkipConfirm();
+    }
+  }, [forceSkipAnalysis, handleSkipConfirm]);
   
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* SEO Score Panel */}
-        <div className="md:col-span-1 border rounded-lg p-4 bg-card">
-          <h3 className="text-lg font-medium mb-3">SEO Score</h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Content Score</span>
-              <span className={`text-2xl font-bold ${getScoreColor()}`}>
-                {seoScore}
-              </span>
-            </div>
-            
-            <Progress value={seoScore} className="h-2" indicatorColor={getProgressColor()} />
-            
-            <div className="grid grid-cols-3 gap-2 text-center text-xs mt-2">
-              <div className="space-y-1">
-                <div className="w-full h-1.5 bg-red-500 rounded"></div>
-                <span className="text-muted-foreground">0-59</span>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          {analysisError ? (
+            <div className="border border-red-200 rounded-lg p-6 bg-red-50 space-y-4">
+              <div className="flex items-center gap-3 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                <h3 className="font-medium">Analysis Error</h3>
               </div>
-              <div className="space-y-1">
-                <div className="w-full h-1.5 bg-yellow-500 rounded"></div>
-                <span className="text-muted-foreground">60-79</span>
-              </div>
-              <div className="space-y-1">
-                <div className="w-full h-1.5 bg-green-500 rounded"></div>
-                <span className="text-muted-foreground">80-100</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col space-y-2">
+              <p className="text-sm text-red-700">{analysisError}</p>
               <Button 
-                onClick={analyzeSeo} 
-                disabled={isAnalyzing} 
-                variant="outline"
-                className="w-full flex items-center gap-2"
+                onClick={handleForceSkip}
+                variant="secondary"
+                className="mt-2"
               >
-                <RotateCw className={`h-4 w-4 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                {isAnalyzing ? 'Analyzing...' : 'Run SEO Analysis'}
+                Skip Analysis & Continue
               </Button>
-              
-              <Button
-                onClick={onRewriteOpen}
-                variant="outline"
-                className="w-full flex items-center gap-2"
+            </div>
+          ) : (
+            <RecommendationsCard 
+              recommendations={recommendations} 
+              recommendationIds={recommendationIds}
+              isAnalyzing={isAnalyzing}
+              handleRewriteContent={handleRewriteContent}
+              isRecommendationApplied={isRecommendationApplied}
+              showRecoveryOption={showRecoveryOption}
+              onForceSkip={handleForceSkip}
+            />
+          )}
+        </motion.div>
+      </div>
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <SeoScoreCard 
+          seoScore={seoScore} 
+          scores={scores} 
+          getScoreColor={getScoreColor}
+        />
+        
+        {/* Skip button card - shown when no analysis has run or as a recovery option */}
+        {(!hasRunAnalysis || showRecoveryOption) && (
+          <div className="mt-4 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {showRecoveryOption 
+                  ? "Analysis is taking longer than expected."
+                  : "Don't want to optimize your content now?"}
+              </p>
+              <Button 
+                onClick={handleForceSkip}
+                variant="outline" 
+                className={`w-full ${showRecoveryOption ? 'border-red-300 text-red-600 hover:bg-red-50' : 'border-gray-300'}`}
               >
-                <PenLine className="h-4 w-4" />
-                Rewrite Content
+                {showRecoveryOption ? "Skip & Continue" : "Skip Optimization"} <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
-        </div>
-        
-        {/* SEO Improvements Panel */}
-        <div className="md:col-span-2 border rounded-lg bg-card">
-          <div className="p-4 border-b">
-            <h3 className="text-lg font-medium">SEO Improvements</h3>
-          </div>
-          
-          <div className="p-4">
-            {seoImprovements.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <CircleAlert className="h-8 w-8 mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">Run an SEO analysis to get improvement suggestions</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {seoImprovements.map((improvement) => (
-                  <div 
-                    key={improvement.id}
-                    className={`p-3 border rounded-md ${improvement.applied ? 'bg-green-500/5 border-green-500/20' : ''}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium">{improvement.title}</h4>
-                        <p className="text-sm text-muted-foreground">{improvement.description}</p>
-                      </div>
-                      <div className={`px-2 py-1 rounded text-xs ${
-                        improvement.priority === 'high' ? 'bg-red-500/10 text-red-500' :
-                        improvement.priority === 'medium' ? 'bg-yellow-500/10 text-yellow-500' :
-                        'bg-blue-500/10 text-blue-500'
-                      }`}>
-                        {improvement.priority}
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2 border-t pt-2">
-                      <p className="text-sm italic">"{improvement.suggestion}"</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+        )}
+      </motion.div>
     </div>
   );
-};
+});
+
+// Add display name for React devtools
+ContentOptimizationContainer.displayName = 'ContentOptimizationContainer';

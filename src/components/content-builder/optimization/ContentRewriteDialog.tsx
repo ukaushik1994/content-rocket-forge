@@ -1,105 +1,201 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, memo, useEffect } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, RefreshCw, Wand2, Check, Copy, Eye, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
-export interface ContentRewriteDialogProps {
+interface ContentRewriteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  content: string;
-  onContentChange: (content: string) => void;
+  selectedRecommendation: string | null;
+  rewriteType: string;
+  rewrittenContent: string;
+  isRewriting: boolean;
+  onApplyContent: () => void;
 }
 
-export const ContentRewriteDialog: React.FC<ContentRewriteDialogProps> = ({
+// Use memo to prevent unnecessary re-renders
+export const ContentRewriteDialog = memo(({
   open,
   onOpenChange,
-  content,
-  onContentChange
-}) => {
-  const [localContent, setLocalContent] = useState(content);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [tone, setTone] = useState('professional');
-
-  // Reset local content when dialog opens
-  React.useEffect(() => {
-    if (open) {
-      setLocalContent(content);
+  selectedRecommendation,
+  rewriteType,
+  rewrittenContent,
+  isRewriting,
+  onApplyContent
+}: ContentRewriteDialogProps) => {
+  const [showDiff, setShowDiff] = useState(false);
+  const [longOperationWarning, setLongOperationWarning] = useState(false);
+  
+  // Timer to show warning after extended processing time
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    
+    if (isRewriting) {
+      setLongOperationWarning(false);
+      timer = setTimeout(() => {
+        setLongOperationWarning(true);
+      }, 5000); // Show warning after 5 seconds
+    } else {
+      setLongOperationWarning(false);
     }
-  }, [open, content]);
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isRewriting]);
 
-  const handleRewrite = async () => {
-    // In a real implementation, this would call an AI service to rewrite the content
-    setIsGenerating(true);
-    
-    // Simulate a delay and rewrite
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // This is just a simple modification to simulate a rewrite
-    const rewrittenContent = `${localContent}\n\n[This content has been rewritten with a ${tone} tone.]`;
-    
-    setLocalContent(rewrittenContent);
-    setIsGenerating(false);
+  const copyToClipboard = () => {
+    if (rewrittenContent) {
+      navigator.clipboard.writeText(rewrittenContent);
+      toast.success("Content copied to clipboard");
+    }
   };
 
-  const handleSave = () => {
-    onContentChange(localContent);
-    onOpenChange(false);
+  const getOptimizationColor = (type: string) => {
+    switch(type.toLowerCase()) {
+      case 'keyword optimization': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
+      case 'readability': return 'bg-green-500/10 text-green-500 border-green-500/30';
+      case 'structure': return 'bg-purple-500/10 text-purple-500 border-purple-500/30';
+      default: return 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30';
+    }
+  };
+
+  const handleClose = () => {
+    if (!isRewriting || longOperationWarning) {
+      onOpenChange(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Rewrite Content</DialogTitle>
-        </DialogHeader>
+    <AlertDialog open={open} onOpenChange={handleClose}>
+      <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-purple-500/20 shadow-xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500">
+            <Wand2 className="h-5 w-5 text-purple-500" />
+            <span>AI Content Optimization</span>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <div className="mt-1 mb-2">
+              {selectedRecommendation}
+            </div>
+            <Badge variant="outline" className={`mt-1 ${getOptimizationColor(rewriteType)}`}>
+              {rewriteType} optimization
+            </Badge>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         
-        <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2">
-            <Button 
-              variant={tone === 'professional' ? 'default' : 'outline'} 
-              onClick={() => setTone('professional')}
-              size="sm"
+        <div className="py-4 space-y-4">
+          {isRewriting ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-600/20 to-blue-600/20 animate-pulse"></div>
+                <RefreshCw className="h-8 w-8 text-purple-500 animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <p className="text-center text-muted-foreground mt-4 max-w-md">
+                AI is optimizing your content for better <span className="font-medium text-purple-500">{rewriteType}</span>...
+              </p>
+              
+              {/* Warning for long-running operations */}
+              {longOperationWarning && (
+                <div className="mt-4 p-3 border border-amber-300 rounded-md bg-amber-50 max-w-sm">
+                  <div className="flex items-start gap-2 text-amber-700">
+                    <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-sm">Taking longer than expected</p>
+                      <p className="text-xs mt-1">You can cancel and try again, or wait a bit longer.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-3"
             >
-              Professional
-            </Button>
-            <Button 
-              variant={tone === 'friendly' ? 'default' : 'outline'} 
-              onClick={() => setTone('friendly')}
-              size="sm"
-            >
-              Friendly
-            </Button>
-            <Button 
-              variant={tone === 'persuasive' ? 'default' : 'outline'} 
-              onClick={() => setTone('persuasive')}
-              size="sm"
-            >
-              Persuasive
-            </Button>
-          </div>
-          
-          <Textarea
-            value={localContent}
-            onChange={(e) => setLocalContent(e.target.value)}
-            className="min-h-[300px] font-mono text-sm"
-          />
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/30">
+                  Optimized Content Preview
+                </Badge>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-1 text-xs"
+                    onClick={copyToClipboard}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 gap-1 text-xs"
+                    onClick={() => setShowDiff(!showDiff)}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    {showDiff ? 'Simple View' : 'Show Changes'}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="border rounded-md p-4 bg-black/50 relative overflow-hidden shadow-inner">
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-500/20 to-blue-500/20 text-xs px-2 py-0.5">
+                  Optimized for {rewriteType}
+                </div>
+                <pre className="whitespace-pre-wrap font-sans text-sm text-white/90 leading-relaxed overflow-auto max-h-[300px]">
+                  {rewrittenContent || "No preview available"}
+                </pre>
+              </div>
+            </motion.div>
+          )}
         </div>
         
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleRewrite} disabled={isGenerating}>
-            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Rewrite
-          </Button>
-          <Button onClick={handleSave} disabled={isGenerating}>
+        <AlertDialogFooter>
+          <AlertDialogCancel 
+            className="border-purple-500/30 text-muted-foreground hover:text-foreground hover:bg-purple-500/5"
+            onClick={() => onOpenChange(false)}
+            disabled={isRewriting && !longOperationWarning}
+          >
+            {isRewriting && !longOperationWarning ? "Processing..." : "Cancel"}
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => {
+              if (!isRewriting && rewrittenContent) {
+                onApplyContent();
+              }
+            }} 
+            disabled={isRewriting || !rewrittenContent}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 gap-1"
+          >
+            {isRewriting ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
             Apply Changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
-};
+});
+
+// Add display name for React devtools
+ContentRewriteDialog.displayName = 'ContentRewriteDialog';

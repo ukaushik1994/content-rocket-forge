@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
@@ -62,8 +61,6 @@ export function useSolutionsData() {
             category: solution.category || "Business Solution", // Now using the DB column with fallback
             logoUrl: solution.logo_url,
             externalUrl: solution.external_url,
-            benefits: [], // Empty benefits array
-            tags: [],     // Empty tags array
             resources: Array.isArray(solution.resources) 
               ? solution.resources.map(resource => {
                   if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
@@ -105,8 +102,6 @@ export function useSolutionsData() {
         category: "Business Solution", // Default category value
         logoUrl: null,
         externalUrl: null,
-        benefits: [], // Empty benefits array
-        tags: [],     // Empty tags array
         resources: []
       };
       
@@ -181,8 +176,6 @@ export function useSolutionsData() {
           category: data[0].category || "Business Solution", // Using category from data
           logoUrl: data[0].logo_url,
           externalUrl: data[0].external_url,
-          benefits: [], // Adding empty benefits array
-          tags: [],     // Adding empty tags array
           resources: Array.isArray(data[0].resources) 
             ? data[0].resources.map((resource: any) => {
                 if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
@@ -264,8 +257,6 @@ export function useSolutionsData() {
         category: solutionData.category || s.category || "Business Solution", // Update category
         logoUrl: logoUrl !== undefined ? logoUrl : s.logoUrl,
         externalUrl: solutionData.externalUrl || null,
-        benefits: s.benefits || [], // Preserve or init empty benefits array
-        tags: s.tags || [],         // Preserve or init empty tags array
         resources: solutionData.resources || []
       } : s));
       

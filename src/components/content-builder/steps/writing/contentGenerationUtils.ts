@@ -26,26 +26,6 @@ export const generatePrompt = ({
       Consider regional language preferences, spellings, and search trends.`
     : '';
 
-  // Build solution-specific instructions if a solution is selected
-  let solutionInstructions = '';
-  if (selectedSolution) {
-    solutionInstructions = `
-    This content should highlight and promote "${selectedSolution.name}" as a solution. 
-    
-    Key features to emphasize:
-    ${selectedSolution.features.slice(0, 5).map(feature => `- ${feature}`).join('\n')}
-    
-    Target audience:
-    ${selectedSolution.targetAudience ? selectedSolution.targetAudience.map(audience => `- ${audience}`).join('\n') : '- General audience'}
-    
-    Pain points to address:
-    ${selectedSolution.painPoints ? selectedSolution.painPoints.map(pain => `- ${pain}`).join('\n') : '- General needs in this area'}
-    
-    Include at least one persuasive call-to-action related to ${selectedSolution.name}.
-    Naturally integrate the solution within the content without making it feel like an advertisement.
-    `;
-  }
-
   return `
     Write comprehensive, high-quality content for an article about "${mainKeyword}".
     
@@ -56,7 +36,7 @@ export const generatePrompt = ({
     Use this outline structure:
     ${outlineString}
     
-    ${solutionInstructions}
+    ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
     
     ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
     

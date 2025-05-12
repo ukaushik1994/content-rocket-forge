@@ -3,118 +3,66 @@
  * Content-related type definitions
  */
 
-// Content Type Enum
+// Content Type Options
 export enum ContentType {
-  BLOG_POST = 'blog-post',
+  BLOG_POST = 'blog',
   ARTICLE = 'article',
-  LANDING_PAGE = 'landing-page',
-  PRODUCT_PAGE = 'product-page',
+  LANDING_PAGE = 'landingPage',
+  PRODUCT_DESCRIPTION = 'productDescription',
   EMAIL = 'email',
-  SOCIAL_POST = 'social-post'
+  SOCIAL = 'social',
+  SEO = 'seo'
 }
 
-// Content Format Enum
+// Content Format Options
 export enum ContentFormat {
-  ARTICLE = 'article',
+  ARTICLE = 'long-form',
+  SHORT_FORM = 'short-form',
   LISTICLE = 'listicle',
   HOW_TO = 'how-to',
-  COMPARISON = 'comparison',
-  CASE_STUDY = 'case-study',
-  INTERVIEW = 'interview'
+  LIST = 'list'
 }
 
-// Content Intent Enum
+// Content Intent Options
 export enum ContentIntent {
   INFORM = 'inform',
-  PERSUADE = 'persuade',
+  CONVERT = 'convert',
   ENTERTAIN = 'entertain',
-  CONVERT = 'convert'
+  EDUCATE = 'educate'
 }
 
 // Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
-  mainKeyword?: string;
-  secondaryKeywords?: string[];
+  mainKeyword: string;
+  secondaryKeywords: string[];
+  contentType: string;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  status: 'draft' | 'published' | 'archived';
+  notes: string;
+  // Optional fields
   seoScore?: number;
-  outlineSections?: any[];
-  note?: string;
-  contentType?: string;
-  contentFormat?: string;
-  contentIntent?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  outline?: any[];
+  outlineJson?: string;
+  
+  // Adding missing properties
+  outline?: string[];
   serpSelections?: any[];
   serpData?: any;
-  status?: string;
-  notes?: string;
-  headings?: any;
-  solutionInfo?: {
-    id: string;
-    name: string;
-    category: string;
-  };
-  solutionMetrics?: {
-    overallScore?: number;
-    nameMentions?: number;
-    featureIncorporation?: number;
-    positioningScore?: number;
-    mentionedFeatures?: string[];
-    painPointsAddressed?: string[];
-    audienceAlignment?: number;
-    keywordMatches?: number;
-    featureCoverage?: number;
-    naturalIntegration?: number;
-  };
 }
 
-// Search Countries
-export enum SearchCountry {
-  US = 'us',
-  UK = 'uk',
-  AU = 'au',
-  CA = 'ca',
-  IN = 'in',
-  DE = 'de',
-  FR = 'fr',
-  ES = 'es',
-  IT = 'it',
-  JP = 'jp',
-  BR = 'br',
-  MEA = 'mea',
-  GLOBAL = 'global'
+// Define SearchCountry type for use in the SERP analysis
+export interface SearchCountry {
+  code: string;
+  name: string;
+  flag?: string;
 }
 
-// Available Countries for Search
-export const AVAILABLE_COUNTRIES = [
-  { code: 'us', name: 'United States' },
-  { code: 'uk', name: 'United Kingdom' },
-  { code: 'au', name: 'Australia' },
-  { code: 'ca', name: 'Canada' },
-  { code: 'in', name: 'India' },
-  { code: 'de', name: 'Germany' },
-  { code: 'fr', name: 'France' },
-  { code: 'es', name: 'Spain' },
-  { code: 'it', name: 'Italy' },
-  { code: 'jp', name: 'Japan' },
-  { code: 'br', name: 'Brazil' },
-  { code: 'mea', name: 'Middle East' },
-  { code: 'global', name: 'Global' }
+// Available countries for SERP analysis
+export const AVAILABLE_COUNTRIES: SearchCountry[] = [
+  { code: 'us', name: 'United States', flag: '🇺🇸' },
+  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'mea', name: 'Middle East', flag: '🌍' },
+  { code: 'global', name: 'Global', flag: '🌎' }
 ];
-
-// Keyword Usage Type
-export interface KeywordUsage {
-  keyword: string;
-  count: number;
-  density: string; // percentage as string e.g. "1.5%"
-  usageCount?: number;
-  isPrimary?: boolean;
-  usedIn?: Array<{
-    contentId: string;
-    contentTitle: string;
-    isPrimary: boolean;
-    status: string;
-  }>;
-}

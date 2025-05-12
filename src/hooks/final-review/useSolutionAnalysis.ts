@@ -119,7 +119,7 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
       const fallbackMetrics: SolutionIntegrationMetrics = {
         featureIncorporation: localMetrics.featureIncorporation,
         positioningScore: localMetrics.positioningScore,
-        painPointsAddressed: localMetrics.painPointsAddressed, // Changed from string[] to number
+        painPointsAddressed: [`${localMetrics.painPointsAddressed}% of pain points addressed`],
         ctaEffectiveness: ctaInfo?.ctaCount ? 75 : 25,  // Simple heuristic based on CTA presence
         overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.painPointsAddressed + localMetrics.audienceAlignment) / 4),
         mentions: localMetrics.featureIncorporation > 50 ? 'High' : 'Low',

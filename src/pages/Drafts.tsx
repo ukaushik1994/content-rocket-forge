@@ -4,11 +4,9 @@ import Navbar from '@/components/layout/Navbar';
 import { DraftsHeader } from '@/components/drafts/DraftsHeader';
 import { DraftsList } from '@/components/drafts/DraftsList';
 import { DraftDetailView } from '@/components/drafts/DraftDetailView';
-import { KeywordRepository } from '@/components/drafts/KeywordRepository';
 import { useContent } from '@/contexts/content';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Drafts = () => {
   const {
@@ -18,7 +16,6 @@ const Drafts = () => {
   } = useContent();
   const [selectedDraft, setSelectedDraft] = useState<any | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('content');
 
   // Refresh content when component mounts
   useEffect(() => {
@@ -73,23 +70,9 @@ const Drafts = () => {
       
       <main className="flex-1 container py-8">
         <DraftsHeader />
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="mb-4">
-            <TabsTrigger value="content">Content Drafts</TabsTrigger>
-            <TabsTrigger value="keywords">Keyword Repository</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="content" className="space-y-6">
-            <DraftsList 
-              onOpenDetailView={handleOpenDetailView}
-            />
-          </TabsContent>
-          
-          <TabsContent value="keywords" className="space-y-6">
-            <KeywordRepository />
-          </TabsContent>
-        </Tabs>
+        <DraftsList 
+          onOpenDetailView={handleOpenDetailView}
+        />
         
         <DraftDetailView 
           open={detailViewOpen} 
