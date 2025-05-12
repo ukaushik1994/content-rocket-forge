@@ -15,7 +15,7 @@ import {
   SerpEntitiesSection,
   SerpHeadingsSection
 } from '@/components/content/serp-analysis';
-import { AVAILABLE_COUNTRIES, SearchCountry } from '@/components/content-builder/steps/writing/ContentGenerationHeader';
+import { SearchCountry, AVAILABLE_COUNTRIES } from '@/contexts/content-builder/types/content-types';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';

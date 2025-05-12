@@ -15,6 +15,11 @@ export interface Solution {
   url?: string;
   imageUrl?: string;
   logoUrl?: string;
+  externalUrl?: string;
+  useCases?: string[];
+  painPoints?: string[];
+  targetAudience?: string[];
+  resources?: any[];
 }
 
 // Solution Integration Metrics
@@ -22,6 +27,10 @@ export interface SolutionIntegrationMetrics {
   keywordMatches: number;
   featureCoverage: number;
   naturalIntegration: number;
+  overallScore?: number;
+  featureIncorporation?: number;
+  positioningScore?: number;
+  mentionedFeatures?: string[];
 }
 
 // Solution Analysis Result

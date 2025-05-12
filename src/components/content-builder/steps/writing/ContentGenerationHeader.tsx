@@ -26,10 +26,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Add export for types and countries
-export type SearchCountry = {
+export interface SearchCountry {
   value: string;
   label: string;
-};
+}
 
 export const AVAILABLE_COUNTRIES: SearchCountry[] = [
   { value: 'us', label: '🇺🇸 US' },

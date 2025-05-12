@@ -109,9 +109,8 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
   // Create variations based on refresh parameter
   const variationFactor = refresh ? Math.random() : 0.5;
   
-  // Ensure we always include UK, US, MEA, and global data
-  const standardRegions = ['uk', 'us', 'mea'];
-  const regionsToInclude = Array.from(new Set([...standardRegions, ...countries]));
+  // Ensure we always include countries data for requested regions
+  const regionsToInclude = Array.from(new Set([...countries]));
   
   // Create a set to store unique values to prevent duplicates
   const uniqueKeywords = new Set<string>();
@@ -124,7 +123,17 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
   // Add region-specific data
   regionsToInclude.forEach((region) => {
     // Format the region label
-    const regionLabel = region.toLowerCase() === 'mea' ? 'MEA' : region.toUpperCase();
+    let regionLabel: string;
+    switch(region.toLowerCase()) {
+      case 'mea': 
+        regionLabel = 'MEA'; 
+        break;
+      case 'global': 
+        regionLabel = 'Global'; 
+        break;
+      default:
+        regionLabel = region.toUpperCase();
+    }
     
     // Add region-specific keywords
     [`${regionLabel}: ${keyword} strategy`, 
@@ -167,40 +176,20 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
      `${regionLabel}: ${keyword} vs competitors in ${regionLabel}`].forEach(cg => uniqueContentGaps.add(cg));
   });
   
-  // Add global keywords that are relevant across regions
-  [`Global: ${keyword} strategy`,
-   `Global: international ${keyword} tools`,
-   `Global: universal ${keyword} practices`,
-   `Global: worldwide ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
-   
-  // Add global questions
-  [`Global: How does ${keyword} work globally?`,
-   `Global: What are the best ${keyword} practices worldwide?`,
-   `Global: Why is ${keyword} important for international SEO?`,
-   `Global: When should I implement ${keyword} across markets?`].forEach(q => uniqueQuestions.add(q));
-
-  // Add global headings
-  [`Global: Global approach to ${keyword}`,
-   `Global: International ${keyword} implementation`,
-   `Global: Universal benefits of ${keyword}`,
-   `Global: Cross-market ${keyword} strategies`].forEach(h => uniqueHeadings.add(h));
-   
-  // Add global entities
-  [`Global: ${keyword} global platform`,
-   `Global: international ${keyword} framework`,
-   `Global: cross-market ${keyword} methodology`,
-   `Global: universal ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
-   
-  // Add global content gaps
-  [`Global: ${keyword} for global markets`,
-   `Global: International ${keyword} best practices`,
-   `Global: Cross-border ${keyword} implementation`,
-   `Global: Multilingual ${keyword} strategies`].forEach(cg => uniqueContentGaps.add(cg));
-   
   // Add refresh-specific items if needed
   if (refresh) {
     regionsToInclude.forEach(region => {
-      const regionLabel = region.toLowerCase() === 'mea' ? 'MEA' : region.toUpperCase();
+      let regionLabel: string;
+      switch(region.toLowerCase()) {
+        case 'mea': 
+          regionLabel = 'MEA'; 
+          break;
+        case 'global': 
+          regionLabel = 'Global'; 
+          break;
+        default:
+          regionLabel = region.toUpperCase();
+      }
       
       [`${regionLabel}: ${keyword} certification`,
        `${regionLabel}: ${keyword} for startups`,
@@ -236,7 +225,17 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
 
   // Generate top results for each region
   regionsToInclude.forEach((region, regionIndex) => {
-    const regionLabel = region.toLowerCase() === 'mea' ? 'MEA' : region.toUpperCase();
+    let regionLabel: string;
+    switch(region.toLowerCase()) {
+      case 'mea': 
+        regionLabel = 'MEA'; 
+        break;
+      case 'global': 
+        regionLabel = 'Global'; 
+        break;
+      default:
+        regionLabel = region.toUpperCase();
+    }
     
     // Generate 3 results per region
     for (let i = 1; i <= 3; i++) {
@@ -250,23 +249,6 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
     }
   });
 
-  // Add some global results
-  topResultsByRegion.push({
-    title: `Global: Universal ${keyword} Best Practices`,
-    link: `https://example.com/global/${keyword.replace(/\s+/g, '-')}-practices`,
-    snippet: `International standards and best practices for ${keyword} implementation across all markets.`,
-    position: regionsToInclude.length * 3 + 1,
-    country: 'global'
-  });
-  
-  topResultsByRegion.push({
-    title: `Global: Cross-Regional ${keyword} Implementation Guide`,
-    link: `https://example.com/global/${keyword.replace(/\s+/g, '-')}-cross-regional`,
-    snippet: `Learn how to adapt ${keyword} strategies across UK, US, and MEA markets.`,
-    position: regionsToInclude.length * 3 + 2,
-    country: 'global'
-  });
-  
   // Generate mock data based on the keyword with potential variations
   return {
     keyword,
@@ -291,10 +273,20 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
       `Compare ${keyword} with alternative approaches`,
       `Include case studies showing successful ${keyword} implementation`,
       ...regionsToInclude.map(region => {
-        const regionLabel = region.toLowerCase() === 'mea' ? 'MEA' : region.toUpperCase();
+        let regionLabel: string;
+        switch(region.toLowerCase()) {
+          case 'mea': 
+            regionLabel = 'MEA'; 
+            break;
+          case 'global': 
+            regionLabel = 'Global'; 
+            break;
+          default:
+            regionLabel = region.toUpperCase();
+        }
         return `Create localized content for ${regionLabel} market`;
       }),
-      `Develop a global strategy that works across all regions`
+      `Develop a strategy that works across all selected regions`
     ],
     isMockData: true,
     searchCountries: countries  // Property explicitly added to match type
@@ -305,13 +297,19 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
   try {
     const uniqueKeywords = new Set<string>();
     
-    // Ensure we include UK, US, MEA regions
-    const standardRegions = ['uk', 'us', 'mea'];
-    const regionsToInclude = Array.from(new Set([...standardRegions, ...countries]));
-    
     // Generate region-specific related keywords
-    regionsToInclude.forEach(region => {
-      const regionLabel = region.toLowerCase() === 'mea' ? 'MEA' : region.toUpperCase();
+    countries.forEach(region => {
+      let regionLabel: string;
+      switch(region.toLowerCase()) {
+        case 'mea': 
+          regionLabel = 'MEA'; 
+          break;
+        case 'global': 
+          regionLabel = 'Global'; 
+          break;
+        default:
+          regionLabel = region.toUpperCase();
+      }
       
       [`${regionLabel}: ${keyword} strategy`,
        `${regionLabel}: ${keyword} tools`,
@@ -322,11 +320,6 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
        `${regionLabel}: ${keyword} techniques`,
        `${regionLabel}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
     });
-    
-    // Add some global keywords
-    [`Global: ${keyword} worldwide strategy`,
-     `Global: international ${keyword} approach`,
-     `Global: cross-market ${keyword} implementation`].forEach(kw => uniqueKeywords.add(kw));
     
     return Array.from(uniqueKeywords);
   } catch (error) {
