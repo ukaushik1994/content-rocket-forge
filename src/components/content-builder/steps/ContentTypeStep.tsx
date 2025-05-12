@@ -21,13 +21,13 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const contentTypes: Array<{value: string; label: string; icon: React.ElementType; description: string}> = [
-  { value: ContentType.BLOG_POST, label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
-  { value: ContentType.LANDING_PAGE, label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
-  { value: ContentType.PRODUCT_DESCRIPTION, label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
-  { value: ContentType.ARTICLE, label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
-  { value: ContentType.EMAIL, label: 'Email', icon: Mail, description: 'Content for email marketing campaigns' },
-  { value: ContentType.SOCIAL, label: 'Social Media', icon: MessageCircle, description: 'Engaging posts for social platforms' }
+const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
+  { value: 'blog', label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
+  { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
+  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
+  { value: 'article', label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
+  { value: 'email', label: 'Email', icon: Mail, description: 'Content for email marketing campaigns' },
+  { value: 'social', label: 'Social Media', icon: MessageCircle, description: 'Engaging posts for social platforms' }
 ];
 
 export const ContentTypeStep = () => {

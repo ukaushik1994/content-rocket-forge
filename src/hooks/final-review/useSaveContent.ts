@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -5,7 +6,6 @@ import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useContent } from '@/contexts/content';
 import { supabase } from '@/integrations/supabase/client';
-import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -16,19 +16,6 @@ export const useSaveContent = () => {
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
   const { refreshContent } = useContent();
   const navigate = useNavigate();
-
-  // Helper function to convert outline to serializable format
-  const prepareOutlineForSaving = (outline: string[] | OutlineSection[]): string[] => {
-    if (!outline || outline.length === 0) return [];
-    
-    // Check if it's already a string array
-    if (typeof outline[0] === 'string') {
-      return outline as string[];
-    }
-    
-    // Convert from OutlineSection[] to string[]
-    return (outline as OutlineSection[]).map(section => section.title);
-  };
 
   const handleSaveToDraft = async (): Promise<string | null> => {
     try {
@@ -46,7 +33,7 @@ export const useSaveContent = () => {
         metaDescription: state.metaDescription,
         status: 'draft',
         notes: '',
-        outline: prepareOutlineForSaving(state.outline),
+        outline: state.outline,
         serpSelections: state.serpSelections,
         serpData: state.serpData
       };
@@ -194,7 +181,7 @@ export const useSaveContent = () => {
         status: 'published',
         notes: '',
         seoScore: state.seoScore,
-        outline: prepareOutlineForSaving(state.outline),
+        outline: state.outline,
         serpSelections: state.serpSelections,
         serpData: state.serpData
       };
