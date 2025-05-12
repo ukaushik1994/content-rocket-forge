@@ -41,11 +41,33 @@ export interface SaveContentParams {
   outlineSections?: any[];
   note?: string;
   contentType?: string;
+  contentFormat?: string;
+  contentIntent?: string;
   metaTitle?: string;
   metaDescription?: string;
   outline?: any[];
   serpSelections?: any[];
   serpData?: any;
+  status?: string;
+  notes?: string;
+  headings?: any;
+  solutionInfo?: {
+    id: string;
+    name: string;
+    category: string;
+  };
+  solutionMetrics?: {
+    overallScore?: number;
+    nameMentions?: number;
+    featureIncorporation?: number;
+    positioningScore?: number;
+    mentionedFeatures?: string[];
+    painPointsAddressed?: string[];
+    audienceAlignment?: number;
+    keywordMatches?: number;
+    featureCoverage?: number;
+    naturalIntegration?: number;
+  };
 }
 
 // Search Countries

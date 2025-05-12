@@ -120,7 +120,7 @@ export const ContentWritingStep = () => {
               outline={outline}
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
-              handleInstructionsChange={handleInstructionsChange}
+              handleInstructionsChange={(instructions) => handleInstructionsChange(instructions)}
             />
           </div>
         )}

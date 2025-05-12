@@ -24,7 +24,7 @@ export interface ContentBuilderContextType {
   removeKeyword: (keyword: string) => void;
   
   // SERP Actions
-  analyzeKeyword: (keyword: string, regions?: string[]) => Promise<void>;
+  analyzeKeyword: (keyword: string, regions?: string[]) => Promise<any>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
   

@@ -1,5 +1,6 @@
 
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
+import { createSeoImprovements } from '@/utils/seo/improvement/createSeoImprovement';
 
 export const createSeoActions = (
   state: ContentBuilderState, 
@@ -15,8 +16,8 @@ export const createSeoActions = (
     // Set a dummy SEO score for now
     dispatch({ type: 'SET_SEO_SCORE', payload: 75 });
     
-    // Create mock SEO improvements using the correct interface
-    const improvements = [
+    // Create mock SEO improvements using the proper factory
+    const improvements = createSeoImprovements([
       {
         id: '1',
         title: 'Add more internal links',
@@ -50,7 +51,7 @@ export const createSeoActions = (
         recommendation: 'Add more headings',
         impact: 'low' as const
       }
-    ];
+    ]);
     
     dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: improvements });
     

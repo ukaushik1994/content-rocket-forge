@@ -248,7 +248,7 @@ export const ContentTypeStep = () => {
         <TabsContent value="solution" className="mt-6">
           <SolutionSelection 
             selectedSolution={state.selectedSolution}
-            onSolutionSelect={(solution) => state.dispatch({ type: 'SELECT_SOLUTION', payload: solution })}
+            onSolutionSelect={(solution) => dispatch({ type: 'SELECT_SOLUTION', payload: solution })}
           />
           
           <div className="flex justify-between mt-6">

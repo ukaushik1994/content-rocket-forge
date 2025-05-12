@@ -1,9 +1,9 @@
-
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
+import { createSeoImprovement } from '@/utils/seo/improvement/createSeoImprovement';
 
 /**
  * Custom hook for content rewriting functionality
@@ -69,16 +69,19 @@ export const useContentRewriter = () => {
         
         // Add improvement if not exists
         if (!seoImprovements.some(imp => imp.id === selectedRecommendationId)) {
-          // Fix: Use a type-safe literal for impact instead of a generic string
-          const newImprovement: SeoImprovement = {
-            id: selectedRecommendationId || uuidv4(),
-            type,
-            recommendation,
-            impact: "high", // Use the literal type: "high", "medium", or "low"
-            applied: false
-          };
+          // Use the helper to create properly typed SEO improvements
+          const improvement = createSeoImprovement({
+            id: 'rewrite_improvement',
+            title: 'Content rewritten',
+            description: 'The content has been rewritten for better engagement',
+            type: 'content',
+            recommendation: 'Rewrite content for better engagement',
+            impact: 'high',
+            applied: false,
+            suggestion: 'Rewrite the content to make it more engaging'
+          });
           
-          dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovement });
+          dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement });
         }
       } catch (error) {
         console.error('Error generating rewritten content:', error);

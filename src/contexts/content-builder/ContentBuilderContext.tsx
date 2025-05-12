@@ -27,13 +27,19 @@ export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = (
     }
   };
 
+  // Wrap the analyzeKeyword function to make it return void
+  const wrappedAnalyzeKeyword = async (keyword: string, regions?: string[]): Promise<any> => {
+    return actions.analyzeKeyword(keyword, regions);
+  };
+
   return (
     <ContentBuilderContext.Provider
       value={{ 
         state, 
         dispatch,
-        saveContent, // Add the missing function
-        ...actions
+        saveContent,
+        ...actions,
+        analyzeKeyword: wrappedAnalyzeKeyword
       }}
     >
       {children}

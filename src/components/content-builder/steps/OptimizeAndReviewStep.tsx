@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentOptimizationContainer } from '../optimization/ContentOptimizationContainer';
@@ -16,7 +15,8 @@ export const OptimizeAndReviewStep = () => {
     updateContent, 
     setContent,
     skipOptimizationStep,
-    navigateToStep
+    navigateToStep,
+    dispatch
   } = useContentBuilder();
   
   const { 
@@ -65,7 +65,7 @@ export const OptimizeAndReviewStep = () => {
       };
       
       // Update the metrics in state
-      state.dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics });
+      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics });
     } catch (error) {
       console.error("Error analyzing solution integration:", error);
     } finally {

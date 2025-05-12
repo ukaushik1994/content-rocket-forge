@@ -6,6 +6,7 @@ import { createSerpActions } from './serpActions';
 import { createNavigationActions } from './navigationActions';
 import { createPublishActions } from './publishActions';
 import { createSeoActions } from './seoActions';
+import { Solution, SolutionIntegrationMetrics } from '../types/solution-types';
 
 /**
  * Creates and combines all content builder actions
@@ -23,6 +24,15 @@ export const createContentBuilderActions = (
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
 
+  // Add solution actions
+  const selectSolution = (solution: Solution | null) => {
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
+  };
+
+  const setSolutionIntegrationMetrics = (metrics: SolutionIntegrationMetrics) => {
+    dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics });
+  };
+  
   // Merge all action groups and return
   return {
     ...keywordActions,
@@ -30,7 +40,8 @@ export const createContentBuilderActions = (
     ...serpActions,
     ...navigationActions,
     ...publishActions,
-    ...seoActions
+    ...seoActions,
+    selectSolution,
+    setSolutionIntegrationMetrics
   };
 };
-
