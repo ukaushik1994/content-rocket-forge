@@ -1,281 +1,222 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
-  FileText, 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Newspaper, 
-  Mail, 
-  MessageCircle,
-  Loader2,
-  ExternalLink
-} from 'lucide-react';
-import { ContentType, Solution } from '@/contexts/content-builder/types';
-import { supabase } from '@/integrations/supabase/client';
+import { ContentType, ContentFormat, ContentIntent } from '@/contexts/content-builder/types/content-types';
+import { ContentTypeCard } from './content-type/ContentTypeCard';
+import { ContentFormatCard } from './content-type/ContentFormatCard';
+import { ContentIntentCard } from './content-type/ContentIntentCard';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
-  { value: ContentType.BLOG_POST, label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
-  { value: ContentType.LANDING_PAGE, label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
-  { value: ContentType.PRODUCT_DESCRIPTION, label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
-  { value: ContentType.ARTICLE, label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
-  { value: ContentType.EMAIL, label: 'Email', icon: Mail, description: 'Content for email marketing campaigns' },
-  { value: ContentType.SOCIAL, label: 'Social Media', icon: MessageCircle, description: 'Engaging posts for social platforms' }
-];
+import { CheckIcon, ChevronRight } from 'lucide-react';
 
 export const ContentTypeStep = () => {
-  const { state, dispatch } = useContentBuilder();
-  const { contentType, selectedSolution } = state;
-  const [solutions, setSolutions] = useState<Solution[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (contentType && selectedSolution) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
+  const { state, setContentType, setContentFormat, setContentIntent, navigateToStep } = useContentBuilder();
+  const { contentType, contentFormat, contentIntent } = state;
+  const [selectedType, setSelectedType] = useState<string>(contentType || ContentType.BLOG_POST);
+  const [selectedFormat, setSelectedFormat] = useState<string>(contentFormat || ContentFormat.ARTICLE);
+  const [selectedIntent, setSelectedIntent] = useState<string>(contentIntent || ContentIntent.INFORM);
+
+  const contentTypes = [
+    { 
+      id: ContentType.BLOG_POST, 
+      title: 'Blog Post', 
+      description: 'Informative and engaging content to attract and educate your audience',
+      icon: '📝' 
+    },
+    { 
+      id: ContentType.LANDING_PAGE, 
+      title: 'Landing Page', 
+      description: 'Focused content designed to convert visitors into leads or customers',
+      icon: '🌐' 
+    },
+    { 
+      id: ContentType.PRODUCT_DESCRIPTION, 
+      title: 'Product Description', 
+      description: 'Compelling content that highlights features and benefits of your product',
+      icon: '📦' 
+    },
+    { 
+      id: ContentType.ARTICLE, 
+      title: 'Article', 
+      description: 'Longer in-depth content to establish authority in your field',
+      icon: '📰' 
+    },
+    { 
+      id: ContentType.EMAIL, 
+      title: 'Email', 
+      description: 'Targeted content for email marketing campaigns',
+      icon: '📧' 
+    },
+    { 
+      id: ContentType.SOCIAL_POST, 
+      title: 'Social Post', 
+      description: 'Shareable content for social media platforms',
+      icon: '💬' 
     }
-  }, [contentType, selectedSolution, dispatch]);
-  
-  useEffect(() => {
-    fetchSolutions();
-  }, []);
+  ];
 
-  const fetchSolutions = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('solutions')
-        .select('*');
-      
-      if (error) throw error;
-      
-      if (data) {
-        // Transform the data from jsonb columns to the expected format with validation
-        const formattedSolutions: Solution[] = data.map(solution => ({
-          id: solution.id,
-          name: solution.name,
-          features: Array.isArray(solution.features) 
-            ? solution.features.map(f => String(f)) 
-            : [],
-          useCases: Array.isArray(solution.use_cases) 
-            ? solution.use_cases.map(u => String(u)) 
-            : [],
-          painPoints: Array.isArray(solution.pain_points) 
-            ? solution.pain_points.map(p => String(p)) 
-            : [],
-          targetAudience: Array.isArray(solution.target_audience) 
-            ? solution.target_audience.map(t => String(t)) 
-            : [],
-          description: `${solution.name} - Business Solution`,
-          category: solution.category || "Business Solution", // Using the category from DB with fallback
-          logoUrl: solution.logo_url,
-          externalUrl: solution.external_url,
-          benefits: [],  // Adding empty benefits array
-          tags: [],      // Adding empty tags array
-          resources: Array.isArray(solution.resources) 
-            ? solution.resources.map(resource => {
-                if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
-                  return {
-                    title: String(resource.title || ''),
-                    url: String(resource.url || '')
-                  };
-                }
-                return { title: '', url: '' };
-              }).filter(r => r.title && r.url)
-            : []
-        }));
-        setSolutions(formattedSolutions);
-      }
-    } catch (error) {
-      console.error("Error fetching solutions:", error);
-      // Fallback to some default data if there's an error or no solutions
-      setSolutions([{
-        id: '1',
-        name: 'Demo Solution',
-        description: 'Demo solution for content creation',
-        features: ["Feature 1", "Feature 2", "Feature 3"],
-        useCases: ["Use case 1", "Use case 2"],
-        painPoints: ["Pain point 1", "Pain point 2"],
-        targetAudience: ["Audience 1", "Audience 2"],
-        category: "Business Solution", // Default category 
-        logoUrl: null,
-        externalUrl: null,
-        benefits: [],  // Adding empty benefits array
-        tags: [],      // Adding empty tags array
-        resources: []
-      }]);
-    } finally {
-      setIsLoading(false);
+  const contentFormats = [
+    { 
+      id: ContentFormat.ARTICLE, 
+      title: 'Standard Article', 
+      description: 'Traditional article format with paragraphs and headings',
+      icon: '📄' 
+    },
+    { 
+      id: ContentFormat.LISTICLE, 
+      title: 'Listicle', 
+      description: 'Content organized as a numbered or bulleted list',
+      icon: '🔢' 
+    },
+    { 
+      id: ContentFormat.HOW_TO, 
+      title: 'How-To Guide', 
+      description: 'Step-by-step instructions for completing a task',
+      icon: '🔧' 
+    },
+    { 
+      id: ContentFormat.COMPARISON, 
+      title: 'Comparison', 
+      description: 'Evaluating multiple items, services or concepts side by side',
+      icon: '⚖️' 
+    },
+    { 
+      id: ContentFormat.CASE_STUDY, 
+      title: 'Case Study', 
+      description: 'Detailed analysis of a specific subject or example',
+      icon: '🔍' 
+    },
+    { 
+      id: ContentFormat.OPINION, 
+      title: 'Opinion/Editorial', 
+      description: 'Subjective content that presents a personal viewpoint',
+      icon: '💭' 
     }
-  };
-  
-  const handleSelectContentType = (value: string) => {
-    dispatch({ type: 'SET_CONTENT_TYPE', payload: value as ContentType });
-  };
-  
-  const handleSelectSolution = (solution: Solution) => {
-    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
-    toast.success(`Selected solution: ${solution.name}`);
+  ];
+
+  const contentIntents = [
+    { 
+      id: ContentIntent.INFORM, 
+      title: 'Inform', 
+      description: 'Educate your audience about a topic',
+      icon: '📚' 
+    },
+    { 
+      id: ContentIntent.CONVERT, 
+      title: 'Convert', 
+      description: 'Persuade the reader to take a specific action',
+      icon: '🎯' 
+    },
+    { 
+      id: ContentIntent.ENTERTAIN, 
+      title: 'Entertain', 
+      description: 'Engage and amuse your audience',
+      icon: '🎭' 
+    },
+    { 
+      id: ContentIntent.EDUCATE, 
+      title: 'Educate', 
+      description: 'Provide detailed knowledge or training',
+      icon: '🎓' 
+    },
+    { 
+      id: ContentIntent.INSPIRE, 
+      title: 'Inspire', 
+      description: 'Motivate your audience to feel or do something',
+      icon: '✨' 
+    }
+  ];
+
+  const handleTypeSelect = (typeId: string) => {
+    setSelectedType(typeId);
   };
 
-  const handleNavigateToSolutions = () => {
-    navigate('/solutions');
+  const handleFormatSelect = (formatId: string) => {
+    setSelectedFormat(formatId);
   };
 
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+  const handleIntentSelect = (intentId: string) => {
+    setSelectedIntent(intentId);
+  };
+
+  const handleContinue = () => {
+    // Save the selected values to context
+    setContentType(selectedType);
+    setContentFormat(selectedFormat);
+    setContentIntent(selectedIntent);
+    
+    // Navigate to next step
+    navigateToStep(state.currentStep + 1);
   };
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Content Type</h3>
-        <p className="text-sm text-muted-foreground">
-          Select the type of content you want to create.
+    <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-2">Select Content Type</h2>
+        <p className="text-muted-foreground">
+          Choose the type, format, and intent for your content piece
         </p>
-        
-        <RadioGroup 
-          value={contentType || ''} 
-          onValueChange={handleSelectContentType}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          {contentTypes.map((type) => (
-            <div key={type.value} className="relative">
-              <RadioGroupItem
-                value={type.value}
-                id={`content-type-${type.value}`}
-                className="sr-only peer"
-              />
-              <Label
-                htmlFor={`content-type-${type.value}`}
-                className={`flex flex-col items-center justify-center h-32 p-4 rounded-lg border-2 cursor-pointer
-                transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/50
-                ${contentType === type.value ? 'border-primary bg-primary/5' : 'border-muted'}`}
-              >
-                <type.icon className="h-8 w-8 mb-2" />
-                <div className="font-medium text-center">{type.label}</div>
-                <div className="text-xs text-center text-muted-foreground mt-1">{type.description}</div>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
       </div>
       
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Select a Solution</h3>
-          <Button
-            variant="outline"
-            onClick={handleNavigateToSolutions}
-            className="text-xs"
-          >
-            Manage Solutions
-          </Button>
+      {/* Content Type Selection */}
+      <div>
+        <h3 className="text-lg font-medium mb-3">Type of Content</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {contentTypes.map(type => (
+            <ContentTypeCard
+              key={type.id}
+              title={type.title}
+              description={type.description}
+              icon={type.icon}
+              selected={selectedType === type.id}
+              onClick={() => handleTypeSelect(type.id)}
+            />
+          ))}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Choose which business solution this content should promote or reference.
-        </p>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {solutions.map((solution) => (
-              <Card 
-                key={solution.id} 
-                className={`cursor-pointer transition-all hover:shadow-md hover:border-primary overflow-hidden
-                  ${selectedSolution?.id === solution.id ? 'border-primary bg-primary/5' : ''}`}
-                onClick={() => handleSelectSolution(solution)}
-              >
-                <CardContent className="p-4 flex gap-4">
-                  <div className="flex-shrink-0">
-                    <Avatar className="h-12 w-12 rounded-md border">
-                      {solution.logoUrl ? (
-                        <AvatarImage 
-                          src={solution.logoUrl} 
-                          alt={solution.name}
-                          className="object-cover"
-                        />
-                      ) : (
-                        <AvatarFallback className="rounded-md bg-primary/10 text-primary font-medium">
-                          {getInitials(solution.name)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{solution.name}</h4>
-                      {solution.externalUrl && (
-                        <a 
-                          href={solution.externalUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="text-muted-foreground hover:text-primary"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                    
-                    {solution.features && solution.features.length > 0 && (
-                      <div className="mt-3">
-                        <span className="text-xs font-medium">Features:</span>
-                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
-                          {solution.features.slice(0, 3).map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                          {solution.features.length > 3 && (
-                            <li className="text-xs text-primary">+{solution.features.length - 3} more features</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-
-                    {solution.useCases && solution.useCases.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-medium">Use Cases:</span>
-                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
-                          {solution.useCases.slice(0, 2).map((useCase, idx) => (
-                            <li key={idx}>{useCase}</li>
-                          ))}
-                          {solution.useCases.length > 2 && (
-                            <li className="text-xs text-primary">+{solution.useCases.length - 2} more use cases</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {solution.resources && solution.resources.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-medium">Resources:</span>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {solution.resources.length} resource(s) available
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+      </div>
+      
+      {/* Content Format Selection */}
+      <div>
+        <h3 className="text-lg font-medium mb-3">Content Format</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {contentFormats.map(format => (
+            <ContentFormatCard
+              key={format.id}
+              title={format.title}
+              description={format.description}
+              icon={format.icon}
+              selected={selectedFormat === format.id}
+              onClick={() => handleFormatSelect(format.id)}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Content Intent Selection */}
+      <div>
+        <h3 className="text-lg font-medium mb-3">Content Goal/Intent</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {contentIntents.map(intent => (
+            <ContentIntentCard
+              key={intent.id}
+              title={intent.title}
+              description={intent.description}
+              icon={intent.icon}
+              selected={selectedIntent === intent.id}
+              onClick={() => handleIntentSelect(intent.id)}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Action Buttons */}
+      <div className="flex justify-end pt-4">
+        <Button
+          onClick={handleContinue}
+          className="min-w-[160px] bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90"
+        >
+          <span>Continue</span>
+          <ChevronRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

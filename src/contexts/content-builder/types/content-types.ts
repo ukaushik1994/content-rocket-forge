@@ -71,3 +71,34 @@ export interface ContentReference {
   status: string;
   created_at: string;
 }
+
+// Search Country type for SERP analysis
+export interface SearchCountry {
+  code: string;
+  name: string;
+  flag?: string;
+}
+
+// Available countries for SERP analysis
+export const AVAILABLE_COUNTRIES: SearchCountry[] = [
+  { code: 'us', name: 'United States' },
+  { code: 'uk', name: 'United Kingdom' },
+  { code: 'ca', name: 'Canada' },
+  { code: 'au', name: 'Australia' },
+  { code: 'in', name: 'India' },
+  { code: 'mea', name: 'Middle East' },
+  { code: 'eu', name: 'Europe' }
+];
+
+// Keyword usage tracking interface
+export interface KeywordUsage {
+  keyword: string;
+  usageCount: number;
+  isPrimary: boolean;
+  usedIn: {
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }[];
+}

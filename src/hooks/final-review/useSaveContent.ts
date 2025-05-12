@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -91,6 +92,17 @@ export const useSaveContent = () => {
       if (!user?.user) {
         throw new Error('User not authenticated');
       }
+
+      // Convert complex objects to plain JSON objects for metadata
+      const solutionMetricsPlain = saveParams.solutionMetrics ? {
+        overallScore: saveParams.solutionMetrics.overallScore,
+        nameMentions: saveParams.solutionMetrics.nameMentions,
+        featureIncorporation: saveParams.solutionMetrics.featureIncorporation,
+        positioningScore: saveParams.solutionMetrics.positioningScore,
+        mentionedFeatures: saveParams.solutionMetrics.mentionedFeatures,
+        painPointsAddressed: saveParams.solutionMetrics.painPointsAddressed,
+        audienceAlignment: saveParams.solutionMetrics.audienceAlignment
+      } : null;
       
       // Save the content item first
       const { data: contentItem, error: contentError } = await supabase
@@ -111,7 +123,7 @@ export const useSaveContent = () => {
             serpSelections: saveParams.serpSelections,
             headings: headings,
             solutionInfo: saveParams.solutionInfo,
-            solutionMetrics: saveParams.solutionMetrics,
+            solutionMetrics: solutionMetricsPlain,
             additionalInstructions: state.additionalInstructions
           }
         })
@@ -251,6 +263,17 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
+      // Convert complex objects to plain JSON objects for metadata
+      const solutionMetricsPlain = publishParams.solutionMetrics ? {
+        overallScore: publishParams.solutionMetrics.overallScore,
+        nameMentions: publishParams.solutionMetrics.nameMentions,
+        featureIncorporation: publishParams.solutionMetrics.featureIncorporation,
+        positioningScore: publishParams.solutionMetrics.positioningScore,
+        mentionedFeatures: publishParams.solutionMetrics.mentionedFeatures,
+        painPointsAddressed: publishParams.solutionMetrics.painPointsAddressed,
+        audienceAlignment: publishParams.solutionMetrics.audienceAlignment
+      } : null;
+
       // Save the content item first
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
@@ -270,7 +293,7 @@ export const useSaveContent = () => {
             serpSelections: publishParams.serpSelections,
             headings: headings,
             solutionInfo: publishParams.solutionInfo,
-            solutionMetrics: publishParams.solutionMetrics,
+            solutionMetrics: solutionMetricsPlain,
             additionalInstructions: state.additionalInstructions
           }
         })

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -195,7 +196,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                             {draft.metadata.solutionMetrics.overallScore && (
                               <div className="flex justify-between col-span-2">
                                 <span className="text-muted-foreground">Overall Score:</span>
-                                <Badge variant={draft.metadata.solutionMetrics.overallScore > 70 ? "success" : "default"}>
+                                <Badge variant={draft.metadata.solutionMetrics.overallScore > 70 ? "default" : "outline"}>
                                   {draft.metadata.solutionMetrics.overallScore}%
                                 </Badge>
                               </div>
@@ -251,7 +252,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                     {draft.seo_score !== undefined && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">SEO Score:</span>
-                        <Badge variant={draft.seo_score > 80 ? "success" : "outline"}>
+                        <Badge variant={draft.seo_score > 80 ? "secondary" : "outline"}>
                           {draft.seo_score}/100
                         </Badge>
                       </div>
