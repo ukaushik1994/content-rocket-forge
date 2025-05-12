@@ -10,10 +10,12 @@ import { ContentCluster } from './cluster-types';
 import { Solution, SolutionIntegrationMetrics } from './solution-types';
 import { SeoImprovement } from './seo-types';
 import { OutlineSection } from './outline-types';
+import { DocumentStructure } from './document-types';
 
 // Content Builder State
 export interface ContentBuilderState {
   currentStep: number;
+  activeStep: number;
   steps: Step[];
   mainKeyword: string;
   selectedKeywords: string[];
@@ -29,15 +31,16 @@ export interface ContentBuilderState {
   contentTitle: string;
   suggestedTitles: string[];
   selectedCluster: ContentCluster | null;
-  contentType: ContentType;
-  contentFormat: ContentFormat;
-  contentIntent: ContentIntent;
+  contentType: string;
+  contentFormat: string;
+  contentIntent: string;
   selectedSolution: Solution | null;
   seoScore: number;
   seoImprovements: SeoImprovement[];
   metaTitle: string;
   metaDescription: string;
-  additionalInstructions: string; 
+  additionalInstructions: string;
+  documentStructure?: DocumentStructure; 
   solutionIntegrationMetrics: SolutionIntegrationMetrics;
-  selectedRegions: string[]; // Add the selectedRegions property
+  selectedRegions: string[];
 }

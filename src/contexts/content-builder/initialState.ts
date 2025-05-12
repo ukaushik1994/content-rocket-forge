@@ -4,6 +4,7 @@ import { ContentType, ContentFormat, ContentIntent } from './types/content-types
 
 export const initialState: ContentBuilderState = {
   currentStep: 0,
+  activeStep: 0,
   steps: [
     {
       id: 0,
@@ -73,9 +74,9 @@ export const initialState: ContentBuilderState = {
   metaDescription: '',
   additionalInstructions: '',
   solutionIntegrationMetrics: {
-    mentionCount: 0,
+    keywordMatches: 0,
     featureCoverage: 0,
     naturalIntegration: 0
   },
-  selectedRegions: ['uk', 'us', 'mea', 'global'] // Add default regions
+  selectedRegions: ['uk', 'us', 'mea', 'global']
 };

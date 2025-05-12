@@ -1,36 +1,34 @@
 
 /**
- * Solution related type definitions
+ * Solution-related type definitions
  */
 
-export interface SolutionResource {
-  title: string;
-  url: string;
-}
-
+// Solution Type
 export interface Solution {
   id: string;
   name: string;
   description: string;
   features: string[];
-  useCases: string[];
-  painPoints: string[];
-  targetAudience: string[];
-  category: string; // This property is required and defined
-  logoUrl: string | null;
-  externalUrl: string | null;
-  resources: SolutionResource[];
+  benefits: string[];
+  category: string;
+  tags: string[];
+  url?: string;
+  imageUrl?: string;
+  logoUrl?: string;
 }
 
+// Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
-  featureIncorporation: number;
-  positioningScore: number;
-  painPointsAddressed: string[];
-  ctaEffectiveness: number;
-  overallScore: number;
-  mentions: number | string;
-  audienceAlignment: number;
-  nameMentions: number;
-  ctaMentions: number;
-  mentionedFeatures: string[]; 
+  keywordMatches: number;
+  featureCoverage: number;
+  naturalIntegration: number;
+}
+
+// Solution Analysis Result
+export interface SolutionAnalysisResult {
+  solutionMentioned: boolean;
+  keywordMatches: number;
+  featuresCovered: number;
+  naturalIntegration: number;
+  recommendations: string[];
 }
