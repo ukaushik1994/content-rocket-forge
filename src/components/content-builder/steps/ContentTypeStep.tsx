@@ -139,10 +139,10 @@ export const ContentTypeStep = () => {
   };
 
   const handleContinue = () => {
-    // Save the selected values to context
-    setContentType(selectedType);
-    setContentFormat(selectedFormat);
-    setContentIntent(selectedIntent);
+    // Save the selected values to context - cast the strings to the proper enum types
+    setContentType(selectedType as ContentType);
+    setContentFormat(selectedFormat as ContentFormat);
+    setContentIntent(selectedIntent as ContentIntent);
     
     // Navigate to next step
     navigateToStep(state.currentStep + 1);
