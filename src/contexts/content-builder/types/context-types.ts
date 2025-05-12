@@ -1,3 +1,4 @@
+
 /**
  * Context-related type definitions
  */
@@ -22,7 +23,7 @@ export interface ContentBuilderContextType {
   removeKeyword: (keyword: string) => void;
   
   // SERP Actions
-  analyzeKeyword: (keyword: string) => Promise<void>;
+  analyzeKeyword: (keyword: string, regions?: string[]) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
   
@@ -51,4 +52,7 @@ export interface ContentBuilderContextType {
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
   saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
   setAdditionalInstructions: (instructions: string) => void;
+  
+  // SERP Region Settings
+  setSelectedRegions: (regions: string[]) => void;
 }

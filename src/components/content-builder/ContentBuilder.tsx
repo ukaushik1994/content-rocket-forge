@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -19,7 +20,8 @@ export const ContentBuilder = () => {
   const { state, navigateToStep, setMainKeyword, addKeyword, setContentTitle, setContentType, setContentFormat, setContentIntent, setContent, setMetaTitle, setMetaDescription, setOutline, setOutlineSections, updateContent, setAdditionalInstructions } = useContentBuilder();
   const { contentItems, loading } = useContent();
   const location = useLocation();
-  const { activeStep, steps } = state;
+  const { steps, currentStep } = state;
+  const activeStep = currentStep; // Use currentStep as activeStep
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
@@ -29,7 +31,7 @@ export const ContentBuilder = () => {
   // Check current step status
   const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
   const currentStepId = steps[activeStep] ? steps[activeStep].id : -1;
-  const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || state.activeStep === 0);
+  const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || activeStep === 0);
   
   // Handle next step navigation
   const handleNextStep = () => {

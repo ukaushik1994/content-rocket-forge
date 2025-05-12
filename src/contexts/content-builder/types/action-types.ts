@@ -36,12 +36,13 @@ export type ContentBuilderAction =
   | { type: 'ADD_SEO_IMPROVEMENT'; payload: SeoImprovement }
   | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
   | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
-  | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
-  | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
-  | { type: 'SET_CONTENT_INTENT'; payload: ContentIntent }
+  | { type: 'SET_CONTENT_TYPE'; payload: string }
+  | { type: 'SET_CONTENT_FORMAT'; payload: string }
+  | { type: 'SET_CONTENT_INTENT'; payload: string }
   | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_META_TITLE'; payload: string }
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
+  | { type: 'SET_SELECTED_REGIONS'; payload: string[] };

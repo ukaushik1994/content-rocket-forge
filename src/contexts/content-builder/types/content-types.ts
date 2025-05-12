@@ -4,13 +4,32 @@
  */
 
 // Content Type Options
-export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'seo';
+export enum ContentType {
+  BLOG_POST = 'blog',
+  ARTICLE = 'article',
+  LANDING_PAGE = 'landingPage',
+  PRODUCT_DESCRIPTION = 'productDescription',
+  EMAIL = 'email',
+  SOCIAL = 'social',
+  SEO = 'seo'
+}
 
 // Content Format Options
-export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'list';
+export enum ContentFormat {
+  ARTICLE = 'long-form',
+  SHORT_FORM = 'short-form',
+  LISTICLE = 'listicle',
+  HOW_TO = 'how-to',
+  LIST = 'list'
+}
 
 // Content Intent Options
-export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';
+export enum ContentIntent {
+  INFORM = 'inform',
+  CONVERT = 'convert',
+  ENTERTAIN = 'entertain',
+  EDUCATE = 'educate'
+}
 
 // Save Content Params
 export interface SaveContentParams {
@@ -18,7 +37,7 @@ export interface SaveContentParams {
   content: string;
   mainKeyword: string;
   secondaryKeywords: string[];
-  contentType: ContentType;
+  contentType: string;
   metaTitle: string | null;
   metaDescription: string | null;
   status: 'draft' | 'published' | 'archived';
@@ -31,4 +50,32 @@ export interface SaveContentParams {
   outline?: string[];
   serpSelections?: any[];
   serpData?: any;
+}
+
+// Define SearchCountry type for use in the SERP analysis
+export interface SearchCountry {
+  code: string;
+  name: string;
+  flag?: string;
+}
+
+// Available countries for SERP analysis
+export const AVAILABLE_COUNTRIES: SearchCountry[] = [
+  { code: 'us', name: 'United States', flag: '🇺🇸' },
+  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'mea', name: 'Middle East', flag: '🌍' },
+  { code: 'global', name: 'Global', flag: '🌎' }
+];
+
+// Keyword Usage Types for KeywordRepository
+export interface KeywordUsage {
+  keyword: string;
+  usageCount: number;
+  isPrimary: boolean;
+  usedIn: {
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }[];
 }

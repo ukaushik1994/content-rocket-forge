@@ -1,56 +1,57 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Sparkles, Clipboard, EyeOff, Eye, Globe, Check } from "lucide-react";
-import { AiProviderSelector } from "@/components/content-builder/outline/ai-generator/AiProviderSelector";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { 
+  PenLine, 
+  ListTree, 
+  BookText, 
+  ClipboardList, 
+  Wand2,
+  Loader2,
+  GlobeIcon
+} from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// Define available search countries
-export type SearchCountry = {
-  code: string;
-  name: string;
-};
+// Add export for types and countries
+export interface SearchCountry {
+  value: string;
+  label: string;
+}
 
 export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { code: 'us', name: 'United States' },
-  { code: 'uk', name: 'United Kingdom' },
-  { code: 'ca', name: 'Canada' },
-  { code: 'au', name: 'Australia' },
-  { code: 'de', name: 'Germany' },
-  { code: 'fr', name: 'France' },
-  { code: 'es', name: 'Spain' },
-  { code: 'it', name: 'Italy' },
-  { code: 'jp', name: 'Japan' },
-  { code: 'in', name: 'India' },
-  { code: 'br', name: 'Brazil' },
-  { code: 'mx', name: 'Mexico' },
-  { code: 'sg', name: 'Singapore' },
-  { code: 'nl', name: 'Netherlands' },
-  { code: 'se', name: 'Sweden' },
+  { value: 'us', label: '🇺🇸 US' },
+  { value: 'uk', label: '🇬🇧 UK' },
+  { value: 'mea', label: '🌍 MEA' },
+  { value: 'global', label: '🌐 Global' }
 ];
 
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
-  handleGenerateContent: () => void;
+  handleGenerateContent: () => Promise<void>;
   handleToggleOutline: () => void;
   handleToggleGenerator: () => void;
   showOutline: boolean;
   outlineLength: number;
   aiProvider: AiProvider;
   onAiProviderChange: (provider: AiProvider) => void;
-  selectedCountries?: string[];
-  onCountriesChange?: (countries: string[]) => void;
+  selectedCountries: string[];
+  onCountriesChange: (countries: string[]) => void;
 }
 
-export function ContentGenerationHeader({
+export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
   isGenerating,
   handleGenerateContent,
   handleToggleOutline,
@@ -59,145 +60,108 @@ export function ContentGenerationHeader({
   outlineLength,
   aiProvider,
   onAiProviderChange,
-  selectedCountries = ['us'],
-  onCountriesChange = () => {}
-}: ContentGenerationHeaderProps) {
-  const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState(false);
-
-  const toggleCountry = (countryCode: string) => {
-    if (selectedCountries.includes(countryCode)) {
-      if (selectedCountries.length > 1) { // Always keep at least one country selected
-        onCountriesChange(selectedCountries.filter(code => code !== countryCode));
+  selectedCountries,
+  onCountriesChange
+}) => {
+  const countries = AVAILABLE_COUNTRIES;
+  
+  const toggleCountry = (country: string) => {
+    if (selectedCountries.includes(country)) {
+      // Don't remove if it's the last one
+      if (selectedCountries.length > 1) {
+        onCountriesChange(selectedCountries.filter(c => c !== country));
       }
     } else {
-      onCountriesChange([...selectedCountries, countryCode]);
+      onCountriesChange([...selectedCountries, country]);
     }
   };
-
+  
+  const getSelectedCountriesLabel = () => {
+    if (selectedCountries.length === countries.length) {
+      return 'All Regions';
+    }
+    if (selectedCountries.length === 1) {
+      const country = countries.find(c => c.value === selectedCountries[0]);
+      return country?.label || 'Select Regions';
+    }
+    return `${selectedCountries.length} Regions`;
+  };
+  
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-2">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
+      <div className="flex items-center space-x-2">
         <Button
-          size="sm"
-          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all"
           onClick={handleGenerateContent}
-          disabled={isGenerating}
+          disabled={isGenerating || outlineLength === 0}
+          className={`bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg`}
         >
-          <Sparkles className="h-4 w-4 mr-2" />
-          {isGenerating ? 'Generating...' : 'Generate Content'}
-        </Button>
-        
-        <Button
-          size="sm"
-          variant="outline"
-          className="bg-glass border border-white/10 hover:border-white/20"
-          onClick={handleToggleGenerator}
-        >
-          <Clipboard className="h-4 w-4 mr-2" />
-          Templates
-        </Button>
-        
-        <Popover open={isCountryPopoverOpen} onOpenChange={setIsCountryPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-glass border border-white/10 hover:border-white/20"
-            >
-              <Globe className="h-4 w-4 mr-2" />
-              {selectedCountries.length === 1 
-                ? AVAILABLE_COUNTRIES.find(c => c.code === selectedCountries[0])?.name
-                : `${selectedCountries.length} Countries`}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-2" align="start">
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm">Select Search Countries</h4>
-              <p className="text-xs text-muted-foreground">
-                Data will be fetched from selected countries
-              </p>
-              
-              <ScrollArea className="h-60 pr-4 mt-2">
-                <div className="space-y-2">
-                  {AVAILABLE_COUNTRIES.map((country) => (
-                    <div 
-                      key={country.code} 
-                      className="flex items-center space-x-2 py-1.5 px-1 rounded hover:bg-white/5"
-                    >
-                      <Checkbox 
-                        id={`country-${country.code}`}
-                        checked={selectedCountries.includes(country.code)}
-                        onCheckedChange={() => toggleCountry(country.code)}
-                        disabled={selectedCountries.length === 1 && selectedCountries.includes(country.code)}
-                      />
-                      <label 
-                        htmlFor={`country-${country.code}`}
-                        className="flex-1 text-sm cursor-pointer"
-                      >
-                        {country.name}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              
-              <div className="flex flex-wrap gap-1 mt-2">
-                {selectedCountries.map(code => {
-                  const country = AVAILABLE_COUNTRIES.find(c => c.code === code);
-                  return (
-                    <Badge key={code} variant="outline" className="bg-white/10 flex items-center gap-1">
-                      {country?.name}
-                      {selectedCountries.length > 1 && (
-                        <button 
-                          className="ml-1 text-white/70 hover:text-white" 
-                          onClick={() => toggleCountry(code)}
-                        >
-                          <span className="sr-only">Remove</span>
-                          ×
-                        </button>
-                      )}
-                    </Badge>
-                  );
-                })}
-              </div>
-              
-              <Button 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={() => setIsCountryPopoverOpen(false)}
-              >
-                <Check className="h-4 w-4 mr-1" /> Apply
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-      
-      <div className="flex flex-wrap items-center gap-4">
-        <AiProviderSelector 
-          aiProvider={aiProvider}
-          setAiProvider={onAiProviderChange}
-        />
-        
-        <Button
-          size="sm"
-          variant="outline"
-          className="bg-glass border border-white/10 hover:border-white/20"
-          onClick={handleToggleOutline}
-        >
-          {showOutline ? (
+          {isGenerating ? (
             <>
-              <EyeOff className="h-4 w-4 mr-2" />
-              Hide Outline
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
             </>
           ) : (
             <>
-              <Eye className="h-4 w-4 mr-2" />
-              Show Outline ({outlineLength})
+              <Wand2 className="mr-2 h-4 w-4" />
+              Generate Content
             </>
           )}
+        </Button>
+
+        <Select
+          value={aiProvider}
+          onValueChange={(value: string) => onAiProviderChange(value as AiProvider)}
+        >
+          <SelectTrigger className="w-36 bg-background/50 text-xs border-white/10">
+            <SelectValue placeholder="AI Provider" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="openai">OpenAI</SelectItem>
+            <SelectItem value="anthropic">Anthropic</SelectItem>
+            <SelectItem value="gemini">Google Gemini</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="bg-background/50 text-xs border-white/10">
+              <GlobeIcon className="h-4 w-4 mr-1" />
+              {getSelectedCountriesLabel()}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {countries.map(country => (
+              <DropdownMenuCheckboxItem
+                key={country.value}
+                checked={selectedCountries.includes(country.value)}
+                onCheckedChange={() => toggleCountry(country.value)}
+              >
+                {country.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleToggleOutline}
+          className={`flex gap-1 ${showOutline ? 'bg-muted/70 text-white' : 'bg-background/50'} text-xs border-white/10`}
+        >
+          <ListTree className="h-3.5 w-3.5" /> Outline
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleToggleGenerator}
+          className="flex gap-1 bg-background/50 text-xs border-white/10"
+        >
+          <ClipboardList className="h-3.5 w-3.5" /> Templates
         </Button>
       </div>
     </div>
   );
-}
+};
