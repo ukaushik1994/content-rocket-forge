@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
@@ -61,6 +62,8 @@ export function useSolutionsData() {
             category: solution.category || "Business Solution", // Now using the DB column with fallback
             logoUrl: solution.logo_url,
             externalUrl: solution.external_url,
+            benefits: [], // Adding empty benefits array
+            tags: [],     // Adding empty tags array
             resources: Array.isArray(solution.resources) 
               ? solution.resources.map(resource => {
                   if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
@@ -102,6 +105,8 @@ export function useSolutionsData() {
         category: "Business Solution", // Default category value
         logoUrl: null,
         externalUrl: null,
+        benefits: [], // Adding empty benefits array
+        tags: [],     // Adding empty tags array
         resources: []
       };
       

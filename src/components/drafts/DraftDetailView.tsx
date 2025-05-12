@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ContentType } from '@/contexts/content-builder/types/content-types';
-import { CheckCircle2, Edit2, FileText, Tag, Clock, FileHeading } from 'lucide-react';
+import { CheckCircle2, Edit2, FileText, Tag, Clock, Heading } from 'lucide-react';
 
 interface DraftDetailViewProps {
   open: boolean;
@@ -91,7 +91,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card p-4 rounded-lg border">
                   <h3 className="font-medium flex items-center">
-                    <FileHeading className="w-4 h-4 mr-2" /> 
+                    <Heading className="w-4 h-4 mr-2" /> 
                     Document Headings
                   </h3>
                   <div className="mt-2 space-y-3">

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +16,19 @@ export const useSaveContent = () => {
   const { refreshContent } = useContent();
   const navigate = useNavigate();
 
+  // Helper function to convert outline to strings if needed
+  const normalizeOutline = (outline: any[]): string[] => {
+    if (!outline) return [];
+    
+    return outline.map(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null && 'title' in item) {
+        return String(item.title || '');
+      }
+      return String(item || '');
+    });
+  };
+
   const handleSaveToDraft = async (): Promise<string | null> => {
     try {
       setIsSaving(true);
@@ -33,7 +45,7 @@ export const useSaveContent = () => {
         metaDescription: state.metaDescription,
         status: 'draft',
         notes: '',
-        outline: state.outline,
+        outline: normalizeOutline(state.outline || []),
         serpSelections: state.serpSelections,
         serpData: state.serpData
       };
@@ -181,7 +193,7 @@ export const useSaveContent = () => {
         status: 'published',
         notes: '',
         seoScore: state.seoScore,
-        outline: state.outline,
+        outline: normalizeOutline(state.outline || []),
         serpSelections: state.serpSelections,
         serpData: state.serpData
       };
