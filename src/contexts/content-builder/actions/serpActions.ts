@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -7,18 +8,15 @@ export const createSerpActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const analyzeKeyword = async (keyword: string, regions?: string[]) => {
+  const analyzeKeyword = async (keyword: string) => {
     if (!keyword) return;
-    
-    // Use provided regions or default to UK, US, MEA, global
-    const searchRegions = regions || ['uk', 'us', 'mea', 'global'];
     
     // Start loading
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
-      // Make API call to analyze keyword with specified regions
-      const serpData = await analyzeKeywordSerp(keyword, false, searchRegions);
+      // Make API call to analyze keyword
+      const serpData = await analyzeKeywordSerp(keyword);
       
       // Update SERP data in state - will be null if no data is found
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
@@ -136,15 +134,9 @@ export const createSerpActions = (
     toast.success(`Generated outline with ${outlineSections.length} sections based on your selected items`);
   };
   
-  // Add a function to set selected regions
-  const setSelectedRegions = (regions: string[]) => {
-    dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions });
-  };
-
   return {
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
-    setSelectedRegions
   };
 };

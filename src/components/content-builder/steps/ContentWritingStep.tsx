@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -73,7 +74,7 @@ export const ContentWritingStep = () => {
       additionalInstructions,
       setIsGenerating,
       handleContentChange,
-      selectedCountries
+      selectedCountries // Pass selected countries
     );
   };
   

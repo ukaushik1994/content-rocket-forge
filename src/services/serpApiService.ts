@@ -109,9 +109,6 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
   // Create variations based on refresh parameter
   const variationFactor = refresh ? Math.random() : 0.5;
   
-  // Ensure we always include countries data for requested regions
-  const regionsToInclude = Array.from(new Set([...countries]));
-  
   // Create a set to store unique values to prevent duplicates
   const uniqueKeywords = new Set<string>();
   const uniqueQuestions = new Set<string>();
@@ -120,135 +117,105 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
   const uniqueEntities = new Set<string>();
   const uniqueContentGaps = new Set<string>();
   
-  // Add region-specific data
-  regionsToInclude.forEach((region) => {
-    // Format the region label
-    let regionLabel: string;
-    switch(region.toLowerCase()) {
-      case 'mea': 
-        regionLabel = 'MEA'; 
-        break;
-      case 'global': 
-        regionLabel = 'Global'; 
-        break;
-      default:
-        regionLabel = region.toUpperCase();
-    }
+  // Combine data from all selected countries
+  countries.forEach((country) => {
+    // Add country-specific keywords
+    [`${country}: ${keyword} strategy`, 
+     `${country}: ${keyword} tools`, 
+     `${country}: best ${keyword} practices`, 
+     `${country}: ${keyword} guide`,
+     `${country}: ${keyword} tutorial`,
+     `${country}: ${keyword} examples`,
+     `${country}: ${keyword} techniques`,
+     `${country}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
     
-    // Add region-specific keywords
-    [`${regionLabel}: ${keyword} strategy`, 
-     `${regionLabel}: ${keyword} tools`, 
-     `${regionLabel}: best ${keyword} practices`, 
-     `${regionLabel}: ${keyword} guide`,
-     `${regionLabel}: ${keyword} tutorial`,
-     `${regionLabel}: ${keyword} examples`,
-     `${regionLabel}: ${keyword} techniques`,
-     `${regionLabel}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
+    // Add country-specific questions
+    [`${country}: How does ${keyword} work in ${country}?`,
+     `${country}: What is the best ${keyword} tool in ${country}?`,
+     `${country}: Why is ${keyword} important for SEO in ${country}?`,
+     `${country}: When should I use ${keyword} in ${country}?`].forEach(q => uniqueQuestions.add(q));
     
-    // Add region-specific questions
-    [`${regionLabel}: How does ${keyword} work in ${regionLabel}?`,
-     `${regionLabel}: What is the best ${keyword} tool in ${regionLabel}?`,
-     `${regionLabel}: Why is ${keyword} important for SEO in ${regionLabel}?`,
-     `${regionLabel}: When should I use ${keyword} in ${regionLabel}?`].forEach(q => uniqueQuestions.add(q));
+    // Add country-specific headings
+    [`${country}: Understanding ${keyword} in ${country}`,
+     `${country}: Benefits of ${keyword} for ${country} markets`,
+     `${country}: How to Implement ${keyword} in ${country}`,
+     `${country}: ${keyword} Best Practices for ${country}`].forEach(h => uniqueHeadings.add(h));
     
-    // Add region-specific headings
-    [`${regionLabel}: Understanding ${keyword} in ${regionLabel}`,
-     `${regionLabel}: Benefits of ${keyword} for ${regionLabel} markets`,
-     `${regionLabel}: How to Implement ${keyword} in ${regionLabel}`,
-     `${regionLabel}: ${keyword} Best Practices for ${regionLabel}`].forEach(h => uniqueHeadings.add(h));
-    
-    // Add region-specific related searches
-    [`${regionLabel}: ${keyword} strategy`,
-     `${regionLabel}: ${keyword} tools`,
-     `${regionLabel}: best ${keyword} practices in ${regionLabel}`,
-     `${regionLabel}: ${keyword} guide`].forEach(rs => uniqueRelatedSearches.add(rs));
+    // Add country-specific related searches
+    [`${country}: ${keyword} strategy`,
+     `${country}: ${keyword} tools`,
+     `${country}: best ${keyword} practices in ${country}`,
+     `${country}: ${keyword} guide`].forEach(rs => uniqueRelatedSearches.add(rs));
      
-    // Add region-specific entities
-    [`${regionLabel}: ${keyword} platform`,
-     `${regionLabel}: ${keyword} strategy`,
-     `${regionLabel}: ${keyword} tools`,
-     `${regionLabel}: ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
+    // Add country-specific entities
+    [`${country}: ${keyword} platform`,
+     `${country}: ${keyword} strategy`,
+     `${country}: ${keyword} tools`,
+     `${country}: ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
 
-    // Add region-specific content gaps
-    [`${regionLabel}: ${keyword} for beginners in ${regionLabel}`,
-     `${regionLabel}: Advanced ${keyword} techniques for ${regionLabel}`,
-     `${regionLabel}: ${keyword} ROI measurement in ${regionLabel}`,
-     `${regionLabel}: ${keyword} vs competitors in ${regionLabel}`].forEach(cg => uniqueContentGaps.add(cg));
+    // Add country-specific content gaps
+    [`${country}: ${keyword} for beginners in ${country}`,
+     `${country}: Advanced ${keyword} techniques for ${country}`,
+     `${country}: ${keyword} ROI measurement in ${country}`,
+     `${country}: ${keyword} vs competitors in ${country}`].forEach(cg => uniqueContentGaps.add(cg));
   });
   
+  // Add global keywords that are relevant across regions
+  [`global ${keyword} strategy`,
+   `international ${keyword} tools`,
+   `universal ${keyword} practices`,
+   `worldwide ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
+   
+  // Add global questions
+  [`How does ${keyword} work globally?`,
+   `What are the best ${keyword} practices worldwide?`,
+   `Why is ${keyword} important for international SEO?`,
+   `When should I implement ${keyword} across markets?`].forEach(q => uniqueQuestions.add(q));
+
+  // Add global headings
+  [`Global approach to ${keyword}`,
+   `International ${keyword} implementation`,
+   `Universal benefits of ${keyword}`,
+   `Cross-market ${keyword} strategies`].forEach(h => uniqueHeadings.add(h));
+   
+  // Add global entities
+  [`${keyword} global platform`,
+   `international ${keyword} framework`,
+   `cross-market ${keyword} methodology`,
+   `universal ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
+   
+  // Add global content gaps
+  [`${keyword} for global markets`,
+   `International ${keyword} best practices`,
+   `Cross-border ${keyword} implementation`,
+   `Multilingual ${keyword} strategies`].forEach(cg => uniqueContentGaps.add(cg));
+   
   // Add refresh-specific items if needed
   if (refresh) {
-    regionsToInclude.forEach(region => {
-      let regionLabel: string;
-      switch(region.toLowerCase()) {
-        case 'mea': 
-          regionLabel = 'MEA'; 
-          break;
-        case 'global': 
-          regionLabel = 'Global'; 
-          break;
-        default:
-          regionLabel = region.toUpperCase();
-      }
-      
-      [`${regionLabel}: ${keyword} certification`,
-       `${regionLabel}: ${keyword} for startups`,
-       `${regionLabel}: ${keyword} ROI`,
-       `${regionLabel}: ${keyword} software comparison`].forEach(kw => uniqueKeywords.add(kw));
+    countries.forEach(country => {
+      [`${country}: ${keyword} certification`,
+       `${country}: ${keyword} for startups`,
+       `${country}: ${keyword} ROI`,
+       `${country}: ${keyword} software comparison`].forEach(kw => uniqueKeywords.add(kw));
        
-      [`${regionLabel}: What are the advantages of ${keyword} in ${regionLabel}?`,
-       `${regionLabel}: How much does ${keyword} cost on average in ${regionLabel}?`,
-       `${regionLabel}: Can ${keyword} be integrated with other systems in ${regionLabel}?`].forEach(q => uniqueQuestions.add(q));
+      [`${country}: What are the advantages of ${keyword} in ${country}?`,
+       `${country}: How much does ${keyword} cost on average in ${country}?`,
+       `${country}: Can ${keyword} be integrated with other systems in ${country}?`].forEach(q => uniqueQuestions.add(q));
        
-      [`${regionLabel}: Cost analysis of ${keyword} in ${regionLabel}`,
-       `${regionLabel}: ${keyword} integration options for ${regionLabel}`,
-       `${regionLabel}: Future of ${keyword} in ${regionLabel} market`].forEach(h => uniqueHeadings.add(h));
+      [`${country}: Cost analysis of ${keyword} in ${country}`,
+       `${country}: ${keyword} integration options for ${country}`,
+       `${country}: Future of ${keyword} in ${country} market`].forEach(h => uniqueHeadings.add(h));
        
-      [`${regionLabel}: ${keyword} pricing model`,
-       `${regionLabel}: ${keyword} certification authority`,
-       `${regionLabel}: ${keyword} compliance in ${regionLabel}`].forEach(e => uniqueEntities.add(e));
+      [`${country}: ${keyword} pricing model`,
+       `${country}: ${keyword} certification authority`,
+       `${country}: ${keyword} compliance in ${country}`].forEach(e => uniqueEntities.add(e));
        
-      [`${regionLabel}: ${keyword} cost optimization in ${regionLabel}`,
-       `${regionLabel}: ${keyword} compliance requirements for ${regionLabel}`,
-       `${regionLabel}: ${keyword} implementation case studies in ${regionLabel}`].forEach(cg => uniqueContentGaps.add(cg));
+      [`${country}: ${keyword} cost optimization in ${country}`,
+       `${country}: ${keyword} compliance requirements for ${country}`,
+       `${country}: ${keyword} implementation case studies in ${country}`].forEach(cg => uniqueContentGaps.add(cg));
     });
   }
   
-  // Create an array to store region-specific top results
-  const topResultsByRegion: Array<{
-    title: string;
-    link: string;
-    snippet: string;
-    position: number;
-    country: string;
-  }> = [];
-
-  // Generate top results for each region
-  regionsToInclude.forEach((region, regionIndex) => {
-    let regionLabel: string;
-    switch(region.toLowerCase()) {
-      case 'mea': 
-        regionLabel = 'MEA'; 
-        break;
-      case 'global': 
-        regionLabel = 'Global'; 
-        break;
-      default:
-        regionLabel = region.toUpperCase();
-    }
-    
-    // Generate 3 results per region
-    for (let i = 1; i <= 3; i++) {
-      topResultsByRegion.push({
-        title: `${regionLabel}: The ${i === 1 ? 'Ultimate Guide' : i === 2 ? 'Complete Manual' : 'Expert Roadmap'} to ${keyword} in ${regionLabel}`,
-        link: `https://example.com/${region.toLowerCase()}/${keyword.replace(/\s+/g, '-')}-guide-${i}`,
-        snippet: `Comprehensive ${regionLabel} resource about ${keyword} with region-specific insights and strategies for ${regionLabel} markets.`,
-        position: regionIndex * 3 + i,
-        country: region.toLowerCase()
-      });
-    }
-  });
-
   // Generate mock data based on the keyword with potential variations
   return {
     keyword,
@@ -263,7 +230,29 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
       description: `Content opportunity for ${topic}`, 
       recommendation: `Create comprehensive content about ${topic}` 
     })),
-    topResults: topResultsByRegion,
+    topResults: countries.flatMap((country, idx) => ([
+      {
+        title: `The Ultimate Guide to ${keyword} in ${country.toUpperCase()}`,
+        link: `https://example.com/${country}/${keyword}-guide`,
+        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide for ${country.toUpperCase()}.`,
+        position: idx * 5 + 1,
+        country
+      },
+      {
+        title: `${country.toUpperCase()}: Best ${keyword} Practices in ${new Date().getFullYear()}`,
+        link: `https://example.com/${country}/${keyword}-best-practices`,
+        snippet: `Discover the most effective ${keyword} practices for ${country.toUpperCase()} markets in ${new Date().getFullYear()}.`,
+        position: idx * 5 + 2,
+        country
+      },
+      {
+        title: `${country.toUpperCase()}: How to Implement ${keyword} Successfully`,
+        link: `https://example.com/${country}/${keyword}-implementation`,
+        snippet: `Step-by-step guide to successfully implementing ${keyword} strategies in ${country.toUpperCase()}.`,
+        position: idx * 5 + 3,
+        country
+      }
+    ])),
     relatedSearches: Array.from(uniqueRelatedSearches).map(query => ({ query })),
     keywords: Array.from(uniqueKeywords),
     recommendations: [
@@ -272,21 +261,7 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
       `Add visual examples of ${keyword} in action`,
       `Compare ${keyword} with alternative approaches`,
       `Include case studies showing successful ${keyword} implementation`,
-      ...regionsToInclude.map(region => {
-        let regionLabel: string;
-        switch(region.toLowerCase()) {
-          case 'mea': 
-            regionLabel = 'MEA'; 
-            break;
-          case 'global': 
-            regionLabel = 'Global'; 
-            break;
-          default:
-            regionLabel = region.toUpperCase();
-        }
-        return `Create localized content for ${regionLabel} market`;
-      }),
-      `Develop a strategy that works across all selected regions`
+      ...countries.map(country => `Create localized content for ${country.toUpperCase()} market`)
     ],
     isMockData: true,
     searchCountries: countries  // Property explicitly added to match type
@@ -297,28 +272,16 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
   try {
     const uniqueKeywords = new Set<string>();
     
-    // Generate region-specific related keywords
-    countries.forEach(region => {
-      let regionLabel: string;
-      switch(region.toLowerCase()) {
-        case 'mea': 
-          regionLabel = 'MEA'; 
-          break;
-        case 'global': 
-          regionLabel = 'Global'; 
-          break;
-        default:
-          regionLabel = region.toUpperCase();
-      }
-      
-      [`${regionLabel}: ${keyword} strategy`,
-       `${regionLabel}: ${keyword} tools`,
-       `${regionLabel}: best ${keyword} practices in ${region}`,
-       `${regionLabel}: ${keyword} guide`,
-       `${regionLabel}: ${keyword} tutorial`,
-       `${regionLabel}: ${keyword} examples`,
-       `${regionLabel}: ${keyword} techniques`,
-       `${regionLabel}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
+    // Generate country-specific related keywords
+    countries.forEach(country => {
+      [`${country} ${keyword} strategy`,
+       `${country} ${keyword} tools`,
+       `best ${keyword} practices in ${country}`,
+       `${country} ${keyword} guide`,
+       `${country} ${keyword} tutorial`,
+       `${country} ${keyword} examples`,
+       `${country} ${keyword} techniques`,
+       `${country} ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
     });
     
     return Array.from(uniqueKeywords);

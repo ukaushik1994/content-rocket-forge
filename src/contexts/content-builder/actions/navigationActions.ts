@@ -11,14 +11,14 @@ export const createNavigationActions = (
     }
     
     // Get the current step and target step
-    const currentStep = state.steps[state.currentStep];
+    const currentStep = state.steps[state.activeStep];
     const targetStep = state.steps[step];
     
     // Always mark the current step as visited
-    dispatch({ type: 'MARK_STEP_VISITED', payload: state.currentStep });
+    dispatch({ type: 'MARK_STEP_VISITED', payload: state.activeStep });
     
     // Check if trying to navigate forward
-    if (step > state.currentStep) {
+    if (step > state.activeStep) {
       // Check if all previous steps are completed before allowing forward navigation
       // First get all steps with IDs less than the target step's ID
       const previousSteps = state.steps.filter(s => s.id < targetStep.id);
@@ -36,7 +36,7 @@ export const createNavigationActions = (
     }
     
     // Skip SERP Analysis (step with id 2) when navigating between steps
-    if (state.currentStep === 0 && step > state.currentStep) {
+    if (state.activeStep === 0 && step > state.activeStep) {
       // If going from keyword selection to content type, move forward normally
       dispatch({ type: 'SET_CURRENT_STEP', payload: step });
       return;
@@ -44,7 +44,7 @@ export const createNavigationActions = (
     
     if (targetStep.id === 2) {
       // If trying to navigate to SERP Analysis (id 2), skip to next valid step
-      const nextValidStep = step + 1 < state.steps.length ? step + 1 : state.currentStep;
+      const nextValidStep = step + 1 < state.steps.length ? step + 1 : state.activeStep;
       dispatch({ type: 'SET_CURRENT_STEP', payload: nextValidStep });
       return;
     }
