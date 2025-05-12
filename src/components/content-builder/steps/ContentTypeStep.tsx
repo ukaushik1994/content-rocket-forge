@@ -1,223 +1,272 @@
 
 import React, { useState } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentType, ContentFormat, ContentIntent } from '@/contexts/content-builder/types/content-types';
 import { ContentTypeCard } from './content-type/ContentTypeCard';
 import { ContentFormatCard } from './content-type/ContentFormatCard';
 import { ContentIntentCard } from './content-type/ContentIntentCard';
-import { Button } from '@/components/ui/button';
-import { CheckIcon, ChevronRight } from 'lucide-react';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { SolutionSelection } from './solutions/SolutionSelection';
+import { toast } from 'sonner';
+
+const contentTypes = [
+  {
+    type: ContentType.BLOG_POST,
+    title: 'Blog Post',
+    description: 'Create an engaging article for your blog',
+    icon: '📝'
+  },
+  {
+    type: ContentType.ARTICLE,
+    title: 'Article',
+    description: 'In-depth informative content with research',
+    icon: '📚'
+  },
+  {
+    type: ContentType.LANDING_PAGE,
+    title: 'Landing Page',
+    description: 'High-converting page focused on a CTA',
+    icon: '🚀'
+  },
+  {
+    type: ContentType.PRODUCT_PAGE,
+    title: 'Product Page',
+    description: 'Showcase your product features and benefits',
+    icon: '🛍️'
+  },
+  {
+    type: ContentType.EMAIL,
+    title: 'Email',
+    description: 'Engaging email content for campaigns',
+    icon: '📧'
+  },
+  {
+    type: ContentType.SOCIAL_POST,
+    title: 'Social Post',
+    description: 'Content optimized for social media platforms',
+    icon: '📱'
+  }
+];
+
+const contentFormats = [
+  {
+    format: ContentFormat.ARTICLE,
+    title: 'Article',
+    description: 'Standard article format with paragraphs and sections',
+    icon: '📄'
+  },
+  {
+    format: ContentFormat.LISTICLE,
+    title: 'Listicle',
+    description: 'Content organized in a numbered list format',
+    icon: '🔢'
+  },
+  {
+    format: ContentFormat.HOW_TO,
+    title: 'How-to Guide',
+    description: 'Step-by-step instructions for processes or tasks',
+    icon: '🔍'
+  },
+  {
+    format: ContentFormat.COMPARISON,
+    title: 'Comparison',
+    description: 'Side-by-side analysis of different options',
+    icon: '⚖️'
+  },
+  {
+    format: ContentFormat.CASE_STUDY,
+    title: 'Case Study',
+    description: 'In-depth examination of a specific example',
+    icon: '🔬'
+  },
+  {
+    format: ContentFormat.INTERVIEW,
+    title: 'Interview',
+    description: 'Q&A style format with expert insights',
+    icon: '🎙️'
+  }
+];
+
+const contentIntents = [
+  {
+    intent: ContentIntent.INFORM,
+    title: 'Inform',
+    description: 'Educate your audience with valuable information',
+    icon: '📚'
+  },
+  {
+    intent: ContentIntent.PERSUADE,
+    title: 'Persuade',
+    description: 'Convince your audience to take a specific action',
+    icon: '🎯'
+  },
+  {
+    intent: ContentIntent.ENTERTAIN,
+    title: 'Entertain',
+    description: 'Engage your audience with interesting content',
+    icon: '🎭'
+  },
+  {
+    intent: ContentIntent.CONVERT,
+    title: 'Convert',
+    description: 'Turn visitors into leads or customers',
+    icon: '💰'
+  }
+];
 
 export const ContentTypeStep = () => {
-  const { state, setContentType, setContentFormat, setContentIntent, navigateToStep } = useContentBuilder();
-  const { contentType, contentFormat, contentIntent } = state;
-  const [selectedType, setSelectedType] = useState<string>(contentType || ContentType.BLOG_POST);
-  const [selectedFormat, setSelectedFormat] = useState<string>(contentFormat || ContentFormat.ARTICLE);
-  const [selectedIntent, setSelectedIntent] = useState<string>(contentIntent || ContentIntent.INFORM);
-
-  const contentTypes = [
-    { 
-      id: ContentType.BLOG_POST, 
-      title: 'Blog Post', 
-      description: 'Informative and engaging content to attract and educate your audience',
-      icon: '📝' 
-    },
-    { 
-      id: ContentType.LANDING_PAGE, 
-      title: 'Landing Page', 
-      description: 'Focused content designed to convert visitors into leads or customers',
-      icon: '🌐' 
-    },
-    { 
-      id: ContentType.PRODUCT_DESCRIPTION, 
-      title: 'Product Description', 
-      description: 'Compelling content that highlights features and benefits of your product',
-      icon: '📦' 
-    },
-    { 
-      id: ContentType.ARTICLE, 
-      title: 'Article', 
-      description: 'Longer in-depth content to establish authority in your field',
-      icon: '📰' 
-    },
-    { 
-      id: ContentType.EMAIL, 
-      title: 'Email', 
-      description: 'Targeted content for email marketing campaigns',
-      icon: '📧' 
-    },
-    { 
-      id: ContentType.SOCIAL_POST, 
-      title: 'Social Post', 
-      description: 'Shareable content for social media platforms',
-      icon: '💬' 
-    }
-  ];
-
-  const contentFormats = [
-    { 
-      id: ContentFormat.ARTICLE, 
-      title: 'Standard Article', 
-      description: 'Traditional article format with paragraphs and headings',
-      icon: '📄' 
-    },
-    { 
-      id: ContentFormat.LISTICLE, 
-      title: 'Listicle', 
-      description: 'Content organized as a numbered or bulleted list',
-      icon: '🔢' 
-    },
-    { 
-      id: ContentFormat.HOW_TO, 
-      title: 'How-To Guide', 
-      description: 'Step-by-step instructions for completing a task',
-      icon: '🔧' 
-    },
-    { 
-      id: ContentFormat.COMPARISON, 
-      title: 'Comparison', 
-      description: 'Evaluating multiple items, services or concepts side by side',
-      icon: '⚖️' 
-    },
-    { 
-      id: ContentFormat.CASE_STUDY, 
-      title: 'Case Study', 
-      description: 'Detailed analysis of a specific subject or example',
-      icon: '🔍' 
-    },
-    { 
-      id: ContentFormat.OPINION, 
-      title: 'Opinion/Editorial', 
-      description: 'Subjective content that presents a personal viewpoint',
-      icon: '💭' 
-    }
-  ];
-
-  const contentIntents = [
-    { 
-      id: ContentIntent.INFORM, 
-      title: 'Inform', 
-      description: 'Educate your audience about a topic',
-      icon: '📚' 
-    },
-    { 
-      id: ContentIntent.CONVERT, 
-      title: 'Convert', 
-      description: 'Persuade the reader to take a specific action',
-      icon: '🎯' 
-    },
-    { 
-      id: ContentIntent.ENTERTAIN, 
-      title: 'Entertain', 
-      description: 'Engage and amuse your audience',
-      icon: '🎭' 
-    },
-    { 
-      id: ContentIntent.EDUCATE, 
-      title: 'Educate', 
-      description: 'Provide detailed knowledge or training',
-      icon: '🎓' 
-    },
-    { 
-      id: ContentIntent.INSPIRE, 
-      title: 'Inspire', 
-      description: 'Motivate your audience to feel or do something',
-      icon: '✨' 
-    }
-  ];
-
-  const handleTypeSelect = (typeId: string) => {
-    setSelectedType(typeId);
-  };
-
-  const handleFormatSelect = (formatId: string) => {
-    setSelectedFormat(formatId);
-  };
-
-  const handleIntentSelect = (intentId: string) => {
-    setSelectedIntent(intentId);
-  };
-
+  const { state, setContentType, setContentFormat, setContentIntent, navigateToStep, selectSolution } = useContentBuilder();
+  const [activeTab, setActiveTab] = useState('content-type');
+  const [selectedType, setSelectedType] = useState(state.contentType || '');
+  const [selectedFormat, setSelectedFormat] = useState(state.contentFormat || '');
+  const [selectedIntent, setSelectedIntent] = useState(state.contentIntent || '');
+  
   const handleContinue = () => {
-    // Save the selected values to context - cast the strings to the proper enum types
+    if (!selectedType) {
+      toast.error('Please select a content type');
+      return;
+    }
+    
+    if (!selectedFormat) {
+      toast.error('Please select a content format');
+      return;
+    }
+    
+    if (!selectedIntent) {
+      toast.error('Please select a content intent');
+      return;
+    }
+    
+    // Save selections to context
     setContentType(selectedType as ContentType);
     setContentFormat(selectedFormat as ContentFormat);
     setContentIntent(selectedIntent as ContentIntent);
     
-    // Navigate to next step
-    navigateToStep(state.currentStep + 1);
+    // Mark step as completed and go to the next step
+    navigateToStep(2);
   };
 
   return (
     <div className="space-y-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Select Content Type</h2>
-        <p className="text-muted-foreground">
-          Choose the type, format, and intent for your content piece
-        </p>
-      </div>
-      
-      {/* Content Type Selection */}
-      <div>
-        <h3 className="text-lg font-medium mb-3">Type of Content</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contentTypes.map(type => (
-            <ContentTypeCard
-              key={type.id}
-              title={type.title}
-              description={type.description}
-              icon={type.icon}
-              selected={selectedType === type.id}
-              onClick={() => handleTypeSelect(type.id)}
-            />
-          ))}
-        </div>
-      </div>
-      
-      {/* Content Format Selection */}
-      <div>
-        <h3 className="text-lg font-medium mb-3">Content Format</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contentFormats.map(format => (
-            <ContentFormatCard
-              key={format.id}
-              title={format.title}
-              description={format.description}
-              icon={format.icon}
-              selected={selectedFormat === format.id}
-              onClick={() => handleFormatSelect(format.id)}
-            />
-          ))}
-        </div>
-      </div>
-      
-      {/* Content Intent Selection */}
-      <div>
-        <h3 className="text-lg font-medium mb-3">Content Goal/Intent</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contentIntents.map(intent => (
-            <ContentIntentCard
-              key={intent.id}
-              title={intent.title}
-              description={intent.description}
-              icon={intent.icon}
-              selected={selectedIntent === intent.id}
-              onClick={() => handleIntentSelect(intent.id)}
-            />
-          ))}
-        </div>
-      </div>
-      
-      {/* Action Buttons */}
-      <div className="flex justify-end pt-4">
-        <Button
-          onClick={handleContinue}
-          className="min-w-[160px] bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90"
-        >
-          <span>Continue</span>
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      <Tabs 
+        defaultValue="content-type" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="content-type">Content Type</TabsTrigger>
+          <TabsTrigger value="content-format">Content Format</TabsTrigger>
+          <TabsTrigger value="content-intent">Content Intent</TabsTrigger>
+          <TabsTrigger value="solution">Solution Integration</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="content-type" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {contentTypes.map((item) => (
+              <ContentTypeCard
+                key={item.title}
+                title={item.title}
+                description={item.description}
+                icon={item.icon}
+                selected={selectedType === item.type}
+                onClick={() => setSelectedType(item.type)}
+              />
+            ))}
+          </div>
+          
+          <div className="flex justify-end mt-6">
+            <Button 
+              onClick={() => setActiveTab('content-format')}
+              disabled={!selectedType}
+            >
+              Next: Format
+            </Button>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="content-format" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {contentFormats.map((item) => (
+              <ContentFormatCard
+                key={item.title}
+                title={item.title}
+                description={item.description}
+                icon={item.icon}
+                selected={selectedFormat === item.format}
+                onClick={() => setSelectedFormat(item.format)}
+              />
+            ))}
+          </div>
+          
+          <div className="flex justify-between mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setActiveTab('content-type')}
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={() => setActiveTab('content-intent')}
+              disabled={!selectedFormat}
+            >
+              Next: Intent
+            </Button>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="content-intent" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {contentIntents.map((item) => (
+              <ContentIntentCard
+                key={item.title}
+                title={item.title}
+                description={item.description}
+                icon={item.icon}
+                selected={selectedIntent === item.intent}
+                onClick={() => setSelectedIntent(item.intent)}
+              />
+            ))}
+          </div>
+          
+          <div className="flex justify-between mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setActiveTab('content-format')}
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={() => setActiveTab('solution')}
+              disabled={!selectedIntent}
+            >
+              Next: Solution
+            </Button>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="solution" className="mt-6">
+          <SolutionSelection 
+            selectedSolution={state.selectedSolution}
+            onSolutionSelect={selectSolution}
+          />
+          
+          <div className="flex justify-between mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setActiveTab('content-intent')}
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={handleContinue}
+            >
+              Continue
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

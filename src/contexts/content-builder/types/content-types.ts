@@ -1,104 +1,84 @@
 
-// Import the SolutionIntegrationMetrics interface
-import { SolutionIntegrationMetrics } from './solution-types';
-
 /**
- * Content Types
+ * Content-related type definitions
  */
 
-// Content Type enum
+// Content Type Enum
 export enum ContentType {
-  BLOG_POST = 'blog_post',
-  LANDING_PAGE = 'landing_page',
-  PRODUCT_DESCRIPTION = 'product_description',
+  BLOG_POST = 'blog-post',
   ARTICLE = 'article',
+  LANDING_PAGE = 'landing-page',
+  PRODUCT_PAGE = 'product-page',
   EMAIL = 'email',
-  SOCIAL_POST = 'social_post'
+  SOCIAL_POST = 'social-post'
 }
 
-// Content Format enum
+// Content Format Enum
 export enum ContentFormat {
   ARTICLE = 'article',
   LISTICLE = 'listicle',
-  HOW_TO = 'how_to',
+  HOW_TO = 'how-to',
   COMPARISON = 'comparison',
-  CASE_STUDY = 'case_study',
-  OPINION = 'opinion'
+  CASE_STUDY = 'case-study',
+  INTERVIEW = 'interview'
 }
 
-// Content Intent enum
+// Content Intent Enum
 export enum ContentIntent {
   INFORM = 'inform',
-  CONVERT = 'convert',
+  PERSUADE = 'persuade',
   ENTERTAIN = 'entertain',
-  EDUCATE = 'educate',
-  INSPIRE = 'inspire'
+  CONVERT = 'convert'
 }
 
-// Parameters for saving content
+// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
-  mainKeyword: string;
-  secondaryKeywords: string[];
-  status: 'draft' | 'published';
-  notes?: string;
-  contentType: string;
-  contentFormat?: string;
-  contentIntent?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  outline?: string[];
-  serpSelections?: any[];
-  serpData?: any;
+  mainKeyword?: string;
+  secondaryKeywords?: string[];
   seoScore?: number;
-  headings?: {
-    h1: string[];
-    h2: string[];
-  };
-  solutionInfo?: {
-    id: string;
-    name: string;
-    category?: string;
-  } | null;
-  solutionMetrics?: SolutionIntegrationMetrics;
+  outlineSections?: any[];
+  note?: string;
 }
 
-// Simple content reference
-export interface ContentReference {
-  id: string;
-  title: string;
-  status: string;
-  created_at: string;
+// Search Countries
+export enum SearchCountry {
+  US = 'us',
+  UK = 'uk',
+  AU = 'au',
+  CA = 'ca',
+  IN = 'in',
+  DE = 'de',
+  FR = 'fr',
+  ES = 'es',
+  IT = 'it',
+  JP = 'jp',
+  BR = 'br',
+  MEA = 'mea',
+  GLOBAL = 'global'
 }
 
-// Search Country type for SERP analysis
-export interface SearchCountry {
-  code: string;
-  name: string;
-  flag?: string;
-}
-
-// Available countries for SERP analysis
-export const AVAILABLE_COUNTRIES: SearchCountry[] = [
+// Available Countries for Search
+export const AVAILABLE_COUNTRIES = [
   { code: 'us', name: 'United States' },
   { code: 'uk', name: 'United Kingdom' },
-  { code: 'ca', name: 'Canada' },
   { code: 'au', name: 'Australia' },
+  { code: 'ca', name: 'Canada' },
   { code: 'in', name: 'India' },
+  { code: 'de', name: 'Germany' },
+  { code: 'fr', name: 'France' },
+  { code: 'es', name: 'Spain' },
+  { code: 'it', name: 'Italy' },
+  { code: 'jp', name: 'Japan' },
+  { code: 'br', name: 'Brazil' },
   { code: 'mea', name: 'Middle East' },
-  { code: 'eu', name: 'Europe' }
+  { code: 'global', name: 'Global' }
 ];
 
-// Keyword usage tracking interface
+// Keyword Usage Type
 export interface KeywordUsage {
   keyword: string;
-  usageCount: number;
-  isPrimary: boolean;
-  usedIn: {
-    contentId: string;
-    contentTitle: string;
-    isPrimary: boolean;
-    status: string;
-  }[];
+  count: number;
+  density: string; // percentage as string e.g. "1.5%"
 }
