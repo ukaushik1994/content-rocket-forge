@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ContentType } from '@/contexts/content-builder/types/content-types';
-import { CheckCircle2, Edit2, FileText, Tag, Clock, BarChart2 } from 'lucide-react';
+import { CheckCircle2, Edit2, FileText, Tag, Clock, FileHeading } from 'lucide-react';
 
 interface DraftDetailViewProps {
   open: boolean;
@@ -27,6 +27,21 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
       minute: '2-digit'
     }).format(date);
   };
+
+  // Extract document headings from content
+  const extractHeadings = (content: string) => {
+    if (!content) return { h1: [], h2: [] };
+    
+    const h1Regex = /^# (.+)$/gm;
+    const h2Regex = /^## (.+)$/gm;
+    
+    const h1 = [...(content.matchAll(h1Regex) || [])].map(match => match[1]);
+    const h2 = [...(content.matchAll(h2Regex) || [])].map(match => match[1]);
+    
+    return { h1, h2 };
+  };
+
+  const headings = extractHeadings(draft.content);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -76,6 +91,40 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card p-4 rounded-lg border">
                   <h3 className="font-medium flex items-center">
+                    <FileHeading className="w-4 h-4 mr-2" /> 
+                    Document Headings
+                  </h3>
+                  <div className="mt-2 space-y-3">
+                    {headings.h1.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-1">H1 Headings</h4>
+                        <ul className="space-y-1">
+                          {headings.h1.map((heading, index) => (
+                            <li key={`h1-${index}`} className="text-sm">{heading}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {headings.h2.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-1">H2 Headings</h4>
+                        <ul className="space-y-1">
+                          {headings.h2.map((heading, index) => (
+                            <li key={`h2-${index}`} className="text-sm">{heading}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {headings.h1.length === 0 && headings.h2.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No headings found in content</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="bg-card p-4 rounded-lg border">
+                  <h3 className="font-medium flex items-center">
                     <Tag className="w-4 h-4 mr-2" /> 
                     Keywords
                   </h3>
@@ -87,27 +136,6 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                     )) : (
                       <span className="text-sm text-muted-foreground">No keywords</span>
                     )}
-                  </div>
-                </div>
-                
-                <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium flex items-center">
-                    <BarChart2 className="w-4 h-4 mr-2" /> 
-                    SEO Score
-                  </h3>
-                  <div className="mt-2">
-                    <div className="flex items-center mt-1">
-                      <div className="bg-muted w-full h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${
-                            draft.seo_score >= 80 ? 'bg-green-500' : 
-                            draft.seo_score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${draft.seo_score || 0}%` }}
-                        ></div>
-                      </div>
-                      <span className="ml-2 font-medium text-sm">{draft.seo_score || 0}%</span>
-                    </div>
                   </div>
                 </div>
                 
@@ -148,7 +176,8 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                 </div>
               </div>
               
-              {draft.metaTitle || draft.metaDescription ? (
+              {/* Meta Information Section */}
+              {(draft.metaTitle || draft.metaDescription) && (
                 <div className="bg-card p-4 rounded-lg border">
                   <h3 className="font-medium mb-2">Meta Information</h3>
                   {draft.metaTitle && (
@@ -164,7 +193,29 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                     </div>
                   )}
                 </div>
-              ) : null}
+              )}
+              
+              {/* SERP Items Section */}
+              {draft.metadata?.serpSelections && draft.metadata.serpSelections.length > 0 && (
+                <div className="bg-card p-4 rounded-lg border">
+                  <h3 className="font-medium mb-2">SERP Items Used</h3>
+                  <div className="space-y-2">
+                    {draft.metadata.serpSelections.map((item: any, index: number) => (
+                      <div key={index} className="border-t border-border pt-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {item.type || 'Item'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {item.source || 'Unknown source'}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-1 line-clamp-2">{item.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
