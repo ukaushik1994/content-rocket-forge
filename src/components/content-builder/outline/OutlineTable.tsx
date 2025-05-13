@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -39,10 +40,13 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
   };
 
   const handleAddSection = () => {
-    const newSection = {
+    // Ensure the new section has the correct type structure
+    const newSection: OutlineSection = {
       id: Math.random().toString(36).substr(2, 9),
       title: 'New Section',
-      level: 1
+      level: 1 as const, // Explicitly use a const assertion for the level type
+      type: 'heading',
+      content: ''
     };
     setEditableOutline([...editableOutline, newSection]);
     setEditingIndex(editableOutline.length);

@@ -1,53 +1,50 @@
 
-/**
- * Mock service for SERP analysis when real API is not available
- */
 import { SerpApiResponse } from './serpApiService';
 
+/**
+ * Mock service for SERP API to be used in development and testing
+ */
 export const serpMockService = {
   /**
-   * Generate mock SERP data for testing
+   * Return mock SERP data for a keyword
    */
   analyzeKeyword: async (keyword: string, regions?: string[]): Promise<SerpApiResponse> => {
-    // Create a delay to simulate network request
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log(`Mock SERP service analyzing keyword: ${keyword} for regions: ${regions?.join(', ') || 'default'}`);
     
-    console.log(`Generating mock SERP data for "${keyword}" in regions: ${regions?.join(', ') || 'default'}`);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Generate mock data based on the keyword
     return {
       keywords: [
-        keyword,
-        `best ${keyword}`,
-        `${keyword} examples`,
-        `how to use ${keyword}`,
-        `${keyword} tutorial`,
-        `${keyword} vs competition`
+        keyword + " guide",
+        "best " + keyword,
+        keyword + " examples",
+        "how to use " + keyword,
+        keyword + " tutorial",
+        "why " + keyword + " is important",
+        keyword + " for beginners",
+        keyword + " advanced techniques"
       ],
       questions: [
-        `What is ${keyword}?`,
-        `How does ${keyword} work?`,
-        `Why is ${keyword} important?`,
-        `When should I use ${keyword}?`,
-        `Where can I learn more about ${keyword}?`
+        "What is " + keyword + "?",
+        "How does " + keyword + " work?",
+        "Why should I use " + keyword + "?",
+        "Is " + keyword + " worth it?",
+        "How to get started with " + keyword + "?"
       ],
       competitors: [
-        { title: `${keyword} - Competitor 1`, url: 'https://example.com/competitor1' },
-        { title: `${keyword} Guide - Competitor 2`, url: 'https://example.com/competitor2' },
-        { title: `How to Master ${keyword} - Competitor 3`, url: 'https://example.com/competitor3' }
+        { name: "Alternative to " + keyword, url: "https://example.com/alt1" },
+        { name: keyword + " competitor", url: "https://example.com/alt2" },
+        { name: "Similar to " + keyword, url: "https://example.com/alt3" }
       ],
       snippets: [
         { 
-          title: `${keyword} Definition`,
-          content: `${keyword} is a powerful tool that helps businesses improve their performance.`
+          title: "What is " + keyword, 
+          content: keyword + " is a powerful tool that helps users achieve their goals efficiently." 
         },
         { 
-          title: `Benefits of ${keyword}`,
-          content: `Using ${keyword} can lead to increased productivity and better results.`
-        },
-        { 
-          title: `${keyword} Best Practices`,
-          content: `When implementing ${keyword}, it's important to follow these guidelines...`
+          title: "Benefits of " + keyword, 
+          content: "Using " + keyword + " can significantly improve productivity and results." 
         }
       ]
     };

@@ -29,7 +29,7 @@ export const createOutlineActions = (
         title: 'New Section',
         content: '',
         type: 'heading',
-        level: 1
+        level: 1 as const // Explicitly set as a literal 1, which satisfies the 1|2|3|4|5|6 type
       };
       const updatedSections = [...state.outlineSections];
       updatedSections.splice(index + 1, 0, newSection);

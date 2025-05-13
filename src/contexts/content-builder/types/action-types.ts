@@ -24,6 +24,8 @@ export type ContentBuilderAction =
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
   | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] }
   | { type: 'SET_OUTLINE_SECTIONS'; payload: OutlineSection[] }
+  | { type: 'SET_OUTLINE_AUTO_GENERATED'; payload: boolean } // Added missing action
+  | { type: 'SET_ACTIVE_STEP'; payload: number } // Added missing action
   | { type: 'SET_CONTENT'; payload: string }
   | { type: 'SET_IS_GENERATING'; payload: boolean }
   | { type: 'SET_IS_SAVING'; payload: boolean }
@@ -45,4 +47,8 @@ export type ContentBuilderAction =
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  | { type: 'SET_SELECTED_REGIONS'; payload: string[] };
+  | { type: 'SET_SELECTED_REGIONS'; payload: string[] }
+  | { type: 'UPDATE_SEO_SCORE'; payload: number } // Added missing action
+  | { type: 'ADD_SEO_IMPROVEMENT'; payload: any } // Added missing action
+  | { type: 'RESET_SERP_SELECTIONS' } // Added missing action
+  | { type: 'SET_CONTENT_LEAD_IN'; payload: string }; // Added missing action

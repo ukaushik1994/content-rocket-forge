@@ -33,7 +33,7 @@ export const createContentBuilderActions = (
   const solutionActions = createSolutionActions(state, dispatch);
   const advancedContentActions = createAdvancedContentActions(state, dispatch);
 
-  // Ensure all required actions are included
+  // Create custom actions
   const updateSeoScore = (score: number) => {
     dispatch({ type: 'UPDATE_SEO_SCORE', payload: score });
   };
