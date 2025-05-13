@@ -1,147 +1,68 @@
 
-import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { toast } from 'sonner';
-import { v4 as uuid } from 'uuid';
+import { ContentBuilderState } from '../types/state-types';
+import { serpApiService } from '@/services/serpApiService';
+import { serpMockService } from '@/services/serpMockService';
+import { serpProcessingService } from '@/services/serpProcessingService';
 
-export const createSerpActions = (
-  state: ContentBuilderState, 
-  dispatch: React.Dispatch<ContentBuilderAction>
-) => {
-  const analyzeKeyword = async (keyword: string, regions?: string[], useMockData: boolean = false) => {
-    if (!keyword) return;
-    
-    // Use provided regions or default to those in state
-    const searchRegions = regions || state.selectedRegions;
-    
-    // Start loading
-    dispatch({ type: 'SET_IS_ANALYZING', payload: true });
-    
+export const createSerpActions = (state: ContentBuilderState, dispatch: React.Dispatch<any>) => {
+  // Analyze keyword and fetch SERP data
+  const analyzeKeyword = async (keyword: string, regions?: string[], useMockData?: boolean) => {
     try {
-      // Make API call to analyze keyword with specified regions, pass useMockData flag
-      const serpData = await analyzeKeywordSerp(keyword, false, searchRegions, useMockData);
+      dispatch({ type: 'SET_IS_ANALYZING', payload: true });
       
-      // Update SERP data in state - will be null if no data is found
-      dispatch({ type: 'SET_SERP_DATA', payload: serpData });
+      // Use mock data if specifically requested or in test/development
+      const service = useMockData ? serpMockService : serpApiService;
       
-      if (!serpData) {
-        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings or use mock data.");
-      } else {
-        console.log("SERP data successfully retrieved:", serpData);
-        toast.success(`Search data analysis completed for ${searchRegions.join(', ')}.`);
+      // Fetch data from API
+      const serpResponse = await service.analyzeKeyword(keyword, regions);
+      
+      if (serpResponse) {
+        // Process the data
+        const processedData = serpProcessingService.processSerpData(serpResponse, keyword);
+        
+        // Update the state with processed data
+        dispatch({ type: 'SET_SERP_DATA', payload: processedData });
+        
+        // Reset selections when analyzing a new keyword
+        dispatch({ type: 'RESET_SERP_SELECTIONS' });
       }
     } catch (error) {
       console.error('Error analyzing keyword:', error);
-      // Set serpData to null to display the NoDataFound component
-      dispatch({ type: 'SET_SERP_DATA', payload: null });
-      // Handle error
-      toast.error("Failed to analyze keyword. Please check your API key and try again.");
     } finally {
-      // End loading
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
   };
   
+  // Add content from SERP selection
   const addContentFromSerp = (content: string, type: string) => {
-    dispatch({ 
-      type: 'TOGGLE_SERP_SELECTION', 
-      payload: { type, content } 
+    dispatch({
+      type: 'TOGGLE_SERP_SELECTION',
+      payload: { type, content }
     });
   };
   
+  // Generate outline from SERP selections
   const generateOutlineFromSelections = () => {
-    if (!state.serpSelections.some(item => item.selected)) {
-      toast.error("Please select at least one item to generate an outline");
-      return;
-    }
+    const { serpSelections } = state;
     
-    // Create a more structured outline from selected items
-    const selectedItems = state.serpSelections.filter(item => item.selected);
+    // Convert selections to outline sections
+    const outlineSections = serpProcessingService.convertSelectionsToOutline(serpSelections);
     
-    // Group items by type
-    const headings = selectedItems.filter(item => item.type === 'heading').map(item => item.content);
-    const questions = selectedItems.filter(item => item.type === 'question').map(item => item.content);
-    const contentGaps = selectedItems.filter(item => item.type === 'contentGap').map(item => item.content);
-    const entities = selectedItems.filter(item => item.type === 'entity').map(item => item.content);
+    // Set the outline sections
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: outlineSections });
     
-    // Create outline sections based on selected items
-    let outlineSections = [];
+    // Set auto-generated flag
+    dispatch({ type: 'SET_OUTLINE_AUTO_GENERATED', payload: true });
     
-    // Start with introduction
-    outlineSections.push("Introduction");
-    
-    // Add headings as main structure if available
-    if (headings.length > 0) {
-      outlineSections = [...outlineSections, ...headings];
-    }
-    
-    // Add content gaps as unique sections
-    if (contentGaps.length > 0) {
-      contentGaps.forEach(gap => {
-        if (!outlineSections.includes(gap)) {
-          outlineSections.push(gap);
-        }
-      });
-    }
-    
-    // Add questions as sections or a FAQ section
-    if (questions.length > 0) {
-      if (questions.length <= 2) {
-        // If only 1-2 questions, add them directly
-        questions.forEach(question => {
-          if (!outlineSections.includes(question)) {
-            outlineSections.push(question);
-          }
-        });
-      } else {
-        // If more than 2 questions, create a FAQ section
-        outlineSections.push("Frequently Asked Questions");
-      }
-    }
-    
-    // Add entities if they're not already included
-    if (entities.length > 0) {
-      // Check if we need a separate section for entities or if they're already covered
-      const entitySectionNeeded = entities.some(entity => 
-        !outlineSections.some(section => 
-          section.toLowerCase().includes(entity.toLowerCase())
-        )
-      );
-      
-      if (entitySectionNeeded) {
-        outlineSections.push("Key Concepts and Definitions");
-      }
-    }
-    
-    // Always add conclusion
-    if (!outlineSections.includes("Conclusion")) {
-      outlineSections.push("Conclusion");
-    }
-    
-    // Set the outline in state
-    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
-    
-    // Create an array of outline sections with IDs for the new table format
-    const outlineSectionsWithIds = outlineSections.map(title => ({
-      id: uuid(),
-      title,
-      level: 1,
-    }));
-    
-    // Set the structured outline sections in state
-    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: outlineSectionsWithIds });
-    
-    // Navigate to the outline step
-    dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
-    
-    toast.success(`Generated outline with ${outlineSections.length} sections based on your selected items`);
+    // Navigate to next step (outline step)
+    dispatch({ type: 'SET_ACTIVE_STEP', payload: 3 });
   };
   
-  // Add a function to set selected regions
+  // Set selected regions for SERP analysis
   const setSelectedRegions = (regions: string[]) => {
     dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions });
   };
-
+  
   return {
     analyzeKeyword,
     addContentFromSerp,

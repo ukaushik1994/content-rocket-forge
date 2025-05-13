@@ -1,21 +1,25 @@
 
-import { v4 as uuid } from 'uuid';
-
 export interface OutlineSection {
   id: string;
-  title: string;
-  level: number;
-  parent?: string;
-  children?: string[];
-  content?: string;
+  title?: string;
+  content: string;
+  type: 'heading' | 'subheading' | 'paragraph' | 'bullet' | 'numbered' | 'blockquote' | 'custom';
+  level?: 1 | 2 | 3 | 4 | 5 | 6;
+  expanded?: boolean;
+  children?: OutlineSection[];
+  metadata?: {
+    source?: string;
+    relevance?: number;
+    keywords?: string[];
+    [key: string]: any;
+  };
 }
 
-export const createOutlineSection = (title: string, level: number = 1): OutlineSection => {
-  return {
-    id: uuid(),
-    title,
-    level
-  };
-};
-
-export type OutlineFormat = 'basic' | 'hierarchical' | 'clustered';
+export interface OutlineGenerationOptions {
+  style?: 'formal' | 'conversational' | 'educational' | 'persuasive';
+  depth?: 'shallow' | 'medium' | 'deep';
+  structure?: 'basic' | 'detailed' | 'academic';
+  includeIntroduction?: boolean;
+  includeConclusion?: boolean;
+  includeCallToAction?: boolean;
+}

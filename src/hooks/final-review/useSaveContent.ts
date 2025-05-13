@@ -1,135 +1,102 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { 
-  SaveContentParams,
-  ContentFormat,
-  ContentIntent,
-  OutlineSection
-} from '@/contexts/content-builder/types';
 
 export const useSaveContent = () => {
-  const { state, dispatch } = useContentBuilder();
-  const { 
-    mainKeyword, 
-    selectedKeywords, 
-    content, 
-    contentTitle, 
-    contentType,
-    contentFormat,
-    contentIntent,
-    outline,
-    outlineSections,
-    metaTitle,
-    metaDescription,
-    seoScore,
-    selectedSolution,
-    solutionIntegrationMetrics,
-    additionalInstructions
-  } = state;
-  
-  const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
+  const { state } = useContentBuilder();
   
-  // We need to access these methods through the context
+  // Get saveContentToDraft and saveContentToPublished from context
   const { saveContentToDraft, saveContentToPublished } = useContentBuilder();
-
-  const handleSaveToDraft = async () => {
+  
+  const handleSaveToDraft = useCallback(async () => {
+    if (!state.content) {
+      toast.error('No content to save');
+      return null;
+    }
+    
     setIsSaving(true);
     
     try {
-      // Prepare the parameters for saving
-      const params: SaveContentParams = {
-        title: contentTitle || mainKeyword || 'Untitled Content',
-        content: content || '',
-        mainKeyword: mainKeyword || '',
-        secondaryKeywords: selectedKeywords || [],
-        contentType: contentType || 'blog',
-        contentFormat: contentFormat || ContentFormat.ARTICLE,
-        contentIntent: contentIntent || ContentIntent.INFORM,
-        metaTitle: metaTitle || null,
-        metaDescription: metaDescription || null,
-        status: 'draft',
-        notes: additionalInstructions || '',
-        seoScore: seoScore || 0,
-        outlineJson: JSON.stringify(outlineSections || outline || []),
-        solutionInfo: selectedSolution ? {
-          id: selectedSolution.id,
-          name: selectedSolution.name,
-          features: selectedSolution.features
-        } : null,
-        solutionMetrics: solutionIntegrationMetrics || null
+      // Prepare save options
+      const saveOptions = {
+        title: state.contentTitle || `Content - ${new Date().toLocaleDateString()}`,
+        content: state.content,
+        keywords: [state.mainKeyword, ...state.selectedKeywords.filter(k => k !== state.mainKeyword)].filter(Boolean),
+        seoScore: state.seoScore || 0,
+        metadata: {
+          contentType: state.contentType,
+          metaTitle: state.metaTitle,
+          metaDescription: state.metaDescription,
+          outline: state.outlineSections ? state.outlineSections.map(s => s.title || s.content) : [],
+          serpSelections: state.serpSelections,
+          selectedSolution: state.selectedSolution ? state.selectedSolution.id : null,
+        }
       };
       
-      // Call the save method
-      const savedId = await saveContentToDraft(params);
+      // Call the saveContentToDraft function from context
+      const contentId = await saveContentToDraft(saveOptions);
       
-      if (savedId) {
+      if (contentId) {
         toast.success('Content saved to drafts');
         setIsSavedToDraft(true);
-      } else {
-        toast.error('Failed to save content');
       }
+      
+      return contentId;
     } catch (error) {
-      console.error('Error saving content:', error);
-      toast.error('Error saving content');
+      console.error('Error saving content to draft:', error);
+      toast.error('Failed to save content');
+      return null;
     } finally {
       setIsSaving(false);
     }
-    
-    return null; // Return null to match expected return type
-  };
+  }, [state, saveContentToDraft]);
   
-  const handlePublish = async () => {
+  const handlePublish = useCallback(async () => {
+    if (!state.content) {
+      toast.error('No content to publish');
+      return null;
+    }
+    
     setIsSaving(true);
     
     try {
-      // Prepare the parameters for saving
-      const params: SaveContentParams = {
-        title: contentTitle || mainKeyword || 'Untitled Content',
-        content: content || '',
-        mainKeyword: mainKeyword || '',
-        secondaryKeywords: selectedKeywords || [],
-        contentType: contentType || 'blog',
-        contentFormat: contentFormat || ContentFormat.ARTICLE,
-        contentIntent: contentIntent || ContentIntent.INFORM,
-        metaTitle: metaTitle || null,
-        metaDescription: metaDescription || null,
+      // Prepare publish options
+      const publishOptions = {
+        title: state.contentTitle || `Content - ${new Date().toLocaleDateString()}`,
+        content: state.content,
+        keywords: [state.mainKeyword, ...state.selectedKeywords.filter(k => k !== state.mainKeyword)].filter(Boolean),
+        seoScore: state.seoScore || 0,
         status: 'published',
-        notes: additionalInstructions || '',
-        seoScore: seoScore || 0,
-        outlineJson: JSON.stringify(outlineSections || outline || []),
-        solutionInfo: selectedSolution ? {
-          id: selectedSolution.id,
-          name: selectedSolution.name,
-          features: selectedSolution.features
-        } : null,
-        solutionMetrics: solutionIntegrationMetrics || null
+        metadata: {
+          contentType: state.contentType,
+          metaTitle: state.metaTitle,
+          metaDescription: state.metaDescription,
+          outline: state.outlineSections ? state.outlineSections.map(s => s.title || s.content) : [],
+          serpSelections: state.serpSelections,
+          selectedSolution: state.selectedSolution ? state.selectedSolution.id : null,
+        }
       };
       
-      // Call the publish method
-      const publishedId = await saveContentToPublished(params);
+      // Call the saveContentToPublished function from context
+      const contentId = await saveContentToPublished(publishOptions);
       
-      if (publishedId) {
+      if (contentId) {
         toast.success('Content published successfully');
-        navigate('/content', { state: { publishedId } });
-        return publishedId;
-      } else {
-        toast.error('Failed to publish content');
       }
+      
+      return contentId;
     } catch (error) {
       console.error('Error publishing content:', error);
-      toast.error('Error publishing content');
+      toast.error('Failed to publish content');
+      return null;
     } finally {
       setIsSaving(false);
     }
-    
-    return null; // Return null to match expected return type
-  };
-
+  }, [state, saveContentToPublished]);
+  
   return {
     isSaving,
     isSavedToDraft,

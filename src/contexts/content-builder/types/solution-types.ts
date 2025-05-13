@@ -13,6 +13,16 @@ export interface Solution {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  // Additional properties needed by the application
+  category?: string;
+  logoUrl?: string | null;
+  externalUrl?: string | null;
+  useCases?: string[];
+  painPoints?: string[];
+  targetAudience?: string[];
+  resources?: Array<{ title: string; url: string }>;
+  benefits?: any[];
+  tags?: any[];
 }
 
 export interface SolutionIntegrationMetrics {
@@ -22,6 +32,11 @@ export interface SolutionIntegrationMetrics {
   potentialImpact: number;
   recommendations: SolutionRecommendation[];
   suggestedLeadIn?: string;
+  // Additional properties needed by the application
+  overallScore: number;
+  featureIncorporation: number;
+  positioningScore: number;
+  mentionedFeatures?: string[];
 }
 
 export interface SolutionRecommendation {

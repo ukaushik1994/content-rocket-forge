@@ -19,6 +19,9 @@ import { OutlineSection } from './outline-types';
 import { ContentCluster } from './cluster-types';
 import { SerpSelection } from './serp-types';
 
+// Explicitly export OutlineSection type to ensure it's available
+export { OutlineSection };
+
 // Context type
 export interface ContentBuilderContextType {
   state: ContentBuilderState;
@@ -55,7 +58,7 @@ export interface ContentBuilderContextType {
   selectCluster: (cluster: ContentCluster | null) => void;
   
   // SERP actions
-  analyzeKeyword: (keyword: string, regions?: string[]) => Promise<void>;
+  analyzeKeyword: (keyword: string, regions?: string[], useMockData?: boolean) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
   setSelectedRegions: (regions: string[]) => void;
