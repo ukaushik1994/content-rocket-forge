@@ -4,16 +4,22 @@
 export interface SerpAnalysisResult {
   keyword: string;
   searchResults: SearchResult[];
-  relatedKeywords: string[];
-  questions: string[];
-  entities: Entity[];
-  searchFeatures: SearchFeature[];
+  relatedSearches?: string[];
+  keywords?: string[];
+  questions?: string[];
+  peopleAlsoAsk?: string[];
+  entities?: Entity[];
+  headings?: string[];
+  searchFeatures?: SearchFeature[];
+  featuredSnippets?: any[];
+  contentGaps?: string[];
   competitors?: Competitor[];
   statistics?: {
     searchVolume?: number;
     competition?: number;
   };
   timestamp: string;
+  searchCountries?: string[];
 }
 
 interface SearchResult {
@@ -44,8 +50,12 @@ interface Competitor {
   position: number;
 }
 
-export const analyzeKeywordSerp = async (keyword: string, regions?: string[]): Promise<SerpAnalysisResult> => {
-  console.log(`Analyzing keyword: ${keyword}, regions: ${regions}`);
+export const analyzeKeywordSerp = async (
+  keyword: string, 
+  refresh: boolean = false, 
+  regions?: string[]
+): Promise<SerpAnalysisResult> => {
+  console.log(`Analyzing keyword: ${keyword}, refresh: ${refresh}, regions: ${regions}`);
   // This would normally connect to a SERP API service
   // For now, we'll return mock data
   
@@ -69,18 +79,27 @@ export const analyzeKeywordSerp = async (keyword: string, regions?: string[]): P
         featured: false
       }
     ],
-    relatedKeywords: [
+    keywords: [
       `${keyword} guide`,
       `${keyword} tutorial`,
-      `${keyword} best practices`,
-      `how to use ${keyword}`,
-      `${keyword} for beginners`
+      `${keyword} examples`
     ],
-    questions: [
+    relatedSearches: [
+      `${keyword} best practices`,
+      `${keyword} for beginners`,
+      `how to use ${keyword}`
+    ],
+    peopleAlsoAsk: [
       `What is ${keyword}?`,
       `How to use ${keyword} effectively?`,
       `Why is ${keyword} important?`,
       `When should I use ${keyword}?`
+    ],
+    headings: [
+      `Introduction to ${keyword}`,
+      `Benefits of ${keyword}`,
+      `How to implement ${keyword}`,
+      `${keyword} best practices`
     ],
     entities: [
       {
@@ -93,6 +112,18 @@ export const analyzeKeywordSerp = async (keyword: string, regions?: string[]): P
         type: "Content Type",
         relevance: 0.8
       }
+    ],
+    featuredSnippets: [
+      {
+        type: "Featured Snippet",
+        content: `${keyword} is a powerful tool that helps with SEO.`,
+        position: 0
+      }
+    ],
+    contentGaps: [
+      `Detailed ${keyword} tutorials`,
+      `${keyword} case studies`,
+      `${keyword} vs competitors`
     ],
     searchFeatures: [
       {
@@ -124,25 +155,41 @@ export const analyzeKeywordSerp = async (keyword: string, regions?: string[]): P
       searchVolume: 1500,
       competition: 0.75
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    searchCountries: regions || ['us', 'uk', 'global']
   };
 };
 
-export const searchKeywords = async (query: string, limit: number = 10): Promise<string[]> => {
-  console.log(`Searching keywords for: ${query}, limit: ${limit}`);
-  // This would normally connect to a keyword suggestion API
-  // For now, we'll return mock data
+export const searchKeywords = async (
+  options: { query: string; refresh?: boolean } | string, 
+  limit: number = 10
+): Promise<string[] | { title: string }[]> => {
+  let query: string;
+  let refresh = false;
   
-  return [
-    query,
-    `${query} guide`,
-    `${query} tutorial`,
-    `${query} best practices`,
-    `${query} examples`,
-    `${query} for beginners`,
-    `how to use ${query}`,
-    `why ${query} matters`,
-    `${query} vs alternatives`,
-    `${query} advanced techniques`
+  if (typeof options === 'string') {
+    query = options;
+  } else {
+    query = options.query;
+    refresh = options.refresh || false;
+  }
+  
+  console.log(`Searching keywords for: ${query}, refresh: ${refresh}, limit: ${limit}`);
+  
+  // This would normally connect to a keyword suggestion API
+  // For now, we'll return mock data with title property
+  const mockResults = [
+    { title: query },
+    { title: `${query} guide` },
+    { title: `${query} tutorial` },
+    { title: `${query} best practices` },
+    { title: `${query} examples` },
+    { title: `${query} for beginners` },
+    { title: `how to use ${query}` },
+    { title: `why ${query} matters` },
+    { title: `${query} vs alternatives` },
+    { title: `${query} advanced techniques` }
   ].slice(0, limit);
+  
+  return mockResults;
 };

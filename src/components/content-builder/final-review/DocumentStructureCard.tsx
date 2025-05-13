@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle, XCircle } from 'lucide-react';
-import { DocumentStructure } from '@/contexts/content-builder/types';
+import { DocumentHeading, DocumentStructure } from '@/contexts/content-builder/types';
 
 interface DocumentStructureCardProps {
   documentStructure: DocumentStructure | null;
@@ -67,7 +67,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
               <Badge variant="secondary" className="mb-1">H1</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h1.map((heading, i) => (
-                  <li key={`h1-${i}`} className="list-disc text-sm">{heading}</li>
+                  <li key={`h1-${i}`} className="list-disc text-sm">{heading.text}</li>
                 ))}
               </ul>
             </div>
@@ -78,7 +78,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
               <Badge variant="secondary" className="mb-1">H2</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h2.map((heading, i) => (
-                  <li key={`h2-${i}`} className="list-disc text-sm">{heading}</li>
+                  <li key={`h2-${i}`} className="list-disc text-sm">{heading.text}</li>
                 ))}
               </ul>
             </div>
@@ -89,7 +89,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
               <Badge variant="secondary" className="mb-1">H3</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h3.map((heading, i) => (
-                  <li key={`h3-${i}`} className="list-disc text-sm">{heading}</li>
+                  <li key={`h3-${i}`} className="list-disc text-sm">{heading.text}</li>
                 ))}
               </ul>
             </div>
@@ -100,7 +100,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
               <Badge variant="secondary" className="mb-1">H4</Badge>
               <ul className="space-y-1 pl-4 text-sm">
                 {h4.map((heading, i) => (
-                  <li key={`h4-${i}`} className="list-disc text-sm">{heading}</li>
+                  <li key={`h4-${i}`} className="list-disc text-sm">{heading.text}</li>
                 ))}
               </ul>
             </div>

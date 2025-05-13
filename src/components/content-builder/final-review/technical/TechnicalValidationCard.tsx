@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle2, FileCode } from 'lucide-react';
 import { DocumentStructure } from '@/contexts/content-builder/types';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult } from '@/services/serpApiService';
 
 interface TechnicalValidationCardProps {
   documentStructure: DocumentStructure | null;

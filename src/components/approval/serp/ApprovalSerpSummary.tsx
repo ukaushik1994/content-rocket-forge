@@ -5,7 +5,7 @@ import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw, Glob
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult } from '@/services/serpApiService';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 import {
@@ -43,7 +43,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
   const [selectedCountries, setSelectedCountries] = useState<string[]>(
     // Include UK, US, MEA by default along with any saved countries
     serpData?.searchCountries ? 
-      Array.from(new Set([...['uk', 'us', 'mea'], ...serpData.searchCountries])) : 
+      Array.from(new Set([...['uk', 'us', 'mea'], ...(serpData.searchCountries || [])])) : 
       ['uk', 'us', 'mea']
   );
   const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState(false);

@@ -26,4 +26,6 @@ export interface DocumentStructure {
   tables: any[];
   wordCount: number;
   headings: DocumentHeading[];
+  hasSingleH1: boolean;
+  hasLogicalHierarchy: boolean;
 }
