@@ -1,35 +1,51 @@
 
+/**
+ * Document structure type definitions
+ */
+
 export interface DocumentHeading {
+  level: number;
   text: string;
-  level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-  subtext?: string;
-  type?: string;
+}
+
+export interface DocumentParagraph {
+  text: string;
+}
+
+export interface DocumentList {
+  type: string;
+  items: string[];
+}
+
+export interface DocumentImage {
+  src: string;
+  alt: string;
+}
+
+export interface DocumentLink {
+  href: string;
+  url: string;
+  text: string;
+}
+
+export interface DocumentMetadata {
+  wordCount: number;
+  characterCount: number;
 }
 
 export interface DocumentStructure {
-  // Original properties
-  headings: DocumentHeading[];
-  paragraphs: number;
-  images?: number;
-  lists?: number;
-  tables?: number;
-  links?: number;
-  totalWords?: number;
-  readingTime?: number;
+  h1: string[];
+  h2: string[];
+  h3: string[];
+  h4: string[];
+  h5: string[];
+  h6: string[];
   hasSingleH1: boolean;
   hasLogicalHierarchy: boolean;
-  
-  // Add properties used in DocumentStructureCard and DocumentStructureAnalysis
-  h1?: DocumentHeading[];
-  h2?: DocumentHeading[];
-  h3?: DocumentHeading[];
-  h4?: DocumentHeading[];
-  h5?: DocumentHeading[];
-  h6?: DocumentHeading[];
-  
-  // Additional metadata properties used in extractDocumentStructure
-  metadata?: {
-    wordCount: number;
-    characterCount: number;
-  }
+  headings: DocumentHeading[];
+  paragraphs: DocumentParagraph[];
+  lists: DocumentList[];
+  images: DocumentImage[];
+  links: DocumentLink[];
+  metadata: DocumentMetadata;
 }

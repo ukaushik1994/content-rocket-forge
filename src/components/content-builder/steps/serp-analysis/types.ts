@@ -21,20 +21,17 @@ export interface SelectedCountsType {
 }
 
 export interface SelectedItemsSidebarProps {
-  selections?: SerpSelection[];
-  serpSelections?: SerpSelection[];
-  totalSelected?: number;
-  selectedCounts?: SelectedCountsType;
-  handleToggleSelection?: (type: string, content: string) => void;
-  onGenerateOutline?: () => void;
+  serpSelections: SerpSelection[];
+  totalSelected: number;
+  selectedCounts: SelectedCountsType;
+  handleToggleSelection: (type: string, content: string) => void;
 }
 
 export interface SelectedItemsContentProps {
-  selections?: SerpSelection[];
-  serpSelections?: SerpSelection[];
-  totalSelected?: number;
-  selectedCounts?: SelectedCountsType;
-  handleToggleSelection?: (type: string, content: string) => void;
-  selectedTab?: string;
-  setSelectedTab?: Dispatch<SetStateAction<string>>;
+  serpSelections: SerpSelection[];
+  totalSelected: number;
+  selectedCounts: SelectedCountsType;
+  handleToggleSelection: (type: string, content: string) => void;
+  selectedTab: string;
+  setSelectedTab: Dispatch<SetStateAction<string>>;
 }

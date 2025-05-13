@@ -1,95 +1,72 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Search, RefreshCw, ChevronRight, CheckCircle, ArrowUpRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { Search, Sparkles, RotateCw, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-export interface SerpAnalysisHeaderProps {
+interface SerpAnalysisHeaderProps {
   mainKeyword: string;
   isAnalyzing: boolean;
-  hasSelections: boolean;
-  onAnalyze: () => void;
-  onNextStep: () => void;
-  showAllData: boolean;
-  onToggleAllData: () => void;
   totalSelected: number;
+  handleReanalyze: () => void;
+  handleContinueWithSelections: () => void;
 }
 
 export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
   mainKeyword,
   isAnalyzing,
-  hasSelections,
-  onAnalyze,
-  onNextStep,
-  showAllData,
-  onToggleAllData,
-  totalSelected
+  totalSelected,
+  handleReanalyze,
+  handleContinueWithSelections
 }) => {
   return (
-    <motion.div 
-      className="mb-6"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold flex items-center">
-            <Search className="h-5 w-5 mr-2 text-primary" />
-            SERP Analysis: {mainKeyword}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2 justify-between items-center">
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={onAnalyze}
-                disabled={isAnalyzing}
-                size="sm"
-                className="bg-white/10 text-primary border-primary/40"
-              >
-                <RefreshCw className={`h-4 w-4 mr-1 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                {isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={onToggleAllData}
-                size="sm"
-                className="bg-white/10 border-white/30"
-              >
-                <ArrowUpRight className="h-4 w-4 mr-1" />
-                {showAllData ? 'Show Less' : 'Show All Data'}
-              </Button>
-            </div>
-            
-            <Button 
-              onClick={onNextStep}
-              disabled={!hasSelections}
-              variant="default"
-              size="sm"
-              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-            >
-              {totalSelected > 0 && (
-                <span className="mr-1 bg-white/20 text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalSelected}
-                </span>
-              )}
-              <span>Generate Outline</span>
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-900/30 to-purple-900/20 border border-white/10 backdrop-blur-xl shadow-xl">
+      <div className="space-y-1">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <div className="p-2 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue flex items-center justify-center">
+            <Search className="h-4 w-4 text-white" />
           </div>
-          
-          {/* Selection guidance */}
-          {!hasSelections && (
-            <div className="mt-3 text-xs text-amber-400 flex items-center">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Select questions, keywords, and snippets to generate your outline
-            </div>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">
+            SERP Analysis
+          </span>
+          {mainKeyword && (
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+              for "{mainKeyword}"
+            </span>
           )}
-        </CardContent>
-      </Card>
-    </motion.div>
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Select items to include in your content outline
+          {totalSelected > 0 && (
+            <Badge variant="outline" className="ml-2 bg-neon-purple/20 border-neon-purple/50">
+              {totalSelected} item{totalSelected !== 1 ? 's' : ''} selected
+            </Badge>
+          )}
+        </p>
+      </div>
+      <div className="flex gap-2 self-end sm:self-auto">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReanalyze}
+          disabled={isAnalyzing || !mainKeyword}
+          className="border-white/20 hover:bg-white/10"
+        >
+          <RotateCw className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+          {isAnalyzing ? 'Analyzing...' : 'Reanalyze'}
+        </Button>
+        
+        <Button
+          size="sm"
+          onClick={handleContinueWithSelections}
+          disabled={totalSelected === 0}
+          className={`bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 ${totalSelected === 0 ? 'opacity-50' : ''}`}
+        >
+          Continue
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    </div>
   );
 };

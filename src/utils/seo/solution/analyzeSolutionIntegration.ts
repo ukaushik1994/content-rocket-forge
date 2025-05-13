@@ -15,22 +15,15 @@ interface SolutionData {
 /**
  * Analyze solution integration within the content
  */
-export const analyzeSolutionIntegration = (content: string, selectedSolution: SolutionData): SolutionIntegrationMetrics => {
+export const analyzeSolutionIntegration = (content: string, selectedSolution: SolutionData): any => {
   if (!content || !selectedSolution) {
     return {
-      matchScore: 0,
-      keywordUsage: 0,
-      contentRelevance: 0,
-      potentialImpact: 0,
-      recommendations: [],
-      overallScore: 0,
       featureIncorporation: 0,
       positioningScore: 0,
-      mentionedFeatures: [],
-      keywordMatches: 0,
       nameMentions: 0,
       painPointsAddressed: 0,
-      audienceAlignment: 0
+      audienceAlignment: 0,
+      mentionedFeatures: []
     };
   }
   
@@ -111,26 +104,14 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
   if (positiveContexts >= 2) {
     positioningScore += 15; // Mentioned in positive contexts
   }
-
-  // Calculate keyword matches
-  const keywordMatches = 0; // This would typically come from a more complex analysis
   
   // Calculate overall metrics with caps to ensure values are within 0-100 range
-  const overallScore = Math.min(100, Math.round((featureIncorporationPercentage + positioningScore + audienceAlignmentPercentage) / 3));
-  
   return {
-    matchScore: Math.min(100, Math.round(featureIncorporationPercentage * 0.7 + audienceAlignmentPercentage * 0.3)),
-    keywordUsage: nameMentions,
-    contentRelevance: Math.min(100, Math.round(painPointsAddressedPercentage * 0.5 + audienceAlignmentPercentage * 0.5)),
-    potentialImpact: Math.min(100, Math.round(positioningScore * 0.6 + featureIncorporationPercentage * 0.4)),
-    recommendations: [],
-    overallScore,
     featureIncorporation: Math.min(100, Math.round(featureIncorporationPercentage)),
     positioningScore: Math.min(100, positioningScore),
-    mentionedFeatures,
-    keywordMatches,
     nameMentions,
     painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),
-    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2))
+    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2)),
+    mentionedFeatures
   };
 };

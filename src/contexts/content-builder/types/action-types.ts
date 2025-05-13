@@ -1,54 +1,48 @@
 
-export type ContentBuilderActionType = 
-  | 'SET_MAIN_KEYWORD'
-  | 'SET_CONTENT_TITLE'
-  | 'SET_CONTENT_TYPE'
-  | 'SET_CONTENT_FORMAT'
-  | 'SET_CONTENT_INTENT'
-  | 'ADD_KEYWORD'
-  | 'REMOVE_KEYWORD'
-  | 'SET_KEYWORD_CLUSTERS'
-  | 'SELECT_KEYWORD_CLUSTER'
-  | 'SET_IS_ANALYZING'
-  | 'SET_SERP_DATA'
-  | 'TOGGLE_SERP_SELECTION'
-  | 'BULK_UPDATE_SERP_SELECTIONS'
-  | 'SET_OUTLINE'
-  | 'SET_OUTLINE_SECTIONS'
-  | 'SET_CONTENT'
-  | 'SET_SUGGESTED_TITLES'
-  | 'NAVIGATE_TO_STEP'
-  | 'MARK_STEP_COMPLETED'
-  | 'MARK_STEP_VISITED'
-  | 'MARK_STEP_ANALYZED'
-  | 'SET_SELECTED_SOLUTION'
-  | 'SET_AVAILABLE_SOLUTIONS'
-  | 'UPDATE_SEO_SCORE'
-  | 'ADD_SEO_IMPROVEMENT'
-  | 'SET_META_TITLE'
-  | 'SET_META_DESCRIPTION'
-  | 'SET_DOCUMENT_STRUCTURE'
-  | 'SET_SOLUTION_INTEGRATION_METRICS'
-  | 'SET_ADDITIONAL_INSTRUCTIONS'
-  | 'SET_SEARCHED_KEYWORDS'
-  | 'SET_SELECTED_REGIONS'
-  | 'SET_IS_SAVING_DATA'
-  | 'SKIP_OPTIMIZATION_STEP'
-  | 'SELECT_SOLUTION'
-  // Add missing action types
-  | 'SET_CURRENT_STEP'
-  | 'SET_IS_SAVING'
-  | 'SET_IS_GENERATING'
-  | 'ADD_SELECTED_KEYWORD'
-  | 'REMOVE_SELECTED_KEYWORD'
-  | 'SELECT_CLUSTER'
-  | 'SET_CONTENT_LEAD_IN'
-  | 'ADD_SEARCHED_KEYWORD'
-  | 'SET_SEO_SCORE'
-  | 'SET_SEO_IMPROVEMENTS'
-  | 'APPLY_SEO_IMPROVEMENT';
+/**
+ * Action-related type definitions
+ */
 
-export interface ContentBuilderAction {
-  type: ContentBuilderActionType;
-  payload: any;
-}
+import { ContentType, ContentFormat, ContentIntent } from './content-types';
+import { Solution, SolutionIntegrationMetrics } from './solution-types';
+import { SeoImprovement } from './seo-types';
+import { ContentCluster } from './cluster-types';
+import { OutlineSection } from './outline-types';
+import { DocumentStructure } from './document-types';
+
+// Content Builder Actions
+export type ContentBuilderAction =
+  | { type: 'SET_CURRENT_STEP'; payload: number }
+  | { type: 'MARK_STEP_COMPLETED'; payload: number }
+  | { type: 'MARK_STEP_VISITED'; payload: number }
+  | { type: 'MARK_STEP_ANALYZED'; payload: number }
+  | { type: 'SKIP_OPTIMIZATION_STEP' }
+  | { type: 'SET_MAIN_KEYWORD'; payload: string }
+  | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
+  | { type: 'SET_SERP_DATA'; payload: any }
+  | { type: 'SET_IS_ANALYZING'; payload: boolean }
+  | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
+  | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] }
+  | { type: 'SET_OUTLINE_SECTIONS'; payload: OutlineSection[] }
+  | { type: 'SET_CONTENT'; payload: string }
+  | { type: 'SET_IS_GENERATING'; payload: boolean }
+  | { type: 'SET_IS_SAVING'; payload: boolean }
+  | { type: 'ADD_KEYWORD'; payload: string }
+  | { type: 'REMOVE_KEYWORD'; payload: string }
+  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
+  | { type: 'SET_CONTENT_TITLE'; payload: string }
+  | { type: 'SET_SUGGESTED_TITLES'; payload: string[] }
+  | { type: 'SET_SEO_SCORE'; payload: number }
+  | { type: 'ADD_SEO_IMPROVEMENT'; payload: SeoImprovement }
+  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
+  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
+  | { type: 'SET_CONTENT_TYPE'; payload: string }
+  | { type: 'SET_CONTENT_FORMAT'; payload: string }
+  | { type: 'SET_CONTENT_INTENT'; payload: string }
+  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
+  | { type: 'SET_META_TITLE'; payload: string }
+  | { type: 'SET_META_DESCRIPTION'; payload: string }
+  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
+  | { type: 'SET_SELECTED_REGIONS'; payload: string[] };

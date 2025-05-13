@@ -1,4 +1,3 @@
-// src/services/aiService/genericApiCalls.ts
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -7,80 +6,103 @@ import { AiApiParams, AiProvider } from "./types";
 import { getFallbackConfig, notifyProviderFallback } from "./providerFallback";
 
 /**
- * Perform an API call to an AI provider, with:
- *  • Built-in retries on 429
- *  • Provider fallback on auth/failure
- *  • Single exit with toast if no provider works
+ * Low-level function to make a custom AI API call with fallback support
+ * @param config The API configuration
+ * @returns A promise that resolves to the API response
  */
-export async function callAiApi<T>(
-  config: AiApiParams,
-  retries = 3,
-  backoffMs = 1000
-): Promise<T | null> {
-  const { provider } = config;
-  const apiKey = await getApiKey(provider);
-
-  if (!apiKey) {
-    toast.error(`No API key for provider "${provider}"`);
-    return null;
-  }
-
+export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
   try {
-    console.log(`Calling AI API [${provider}] with model ${config.model}`);
-    // assume fetch-based call inside
-    const response = await fetch(config.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(config.payload),
-    });
-
-    if (response.status === 429 && retries > 0) {
-      // Rate limited: wait & retry
-      console.warn(
-        `Rate limited by ${provider}. Retrying in ${backoffMs}ms...`,
-        `(${retries} retries left)`
-      );
-      await new Promise((r) => setTimeout(r, backoffMs));
-      return callAiApi<T>(config, retries - 1, backoffMs * 2);
-    }
-
-    if (!response.ok) {
-      // For other errors, attempt fallback provider
-      const text = await response.text().catch(() => "");
-      console.error(
-        `Error from ${provider}: ${response.status} ${response.statusText}`,
-        text
-      );
-      const fallback = getFallbackConfig(provider);
-      if (fallback) {
-        const { nextProvider } = fallback;
-        notifyProviderFallback(provider, nextProvider);
-        return callAiApi<T>({ ...config, provider: nextProvider });
+    console.log(`Calling AI API with provider: ${config.provider}`);
+    
+    // Get the API key if not provided in the config
+    const apiKey = config.apiKey || await getApiKey(config.provider);
+    const hasApiKey = !!apiKey;
+    
+    if (!hasApiKey) {
+      console.warn(`${config.provider.toUpperCase()} API key not configured. Please configure your API key in Settings.`);
+      
+      // Get fallback configuration and check if we should try fallback
+      const { enabled, fallbackProviders } = getFallbackConfig();
+      
+      if (enabled && config.provider && fallbackProviders.length > 0) {
+        // Try fallback providers
+        return await handleGenericProviderError(
+          config.provider as AiProvider, 
+          new Error(`${config.provider} API key not configured`), 
+          config
+        );
       }
-      toast.error(`AI request failed: ${response.statusText}`);
+      
+      toast.warning(`${config.provider.toUpperCase()} API key not configured. Configure your API keys in Settings.`);
       return null;
     }
+    
+    // Call the API proxy
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        ...config,
+        apiKey,
+        hasApiKey
+      }),
+    });
+    
+    if (error) {
+      // Handle error with fallback
+      const { enabled, fallbackProviders } = getFallbackConfig();
+      
+      if (enabled && config.provider && fallbackProviders.length > 0) {
+        return await handleGenericProviderError(config.provider as AiProvider, error, config);
+      } else {
+        console.error(`Error calling ${config.provider} API:`, error);
+        toast.error(`API error: ${error.message || 'Unknown error'}`);
+        return null;
+      }
+    }
+    
+    return data as T;
+  } catch (error: any) {
+    if (config.provider) {
+      return await handleGenericProviderError(config.provider as AiProvider, error, config);
+    } else {
+      console.error(`Error calling AI API:`, error);
+      toast.error(`API error: ${error.message || 'Unknown error'}`);
+      return null;
+    }
+  }
+}
 
-    // All good: parse and return
-    const data = (await response.json()) as T;
-    return data;
-  } catch (err: any) {
-    // Network or unexpected error
-    console.error(`Network/error calling ${provider}:`, err);
-    if (err?.status === 429 && retries > 0) {
-      await new Promise((r) => setTimeout(r, backoffMs));
-      return callAiApi<T>(config, retries - 1, backoffMs * 2);
-    }
-    const fallback = getFallbackConfig(provider);
-    if (fallback) {
-      const { nextProvider } = fallback;
-      notifyProviderFallback(provider, nextProvider);
-      return callAiApi<T>({ ...config, provider: nextProvider });
-    }
-    toast.error("No AI provider is configured or all calls failed.");
+/**
+ * Handle provider errors for generic API calls
+ */
+async function handleGenericProviderError<T>(
+  provider: AiProvider, 
+  error: any, 
+  config: AiApiParams
+): Promise<T | null> {
+  console.error(`Error with ${provider} API:`, error);
+  
+  // Get fallback configuration
+  const { enabled, fallbackProviders } = getFallbackConfig();
+  
+  if (!enabled || fallbackProviders.length === 0) {
+    toast.error(`${provider.toUpperCase()} API error: ${error.message || 'Unknown error'}`);
     return null;
   }
+  
+  // Try fallback providers
+  for (const fallbackProvider of fallbackProviders) {
+    console.log(`Attempting fallback to: ${fallbackProvider}`);
+    const fallbackApiKey = await getApiKey(fallbackProvider);
+    
+    if (fallbackApiKey) {
+      notifyProviderFallback(provider, fallbackProvider);
+      return callAiApi<T>({
+        ...config,
+        provider: fallbackProvider
+      });
+    }
+  }
+  
+  toast.error('No AI provider is configured. Please add at least one API key in Settings.');
+  return null;
 }

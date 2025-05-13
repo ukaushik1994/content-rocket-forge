@@ -61,7 +61,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                   </div>
                   <ul className="text-xs space-y-1 text-muted-foreground">
                     {documentStructure.h1.map((heading, i) => (
-                      <li key={`h1-${i}`} className="truncate">{heading.text}</li>
+                      <li key={`h1-${i}`} className="truncate">{heading}</li>
                     ))}
                   </ul>
                 </div>
@@ -74,7 +74,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                   </div>
                   <ul className="text-xs space-y-1 text-muted-foreground">
                     {documentStructure.h2.map((heading, i) => (
-                      <li key={`h2-${i}`} className="truncate">{heading.text}</li>
+                      <li key={`h2-${i}`} className="truncate">{heading}</li>
                     ))}
                   </ul>
                 </div>
@@ -87,7 +87,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                   </div>
                   <ul className="text-xs space-y-1 text-muted-foreground">
                     {documentStructure.h3.map((heading, i) => (
-                      <li key={`h3-${i}`} className="truncate">{heading.text}</li>
+                      <li key={`h3-${i}`} className="truncate">{heading}</li>
                     ))}
                   </ul>
                 </div>

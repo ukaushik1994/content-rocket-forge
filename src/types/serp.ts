@@ -3,19 +3,6 @@ export interface SerpSearchParams {
   query: string;
   country?: string;
   num?: number;
-  limit?: number;
-  refresh?: boolean;
-}
-
-export interface SearchResult {
-  title: string;
-  link: string;
-  url?: string;
-  snippet: string;
-  position: number;
-  domain?: string;
-  featured?: boolean;
-  country?: string;
 }
 
 export interface SerpAnalysisResult {
@@ -23,8 +10,13 @@ export interface SerpAnalysisResult {
   searchVolume?: number;
   competitionScore?: number;
   keywordDifficulty?: number;
-  searchResults: SearchResult[];
-  topResults?: SearchResult[]; // Add this to support existing code
+  topResults?: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+    position: number;
+    country?: string;  // Added country field
+  }>;
   relatedSearches?: Array<{
     query: string;
     volume?: number;
@@ -41,36 +33,28 @@ export interface SerpAnalysisResult {
   }>;
   keywords?: string[];
   recommendations?: string[];
-  isMockData?: boolean;
+  isMockData?: boolean; // Track if the data is mocked
   
   // Enhanced fields for SERP analysis with updated types
   entities?: Array<{
     name: string;
     type?: string;
     importance?: number;
-    description?: string;
-    relevance?: number;
+    description?: string; // Added this missing field
   }>;
   headings?: Array<{
     text: string;
     level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     subtext?: string;
-    type?: string;
+    type?: string; // Added this missing field
   }>;
   contentGaps?: Array<{
     topic: string;
     description: string;
     recommendation?: string;
-    content?: string;
-    opportunity?: string;
-    source?: string;
+    content?: string; // Added missing field
+    opportunity?: string; // Added missing field
+    source?: string; // Added missing field
   }>;
-  searchFeatures?: any[];
-  competitors?: any[];
-  statistics?: {
-    searchVolume?: number;
-    competition?: number;
-  };
-  searchCountries?: string[];
-  timestamp: string;
+  searchCountries?: string[]; // Added the missing searchCountries property
 }

@@ -275,18 +275,6 @@ export const contentBuilderReducer = (
         selectedRegions: action.payload
       };
       
-    case 'SET_AVAILABLE_SOLUTIONS':
-      return {
-        ...state,
-        availableSolutions: action.payload
-      };
-      
-    case 'SET_CONTENT_LEAD_IN':
-      return {
-        ...state,
-        contentLeadIn: action.payload
-      };
-      
     default:
       return state;
   }

@@ -28,7 +28,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   
   const { 
     solutions, 
-    loading, 
+    isLoading, 
     error,
     fetchSolutions,
     addSolution,
@@ -37,21 +37,12 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   } = useSolutionsData();
   
   const solutionForm = useSolutionForm({
-    addSolution: async (data: any, logoUrl?: string) => {
-      const result = await addSolution(data, logoUrl);
-      return result;
-    },
-    updateSolution: async (id: string, data: any, logoUrl?: string) => {
-      const result = await updateSolution(id, data, logoUrl);
-      return result;
-    }
+    addSolution,
+    updateSolution
   });
 
   const deleteHandler = useDeleteSolution({
-    deleteSolution: async (id: string) => {
-      const result = await deleteSolution(id);
-      return result;
-    }
+    deleteSolution
   });
 
   // Update local filter when search term changes
@@ -105,7 +96,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     setFilterTerm(term);
   };
   
-  if (loading) {
+  if (isLoading) {
     return <LoadingState />;
   }
   
@@ -160,3 +151,5 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     </motion.div>
   );
 };
+
+export default SolutionManager;

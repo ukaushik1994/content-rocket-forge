@@ -1,47 +1,78 @@
 
 /**
- * Content type definitions
+ * Content-related type definitions
  */
 
-export type ContentType = 'blog' | 'article' | 'landing-page' | 'product-description' | 'email' | 'social-post' | string;
-export type ContentFormat = 'how-to' | 'list' | 'opinion' | 'review' | 'news' | 'case-study' | string;
-export type ContentIntent = 'inform' | 'persuade' | 'entertain' | 'sell' | 'explain' | 'compare' | string;
+// Content Type Options
+export type ContentType = 'blog' | 'article' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'seo';
 
+// Content Format Options
+export enum ContentFormat {
+  ARTICLE = 'long-form',
+  SHORT_FORM = 'short-form',
+  LISTICLE = 'listicle',
+  HOW_TO = 'how-to',
+  LIST = 'list'
+}
+
+// Content Intent Options
+export enum ContentIntent {
+  INFORM = 'inform',
+  CONVERT = 'convert',
+  ENTERTAIN = 'entertain',
+  EDUCATE = 'educate'
+}
+
+// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
   mainKeyword: string;
   secondaryKeywords: string[];
-  keywords?: string[]; // Adding this field to support existing code
-  seoScore?: number; // Adding this field to support existing code
   contentType: string;
-  metaTitle?: string;
-  metaDescription?: string;
+  contentFormat?: string;
+  contentIntent?: string;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  status: 'draft' | 'published' | 'archived';
+  notes: string;
+  // Optional fields
+  seoScore?: number;
+  outlineJson?: string;
+  solutionInfo?: any;
+  solutionMetrics?: any;
+  
+  // Adding missing properties
   outline?: string[];
-  status?: 'draft' | 'published';
-  metadata?: {
-    serpSelections?: any[];
-    selectedSolution?: string | null;
-    serpData?: any; // Added for types
-    [key: string]: any;
-  };
+  serpSelections?: any[];
+  serpData?: any;
 }
 
-// Define SearchCountry type for region selection
-export type SearchCountry = {
+// Define SearchCountry type for use in the SERP analysis
+export interface SearchCountry {
   code: string;
   name: string;
   flag?: string;
-};
+}
 
-// Add the AVAILABLE_COUNTRIES export that's being imported in ApprovalSerpSummary.tsx
+// Available countries for SERP analysis
 export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { code: 'us', name: 'United States' },
-  { code: 'uk', name: 'United Kingdom' },
-  { code: 'ca', name: 'Canada' },
-  { code: 'au', name: 'Australia' },
-  { code: 'mea', name: 'Middle East' },
-  { code: 'eu', name: 'Europe' },
-  { code: 'asia', name: 'Asia' },
-  { code: 'global', name: 'Global' }
+  { code: 'us', name: 'United States', flag: '🇺🇸' },
+  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'mea', name: 'Middle East', flag: '🌍' },
+  { code: 'global', name: 'Global', flag: '🌎' }
 ];
+
+// Keyword Usage Types for KeywordRepository
+export interface KeywordUsage {
+  keyword: string;
+  usageCount: number;
+  isPrimary: boolean;
+  usedIn: {
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }[];
+}
+

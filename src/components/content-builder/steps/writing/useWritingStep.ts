@@ -9,7 +9,6 @@ export function useWritingStep() {
   const { 
     mainKeyword, 
     outline, 
-    outlineSections,
     content, 
     additionalInstructions, 
     serpData, 
@@ -64,52 +63,16 @@ export function useWritingStep() {
   const handleAiProviderChange = (provider: AiProvider) => {
     setAiProvider(provider);
   };
-  
-  const setOutlineData = (newOutline: OutlineSection[] | string[]) => {
-    if (Array.isArray(newOutline)) {
-      if (typeof newOutline[0] === 'string') {
-        // Convert string array to OutlineSection array
-        const outlineSections = (newOutline as string[]).map(item => ({
-          id: Math.random().toString(36).substring(7),
-          title: item,
-          type: "heading" as const,
-          level: 2 as const,
-          content: ''
-        }));
-        dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: outlineSections });
-      } else {
-        // It's already an OutlineSection array
-        dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: newOutline as OutlineSection[] });
-      }
-    }
-  };
 
   // Convert outline to the appropriate format for the sidebar component
   const processedOutline = Array.isArray(outline) 
     ? outline.map(item => {
         if (typeof item === 'string') {
-          return { 
-            id: Math.random().toString(), 
-            title: item, 
-            level: 2 as const, 
-            type: "heading" as const, 
-            content: '' 
-          };
+          return { id: Math.random().toString(), title: item, level: 2 };
         } else if (item && typeof item === 'object' && 'title' in item) {
-          // Ensure type property is compatible with OutlineSection
-          const section = { ...item } as OutlineSection;
-          if (typeof section.type === 'string' && !['heading', 'subheading', 'paragraph', 'bullet', 'numbered', 'blockquote', 'custom'].includes(section.type)) {
-            section.type = 'heading';
-          }
-          return section;
+          return item as OutlineSection;
         }
-        return { 
-          id: Math.random().toString(), 
-          title: '', 
-          level: 2 as const, 
-          type: "heading" as const, 
-          content: '' 
-        };
+        return { id: Math.random().toString(), title: '', level: 2 };
       })
     : [];
 
@@ -139,9 +102,6 @@ export function useWritingStep() {
     handleToggleOutline,
     handleToggleGenerator,
     handleContentTemplateSelection,
-    handleAiProviderChange,
-    setOutline: setOutlineData,
-    outlineSections,
-    setOutlineSections
+    handleAiProviderChange
   };
 }

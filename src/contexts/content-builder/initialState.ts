@@ -1,21 +1,54 @@
 
-import { ContentBuilderState } from './types/index';
-import { v4 as uuid } from 'uuid';
+import { ContentBuilderState } from './types/state-types';
+import { ContentFormat, ContentIntent } from './types/content-types';
 
-/**
- * Initial state for the Content Builder
- */
 export const initialState: ContentBuilderState = {
   currentStep: 0,
   activeStep: 0,
   steps: [
-    { id: 0, title: 'Keyword Selection', completed: false, visited: true, analyzed: false },
-    { id: 1, title: 'Content Type', completed: false, visited: false, analyzed: false },
-    { id: 2, title: 'SERP Analysis', completed: false, visited: false, analyzed: false },
-    { id: 3, title: 'Outline', completed: false, visited: false, analyzed: false },
-    { id: 4, title: 'Content Writing', completed: false, visited: false, analyzed: false },
-    { id: 5, title: 'Optimize & Review', completed: false, visited: false, analyzed: false },
-    { id: 6, title: 'Save & Export', completed: false, visited: false, analyzed: false }
+    {
+      id: 0,
+      name: 'Keyword Selection',
+      description: 'Choose your target keywords',
+      completed: false,
+      visited: false
+    },
+    {
+      id: 1,
+      name: 'Content Type',
+      description: 'Select your content format',
+      completed: false,
+      visited: false
+    },
+    {
+      id: 2,
+      name: 'SERP Analysis',
+      description: 'Analyze search results',
+      completed: false,
+      visited: false
+    },
+    {
+      id: 3,
+      name: 'Content Outline',
+      description: 'Create your content structure',
+      completed: false,
+      visited: false
+    },
+    {
+      id: 4,
+      name: 'Content Writing',
+      description: 'Write your content',
+      completed: false,
+      visited: false
+    },
+    {
+      id: 5,
+      name: 'Optimize & Review',
+      description: 'Enhance your content',
+      completed: false,
+      visited: false,
+      analyzed: false
+    }
   ],
   mainKeyword: '',
   selectedKeywords: [],
@@ -31,47 +64,27 @@ export const initialState: ContentBuilderState = {
   contentTitle: '',
   suggestedTitles: [],
   selectedCluster: null,
-  contentType: '',
-  contentFormat: '',
-  contentIntent: '',
+  contentType: 'blog', // Using string literal instead of ContentType.BLOG_POST
+  contentFormat: ContentFormat.ARTICLE,
+  contentIntent: ContentIntent.INFORM,
   selectedSolution: null,
   seoScore: 0,
   seoImprovements: [],
   metaTitle: '',
   metaDescription: '',
   additionalInstructions: '',
-  documentStructure: {
-    h1: [],
-    h2: [],
-    h3: [],
-    h4: [],
-    h5: [],
-    h6: [],
-    paragraphs: [],
-    images: [],
-    links: [],
-    lists: [],
-    hasSingleH1: false,
-    hasLogicalHierarchy: false,
-    wordCount: 0,
-    readingTime: 0,
-    headings: []
-  },
   solutionIntegrationMetrics: {
-    matchScore: 0,
-    keywordUsage: 0,
-    contentRelevance: 0,
-    potentialImpact: 0,
+    keywordMatches: 0,
+    featureCoverage: 0,
+    naturalIntegration: 0,
     overallScore: 0,
     featureIncorporation: 0,
     positioningScore: 0,
-    recommendations: [],
-    keywordMatches: 0,
     mentionedFeatures: [],
+    painPointsAddressed: [],
     nameMentions: 0,
-    painPointsAddressed: 0,
-    audienceAlignment: 0
+    audienceAlignment: 0,
+    ctaEffectiveness: 0
   },
-  selectedRegions: ['us', 'uk'],
-  availableSolutions: []
+  selectedRegions: ['uk', 'us', 'mea', 'global']
 };

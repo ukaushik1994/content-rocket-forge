@@ -5,16 +5,14 @@ import { Label } from '@/components/ui/label';
 import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
-import { RegionSelector } from '../keyword/RegionSelector';
 import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
-import { Search, ChevronRight, Sparkles, Loader2, Globe } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
-import { toast } from 'sonner';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -37,8 +35,7 @@ export const KeywordSelectionStep = () => {
     dispatch,
     analyzeKeyword,
     addContentFromSerp,
-    generateOutlineFromSelections,
-    setSelectedRegions
+    generateOutlineFromSelections
   } = useContentBuilder();
   
   const {
@@ -47,8 +44,7 @@ export const KeywordSelectionStep = () => {
     selectedCluster,
     serpData,
     serpSelections,
-    isAnalyzing,
-    selectedRegions
+    isAnalyzing
   } = state;
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -94,7 +90,7 @@ export const KeywordSelectionStep = () => {
 
     // Automatically start SERP analysis when a keyword is entered
     setHasSearched(true);
-    await analyzeKeyword(keyword, selectedRegions);
+    await analyzeKeyword(keyword);
   };
   
   const handleAddKeyword = (kw: string) => {
@@ -157,19 +153,7 @@ export const KeywordSelectionStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, selectedRegions);
-    }
-  };
-  
-  // Handle changing the selected regions and reanalyzing
-  const handleRegionChange = async (regions: string[]) => {
-    // Update the selected regions in state
-    setSelectedRegions(regions);
-    
-    // Re-analyze with the new regions if we have a keyword
-    if (mainKeyword && hasSearched) {
-      toast.info(`Analyzing "${mainKeyword}" for ${regions.length} regions`);
-      await analyzeKeyword(mainKeyword, regions);
+      await analyzeKeyword(mainKeyword);
     }
   };
   
@@ -202,14 +186,8 @@ export const KeywordSelectionStep = () => {
               <Search className="h-4 w-4 text-primary" />
               Main Keyword
             </Label>
-            
-            {/* Region selector */}
-            <div className="flex items-center gap-2">
-              <RegionSelector 
-                selectedRegions={state.selectedRegions || ['us']}
-                onChange={(regions) => dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions })}
-                onRegionSelect={handleRegionChange}
-              />
+            <div className="text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
+              Power your content with the right keywords
             </div>
           </div>
           <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
@@ -270,7 +248,6 @@ export const KeywordSelectionStep = () => {
                     isLoading={isAnalyzing}
                     mainKeyword={mainKeyword}
                     onAddToContent={handleAddToContent}
-                    onRetry={handleReanalyze}
                   />
                 </div>
               </div>

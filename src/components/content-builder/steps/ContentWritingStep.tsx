@@ -8,7 +8,6 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { Link } from 'react-router-dom';
-import { OutlineSection } from '@/contexts/content-builder/types';
 
 export const ContentWritingStep = () => {
   const {
@@ -37,27 +36,11 @@ export const ContentWritingStep = () => {
     handleToggleOutline,
     handleToggleGenerator,
     handleContentTemplateSelection,
-    handleAiProviderChange,
-    setOutline
+    handleAiProviderChange
   } = useWritingStep();
 
   // Add state for selected countries
   const [selectedCountries, setSelectedCountries] = useState<string[]>(['us']);
-
-  const addSection = () => {
-    const newSection: OutlineSection = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: "New Section",
-      level: 2,
-      type: "heading",
-      content: ""
-    };
-    
-    if (Array.isArray(outline)) {
-      const updatedOutline = [...outline, newSection];
-      setOutline(updatedOutline);
-    }
-  };
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
@@ -71,7 +54,7 @@ export const ContentWritingStep = () => {
           if (typeof item === 'string') {
             return `${index + 1}. ${item}`;
           } else if (item && typeof item === 'object' && 'title' in item) {
-            return `${index + 1}. ${(item as OutlineSection).title}`;
+            return `${index + 1}. ${(item as { title: string }).title}`;
           }
           return '';
         }).filter(Boolean).join('\n')

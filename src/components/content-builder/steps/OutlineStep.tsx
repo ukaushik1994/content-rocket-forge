@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
@@ -21,7 +20,7 @@ export const OutlineStep = () => {
   
   const handleSaveOutline = (updatedOutline: any[]) => {
     console.log('Saving outline:', updatedOutline);
-    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: updatedOutline });
+    dispatch({ type: 'SET_OUTLINE', payload: updatedOutline });
   };
 
   const hasSerpSelections = serpSelections.some(item => item.selected);

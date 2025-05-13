@@ -1,39 +1,47 @@
 
-// Create a stub useFinalReview.ts that will need to be fixed by the user
-import { useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { useSolutionAnalysis } from './final-review/useSolutionAnalysis';
+import { toast } from 'sonner';
 
-// Simple implementation to fix errors - this is a stub
+// Import refactored hooks
+import { useContentAnalysis } from './final-review/useContentAnalysis';
+import { useMetaGenerator } from './final-review/useMetaGenerator';
+import { useSolutionAnalysis } from './final-review/useSolutionAnalysis';
+import { useStepCompletion } from './final-review/useStepCompletion';
+import { useTitleSuggestions } from './final-review/useTitleSuggestions';
+import { useDocumentAnalysis } from './final-review/useDocumentAnalysis';
+import { useRunChecks } from './final-review/useRunChecks';
+import { useDebugLogging } from './final-review/useDebugLogging';
+
 export const useFinalReview = () => {
   const { state } = useContentBuilder();
-  const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
-  const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
-  const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis();
+  const { 
+    content, 
+    metaTitle,
+    contentTitle,
+    serpData
+  } = state;
   
-  // Stub data and functions to fix build errors
-  const keywordUsage = state.mainKeyword ? [
-    { keyword: state.mainKeyword, count: 5, density: '1.2' }
-  ] : [];
+  // Use refactored hooks
+  const { keywordUsage, ctaInfo } = useContentAnalysis();
+  const { titleSuggestions, isGeneratingTitles, generateTitleSuggestions } = useTitleSuggestions();
+  const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
+  const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
+  const { checkStepCompletion } = useStepCompletion();
+  const { documentStructure } = useDocumentAnalysis();
+  const { isRunningAllChecks, runAllChecks } = useRunChecks();
   
-  const ctaInfo = { hasCTA: true, ctaCount: 2, ctaStrength: 'strong' };
-  const titleSuggestions = ['Suggestion 1', 'Suggestion 2', 'Suggestion 3'];
-  const serpData = state.serpData;
+  // Debug logging
+  useDebugLogging(metaTitle, contentTitle);
   
-  const generateMeta = useCallback(() => {
-    // Implementation needed
-    console.log('Generate meta');
-  }, []);
-  
-  const generateTitleSuggestions = useCallback(() => {
-    // Implementation needed
-    console.log('Generate title suggestions');
-  }, []);
-  
-  const runAllChecks = useCallback(() => {
-    // Implementation needed
-    analyzeSolutionUsage();
-  }, [analyzeSolutionUsage]);
+  // Check if step can be completed
+  useEffect(() => {
+    if (checkStepCompletion()) {
+      toast.success("Content fully optimized! You can proceed to the next step.", {
+        id: "content-optimized",
+      });
+    }
+  }, [metaTitle, state.metaDescription, state.documentStructure, checkStepCompletion]);
   
   return {
     isAnalyzing,
@@ -46,6 +54,7 @@ export const useFinalReview = () => {
     generateMeta,
     generateTitleSuggestions,
     analyzeSolutionUsage,
+    checkStepCompletion,
     runAllChecks
   };
 };

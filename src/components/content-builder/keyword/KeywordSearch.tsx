@@ -32,8 +32,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
       if (Array.isArray(results)) {
         // Extract keywords from search results with explicit type casting
         const extractedKeywords = results.map(result => {
-          // Handle both string[] and {title: string}[] results
-          const title = typeof result === 'string' ? result : result.title || '';
+          const title = result.title ? String(result.title) : '';
           return title
             .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')
             .trim()
@@ -78,8 +77,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
       if (Array.isArray(results)) {
         // Extract different keywords for variety
         const extractedKeywords = results.map(result => {
-          // Handle both string[] and {title: string}[] results
-          const title = typeof result === 'string' ? result : result.title || '';
+          const title = result.title ? String(result.title) : '';
           // Use a slightly different extraction strategy for refreshed results
           return title
             .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')

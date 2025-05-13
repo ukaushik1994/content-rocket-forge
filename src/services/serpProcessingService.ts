@@ -1,97 +1,90 @@
 
-import { SerpSelection } from '@/contexts/content-builder/types';
-import { OutlineSection } from '@/contexts/content-builder/types';
+import { SerpAnalysisResult } from '@/types/serp';
 
-// Process SERP data for use in the application
-export const serpProcessingService = {
-  // Process raw SERP data into a format usable by the application
-  processSerpData: (serpData: any, keyword: string) => {
-    // In a real implementation, this would transform the raw SERP data
-    // For now, just return the data as-is
-    return {
-      ...serpData,
-      mainKeyword: keyword,
-      processedAt: new Date().toISOString()
-    };
-  },
-  
-  // Convert selected SERP items into outline sections
-  convertSelectionsToOutline: (selections: SerpSelection[]): OutlineSection[] => {
-    if (!selections || selections.length === 0) {
-      return [];
-    }
-    
-    const outline: OutlineSection[] = [];
-    
-    // First add questions as main sections
-    const questions = selections.filter(item => item.type === 'question');
-    questions.forEach(question => {
-      outline.push({
-        id: Math.random().toString(36).substr(2, 9),
-        title: question.content,
-        type: 'heading',
-        level: 2,
-        content: ''
-      });
-    });
-    
-    // Add headings from SERP
-    const headings = selections.filter(item => item.type === 'heading');
-    headings.forEach(heading => {
-      outline.push({
-        id: Math.random().toString(36).substr(2, 9),
-        title: heading.content,
-        type: 'heading',
-        level: 2,
-        content: ''
-      });
-    });
-    
-    // Add keywords and entities as sections if there aren't enough sections
-    if (outline.length < 3) {
-      const keywords = selections.filter(item => item.type === 'keyword');
-      const entities = selections.filter(item => item.type === 'entity');
-      
-      // Add some keywords as sections
-      keywords.slice(0, 2).forEach(keyword => {
-        outline.push({
-          id: Math.random().toString(36).substr(2, 9),
-          title: `About ${keyword.content}`,
-          type: 'heading',
-          level: 2,
-          content: ''
-        });
-      });
-      
-      // Add entities as sections
-      entities.slice(0, 2).forEach(entity => {
-        outline.push({
-          id: Math.random().toString(36).substr(2, 9),
-          title: `Understanding ${entity.content}`,
-          type: 'heading',
-          level: 2,
-          content: ''
-        });
-      });
-    }
-    
-    // Add introduction and conclusion sections
-    outline.unshift({
-      id: 'intro-' + Math.random().toString(36).substr(2, 9),
-      title: 'Introduction',
-      type: 'heading',
-      level: 1,
-      content: ''
-    });
-    
-    outline.push({
-      id: 'conclusion-' + Math.random().toString(36).substr(2, 9),
-      title: 'Conclusion',
-      type: 'heading',
-      level: 2,
-      content: ''
-    });
-    
-    return outline;
+/**
+ * Process and normalize API response to ensure consistent structure
+ */
+export function processSerpResponse(response: any): SerpAnalysisResult {
+  if (!response) {
+    throw new Error('Invalid SERP response data');
   }
-};
+
+  console.log('Processing SERP response:', response);
+
+  // Ensure response has expected structure and the required keyword field
+  const processedData: SerpAnalysisResult = {
+    keyword: response.keyword || '',
+    searchVolume: response.searchVolume || 0,
+    competitionScore: response.competitionScore || 0,
+    keywordDifficulty: response.keywordDifficulty || 0,
+    
+    // Process top results
+    topResults: Array.isArray(response.topResults) ? response.topResults.map((result: any, index: number) => ({
+      title: result.title || '',
+      link: result.link || '',
+      snippet: result.snippet || '',
+      position: result.position || index + 1 // Ensure position exists
+    })) : [],
+    
+    // Process related searches
+    relatedSearches: Array.isArray(response.relatedSearches) ? response.relatedSearches.map((search: any) => ({
+      query: search.query || '',
+      volume: search.volume || 0 // Ensure volume exists
+    })) : [],
+    
+    // Process people also ask questions
+    peopleAlsoAsk: Array.isArray(response.peopleAlsoAsk) ? response.peopleAlsoAsk.map((item: any) => ({
+      question: item.question || '',
+      source: item.source || '',
+      answer: item.answer || 'No answer available' // Ensure answer exists
+    })) : [],
+    
+    // Process featured snippets
+    featuredSnippets: Array.isArray(response.featuredSnippets) ? response.featuredSnippets.map((snippet: any) => ({
+      content: snippet.content || '',
+      source: snippet.source || '',
+      type: snippet.type || 'general' // Ensure type exists
+    })) : [],
+    
+    // Process new fields - entities, headings, contentGaps
+    entities: Array.isArray(response.entities) ? response.entities.map((entity: any) => ({
+      name: entity.name || '',
+      type: entity.type || 'unknown',
+      importance: entity.importance || 5,
+      description: entity.description || ''
+    })) : [],
+    
+    headings: Array.isArray(response.headings) ? response.headings.map((heading: any) => ({
+      text: heading.text || '',
+      level: heading.level || 'h2',
+      subtext: heading.subtext || '',
+      type: heading.type || ''
+    })) : [],
+    
+    contentGaps: Array.isArray(response.contentGaps) ? response.contentGaps.map((gap: any) => ({
+      topic: gap.topic || '',
+      description: gap.description || '',
+      recommendation: gap.recommendation || '',
+      content: gap.content || '',
+      opportunity: gap.opportunity || '',
+      source: gap.source || ''
+    })) : [],
+    
+    // Include recommendations if available
+    recommendations: Array.isArray(response.recommendations) ? response.recommendations : []
+  };
+  
+  return processedData;
+}
+
+/**
+ * Validates keyword input
+ */
+export function validateKeywordInput(keyword: string): string {
+  if (!keyword) {
+    throw new Error('Keyword cannot be empty');
+  }
+  
+  // Basic sanitization
+  return keyword.trim().toLowerCase();
+}

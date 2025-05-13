@@ -14,9 +14,6 @@ export const SerpDataAnalysis = ({ serpData }: SerpDataAnalysisProps) => {
     return null;
   }
   
-  // Get the search results from either topResults or searchResults property
-  const searchResults = serpData.topResults || serpData.searchResults || [];
-  
   return (
     <Card className="overflow-hidden shadow-lg">
       <CardHeader className="pb-3 border-b">
@@ -28,20 +25,20 @@ export const SerpDataAnalysis = ({ serpData }: SerpDataAnalysisProps) => {
       <CardContent className="pt-4">
         <ScrollArea className="h-[300px] pr-4">
           <div className="space-y-4">
-            {searchResults.length > 0 && (
+            {serpData.topResults && serpData.topResults.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <List className="h-4 w-4 text-blue-500" /> 
                   Top Ranking Pages
                 </h4>
                 <div className="space-y-2">
-                  {searchResults.slice(0, 3).map((result: any, idx: number) => (
+                  {serpData.topResults.slice(0, 3).map((result: any, idx: number) => (
                     <div key={`result-${idx}`} className="bg-card border rounded-md p-3">
                       <div className="text-xs font-medium text-blue-600">
                         Position {result.position}: {result.title || 'No title'}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1 truncate">
-                        {result.url || result.link || 'No URL'}
+                        {result.url || 'No URL'}
                       </div>
                     </div>
                   ))}

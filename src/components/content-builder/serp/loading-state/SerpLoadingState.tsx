@@ -1,60 +1,95 @@
 
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LoadingParticles } from './LoadingParticle';
 import { LoadingSpinner } from './LoadingSpinner';
-import { ProgressIndicator } from './ProgressIndicator';
-import { LoadingParticle } from './LoadingParticle';
+import { ProgressIndicators } from './ProgressIndicator';
 
 export interface SerpLoadingStateProps {
   isLoading: boolean;
-  message?: string;
-  keywords?: string[];
+  navigateToStep?: (step: number) => void;
 }
 
 export const SerpLoadingState: React.FC<SerpLoadingStateProps> = ({
-  isLoading = true,
-  message = 'Analyzing search results...',
-  keywords
+  isLoading,
+  navigateToStep = () => {} // Default empty function to avoid undefined errors
 }) => {
-  // Predefined loading messages for variety
-  const loadingMessages = [
-    'Extracting insights from top-ranking content',
-    'Identifying patterns in search results',
-    'Finding key entities and topics',
-    'Analyzing competitor content structure',
-    'Extracting questions people are asking'
-  ];
-  
-  // Get a random loading message
-  const randomSubMessage = () => {
-    return loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+  if (!isLoading) return null;
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3
+      }
+    }
   };
-  
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center justify-center py-12 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 relative overflow-hidden">
-        {/* Background particles */}
-        <div className="absolute inset-0 pointer-events-none">
-          <LoadingParticle delay={0} top="10%" left="20%" />
-          <LoadingParticle delay={1} top="30%" left="70%" />
-          <LoadingParticle delay={0.5} top="60%" left="30%" />
-          <LoadingParticle delay={1.5} top="80%" left="60%" />
-          <LoadingParticle delay={2} top="20%" left="80%" />
-        </div>
-        
-        <div className="relative">
+    <motion.div 
+      className="space-y-6"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div 
+        className="relative overflow-hidden py-16 px-8 rounded-2xl border border-white/10 bg-gradient-to-br from-black/40 via-purple-900/20 to-blue-900/30 backdrop-blur-xl shadow-2xl"
+        variants={itemVariants}
+      >
+        {/* Animated particles in the background */}
+        <LoadingParticles count={12} />
+
+        <div className="flex flex-col items-center justify-center relative z-10">
           <LoadingSpinner />
-          <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary h-8 w-8 animate-pulse" />
+
+          <motion.div
+            variants={itemVariants}
+            className="text-center"
+          >
+            <motion.h2 
+              className="text-2xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-neon-blue via-neon-purple to-neon-blue"
+              animate={{ 
+                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+              }}
+              transition={{ 
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              Analyzing Search Results
+            </motion.h2>
+            <p className="text-muted-foreground mb-8">Extracting valuable insights to optimize your content</p>
+          </motion.div>
+
+          {/* Animated progress indicators */}
+          <ProgressIndicators />
+
+          {/* Skip button */}
+          <motion.div
+            className="mt-10"
+            variants={itemVariants}
+          >
+            <Button
+              variant="outline"
+              onClick={() => navigateToStep(5)} // Navigate to the next step
+              className="group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300"
+            >
+              Skip Analysis
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </motion.div>
         </div>
-        <p className="mt-6 text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">{message}</p>
-        <p className="text-sm text-muted-foreground mt-2">{randomSubMessage()}</p>
-        
-        {keywords && keywords.length > 0 && (
-          <div className="mt-6">
-            <ProgressIndicator keywords={keywords} />
-          </div>
-        )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

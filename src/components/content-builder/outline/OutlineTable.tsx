@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -34,24 +33,16 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
     if (typeof newOutline[index] === 'string') {
       newOutline[index] = value;
     } else {
-      // Ensure we maintain the proper OutlineSection shape
-      const section = newOutline[index] as OutlineSection;
-      newOutline[index] = { 
-        ...section, 
-        title: value 
-      };
+      newOutline[index] = { ...newOutline[index] as OutlineSection, title: value };
     }
     setEditableOutline(newOutline);
   };
 
   const handleAddSection = () => {
-    // Ensure the new section has the correct type structure
-    const newSection: OutlineSection = {
+    const newSection = {
       id: Math.random().toString(36).substr(2, 9),
       title: 'New Section',
-      level: 2, // Use a valid level from 1-6
-      type: 'heading',
-      content: ''
+      level: 1
     };
     setEditableOutline([...editableOutline, newSection]);
     setEditingIndex(editableOutline.length);
