@@ -8,7 +8,7 @@ export const createSerpActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const analyzeKeyword = async (keyword: string, regions?: string[]) => {
+  const analyzeKeyword = async (keyword: string, regions?: string[], useMockData: boolean = false) => {
     if (!keyword) return;
     
     // Use provided regions or default to those in state
@@ -18,14 +18,14 @@ export const createSerpActions = (
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
-      // Make API call to analyze keyword with specified regions
-      const serpData = await analyzeKeywordSerp(keyword, false, searchRegions);
+      // Make API call to analyze keyword with specified regions, pass useMockData flag
+      const serpData = await analyzeKeywordSerp(keyword, false, searchRegions, useMockData);
       
       // Update SERP data in state - will be null if no data is found
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
-        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
+        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings or use mock data.");
       } else {
         console.log("SERP data successfully retrieved:", serpData);
         toast.success(`Search data analysis completed for ${searchRegions.join(', ')}.`);

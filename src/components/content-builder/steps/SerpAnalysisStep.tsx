@@ -1,14 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
+  
+  // Add state for using mock data
+  const [useMockData, setUseMockData] = useState(false);
   
   // Get selection statistics
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -16,7 +22,7 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword);
+      await analyzeKeyword(mainKeyword, undefined, useMockData);
     }
   };
   
@@ -43,6 +49,18 @@ export const SerpAnalysisStep = () => {
   const handleAddToContent = (content: string, type: string) => {
     handleToggleSelection(type, content);
   };
+
+  // Toggle mock data usage
+  const handleToggleMockData = () => {
+    const newValue = !useMockData;
+    setUseMockData(newValue);
+    toast.info(`Mock SERP data ${newValue ? 'enabled' : 'disabled'}`);
+    
+    // If enabling mock data, automatically reanalyze with mock data
+    if (newValue && mainKeyword) {
+      analyzeKeyword(mainKeyword, undefined, true);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -53,6 +71,19 @@ export const SerpAnalysisStep = () => {
         handleReanalyze={handleReanalyze}
         handleContinueWithSelections={handleContinueWithSelections}
       />
+      
+      {/* Add mock data toggle button */}
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleToggleMockData}
+          className={`flex items-center gap-2 ${useMockData ? 'bg-purple-900/20 text-purple-400 border-purple-500/30' : 'bg-white/5'}`}
+        >
+          <Eye size={16} />
+          {useMockData ? 'Using Mock Data' : 'Use Mock Data'}
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
         <div className="lg:col-span-3">

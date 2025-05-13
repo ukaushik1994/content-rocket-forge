@@ -1,50 +1,33 @@
 
-/**
- * Solution-related type definitions
- */
-
-// Solution Type
 export interface Solution {
   id: string;
   name: string;
   description: string;
-  features: string[];
-  benefits?: string[];
-  category: string;
-  tags?: string[];
+  type: string;
+  icon?: string;
   url?: string;
-  imageUrl?: string;
-  logoUrl?: string | null;
-  externalUrl?: string | null;
-  useCases?: string[];
-  painPoints?: string[];
-  targetAudience?: string[];
-  resources?: any[];
+  apiKey?: string;
+  isConnected: boolean;
+  features?: string[];
+  metadata?: Record<string, any>;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
 }
 
-// Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
-  keywordMatches: number;
-  featureCoverage: number;
-  naturalIntegration: number;
-  overallScore?: number;
-  featureIncorporation?: number;
-  positioningScore?: number;
-  mentionedFeatures?: string[];
-  painPointsAddressed?: string[];
-  nameMentions?: number;
-  audienceAlignment?: number;
-  ctaEffectiveness?: number;
-  ctaMentions?: number;
-  mentions?: string;
+  matchScore: number;
+  keywordUsage: number;
+  contentRelevance: number;
+  potentialImpact: number;
+  recommendations: SolutionRecommendation[];
+  suggestedLeadIn?: string;
 }
 
-// Solution Analysis Result
-export interface SolutionAnalysisResult {
-  solutionMentioned: boolean;
-  keywordMatches: number;
-  featuresCovered: number;
-  naturalIntegration: number;
-  recommendations: string[];
+export interface SolutionRecommendation {
+  id: string;
+  type: string;
+  description: string;
+  applied: boolean;
+  priority: 'low' | 'medium' | 'high';
 }
-

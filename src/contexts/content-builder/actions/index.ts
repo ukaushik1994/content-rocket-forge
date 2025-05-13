@@ -7,6 +7,10 @@ import { createNavigationActions } from './navigationActions';
 import { createPublishActions } from './publishActions';
 import { createSeoActions } from './seoActions';
 import { createOutlineActions } from './outlineActions';
+import { createClusterActions } from './clusterActions';
+import { createContentGenerationActions } from './contentGenerationActions';
+import { createSolutionActions } from './solutionActions';
+import { createAdvancedContentActions } from './advancedContentActions';
 
 /**
  * Creates and combines all content builder actions
@@ -24,6 +28,10 @@ export const createContentBuilderActions = (
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
   const outlineActions = createOutlineActions(state, dispatch);
+  const clusterActions = createClusterActions(state, dispatch);
+  const contentGenerationActions = createContentGenerationActions(state, dispatch);
+  const solutionActions = createSolutionActions(state, dispatch);
+  const advancedContentActions = createAdvancedContentActions(state, dispatch);
 
   // Merge all action groups and return
   return {
@@ -33,6 +41,10 @@ export const createContentBuilderActions = (
     ...navigationActions,
     ...publishActions,
     ...seoActions,
-    ...outlineActions
+    ...outlineActions,
+    ...clusterActions,
+    ...contentGenerationActions,
+    ...solutionActions,
+    ...advancedContentActions
   };
 };
