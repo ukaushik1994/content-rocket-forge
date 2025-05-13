@@ -35,7 +35,7 @@ export interface SolutionIntegrationMetrics {
   recommendationCount?: number;
   keywordIntegrationScore?: number;
   
-  // Add missing properties from SolutionIntegrationCard.tsx
+  // Properties used in SolutionIntegrationCard
   overallScore: number;
   featureIncorporation: number;
   positioningScore: number;

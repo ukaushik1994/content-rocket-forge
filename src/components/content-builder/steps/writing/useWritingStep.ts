@@ -5,10 +5,11 @@ import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
 
 export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions, setOutline, setOutlineSections } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 
+    outlineSections,
     content, 
     additionalInstructions, 
     serpData, 
@@ -68,11 +69,28 @@ export function useWritingStep() {
   const processedOutline = Array.isArray(outline) 
     ? outline.map(item => {
         if (typeof item === 'string') {
-          return { id: Math.random().toString(), title: item, level: 2 as const, type: 'heading', content: '' };
+          return { 
+            id: Math.random().toString(), 
+            title: item, 
+            level: 2 as const, 
+            type: 'heading' as const, // Use 'as const' to specify literal type
+            content: '' 
+          };
         } else if (item && typeof item === 'object' && 'title' in item) {
-          return item as OutlineSection;
+          // Ensure type property is compatible with OutlineSection
+          const section = { ...item } as OutlineSection;
+          if (typeof section.type === 'string' && !['heading', 'subheading', 'paragraph', 'bullet', 'numbered', 'blockquote', 'custom'].includes(section.type)) {
+            section.type = 'heading';
+          }
+          return section;
         }
-        return { id: Math.random().toString(), title: '', level: 2 as const, type: 'heading', content: '' };
+        return { 
+          id: Math.random().toString(), 
+          title: '', 
+          level: 2 as const, 
+          type: 'heading' as const, 
+          content: '' 
+        };
       })
     : [];
 
@@ -102,6 +120,9 @@ export function useWritingStep() {
     handleToggleOutline,
     handleToggleGenerator,
     handleContentTemplateSelection,
-    handleAiProviderChange
+    handleAiProviderChange,
+    setOutline,
+    outlineSections,
+    setOutlineSections
   };
 }

@@ -7,6 +7,7 @@ export interface DocumentHeading {
 }
 
 export interface DocumentStructure {
+  // Original properties
   headings: DocumentHeading[];
   paragraphs: number;
   images?: number;
@@ -17,4 +18,18 @@ export interface DocumentStructure {
   readingTime?: number;
   hasSingleH1: boolean;
   hasLogicalHierarchy: boolean;
+  
+  // Add properties used in DocumentStructureCard and DocumentStructureAnalysis
+  h1?: DocumentHeading[];
+  h2?: DocumentHeading[];
+  h3?: DocumentHeading[];
+  h4?: DocumentHeading[];
+  h5?: DocumentHeading[];
+  h6?: DocumentHeading[];
+  
+  // Additional metadata properties used in extractDocumentStructure
+  metadata?: {
+    wordCount: number;
+    characterCount: number;
+  }
 }

@@ -26,6 +26,18 @@ export type SearchCountry = {
   region?: string;
 };
 
+export interface KeywordUsage {
+  keyword: string;
+  usageCount: number;
+  isPrimary: boolean;
+  usedIn: Array<{
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }>;
+}
+
 export const AVAILABLE_COUNTRIES: SearchCountry[] = [
   { name: 'United States', code: 'us', region: 'North America' },
   { name: 'United Kingdom', code: 'uk', region: 'Europe' },
