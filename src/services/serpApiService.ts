@@ -41,7 +41,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
   }
 };
 
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, countries: string[] = ['us']): Promise<SerpAnalysisResult | null> {
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, countries: string[] = ['us']): Promise<SerpAnalysisResult | null> => {
   try {
     // Get the SERP API key from the user's settings
     const { data: apiKey } = await supabase
