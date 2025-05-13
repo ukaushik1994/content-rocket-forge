@@ -1,65 +1,62 @@
 
-import { ContentBuilderState } from './types/state-types';
-import { Step } from './types/step-types';
+import { ContentBuilderState } from './types/index';
+import { v4 as uuid } from 'uuid';
 
-// Define steps for the content builder workflow
-const contentBuilderSteps: Step[] = [
-  { id: 0, name: 'Keyword Selection', completed: false, analyzed: false },
-  { id: 1, name: 'Content Type', completed: false, analyzed: false },
-  { id: 2, name: 'SERP Analysis', completed: false, analyzed: false },
-  { id: 3, name: 'Outline', completed: false, analyzed: false },
-  { id: 4, name: 'Content Writing', completed: false, analyzed: false },
-  { id: 5, name: 'Optimize & Review', completed: false, analyzed: false }
-];
-
-// Initial state for content builder
+/**
+ * Initial state for the Content Builder
+ */
 export const initialState: ContentBuilderState = {
   currentStep: 0,
   activeStep: 0,
-  steps: contentBuilderSteps,
-  
-  // Keyword related state
+  steps: [
+    { id: uuid(), title: 'Keyword Selection', completed: false, visited: true, analyzed: false },
+    { id: uuid(), title: 'Content Type', completed: false, visited: false, analyzed: false },
+    { id: uuid(), title: 'SERP Analysis', completed: false, visited: false, analyzed: false },
+    { id: uuid(), title: 'Outline', completed: false, visited: false, analyzed: false },
+    { id: uuid(), title: 'Content Writing', completed: false, visited: false, analyzed: false },
+    { id: uuid(), title: 'Optimize & Review', completed: false, visited: false, analyzed: false },
+    { id: uuid(), title: 'Save & Export', completed: false, visited: false, analyzed: false }
+  ],
   mainKeyword: '',
   selectedKeywords: [],
   searchedKeywords: [],
-  selectedRegions: ['us'],
-  
-  // SERP analysis related state
   serpData: null,
   isAnalyzing: false,
+  isSavingData: false,
   serpSelections: [],
-  
-  // Content related state
   outline: [],
   outlineSections: [],
+  isGenerating: false,
   content: '',
   contentTitle: '',
   suggestedTitles: [],
-  isGenerating: false,
-  
-  // Content type related state
+  selectedCluster: null,
   contentType: '',
   contentFormat: '',
   contentIntent: '',
-  
-  // Cluster data
-  selectedCluster: null,
-  
-  // Solution related state
   selectedSolution: null,
-  availableSolutions: [],
-  
-  // SEO related state
   seoScore: 0,
   seoImprovements: [],
   metaTitle: '',
   metaDescription: '',
-  
-  // Additional state
   additionalInstructions: '',
-  isSavingData: false,
-  
-  // Technical SEO analysis
+  documentStructure: {
+    h1: [],
+    h2: [],
+    h3: [],
+    h4: [],
+    h5: [],
+    h6: [],
+    paragraphs: [],
+    images: [],
+    links: [],
+    lists: [],
+    hasSingleH1: false,
+    hasLogicalHierarchy: false,
+    wordCount: 0,
+    readingTime: 0,
+    headings: []
+  },
   solutionIntegrationMetrics: {
     matchScore: 0,
     keywordUsage: 0,
@@ -69,6 +66,12 @@ export const initialState: ContentBuilderState = {
     featureIncorporation: 0,
     positioningScore: 0,
     recommendations: [],
-    mentionedFeatures: []
-  }
+    keywordMatches: 0,
+    mentionedFeatures: [],
+    nameMentions: 0,
+    painPointsAddressed: 0,
+    audienceAlignment: 0
+  },
+  selectedRegions: ['us', 'uk'],
+  availableSolutions: []
 };

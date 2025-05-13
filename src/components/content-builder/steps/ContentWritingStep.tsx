@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -8,6 +9,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { Link } from 'react-router-dom';
+import { OutlineSection } from '@/contexts/content-builder/types';
 
 export const ContentWritingStep = () => {
   const {
@@ -54,7 +56,7 @@ export const ContentWritingStep = () => {
           if (typeof item === 'string') {
             return `${index + 1}. ${item}`;
           } else if (item && typeof item === 'object' && 'title' in item) {
-            return `${index + 1}. ${(item as { title: string }).title}`;
+            return `${index + 1}. ${(item as OutlineSection).title}`;
           }
           return '';
         }).filter(Boolean).join('\n')

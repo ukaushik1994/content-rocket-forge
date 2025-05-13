@@ -5,12 +5,12 @@ import { serpProcessingService } from '@/services/serpProcessingService';
 
 export const createSerpActions = (state: ContentBuilderState, dispatch: React.Dispatch<any>) => {
   // Analyze keyword and fetch SERP data
-  const analyzeKeyword = async (keyword: string, regions?: string[]) => {
+  const analyzeKeyword = async (keyword: string, refresh: boolean = false, regions?: string[]) => {
     try {
       dispatch({ type: 'SET_IS_ANALYZING', payload: true });
       
       // Fetch data from API
-      const serpResponse = await analyzeKeywordSerp(keyword, regions);
+      const serpResponse = await analyzeKeywordSerp(keyword, refresh, regions);
       
       if (serpResponse) {
         // Process the data

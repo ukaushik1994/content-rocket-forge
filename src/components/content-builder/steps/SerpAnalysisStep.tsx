@@ -23,7 +23,7 @@ export const SerpAnalysisStep = () => {
   const handleReanalyze = async () => {
     if (mainKeyword) {
       // Pass refresh = true to force refresh the data
-      await analyzeKeyword(mainKeyword, true, state.selectedRegions);
+      await analyzeKeyword(mainKeyword, true);
     }
   };
   
@@ -59,7 +59,7 @@ export const SerpAnalysisStep = () => {
     
     // If enabling mock data, automatically reanalyze with mock data
     if (newValue && mainKeyword) {
-      // Set refresh to true without regions
+      // Set refresh to true
       analyzeKeyword(mainKeyword, true);
     }
   };

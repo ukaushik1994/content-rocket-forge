@@ -42,7 +42,15 @@ export type ContentBuilderActionType =
   | 'SET_ACTIVE_STEP'
   | 'SET_DOCUMENT_STRUCTURE'
   | 'SET_SELECTED_REGIONS'
-  | 'SET_AVAILABLE_SOLUTIONS';
+  | 'SET_AVAILABLE_SOLUTIONS'
+  | 'SET_OUTLINE'
+  | 'SET_SUGGESTED_TITLES'
+  | 'SET_SEO_SCORE'
+  | 'ADD_SEO_IMPROVEMENT'
+  | 'SET_SEO_IMPROVEMENTS'
+  | 'APPLY_SEO_IMPROVEMENT'
+  | 'SET_IS_SAVING'
+  | 'SET_SOLUTION_INTEGRATION_METRICS';
 
 // Define the structure of an action
 export interface ContentBuilderAction {

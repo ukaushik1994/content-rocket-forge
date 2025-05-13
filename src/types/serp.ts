@@ -12,12 +12,12 @@ export interface SerpAnalysisResult {
   searchVolume?: number;
   competitionScore?: number;
   keywordDifficulty?: number;
-  topResults?: Array<{
+  searchResults: Array<{
     title: string;
     link: string;
     snippet: string;
     position: number;
-    country?: string;  // Added country field
+    country?: string;
   }>;
   relatedSearches?: Array<{
     query: string;
@@ -35,28 +35,29 @@ export interface SerpAnalysisResult {
   }>;
   keywords?: string[];
   recommendations?: string[];
-  isMockData?: boolean; // Track if the data is mocked
+  isMockData?: boolean;
   
   // Enhanced fields for SERP analysis with updated types
   entities?: Array<{
     name: string;
     type?: string;
     importance?: number;
-    description?: string; // Added this missing field
+    description?: string;
   }>;
   headings?: Array<{
     text: string;
     level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     subtext?: string;
-    type?: string; // Added this missing field
+    type?: string;
   }>;
   contentGaps?: Array<{
     topic: string;
     description: string;
     recommendation?: string;
-    content?: string; // Added missing field
-    opportunity?: string; // Added missing field
-    source?: string; // Added missing field
+    content?: string;
+    opportunity?: string;
+    source?: string;
   }>;
-  searchCountries?: string[]; // Added the missing searchCountries property
+  searchCountries?: string[];
+  timestamp: string;
 }

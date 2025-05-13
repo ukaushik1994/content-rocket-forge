@@ -60,9 +60,12 @@ export const ContentTypeStep = () => {
         const formattedSolutions: Solution[] = data.map(solution => ({
           id: solution.id,
           name: solution.name,
+          description: `${solution.name} - Business Solution`,
           features: Array.isArray(solution.features) 
             ? solution.features.map(f => String(f)) 
             : [],
+          type: solution.category || "Business Solution",
+          isConnected: true,
           useCases: Array.isArray(solution.use_cases) 
             ? solution.use_cases.map(u => String(u)) 
             : [],
@@ -72,7 +75,6 @@ export const ContentTypeStep = () => {
           targetAudience: Array.isArray(solution.target_audience) 
             ? solution.target_audience.map(t => String(t)) 
             : [],
-          description: `${solution.name} - Business Solution`,
           category: solution.category || "Business Solution", // Using the category from DB with fallback
           logoUrl: solution.logo_url,
           externalUrl: solution.external_url,
@@ -81,10 +83,11 @@ export const ContentTypeStep = () => {
                 if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
                   return {
                     title: String(resource.title || ''),
-                    url: String(resource.url || '')
+                    url: String(resource.url || ''),
+                    type: 'link' // Default type
                   };
                 }
-                return { title: '', url: '' };
+                return { title: '', url: '', type: 'link' };
               }).filter(r => r.title && r.url)
             : [],
           benefits: [],
@@ -100,6 +103,8 @@ export const ContentTypeStep = () => {
         name: 'Demo Solution',
         description: 'Demo solution for content creation',
         features: ["Feature 1", "Feature 2", "Feature 3"],
+        type: "Business Solution", 
+        isConnected: true,
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"],

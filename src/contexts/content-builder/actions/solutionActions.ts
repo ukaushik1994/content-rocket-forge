@@ -11,9 +11,9 @@ export const createSolutionActions = (
   const setSelectedSolution = (solutionId: string | null) => {
     let solution: Solution | null = null;
     
-    if (solutionId) {
+    if (solutionId && state.availableSolutions) {
       // Find the solution by id - this uses a safe optional chaining approach in case the property doesn't exist
-      solution = state.availableSolutions?.find(s => s.id === solutionId) || null;
+      solution = state.availableSolutions.find(s => s.id === solutionId) || null;
     }
     
     dispatch({ type: 'SELECT_SOLUTION', payload: solution });
@@ -24,8 +24,14 @@ export const createSolutionActions = (
     dispatch({ type: 'SET_CONTENT_LEAD_IN', payload: leadIn });
   };
   
+  // Set available solutions
+  const setAvailableSolutions = (solutions: Solution[]) => {
+    dispatch({ type: 'SET_AVAILABLE_SOLUTIONS', payload: solutions });
+  };
+  
   return {
     setSelectedSolution,
-    setContentLeadIn
+    setContentLeadIn,
+    setAvailableSolutions
   };
 };

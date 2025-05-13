@@ -1,8 +1,14 @@
 
+/**
+ * Document-related type definitions
+ */
+
 export interface DocumentHeading {
-  level: number;
+  id: string;
   text: string;
-  id?: string;
+  level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  position: number;
+  content?: string;
 }
 
 export interface DocumentStructure {
@@ -12,20 +18,13 @@ export interface DocumentStructure {
   h4: DocumentHeading[];
   h5: DocumentHeading[];
   h6: DocumentHeading[];
-  paragraphs: string[];
-  images: string[];
-  links: {
-    url: string;
-    text: string;
-    isExternal: boolean;
-  }[];
-  lists: {
-    type: 'ordered' | 'unordered';
-    items: string[];
-  }[];
-  tables: any[];
-  wordCount: number;
-  headings: DocumentHeading[];
+  paragraphs: any[];
+  images: any[];
+  links: any[];
+  lists: any[];
   hasSingleH1: boolean;
   hasLogicalHierarchy: boolean;
+  wordCount: number;
+  readingTime: number;
+  headings: DocumentHeading[];
 }

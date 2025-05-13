@@ -4,15 +4,34 @@
 export interface SerpAnalysisResult {
   keyword: string;
   searchResults: SearchResult[];
-  relatedSearches?: string[];
+  relatedSearches?: Array<{
+    query: string;
+    volume?: number;
+  }>;
   keywords?: string[];
   questions?: string[];
-  peopleAlsoAsk?: string[];
+  peopleAlsoAsk?: Array<{
+    question: string;
+    source: string;
+    answer?: string;
+  }>;
   entities?: Entity[];
-  headings?: string[];
+  headings?: Array<{
+    text: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+    subtext?: string;
+    type?: string;
+  }>;
   searchFeatures?: SearchFeature[];
   featuredSnippets?: any[];
-  contentGaps?: string[];
+  contentGaps?: Array<{
+    topic: string;
+    description: string;
+    recommendation?: string;
+    content?: string;
+    opportunity?: string;
+    source?: string;
+  }>;
   competitors?: Competitor[];
   statistics?: {
     searchVolume?: number;
@@ -85,21 +104,43 @@ export const analyzeKeywordSerp = async (
       `${keyword} examples`
     ],
     relatedSearches: [
-      `${keyword} best practices`,
-      `${keyword} for beginners`,
-      `how to use ${keyword}`
+      { query: `${keyword} best practices`, volume: 1200 },
+      { query: `${keyword} for beginners`, volume: 890 },
+      { query: `how to use ${keyword}`, volume: 760 }
     ],
     peopleAlsoAsk: [
-      `What is ${keyword}?`,
-      `How to use ${keyword} effectively?`,
-      `Why is ${keyword} important?`,
-      `When should I use ${keyword}?`
+      {
+        question: `What is ${keyword}?`,
+        source: "example.com",
+        answer: `${keyword} is a powerful tool for...`
+      },
+      {
+        question: `How to use ${keyword} effectively?`,
+        source: "guides.com",
+        answer: `To use ${keyword} effectively, you should...`
+      }
     ],
     headings: [
-      `Introduction to ${keyword}`,
-      `Benefits of ${keyword}`,
-      `How to implement ${keyword}`,
-      `${keyword} best practices`
+      {
+        text: `Introduction to ${keyword}`,
+        level: "h1",
+        type: "main"
+      },
+      {
+        text: `Benefits of ${keyword}`,
+        level: "h2",
+        type: "section"
+      },
+      {
+        text: `How to implement ${keyword}`,
+        level: "h2",
+        type: "section"
+      },
+      {
+        text: `${keyword} best practices`,
+        level: "h2",
+        type: "section"
+      }
     ],
     entities: [
       {
@@ -117,13 +158,20 @@ export const analyzeKeywordSerp = async (
       {
         type: "Featured Snippet",
         content: `${keyword} is a powerful tool that helps with SEO.`,
-        position: 0
+        source: "example.com"
       }
     ],
     contentGaps: [
-      `Detailed ${keyword} tutorials`,
-      `${keyword} case studies`,
-      `${keyword} vs competitors`
+      {
+        topic: `Detailed ${keyword} tutorials`,
+        description: `Comprehensive step-by-step tutorials on ${keyword}`,
+        recommendation: `Create detailed tutorials`
+      },
+      {
+        topic: `${keyword} case studies`,
+        description: `Real-world examples of ${keyword} implementation`,
+        recommendation: `Add case studies`
+      }
     ],
     searchFeatures: [
       {
@@ -163,7 +211,7 @@ export const analyzeKeywordSerp = async (
 export const searchKeywords = async (
   options: { query: string; refresh?: boolean } | string, 
   limit: number = 10
-): Promise<string[] | { title: string }[]> => {
+): Promise<Array<{ title: string }>> => {
   let query: string;
   let refresh = false;
   
