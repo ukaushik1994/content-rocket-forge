@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Solution, SolutionResource } from '@/contexts/content-builder/types';
+import { Solution } from '@/contexts/content-builder/types';
 
 export function useSolutionsData() {
   const [solutions, setSolutions] = useState<Solution[]>([]);
@@ -34,7 +35,7 @@ export function useSolutionsData() {
               'Time-consuming content creation',
               'SEO optimization challenges',
               'Maintaining consistent quality',
-              'Writer's block'
+              "Writer's block" // Fixed straight single quote
             ],
             targetAudience: [
               'Content marketers',
