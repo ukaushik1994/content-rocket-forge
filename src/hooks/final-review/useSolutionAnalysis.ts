@@ -23,7 +23,11 @@ export const useSolutionAnalysis = () => {
           overallScore: 0,
           featureIncorporation: 0,
           positioningScore: 0,
-          mentionedFeatures: []
+          mentionedFeatures: [],
+          keywordMatches: 0,
+          nameMentions: 0,
+          painPointsAddressed: 0,
+          audienceAlignment: 0
         };
         
         dispatch({

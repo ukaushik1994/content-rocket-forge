@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -112,14 +113,14 @@ export const KeywordSelectionStep = () => {
   
   const handleSelectCluster = (cluster: ContentCluster) => {
     dispatch({
-      type: 'SELECT_KEYWORD_CLUSTER',
+      type: 'SELECT_CLUSTER',
       payload: cluster
     });
   };
   
   const handleClearCluster = () => {
     dispatch({
-      type: 'SELECT_KEYWORD_CLUSTER',
+      type: 'SELECT_CLUSTER',
       payload: null
     });
   };

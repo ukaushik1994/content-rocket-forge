@@ -5,7 +5,7 @@ import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
 
 export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions, setOutline, setOutlineSections } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 

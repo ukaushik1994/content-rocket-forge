@@ -39,7 +39,178 @@ export const ContentTypeStep = () => {
       {/* Content Type Options */}
       <Card>
         <CardContent className="pt-6">
-          {/* ... other content type options */}
+          <Tabs defaultValue="type" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="type">Content Type</TabsTrigger>
+              <TabsTrigger value="format">Format</TabsTrigger>
+              <TabsTrigger value="intent">Intent</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="type" className="space-y-4">
+              <div>
+                <Label className="text-base">Select Content Type</Label>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose the type of content you want to create
+                </p>
+                
+                <RadioGroup 
+                  value={contentType} 
+                  onValueChange={handleContentTypeChange}
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div>
+                    <RadioGroupItem value="blog" id="blog" className="peer sr-only" />
+                    <Label
+                      htmlFor="blog"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Blog Post</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="article" id="article" className="peer sr-only" />
+                    <Label
+                      htmlFor="article"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Article</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="landing-page" id="landing-page" className="peer sr-only" />
+                    <Label
+                      htmlFor="landing-page"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Landing Page</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="product-description" id="product-description" className="peer sr-only" />
+                    <Label
+                      htmlFor="product-description"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Product Description</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="format" className="space-y-4">
+              <div>
+                <Label className="text-base">Select Content Format</Label>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Choose the format that best suits your content
+                </p>
+                
+                <RadioGroup 
+                  value={contentFormat} 
+                  onValueChange={handleContentFormatChange}
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div>
+                    <RadioGroupItem value="how-to" id="how-to" className="peer sr-only" />
+                    <Label
+                      htmlFor="how-to"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">How-to Guide</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="list" id="list" className="peer sr-only" />
+                    <Label
+                      htmlFor="list"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">List</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="opinion" id="opinion" className="peer sr-only" />
+                    <Label
+                      htmlFor="opinion"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Opinion</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="review" id="review" className="peer sr-only" />
+                    <Label
+                      htmlFor="review"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Review</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="intent" className="space-y-4">
+              <div>
+                <Label className="text-base">Select Content Intent</Label>
+                <p className="text-sm text-muted-foreground mb-4">
+                  What is the primary goal of your content?
+                </p>
+                
+                <RadioGroup 
+                  value={contentIntent} 
+                  onValueChange={handleContentIntentChange}
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div>
+                    <RadioGroupItem value="inform" id="inform" className="peer sr-only" />
+                    <Label
+                      htmlFor="inform"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Inform</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="persuade" id="persuade" className="peer sr-only" />
+                    <Label
+                      htmlFor="persuade"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Persuade</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="entertain" id="entertain" className="peer sr-only" />
+                    <Label
+                      htmlFor="entertain"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Entertain</span>
+                    </Label>
+                  </div>
+                  
+                  <div>
+                    <RadioGroupItem value="sell" id="sell" className="peer sr-only" />
+                    <Label
+                      htmlFor="sell"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Sell</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 

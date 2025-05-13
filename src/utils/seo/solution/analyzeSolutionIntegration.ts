@@ -26,7 +26,11 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
       overallScore: 0,
       featureIncorporation: 0,
       positioningScore: 0,
-      mentionedFeatures: []
+      mentionedFeatures: [],
+      keywordMatches: 0,
+      nameMentions: 0,
+      painPointsAddressed: 0,
+      audienceAlignment: 0
     };
   }
   
@@ -107,6 +111,9 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
   if (positiveContexts >= 2) {
     positioningScore += 15; // Mentioned in positive contexts
   }
+
+  // Calculate keyword matches
+  const keywordMatches = 0; // This would typically come from a more complex analysis
   
   // Calculate overall metrics with caps to ensure values are within 0-100 range
   const overallScore = Math.min(100, Math.round((featureIncorporationPercentage + positioningScore + audienceAlignmentPercentage) / 3));
@@ -121,6 +128,7 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
     featureIncorporation: Math.min(100, Math.round(featureIncorporationPercentage)),
     positioningScore: Math.min(100, positioningScore),
     mentionedFeatures,
+    keywordMatches,
     nameMentions,
     painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),
     audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2))

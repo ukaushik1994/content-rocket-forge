@@ -70,14 +70,16 @@ export function useSolutionsData() {
       });
       
       setLoading(false);
+      return true;
     } catch (err) {
       setError('Failed to load solutions');
       setLoading(false);
+      return false;
     }
   };
 
   // Create a solution
-  const addSolution = async (solutionData: Omit<Solution, 'id'>) => {
+  const addSolution = async (solutionData: Omit<Solution, 'id'>, logoUrl?: string) => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -96,14 +98,14 @@ export function useSolutionsData() {
         payload: [...solutions, newSolution]
       });
       
-      return { success: true, id: newSolution.id };
+      return true;
     } catch (err) {
-      return { success: false, error: 'Failed to create solution' };
+      return false;
     }
   };
 
   // Update a solution
-  const updateSolution = async (id: string, updates: Partial<Solution>) => {
+  const updateSolution = async (id: string, updates: Partial<Solution>, logoUrl?: string) => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -123,9 +125,9 @@ export function useSolutionsData() {
         )
       });
       
-      return { success: true };
+      return true;
     } catch (err) {
-      return { success: false, error: 'Failed to update solution' };
+      return false;
     }
   };
 
@@ -144,9 +146,9 @@ export function useSolutionsData() {
         payload: solutions.filter(solution => solution.id !== id)
       });
       
-      return { success: true };
+      return true;
     } catch (err) {
-      return { success: false, error: 'Failed to delete solution' };
+      return false;
     }
   };
 

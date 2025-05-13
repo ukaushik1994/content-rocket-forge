@@ -34,7 +34,7 @@ export type ContentBuilderActionType =
   | 'SET_SELECTED_REGIONS'
   | 'SET_IS_SAVING_DATA'
   | 'SKIP_OPTIMIZATION_STEP'
-  | 'SELECT_SOLUTION'  
+  | 'SELECT_SOLUTION'
   // Add missing action types
   | 'SET_CURRENT_STEP'
   | 'SET_IS_SAVING'
@@ -42,7 +42,11 @@ export type ContentBuilderActionType =
   | 'ADD_SELECTED_KEYWORD'
   | 'REMOVE_SELECTED_KEYWORD'
   | 'SELECT_CLUSTER'
-  | 'SET_CONTENT_LEAD_IN';
+  | 'SET_CONTENT_LEAD_IN'
+  | 'ADD_SEARCHED_KEYWORD'
+  | 'SET_SEO_SCORE'
+  | 'SET_SEO_IMPROVEMENTS'
+  | 'APPLY_SEO_IMPROVEMENT';
 
 export interface ContentBuilderAction {
   type: ContentBuilderActionType;

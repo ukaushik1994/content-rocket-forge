@@ -16,6 +16,7 @@ export const serpMockService = {
         {
           title: `Ultimate Guide to ${keyword}`,
           url: "https://example.com/guide",
+          link: "https://example.com/guide", // Added link property
           snippet: `This comprehensive guide covers everything you need to know about ${keyword}, including best practices, tips, and examples.`,
           position: 1,
           domain: "example.com",
@@ -24,6 +25,7 @@ export const serpMockService = {
         {
           title: `${keyword} for Beginners`,
           url: "https://example.com/beginners",
+          link: "https://example.com/beginners", // Added link property
           snippet: `New to ${keyword}? Start here with our beginner-friendly introduction to the core concepts and methodology.`,
           position: 2,
           domain: "beginners-guide.com",
@@ -32,6 +34,7 @@ export const serpMockService = {
         {
           title: `Advanced ${keyword} Techniques`,
           url: "https://example.com/advanced",
+          link: "https://example.com/advanced", // Added link property
           snippet: `Take your ${keyword} skills to the next level with these advanced techniques used by professionals.`,
           position: 3,
           domain: "pro-tips.com",
@@ -102,18 +105,21 @@ export const serpMockService = {
           domain: "example.com",
           title: `The Complete ${keyword} Guide`,
           url: "https://example.com/complete-guide",
+          link: "https://example.com/complete-guide", // Added link property
           position: 1
         },
         {
           domain: "competitor1.com",
           title: `${keyword} Ultimate Resource`,
           url: "https://competitor1.com/resource",
+          link: "https://competitor1.com/resource", // Added link property
           position: 2
         },
         {
           domain: "competitor2.com",
           title: `${keyword} Step-by-Step Tutorial`,
           url: "https://competitor2.com/tutorial",
+          link: "https://competitor2.com/tutorial", // Added link property
           position: 3
         }
       ],
