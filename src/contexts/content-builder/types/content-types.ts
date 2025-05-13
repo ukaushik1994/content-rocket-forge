@@ -4,15 +4,7 @@
  */
 
 // Content Type Options
-export enum ContentType {
-  BLOG_POST = 'blog',
-  ARTICLE = 'article',
-  LANDING_PAGE = 'landingPage',
-  PRODUCT_DESCRIPTION = 'productDescription',
-  EMAIL = 'email',
-  SOCIAL = 'social',
-  SEO = 'seo'
-}
+export type ContentType = 'blog' | 'article' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'seo';
 
 // Content Format Options
 export enum ContentFormat {
@@ -38,6 +30,8 @@ export interface SaveContentParams {
   mainKeyword: string;
   secondaryKeywords: string[];
   contentType: string;
+  contentFormat?: string;
+  contentIntent?: string;
   metaTitle: string | null;
   metaDescription: string | null;
   status: 'draft' | 'published' | 'archived';
@@ -45,6 +39,8 @@ export interface SaveContentParams {
   // Optional fields
   seoScore?: number;
   outlineJson?: string;
+  solutionInfo?: any;
+  solutionMetrics?: any;
   
   // Adding missing properties
   outline?: string[];
@@ -79,3 +75,4 @@ export interface KeywordUsage {
     status: string;
   }[];
 }
+

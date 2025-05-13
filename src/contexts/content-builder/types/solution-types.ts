@@ -9,13 +9,13 @@ export interface Solution {
   name: string;
   description: string;
   features: string[];
-  benefits: string[];
+  benefits?: string[];
   category: string;
-  tags: string[];
+  tags?: string[];
   url?: string;
   imageUrl?: string;
-  logoUrl?: string;
-  externalUrl?: string;
+  logoUrl?: string | null;
+  externalUrl?: string | null;
   useCases?: string[];
   painPoints?: string[];
   targetAudience?: string[];
@@ -34,6 +34,9 @@ export interface SolutionIntegrationMetrics {
   painPointsAddressed?: string[];
   nameMentions?: number;
   audienceAlignment?: number;
+  ctaEffectiveness?: number;
+  ctaMentions?: number;
+  mentions?: string;
 }
 
 // Solution Analysis Result
@@ -44,3 +47,4 @@ export interface SolutionAnalysisResult {
   naturalIntegration: number;
   recommendations: string[];
 }
+

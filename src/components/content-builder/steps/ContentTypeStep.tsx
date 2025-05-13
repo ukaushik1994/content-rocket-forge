@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -87,7 +86,9 @@ export const ContentTypeStep = () => {
                 }
                 return { title: '', url: '' };
               }).filter(r => r.title && r.url)
-            : []
+            : [],
+          benefits: [],
+          tags: []
         }));
         setSolutions(formattedSolutions);
       }
@@ -105,7 +106,9 @@ export const ContentTypeStep = () => {
         category: "Business Solution", // Default category 
         logoUrl: null,
         externalUrl: null,
-        resources: []
+        resources: [],
+        benefits: [],
+        tags: []
       }]);
     } finally {
       setIsLoading(false);

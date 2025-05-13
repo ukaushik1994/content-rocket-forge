@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +5,22 @@ import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useContent } from '@/contexts/content';
 import { supabase } from '@/integrations/supabase/client';
+import { OutlineSection } from '@/contexts/content-builder/types';
+
+/**
+ * Helper function to serialize outline data
+ */
+const serializeOutline = (outline: string[] | OutlineSection[] | undefined): string[] => {
+  if (!outline) return [];
+  
+  // If outline is already string[], just return it
+  if (typeof outline[0] === 'string') {
+    return outline as string[];
+  }
+  
+  // Convert OutlineSection[] to string[]
+  return (outline as OutlineSection[]).map(section => section.title);
+};
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -29,13 +44,30 @@ export const useSaveContent = () => {
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
         contentType: state.contentType,
+        contentFormat: state.contentFormat,
+        contentIntent: state.contentIntent,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
         status: 'draft',
         notes: '',
-        outline: state.outline,
+        outline: serializeOutline(state.outline),
         serpSelections: state.serpSelections,
-        serpData: state.serpData
+        serpData: state.serpData,
+        solutionInfo: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          features: state.selectedSolution.features
+        } : null,
+        solutionMetrics: state.solutionIntegrationMetrics ? {
+          featureIncorporation: state.solutionIntegrationMetrics.featureIncorporation,
+          positioningScore: state.solutionIntegrationMetrics.positioningScore,
+          painPointsAddressed: state.solutionIntegrationMetrics.painPointsAddressed,
+          ctaEffectiveness: state.solutionIntegrationMetrics.ctaEffectiveness,
+          overallScore: state.solutionIntegrationMetrics.overallScore,
+          nameMentions: state.solutionIntegrationMetrics.nameMentions,
+          audienceAlignment: state.solutionIntegrationMetrics.audienceAlignment,
+          mentionedFeatures: state.solutionIntegrationMetrics.mentionedFeatures
+        } : null
       };
       
       console.log('[useSaveContent] Saving content with params:', {
@@ -64,10 +96,13 @@ export const useSaveContent = () => {
           seo_score: state.seoScore || 0,
           metadata: {
             contentType: saveParams.contentType,
+            contentFormat: saveParams.contentFormat,
+            contentIntent: saveParams.contentIntent,
             metaTitle: saveParams.metaTitle,
             metaDescription: saveParams.metaDescription,
             outline: saveParams.outline,
             serpSelections: saveParams.serpSelections,
+            solutionInfo: saveParams.solutionInfo
           }
         })
         .select()
@@ -176,14 +211,31 @@ export const useSaveContent = () => {
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
         contentType: state.contentType,
+        contentFormat: state.contentFormat,
+        contentIntent: state.contentIntent,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
         status: 'published',
         notes: '',
         seoScore: state.seoScore,
-        outline: state.outline,
+        outline: serializeOutline(state.outline),
         serpSelections: state.serpSelections,
-        serpData: state.serpData
+        serpData: state.serpData,
+        solutionInfo: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          features: state.selectedSolution.features
+        } : null,
+        solutionMetrics: state.solutionIntegrationMetrics ? {
+          featureIncorporation: state.solutionIntegrationMetrics.featureIncorporation,
+          positioningScore: state.solutionIntegrationMetrics.positioningScore,
+          painPointsAddressed: state.solutionIntegrationMetrics.painPointsAddressed,
+          ctaEffectiveness: state.solutionIntegrationMetrics.ctaEffectiveness,
+          overallScore: state.solutionIntegrationMetrics.overallScore,
+          nameMentions: state.solutionIntegrationMetrics.nameMentions,
+          audienceAlignment: state.solutionIntegrationMetrics.audienceAlignment,
+          mentionedFeatures: state.solutionIntegrationMetrics.mentionedFeatures
+        } : null
       };
       
       console.log('[useSaveContent] Publishing content with params:', publishParams);
@@ -205,10 +257,13 @@ export const useSaveContent = () => {
           seo_score: publishParams.seoScore || 0,
           metadata: {
             contentType: publishParams.contentType,
+            contentFormat: publishParams.contentFormat,
+            contentIntent: publishParams.contentIntent,
             metaTitle: publishParams.metaTitle,
             metaDescription: publishParams.metaDescription,
             outline: publishParams.outline,
             serpSelections: publishParams.serpSelections,
+            solutionInfo: publishParams.solutionInfo
           }
         })
         .select()

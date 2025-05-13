@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
@@ -51,7 +50,7 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
               1. Feature Incorporation (0-100): What percentage of solution features are incorporated in the content?
               2. Positioning Score (0-100): How well is the solution positioned in the content?
               3. Pain Points Addressed: Which pain points are addressed in the content?
-              4. CTA Effectiveness (0-100): How effective are the calls to action for this solution?
+              4. CTA Effectiveness (0-100): How effective are the calls to actions for this solution?
               5. Overall Score (0-100): Overall effectiveness of solution integration
               6. Number of Solution Name Mentions
               7. Number of CTA Mentions
@@ -126,6 +125,9 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
         audienceAlignment: localMetrics.audienceAlignment,
         nameMentions: localMetrics.nameMentions,
         ctaMentions: ctaInfo?.ctaCount || 0,
+        keywordMatches: localMetrics.featureIncorporation > 30 ? 5 : 2,
+        featureCoverage: localMetrics.featureIncorporation,
+        naturalIntegration: localMetrics.positioningScore,
         mentionedFeatures: localMetrics.mentionedFeatures || []
       };
       
