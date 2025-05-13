@@ -43,4 +43,5 @@ export interface ContentBuilderState {
   documentStructure?: DocumentStructure; 
   solutionIntegrationMetrics: SolutionIntegrationMetrics;
   selectedRegions: string[];
+  availableSolutions: Solution[];
 }

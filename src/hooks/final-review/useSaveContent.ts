@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
+import { SaveContentParams } from '@/contexts/content-builder/types';
 
 export const useSaveContent = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -21,16 +22,18 @@ export const useSaveContent = () => {
     
     try {
       // Prepare save options
-      const saveOptions = {
+      const saveOptions: SaveContentParams = {
         title: state.contentTitle || `Content - ${new Date().toLocaleDateString()}`,
         content: state.content,
+        mainKeyword: state.mainKeyword,
+        secondaryKeywords: state.selectedKeywords.filter(k => k !== state.mainKeyword),
         keywords: [state.mainKeyword, ...state.selectedKeywords.filter(k => k !== state.mainKeyword)].filter(Boolean),
         seoScore: state.seoScore || 0,
+        contentType: state.contentType,
+        metaTitle: state.metaTitle,
+        metaDescription: state.metaDescription,
+        outline: state.outlineSections ? state.outlineSections.map(s => s.title || s.content) : [],
         metadata: {
-          contentType: state.contentType,
-          metaTitle: state.metaTitle,
-          metaDescription: state.metaDescription,
-          outline: state.outlineSections ? state.outlineSections.map(s => s.title || s.content) : [],
           serpSelections: state.serpSelections,
           selectedSolution: state.selectedSolution ? state.selectedSolution.id : null,
         }
@@ -64,17 +67,19 @@ export const useSaveContent = () => {
     
     try {
       // Prepare publish options
-      const publishOptions = {
+      const publishOptions: SaveContentParams = {
         title: state.contentTitle || `Content - ${new Date().toLocaleDateString()}`,
         content: state.content,
+        mainKeyword: state.mainKeyword,
+        secondaryKeywords: state.selectedKeywords.filter(k => k !== state.mainKeyword),
         keywords: [state.mainKeyword, ...state.selectedKeywords.filter(k => k !== state.mainKeyword)].filter(Boolean),
         seoScore: state.seoScore || 0,
+        contentType: state.contentType,
+        metaTitle: state.metaTitle,
+        metaDescription: state.metaDescription,
+        outline: state.outlineSections ? state.outlineSections.map(s => s.title || s.content) : [],
         status: 'published',
         metadata: {
-          contentType: state.contentType,
-          metaTitle: state.metaTitle,
-          metaDescription: state.metaDescription,
-          outline: state.outlineSections ? state.outlineSections.map(s => s.title || s.content) : [],
           serpSelections: state.serpSelections,
           selectedSolution: state.selectedSolution ? state.selectedSolution.id : null,
         }

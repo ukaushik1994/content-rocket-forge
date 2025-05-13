@@ -1,20 +1,16 @@
 
 import { ContentBuilderState } from '../types/state-types';
-import { serpApiService } from '@/services/serpApiService';
-import { serpMockService } from '@/services/serpMockService';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { serpProcessingService } from '@/services/serpProcessingService';
 
 export const createSerpActions = (state: ContentBuilderState, dispatch: React.Dispatch<any>) => {
   // Analyze keyword and fetch SERP data
-  const analyzeKeyword = async (keyword: string, regions?: string[], useMockData?: boolean) => {
+  const analyzeKeyword = async (keyword: string, regions?: string[]) => {
     try {
       dispatch({ type: 'SET_IS_ANALYZING', payload: true });
       
-      // Use mock data if specifically requested or in test/development
-      const service = useMockData ? serpMockService : serpApiService;
-      
       // Fetch data from API
-      const serpResponse = await service.analyzeKeyword(keyword, regions);
+      const serpResponse = await analyzeKeywordSerp(keyword, regions);
       
       if (serpResponse) {
         // Process the data

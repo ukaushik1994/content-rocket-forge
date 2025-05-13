@@ -1,53 +1,97 @@
 
-import { SerpApiResponse } from './serpApiService';
-import { SerpSelection, OutlineSection } from '@/contexts/content-builder/types';
-import { v4 as uuid } from 'uuid';
+import { SerpSelection } from '@/contexts/content-builder/types';
+import { OutlineSection } from '@/contexts/content-builder/types';
 
-/**
- * Service for processing SERP data and converting it to formats needed by the application
- */
+// Process SERP data for use in the application
 export const serpProcessingService = {
-  /**
-   * Process raw SERP data into a format used by the application
-   */
-  processSerpData: (data: SerpApiResponse, keyword: string) => {
-    // Create a processed result object with all the necessary fields
+  // Process raw SERP data into a format usable by the application
+  processSerpData: (serpData: any, keyword: string) => {
+    // In a real implementation, this would transform the raw SERP data
+    // For now, just return the data as-is
     return {
-      keyword,
-      keywords: data.keywords || [],
-      questions: data.questions || [],
-      competitors: data.competitors || [],
-      snippets: data.snippets || [],
-      isMockData: true,
+      ...serpData,
+      mainKeyword: keyword,
+      processedAt: new Date().toISOString()
     };
   },
   
-  /**
-   * Convert SERP selections to outline sections
-   */
+  // Convert selected SERP items into outline sections
   convertSelectionsToOutline: (selections: SerpSelection[]): OutlineSection[] => {
     if (!selections || selections.length === 0) {
       return [];
     }
     
-    return selections.map(selection => {
-      const section: OutlineSection = {
-        id: uuid(),
-        title: selection.content,
+    const outline: OutlineSection[] = [];
+    
+    // First add questions as main sections
+    const questions = selections.filter(item => item.type === 'question');
+    questions.forEach(question => {
+      outline.push({
+        id: Math.random().toString(36).substr(2, 9),
+        title: question.content,
         type: 'heading',
-        level: 2, // A valid level from 1|2|3|4|5|6
+        level: 2,
         content: ''
-      };
-      
-      if (selection.type === 'question') {
-        section.type = 'heading';
-        section.level = 3;
-      } else if (selection.type === 'keyword') {
-        section.type = 'heading';
-        section.level = 2;
-      }
-      
-      return section;
+      });
     });
+    
+    // Add headings from SERP
+    const headings = selections.filter(item => item.type === 'heading');
+    headings.forEach(heading => {
+      outline.push({
+        id: Math.random().toString(36).substr(2, 9),
+        title: heading.content,
+        type: 'heading',
+        level: 2,
+        content: ''
+      });
+    });
+    
+    // Add keywords and entities as sections if there aren't enough sections
+    if (outline.length < 3) {
+      const keywords = selections.filter(item => item.type === 'keyword');
+      const entities = selections.filter(item => item.type === 'entity');
+      
+      // Add some keywords as sections
+      keywords.slice(0, 2).forEach(keyword => {
+        outline.push({
+          id: Math.random().toString(36).substr(2, 9),
+          title: `About ${keyword.content}`,
+          type: 'heading',
+          level: 2,
+          content: ''
+        });
+      });
+      
+      // Add entities as sections
+      entities.slice(0, 2).forEach(entity => {
+        outline.push({
+          id: Math.random().toString(36).substr(2, 9),
+          title: `Understanding ${entity.content}`,
+          type: 'heading',
+          level: 2,
+          content: ''
+        });
+      });
+    }
+    
+    // Add introduction and conclusion sections
+    outline.unshift({
+      id: 'intro-' + Math.random().toString(36).substr(2, 9),
+      title: 'Introduction',
+      type: 'heading',
+      level: 1,
+      content: ''
+    });
+    
+    outline.push({
+      id: 'conclusion-' + Math.random().toString(36).substr(2, 9),
+      title: 'Conclusion',
+      type: 'heading',
+      level: 2,
+      content: ''
+    });
+    
+    return outline;
   }
 };

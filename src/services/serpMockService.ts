@@ -1,52 +1,127 @@
 
-import { SerpApiResponse } from './serpApiService';
+import { SerpAnalysisResult } from './serpApiService';
 
-/**
- * Mock service for SERP API to be used in development and testing
- */
+// Mock SERP API service for development and testing
 export const serpMockService = {
-  /**
-   * Return mock SERP data for a keyword
-   */
-  analyzeKeyword: async (keyword: string, regions?: string[]): Promise<SerpApiResponse> => {
-    console.log(`Mock SERP service analyzing keyword: ${keyword} for regions: ${regions?.join(', ') || 'default'}`);
+  analyzeKeyword: async (keyword: string, regions?: string[]): Promise<SerpAnalysisResult> => {
+    console.log(`[Mock] Analyzing keyword: ${keyword}, regions: ${regions ? regions.join(',') : 'default'}`);
     
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
+    // Return mock data
     return {
-      keywords: [
-        keyword + " guide",
-        "best " + keyword,
-        keyword + " examples",
-        "how to use " + keyword,
-        keyword + " tutorial",
-        "why " + keyword + " is important",
-        keyword + " for beginners",
-        keyword + " advanced techniques"
+      keyword,
+      searchResults: [
+        {
+          title: `Ultimate Guide to ${keyword}`,
+          url: "https://example.com/guide",
+          snippet: `This comprehensive guide covers everything you need to know about ${keyword}, including best practices, tips, and examples.`,
+          position: 1,
+          domain: "example.com",
+          featured: true
+        },
+        {
+          title: `${keyword} for Beginners`,
+          url: "https://example.com/beginners",
+          snippet: `New to ${keyword}? Start here with our beginner-friendly introduction to the core concepts and methodology.`,
+          position: 2,
+          domain: "beginners-guide.com",
+          featured: false
+        },
+        {
+          title: `Advanced ${keyword} Techniques`,
+          url: "https://example.com/advanced",
+          snippet: `Take your ${keyword} skills to the next level with these advanced techniques used by professionals.`,
+          position: 3,
+          domain: "pro-tips.com",
+          featured: false
+        }
+      ],
+      relatedKeywords: [
+        `best ${keyword} tools`,
+        `${keyword} examples`,
+        `${keyword} for beginners`,
+        `advanced ${keyword} techniques`,
+        `${keyword} vs traditional methods`,
+        `how to learn ${keyword}`,
+        `${keyword} certification`,
+        `${keyword} career path`
       ],
       questions: [
-        "What is " + keyword + "?",
-        "How does " + keyword + " work?",
-        "Why should I use " + keyword + "?",
-        "Is " + keyword + " worth it?",
-        "How to get started with " + keyword + "?"
+        `What is ${keyword}?`,
+        `How do I get started with ${keyword}?`,
+        `Why is ${keyword} important for businesses?`,
+        `What are common mistakes to avoid with ${keyword}?`,
+        `How can I measure success with ${keyword}?`,
+        `What tools are used for ${keyword}?`,
+        `How long does it take to learn ${keyword}?`,
+        `What industries use ${keyword} the most?`
+      ],
+      entities: [
+        {
+          name: keyword,
+          type: "Topic",
+          relevance: 1.0
+        },
+        {
+          name: "Digital Marketing",
+          type: "Industry",
+          relevance: 0.8
+        },
+        {
+          name: "Data Analysis",
+          type: "Skill",
+          relevance: 0.7
+        },
+        {
+          name: "Strategy",
+          type: "Concept",
+          relevance: 0.6
+        }
+      ],
+      searchFeatures: [
+        {
+          type: "Featured Snippet",
+          content: `${keyword} is a methodology that helps organizations improve their online visibility and reach their target audience more effectively.`,
+          position: 0
+        },
+        {
+          type: "People Also Ask",
+          content: `Common questions about ${keyword}`,
+          position: 2
+        },
+        {
+          type: "Video Carousel",
+          content: `Top video tutorials for ${keyword}`,
+          position: 4
+        }
       ],
       competitors: [
-        { name: "Alternative to " + keyword, url: "https://example.com/alt1" },
-        { name: keyword + " competitor", url: "https://example.com/alt2" },
-        { name: "Similar to " + keyword, url: "https://example.com/alt3" }
-      ],
-      snippets: [
-        { 
-          title: "What is " + keyword, 
-          content: keyword + " is a powerful tool that helps users achieve their goals efficiently." 
+        {
+          domain: "example.com",
+          title: `The Complete ${keyword} Guide`,
+          url: "https://example.com/complete-guide",
+          position: 1
         },
-        { 
-          title: "Benefits of " + keyword, 
-          content: "Using " + keyword + " can significantly improve productivity and results." 
+        {
+          domain: "competitor1.com",
+          title: `${keyword} Ultimate Resource`,
+          url: "https://competitor1.com/resource",
+          position: 2
+        },
+        {
+          domain: "competitor2.com",
+          title: `${keyword} Step-by-Step Tutorial`,
+          url: "https://competitor2.com/tutorial",
+          position: 3
         }
-      ]
+      ],
+      statistics: {
+        searchVolume: 5000,
+        competition: 0.65
+      },
+      timestamp: new Date().toISOString()
     };
   }
 };

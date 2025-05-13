@@ -1,60 +1,57 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from '../types/index';
+import { ContentBuilderState } from '../types/state-types';
+import { ContentBuilderAction } from '../types/action-types';
 import { createKeywordActions } from './keywordActions';
-import { createContentActions } from './contentActions';
 import { createSerpActions } from './serpActions';
-import { createNavigationActions } from './navigationActions';
-import { createPublishActions } from './publishActions';
-import { createSeoActions } from './seoActions';
+import { createContentActions } from './contentActions';
 import { createOutlineActions } from './outlineActions';
+import { createNavigationActions } from './navigationActions';
+import { createSeoActions } from './seoActions';
+import { createMetaActions } from './metaActions';
 import { createClusterActions } from './clusterActions';
-import { createContentGenerationActions } from './contentGenerationActions';
 import { createSolutionActions } from './solutionActions';
-import { createAdvancedContentActions } from './advancedContentActions';
+import { createContentGenerationActions } from './contentGenerationActions';
+import { createSaveActions } from './saveActions';
+import { ContentBuilderContextType } from '../types/context-types';
 
-/**
- * Creates and combines all content builder actions
- */
 export const createContentBuilderActions = (
-  state: ContentBuilderState, 
+  state: ContentBuilderState,
   dispatch: React.Dispatch<ContentBuilderAction>
 ): Omit<ContentBuilderContextType, 'state' | 'dispatch'> => {
-  
-  // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
-  const contentActions = createContentActions(state, dispatch);
   const serpActions = createSerpActions(state, dispatch);
-  const navigationActions = createNavigationActions(state, dispatch);
-  const publishActions = createPublishActions(state, dispatch);
-  const seoActions = createSeoActions(state, dispatch);
+  const contentActions = createContentActions(state, dispatch);
   const outlineActions = createOutlineActions(state, dispatch);
+  const navigationActions = createNavigationActions(state, dispatch);
+  const seoActions = createSeoActions(state, dispatch);
+  const metaActions = createMetaActions(state, dispatch);
   const clusterActions = createClusterActions(state, dispatch);
-  const contentGenerationActions = createContentGenerationActions(state, dispatch);
   const solutionActions = createSolutionActions(state, dispatch);
-  const advancedContentActions = createAdvancedContentActions(state, dispatch);
+  const contentGenerationActions = createContentGenerationActions(state, dispatch);
+  const saveActions = createSaveActions(state, dispatch);
 
-  // Create custom actions
+  // Define the action to update SEO score
   const updateSeoScore = (score: number) => {
     dispatch({ type: 'UPDATE_SEO_SCORE', payload: score });
   };
 
+  // Define the action to add SEO improvement
   const addSeoImprovement = (improvement: any) => {
     dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement });
   };
 
-  // Merge all action groups and return
   return {
     ...keywordActions,
-    ...contentActions,
     ...serpActions,
-    ...navigationActions,
-    ...publishActions,
-    ...seoActions,
+    ...contentActions,
     ...outlineActions,
+    ...navigationActions,
+    ...seoActions,
+    ...metaActions,
     ...clusterActions,
-    ...contentGenerationActions,
     ...solutionActions,
-    ...advancedContentActions,
+    ...contentGenerationActions,
+    ...saveActions,
     updateSeoScore,
     addSeoImprovement
   };

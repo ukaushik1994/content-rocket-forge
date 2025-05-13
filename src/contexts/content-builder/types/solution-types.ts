@@ -39,4 +39,6 @@ export interface SolutionIntegrationMetrics {
   keywordMatches?: number;
   mentionedFeatures?: string[];
   nameMentions?: number;
+  painPointsAddressed?: number;
+  audienceAlignment?: number;
 }

@@ -1,78 +1,24 @@
 
-/**
- * Content-related type definitions
- */
+export type ContentType = 'blog' | 'article' | 'landingPage' | 'productDescription' | 'email' | 'social';
 
-// Content Type Options
-export type ContentType = 'blog' | 'article' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'seo';
+export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'case-study' | 'review';
 
-// Content Format Options
-export enum ContentFormat {
-  ARTICLE = 'long-form',
-  SHORT_FORM = 'short-form',
-  LISTICLE = 'listicle',
-  HOW_TO = 'how-to',
-  LIST = 'list'
-}
+export type ContentIntent = 'inform' | 'convince' | 'convert' | 'entertain' | 'educate';
 
-// Content Intent Options
-export enum ContentIntent {
-  INFORM = 'inform',
-  CONVERT = 'convert',
-  ENTERTAIN = 'entertain',
-  EDUCATE = 'educate'
-}
-
-// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
-  mainKeyword: string;
-  secondaryKeywords: string[];
-  contentType: string;
-  contentFormat?: string;
-  contentIntent?: string;
-  metaTitle: string | null;
-  metaDescription: string | null;
-  status: 'draft' | 'published' | 'archived';
-  notes: string;
-  // Optional fields
+  keywords?: string[];
+  mainKeyword?: string;
+  secondaryKeywords?: string[];
   seoScore?: number;
-  outlineJson?: string;
-  solutionInfo?: any;
-  solutionMetrics?: any;
-  
-  // Adding missing properties
-  outline?: string[];
-  serpSelections?: any[];
-  serpData?: any;
+  contentType?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  outline?: string[] | OutlineSection[];
+  status?: string;
+  note?: string;
+  metadata?: {
+    [key: string]: any;
+  };
 }
-
-// Define SearchCountry type for use in the SERP analysis
-export interface SearchCountry {
-  code: string;
-  name: string;
-  flag?: string;
-}
-
-// Available countries for SERP analysis
-export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { code: 'us', name: 'United States', flag: '🇺🇸' },
-  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'mea', name: 'Middle East', flag: '🌍' },
-  { code: 'global', name: 'Global', flag: '🌎' }
-];
-
-// Keyword Usage Types for KeywordRepository
-export interface KeywordUsage {
-  keyword: string;
-  usageCount: number;
-  isPrimary: boolean;
-  usedIn: {
-    contentId: string;
-    contentTitle: string;
-    isPrimary: boolean;
-    status: string;
-  }[];
-}
-

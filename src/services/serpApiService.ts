@@ -1,117 +1,148 @@
-/**
- * Service for interacting with the SERP API
- */
-import { SerpSearchParams, SerpAnalysisResult } from '@/types/serp';
 
-// Interface for SERP API response
-export interface SerpApiResponse {
-  keywords: string[];
+// Type definitions for SERP (Search Engine Results Page) data
+
+export interface SerpAnalysisResult {
+  keyword: string;
+  searchResults: SearchResult[];
+  relatedKeywords: string[];
   questions: string[];
-  competitors: any[];
-  snippets: any[];
-  // Other SERP data fields
+  entities: Entity[];
+  searchFeatures: SearchFeature[];
+  competitors?: Competitor[];
+  statistics?: {
+    searchVolume?: number;
+    competition?: number;
+  };
+  timestamp: string;
 }
 
-// Main service object
-export const serpApiService = {
-  /**
-   * Analyze a keyword and fetch SERP data
-   */
-  analyzeKeyword: async (keyword: string, regions?: string[]): Promise<SerpApiResponse | null> => {
-    try {
-      // This would be a real API call in production
-      console.log(`Analyzing keyword: ${keyword} for regions: ${regions?.join(', ') || 'default'}`);
-      
-      // For now, return null to trigger the mock data fallback
-      return null;
-      
-      // Real implementation would be:
-      // const response = await fetch('/api/serp/analyze', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ keyword, regions })
-      // });
-      // return await response.json();
-    } catch (error) {
-      console.error('Error in SERP API service:', error);
-      return null;
-    }
-  }
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+  position: number;
+  domain: string;
+  featured?: boolean;
+}
+
+interface Entity {
+  name: string;
+  type: string;
+  relevance: number;
+}
+
+interface SearchFeature {
+  type: string;
+  content: string;
+  position: number;
+}
+
+interface Competitor {
+  domain: string;
+  title: string;
+  url: string;
+  position: number;
+}
+
+export const analyzeKeywordSerp = async (keyword: string, regions?: string[]): Promise<SerpAnalysisResult> => {
+  console.log(`Analyzing keyword: ${keyword}, regions: ${regions}`);
+  // This would normally connect to a SERP API service
+  // For now, we'll return mock data
+  
+  return {
+    keyword,
+    searchResults: [
+      {
+        title: `Best results for ${keyword}`,
+        url: "https://example.com/result1",
+        snippet: `This is a comprehensive guide about ${keyword}.`,
+        position: 1,
+        domain: "example.com",
+        featured: true
+      },
+      {
+        title: `${keyword} - Ultimate Guide 2025`,
+        url: "https://example.com/result2",
+        snippet: `Learn everything about ${keyword} with our step-by-step guide.`,
+        position: 2,
+        domain: "guides.com",
+        featured: false
+      }
+    ],
+    relatedKeywords: [
+      `${keyword} guide`,
+      `${keyword} tutorial`,
+      `${keyword} best practices`,
+      `how to use ${keyword}`,
+      `${keyword} for beginners`
+    ],
+    questions: [
+      `What is ${keyword}?`,
+      `How to use ${keyword} effectively?`,
+      `Why is ${keyword} important?`,
+      `When should I use ${keyword}?`
+    ],
+    entities: [
+      {
+        name: keyword,
+        type: "Concept",
+        relevance: 0.95
+      },
+      {
+        name: "Guide",
+        type: "Content Type",
+        relevance: 0.8
+      }
+    ],
+    searchFeatures: [
+      {
+        type: "Featured Snippet",
+        content: `${keyword} is a powerful tool that helps with SEO.`,
+        position: 0
+      },
+      {
+        type: "People Also Ask",
+        content: `Questions related to ${keyword}`,
+        position: 3
+      }
+    ],
+    competitors: [
+      {
+        domain: "example.com",
+        title: `Ultimate ${keyword} Guide`,
+        url: "https://example.com/guide",
+        position: 1
+      },
+      {
+        domain: "competitor.com",
+        title: `${keyword} for Beginners`,
+        url: "https://competitor.com/beginners",
+        position: 2
+      }
+    ],
+    statistics: {
+      searchVolume: 1500,
+      competition: 0.75
+    },
+    timestamp: new Date().toISOString()
+  };
 };
 
-/**
- * Analyze a keyword and fetch SERP data with more detailed response
- */
-export const analyzeKeywordSerp = async (keyword: string, refresh = false, regions?: string[]): Promise<SerpAnalysisResult> => {
-  try {
-    // This would be a real API call in production
-    console.log(`Analyzing keyword SERP: ${keyword}, refresh: ${refresh}, regions: ${regions?.join(', ') || 'default'}`);
-    
-    // For now, return mock data
-    return {
-      keyword,
-      searchVolume: Math.floor(Math.random() * 10000) + 500,
-      competitionScore: Math.random() * 0.9 + 0.1,
-      keywordDifficulty: Math.floor(Math.random() * 100),
-      keywords: [
-        keyword + " guide",
-        "best " + keyword,
-        keyword + " examples",
-        "how to use " + keyword,
-        keyword + " tutorial"
-      ],
-      peopleAlsoAsk: [
-        { question: "What is " + keyword + "?", source: "google.com" },
-        { question: "How to use " + keyword + "?", source: "google.com" },
-        { question: "Is " + keyword + " worth it?", source: "google.com" }
-      ],
-      recommendations: [
-        "Include a comprehensive definition of " + keyword,
-        "Address common questions about " + keyword,
-        "Compare " + keyword + " to alternatives"
-      ],
-      entities: [
-        { name: keyword, type: "product", importance: 0.9, description: "Main topic" },
-        { name: keyword + " alternatives", type: "concept", importance: 0.7, description: "Related products" }
-      ],
-      headings: [
-        { text: "Introduction to " + keyword, level: "h2", subtext: "Overview" },
-        { text: "Benefits of " + keyword, level: "h2", subtext: "Advantages" },
-        { text: "How to use " + keyword, level: "h2", subtext: "Tutorial" }
-      ],
-      relatedSearches: [
-        { query: keyword + " vs competitors", volume: 650 },
-        { query: "benefits of " + keyword, volume: 480 }
-      ],
-      isMockData: true,
-      searchCountries: regions || ["us", "uk"]
-    };
-  } catch (error) {
-    console.error('Error in SERP analysis service:', error);
-    throw error;
-  }
-};
-
-/**
- * Search for keywords and return related suggestions
- */
-export const searchKeywords = async (params: SerpSearchParams): Promise<any[]> => {
-  try {
-    console.log('Searching keywords:', params);
-    
-    // Mock data for now
-    return [
-      { title: `Best ${params.query} Guide for Beginners` },
-      { title: `How to Use ${params.query} Effectively` },
-      { title: `Top 10 ${params.query} Tools for 2025` },
-      { title: `${params.query} vs Alternatives: Comprehensive Comparison` },
-      { title: `Why ${params.query} is Important for Your Business` },
-      { title: `${params.query} Tutorial: Step by Step Guide` },
-      { title: `Understanding ${params.query} in Simple Terms` },
-      { title: `Advanced ${params.query} Techniques for Professionals` }
-    ];
-  } catch (error) {
-    console.error('Error searching keywords:', error);
-    return [];
-  }
+export const searchKeywords = async (query: string, limit: number = 10): Promise<string[]> => {
+  console.log(`Searching keywords for: ${query}, limit: ${limit}`);
+  // This would normally connect to a keyword suggestion API
+  // For now, we'll return mock data
+  
+  return [
+    query,
+    `${query} guide`,
+    `${query} tutorial`,
+    `${query} best practices`,
+    `${query} examples`,
+    `${query} for beginners`,
+    `how to use ${query}`,
+    `why ${query} matters`,
+    `${query} vs alternatives`,
+    `${query} advanced techniques`
+  ].slice(0, limit);
 };
