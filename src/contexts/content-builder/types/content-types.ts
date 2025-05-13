@@ -26,3 +26,22 @@ export interface SaveContentParams {
     [key: string]: any;
   };
 }
+
+// Define SearchCountry type for region selection
+export type SearchCountry = {
+  code: string;
+  name: string;
+  flag?: string;
+};
+
+// Add the AVAILABLE_COUNTRIES export that's being imported in ApprovalSerpSummary.tsx
+export const AVAILABLE_COUNTRIES: SearchCountry[] = [
+  { code: 'us', name: 'United States' },
+  { code: 'uk', name: 'United Kingdom' },
+  { code: 'ca', name: 'Canada' },
+  { code: 'au', name: 'Australia' },
+  { code: 'mea', name: 'Middle East' },
+  { code: 'eu', name: 'Europe' },
+  { code: 'asia', name: 'Asia' },
+  { code: 'global', name: 'Global' }
+];
