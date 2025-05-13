@@ -28,21 +28,21 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   
   const { 
     solutions, 
-    isLoading, 
+    loading: isLoading, 
     error,
     fetchSolutions,
-    addSolution,
+    addSolution: createSolution,
     updateSolution,
     deleteSolution
   } = useSolutionsData();
   
   const solutionForm = useSolutionForm({
-    addSolution,
-    updateSolution
+    addSolution: createSolution,
+    updateSolution: updateSolution as (id: string, data: any, logoUrl?: string) => Promise<boolean>
   });
 
   const deleteHandler = useDeleteSolution({
-    deleteSolution
+    deleteSolution: deleteSolution as (id: string) => Promise<boolean>
   });
 
   // Update local filter when search term changes
@@ -151,5 +151,3 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     </motion.div>
   );
 };
-
-export default SolutionManager;

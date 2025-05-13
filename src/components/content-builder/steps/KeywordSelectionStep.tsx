@@ -86,7 +86,7 @@ export const KeywordSelectionStep = () => {
     // Add it to selected keywords if not already there
     if (!selectedKeywords.includes(keyword)) {
       dispatch({
-        type: 'ADD_SELECTED_KEYWORD',
+        type: 'ADD_KEYWORD',
         payload: keyword
       });
     }
@@ -98,28 +98,28 @@ export const KeywordSelectionStep = () => {
   
   const handleAddKeyword = (kw: string) => {
     dispatch({
-      type: 'ADD_SELECTED_KEYWORD',
+      type: 'ADD_KEYWORD',
       payload: kw
     });
   };
   
   const handleRemoveKeyword = (kw: string) => {
     dispatch({
-      type: 'REMOVE_SELECTED_KEYWORD',
+      type: 'REMOVE_KEYWORD',
       payload: kw
     });
   };
   
   const handleSelectCluster = (cluster: ContentCluster) => {
     dispatch({
-      type: 'SELECT_CLUSTER',
+      type: 'SELECT_KEYWORD_CLUSTER',
       payload: cluster
     });
   };
   
   const handleClearCluster = () => {
     dispatch({
-      type: 'SELECT_CLUSTER',
+      type: 'SELECT_KEYWORD_CLUSTER',
       payload: null
     });
   };

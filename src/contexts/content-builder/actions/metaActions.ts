@@ -16,18 +16,8 @@ export const createMetaActions = (
     dispatch({ type: 'SET_META_DESCRIPTION', payload: description });
   };
 
-  // Generate meta information
-  const generateMetaInfo = async () => {
-    // Implementation would go here if needed
-    return {
-      title: '',
-      description: ''
-    };
-  };
-
   return {
     setMetaTitle,
-    setMetaDescription,
-    generateMetaInfo
+    setMetaDescription
   };
 };

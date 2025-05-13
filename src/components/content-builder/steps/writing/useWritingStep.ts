@@ -5,7 +5,7 @@ import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
 
 export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions, setOutline: contextSetOutline, setOutlineSections } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions, setOutline, setOutlineSections } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 
@@ -65,7 +65,7 @@ export function useWritingStep() {
     setAiProvider(provider);
   };
   
-  const setOutline = (newOutline: OutlineSection[] | string[]) => {
+  const setOutlineData = (newOutline: OutlineSection[] | string[]) => {
     if (Array.isArray(newOutline)) {
       if (typeof newOutline[0] === 'string') {
         // Convert string array to OutlineSection array
@@ -76,10 +76,10 @@ export function useWritingStep() {
           level: 2 as const,
           content: ''
         }));
-        contextSetOutline(outlineSections);
+        dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: outlineSections });
       } else {
         // It's already an OutlineSection array
-        contextSetOutline(newOutline as OutlineSection[]);
+        dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: newOutline as OutlineSection[] });
       }
     }
   };
@@ -140,7 +140,7 @@ export function useWritingStep() {
     handleToggleGenerator,
     handleContentTemplateSelection,
     handleAiProviderChange,
-    setOutline,
+    setOutline: setOutlineData,
     outlineSections,
     setOutlineSections
   };

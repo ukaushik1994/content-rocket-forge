@@ -1,25 +1,30 @@
 
+/**
+ * Outline-related type definitions
+ */
+
+export type OutlineSectionType = 
+  | 'heading' 
+  | 'subheading' 
+  | 'paragraph' 
+  | 'bullet' 
+  | 'numbered'
+  | 'blockquote'
+  | 'custom';
+
 export interface OutlineSection {
   id: string;
   title: string;
-  content?: string;
-  type: 'heading' | 'subheading' | 'paragraph' | 'bullet' | 'numbered' | 'blockquote' | 'custom';
-  level?: 1 | 2 | 3 | 4 | 5 | 6;
-  expanded?: boolean;
+  type: OutlineSectionType;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  content: string;
   children?: OutlineSection[];
-  metadata?: {
-    source?: string;
-    relevance?: number;
-    keywords?: string[];
-    [key: string]: any;
-  };
 }
 
 export interface OutlineGenerationOptions {
-  style?: 'formal' | 'conversational' | 'educational' | 'persuasive';
-  depth?: 'shallow' | 'medium' | 'deep';
-  structure?: 'basic' | 'detailed' | 'academic';
-  includeIntroduction?: boolean;
-  includeConclusion?: boolean;
-  includeCallToAction?: boolean;
+  includeIntroduction: boolean;
+  includeConclusion: boolean;
+  headingStyle: 'question' | 'statement' | 'mixed';
+  sectionsCount: number;
+  depth: 'simple' | 'detailed' | 'comprehensive';
 }

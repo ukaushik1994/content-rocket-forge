@@ -12,6 +12,7 @@ import { createClusterActions } from './clusterActions';
 import { createSolutionActions } from './solutionActions';
 import { createContentGenerationActions } from './contentGenerationActions';
 import { createSaveActions } from './saveActions';
+import { createAdvancedContentActions } from './advancedContentActions';
 import { ContentBuilderContextType } from '../types/context-types';
 
 export const createContentBuilderActions = (
@@ -29,16 +30,7 @@ export const createContentBuilderActions = (
   const solutionActions = createSolutionActions(state, dispatch);
   const contentGenerationActions = createContentGenerationActions(state, dispatch);
   const saveActions = createSaveActions(state, dispatch);
-
-  // Define the action to update SEO score
-  const updateSeoScore = (score: number) => {
-    dispatch({ type: 'UPDATE_SEO_SCORE', payload: score });
-  };
-
-  // Define the action to add SEO improvement
-  const addSeoImprovement = (improvement: any) => {
-    dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement });
-  };
+  const advancedContentActions = createAdvancedContentActions(state, dispatch);
 
   return {
     ...keywordActions,
@@ -52,7 +44,6 @@ export const createContentBuilderActions = (
     ...solutionActions,
     ...contentGenerationActions,
     ...saveActions,
-    updateSeoScore,
-    addSeoImprovement
+    ...advancedContentActions
   };
 };

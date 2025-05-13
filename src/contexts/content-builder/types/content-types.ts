@@ -18,6 +18,8 @@ export interface SaveContentParams {
   outline: string[] | any[];
   serpSelections?: any[];
   selectedSolution?: any;
+  seoScore?: number;
+  serpData?: any;
 }
 
 export type SearchCountry = {

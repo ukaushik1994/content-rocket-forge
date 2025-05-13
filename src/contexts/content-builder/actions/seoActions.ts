@@ -29,11 +29,23 @@ export const createSeoActions = (
   const skipOptimizationStep = () => {
     dispatch({ type: 'SKIP_OPTIMIZATION_STEP', payload: true });
   };
+  
+  // Analyze SEO
+  const analyzeSeo = async (content: string) => {
+    // Implementation would go here
+  };
+  
+  // Apply SEO improvement
+  const applySeoImprovement = (id: string) => {
+    // Implementation would go here
+  };
 
   return {
     updateSeoScore,
     addSeoImprovement,
     runSeoAnalysis,
-    skipOptimizationStep
+    skipOptimizationStep,
+    analyzeSeo,
+    applySeoImprovement
   };
 };
