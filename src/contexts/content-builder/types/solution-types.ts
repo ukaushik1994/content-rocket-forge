@@ -3,12 +3,12 @@ export interface Solution {
   id: string;
   name: string;
   description: string;
-  type: string;
+  type?: string;
   icon?: string;
   url?: string;
   apiKey?: string;
-  isConnected: boolean;
-  features?: string[];
+  isConnected?: boolean;
+  features: string[];
   metadata?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
@@ -37,6 +37,10 @@ export interface SolutionIntegrationMetrics {
   featureIncorporation: number;
   positioningScore: number;
   mentionedFeatures?: string[];
+  nameMentions?: number;
+  painPointsAddressed?: number;
+  audienceAlignment?: number;
+  keywordMatches?: number;
 }
 
 export interface SolutionRecommendation {

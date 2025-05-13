@@ -6,7 +6,7 @@ export const createSolutionActions = (
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
   const setSelectedSolution = (solutionId: string | null) => {
-    dispatch({ type: 'SET_SELECTED_SOLUTION', payload: solutionId });
+    dispatch({ type: 'SELECT_SOLUTION', payload: solutionId });
   };
 
   const setContentLeadIn = (leadIn: string) => {

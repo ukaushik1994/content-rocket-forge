@@ -1,90 +1,42 @@
 
-import { SerpAnalysisResult } from '@/types/serp';
-
 /**
- * Process and normalize API response to ensure consistent structure
+ * Service for processing SERP data into usable format
  */
-export function processSerpResponse(response: any): SerpAnalysisResult {
-  if (!response) {
-    throw new Error('Invalid SERP response data');
-  }
+import { SerpApiResponse } from './serpApiService';
 
-  console.log('Processing SERP response:', response);
-
-  // Ensure response has expected structure and the required keyword field
-  const processedData: SerpAnalysisResult = {
-    keyword: response.keyword || '',
-    searchVolume: response.searchVolume || 0,
-    competitionScore: response.competitionScore || 0,
-    keywordDifficulty: response.keywordDifficulty || 0,
-    
-    // Process top results
-    topResults: Array.isArray(response.topResults) ? response.topResults.map((result: any, index: number) => ({
-      title: result.title || '',
-      link: result.link || '',
-      snippet: result.snippet || '',
-      position: result.position || index + 1 // Ensure position exists
-    })) : [],
-    
-    // Process related searches
-    relatedSearches: Array.isArray(response.relatedSearches) ? response.relatedSearches.map((search: any) => ({
-      query: search.query || '',
-      volume: search.volume || 0 // Ensure volume exists
-    })) : [],
-    
-    // Process people also ask questions
-    peopleAlsoAsk: Array.isArray(response.peopleAlsoAsk) ? response.peopleAlsoAsk.map((item: any) => ({
-      question: item.question || '',
-      source: item.source || '',
-      answer: item.answer || 'No answer available' // Ensure answer exists
-    })) : [],
-    
-    // Process featured snippets
-    featuredSnippets: Array.isArray(response.featuredSnippets) ? response.featuredSnippets.map((snippet: any) => ({
-      content: snippet.content || '',
-      source: snippet.source || '',
-      type: snippet.type || 'general' // Ensure type exists
-    })) : [],
-    
-    // Process new fields - entities, headings, contentGaps
-    entities: Array.isArray(response.entities) ? response.entities.map((entity: any) => ({
-      name: entity.name || '',
-      type: entity.type || 'unknown',
-      importance: entity.importance || 5,
-      description: entity.description || ''
-    })) : [],
-    
-    headings: Array.isArray(response.headings) ? response.headings.map((heading: any) => ({
-      text: heading.text || '',
-      level: heading.level || 'h2',
-      subtext: heading.subtext || '',
-      type: heading.type || ''
-    })) : [],
-    
-    contentGaps: Array.isArray(response.contentGaps) ? response.contentGaps.map((gap: any) => ({
-      topic: gap.topic || '',
-      description: gap.description || '',
-      recommendation: gap.recommendation || '',
-      content: gap.content || '',
-      opportunity: gap.opportunity || '',
-      source: gap.source || ''
-    })) : [],
-    
-    // Include recommendations if available
-    recommendations: Array.isArray(response.recommendations) ? response.recommendations : []
-  };
+export const serpProcessingService = {
+  /**
+   * Process raw SERP data into a standardized format for the application
+   */
+  processSerpData: (data: SerpApiResponse, mainKeyword: string) => {
+    // Process and transform the data as needed
+    return {
+      ...data,
+      mainKeyword,
+      processed: true,
+      timestamp: new Date().toISOString()
+    };
+  },
   
-  return processedData;
-}
-
-/**
- * Validates keyword input
- */
-export function validateKeywordInput(keyword: string): string {
-  if (!keyword) {
-    throw new Error('Keyword cannot be empty');
+  /**
+   * Convert SERP selections to outline sections
+   */
+  convertSelectionsToOutline: (selections: any[]) => {
+    // Map selections to outline sections
+    return selections
+      .filter(item => item.selected)
+      .map(item => ({
+        id: `outline-${Math.random().toString(36).substr(2, 9)}`,
+        title: typeof item.content === 'string' ? 
+          item.content.substring(0, 60) + (item.content.length > 60 ? '...' : '') : 
+          'New Section',
+        content: '',
+        type: 'heading',
+        level: 1,
+        metadata: {
+          source: 'serp',
+          type: item.type
+        }
+      }));
   }
-  
-  // Basic sanitization
-  return keyword.trim().toLowerCase();
-}
+};

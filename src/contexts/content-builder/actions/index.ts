@@ -33,6 +33,15 @@ export const createContentBuilderActions = (
   const solutionActions = createSolutionActions(state, dispatch);
   const advancedContentActions = createAdvancedContentActions(state, dispatch);
 
+  // Ensure all required actions are included
+  const updateSeoScore = (score: number) => {
+    dispatch({ type: 'UPDATE_SEO_SCORE', payload: score });
+  };
+
+  const addSeoImprovement = (improvement: any) => {
+    dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement });
+  };
+
   // Merge all action groups and return
   return {
     ...keywordActions,
@@ -45,6 +54,8 @@ export const createContentBuilderActions = (
     ...clusterActions,
     ...contentGenerationActions,
     ...solutionActions,
-    ...advancedContentActions
+    ...advancedContentActions,
+    updateSeoScore,
+    addSeoImprovement
   };
 };

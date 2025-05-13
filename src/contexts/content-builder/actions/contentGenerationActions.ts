@@ -8,7 +8,7 @@ export const createContentGenerationActions = (
 ) => {
   const generateContentRequest = async (instructions?: string) => {
     try {
-      dispatch({ type: 'SET_IS_GENERATING_CONTENT', payload: true });
+      dispatch({ type: 'SET_IS_GENERATING', payload: true });
       
       // In a real implementation, this would call an API
       // For now, let's simulate a delay and generate placeholder content
@@ -31,7 +31,7 @@ ${instructions ? `\nFollowing your instructions: ${instructions}` : ''}
       console.error('Error generating content:', error);
       toast.error('Failed to generate content');
     } finally {
-      dispatch({ type: 'SET_IS_GENERATING_CONTENT', payload: false });
+      dispatch({ type: 'SET_IS_GENERATING', payload: false });
     }
   };
 

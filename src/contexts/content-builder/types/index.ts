@@ -6,7 +6,7 @@ export * from './serp-types';
 export * from './cluster-types';
 export * from './content-types';
 export * from './document-types';
-export * from './outline-types';
+export type { OutlineSection } from './outline-types';
 export * from './solution-types';
 export * from './context-types';
 export * from './seo-types';
@@ -18,9 +18,6 @@ import { ContentFormat, ContentIntent } from './content-types';
 import { OutlineSection } from './outline-types';
 import { ContentCluster } from './cluster-types';
 import { SerpSelection } from './serp-types';
-
-// Explicitly export OutlineSection type to ensure it's available
-export { OutlineSection };
 
 // Context type
 export interface ContentBuilderContextType {

@@ -33,8 +33,16 @@ export const useSolutionAnalysis = () => {
         return;
       }
       
+      // Ensure the selectedSolution has the required properties for the analysis
+      const solutionData = {
+        name: selectedSolution.name || '',
+        features: selectedSolution.features || [],
+        painPoints: selectedSolution.painPoints || [],
+        targetAudience: selectedSolution.targetAudience || []
+      };
+      
       // Run the solution integration analysis
-      const metrics = analyzeSolutionIntegration(content, selectedSolution);
+      const metrics = analyzeSolutionIntegration(content, solutionData);
       
       // Update state with the results
       dispatch({

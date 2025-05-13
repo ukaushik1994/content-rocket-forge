@@ -112,19 +112,17 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
   const overallScore = Math.min(100, Math.round((featureIncorporationPercentage + positioningScore + audienceAlignmentPercentage) / 3));
   
   return {
-    featureIncorporation: Math.min(100, Math.round(featureIncorporationPercentage)),
-    positioningScore: Math.min(100, positioningScore),
-    nameMentions,
-    painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),
-    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2)),
-    mentionedFeatures,
-    
-    // Required properties from SolutionIntegrationMetrics
     matchScore: Math.min(100, Math.round(featureIncorporationPercentage * 0.7 + audienceAlignmentPercentage * 0.3)),
     keywordUsage: nameMentions,
     contentRelevance: Math.min(100, Math.round(painPointsAddressedPercentage * 0.5 + audienceAlignmentPercentage * 0.5)),
     potentialImpact: Math.min(100, Math.round(positioningScore * 0.6 + featureIncorporationPercentage * 0.4)),
     recommendations: [],
-    overallScore
+    overallScore,
+    featureIncorporation: Math.min(100, Math.round(featureIncorporationPercentage)),
+    positioningScore: Math.min(100, positioningScore),
+    mentionedFeatures,
+    nameMentions,
+    painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),
+    audienceAlignment: Math.min(100, Math.round((positioningScore + audienceAlignmentPercentage) / 2))
   };
 };

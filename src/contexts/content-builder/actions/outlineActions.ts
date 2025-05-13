@@ -27,6 +27,8 @@ export const createOutlineActions = (
       const newSection: OutlineSection = {
         id: uuid(),
         title: 'New Section',
+        content: '',
+        type: 'heading',
         level: 1
       };
       const updatedSections = [...state.outlineSections];
