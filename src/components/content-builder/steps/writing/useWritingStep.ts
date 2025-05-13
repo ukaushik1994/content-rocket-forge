@@ -5,7 +5,7 @@ import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
 
 export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions, setOutline, setOutlineSections } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions, setOutline: contextSetOutline, setOutlineSections } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 
@@ -63,6 +63,25 @@ export function useWritingStep() {
 
   const handleAiProviderChange = (provider: AiProvider) => {
     setAiProvider(provider);
+  };
+  
+  const setOutline = (newOutline: OutlineSection[] | string[]) => {
+    if (Array.isArray(newOutline)) {
+      if (typeof newOutline[0] === 'string') {
+        // It's a string array, convert to OutlineSection array
+        const outlineSections = (newOutline as string[]).map(item => ({
+          id: Math.random().toString(36).substring(7),
+          title: item,
+          type: 'heading' as const,
+          level: 2 as const,
+          content: ''
+        }));
+        contextSetOutline(outlineSections);
+      } else {
+        // It's already an OutlineSection array
+        contextSetOutline(newOutline as OutlineSection[]);
+      }
+    }
   };
 
   // Convert outline to the appropriate format for the sidebar component

@@ -42,13 +42,13 @@ export const SerpAnalysisStep = () => {
   };
 
   if (isLoadingInit || !state.mainKeyword) {
-    return <SerpLoadingState />;
+    return <SerpLoadingState isLoading={true} />;
   }
 
   return (
     <div className="space-y-6">
       <SerpAnalysisHeader 
-        keyword={state.mainKeyword}
+        mainKeyword={state.mainKeyword}
         isAnalyzing={state.isAnalyzing}
         onAnalyze={handleRunAnalysis}
         hasSelections={state.serpSelections.filter(s => s.selected).length > 0}
@@ -69,7 +69,7 @@ export const SerpAnalysisStep = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           {state.isAnalyzing ? (
-            <SerpLoadingState />
+            <SerpLoadingState isLoading={true} />
           ) : (
             <Tabs 
               defaultValue="overview" 
@@ -95,11 +95,16 @@ export const SerpAnalysisStep = () => {
                 <SerpAnalysisPanel 
                   serpData={state.serpData} 
                   maxItemsToShow={showAllData ? 50 : 10}
+                  mainKeyword={state.mainKeyword}
+                  isLoading={false}
                 />
               </TabsContent>
               
               <TabsContent value="selections" className="m-0">
-                <SelectedItemsContent selections={state.serpSelections.filter(s => s.selected)} />
+                <SelectedItemsContent 
+                  serpSelections={state.serpSelections.filter(s => s.selected)}
+                  selectedTab="all"
+                />
               </TabsContent>
             </Tabs>
           )}
@@ -107,7 +112,7 @@ export const SerpAnalysisStep = () => {
         
         <div>
           <SelectedItemsSidebar 
-            selections={state.serpSelections.filter(s => s.selected)}
+            serpSelections={state.serpSelections.filter(s => s.selected)}
             onGenerateOutline={handleNextStep}
           />
         </div>

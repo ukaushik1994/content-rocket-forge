@@ -4,10 +4,11 @@ import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
-  isLoading: boolean;
-  mainKeyword: string;
+  isLoading?: boolean;
+  mainKeyword?: string;
   onAddToContent?: (content: string, type: string) => void;
   onRetry?: () => void;
+  maxItemsToShow?: number;
 }
 
 export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {

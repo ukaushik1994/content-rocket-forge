@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Globe, MapPin } from 'lucide-react';
+import { Check, Globe } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -14,11 +14,13 @@ import { Badge } from '@/components/ui/badge';
 
 interface RegionSelectorProps {
   selectedRegions: string[];
-  onRegionSelect: (regions: string[]) => void;
+  onChange: (regions: string[]) => void;
+  onRegionSelect?: (regions: string[]) => void;
 }
 
 export const RegionSelector: React.FC<RegionSelectorProps> = ({ 
   selectedRegions, 
+  onChange,
   onRegionSelect 
 }) => {
   // Available regions
@@ -34,9 +36,13 @@ export const RegionSelector: React.FC<RegionSelectorProps> = ({
     if (selectedRegions.includes(regionId)) {
       // Don't allow deselecting if it's the last selected region
       if (selectedRegions.length === 1) return;
-      onRegionSelect(selectedRegions.filter(id => id !== regionId));
+      const newRegions = selectedRegions.filter(id => id !== regionId);
+      onChange(newRegions);
+      if (onRegionSelect) onRegionSelect(newRegions);
     } else {
-      onRegionSelect([...selectedRegions, regionId]);
+      const newRegions = [...selectedRegions, regionId];
+      onChange(newRegions);
+      if (onRegionSelect) onRegionSelect(newRegions);
     }
   };
   

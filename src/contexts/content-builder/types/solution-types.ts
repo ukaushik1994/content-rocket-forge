@@ -1,7 +1,9 @@
 
-/**
- * Solution-related type definitions
- */
+export interface SolutionResource {
+  title: string;
+  url: string;
+  type?: string;
+}
 
 export interface Solution {
   id: string;
@@ -11,44 +13,21 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  category: string;
-  logoUrl: string | null;
-  externalUrl: string | null;
-  resources: Array<{
-    title: string;
-    url: string;
-    type: string;
-  }>;
-  benefits?: any[];
-  tags?: any[];
-  type: string;
-  isConnected: boolean;
+  category?: string;
+  logoUrl?: string | null;
+  externalUrl?: string | null;
+  resources?: SolutionResource[];
+  type?: string;
+  isConnected?: boolean;
 }
 
 export interface SolutionIntegrationMetrics {
-  totalScore?: number;
-  featuresIncluded?: number;
-  useCasesAddressed?: number;
-  painPointsAddressed?: number;
-  audienceTargeting?: number;
-  contentQuality?: number;
-  recommendationCount?: number;
-  keywordIntegrationScore?: number;
-  
-  // Properties used in SolutionIntegrationCard
-  overallScore: number;
-  featureIncorporation: number;
-  positioningScore: number;
-  mentionedFeatures: string[];
-  
-  // Original properties from analyzeSolutionIntegration.ts
-  matchScore: number;
-  keywordUsage: number;
-  contentRelevance: number;
-  potentialImpact: number;
-  recommendations: string[];
-  nameMentions?: number;
-  audienceAlignment?: number;
+  totalFeatures?: number;
+  totalMentioned?: number;
+  overallScore?: number;
+  featureIncorporation?: number;
+  positioningScore?: number;
+  mentionedFeatures?: string[];
+  notMentionedFeatures?: string[];
+  recommendations?: string[];
 }
-
-export type SolutionCategory = 'analytics' | 'seo' | 'content' | 'social' | 'ecommerce' | 'automation' | 'other';

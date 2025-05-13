@@ -5,21 +5,36 @@ import { Search, Sparkles, RotateCw, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-interface SerpAnalysisHeaderProps {
+export interface SerpAnalysisHeaderProps {
   mainKeyword: string;
+  keyword?: string;
   isAnalyzing: boolean;
-  totalSelected: number;
-  handleReanalyze: () => void;
-  handleContinueWithSelections: () => void;
+  totalSelected?: number;
+  handleReanalyze?: () => void;
+  handleContinueWithSelections?: () => void;
+  onAnalyze: () => Promise<void>;
+  hasSelections: boolean;
+  onNextStep: () => void;
+  showAllData: boolean;
+  onToggleAllData: () => void;
 }
 
 export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
   mainKeyword,
+  keyword,
   isAnalyzing,
-  totalSelected,
+  totalSelected = 0,
   handleReanalyze,
-  handleContinueWithSelections
+  handleContinueWithSelections,
+  onAnalyze,
+  hasSelections,
+  onNextStep,
+  showAllData,
+  onToggleAllData
 }) => {
+  // Use either keyword or mainKeyword - maintain backward compatibility
+  const displayKeyword = keyword || mainKeyword;
+  
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-900/30 to-purple-900/20 border border-white/10 backdrop-blur-xl shadow-xl">
       <div className="space-y-1">
@@ -30,17 +45,17 @@ export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">
             SERP Analysis
           </span>
-          {mainKeyword && (
+          {displayKeyword && (
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
-              for "{mainKeyword}"
+              for "{displayKeyword}"
             </span>
           )}
         </h2>
         <p className="text-sm text-muted-foreground">
           Select items to include in your content outline
-          {totalSelected > 0 && (
+          {(totalSelected > 0 || hasSelections) && (
             <Badge variant="outline" className="ml-2 bg-neon-purple/20 border-neon-purple/50">
-              {totalSelected} item{totalSelected !== 1 ? 's' : ''} selected
+              {totalSelected || (hasSelections ? "Items" : "0")} selected
             </Badge>
           )}
         </p>
@@ -49,8 +64,8 @@ export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={handleReanalyze}
-          disabled={isAnalyzing || !mainKeyword}
+          onClick={handleReanalyze || onAnalyze}
+          disabled={isAnalyzing || !displayKeyword}
           className="border-white/20 hover:bg-white/10"
         >
           <RotateCw className={`h-4 w-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
@@ -59,9 +74,9 @@ export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
         
         <Button
           size="sm"
-          onClick={handleContinueWithSelections}
-          disabled={totalSelected === 0}
-          className={`bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 ${totalSelected === 0 ? 'opacity-50' : ''}`}
+          onClick={handleContinueWithSelections || onNextStep}
+          disabled={!hasSelections && totalSelected === 0}
+          className={`bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 ${(!hasSelections && totalSelected === 0) ? 'opacity-50' : ''}`}
         >
           Continue
           <ChevronRight className="h-4 w-4 ml-1" />

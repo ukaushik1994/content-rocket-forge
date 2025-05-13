@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Solution } from '@/contexts/content-builder/types';
+import { Solution, SolutionResource } from '@/contexts/content-builder/types';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -61,16 +61,20 @@ export function useSolutionsData() {
             category: solution.category || "Business Solution", // Now using the DB column with fallback
             logoUrl: solution.logo_url,
             externalUrl: solution.external_url,
+            // Add these required properties
+            type: "business",
+            isConnected: true,
             resources: Array.isArray(solution.resources) 
-              ? solution.resources.map(resource => {
+              ? solution.resources.map((resource: any) => {
                   if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
                     return {
                       title: String(resource.title || ''),
-                      url: String(resource.url || '')
+                      url: String(resource.url || ''),
+                      type: resource.type || 'link' // Add default type
                     };
                   }
-                  return { title: '', url: '' };
-                }).filter(r => r.title && r.url) 
+                  return { title: '', url: '', type: 'link' };
+                }).filter((r: any) => r.title && r.url) 
               : []
           }));
           
@@ -91,7 +95,7 @@ export function useSolutionsData() {
       toast.error("Failed to load solutions. Please try again later.");
       
       // Fallback to some default data if there's an error
-      const fallbackSolution = {
+      const fallbackSolution: Solution = {
         id: '1',
         name: 'Demo Solution',
         description: 'Demo solution for content creation',
@@ -102,6 +106,8 @@ export function useSolutionsData() {
         category: "Business Solution", // Default category value
         logoUrl: null,
         externalUrl: null,
+        type: "business",
+        isConnected: true,
         resources: []
       };
       
@@ -119,7 +125,7 @@ export function useSolutionsData() {
     painPoints: string[];
     targetAudience: string[];
     externalUrl?: string | null;
-    resources?: Array<{ title: string; url: string; }>;
+    resources?: SolutionResource[];
     category?: string; // Category parameter
   }, logoUrl?: string): Promise<boolean> => {
     // Input validation
@@ -135,6 +141,12 @@ export function useSolutionsData() {
         return false;
       }
       
+      // Ensure resources have the required type property
+      const sanitizedResources = solutionData.resources?.map(resource => ({
+        ...resource,
+        type: resource.type || 'link'
+      })) || [];
+      
       // Data sanitization
       const sanitizedData = {
         name: solutionData.name.trim(),
@@ -144,7 +156,7 @@ export function useSolutionsData() {
         target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== ''),
         external_url: solutionData.externalUrl || null,
         logo_url: logoUrl || null,
-        resources: solutionData.resources || [],
+        resources: sanitizedResources,
         category: solutionData.category || "Business Solution", // Use provided category or default
         user_id: user.id
       };
@@ -176,15 +188,18 @@ export function useSolutionsData() {
           category: data[0].category || "Business Solution", // Using category from data
           logoUrl: data[0].logo_url,
           externalUrl: data[0].external_url,
+          type: "business",
+          isConnected: true,
           resources: Array.isArray(data[0].resources) 
             ? data[0].resources.map((resource: any) => {
                 if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
                   return {
                     title: String(resource.title || ''),
-                    url: String(resource.url || '')
+                    url: String(resource.url || ''),
+                    type: resource.type || 'link'
                   };
                 }
-                return { title: '', url: '' };
+                return { title: '', url: '', type: 'link' };
               }).filter((r: any) => r.title && r.url)
             : []
         };
@@ -206,7 +221,7 @@ export function useSolutionsData() {
     painPoints: string[];
     targetAudience: string[];
     externalUrl?: string | null;
-    resources?: Array<{ title: string; url: string; }>;
+    resources?: SolutionResource[];
     category?: string; // Category parameter
   }, logoUrl?: string): Promise<boolean> => {
     // Input validation
