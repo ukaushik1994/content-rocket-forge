@@ -7,18 +7,24 @@ export interface SerpSearchParams {
   refresh?: boolean;
 }
 
+export interface SearchResult {
+  title: string;
+  link: string;
+  url?: string;
+  snippet: string;
+  position: number;
+  domain?: string;
+  featured?: boolean;
+  country?: string;
+}
+
 export interface SerpAnalysisResult {
   keyword: string;
   searchVolume?: number;
   competitionScore?: number;
   keywordDifficulty?: number;
-  searchResults: Array<{
-    title: string;
-    link: string;
-    snippet: string;
-    position: number;
-    country?: string;
-  }>;
+  searchResults: SearchResult[];
+  topResults?: SearchResult[]; // Add this to support existing code
   relatedSearches?: Array<{
     query: string;
     volume?: number;
@@ -43,6 +49,7 @@ export interface SerpAnalysisResult {
     type?: string;
     importance?: number;
     description?: string;
+    relevance?: number;
   }>;
   headings?: Array<{
     text: string;
@@ -58,6 +65,12 @@ export interface SerpAnalysisResult {
     opportunity?: string;
     source?: string;
   }>;
+  searchFeatures?: any[];
+  competitors?: any[];
+  statistics?: {
+    searchVolume?: number;
+    competition?: number;
+  };
   searchCountries?: string[];
   timestamp: string;
 }

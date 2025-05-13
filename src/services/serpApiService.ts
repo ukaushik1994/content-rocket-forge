@@ -1,73 +1,8 @@
-
 // Type definitions for SERP (Search Engine Results Page) data
+import { SerpAnalysisResult, SearchResult } from '@/types/serp';
 
-export interface SerpAnalysisResult {
-  keyword: string;
-  searchResults: SearchResult[];
-  relatedSearches?: Array<{
-    query: string;
-    volume?: number;
-  }>;
-  keywords?: string[];
-  questions?: string[];
-  peopleAlsoAsk?: Array<{
-    question: string;
-    source: string;
-    answer?: string;
-  }>;
-  entities?: Entity[];
-  headings?: Array<{
-    text: string;
-    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    subtext?: string;
-    type?: string;
-  }>;
-  searchFeatures?: SearchFeature[];
-  featuredSnippets?: any[];
-  contentGaps?: Array<{
-    topic: string;
-    description: string;
-    recommendation?: string;
-    content?: string;
-    opportunity?: string;
-    source?: string;
-  }>;
-  competitors?: Competitor[];
-  statistics?: {
-    searchVolume?: number;
-    competition?: number;
-  };
-  timestamp: string;
-  searchCountries?: string[];
-}
-
-interface SearchResult {
-  title: string;
-  url: string;
-  snippet: string;
-  position: number;
-  domain: string;
-  featured?: boolean;
-}
-
-interface Entity {
-  name: string;
-  type: string;
-  relevance: number;
-}
-
-interface SearchFeature {
-  type: string;
-  content: string;
-  position: number;
-}
-
-interface Competitor {
-  domain: string;
-  title: string;
-  url: string;
-  position: number;
-}
+// Re-export the imported types to maintain backward compatibility
+export type { SerpAnalysisResult, SearchResult };
 
 export const analyzeKeywordSerp = async (
   keyword: string, 
@@ -78,26 +13,31 @@ export const analyzeKeywordSerp = async (
   // This would normally connect to a SERP API service
   // For now, we'll return mock data
   
+  const mockResults: SearchResult[] = [
+    {
+      title: `Best results for ${keyword}`,
+      link: "https://example.com/result1",
+      url: "https://example.com/result1", // Include both link and url for compatibility
+      snippet: `This is a comprehensive guide about ${keyword}.`,
+      position: 1,
+      domain: "example.com",
+      featured: true
+    },
+    {
+      title: `${keyword} - Ultimate Guide 2025`,
+      link: "https://example.com/result2",
+      url: "https://example.com/result2", // Include both link and url for compatibility
+      snippet: `Learn everything about ${keyword} with our step-by-step guide.`,
+      position: 2,
+      domain: "guides.com",
+      featured: false
+    }
+  ];
+  
   return {
     keyword,
-    searchResults: [
-      {
-        title: `Best results for ${keyword}`,
-        url: "https://example.com/result1",
-        snippet: `This is a comprehensive guide about ${keyword}.`,
-        position: 1,
-        domain: "example.com",
-        featured: true
-      },
-      {
-        title: `${keyword} - Ultimate Guide 2025`,
-        url: "https://example.com/result2",
-        snippet: `Learn everything about ${keyword} with our step-by-step guide.`,
-        position: 2,
-        domain: "guides.com",
-        featured: false
-      }
-    ],
+    searchResults: mockResults,
+    topResults: mockResults, // Add topResults which is used in some components
     keywords: [
       `${keyword} guide`,
       `${keyword} tutorial`,

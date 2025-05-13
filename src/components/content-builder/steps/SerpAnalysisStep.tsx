@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
-  const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
+  const { mainKeyword, serpData, isAnalyzing, serpSelections, selectedRegions } = state;
   
   // Add state for using mock data
   const [useMockData, setUseMockData] = useState(false);
@@ -23,7 +23,7 @@ export const SerpAnalysisStep = () => {
   const handleReanalyze = async () => {
     if (mainKeyword) {
       // Pass refresh = true to force refresh the data
-      await analyzeKeyword(mainKeyword, true);
+      await analyzeKeyword(mainKeyword, true, selectedRegions);
     }
   };
   
@@ -59,8 +59,8 @@ export const SerpAnalysisStep = () => {
     
     // If enabling mock data, automatically reanalyze with mock data
     if (newValue && mainKeyword) {
-      // Set refresh to true
-      analyzeKeyword(mainKeyword, true);
+      // Set refresh to true and pass the selected regions
+      analyzeKeyword(mainKeyword, true, selectedRegions);
     }
   };
   

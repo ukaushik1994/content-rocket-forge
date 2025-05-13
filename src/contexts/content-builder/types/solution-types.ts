@@ -8,37 +8,32 @@ export interface Solution {
   name: string;
   description: string;
   features: string[];
-  type: string;
-  isConnected: boolean;
-  
-  // Extended fields
-  useCases?: string[];
-  painPoints?: string[];
-  targetAudience?: string[];
-  category?: string;
-  logoUrl?: string | null;
-  externalUrl?: string | null;
-  resources?: Array<{
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
+  category: string;
+  logoUrl: string | null;
+  externalUrl: string | null;
+  resources: Array<{
     title: string;
     url: string;
     type: string;
   }>;
   benefits?: any[];
   tags?: any[];
+  type: string;
+  isConnected: boolean;
 }
 
 export interface SolutionIntegrationMetrics {
-  matchScore: number;
-  keywordUsage: number;
-  contentRelevance: number;
-  potentialImpact: number;
-  overallScore: number;
-  featureIncorporation: number;
-  positioningScore: number;
-  recommendations: string[];
-  keywordMatches?: number;
-  mentionedFeatures?: string[];
-  nameMentions?: number;
-  painPointsAddressed?: number;
-  audienceAlignment?: number;
+  totalScore: number;
+  featuresIncluded: number;
+  useCasesAddressed: number;
+  painPointsAddressed: number;
+  audienceTargeting: number;
+  contentQuality: number;
+  recommendationCount: number;
+  keywordIntegrationScore: number;
 }
+
+export type SolutionCategory = 'analytics' | 'seo' | 'content' | 'social' | 'ecommerce' | 'automation' | 'other';

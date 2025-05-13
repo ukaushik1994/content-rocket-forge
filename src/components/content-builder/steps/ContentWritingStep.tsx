@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -43,6 +42,18 @@ export const ContentWritingStep = () => {
 
   // Add state for selected countries
   const [selectedCountries, setSelectedCountries] = useState<string[]>(['us']);
+
+  const addSection = () => {
+    const newSection = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: "New Section",
+      level: 2 as const,
+      type: "heading" as const, // Use a valid type from the union type
+      content: ""
+    };
+    
+    setOutlineSections([...outlineSections, newSection]);
+  };
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
