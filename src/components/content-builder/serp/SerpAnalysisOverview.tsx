@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { SerpAnalysisResult } from '@/types/serp';
@@ -11,6 +10,9 @@ import {
 
 export interface SerpAnalysisOverviewProps {
   serpData: SerpAnalysisResult;
+  selections?: SerpSelection[];
+  serpSelections?: SerpSelection[]; // For backwards compatibility
+  maxItemsToShow?: number;
   selectedCounts?: {
     question: number;
     keyword: number;
@@ -20,8 +22,6 @@ export interface SerpAnalysisOverviewProps {
   totalSelected?: number;
   getItemsByType?: (type: string) => SerpSelection[];
   handleToggleSelection?: (type: string, content: string) => void;
-  selections?: SerpSelection[];
-  maxItemsToShow?: number;
 }
 
 export const SerpAnalysisOverview: React.FC<SerpAnalysisOverviewProps> = ({
@@ -31,8 +31,12 @@ export const SerpAnalysisOverview: React.FC<SerpAnalysisOverviewProps> = ({
   getItemsByType,
   handleToggleSelection,
   selections,
+  serpSelections, // Support both for backwards compatibility
   maxItemsToShow
 }) => {
+  // Use either selections or serpSelections
+  const allSelections = selections || serpSelections || [];
+  
   // Animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -55,8 +59,8 @@ export const SerpAnalysisOverview: React.FC<SerpAnalysisOverviewProps> = ({
       return selectedCounts[type as keyof typeof selectedCounts] || 0;
     }
     
-    if (selections) {
-      return selections.filter(s => s.type === type && s.selected).length;
+    if (allSelections && allSelections.length > 0) {
+      return allSelections.filter(s => s.type === type && s.selected).length;
     }
     
     return 0;
@@ -64,13 +68,13 @@ export const SerpAnalysisOverview: React.FC<SerpAnalysisOverviewProps> = ({
   
   const getTotalSelected = () => {
     if (totalSelected !== undefined) return totalSelected;
-    if (selections) return selections.filter(s => s.selected).length;
+    if (allSelections && allSelections.length > 0) return allSelections.filter(s => s.selected).length;
     return 0;
   };
   
   const getItemsOfType = (type: string) => {
     if (getItemsByType) return getItemsByType(type);
-    if (selections) return selections.filter(s => s.type === type);
+    if (allSelections && allSelections.length > 0) return allSelections.filter(s => s.type === type);
     return [];
   };
   

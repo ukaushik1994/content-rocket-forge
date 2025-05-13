@@ -2,7 +2,7 @@
 export interface SolutionResource {
   title: string;
   url: string;
-  type?: string;
+  type: string;
 }
 
 export interface Solution {
@@ -13,21 +13,27 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  category?: string;
-  logoUrl?: string | null;
-  externalUrl?: string | null;
-  resources?: SolutionResource[];
-  type?: string;
-  isConnected?: boolean;
+  benefits?: string[];  // Add benefits as an optional property
+  category: string;
+  type: string;
+  isConnected: boolean;
+  logoUrl: string;
+  externalUrl: string;
+  resources: SolutionResource[];
 }
 
 export interface SolutionIntegrationMetrics {
-  totalFeatures?: number;
-  totalMentioned?: number;
-  overallScore?: number;
-  featureIncorporation?: number;
-  positioningScore?: number;
-  mentionedFeatures?: string[];
-  notMentionedFeatures?: string[];
-  recommendations?: string[];
+  matchScore: number;
+  keywordUsage: number;
+  contentRelevance: number;
+  potentialImpact: number;
+  overallScore: number;
+  featureIncorporation: number;
+  positioningScore: number;
+  recommendations: string[];
+  keywordMatches: number;
+  mentionedFeatures: string[];
+  nameMentions: number;
+  painPointsAddressed: number;
+  audienceAlignment: number;
 }

@@ -12,5 +12,12 @@ interface SerpAnalysisPanelProps {
 }
 
 export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
-  return <CoreSerpAnalysisPanel {...props} />;
+  // Ensure isLoading is always defined
+  const updatedProps = {
+    ...props,
+    isLoading: props.isLoading ?? false,
+    mainKeyword: props.mainKeyword ?? ''
+  };
+  
+  return <CoreSerpAnalysisPanel {...updatedProps} />;
 }

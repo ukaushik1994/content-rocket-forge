@@ -6,7 +6,7 @@ import { ProgressIndicator } from './ProgressIndicator';
 import { LoadingParticle } from './LoadingParticle';
 
 export interface SerpLoadingStateProps {
-  isLoading?: boolean;
+  isLoading: boolean;
   message?: string;
   keywords?: string[];
 }

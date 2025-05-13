@@ -9,13 +9,13 @@ export const initialState: ContentBuilderState = {
   currentStep: 0,
   activeStep: 0,
   steps: [
-    { id: uuid(), title: 'Keyword Selection', completed: false, visited: true, analyzed: false },
-    { id: uuid(), title: 'Content Type', completed: false, visited: false, analyzed: false },
-    { id: uuid(), title: 'SERP Analysis', completed: false, visited: false, analyzed: false },
-    { id: uuid(), title: 'Outline', completed: false, visited: false, analyzed: false },
-    { id: uuid(), title: 'Content Writing', completed: false, visited: false, analyzed: false },
-    { id: uuid(), title: 'Optimize & Review', completed: false, visited: false, analyzed: false },
-    { id: uuid(), title: 'Save & Export', completed: false, visited: false, analyzed: false }
+    { id: 0, title: 'Keyword Selection', completed: false, visited: true, analyzed: false },
+    { id: 1, title: 'Content Type', completed: false, visited: false, analyzed: false },
+    { id: 2, title: 'SERP Analysis', completed: false, visited: false, analyzed: false },
+    { id: 3, title: 'Outline', completed: false, visited: false, analyzed: false },
+    { id: 4, title: 'Content Writing', completed: false, visited: false, analyzed: false },
+    { id: 5, title: 'Optimize & Review', completed: false, visited: false, analyzed: false },
+    { id: 6, title: 'Save & Export', completed: false, visited: false, analyzed: false }
   ],
   mainKeyword: '',
   selectedKeywords: [],

@@ -68,11 +68,11 @@ export function useWritingStep() {
   const setOutline = (newOutline: OutlineSection[] | string[]) => {
     if (Array.isArray(newOutline)) {
       if (typeof newOutline[0] === 'string') {
-        // It's a string array, convert to OutlineSection array
+        // Convert string array to OutlineSection array
         const outlineSections = (newOutline as string[]).map(item => ({
           id: Math.random().toString(36).substring(7),
           title: item,
-          type: 'heading' as const,
+          type: "heading" as const,
           level: 2 as const,
           content: ''
         }));
@@ -92,7 +92,7 @@ export function useWritingStep() {
             id: Math.random().toString(), 
             title: item, 
             level: 2 as const, 
-            type: 'heading' as const, // Use 'as const' to specify literal type
+            type: "heading" as const, 
             content: '' 
           };
         } else if (item && typeof item === 'object' && 'title' in item) {
@@ -107,7 +107,7 @@ export function useWritingStep() {
           id: Math.random().toString(), 
           title: '', 
           level: 2 as const, 
-          type: 'heading' as const, 
+          type: "heading" as const, 
           content: '' 
         };
       })

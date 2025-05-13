@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types';
 import { v4 as uuid } from 'uuid';
 
@@ -273,6 +272,12 @@ export const contentBuilderReducer = (
       return {
         ...state,
         selectedRegions: action.payload
+      };
+      
+    case 'SKIP_OPTIMIZATION_STEP':
+      return {
+        ...state,
+        skipOptimization: action.payload
       };
       
     default:

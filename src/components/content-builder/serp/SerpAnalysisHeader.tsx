@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles, RotateCw, ChevronRight } from 'lucide-react';
@@ -7,21 +6,19 @@ import { Badge } from '@/components/ui/badge';
 
 export interface SerpAnalysisHeaderProps {
   mainKeyword: string;
-  keyword?: string;
   isAnalyzing: boolean;
-  totalSelected?: number;
-  handleReanalyze?: () => void;
-  handleContinueWithSelections?: () => void;
-  onAnalyze: () => Promise<void>;
   hasSelections: boolean;
+  onAnalyze: () => Promise<void>;
   onNextStep: () => void;
   showAllData: boolean;
   onToggleAllData: () => void;
+  totalSelected?: number;
+  handleReanalyze?: () => void;
+  handleContinueWithSelections?: () => void;
 }
 
 export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
   mainKeyword,
-  keyword,
   isAnalyzing,
   totalSelected = 0,
   handleReanalyze,

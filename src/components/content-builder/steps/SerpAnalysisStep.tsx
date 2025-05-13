@@ -55,6 +55,7 @@ export const SerpAnalysisStep = () => {
         onNextStep={handleNextStep}
         showAllData={showAllData}
         onToggleAllData={() => setShowAllData(!showAllData)}
+        totalSelected={state.serpSelections.filter(s => s.selected).length}
       />
       
       {/* SERP Analysis Region Selector */}
@@ -62,6 +63,7 @@ export const SerpAnalysisStep = () => {
         <RegionSelector 
           selectedRegions={state.selectedRegions || ['us']}
           onChange={(regions) => dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions })}
+          onRegionSelect={(regions) => dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions })}
         />
       </div>
 

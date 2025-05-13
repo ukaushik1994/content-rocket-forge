@@ -205,8 +205,9 @@ export const KeywordSelectionStep = () => {
             {/* Region selector */}
             <div className="flex items-center gap-2">
               <RegionSelector 
-                selectedRegions={selectedRegions} 
-                onRegionSelect={handleRegionChange} 
+                selectedRegions={state.selectedRegions || ['us']}
+                onChange={(regions) => dispatch({ type: 'SET_SELECTED_REGIONS', payload: regions })}
+                onRegionSelect={handleRegionChange}
               />
             </div>
           </div>

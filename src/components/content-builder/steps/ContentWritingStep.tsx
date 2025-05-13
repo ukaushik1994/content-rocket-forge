@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -50,7 +49,7 @@ export const ContentWritingStep = () => {
       id: Math.random().toString(36).substr(2, 9),
       title: "New Section",
       level: 2,
-      type: "heading", // Use a valid type from the union type
+      type: "heading",
       content: ""
     };
     

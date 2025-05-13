@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles } from 'lucide-react';
@@ -23,14 +24,16 @@ export interface SerpAnalysisPanelProps {
   mainKeyword: string;
   onAddToContent?: (content: string, type: string) => void;
   onRetry?: () => void;
+  maxItemsToShow?: number;
 }
 
 export function SerpAnalysisPanel({ 
   serpData, 
-  isLoading, 
-  mainKeyword,
+  isLoading = false, 
+  mainKeyword = '',
   onAddToContent = () => {},
-  onRetry = () => {}
+  onRetry = () => {},
+  maxItemsToShow
 }: SerpAnalysisPanelProps) {
   const [expandedSections, setExpandedSections] = useState<{
     searchMetrics: boolean;
