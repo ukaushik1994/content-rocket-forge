@@ -68,11 +68,11 @@ export function useWritingStep() {
   const processedOutline = Array.isArray(outline) 
     ? outline.map(item => {
         if (typeof item === 'string') {
-          return { id: Math.random().toString(), title: item, level: 2 };
+          return { id: Math.random().toString(), title: item, level: 2 as const, type: 'heading', content: '' };
         } else if (item && typeof item === 'object' && 'title' in item) {
           return item as OutlineSection;
         }
-        return { id: Math.random().toString(), title: '', level: 2 };
+        return { id: Math.random().toString(), title: '', level: 2 as const, type: 'heading', content: '' };
       })
     : [];
 

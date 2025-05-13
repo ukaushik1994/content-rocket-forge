@@ -34,7 +34,12 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
     if (typeof newOutline[index] === 'string') {
       newOutline[index] = value;
     } else {
-      newOutline[index] = { ...newOutline[index] as OutlineSection, title: value };
+      // Ensure we maintain the proper OutlineSection shape
+      const section = newOutline[index] as OutlineSection;
+      newOutline[index] = { 
+        ...section, 
+        title: value 
+      };
     }
     setEditableOutline(newOutline);
   };
@@ -44,7 +49,7 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
     const newSection: OutlineSection = {
       id: Math.random().toString(36).substr(2, 9),
       title: 'New Section',
-      level: 1 as const, // Explicitly use a const assertion for the level type
+      level: 2, // Use a valid level from 1-6
       type: 'heading',
       content: ''
     };

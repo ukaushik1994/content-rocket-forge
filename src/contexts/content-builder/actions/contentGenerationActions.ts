@@ -7,7 +7,7 @@ export const createContentGenerationActions = (
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
   // Generate content based on instructions
-  const generateContentRequest = async (instructions?: string) => {
+  const generateContentRequest = async (instructions?: string): Promise<void> => {
     try {
       // Set loading state
       dispatch({ type: 'SET_IS_GENERATING', payload: true });
@@ -45,8 +45,6 @@ ${state.selectedSolution ? `\n### Solution Integration\nThis content includes in
       
       // Update content in state
       dispatch({ type: 'SET_CONTENT', payload: exampleContent });
-      
-      return exampleContent;
     } catch (error) {
       console.error('Error generating content:', error);
       // Handle error state if needed

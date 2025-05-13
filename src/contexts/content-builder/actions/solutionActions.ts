@@ -9,9 +9,12 @@ export const createSolutionActions = (
 ) => {
   // Set selected solution
   const setSelectedSolution = (solutionId: string | null) => {
-    const solution = solutionId 
-      ? state.availableSolutions.find(s => s.id === solutionId) || null
-      : null;
+    let solution: Solution | null = null;
+    
+    if (solutionId) {
+      // Find the solution by id - this uses a safe optional chaining approach in case the property doesn't exist
+      solution = state.availableSolutions?.find(s => s.id === solutionId) || null;
+    }
     
     dispatch({ type: 'SELECT_SOLUTION', payload: solution });
   };

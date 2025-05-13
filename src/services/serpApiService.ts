@@ -1,4 +1,3 @@
-
 /**
  * Service for interacting with the SERP API
  */
