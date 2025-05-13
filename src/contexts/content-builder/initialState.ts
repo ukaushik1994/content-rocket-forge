@@ -1,6 +1,6 @@
 
 import { ContentBuilderState } from './types/state-types';
-import { ContentType, ContentFormat, ContentIntent } from './types/content-types';
+import { ContentFormat, ContentIntent } from './types/content-types';
 
 export const initialState: ContentBuilderState = {
   currentStep: 0,
@@ -64,7 +64,7 @@ export const initialState: ContentBuilderState = {
   contentTitle: '',
   suggestedTitles: [],
   selectedCluster: null,
-  contentType: ContentType.BLOG_POST,
+  contentType: 'blog', // Using string literal instead of ContentType.BLOG_POST
   contentFormat: ContentFormat.ARTICLE,
   contentIntent: ContentIntent.INFORM,
   selectedSolution: null,
@@ -83,7 +83,8 @@ export const initialState: ContentBuilderState = {
     mentionedFeatures: [],
     painPointsAddressed: [],
     nameMentions: 0,
-    audienceAlignment: 0
+    audienceAlignment: 0,
+    ctaEffectiveness: 0
   },
   selectedRegions: ['uk', 'us', 'mea', 'global']
 };
