@@ -28,59 +28,20 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
       return [];
     }
     
-    // Add a cache-busting parameter if refresh is true
-    const cacheBuster = refresh ? `&_cb=${Date.now()}` : '';
+    // This would be where we'd make the actual API call with the API key
+    // For now, since we're instructed to not show mock data if there's no real data,
+    // we'll just return an empty array
+    console.log(`Searching keywords for query: ${query} in countries: ${countries.join(', ')}`);
     
-    // Generate results for each country
-    const allResults = await Promise.all(countries.map(async (country) => {
-      // In a real implementation, this would make API calls with country-specific parameters
-      
-      // Mock data for development - in production, this would call the actual API with country parameter
-      const mockResults = [
-        { title: `${country.toUpperCase()}: How to Use ${query} Effectively`, url: `https://example.com/${country}/1` },
-        { title: `${country.toUpperCase()}: The Ultimate Guide to ${query}`, url: `https://example.com/${country}/2` },
-        { title: `${country.toUpperCase()}: 10 Best ${query} Strategies`, url: `https://example.com/${country}/3` },
-        { title: `${country.toUpperCase()}: Why ${query} Matters for SEO`, url: `https://example.com/${country}/4` },
-        { title: `${country.toUpperCase()}: Understanding ${query} for Beginners`, url: `https://example.com/${country}/5` },
-        { title: `${country.toUpperCase()}: ${query} vs Traditional Methods`, url: `https://example.com/${country}/6` },
-        { title: `${country.toUpperCase()}: The Future of ${query} in 2025`, url: `https://example.com/${country}/7` },
-        { title: `${country.toUpperCase()}: How to Measure ${query} Success`, url: `https://example.com/${country}/8` },
-        { title: `${country.toUpperCase()}: ${query} Best Practices`, url: `https://example.com/${country}/9` },
-        { title: `${country.toUpperCase()}: ${query} Case Studies`, url: `https://example.com/${country}/10` },
-      ];
-      
-      // If refreshing, shuffle the results to simulate new data
-      if (refresh) {
-        return {
-          country,
-          results: mockResults
-            .map(item => ({ 
-              ...item, 
-              title: item.title.replace(query, `${query} ${['Expert', 'Professional', 'Advanced', 'Strategic'][Math.floor(Math.random() * 4)]}`)
-            }))
-            .sort(() => Math.random() - 0.5)
-        };
-      }
-      
-      return { country, results: mockResults };
-    }));
-    
-    // Flatten results and take top items
-    const combinedResults = allResults.flatMap(countryData => 
-      countryData.results.map(result => ({
-        ...result,
-        country: countryData.country
-      }))
-    );
-    
-    return combinedResults.slice(0, limit);
+    // Return empty results since we don't want to show mock data
+    return [];
   } catch (error) {
     console.error('Error searching keywords:', error);
     return [];
   }
 };
 
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, countries: string[] = ['us']): Promise<SerpAnalysisResult> => {
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, countries: string[] = ['us']): Promise<SerpAnalysisResult | null> {
   try {
     // Get the SERP API key from the user's settings
     const { data: apiKey } = await supabase
@@ -91,237 +52,26 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
       .single();
 
     if (!apiKey) {
-      console.warn('No SERP API key found in settings, using mock data');
-      // Return mock data instead of null for testing
-      return generateMockSerpData(keyword, refresh, countries);
+      console.warn('No SERP API key found in settings');
+      // Return null to indicate no data is available instead of using mock data
+      return null;
     }
     
-    // Mock data for now - in production, this would call the actual API
-    return generateMockSerpData(keyword, refresh, countries);
+    // In a real implementation, we would make an API call here with the apiKey
+    // Since we don't want to use mock data, we'll return null to indicate no data found
+    return null;
   } catch (error) {
     console.error('Error analyzing keyword:', error);
-    return generateMockSerpData(keyword, refresh, countries);
+    return null;
   }
 };
 
-// Helper function to generate mock SERP data
-function generateMockSerpData(keyword: string, refresh?: boolean, countries: string[] = ['us']): SerpAnalysisResult {
-  // Create variations based on refresh parameter
-  const variationFactor = refresh ? Math.random() : 0.5;
-  
-  // Ensure we always include countries data for requested regions
-  const regionsToInclude = Array.from(new Set([...countries]));
-  
-  // Create a set to store unique values to prevent duplicates
-  const uniqueKeywords = new Set<string>();
-  const uniqueQuestions = new Set<string>();
-  const uniqueHeadings = new Set<string>();
-  const uniqueRelatedSearches = new Set<string>();
-  const uniqueEntities = new Set<string>();
-  const uniqueContentGaps = new Set<string>();
-  
-  // Add region-specific data
-  regionsToInclude.forEach((region) => {
-    // Format the region label
-    let regionLabel: string;
-    switch(region.toLowerCase()) {
-      case 'mea': 
-        regionLabel = 'MEA'; 
-        break;
-      case 'global': 
-        regionLabel = 'Global'; 
-        break;
-      default:
-        regionLabel = region.toUpperCase();
-    }
-    
-    // Add region-specific keywords
-    [`${regionLabel}: ${keyword} strategy`, 
-     `${regionLabel}: ${keyword} tools`, 
-     `${regionLabel}: best ${keyword} practices`, 
-     `${regionLabel}: ${keyword} guide`,
-     `${regionLabel}: ${keyword} tutorial`,
-     `${regionLabel}: ${keyword} examples`,
-     `${regionLabel}: ${keyword} techniques`,
-     `${regionLabel}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
-    
-    // Add region-specific questions
-    [`${regionLabel}: How does ${keyword} work in ${regionLabel}?`,
-     `${regionLabel}: What is the best ${keyword} tool in ${regionLabel}?`,
-     `${regionLabel}: Why is ${keyword} important for SEO in ${regionLabel}?`,
-     `${regionLabel}: When should I use ${keyword} in ${regionLabel}?`].forEach(q => uniqueQuestions.add(q));
-    
-    // Add region-specific headings
-    [`${regionLabel}: Understanding ${keyword} in ${regionLabel}`,
-     `${regionLabel}: Benefits of ${keyword} for ${regionLabel} markets`,
-     `${regionLabel}: How to Implement ${keyword} in ${regionLabel}`,
-     `${regionLabel}: ${keyword} Best Practices for ${regionLabel}`].forEach(h => uniqueHeadings.add(h));
-    
-    // Add region-specific related searches
-    [`${regionLabel}: ${keyword} strategy`,
-     `${regionLabel}: ${keyword} tools`,
-     `${regionLabel}: best ${keyword} practices in ${regionLabel}`,
-     `${regionLabel}: ${keyword} guide`].forEach(rs => uniqueRelatedSearches.add(rs));
-     
-    // Add region-specific entities
-    [`${regionLabel}: ${keyword} platform`,
-     `${regionLabel}: ${keyword} strategy`,
-     `${regionLabel}: ${keyword} tools`,
-     `${regionLabel}: ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
-
-    // Add region-specific content gaps
-    [`${regionLabel}: ${keyword} for beginners in ${regionLabel}`,
-     `${regionLabel}: Advanced ${keyword} techniques for ${regionLabel}`,
-     `${regionLabel}: ${keyword} ROI measurement in ${regionLabel}`,
-     `${regionLabel}: ${keyword} vs competitors in ${regionLabel}`].forEach(cg => uniqueContentGaps.add(cg));
-  });
-  
-  // Add refresh-specific items if needed
-  if (refresh) {
-    regionsToInclude.forEach(region => {
-      let regionLabel: string;
-      switch(region.toLowerCase()) {
-        case 'mea': 
-          regionLabel = 'MEA'; 
-          break;
-        case 'global': 
-          regionLabel = 'Global'; 
-          break;
-        default:
-          regionLabel = region.toUpperCase();
-      }
-      
-      [`${regionLabel}: ${keyword} certification`,
-       `${regionLabel}: ${keyword} for startups`,
-       `${regionLabel}: ${keyword} ROI`,
-       `${regionLabel}: ${keyword} software comparison`].forEach(kw => uniqueKeywords.add(kw));
-       
-      [`${regionLabel}: What are the advantages of ${keyword} in ${regionLabel}?`,
-       `${regionLabel}: How much does ${keyword} cost on average in ${regionLabel}?`,
-       `${regionLabel}: Can ${keyword} be integrated with other systems in ${regionLabel}?`].forEach(q => uniqueQuestions.add(q));
-       
-      [`${regionLabel}: Cost analysis of ${keyword} in ${regionLabel}`,
-       `${regionLabel}: ${keyword} integration options for ${regionLabel}`,
-       `${regionLabel}: Future of ${keyword} in ${regionLabel} market`].forEach(h => uniqueHeadings.add(h));
-       
-      [`${regionLabel}: ${keyword} pricing model`,
-       `${regionLabel}: ${keyword} certification authority`,
-       `${regionLabel}: ${keyword} compliance in ${regionLabel}`].forEach(e => uniqueEntities.add(e));
-       
-      [`${regionLabel}: ${keyword} cost optimization in ${regionLabel}`,
-       `${regionLabel}: ${keyword} compliance requirements for ${regionLabel}`,
-       `${regionLabel}: ${keyword} implementation case studies in ${regionLabel}`].forEach(cg => uniqueContentGaps.add(cg));
-    });
-  }
-  
-  // Create an array to store region-specific top results
-  const topResultsByRegion: Array<{
-    title: string;
-    link: string;
-    snippet: string;
-    position: number;
-    country: string;
-  }> = [];
-
-  // Generate top results for each region
-  regionsToInclude.forEach((region, regionIndex) => {
-    let regionLabel: string;
-    switch(region.toLowerCase()) {
-      case 'mea': 
-        regionLabel = 'MEA'; 
-        break;
-      case 'global': 
-        regionLabel = 'Global'; 
-        break;
-      default:
-        regionLabel = region.toUpperCase();
-    }
-    
-    // Generate 3 results per region
-    for (let i = 1; i <= 3; i++) {
-      topResultsByRegion.push({
-        title: `${regionLabel}: The ${i === 1 ? 'Ultimate Guide' : i === 2 ? 'Complete Manual' : 'Expert Roadmap'} to ${keyword} in ${regionLabel}`,
-        link: `https://example.com/${region.toLowerCase()}/${keyword.replace(/\s+/g, '-')}-guide-${i}`,
-        snippet: `Comprehensive ${regionLabel} resource about ${keyword} with region-specific insights and strategies for ${regionLabel} markets.`,
-        position: regionIndex * 3 + i,
-        country: region.toLowerCase()
-      });
-    }
-  });
-
-  // Generate mock data based on the keyword with potential variations
-  return {
-    keyword,
-    searchVolume: Math.floor(Math.random() * 10000) + 1000,
-    competitionScore: Math.random() * 0.8,
-    keywordDifficulty: Math.floor(Math.random() * 100),
-    entities: Array.from(uniqueEntities).map(name => ({ name, type: 'entity' })),
-    peopleAlsoAsk: Array.from(uniqueQuestions).map(question => ({ question, source: 'search' })),
-    headings: Array.from(uniqueHeadings).map(text => ({ text, level: 'h2' as const })),
-    contentGaps: Array.from(uniqueContentGaps).map(topic => ({ 
-      topic, 
-      description: `Content opportunity for ${topic}`, 
-      recommendation: `Create comprehensive content about ${topic}` 
-    })),
-    topResults: topResultsByRegion,
-    relatedSearches: Array.from(uniqueRelatedSearches).map(query => ({ query })),
-    keywords: Array.from(uniqueKeywords),
-    recommendations: [
-      `Create a comprehensive guide on ${keyword}`,
-      `Include step-by-step instructions for implementing ${keyword}`,
-      `Add visual examples of ${keyword} in action`,
-      `Compare ${keyword} with alternative approaches`,
-      `Include case studies showing successful ${keyword} implementation`,
-      ...regionsToInclude.map(region => {
-        let regionLabel: string;
-        switch(region.toLowerCase()) {
-          case 'mea': 
-            regionLabel = 'MEA'; 
-            break;
-          case 'global': 
-            regionLabel = 'Global'; 
-            break;
-          default:
-            regionLabel = region.toUpperCase();
-        }
-        return `Create localized content for ${regionLabel} market`;
-      }),
-      `Develop a strategy that works across all selected regions`
-    ],
-    isMockData: true,
-    searchCountries: countries  // Property explicitly added to match type
-  };
-}
-
 export const searchRelatedKeywords = async (keyword: string, countries: string[] = ['us']) => {
   try {
-    const uniqueKeywords = new Set<string>();
-    
-    // Generate region-specific related keywords
-    countries.forEach(region => {
-      let regionLabel: string;
-      switch(region.toLowerCase()) {
-        case 'mea': 
-          regionLabel = 'MEA'; 
-          break;
-        case 'global': 
-          regionLabel = 'Global'; 
-          break;
-        default:
-          regionLabel = region.toUpperCase();
-      }
-      
-      [`${regionLabel}: ${keyword} strategy`,
-       `${regionLabel}: ${keyword} tools`,
-       `${regionLabel}: best ${keyword} practices in ${region}`,
-       `${regionLabel}: ${keyword} guide`,
-       `${regionLabel}: ${keyword} tutorial`,
-       `${regionLabel}: ${keyword} examples`,
-       `${regionLabel}: ${keyword} techniques`,
-       `${regionLabel}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
-    });
-    
-    return Array.from(uniqueKeywords);
+    // In a real implementation, this would make an API call
+    // Since we don't want to use mock data, we'll return an empty array
+    console.log(`Searching related keywords for: ${keyword} in countries: ${countries.join(', ')}`);
+    return [];
   } catch (error) {
     console.error('Error searching related keywords:', error);
     return [];

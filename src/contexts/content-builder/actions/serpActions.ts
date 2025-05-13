@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -10,8 +11,8 @@ export const createSerpActions = (
   const analyzeKeyword = async (keyword: string, regions?: string[]) => {
     if (!keyword) return;
     
-    // Use provided regions or default to UK, US, MEA, global
-    const searchRegions = regions || ['uk', 'us', 'mea', 'global'];
+    // Use provided regions or default to those in state
+    const searchRegions = regions || state.selectedRegions;
     
     // Start loading
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
@@ -27,7 +28,7 @@ export const createSerpActions = (
         toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
       } else {
         console.log("SERP data successfully retrieved:", serpData);
-        toast.success("Search data analysis completed successfully.");
+        toast.success(`Search data analysis completed for ${searchRegions.join(', ')}.`);
       }
     } catch (error) {
       console.error('Error analyzing keyword:', error);

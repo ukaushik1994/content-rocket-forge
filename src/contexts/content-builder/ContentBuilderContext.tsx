@@ -15,6 +15,7 @@ export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = (
   // Create actions
   const actions = createContentBuilderActions(state, dispatch);
 
+  // Make sure we're exposing all the needed functions from actions
   return (
     <ContentBuilderContext.Provider
       value={{ 
@@ -36,4 +37,3 @@ export const useContentBuilder = () => {
   }
   return context;
 };
-
