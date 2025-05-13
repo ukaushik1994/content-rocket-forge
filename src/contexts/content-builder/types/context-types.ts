@@ -39,6 +39,12 @@ export interface ContentBuilderContextType {
   setOutline: (outline: string[]) => void;
   setOutlineSections: (sections: OutlineSection[]) => void;
   
+  // Outline Actions
+  addOutlineItem: (index: number) => void;
+  removeOutlineItem: (index: number) => void;
+  updateOutlineItem: (index: number, updatedItem: string | OutlineSection) => void;
+  moveOutlineItem: (fromIndex: number, toIndex: number) => void;
+  
   // Meta Actions
   setMetaTitle: (title: string) => void;
   setMetaDescription: (description: string) => void;
@@ -47,12 +53,23 @@ export interface ContentBuilderContextType {
   analyzeSeo: (content: string) => Promise<void>;
   applySeoImprovement: (id: string) => void;
   skipOptimizationStep: () => void;
-
+  updateSeoScore: (score: number) => void;
+  addSeoImprovement: (improvement: any) => void;
+  
+  // Solution Actions
+  setSelectedSolution: (solutionId: string | null) => void;
+  setContentLeadIn: (leadIn: string) => void;
+  
   // Advanced Content Actions
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
   saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
   setAdditionalInstructions: (instructions: string) => void;
+  setSuggestedTitles: (titles: string[]) => void;
+  generateContentRequest: (instructions?: string) => Promise<void>;
   
   // SERP Region Settings
   setSelectedRegions: (regions: string[]) => void;
+  
+  // Cluster actions
+  selectCluster: (cluster: any | null) => void;
 }

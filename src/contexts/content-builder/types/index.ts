@@ -6,11 +6,16 @@ export * from './serp-types';
 export * from './cluster-types';
 export * from './content-types';
 export * from './document-types';
+export * from './outline-types';
+export * from './solution-types';
+export * from './context-types';
+export * from './seo-types';
+export * from './step-types';
 
 import { ContentBuilderState } from './state-types';
 import { ContentBuilderAction } from './action-types';
 import { ContentFormat, ContentIntent } from './content-types';
-import { OutlineSection } from './document-types';
+import { OutlineSection } from './outline-types';
 import { ContentCluster } from './cluster-types';
 import { SerpSelection } from './serp-types';
 
@@ -69,4 +74,10 @@ export interface ContentBuilderContextType {
   updateSeoScore: (score: number) => void;
   addSeoImprovement: (improvement: any) => void;
   applySeoImprovement: (id: string) => void;
+  
+  // Advanced Content Actions
+  saveContentToDraft: (options: any) => Promise<string | null>;
+  saveContentToPublished: (options: any) => Promise<string | null>;
+  analyzeSeo: (content: string) => Promise<void>;
+  skipOptimizationStep: () => void;
 }
