@@ -19,7 +19,7 @@ export type ContentBuilderActionType =
   | 'REMOVE_SERP_SELECTION'
   | 'TOGGLE_SERP_SELECTION'
   | 'RESET_SERP_SELECTIONS'
-  | 'SET_OUTLINE'  // Add this line to support the SET_OUTLINE action
+  | 'SET_OUTLINE'
   | 'SET_OUTLINE_SECTIONS'
   | 'SET_IS_GENERATING'
   | 'SET_CONTENT'
@@ -30,6 +30,7 @@ export type ContentBuilderActionType =
   | 'SET_CONTENT_FORMAT'
   | 'SET_CONTENT_INTENT'
   | 'SET_SELECTED_SOLUTION'
+  | 'SELECT_SOLUTION'
   | 'SET_SEO_SCORE'
   | 'SET_SEO_IMPROVEMENTS'
   | 'SET_META_TITLE'
@@ -39,7 +40,10 @@ export type ContentBuilderActionType =
   | 'SET_SOLUTION_INTEGRATION_METRICS'
   | 'SET_SELECTED_REGIONS'
   | 'SET_AVAILABLE_SOLUTIONS'
-  | 'SET_ADDITIONAL_INSTRUCTIONS';
+  | 'SET_CONTENT_LEAD_IN'
+  | 'ADD_KEYWORD'
+  | 'REMOVE_KEYWORD'
+  | 'SELECT_CLUSTER';
 
 export interface ContentBuilderAction {
   type: ContentBuilderActionType;

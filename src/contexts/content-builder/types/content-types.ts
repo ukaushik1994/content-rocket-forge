@@ -3,7 +3,7 @@
  * Content-related type definitions
  */
 
-export type ContentType = 'blog' | 'article' | 'landing' | 'product' | 'custom';
+export type ContentType = 'blog' | 'article' | 'landing' | 'product' | 'custom' | 'landingPage' | 'productDescription' | 'email' | 'social';
 export type ContentFormat = 'markdown' | 'html' | 'rich-text' | 'plain-text';
 export type ContentIntent = 'informational' | 'commercial' | 'transactional' | 'navigational';
 

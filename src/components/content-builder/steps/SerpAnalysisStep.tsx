@@ -22,8 +22,8 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      // Pass refresh = true to force refresh the data
-      await analyzeKeyword(mainKeyword, true, selectedRegions);
+      // Fix parameter types by passing the correct arguments
+      await analyzeKeyword(mainKeyword, selectedRegions, true);
     }
   };
   
@@ -59,8 +59,8 @@ export const SerpAnalysisStep = () => {
     
     // If enabling mock data, automatically reanalyze with mock data
     if (newValue && mainKeyword) {
-      // Set refresh to true and pass the selected regions
-      analyzeKeyword(mainKeyword, true, selectedRegions);
+      // Fix parameter types
+      analyzeKeyword(mainKeyword, selectedRegions, true);
     }
   };
   

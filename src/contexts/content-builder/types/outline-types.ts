@@ -3,7 +3,7 @@ export interface OutlineSection {
   id: string;
   title: string;
   content?: string;
-  type?: 'heading' | 'subheading' | 'paragraph' | 'bullet' | 'numbered' | 'blockquote' | 'custom';
+  type: 'heading' | 'subheading' | 'paragraph' | 'bullet' | 'numbered' | 'blockquote' | 'custom';
   level?: 1 | 2 | 3 | 4 | 5 | 6;
   expanded?: boolean;
   children?: OutlineSection[];

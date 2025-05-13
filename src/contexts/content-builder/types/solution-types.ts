@@ -26,14 +26,29 @@ export interface Solution {
 }
 
 export interface SolutionIntegrationMetrics {
-  totalScore: number;
-  featuresIncluded: number;
-  useCasesAddressed: number;
-  painPointsAddressed: number;
-  audienceTargeting: number;
-  contentQuality: number;
-  recommendationCount: number;
-  keywordIntegrationScore: number;
+  totalScore?: number;
+  featuresIncluded?: number;
+  useCasesAddressed?: number;
+  painPointsAddressed?: number;
+  audienceTargeting?: number;
+  contentQuality?: number;
+  recommendationCount?: number;
+  keywordIntegrationScore?: number;
+  
+  // Add missing properties from SolutionIntegrationCard.tsx
+  overallScore: number;
+  featureIncorporation: number;
+  positioningScore: number;
+  mentionedFeatures: string[];
+  
+  // Original properties from analyzeSolutionIntegration.ts
+  matchScore: number;
+  keywordUsage: number;
+  contentRelevance: number;
+  potentialImpact: number;
+  recommendations: string[];
+  nameMentions?: number;
+  audienceAlignment?: number;
 }
 
 export type SolutionCategory = 'analytics' | 'seo' | 'content' | 'social' | 'ecommerce' | 'automation' | 'other';

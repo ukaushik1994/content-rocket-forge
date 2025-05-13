@@ -125,7 +125,7 @@ export const ContentTypeStep = () => {
   };
   
   const handleSelectSolution = (solution: Solution) => {
-    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
+    dispatch({ type: 'SET_SELECTED_SOLUTION', payload: solution });
     toast.success(`Selected solution: ${solution.name}`);
   };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -87,7 +86,7 @@ export const KeywordSelectionStep = () => {
     // Add it to selected keywords if not already there
     if (!selectedKeywords.includes(keyword)) {
       dispatch({
-        type: 'ADD_KEYWORD',
+        type: 'ADD_SELECTED_KEYWORD',
         payload: keyword
       });
     }
@@ -99,14 +98,14 @@ export const KeywordSelectionStep = () => {
   
   const handleAddKeyword = (kw: string) => {
     dispatch({
-      type: 'ADD_KEYWORD',
+      type: 'ADD_SELECTED_KEYWORD',
       payload: kw
     });
   };
   
   const handleRemoveKeyword = (kw: string) => {
     dispatch({
-      type: 'REMOVE_KEYWORD',
+      type: 'REMOVE_SELECTED_KEYWORD',
       payload: kw
     });
   };
