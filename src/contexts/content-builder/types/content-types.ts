@@ -1,78 +1,43 @@
 
 /**
- * Content-related type definitions
+ * Content type definitions
  */
 
-// Content Type Options
-export type ContentType = 'blog' | 'article' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'seo';
+export type ContentType = 
+  | 'blog'
+  | 'article'
+  | 'landing-page'
+  | 'product-page'
+  | 'guide'
+  | 'review'
+  | 'comparison'
+  | 'info-page'
+  | 'custom';
 
-// Content Format Options
-export enum ContentFormat {
-  ARTICLE = 'long-form',
-  SHORT_FORM = 'short-form',
-  LISTICLE = 'listicle',
-  HOW_TO = 'how-to',
-  LIST = 'list'
-}
-
-// Content Intent Options
-export enum ContentIntent {
-  INFORM = 'inform',
-  CONVERT = 'convert',
-  ENTERTAIN = 'entertain',
-  EDUCATE = 'educate'
-}
-
-// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
-  mainKeyword: string;
-  secondaryKeywords: string[];
-  contentType: string;
-  contentFormat?: string;
-  contentIntent?: string;
-  metaTitle: string | null;
-  metaDescription: string | null;
-  status: 'draft' | 'published' | 'archived';
-  notes: string;
-  // Optional fields
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
+  contentType?: ContentType;
   seoScore?: number;
-  outlineJson?: string;
-  solutionInfo?: any;
-  solutionMetrics?: any;
-  
-  // Adding missing properties
-  outline?: string[];
-  serpSelections?: any[];
-  serpData?: any;
+  isPublished?: boolean;
+  customFields?: Record<string, any>;
 }
 
-// Define SearchCountry type for use in the SERP analysis
-export interface SearchCountry {
-  code: string;
-  name: string;
-  flag?: string;
+export interface KeywordUsage {
+  keyword: string;
+  count: number;
+  density: string;
 }
 
 // Available countries for SERP analysis
-export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { code: 'us', name: 'United States', flag: '🇺🇸' },
-  { code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'mea', name: 'Middle East', flag: '🌍' },
-  { code: 'global', name: 'Global', flag: '🌎' }
+export const AVAILABLE_COUNTRIES = [
+  { id: 'us', name: 'United States', flag: '🇺🇸' },
+  { id: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
+  { id: 'ca', name: 'Canada', flag: '🇨🇦' },
+  { id: 'au', name: 'Australia', flag: '🇦🇺' },
+  { id: 'mea', name: 'Middle East', flag: '🌍' },
+  { id: 'global', name: 'Global', flag: '🌐' }
 ];
-
-// Keyword Usage Types for KeywordRepository
-export interface KeywordUsage {
-  keyword: string;
-  usageCount: number;
-  isPrimary: boolean;
-  usedIn: {
-    contentId: string;
-    contentTitle: string;
-    isPrimary: boolean;
-    status: string;
-  }[];
-}
-

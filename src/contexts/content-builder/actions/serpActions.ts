@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -26,7 +27,7 @@ export const createSerpActions = (
       if (!serpData) {
         toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
       } else {
-        console.log("SERP data successfully retrieved:", serpData);
+        console.log("SERP data successfully retrieved");
         toast.success("Search data analysis completed successfully.");
       }
     } catch (error) {

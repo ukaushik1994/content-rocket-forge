@@ -27,7 +27,7 @@ export function SerpContentGenerator({
   const [localSerpData, setLocalSerpData] = useState<SerpAnalysisResult | null>(serpData);
 
   if (!serpData) {
-    return <EmptyState />;
+    return <EmptyState message="No SERP data available. Please add your API key in settings and analyze a keyword." />;
   }
 
   const refreshSection = async (section: 'keywords' | 'headings' | 'questions' | 'entities') => {
