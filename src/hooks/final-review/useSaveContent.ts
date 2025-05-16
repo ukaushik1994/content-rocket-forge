@@ -12,7 +12,7 @@ export function useSaveContent() {
   const { state } = useContentBuilder();
   const { addContentItem } = useContent();
   
-  const handleSaveToDraft = async () => {
+  const handleSaveToDraft = async (): Promise<void> => {
     try {
       setIsSaving(true);
       console.log("Saving content to draft...");
@@ -20,7 +20,7 @@ export function useSaveContent() {
       if (!state.content || !state.mainKeyword) {
         toast.error("Content or main keyword is missing");
         setIsSaving(false);
-        return null;
+        return;
       }
       
       const title = state.metaTitle || `${state.mainKeyword} - Draft`;
@@ -46,7 +46,7 @@ export function useSaveContent() {
         metadata: {
           mainKeyword: state.mainKeyword,
           secondaryKeywords: state.selectedKeywords,
-          outline: JSON.stringify(state.outline), // Convert complex objects to string
+          outline: Array.isArray(state.outline) ? state.outline : [state.outline].filter(Boolean), // Ensure outline is an array
           outlineSections: JSON.stringify(state.outlineSections),
           additionalInstructions: state.additionalInstructions,
           contentType: state.contentType,
@@ -63,21 +63,18 @@ export function useSaveContent() {
       if (id) {
         toast.success("Content saved to drafts");
         setIsSavedToDraft(true);
-        return id;
       } else {
         toast.error("Failed to save content");
-        return null;
       }
     } catch (error) {
       console.error("Error in handleSaveToDraft:", error);
       toast.error("An error occurred while saving the content");
-      return null;
     } finally {
       setIsSaving(false);
     }
   };
   
-  const handlePublish = async () => {
+  const handlePublish = async (): Promise<void> => {
     try {
       setIsPublishing(true);
       console.log("Publishing content...");
@@ -85,14 +82,14 @@ export function useSaveContent() {
       if (!state.content || !state.mainKeyword) {
         toast.error("Content or main keyword is missing");
         setIsPublishing(false);
-        return null;
+        return;
       }
       
       // Check for minimum SEO score before publishing
       if (state.seoScore < 50) {
         if (!confirm("This content has a low SEO score. Are you sure you want to publish it?")) {
           setIsPublishing(false);
-          return null;
+          return;
         }
       }
       
@@ -119,7 +116,7 @@ export function useSaveContent() {
         metadata: {
           mainKeyword: state.mainKeyword,
           secondaryKeywords: state.selectedKeywords,
-          outline: JSON.stringify(state.outline), // Convert complex objects to string
+          outline: Array.isArray(state.outline) ? state.outline : [state.outline].filter(Boolean), // Ensure outline is an array
           outlineSections: JSON.stringify(state.outlineSections),
           additionalInstructions: state.additionalInstructions,
           contentType: state.contentType,
@@ -136,15 +133,12 @@ export function useSaveContent() {
       
       if (id) {
         toast.success("Content published successfully!");
-        return id;
       } else {
         toast.error("Failed to publish content");
-        return null;
       }
     } catch (error) {
       console.error("Error in handlePublish:", error);
       toast.error("An error occurred while publishing the content");
-      return null;
     } finally {
       setIsPublishing(false);
     }
