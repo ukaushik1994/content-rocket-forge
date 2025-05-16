@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SerpAnalysisResult } from '@/types/serp';
 import { ContentTemplatesHeader } from './templates/ContentTemplatesHeader';
@@ -49,8 +50,13 @@ export function SerpContentGenerator({
     }
 
     try {
+      // Get countries from existing data or default to US
+      const countries = (serpData.searchCountries && serpData.searchCountries.length > 0) 
+        ? serpData.searchCountries 
+        : ['us'];
+      
       // Fetch new SERP data with refresh flag set to true
-      const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
+      const newSerpData = await analyzeKeywordSerp(mainKeyword, true, countries);
       
       if (newSerpData) {
         // Create updated data by merging the new section data with existing data

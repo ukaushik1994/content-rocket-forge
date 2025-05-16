@@ -17,7 +17,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
     const { query, refresh = false, countries = ['us'] } = params;
     
-    // Use the apiKeyService instead of direct database query
+    // Use the apiKeyService to get the API key
     const apiKey = await getApiKey('serp');
     if (!apiKey) {
       console.error('No SERP API key found in settings');
@@ -25,28 +25,32 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
       return [];
     }
     
-    console.log('SERP API key found, making API request with countries:', countries);
+    console.log('SERP API key found, making direct API request with countries:', countries);
     
-    // Make the actual API call to the SERP service
-    const response = await fetch('/api/serp/search-keywords', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        refresh,
-        countries
-      }),
+    // Make direct API call to the SERP service without using a proxy endpoint
+    const searchParams = new URLSearchParams({
+      engine: 'google',
+      q: query,
+      api_key: apiKey,
+      location: countries[0] || 'us',
+      gl: countries[0] || 'us'
     });
+
+    const url = `https://serpapi.com/search?${searchParams.toString()}`;
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("searchKeywords response:", data);
-    return data.results || [];
+    console.log("SERP search response:", data);
+    
+    // Extract relevant results from the response
+    const organicResults = data.organic_results || [];
+    const relatedSearches = data.related_searches || [];
+    
+    return [...organicResults, ...relatedSearches];
   } catch (error) {
     console.error('Error searching keywords:', error);
     toast.error('Failed to search keywords. Please check your API connection.');
@@ -58,7 +62,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
   try {
     console.log('Analyzing keyword:', keyword, 'refresh:', refresh, 'countries:', countries);
     
-    // Use the apiKeyService instead of direct database query
+    // Use the apiKeyService to get the API key
     const apiKey = await getApiKey('serp');
     if (!apiKey) {
       console.warn('No SERP API key found in settings');
@@ -66,20 +70,23 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
       return null;
     }
     
-    console.log('SERP API key found, making API request with countries:', countries);
+    console.log('SERP API key found, making direct API request with countries:', countries);
     
-    // Make the actual API call to the SERP service
-    const response = await fetch('/api/serp/analyze-keyword', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        keyword,
-        refresh,
-        countries
-      }),
+    // Use the first country as the primary location
+    const primaryCountry = countries[0] || 'us';
+    
+    // Make direct API call to SERP API
+    const searchParams = new URLSearchParams({
+      engine: 'google',
+      q: keyword,
+      api_key: apiKey,
+      location: primaryCountry,
+      gl: primaryCountry,
+      num: '10'
     });
+
+    const url = `https://serpapi.com/search?${searchParams.toString()}`;
+    const response = await fetch(url);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -113,7 +120,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
 
 export const searchRelatedKeywords = async (keyword: string, countries: string[] = ['us']) => {
   try {
-    // Use the apiKeyService instead of direct database query
+    // Use the apiKeyService to get the API key
     const apiKey = await getApiKey('serp');
     if (!apiKey) {
       console.warn('No SERP API key found in settings');
@@ -121,19 +128,22 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
       return [];
     }
     
-    console.log('SERP API key found, making API request with countries:', countries);
+    console.log('SERP API key found, making direct API request with countries:', countries);
     
-    // Make the actual API call to the SERP service
-    const response = await fetch('/api/serp/related-keywords', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        keyword,
-        countries
-      }),
+    // Use the first country as the primary location
+    const primaryCountry = countries[0] || 'us';
+    
+    // Make direct API call to SERP API
+    const searchParams = new URLSearchParams({
+      engine: 'google',
+      q: keyword,
+      api_key: apiKey,
+      location: primaryCountry,
+      gl: primaryCountry,
     });
+
+    const url = `https://serpapi.com/search?${searchParams.toString()}`;
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
@@ -141,7 +151,12 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
 
     const data = await response.json();
     console.log("Related keywords response:", data);
-    return data.keywords || [];
+    
+    // Extract related searches from the response
+    const relatedSearches = data.related_searches || [];
+    const keywords = relatedSearches.map((item: any) => item.query || '');
+    
+    return keywords;
   } catch (error) {
     console.error('Error searching related keywords:', error);
     toast.error('Failed to fetch related keywords. Please check your API connection.');
