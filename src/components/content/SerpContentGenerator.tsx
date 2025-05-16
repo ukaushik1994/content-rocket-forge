@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SerpAnalysisResult } from '@/types/serp';
 import { ContentTemplatesHeader } from './templates/ContentTemplatesHeader';

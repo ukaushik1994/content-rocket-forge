@@ -25,14 +25,14 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
       size={size}
       onClick={onClick}
       disabled={isRefreshing}
-      className={cn("gap-1.5", className)}
+      className={className}
+      title="Refresh"
       {...props}
     >
       <RefreshCw className={cn(
         "h-3.5 w-3.5", 
         isRefreshing && "animate-spin"
       )} />
-      {children || "Refresh"}
     </Button>
   );
 };

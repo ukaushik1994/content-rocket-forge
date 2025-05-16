@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -187,6 +186,7 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
                     isRefreshing={isLoading}
                     disabled={isLoading}
                     size="sm"
+                    title="Refresh keyword suggestions"
                   />
                 </div>
               </div>
