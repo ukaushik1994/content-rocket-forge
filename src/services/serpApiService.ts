@@ -25,7 +25,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
       return [];
     }
     
-    console.log('SERP API key found, making API request');
+    console.log('SERP API key found, making API request with countries:', countries);
     
     // Make the actual API call to the SERP service
     const response = await fetch('/api/serp/search-keywords', {
@@ -66,7 +66,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
       return null;
     }
     
-    console.log('SERP API key found, making API request');
+    console.log('SERP API key found, making API request with countries:', countries);
     
     // Make the actual API call to the SERP service
     const response = await fetch('/api/serp/analyze-keyword', {
@@ -96,6 +96,9 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
       return null;
     }
     
+    // Add the search countries to the response data
+    data.searchCountries = countries;
+    
     // Process and normalize the response
     const processedData = processSerpResponse(data);
     console.log("Processed SERP data:", processedData);
@@ -118,7 +121,7 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
       return [];
     }
     
-    console.log('SERP API key found, making API request');
+    console.log('SERP API key found, making API request with countries:', countries);
     
     // Make the actual API call to the SERP service
     const response = await fetch('/api/serp/related-keywords', {

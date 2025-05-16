@@ -43,7 +43,8 @@ export const KeywordSelectionStep = () => {
     selectedCluster,
     serpData,
     serpSelections,
-    isAnalyzing
+    isAnalyzing,
+    selectedRegions
   } = state;
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -89,7 +90,9 @@ export const KeywordSelectionStep = () => {
 
     // Automatically start SERP analysis when a keyword is entered
     setHasSearched(true);
-    await analyzeKeyword(keyword);
+    
+    // Pass the selected regions to the analyzeKeyword function
+    await analyzeKeyword(keyword, selectedRegions);
   };
   
   const handleAddKeyword = (kw: string) => {
@@ -152,7 +155,8 @@ export const KeywordSelectionStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword);
+      // Pass the selected regions to the analyzeKeyword function
+      await analyzeKeyword(mainKeyword, selectedRegions);
     }
   };
   

@@ -10,9 +10,10 @@ import { SerpContentGapsTab } from './serp-tabs/SerpContentGapsTab';
 import { SerpCompetitorsTab } from './serp-tabs/SerpCompetitorsTab';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCcw, Settings } from 'lucide-react';
+import { AlertCircle, RefreshCcw, Settings, GlobeIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getApiKey } from '@/services/apiKeyService';
+import { AVAILABLE_COUNTRIES } from '@/components/content-builder/keyword/CountrySelector';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -68,19 +69,36 @@ export function SerpAnalysisPanel({
   if (Object.keys(serpData).length === 0) {
     return <SerpNoDataState keyword={mainKeyword} onRetry={onRetry} />;
   }
+  
+  // Format the countries for display
+  const searchCountriesDisplay = serpData.searchCountries && serpData.searchCountries.length > 0 
+    ? serpData.searchCountries.map(code => {
+        const country = AVAILABLE_COUNTRIES.find(c => c.value === code);
+        return country ? country.label : code;
+      }).join(", ")
+    : "US";
 
   return (
     <div className="border rounded-lg shadow-lg overflow-hidden">
       <Tabs defaultValue="keywords" value={activeTab} onValueChange={setActiveTab}>
         <div className="bg-card border-b px-4 py-2">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6">
-            <TabsTrigger value="keywords">Keywords</TabsTrigger>
-            <TabsTrigger value="questions">Questions</TabsTrigger>
-            <TabsTrigger value="entities">Entities</TabsTrigger>
-            <TabsTrigger value="headings">Headings</TabsTrigger>
-            <TabsTrigger value="contentGaps">Gaps</TabsTrigger>
-            <TabsTrigger value="competitors">Competition</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-2">
+            <TabsList className="grid grid-cols-3 md:grid-cols-6">
+              <TabsTrigger value="keywords">Keywords</TabsTrigger>
+              <TabsTrigger value="questions">Questions</TabsTrigger>
+              <TabsTrigger value="entities">Entities</TabsTrigger>
+              <TabsTrigger value="headings">Headings</TabsTrigger>
+              <TabsTrigger value="contentGaps">Gaps</TabsTrigger>
+              <TabsTrigger value="competitors">Competition</TabsTrigger>
+            </TabsList>
+            
+            {serpData.searchCountries && serpData.searchCountries.length > 0 && (
+              <div className="hidden md:flex items-center text-xs text-muted-foreground">
+                <GlobeIcon className="h-3 w-3 mr-1" />
+                <span>{searchCountriesDisplay}</span>
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="p-4 bg-background">

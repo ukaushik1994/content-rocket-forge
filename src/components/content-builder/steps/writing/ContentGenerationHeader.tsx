@@ -7,8 +7,7 @@ import {
   BookText, 
   ClipboardList, 
   Wand2,
-  Loader2,
-  GlobeIcon
+  Loader2
 } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import {
@@ -18,25 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { CountrySelector, AVAILABLE_COUNTRIES, SearchCountry } from '@/components/content-builder/keyword/CountrySelector';
 
-// Add export for types and countries
-export interface SearchCountry {
-  value: string;
-  label: string;
-}
-
-export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { value: 'us', label: '🇺🇸 US' },
-  { value: 'uk', label: '🇬🇧 UK' },
-  { value: 'mea', label: '🌍 MEA' },
-  { value: 'global', label: '🌐 Global' }
-];
+// Export for types
+export { AVAILABLE_COUNTRIES, type SearchCountry };
 
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
@@ -63,30 +47,6 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   selectedCountries,
   onCountriesChange
 }) => {
-  const countries = AVAILABLE_COUNTRIES;
-  
-  const toggleCountry = (country: string) => {
-    if (selectedCountries.includes(country)) {
-      // Don't remove if it's the last one
-      if (selectedCountries.length > 1) {
-        onCountriesChange(selectedCountries.filter(c => c !== country));
-      }
-    } else {
-      onCountriesChange([...selectedCountries, country]);
-    }
-  };
-  
-  const getSelectedCountriesLabel = () => {
-    if (selectedCountries.length === countries.length) {
-      return 'All Regions';
-    }
-    if (selectedCountries.length === 1) {
-      const country = countries.find(c => c.value === selectedCountries[0]);
-      return country?.label || 'Select Regions';
-    }
-    return `${selectedCountries.length} Regions`;
-  };
-  
   return (
     <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
       <div className="flex items-center space-x-2">
@@ -122,25 +82,10 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
           </SelectContent>
         </Select>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="bg-background/50 text-xs border-white/10">
-              <GlobeIcon className="h-4 w-4 mr-1" />
-              {getSelectedCountriesLabel()}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {countries.map(country => (
-              <DropdownMenuCheckboxItem
-                key={country.value}
-                checked={selectedCountries.includes(country.value)}
-                onCheckedChange={() => toggleCountry(country.value)}
-              >
-                {country.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CountrySelector 
+          selectedCountries={selectedCountries}
+          onCountriesChange={onCountriesChange}
+        />
       </div>
       
       <div className="flex flex-wrap gap-2">

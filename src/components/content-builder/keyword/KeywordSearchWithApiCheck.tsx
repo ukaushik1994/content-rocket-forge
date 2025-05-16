@@ -7,11 +7,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SerpApiKeyMissing } from '@/components/content-builder/serp/SerpApiKeyMissing';
 import { getApiKey } from '@/services/apiKeyService';
+import { CountrySelector } from './CountrySelector';
 
 export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = React.useState(false);
   const [hasApiKey, setHasApiKey] = React.useState<boolean | null>(null);
+  const { state, setSelectedRegions } = useContentBuilder();
+  const { selectedRegions } = state;
   
   React.useEffect(() => {
     const checkApiKey = async () => {
@@ -49,10 +52,24 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
     await onKeywordSearch(keyword, suggestions);
   };
   
+  const handleCountriesChange = (countries: string[]) => {
+    setSelectedRegions(countries);
+  };
+  
   // Show the search bar first
   return (
     <div className="space-y-4">
-      <KeywordSearch initialKeyword={initialKeyword} onKeywordSearch={handleKeywordSearch} />
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+        <div className="flex-1">
+          <KeywordSearch initialKeyword={initialKeyword} onKeywordSearch={handleKeywordSearch} />
+        </div>
+        <div>
+          <CountrySelector 
+            selectedCountries={selectedRegions} 
+            onCountriesChange={handleCountriesChange}
+          />
+        </div>
+      </div>
       
       {/* Show API key missing notice below the search bar if needed */}
       {hasApiKey === false && (
