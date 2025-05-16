@@ -96,5 +96,24 @@ export const initialState: ContentBuilderState = {
     audienceAlignment: 0,
     ctaEffectiveness: 0
   },
-  selectedRegions: ['uk', 'us', 'mea', 'global']
+  selectedRegions: ['uk', 'us', 'mea', 'global'],
+  documentStructure: {
+    h1: [],
+    h2: [],
+    h3: [],
+    h4: [],
+    h5: [],
+    h6: [],
+    hasSingleH1: false,
+    hasLogicalHierarchy: false,
+    headings: [],
+    paragraphs: [],
+    lists: [],
+    images: [],
+    links: [],
+    metadata: {
+      wordCount: 0,
+      characterCount: 0
+    }
+  }
 };
