@@ -84,15 +84,18 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         
         // Test the key after saving
         try {
+          setIsTesting(true);
           const testSuccess = await testApiKey(provider.serviceKey, apiKey);
           setTestSuccessful(testSuccess);
           
           if (!testSuccess) {
-            setError(`${provider.name} API key was saved but could not be verified.`);
+            setError(`${provider.name} API key was saved but could not be verified. Please check that the key is valid and try testing again.`);
           }
         } catch (testError: any) {
           console.error(`Error testing ${provider.name} API key after save:`, testError);
           setError(testError.message || `Failed to verify ${provider.name} API key after saving`);
+        } finally {
+          setIsTesting(false);
         }
       }
     } catch (error: any) {
@@ -109,12 +112,21 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       setIsTesting(true);
       setError(null);
       
+      // For SERP API, show special instructions if the key is empty or invalid
+      if (provider.serviceKey === 'serp' && (!apiKey.trim() || apiKey.includes('SERP_API_KEY'))) {
+        setError('Please enter a valid SERP API key. You can get one from https://serpapi.com');
+        setIsTesting(false);
+        return;
+      }
+      
+      console.log(`Testing ${provider.name} API key...`);
+      
       // Always use the current value in the input field for testing
       const success = await testApiKey(provider.serviceKey, apiKey);
       setTestSuccessful(success);
       
       if (!success) {
-        setError(`${provider.name} API key could not be verified.`);
+        setError(`${provider.name} API key could not be verified. Please double-check that you've entered a valid API key.`);
       }
     } catch (error: any) {
       console.error(`Error testing ${provider.name} API key:`, error);
@@ -193,6 +205,17 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       {error && (
         <div className="bg-red-900/20 border border-red-500/30 p-3 rounded-md text-sm text-red-300">
           {error}
+          {provider.serviceKey === 'serp' && !testSuccessful && (
+            <div className="mt-2">
+              <p className="font-semibold">SERP API troubleshooting:</p>
+              <ul className="list-disc ml-5 mt-1 space-y-1">
+                <li>Make sure you're using the correct API key from your SerpApi account</li>
+                <li>Check that your SerpApi account has remaining credits</li>
+                <li>Try using a different browser or network connection</li>
+                <li>Visit <a href="https://serpapi.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">SerpApi website</a> to verify your account status</li>
+              </ul>
+            </div>
+          )}
         </div>
       )}
       

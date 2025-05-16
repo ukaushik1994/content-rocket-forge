@@ -6,10 +6,12 @@
 import { getApiKey } from './crud';
 import { decryptKey } from './encryption';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface TestApiResponse {
   success: boolean;
   message: string;
+  details?: any;
 }
 
 /**
@@ -47,24 +49,43 @@ export async function testApiKey(service: string, apiKey?: string): Promise<bool
           }),
         });
         
+        const responseData = await response.text();
+        console.info(`${service} API test raw response:`, responseData);
+        
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`${service} API key test failed with status ${response.status}: ${errorText}`);
+          console.error(`${service} API key test failed with status ${response.status}: ${responseData}`);
+          
+          // Try to parse the response as JSON if possible
+          try {
+            const errorJson = JSON.parse(responseData);
+            toast.error(`API key verification failed: ${errorJson.message || 'Unknown error'}`);
+          } catch (e) {
+            toast.error(`API key verification failed: ${responseData || 'Unknown error'}`);
+          }
+          
           return false;
         }
         
         try {
-          const data = await response.json();
+          const data = JSON.parse(responseData);
           console.info(`${service} API test response:`, data);
           
-          return !!data.success;
+          if (data.success) {
+            toast.success(`${service} API key verified successfully`);
+            return true;
+          } else {
+            toast.error(`API key verification failed: ${data.message || 'Unknown error'}`);
+            return false;
+          }
         } catch (jsonError) {
-          console.error(`Error parsing JSON response from ${service} API test:`, jsonError);
+          console.error(`Error parsing JSON response from ${service} API test:`, jsonError, responseData);
+          toast.error(`Error parsing API response: ${jsonError.message}`);
           // If we can't parse the JSON, assume the test failed
           return false;
         }
       } catch (error) {
         console.error(`Error testing ${service} API key:`, error);
+        toast.error(`Error testing API key: ${error.message || 'Network error'}`);
         
         // If the API proxy endpoint is not available, we'll fall back to a simpler validation
         if (service === 'serp') {
@@ -82,6 +103,7 @@ export async function testApiKey(service: string, apiKey?: string): Promise<bool
     return true;
   } catch (error) {
     console.error(`Error testing ${service} API key:`, error);
+    toast.error(`Error testing API key: ${error.message || 'Unknown error'}`);
     return false;
   }
 }

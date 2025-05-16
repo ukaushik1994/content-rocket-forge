@@ -19,28 +19,38 @@ export default async function handler(req, res) {
     // Test SERP API key
     if (service === 'serp') {
       try {
+        console.log("Testing SERP API key...");
         const url = `https://serpapi.com/account?api_key=${apiKey}`;
+        
         const response = await fetch(url);
         
+        console.log("SERP API test response status:", response.status);
+        
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error("SERP API error response:", errorText);
+          
           return res.status(400).json({ 
             success: false, 
-            message: `SERP API key invalid: ${response.statusText}` 
+            message: `SERP API key invalid: ${response.status} - ${response.statusText}`,
+            details: errorText
           });
         }
         
         const data = await response.json();
-        console.log("SERP API test response:", data);
+        console.log("SERP API test successful, account data:", data);
         
         return res.status(200).json({ 
           success: true, 
-          message: 'SERP API key is valid' 
+          message: 'SERP API key is valid',
+          account: data
         });
       } catch (error) {
         console.error('Error testing SERP API key:', error);
         return res.status(500).json({
           success: false,
-          message: `Error testing SERP API key: ${error.message || 'Unknown error'}`
+          message: `Error testing SERP API key: ${error.message || 'Unknown error'}`,
+          error: error.toString()
         });
       }
     }
@@ -84,7 +94,8 @@ export default async function handler(req, res) {
     console.error('Error testing API key:', error);
     return res.status(500).json({ 
       success: false, 
-      message: error.message || 'Failed to test API key' 
+      message: error.message || 'Failed to test API key',
+      error: error.toString()
     });
   }
 }
