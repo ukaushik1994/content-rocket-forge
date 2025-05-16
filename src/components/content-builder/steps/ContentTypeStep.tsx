@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,8 +23,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
   { value: 'blog', label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
-  { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
-  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
+  { value: 'landing-page', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
+  { value: 'product-page', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
   { value: 'article', label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
   { value: 'email', label: 'Email', icon: Mail, description: 'Content for email marketing campaigns' },
   { value: 'social', label: 'Social Media', icon: MessageCircle, description: 'Engaging posts for social platforms' }

@@ -15,7 +15,7 @@ import {
   SerpEntitiesSection,
   SerpHeadingsSection
 } from '@/components/content/serp-analysis';
-import { SearchCountry, AVAILABLE_COUNTRIES } from '@/contexts/content-builder/types/content-types';
+import { AVAILABLE_COUNTRIES } from '@/contexts/content-builder/types/content-types';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -172,7 +172,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
                 >
                   <Globe className="h-3.5 w-3.5 mr-1" />
                   {selectedCountries.length === 1 
-                    ? AVAILABLE_COUNTRIES.find(c => c.code === selectedCountries[0])?.name
+                    ? AVAILABLE_COUNTRIES.find(c => c.id === selectedCountries[0])?.name
                     : `${selectedCountries.length} Regions`}
                 </Button>
               </PopoverTrigger>
@@ -187,17 +187,17 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
                     <div className="space-y-2">
                       {AVAILABLE_COUNTRIES.map((country) => (
                         <div 
-                          key={country.code} 
+                          key={country.id} 
                           className="flex items-center space-x-2 py-1.5 px-1 rounded hover:bg-white/5"
                         >
                           <Checkbox 
-                            id={`country-${country.code}`}
-                            checked={selectedCountries.includes(country.code)}
-                            onCheckedChange={() => toggleCountry(country.code)}
-                            disabled={selectedCountries.length === 1 && selectedCountries.includes(country.code)}
+                            id={`country-${country.id}`}
+                            checked={selectedCountries.includes(country.id)}
+                            onCheckedChange={() => toggleCountry(country.id)}
+                            disabled={selectedCountries.length === 1 && selectedCountries.includes(country.id)}
                           />
                           <label 
-                            htmlFor={`country-${country.code}`}
+                            htmlFor={`country-${country.id}`}
                             className="flex-1 text-sm cursor-pointer"
                           >
                             {country.name}
@@ -209,7 +209,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
                   
                   <div className="flex flex-wrap gap-1 mt-2">
                     {selectedCountries.map(code => {
-                      const country = AVAILABLE_COUNTRIES.find(c => c.code === code);
+                      const country = AVAILABLE_COUNTRIES.find(c => c.id === code);
                       return (
                         <Badge key={code} variant="outline" className="bg-white/10 flex items-center gap-1">
                           {country?.name}
