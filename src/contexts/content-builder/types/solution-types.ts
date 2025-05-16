@@ -24,19 +24,20 @@ export interface Solution {
 
 // Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
-  keywordMatches: number;
-  featureCoverage: number;
-  naturalIntegration: number;
-  overallScore?: number;
-  featureIncorporation?: number;
-  positioningScore?: number;
+  featureIncorporation: number;
+  positioningScore: number;
+  audienceAlignment: number;
+  overall: number;  // Added missing property
+  keywordMatches?: number;
+  featureCoverage?: number;
+  naturalIntegration?: number;
   mentionedFeatures?: string[];
-  painPointsAddressed?: string[];
+  painPointsAddressed?: string[] | number;
   nameMentions?: number;
-  audienceAlignment?: number;
   ctaEffectiveness?: number;
   ctaMentions?: number;
   mentions?: string;
+  overallScore?: number;
 }
 
 // Solution Analysis Result

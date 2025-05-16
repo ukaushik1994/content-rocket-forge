@@ -66,7 +66,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
           <div className="space-y-3">
             {/* Headings Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {h1.length > 0 && (
+              {h1 && h1.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-purple-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H1 Headings ({h1.length})
@@ -79,7 +79,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {h2.length > 0 && (
+              {h2 && h2.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-blue-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H2 Headings ({h2.length})
@@ -92,7 +92,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {h3.length > 0 && (
+              {h3 && h3.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-cyan-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H3 Headings ({h3.length})
@@ -105,7 +105,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {h4.length > 0 && (
+              {h4 && h4.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-teal-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H4 Headings ({h4.length})
@@ -118,7 +118,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {h5.length > 0 && (
+              {h5 && h5.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-indigo-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H5 Headings ({h5.length})
@@ -131,7 +131,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {h6.length > 0 && (
+              {h6 && h6.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-violet-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H6 Headings ({h6.length})
@@ -144,8 +144,8 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {h1.length === 0 && h2.length === 0 && h3.length === 0 && 
-               h4.length === 0 && h5.length === 0 && h6.length === 0 && (
+              {(!h1 || h1.length === 0) && (!h2 || h2.length === 0) && (!h3 || h3.length === 0) && 
+               (!h4 || h4.length === 0) && (!h5 || h5.length === 0) && (!h6 || h6.length === 0) && (
                 <div className="col-span-3 bg-card border rounded-md p-3 text-center">
                   <p className="text-sm text-muted-foreground">No headings found in the content.</p>
                 </div>

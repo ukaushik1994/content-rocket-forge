@@ -26,11 +26,13 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
     );
   }
   
-  // Ensure all required properties exist
+  // Ensure all required properties exist with proper fallbacks
   const h1 = documentStructure.h1 || [];
   const h2 = documentStructure.h2 || [];
   const h3 = documentStructure.h3 || [];
   const h4 = documentStructure.h4 || [];
+  const h5 = documentStructure.h5 || [];
+  const h6 = documentStructure.h6 || [];
   const hasSingleH1 = documentStructure.hasSingleH1 || false;
   const hasLogicalHierarchy = documentStructure.hasLogicalHierarchy || false;
   
@@ -112,7 +114,30 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
             </div>
           )}
           
-          {h1.length === 0 && h2.length === 0 && h3.length === 0 && h4.length === 0 && (
+          {h5.length > 0 && (
+            <div className="mb-2">
+              <Badge variant="secondary" className="mb-1">H5</Badge>
+              <ul className="space-y-1 pl-4 text-sm">
+                {h5.map((heading, i) => (
+                  <li key={`h5-${i}`} className="list-disc text-sm">{heading}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {h6.length > 0 && (
+            <div className="mb-2">
+              <Badge variant="secondary" className="mb-1">H6</Badge>
+              <ul className="space-y-1 pl-4 text-sm">
+                {h6.map((heading, i) => (
+                  <li key={`h6-${i}`} className="list-disc text-sm">{heading}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {h1.length === 0 && h2.length === 0 && h3.length === 0 && 
+           h4.length === 0 && h5.length === 0 && h6.length === 0 && (
             <p className="text-muted-foreground text-sm italic">No headings found in your content.</p>
           )}
         </div>

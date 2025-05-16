@@ -22,8 +22,16 @@ export const detectApiKeyType = (apiKey: string): string | null => {
     return 'openai';
   }
   
-  // SERP API keys are typically long alphanumeric strings
-  if (/^[a-zA-Z0-9]{32,}$/.test(apiKey)) {
+  // SERP API keys are typically alphanumeric strings
+  // Previously we were checking for 32+ characters which might be too strict
+  if (/^[a-zA-Z0-9]{16,}$/.test(apiKey)) {
+    console.log('Detected potential SERP API key format');
+    return 'serp';
+  }
+  
+  // Some SERP APIs use custom formats
+  if (/^[a-zA-Z0-9-_]{8,}$/.test(apiKey)) {
+    console.log('Detected alternative SERP API key format');
     return 'serp';
   }
   
@@ -32,5 +40,6 @@ export const detectApiKeyType = (apiKey: string): string | null => {
     return 'anthropic';
   }
   
+  console.log('API key type not detected for:', apiKey.substring(0, 5) + '...');
   return null;
 };

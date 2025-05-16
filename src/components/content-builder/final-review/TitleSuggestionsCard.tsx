@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, RefreshCw, Sparkles, Star } from 'lucide-react';
+import { Check, RefreshCw, Sparkles, Star, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,6 +47,12 @@ export const TitleSuggestionsCard = ({
     onSelectTitle(selectedTitle);
     console.log("[TitleSuggestionsCard] Title selected:", selectedTitle);
     toast.success("Title updated successfully");
+  };
+
+  const handleRegenerateTitles = () => {
+    console.log("[TitleSuggestionsCard] Regenerating titles");
+    generateNewTitles();
+    toast.success("Generating new title suggestions");
   };
 
   const container = {
@@ -156,8 +162,32 @@ export const TitleSuggestionsCard = ({
           </AnimatePresence>
         </div>
 
-        {/* Generate Button */}
-        <div className="flex justify-end">
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-2">
+          {/* Regenerate Button - only show when we already have suggestions or a current title */}
+          {(suggestions.length > 0 || currentTitle) && (
+            <Button
+              onClick={handleRegenerateTitles}
+              disabled={isGenerating}
+              variant="outline"
+              size="sm"
+              className="gap-2 border-purple-500/30 hover:bg-purple-500/10 hover:text-purple-500 transition-colors"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Regenerating...
+                </>
+              ) : (
+                <>
+                  <RotateCw className="h-3.5 w-3.5" />
+                  Regenerate
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Generate New Button - always show */}
           <Button
             onClick={generateNewTitles}
             disabled={isGenerating}
@@ -173,7 +203,7 @@ export const TitleSuggestionsCard = ({
             ) : (
               <>
                 <Sparkles className="h-3.5 w-3.5" />
-                Generate New Titles
+                Generate Titles
               </>
             )}
           </Button>

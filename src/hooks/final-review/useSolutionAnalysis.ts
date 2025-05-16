@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
@@ -21,8 +22,13 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
   
   // Main function to analyze solution usage
   const analyzeSolutionUsage = useCallback(async () => {
-    if (!content || !selectedSolution) {
-      toast.error('No content or solution available for analysis', toastConfig.error);
+    if (!content) {
+      toast.error('No content available for analysis', toastConfig.error);
+      return;
+    }
+    
+    if (!selectedSolution) {
+      toast.error('No solution selected for analysis. Please select a solution in the Content Type step.', toastConfig.error);
       return;
     }
     
@@ -41,8 +47,8 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
             content: `
               Solution Name: ${selectedSolution.name}
               Solution Features: ${selectedSolution.features.join(', ')}
-              Pain Points: ${selectedSolution.painPoints.join(', ')}
-              Target Audience: ${selectedSolution.targetAudience.join(', ')}
+              Pain Points: ${(selectedSolution.painPoints || []).join(', ')}
+              Target Audience: ${(selectedSolution.targetAudience || []).join(', ')}
               
               Content: ${content.substring(0, 5000)}
               
@@ -79,17 +85,21 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
           
           if (jsonMatch) {
             const jsonStr = jsonMatch[0].replace(/```json|```/g, '').trim();
-            solutionMetrics = JSON.parse(jsonStr);
+            const aiMetrics = JSON.parse(jsonStr);
             
-            // Ensure we have all required properties
-            if (!solutionMetrics.featureIncorporation || !solutionMetrics.positioningScore) {
-              throw new Error('Incomplete metrics in AI response');
-            }
-            
-            // Add empty array for mentionedFeatures if not provided
-            if (!solutionMetrics.mentionedFeatures) {
-              solutionMetrics.mentionedFeatures = [];
-            }
+            // Map AI response to our metrics structure
+            solutionMetrics = {
+              featureIncorporation: aiMetrics.featureIncorporation || 0,
+              positioningScore: aiMetrics.positioningScore || 0,
+              audienceAlignment: aiMetrics.audienceAlignment || 0,
+              overall: aiMetrics.overallScore || 0,
+              overallScore: aiMetrics.overallScore || 0,
+              mentionedFeatures: Array.isArray(aiMetrics.mentionedFeatures) ? aiMetrics.mentionedFeatures : [],
+              nameMentions: aiMetrics.nameMentions || 0,
+              ctaEffectiveness: aiMetrics.ctaEffectiveness || 0,
+              ctaMentions: aiMetrics.ctaMentions || 0,
+              painPointsAddressed: aiMetrics.painPointsAddressed || []
+            };
           } else {
             throw new Error('Could not extract valid JSON from AI response');
           }
@@ -118,17 +128,14 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
       const fallbackMetrics: SolutionIntegrationMetrics = {
         featureIncorporation: localMetrics.featureIncorporation,
         positioningScore: localMetrics.positioningScore,
-        painPointsAddressed: [`${localMetrics.painPointsAddressed}% of pain points addressed`],
-        ctaEffectiveness: ctaInfo?.ctaCount ? 75 : 25,  // Simple heuristic based on CTA presence
-        overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.painPointsAddressed + localMetrics.audienceAlignment) / 4),
-        mentions: localMetrics.featureIncorporation > 50 ? 'High' : 'Low',
         audienceAlignment: localMetrics.audienceAlignment,
-        nameMentions: localMetrics.nameMentions,
+        overall: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.audienceAlignment) / 3),
+        overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.audienceAlignment) / 3),
+        mentionedFeatures: localMetrics.mentionedFeatures || [],
+        nameMentions: localMetrics.nameMentions || 0,
+        ctaEffectiveness: ctaInfo?.ctaCount ? 75 : 25,  // Simple heuristic based on CTA presence
         ctaMentions: ctaInfo?.ctaCount || 0,
-        keywordMatches: localMetrics.featureIncorporation > 30 ? 5 : 2,
-        featureCoverage: localMetrics.featureIncorporation,
-        naturalIntegration: localMetrics.positioningScore,
-        mentionedFeatures: localMetrics.mentionedFeatures || []
+        painPointsAddressed: []
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: fallbackMetrics });

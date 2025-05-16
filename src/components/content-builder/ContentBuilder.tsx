@@ -74,6 +74,7 @@ export const ContentBuilder = () => {
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizeAndReviewStep />;
+      case 6: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -93,7 +94,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 6;
   
   // --- Load draft data if editing ---
   React.useEffect(() => {

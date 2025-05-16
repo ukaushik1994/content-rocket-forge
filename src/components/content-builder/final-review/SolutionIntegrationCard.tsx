@@ -34,12 +34,21 @@ export const SolutionIntegrationCard = ({
             <div className="text-center space-y-2">
               <Puzzle className="h-10 w-10 mx-auto text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">No solution selected</p>
+              <p className="text-xs text-muted-foreground">Select a solution in the Content Type step</p>
             </div>
           </div>
         </CardContent>
       </Card>
     );
   }
+  
+  // Calculate an overall score if one is not provided
+  const overallScore = metrics?.overallScore || metrics?.overall || 
+    (metrics ? Math.round((
+      (metrics.featureIncorporation || 0) + 
+      (metrics.positioningScore || 0) + 
+      (metrics.audienceAlignment || 0)
+    ) / 3) : 0);
   
   return (
     <Card className="border-purple-500/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
@@ -58,17 +67,17 @@ export const SolutionIntegrationCard = ({
               {solution.category}
             </p>
           </div>
-          {metrics && (
+          {metrics && overallScore && (
             <div className={`rounded-full px-2 py-1 text-xs font-medium ${
-              metrics.overallScore >= 70 
+              overallScore >= 70 
                 ? 'bg-green-500/20 text-green-400' 
-                : metrics.overallScore >= 40 
+                : overallScore >= 40 
                   ? 'bg-amber-500/20 text-amber-400' 
                   : 'bg-rose-500/20 text-rose-400'
             }`}>
-              {metrics.overallScore >= 70 
+              {overallScore >= 70 
                 ? 'Well Integrated' 
-                : metrics.overallScore >= 40 
+                : overallScore >= 40 
                   ? 'Partial Integration' 
                   : 'Poor Integration'}
             </div>
@@ -105,7 +114,7 @@ export const SolutionIntegrationCard = ({
               ) : (
                 <>
                   <AlertCircle className="h-4 w-4" />
-                  Analyze Content Structure
+                  Analyze Solution Integration
                 </>
               )}
             </Button>
@@ -120,10 +129,10 @@ export const SolutionIntegrationCard = ({
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Feature Integration</span>
-                <span className="font-medium">{metrics.featureIncorporation}%</span>
+                <span className="font-medium">{metrics.featureIncorporation || 0}%</span>
               </div>
-              <Progress value={metrics.featureIncorporation} className="h-2" />
-              {metrics.featureIncorporation < 50 && (
+              <Progress value={metrics.featureIncorporation || 0} className="h-2" />
+              {(metrics.featureIncorporation || 0) < 50 && (
                 <p className="text-xs text-amber-400 mt-1">
                   Include more solution features in your content
                 </p>
@@ -134,10 +143,10 @@ export const SolutionIntegrationCard = ({
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Strategic Positioning</span>
-                <span className="font-medium">{metrics.positioningScore}%</span>
+                <span className="font-medium">{metrics.positioningScore || 0}%</span>
               </div>
-              <Progress value={metrics.positioningScore} className="h-2" />
-              {metrics.positioningScore < 50 && (
+              <Progress value={metrics.positioningScore || 0} className="h-2" />
+              {(metrics.positioningScore || 0) < 50 && (
                 <p className="text-xs text-amber-400 mt-1">
                   Position your solution more effectively
                 </p>
@@ -148,23 +157,29 @@ export const SolutionIntegrationCard = ({
             <div>
               <h4 className="text-xs mb-2">Feature Mentions</h4>
               <div className="grid grid-cols-2 gap-1">
-                {solution.features.slice(0, 4).map((feature, index) => (
-                  <div 
-                    key={index}
-                    className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
-                      metrics.mentionedFeatures && metrics.mentionedFeatures.includes(feature)
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-gray-500/20 text-gray-400'
-                    }`}
-                  >
-                    {metrics.mentionedFeatures && metrics.mentionedFeatures.includes(feature) ? (
-                      <CheckCircle className="h-3 w-3" />
-                    ) : (
-                      <AlertCircle className="h-3 w-3" />
-                    )}
-                    <span className="truncate">{feature}</span>
-                  </div>
-                ))}
+                {solution.features && solution.features.slice(0, 4).map((feature, index) => {
+                  const isMentioned = metrics.mentionedFeatures && 
+                    Array.isArray(metrics.mentionedFeatures) && 
+                    metrics.mentionedFeatures.includes(feature);
+                    
+                  return (
+                    <div 
+                      key={index}
+                      className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${
+                        isMentioned
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-gray-500/20 text-gray-400'
+                      }`}
+                    >
+                      {isMentioned ? (
+                        <CheckCircle className="h-3 w-3" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3" />
+                      )}
+                      <span className="truncate">{feature}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             

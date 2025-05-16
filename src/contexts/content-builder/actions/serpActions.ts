@@ -9,10 +9,14 @@ export const createSerpActions = (
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
   const analyzeKeyword = async (keyword: string, regions?: string[]) => {
-    if (!keyword) return;
+    if (!keyword) {
+      console.error("Cannot analyze empty keyword");
+      toast.error("Please enter a keyword to analyze");
+      return;
+    }
     
     // Use provided regions or the currently selected regions or default to 'us'
-    const searchRegions = regions || state.selectedRegions.length > 0 ? state.selectedRegions : ['us'];
+    const searchRegions = regions || (state.selectedRegions.length > 0 ? state.selectedRegions : ['us']);
     
     // Start loading
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
@@ -23,7 +27,10 @@ export const createSerpActions = (
       // Make API call to analyze keyword with specified regions
       const serpData = await analyzeKeywordSerp(keyword, false, searchRegions);
       
+      console.log('SERP API response received:', serpData ? 'Data received' : 'No data received');
+      
       if (!serpData) {
+        console.error('No SERP data returned from API');
         dispatch({ type: 'SET_SERP_DATA', payload: null });
         toast.error("Failed to retrieve SERP data. Please check your API key in Settings → API.");
         return;
@@ -31,12 +38,13 @@ export const createSerpActions = (
       
       // Only proceed if we have actual data (not mock data)
       if (serpData.isMockData) {
+        console.warn('Mock SERP data received - API key may be invalid or missing');
         dispatch({ type: 'SET_SERP_DATA', payload: null });
         toast.warning("No real SERP data available. Please add your SERP API key in Settings → API.");
         return;
       }
       
-      console.log('SERP data received:', serpData);
+      console.log('SERP data received:', JSON.stringify(serpData).substring(0, 200) + '...');
       
       // Update SERP data in state
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
@@ -62,7 +70,8 @@ export const createSerpActions = (
     const selections: SerpSelection[] = [];
     
     // Add keywords
-    if (serpData.keywords && serpData.keywords.length > 0) {
+    if (serpData.keywords && Array.isArray(serpData.keywords) && serpData.keywords.length > 0) {
+      console.log(`Processing ${serpData.keywords.length} keywords from SERP data`);
       serpData.keywords.forEach((keyword: string) => {
         selections.push({
           type: 'keyword',
@@ -70,78 +79,105 @@ export const createSerpActions = (
           selected: false
         });
       });
+    } else {
+      console.log('No keywords found in SERP data');
     }
     
     // Add questions from peopleAlsoAsk - ensuring we capture all FAQ data properly
-    if (serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0) {
+    if (serpData.peopleAlsoAsk && Array.isArray(serpData.peopleAlsoAsk) && serpData.peopleAlsoAsk.length > 0) {
+      console.log(`Processing ${serpData.peopleAlsoAsk.length} questions from SERP data`);
       serpData.peopleAlsoAsk.forEach((item: any) => {
         // Extract the question text properly
-        const questionText = typeof item === 'string' ? item : item.question;
+        const questionText = typeof item === 'string' ? item : (item ? item.question : null);
         
-        selections.push({
-          type: 'question',
-          content: questionText,
-          selected: false,
-          source: item.source || '',
-          metadata: { 
-            answer: item.answer || '',
-            type: 'faq'
-          }
-        });
+        if (questionText) {
+          selections.push({
+            type: 'question',
+            content: questionText,
+            selected: false,
+            source: item.source || '',
+            metadata: { 
+              answer: item.answer || '',
+              type: 'faq'
+            }
+          });
+        }
       });
+    } else {
+      console.log('No questions found in SERP data');
     }
     
     // Add entities
-    if (serpData.entities && serpData.entities.length > 0) {
+    if (serpData.entities && Array.isArray(serpData.entities) && serpData.entities.length > 0) {
+      console.log(`Processing ${serpData.entities.length} entities from SERP data`);
       serpData.entities.forEach((entity: any) => {
-        selections.push({
-          type: 'entity',
-          content: entity.name,
-          selected: false,
-          metadata: { type: entity.type, description: entity.description }
-        });
+        if (entity && entity.name) {
+          selections.push({
+            type: 'entity',
+            content: entity.name,
+            selected: false,
+            metadata: { type: entity.type, description: entity.description }
+          });
+        }
       });
+    } else {
+      console.log('No entities found in SERP data');
     }
     
     // Add headings
-    if (serpData.headings && serpData.headings.length > 0) {
+    if (serpData.headings && Array.isArray(serpData.headings) && serpData.headings.length > 0) {
+      console.log(`Processing ${serpData.headings.length} headings from SERP data`);
       serpData.headings.forEach((heading: any) => {
-        const headingText = typeof heading === 'string' ? heading : heading.text;
-        selections.push({
-          type: 'heading',
-          content: headingText,
-          selected: false,
-          metadata: { level: typeof heading === 'string' ? 'h2' : heading.level }
-        });
+        const headingText = typeof heading === 'string' ? heading : (heading ? heading.text : null);
+        if (headingText) {
+          selections.push({
+            type: 'heading',
+            content: headingText,
+            selected: false,
+            metadata: { level: typeof heading === 'string' ? 'h2' : heading.level }
+          });
+        }
       });
+    } else {
+      console.log('No headings found in SERP data');
     }
     
     // Add content gaps
-    if (serpData.contentGaps && serpData.contentGaps.length > 0) {
+    if (serpData.contentGaps && Array.isArray(serpData.contentGaps) && serpData.contentGaps.length > 0) {
+      console.log(`Processing ${serpData.contentGaps.length} content gaps from SERP data`);
       serpData.contentGaps.forEach((gap: any) => {
-        selections.push({
-          type: 'contentGap',
-          content: gap.topic || gap.description,
-          selected: false,
-          metadata: { description: gap.description }
-        });
+        if (gap) {
+          selections.push({
+            type: 'contentGap',
+            content: gap.topic || gap.description || 'Content Gap',
+            selected: false,
+            metadata: { description: gap.description }
+          });
+        }
       });
+    } else {
+      console.log('No content gaps found in SERP data');
     }
     
     // Add top results
-    if (serpData.topResults && serpData.topResults.length > 0) {
+    if (serpData.topResults && Array.isArray(serpData.topResults) && serpData.topResults.length > 0) {
+      console.log(`Processing ${Math.min(5, serpData.topResults.length)} top results from SERP data`);
       serpData.topResults.slice(0, 5).forEach((result: any) => {
-        selections.push({
-          type: 'topRank',
-          content: result.title || 'Untitled Result',
-          selected: false,
-          source: result.link,
-          metadata: { snippet: result.snippet, position: result.position }
-        });
+        if (result) {
+          selections.push({
+            type: 'topRank',
+            content: result.title || 'Untitled Result',
+            selected: false,
+            source: result.link || '',
+            metadata: { snippet: result.snippet, position: result.position }
+          });
+        }
       });
+    } else {
+      console.log('No top results found in SERP data');
     }
     
-    console.log("Created SERP selections:", selections);
+    console.log(`Created ${selections.length} SERP selections`);
     
     // Update the selections in the state
     dispatch({ type: 'SET_SERP_SELECTIONS', payload: selections });
