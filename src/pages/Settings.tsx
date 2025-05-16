@@ -1,8 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfileSettings } from '@/components/settings';
 import { APISettings } from '@/components/settings';
@@ -14,10 +12,25 @@ import { AppearanceSettings } from '@/components/settings';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Extract tab from URL path
+  const getTabFromPath = () => {
+    const path = location.pathname.split('/');
+    return path.length > 2 ? path[2] : "profile";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getTabFromPath());
+  
+  // Update tab when location changes
+  useEffect(() => {
+    setActiveTab(getTabFromPath());
+  }, [location]);
   
   if (loading) {
     return (
@@ -32,6 +45,7 @@ export default function Settings() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    navigate(`/settings/${tab}`);
   };
 
   // Render the appropriate content based on the active tab

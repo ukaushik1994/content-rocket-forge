@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SettingsLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,8 @@ interface SettingsLayoutProps {
 }
 
 export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLayoutProps) {
+  const location = useLocation();
+  
   const handleValueChange = (value: string) => {
     if (onTabChange) {
       onTabChange(value);
