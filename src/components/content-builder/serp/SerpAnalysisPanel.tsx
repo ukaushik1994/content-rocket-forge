@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult } from '@/services/serp/types';
 import { useNavigate } from 'react-router-dom';
 
 // Import the needed SERP components

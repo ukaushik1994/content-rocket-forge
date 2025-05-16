@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult } from '@/services/serp/types';
 import { ContentTemplatesHeader } from './templates/ContentTemplatesHeader';
 import { ContentTemplatesGrid } from './templates/ContentTemplatesGrid';
 import { ContentStrategyTips } from './templates/ContentStrategyTips';
 import { EmptyState } from './templates/EmptyState';
 import { RefreshButton } from '@/components/ui/refresh-button';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { analyzeKeywordSerp } from '@/services/serp/keywordService';
 import { toast } from 'sonner';
 
 interface SerpContentGeneratorProps {
