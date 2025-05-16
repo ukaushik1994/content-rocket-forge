@@ -3,7 +3,8 @@
  * Functions to test API keys for various services
  */
 
-import { getApiKey, decryptKey } from './crud';
+import { getApiKey } from './crud';
+import { decryptKey } from './encryption';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TestApiResponse {
