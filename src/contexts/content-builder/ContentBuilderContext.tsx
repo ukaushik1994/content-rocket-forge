@@ -15,14 +15,15 @@ export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = (
   // Create actions
   const actions = createContentBuilderActions(state, dispatch);
 
+  // Make sure we have all required functions from the context type
+  const contextValue: ContentBuilderContextType = {
+    state,
+    dispatch,
+    ...actions
+  };
+
   return (
-    <ContentBuilderContext.Provider
-      value={{ 
-        state, 
-        dispatch, 
-        ...actions
-      }}
-    >
+    <ContentBuilderContext.Provider value={contextValue}>
       {children}
     </ContentBuilderContext.Provider>
   );
@@ -36,4 +37,3 @@ export const useContentBuilder = () => {
   }
   return context;
 };
-

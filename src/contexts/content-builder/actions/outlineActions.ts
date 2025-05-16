@@ -33,10 +33,20 @@ export const createOutlineActions = (
     dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: sections });
   };
 
+  const setOutline = (outline: string[]) => {
+    dispatch({ type: 'SET_OUTLINE', payload: outline });
+  };
+
+  const setOutlineSections = (sections: OutlineSection[]) => {
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: sections });
+  };
+
   return {
     addOutlineSection,
     updateOutlineSection,
     removeOutlineSection,
-    reorderOutlineSections
+    reorderOutlineSections,
+    setOutline,
+    setOutlineSections
   };
 };
