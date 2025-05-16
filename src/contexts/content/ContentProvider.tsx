@@ -6,7 +6,8 @@ import { ContentItemType, ContentContextType } from './types';
 import { fetchItemKeywords, processContentItems } from './utils';
 import { createContentActions } from './actions';
 
-const ContentContext = createContext<ContentContextType | undefined>(undefined);
+// Export the ContentContext so it can be imported in other files
+export const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
@@ -116,10 +117,4 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useContent = () => {
-  const context = useContext(ContentContext);
-  if (context === undefined) {
-    throw new Error('useContent must be used within a ContentProvider');
-  }
-  return context;
-};
+// Remove the duplicate useContent hook since it's now in index.ts
