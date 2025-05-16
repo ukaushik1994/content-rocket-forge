@@ -274,6 +274,12 @@ export const contentBuilderReducer = (
         selectedRegions: action.payload
       };
       
+    case 'SET_SERP_SELECTIONS':
+      return {
+        ...state,
+        serpSelections: action.payload
+      };
+      
     default:
       return state;
   }

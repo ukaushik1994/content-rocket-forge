@@ -4,9 +4,11 @@
  */
 
 export interface SerpSelection {
+  id?: string;
   type: string;
   content: string;
   selected: boolean;
+  timestamp?: string;
   source?: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }

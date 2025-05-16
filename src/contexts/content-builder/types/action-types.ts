@@ -9,6 +9,7 @@ import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { OutlineSection } from './outline-types';
 import { DocumentStructure } from './document-types';
+import { SerpSelection } from './serp-types';
 
 // Content Builder Actions
 export type ContentBuilderAction =
@@ -22,6 +23,7 @@ export type ContentBuilderAction =
   | { type: 'SET_SERP_DATA'; payload: any }
   | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
+  | { type: 'SET_SERP_SELECTIONS'; payload: SerpSelection[] }
   | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] }
   | { type: 'SET_OUTLINE_SECTIONS'; payload: OutlineSection[] }
   | { type: 'SET_CONTENT'; payload: string }

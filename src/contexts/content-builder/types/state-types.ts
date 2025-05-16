@@ -1,46 +1,49 @@
 
-/**
- * State-related type definitions
- */
-
-import { Step } from './step-types';
-import { SerpSelection } from './serp-types';
-import { ContentType, ContentFormat, ContentIntent } from './content-types';
+import { ContentFormat, ContentIntent, ContentType } from './content-types';
 import { ContentCluster } from './cluster-types';
 import { Solution, SolutionIntegrationMetrics } from './solution-types';
 import { SeoImprovement } from './seo-types';
 import { OutlineSection } from './outline-types';
 import { DocumentStructure } from './document-types';
+import { SerpSelection } from './serp-types';
 
-// Content Builder State
+export interface Step {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  completed: boolean;
+  visited: boolean;
+  analyzed?: boolean;
+}
+
 export interface ContentBuilderState {
-  currentStep: number;
-  activeStep: number;
   steps: Step[];
+  currentStep: number;
   mainKeyword: string;
-  selectedKeywords: string[];
   searchedKeywords: string[];
+  selectedKeywords: string[];
+  selectedCluster: ContentCluster | null;
   serpData: any;
-  isAnalyzing: boolean;
-  isSavingData: boolean;
   serpSelections: SerpSelection[];
-  outline: string[] | OutlineSection[];
+  isAnalyzing: boolean;
+  outline: string[];
   outlineSections: OutlineSection[];
-  isGenerating: boolean;
   content: string;
+  isGenerating: boolean;
+  isSavingData: boolean;
   contentTitle: string;
   suggestedTitles: string[];
-  selectedCluster: ContentCluster | null;
+  seoScore: number;
+  seoImprovements: SeoImprovement[];
   contentType: ContentType;
   contentFormat: ContentFormat;
   contentIntent: ContentIntent;
   selectedSolution: Solution | null;
-  seoScore: number;
-  seoImprovements: SeoImprovement[];
   metaTitle: string;
   metaDescription: string;
-  additionalInstructions: string;
-  documentStructure?: DocumentStructure; 
+  documentStructure: DocumentStructure;
   solutionIntegrationMetrics: SolutionIntegrationMetrics;
+  additionalInstructions: string;
   selectedRegions: string[];
 }

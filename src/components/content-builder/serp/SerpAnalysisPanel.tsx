@@ -2,18 +2,20 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SerpKeywordsSection } from '../content/serp-analysis/SerpKeywordsSection';
-import { SerpQuestionsSection } from '../content/serp-analysis/SerpQuestionsSection';
-import { SerpHeadingsSection } from '../content/serp-analysis/SerpHeadingsSection';
-import { SerpEntitiesSection } from '../content/serp-analysis/SerpEntitiesSection';
-import { SerpContentGapsSection } from '../content/serp-analysis/SerpContentGapsSection';
-import { SerpCompetitorsSection } from '../content/serp-analysis/SerpCompetitorsSection';
-import { SerpNoDataFound } from '../content/serp-analysis/SerpNoDataFound';
-import { SerpEmptyState } from '../content/serp-analysis/SerpEmptyState';
 import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { SerpAnalysisResult } from '@/types/serp';
 import { useNavigate } from 'react-router-dom';
+
+// Import the needed SERP components directly from src/components/content/serp-analysis
+// instead of trying to use relative paths
+import { SerpKeywordsSection } from '@/components/content/serp-analysis/SerpKeywordsSection';
+import { SerpQuestionsSection } from '@/components/content/serp-analysis/SerpQuestionsSection';
+import { SerpHeadingsSection } from '@/components/content/serp-analysis/SerpHeadingsSection';
+import { SerpEntitiesSection } from '@/components/content/serp-analysis/SerpEntitiesSection';
+import { SerpContentGapsSection } from '@/components/content/serp-analysis/SerpContentGapsSection';
+import { SerpCompetitorsSection } from '@/components/content/serp-analysis/SerpCompetitorsSection';
+import { SerpNoDataFound } from '@/components/content/serp-analysis/SerpNoDataFound';
+import { SerpEmptyState } from '@/components/content/serp-analysis/SerpEmptyState';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -150,44 +152,49 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
         <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'keywords' && (
             <SerpKeywordsSection 
-              keywords={serpData.keywords || []}
-              relatedSearches={serpData.relatedSearches || []}
-              onAddToContent={(content) => onAddToContent(content, 'keyword')}
+              serpData={serpData}
+              expanded={true} 
+              onAddToContent={onAddToContent}
             />
           )}
           
           {activeTab === 'questions' && (
             <SerpQuestionsSection 
-              questions={serpData.peopleAlsoAsk || []}
-              onAddToContent={(content) => onAddToContent(content, 'question')}
+              serpData={serpData}
+              expanded={true}
+              onAddToContent={onAddToContent}
             />
           )}
           
           {activeTab === 'headings' && (
             <SerpHeadingsSection 
-              headings={serpData.headings || []}
-              onAddToContent={(content) => onAddToContent(content, 'heading')}
+              serpData={serpData}
+              expanded={true}
+              onAddToContent={onAddToContent}
             />
           )}
           
           {activeTab === 'entities' && (
             <SerpEntitiesSection 
-              entities={serpData.entities || []}
-              onAddToContent={(content) => onAddToContent(content, 'entity')}
+              serpData={serpData}
+              expanded={true}
+              onAddToContent={onAddToContent}
             />
           )}
           
           {activeTab === 'content-gaps' && (
             <SerpContentGapsSection 
-              contentGaps={serpData.contentGaps || []}
-              onAddToContent={(content) => onAddToContent(content, 'contentGap')}
+              serpData={serpData}
+              expanded={true}
+              onAddToContent={onAddToContent}
             />
           )}
           
           {activeTab === 'competitors' && (
             <SerpCompetitorsSection 
-              competitors={serpData.topResults || []}
-              onAddToContent={(content) => onAddToContent(content, 'topRank')}
+              serpData={serpData}
+              expanded={true}
+              onAddToContent={onAddToContent}
             />
           )}
         </div>
