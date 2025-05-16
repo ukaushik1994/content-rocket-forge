@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { DocumentStructureAnalysis } from './technical/DocumentStructureAnalysis';
-import { MetaInformationReview } from './technical/MetaInformationReview';
-import { SerpDataAnalysis } from './technical/SerpDataAnalysis';
-import { TechnicalValidationCard } from './technical/TechnicalValidationCard';
+import { DocumentStructureAnalysis } from '../technical/DocumentStructureAnalysis';
+import { MetaInformationReview } from '../technical/MetaInformationReview';
+import { SerpDataAnalysis } from '../technical/SerpDataAnalysis';
+import { TechnicalValidationCard } from '../technical/TechnicalValidationCard';
 import { DocumentStructure } from '@/contexts/content-builder/types';
 import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
