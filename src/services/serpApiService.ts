@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
+import { processSerpResponse } from './serpProcessingService';
 
 interface SearchKeywordParams {
   query: string;
@@ -25,7 +26,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
 
     if (!apiKey) {
       console.error('No SERP API key found in settings');
-      toast.error('Missing SERP API key. Please add your API key in Settings.');
+      toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return [];
     }
     
@@ -47,6 +48,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     }
 
     const data = await response.json();
+    console.log("searchKeywords response:", data);
     return data.results || [];
   } catch (error) {
     console.error('Error searching keywords:', error);
@@ -57,6 +59,8 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
 
 export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, countries: string[] = ['us']): Promise<SerpAnalysisResult | null> => {
   try {
+    console.log('Analyzing keyword:', keyword, 'refresh:', refresh, 'countries:', countries);
+    
     // Get the SERP API key from the user's settings
     const { data: apiKey } = await supabase
       .from('api_keys')
@@ -67,7 +71,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
 
     if (!apiKey) {
       console.warn('No SERP API key found in settings');
-      toast.error('Missing SERP API key. Please add your API key in Settings.');
+      toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return null;
     }
     
@@ -89,6 +93,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
     }
 
     const data = await response.json();
+    console.log("Raw SERP API response:", data);
     
     // If no data was returned, inform the user
     if (!data || Object.keys(data).length === 0) {
@@ -96,7 +101,11 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
       return null;
     }
     
-    return data;
+    // Process and normalize the response
+    const processedData = processSerpResponse(data);
+    console.log("Processed SERP data:", processedData);
+    
+    return processedData;
   } catch (error) {
     console.error('Error analyzing keyword:', error);
     toast.error('Failed to analyze keyword. Please check your API connection.');
@@ -116,7 +125,7 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
 
     if (!apiKey) {
       console.warn('No SERP API key found in settings');
-      toast.error('Missing SERP API key. Please add your API key in Settings.');
+      toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return [];
     }
     
@@ -137,6 +146,7 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
     }
 
     const data = await response.json();
+    console.log("Related keywords response:", data);
     return data.keywords || [];
   } catch (error) {
     console.error('Error searching related keywords:', error);

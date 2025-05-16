@@ -18,16 +18,21 @@ export const createSerpActions = (
     dispatch({ type: 'SET_IS_ANALYZING', payload: true });
     
     try {
+      console.log('Analyzing keyword:', keyword, 'with regions:', searchRegions);
       // Make API call to analyze keyword with specified regions
       const serpData = await analyzeKeywordSerp(keyword, false, searchRegions);
+      
+      console.log('SERP data received:', serpData);
       
       // Update SERP data in state - will be null if no data is found
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
-        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
+        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings → API.");
       } else {
-        console.log("SERP data successfully retrieved");
+        // Create initial selections from the SERP data
+        initializeSerpSelections(serpData, dispatch);
+        console.log("SERP data successfully retrieved and selections initialized");
         toast.success("Search data analysis completed successfully.");
       }
     } catch (error) {
@@ -40,6 +45,89 @@ export const createSerpActions = (
       // End loading
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
+  };
+  
+  // Initialize SERP selections from the data
+  const initializeSerpSelections = (serpData: any, dispatch: React.Dispatch<ContentBuilderAction>) => {
+    const selections: SerpSelection[] = [];
+    
+    // Add keywords
+    if (serpData.keywords && serpData.keywords.length > 0) {
+      serpData.keywords.forEach((keyword: string) => {
+        selections.push({
+          type: 'keyword',
+          content: keyword,
+          selected: false
+        });
+      });
+    }
+    
+    // Add questions from peopleAlsoAsk
+    if (serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0) {
+      serpData.peopleAlsoAsk.forEach((item: any) => {
+        selections.push({
+          type: 'question',
+          content: item.question,
+          selected: false,
+          source: item.source
+        });
+      });
+    }
+    
+    // Add entities
+    if (serpData.entities && serpData.entities.length > 0) {
+      serpData.entities.forEach((entity: any) => {
+        selections.push({
+          type: 'entity',
+          content: entity.name,
+          selected: false,
+          metadata: { type: entity.type, description: entity.description }
+        });
+      });
+    }
+    
+    // Add headings
+    if (serpData.headings && serpData.headings.length > 0) {
+      serpData.headings.forEach((heading: any) => {
+        const headingText = typeof heading === 'string' ? heading : heading.text;
+        selections.push({
+          type: 'heading',
+          content: headingText,
+          selected: false,
+          metadata: { level: typeof heading === 'string' ? 'h2' : heading.level }
+        });
+      });
+    }
+    
+    // Add content gaps
+    if (serpData.contentGaps && serpData.contentGaps.length > 0) {
+      serpData.contentGaps.forEach((gap: any) => {
+        selections.push({
+          type: 'contentGap',
+          content: gap.topic || gap.description,
+          selected: false,
+          metadata: { description: gap.description }
+        });
+      });
+    }
+    
+    // Add top results
+    if (serpData.topResults && serpData.topResults.length > 0) {
+      serpData.topResults.slice(0, 5).forEach((result: any) => {
+        selections.push({
+          type: 'topRank',
+          content: result.title || 'Untitled Result',
+          selected: false,
+          source: result.link,
+          metadata: { snippet: result.snippet, position: result.position }
+        });
+      });
+    }
+    
+    console.log("Created SERP selections:", selections);
+    
+    // Update the selections in the state
+    dispatch({ type: 'SET_SERP_SELECTIONS', payload: selections });
   };
   
   const addContentFromSerp = (content: string, type: string) => {
