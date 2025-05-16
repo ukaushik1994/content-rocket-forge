@@ -3,10 +3,9 @@ import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { KeywordSearch } from './KeywordSearch';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SerpApiKeyMissing } from '@/components/content-builder/serp/SerpApiKeyMissing';
-import { getApiKey, decodeApiKey } from '@/services/apiKeyService';
+import { getApiKey } from '@/services/apiKeyService';
 import { CountrySelector } from './CountrySelector';
 
 export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
@@ -29,13 +28,6 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
         
         if (keyExists) {
           console.log('SERP API key found in settings');
-          // Let's manually decode to verify it's working properly
-          try {
-            const decodedKey = decodeApiKey(encryptedKey);
-            console.log('SERP API key length:', decodedKey.length);
-          } catch (decodeError) {
-            console.error('Error decoding SERP API key:', decodeError);
-          }
         } else {
           console.log('No SERP API key found in settings');
         }
