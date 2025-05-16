@@ -14,6 +14,7 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
   const [hasApiKey, setHasApiKey] = React.useState<boolean | null>(null);
   const { state, setSelectedRegions } = useContentBuilder();
   const { selectedRegions } = state;
+  const selectedRegion = selectedRegions.length > 0 ? selectedRegions[0] : 'us';
   
   // Check for API key on mount
   React.useEffect(() => {
@@ -54,8 +55,8 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
     await onKeywordSearch(keyword, suggestions);
   };
   
-  const handleCountriesChange = (countries: string[]) => {
-    setSelectedRegions(countries);
+  const handleCountryChange = (country: string) => {
+    setSelectedRegions([country]);
   };
   
   // Show the search bar first
@@ -67,8 +68,8 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
         </div>
         <div>
           <CountrySelector 
-            selectedCountries={selectedRegions} 
-            onCountriesChange={handleCountriesChange}
+            selectedCountry={selectedRegion}
+            onCountryChange={handleCountryChange}
           />
         </div>
       </div>

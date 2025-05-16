@@ -47,6 +47,12 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   selectedCountries,
   onCountriesChange
 }) => {
+  const selectedRegion = selectedCountries.length > 0 ? selectedCountries[0] : 'us';
+  
+  const handleCountryChange = (country: string) => {
+    onCountriesChange([country]);
+  };
+  
   return (
     <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
       <div className="flex items-center space-x-2">
@@ -83,8 +89,8 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
         </Select>
         
         <CountrySelector 
-          selectedCountries={selectedCountries}
-          onCountriesChange={onCountriesChange}
+          selectedCountry={selectedRegion}
+          onCountryChange={handleCountryChange}
         />
       </div>
       

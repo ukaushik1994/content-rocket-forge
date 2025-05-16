@@ -25,18 +25,36 @@ export const AVAILABLE_COUNTRIES: SearchCountry[] = [
 interface CountrySelectorProps {
   selectedCountry: string;
   onCountryChange: (country: string) => void;
+  // For backward compatibility
+  selectedCountries?: string[];
+  onCountriesChange?: (countries: string[]) => void;
   className?: string;
 }
 
 export const CountrySelector: React.FC<CountrySelectorProps> = ({
   selectedCountry,
   onCountryChange,
+  selectedCountries,
+  onCountriesChange,
   className = ""
 }) => {
   const countries = AVAILABLE_COUNTRIES;
   
+  // Handle both old and new API
+  const handleCountryChange = (value: string) => {
+    onCountryChange(value);
+    // Support legacy API if provided
+    if (onCountriesChange) {
+      onCountriesChange([value]);
+    }
+  };
+  
+  // Use selectedCountries for backward compatibility if provided
+  const effectiveSelectedCountry = selectedCountry || 
+    (selectedCountries && selectedCountries.length > 0 ? selectedCountries[0] : 'us');
+  
   const getSelectedCountryLabel = () => {
-    const country = countries.find(c => c.value === selectedCountry);
+    const country = countries.find(c => c.value === effectiveSelectedCountry);
     return country?.label || 'Select Region';
   };
   
@@ -49,7 +67,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuRadioGroup value={selectedCountry} onValueChange={onCountryChange}>
+        <DropdownMenuRadioGroup value={effectiveSelectedCountry} onValueChange={handleCountryChange}>
           {countries.map(country => (
             <DropdownMenuRadioItem
               key={country.value}

@@ -3,12 +3,12 @@ import { ContentBuilderState } from './types/index';
 
 export const initialState: ContentBuilderState = {
   steps: [
-    { id: 1, name: 'Keyword Selection', completed: false, visited: false },
-    { id: 2, name: 'SERP Analysis', completed: false, visited: false },
-    { id: 3, name: 'Outline Creation', completed: false, visited: false },
-    { id: 4, name: 'Content Writing', completed: false, visited: false },
-    { id: 5, name: 'Optimize & Review', completed: false, visited: false },
-    { id: 6, name: 'Save & Export', completed: false, visited: false }
+    { id: 1, name: 'Keyword Selection', description: 'Select primary and secondary keywords for your content', completed: false, visited: false },
+    { id: 2, name: 'SERP Analysis', description: 'Analyze search results to understand search intent', completed: false, visited: false },
+    { id: 3, name: 'Outline Creation', description: 'Generate a structured outline for your content', completed: false, visited: false },
+    { id: 4, name: 'Content Writing', description: 'Create engaging content based on your outline', completed: false, visited: false },
+    { id: 5, name: 'Optimize & Review', description: 'Analyze and improve content performance', completed: false, visited: false },
+    { id: 6, name: 'Save & Export', description: 'Save your content and export it to desired formats', completed: false, visited: false }
   ],
   currentStep: 1,
   mainKeyword: '',
@@ -28,24 +28,33 @@ export const initialState: ContentBuilderState = {
   seoScore: 0,
   seoImprovements: [],
   contentType: 'article',
-  contentFormat: 'blog',
-  contentIntent: 'informational',
+  contentFormat: 'long-form', // Changed from 'blog' to valid ContentFormat
+  contentIntent: 'inform', // Changed from 'informational' to valid ContentIntent
   selectedSolution: null,
   metaTitle: '',
   metaDescription: '',
   documentStructure: {
-    headingsCount: 0,
-    paragraphsCount: 0,
-    wordsCount: 0,
-    readingTime: 0,
+    totalWordCount: 0,
+    paragraphCount: 0,
+    sentenceCount: 0,
+    readability: {
+      score: 0,
+      level: 'standard'
+    },
+    headings: {
+      h1: 0,
+      h2: 0,
+      h3: 0,
+      h4: 0
+    },
     hasIntroduction: false,
     hasConclusion: false,
-    hasFAQSection: false,
+    hasFAQSection: false
   },
   solutionIntegrationMetrics: {
-    keywordRelevance: 0,
-    contentMatch: 0,
-    overallScore: 0,
+    relevanceScore: 0,
+    contentMatchScore: 0,
+    integrationScore: 0
   },
   additionalInstructions: '',
   selectedRegions: ['us'], // Default to US region
