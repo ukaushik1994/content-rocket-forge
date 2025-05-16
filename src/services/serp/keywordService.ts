@@ -2,7 +2,6 @@
 import { toast } from 'sonner';
 import { SearchKeywordParams, SerpAnalysisResult } from './types';
 import { getSerpApiKey, callSerpApi } from './apiProxy';
-import { generateMockData, generateMockRelatedKeywords } from './mockData';
 import { processSerpResponse } from './processing';
 
 /**
@@ -14,7 +13,10 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     
     // Get the API key
     const apiKey = await getSerpApiKey();
-    if (!apiKey) return [];
+    if (!apiKey) {
+      toast.error('SERP API key is missing. Please add it in Settings → API.');
+      return [];
+    }
     
     console.log('SERP API key found, making API request with countries:', countries);
     
@@ -61,10 +63,8 @@ export const analyzeKeywordSerp = async (
     const apiKey = await getSerpApiKey();
     if (!apiKey) {
       console.warn('No valid SERP API key found');
-      
-      // Return mock data as a fallback
-      const mockData = generateMockData(keyword, countries);
-      return processSerpResponse(mockData);
+      toast.error('SERP API key is required. Please add it in Settings → API.');
+      return null;
     }
     
     console.log('SERP API key found, making API request with countries:', countries);
@@ -87,11 +87,7 @@ export const analyzeKeywordSerp = async (
       // If no data was returned, inform the user
       if (!data || Object.keys(data).length === 0) {
         toast.warning('No SERP data found for this keyword. Try another keyword or check your API key.');
-        
-        // Return mock data for development
-        console.log("Using mock data as fallback");
-        const mockData = generateMockData(keyword, countries);
-        return processSerpResponse(mockData);
+        return null;
       }
       
       // Add the search countries to the response data
@@ -105,13 +101,9 @@ export const analyzeKeywordSerp = async (
       return processedData;
       
     } catch (error) {
-      console.warn('All attempts to call SERP API failed:', error);
-      console.log("Using mock data as error fallback");
-      toast.warning('Using demo data due to API connection issues.');
-      
-      // Return mock data as a fallback
-      const mockData = generateMockData(keyword, countries);
-      return processSerpResponse(mockData);
+      console.warn('Failed to call SERP API:', error);
+      toast.error('SERP API request failed. Please check your API key and try again.');
+      return null;
     }
   } catch (error) {
     console.error('Error analyzing keyword:', error);
@@ -128,8 +120,8 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
     // Get the API key
     const apiKey = await getSerpApiKey();
     if (!apiKey) {
-      // Return mock data as a fallback
-      return generateMockRelatedKeywords(keyword);
+      toast.error('SERP API key is required. Please add it in Settings → API.');
+      return [];
     }
     
     console.log('SERP API key found, making API request with countries:', countries);
@@ -152,15 +144,12 @@ export const searchRelatedKeywords = async (keyword: string, countries: string[]
       const relatedSearches = data.related_searches || [];
       const keywords = relatedSearches.map((item: any) => item.query || '');
       
-      return keywords.length > 0 ? keywords : generateMockRelatedKeywords(keyword);
+      return keywords.length > 0 ? keywords : [];
       
     } catch (error) {
       console.warn('Call to SERP API failed:', error);
-      console.log("Using mock keywords as error fallback");
-      toast.warning('Using demo keywords due to API connection issues.');
-      
-      // Return mock data as a fallback
-      return generateMockRelatedKeywords(keyword);
+      toast.error('Failed to fetch related keywords. Please check your API connection.');
+      return [];
     }
   } catch (error) {
     console.error('Error searching related keywords:', error);

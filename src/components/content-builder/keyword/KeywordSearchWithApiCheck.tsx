@@ -32,6 +32,7 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
           console.log('SERP API key found in settings');
         } else {
           console.log('No SERP API key found in settings');
+          toast.warning('SERP API key is required for content analysis. Please add it in Settings → API.');
         }
       } catch (error) {
         console.error('Error checking API key:', error);
@@ -50,8 +51,7 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
       return;
     }
     
-    // We'll proceed with keyword search even if API validation failed
-    // This allows users to still use the app with mock data when API issues occur
+    // Only proceed with keyword search if API key exists
     await onKeywordSearch(keyword, suggestions);
   };
   

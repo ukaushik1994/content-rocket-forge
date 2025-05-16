@@ -74,6 +74,13 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
     return <SerpApiKeyMissing />;
   }
   
+  // If serpData.isMockData is true, prompt the user to add a real API key
+  if (serpData.isMockData) {
+    return (
+      <SerpApiKeyMissing />
+    );
+  }
+  
   // If serpData is an empty object, it means the API request succeeded but returned no data
   if (Object.keys(serpData).length === 0) {
     return (

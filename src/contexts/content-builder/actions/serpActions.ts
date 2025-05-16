@@ -1,5 +1,6 @@
+
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { analyzeKeywordSerp, searchRelatedKeywords } from '@/services/serp';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
@@ -18,22 +19,32 @@ export const createSerpActions = (
     
     try {
       console.log('Analyzing keyword:', keyword, 'with regions:', searchRegions);
+      
       // Make API call to analyze keyword with specified regions
       const serpData = await analyzeKeywordSerp(keyword, false, searchRegions);
       
+      if (!serpData) {
+        dispatch({ type: 'SET_SERP_DATA', payload: null });
+        toast.error("Failed to retrieve SERP data. Please check your API key in Settings → API.");
+        return;
+      }
+      
+      // Only proceed if we have actual data (not mock data)
+      if (serpData.isMockData) {
+        dispatch({ type: 'SET_SERP_DATA', payload: null });
+        toast.warning("No real SERP data available. Please add your SERP API key in Settings → API.");
+        return;
+      }
+      
       console.log('SERP data received:', serpData);
       
-      // Update SERP data in state - will be null if no data is found
+      // Update SERP data in state
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
-      if (!serpData) {
-        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings → API.");
-      } else {
-        // Create initial selections from the SERP data
-        initializeSerpSelections(serpData, dispatch);
-        console.log("SERP data successfully retrieved and selections initialized");
-        toast.success("Search data analysis completed successfully.");
-      }
+      // Create initial selections from the SERP data
+      initializeSerpSelections(serpData, dispatch);
+      console.log("SERP data successfully retrieved and selections initialized");
+      toast.success("Search data analysis completed successfully.");
     } catch (error) {
       console.error('Error analyzing keyword:', error);
       // Set serpData to null to display the NoDataFound component

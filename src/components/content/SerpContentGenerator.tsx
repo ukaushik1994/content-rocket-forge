@@ -8,6 +8,7 @@ import { EmptyState } from './templates/EmptyState';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { analyzeKeywordSerp } from '@/services/serp/keywordService';
 import { toast } from 'sonner';
+import { SerpApiKeyMissing } from '@/components/content-builder/serp/SerpApiKeyMissing';
 
 interface SerpContentGeneratorProps {
   serpData: SerpAnalysisResult | null;
@@ -28,6 +29,11 @@ export function SerpContentGenerator({
 
   if (!serpData) {
     return <EmptyState message="No SERP data available. Please add your API key in settings and analyze a keyword." />;
+  }
+
+  // Check if the data is mock data
+  if (serpData.isMockData) {
+    return <SerpApiKeyMissing />;
   }
 
   const refreshSection = async (section: 'keywords' | 'headings' | 'questions' | 'entities') => {
@@ -58,7 +64,7 @@ export function SerpContentGenerator({
       // Fetch new SERP data with refresh flag set to true
       const newSerpData = await analyzeKeywordSerp(mainKeyword, true, countries);
       
-      if (newSerpData) {
+      if (newSerpData && !newSerpData.isMockData) {
         // Create updated data by merging the new section data with existing data
         const updatedData = { ...localSerpData } as SerpAnalysisResult;
         
@@ -84,6 +90,8 @@ export function SerpContentGenerator({
         
         // Update the local state
         setLocalSerpData(updatedData);
+      } else {
+        toast.error('Failed to get real SERP data. Please check your API key.');
       }
     } catch (error) {
       console.error(`Error refreshing ${section}:`, error);
