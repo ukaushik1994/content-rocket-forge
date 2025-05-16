@@ -1,272 +1,243 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Solution } from '@/contexts/content-builder/types';
-import { useSolutionsData } from '@/components/solutions/hooks/useSolutionsData';
-import { Sparkles, FileText, LayoutGrid, Search, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { ContentTypeCard } from '../content-type/ContentTypeCard';
-import { ContentTypeSelector } from '../content-type/ContentTypeSelector';
-import { SolutionSelector } from '../content-type/SolutionSelector';
 import { ContentType, ContentFormat } from '@/contexts/content-builder/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from '@/components/ui/button';
+import {
+  Calculator,
+  BookText,
+  BarChart3,
+  CheckCircle,
+  FileStack,
+  FileQuestion,
+  ListChecks,
+  Mail
+} from 'lucide-react';
 
-// Content type definitions
-const contentTypes = [
+// Import the Solution type from the correct location
+import { Solution } from '@/contexts/content-builder/types/solution-types';
+
+// Content type options
+const contentTypeOptions: { value: ContentType; label: string; icon: React.ReactNode; description: string }[] = [
   {
-    id: 'blog' as ContentType,
-    title: 'Blog Post',
-    description: 'Informative, educational content to attract and engage your audience',
-    icon: <FileText className="h-5 w-5" />,
-    formats: ['How-to Guide', 'List Post', 'Ultimate Guide', 'Case Study', 'Opinion Piece']
+    value: 'blog',
+    label: 'Blog Post',
+    icon: <BookText className="h-6 w-6" />,
+    description: 'Educational content to attract and engage readers'
   },
   {
-    id: 'landing' as ContentType,
-    title: 'Landing Page',
-    description: 'Conversion-focused content designed to drive specific actions',
-    icon: <LayoutGrid className="h-5 w-5" />,
-    formats: ['Product Page', 'Service Page', 'Lead Generation', 'Feature Highlight']
+    value: 'product',
+    label: 'Product Page',
+    icon: <Calculator className="h-6 w-6" />,
+    description: 'Showcase features and benefits of your product'
   },
   {
-    id: 'seo' as ContentType,
-    title: 'SEO Content',
-    description: 'Keyword-optimized content designed to rank well in search results',
-    icon: <Search className="h-5 w-5" />,
-    formats: ['Pillar Page', 'Keyword-focused Article', 'FAQ Page', 'Resource Page']
+    value: 'landing',
+    label: 'Landing Page',
+    icon: <BarChart3 className="h-6 w-6" />,
+    description: 'Conversion-focused page for campaigns or offers'
+  },
+  {
+    value: 'case-study',
+    label: 'Case Study',
+    icon: <CheckCircle className="h-6 w-6" />,
+    description: 'Showcase customer success stories and results'
   }
 ];
 
-// Mock solutions until we integrate with backend
+// Content format options
+const contentFormatOptions: { value: string; label: string; icon: React.ReactNode }[] = [
+  {
+    value: 'article',
+    label: 'Article',
+    icon: <FileStack className="h-5 w-5" />
+  },
+  {
+    value: 'how-to',
+    label: 'How-to Guide',
+    icon: <ListChecks className="h-5 w-5" />
+  },
+  {
+    value: 'faq',
+    label: 'FAQ',
+    icon: <FileQuestion className="h-5 w-5" />
+  },
+  {
+    value: 'newsletter',
+    label: 'Newsletter',
+    icon: <Mail className="h-5 w-5" />
+  }
+];
+
+// Mock solutions for demonstration
 const mockSolutions: Solution[] = [
   {
     id: '1',
-    name: 'Content Marketing Platform',
-    description: 'All-in-one solution for content creation and distribution',
-    features: ['AI content generation', 'SEO optimization', 'Content calendar'],
-    useCases: ['Marketing teams', 'Content creators'],
-    painPoints: ['Time-consuming content creation', 'Poor SEO performance'],
-    targetAudience: ['Marketing managers', 'Content strategists'],
-    category: 'Marketing',
-    logoUrl: null,
-    externalUrl: null,
-    resources: []
+    name: 'Content Optimizer Pro',
+    features: ['AI content generation', 'Keyword optimization', 'Readability analysis'],
+    painPoints: ['Poor content quality', 'Time-consuming content creation', 'Low search rankings']
   },
   {
     id: '2',
-    name: 'SEO Analytics Suite',
-    description: 'Comprehensive SEO tracking and optimization tools',
-    features: ['Keyword tracking', 'Competitor analysis', 'Backlink monitoring'],
-    useCases: ['SEO agencies', 'Marketing departments'],
-    painPoints: ['Lack of visibility into SEO performance', 'Manual reporting'],
-    targetAudience: ['SEO specialists', 'Digital marketers'],
-    category: 'Analytics',
-    logoUrl: null,
-    externalUrl: null,
-    resources: []
-  },
-  {
-    id: '3',
-    name: 'Social Media Manager',
-    description: 'Streamline your social media presence across platforms',
-    features: ['Content scheduling', 'Analytics dashboard', 'Engagement tracking'],
-    useCases: ['Social media teams', 'Small businesses'],
-    painPoints: ['Inconsistent posting', 'Poor engagement metrics'],
-    targetAudience: ['Social media managers', 'Marketing coordinators'],
-    category: 'Social Media',
-    logoUrl: null,
-    externalUrl: null,
-    resources: []
+    name: 'SEO Wizard',
+    features: ['Keyword research', 'Competitor analysis', 'Backlink tracking'],
+    painPoints: ['Low organic traffic', 'Poor keyword targeting', 'Limited SEO knowledge']
   }
 ];
 
 export const ContentTypeStep = () => {
-  const { state, dispatch, setContentType, setSelectedSolution } = useContentBuilder();
-  const { solutions, isLoading, fetchSolutions } = useSolutionsData();
+  const { state, setContentType, setContentFormat, setSelectedSolution } = useContentBuilder();
+  const { contentType, contentFormat } = state;
   
-  const [selectedType, setSelectedType] = useState<ContentType | ''>(state.contentType || '');
-  const [selectedFormat, setSelectedFormat] = useState<string>(state.contentFormat || '');
-  const [activeTab, setActiveTab] = useState('type');
-  const [availableSolutions, setAvailableSolutions] = useState<Solution[]>([]);
+  const [selectedSolution, setLocalSelectedSolution] = useState<Solution | null>(null);
   
-  // Load solutions on component mount
+  // Mark step as completed when contentType is selected
   useEffect(() => {
-    fetchSolutions();
-  }, [fetchSolutions]);
-  
-  // Set available solutions based on loaded data or fallback to mock data
-  useEffect(() => {
-    if (solutions && solutions.length > 0) {
-      setAvailableSolutions(solutions);
-    } else if (!isLoading) {
-      // If no solutions loaded and not loading, use mock data
-      setAvailableSolutions(mockSolutions);
+    if (contentType) {
+      console.log("ContentType selected:", contentType);
     }
-  }, [solutions, isLoading]);
-  
-  // Update local state when context state changes
-  useEffect(() => {
-    if (state.contentType) {
-      setSelectedType(state.contentType);
-    }
-    if (state.contentFormat) {
-      setSelectedFormat(state.contentFormat);
-    }
-  }, [state.contentType, state.contentFormat]);
+  }, [contentType]);
   
   // Handle content type selection
-  const handleTypeSelect = (typeId: ContentType) => {
-    setSelectedType(typeId);
-    setContentType(typeId);
-    
-    // Find the selected type to get available formats
-    const selectedTypeObj = contentTypes.find(type => type.id === typeId);
-    
-    // If the current format is not available in the new type, reset it
-    if (selectedTypeObj && !selectedTypeObj.formats.includes(selectedFormat)) {
-      setSelectedFormat('');
-    }
+  const handleContentTypeSelect = (value: string) => {
+    // Cast the string value to ContentType
+    setContentType(value as ContentType);
   };
   
-  // Handle format selection
-  const handleFormatSelect = (format: string) => {
-    setSelectedFormat(format);
-    dispatch({
-      type: 'SET_CONTENT_FORMAT',
-      payload: format as ContentFormat
-    });
+  // Handle content format selection
+  const handleFormatSelect = (value: string) => {
+    // Cast the string value to ContentFormat
+    setContentFormat(value as ContentFormat);
   };
   
   // Handle solution selection
-  const handleSolutionSelect = (solution: Solution | null) => {
+  const handleSolutionSelect = (solution: Solution) => {
+    setLocalSelectedSolution(solution);
     setSelectedSolution(solution);
-    
-    if (solution) {
-      toast.success(`Selected solution: ${solution.name}`);
-    } else {
-      toast.info('No solution selected');
-    }
-  };
-  
-  // Check if we can proceed to the next step
-  const canProceed = selectedType !== '';
-  
-  // Mark step as completed if we have a content type
-  useEffect(() => {
-    if (canProceed) {
-      dispatch({
-        type: 'MARK_STEP_COMPLETED',
-        payload: 1
-      });
-    }
-  }, [canProceed, dispatch]);
-  
-  // Get formats for the selected type
-  const getFormatsForSelectedType = () => {
-    const selectedTypeObj = contentTypes.find(type => type.id === selectedType);
-    return selectedTypeObj ? selectedTypeObj.formats : [];
   };
   
   return (
-    <div className="space-y-8">
-      {/* Header with animation */}
-      <motion.div 
-        className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <h3 className="text-lg font-semibold">Content Configuration</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Select your content type and business solution to optimize your content
-          </p>
-        </div>
-      </motion.div>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">Content Type</h3>
+        <p className="text-sm text-muted-foreground">
+          Select the type of content you want to create
+        </p>
+      </div>
       
-      {/* Content Type Selection Tabs */}
-      <Tabs defaultValue="type" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 mb-6">
-          <TabsTrigger value="type" className="text-sm">Content Type</TabsTrigger>
-          <TabsTrigger value="solution" className="text-sm">Business Solution</TabsTrigger>
-        </TabsList>
+      {/* Content Type Selection */}
+      <div>
+        <Label className="mb-3 block">What type of content are you creating?</Label>
         
-        {/* Content Type Tab */}
-        <TabsContent value="type" className="space-y-6">
-          <div className="space-y-4">
-            <Label className="text-base">Select Content Type</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {contentTypes.map(type => (
-                <ContentTypeCard
-                  key={type.id}
-                  type={type}
-                  isSelected={selectedType === type.id}
-                  onSelect={() => handleTypeSelect(type.id)}
-                />
-              ))}
-            </div>
+        <RadioGroup 
+          value={contentType || ''} 
+          onValueChange={handleContentTypeSelect}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          {contentTypeOptions.map((option) => (
+            <Label
+              key={option.value}
+              htmlFor={option.value}
+              className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors
+                ${contentType === option.value 
+                  ? 'border-primary bg-primary/10' 
+                  : 'hover:bg-accent'}`}
+            >
+              <RadioGroupItem id={option.value} value={option.value} className="sr-only" />
+              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary">
+                {option.icon}
+              </div>
+              <div className="flex-1">
+                <div className="font-medium">{option.label}</div>
+                <div className="text-xs text-muted-foreground">{option.description}</div>
+              </div>
+            </Label>
+          ))}
+        </RadioGroup>
+      </div>
+      
+      {/* Content Format Selection */}
+      {contentType && (
+        <div className="space-y-3 pt-4 animate-fade-in">
+          <Label>Select content format:</Label>
+          
+          <RadioGroup 
+            value={contentFormat || ''} 
+            onValueChange={handleFormatSelect}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+          >
+            {contentFormatOptions.map((format) => (
+              <Label
+                key={format.value}
+                htmlFor={`format-${format.value}`}
+                className={`flex flex-col items-center gap-1 p-3 rounded-lg border cursor-pointer transition-colors aspect-square
+                  ${contentFormat === format.value 
+                    ? 'border-primary bg-primary/10' 
+                    : 'hover:bg-accent'}`}
+              >
+                <RadioGroupItem id={`format-${format.value}`} value={format.value} className="sr-only" />
+                <div className="h-8 w-8 flex items-center justify-center">
+                  {format.icon}
+                </div>
+                <div className="text-sm text-center">{format.label}</div>
+              </Label>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
+      
+      {/* Solution Selection */}
+      {contentType && contentFormat && (
+        <div className="space-y-3 pt-4 animate-fade-in">
+          <Label>Select solution to integrate (optional):</Label>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {mockSolutions.map((solution) => (
+              <Card 
+                key={solution.id}
+                className={`cursor-pointer transition-all hover:shadow
+                  ${selectedSolution?.id === solution.id 
+                    ? 'border-primary ring-1 ring-primary' 
+                    : 'hover:border-primary/40'}`}
+                onClick={() => handleSolutionSelect(solution)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">{solution.name}</h4>
+                    {selectedSolution?.id === solution.id && (
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <div className="mt-2 text-sm">
+                    <strong>Key features:</strong>
+                    <ul className="list-disc ml-5 mt-1">
+                      {solution.features.slice(0, 2).map((feature, i) => (
+                        <li key={i}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
           
-          {/* Content Format Selection */}
-          {selectedType && (
-            <motion.div 
-              className="space-y-4"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              transition={{ duration: 0.3 }}
-            >
-              <Label className="text-base">Select Content Format</Label>
-              <ContentTypeSelector
-                formats={getFormatsForSelectedType()}
-                selectedFormat={selectedFormat}
-                onFormatSelect={handleFormatSelect}
-              />
-            </motion.div>
-          )}
-          
-          <div className="flex justify-end">
+          <div className="flex justify-center pt-2">
             <Button 
-              onClick={() => setActiveTab('solution')}
-              disabled={!selectedType}
-              className="bg-gradient-to-r from-neon-purple to-neon-blue"
+              variant="outline" 
+              onClick={() => {
+                setLocalSelectedSolution(null);
+                setSelectedSolution(null);
+              }}
+              size="sm"
             >
-              Continue <ChevronRight className="ml-2 h-4 w-4" />
+              Clear Selection
             </Button>
           </div>
-        </TabsContent>
-        
-        {/* Business Solution Tab */}
-        <TabsContent value="solution" className="space-y-6">
-          <div className="space-y-4">
-            <Label className="text-base">Select Business Solution (Optional)</Label>
-            <p className="text-sm text-muted-foreground">
-              Choose a business solution to incorporate into your content
-            </p>
-            
-            <SolutionSelector
-              solutions={availableSolutions}
-              selectedSolution={state.selectedSolution}
-              onSolutionSelect={handleSolutionSelect}
-              isLoading={isLoading}
-            />
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              onClick={() => setActiveTab('type')}
-              variant="outline"
-              className="mr-2 bg-glass border border-white/10"
-            >
-              Back
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 };
