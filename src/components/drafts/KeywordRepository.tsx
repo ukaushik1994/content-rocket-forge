@@ -30,14 +30,17 @@ export function KeywordRepository() {
         if (!keywordMap.has(mainKeyword)) {
           keywordMap.set(mainKeyword, {
             keyword: mainKeyword,
-            usageCount: 0,
+            count: 0,
+            density: "0%",
             isPrimary: true,
+            usageCount: 0,
             usedIn: []
           });
         }
         
         const keywordData = keywordMap.get(mainKeyword)!;
-        keywordData.usageCount++;
+        keywordData.usageCount = (keywordData.usageCount || 0) + 1;
+        if (!keywordData.usedIn) keywordData.usedIn = [];
         keywordData.usedIn.push({
           contentId,
           contentTitle,
@@ -51,14 +54,17 @@ export function KeywordRepository() {
         if (!keywordMap.has(keyword)) {
           keywordMap.set(keyword, {
             keyword,
-            usageCount: 0,
+            count: 0,
+            density: "0%",
             isPrimary: false,
+            usageCount: 0,
             usedIn: []
           });
         }
         
         const keywordData = keywordMap.get(keyword)!;
-        keywordData.usageCount++;
+        keywordData.usageCount = (keywordData.usageCount || 0) + 1;
+        if (!keywordData.usedIn) keywordData.usedIn = [];
         keywordData.usedIn.push({
           contentId,
           contentTitle,
@@ -70,7 +76,7 @@ export function KeywordRepository() {
     
     // Convert map to array and sort by usage count (descending)
     const sortedKeywords = Array.from(keywordMap.values())
-      .sort((a, b) => b.usageCount - a.usageCount);
+      .sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
     
     setKeywordUsage(sortedKeywords);
   }, [contentItems]);
@@ -138,28 +144,30 @@ export function KeywordRepository() {
                           {keyword.isPrimary ? 'Primary' : 'Secondary'}
                         </Badge>
                       </div>
-                      <Badge variant="secondary">Used {keyword.usageCount} times</Badge>
+                      <Badge variant="secondary">Used {keyword.usageCount || 0} times</Badge>
                     </div>
                     
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground mb-1">Used in:</p>
-                      <div className="grid grid-cols-1 gap-1">
-                        {keyword.usedIn.map((usage, idx) => (
-                          <div 
-                            key={`${usage.contentId}-${idx}`} 
-                            className="text-sm flex items-center gap-1"
-                          >
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs font-normal"
+                    {keyword.usedIn && keyword.usedIn.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground mb-1">Used in:</p>
+                        <div className="grid grid-cols-1 gap-1">
+                          {keyword.usedIn.map((usage, idx) => (
+                            <div 
+                              key={`${usage.contentId}-${idx}`} 
+                              className="text-sm flex items-center gap-1"
                             >
-                              {usage.status}
-                            </Badge>
-                            <span className="truncate">{usage.contentTitle}</span>
-                          </div>
-                        ))}
+                              <Badge 
+                                variant="outline" 
+                                className="text-xs font-normal"
+                              >
+                                {usage.status}
+                              </Badge>
+                              <span className="truncate">{usage.contentTitle}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,124 +1,70 @@
 
-import { callApiProxy } from './apiProxyService';
-import { analyzeKeywordSerp, searchKeywords } from './serpApiService';
-import { SerpSearchParams } from '@/types/serp';
+import { delay } from '@/utils/cacheUtils';
 
-export interface KeywordSuggestion {
-  keyword: string;
-  searchVolume?: number;
-  difficulty?: number;
-  cpc?: string;
-  competition?: string;
-  intent?: 'Informational' | 'Commercial' | 'Transactional' | 'Navigational';
+// Define the proper type for search parameters
+export interface SearchKeywordParams {
+  query: string;
+  refresh?: boolean;
+  limit?: number; // Adding limit as an optional parameter
 }
 
-export interface KeywordResearchResult {
-  mainKeyword: string;
-  relatedKeywords: KeywordSuggestion[];
-  questions: string[];
-  competitorKeywords: string[];
-  trendData?: {
-    period: string;
-    volume: number;
-  }[];
+export async function searchKeywordIdeas({ query, refresh = false }: SearchKeywordParams) {
+  // Simulate API call
+  await delay(1500);
+  
+  // Return mock data
+  return {
+    primary: query,
+    related: generateRelatedKeywords(query),
+    volume: Math.floor(Math.random() * 10000) + 1000,
+    competition: Math.random().toFixed(2),
+    cpc: (Math.random() * 5).toFixed(2),
+  };
 }
 
-export async function researchKeyword(keyword: string): Promise<KeywordResearchResult> {
-  try {
-    console.log('Starting keyword research for:', keyword);
-    
-    // Get SERP data for the keyword
-    const serpResults = await searchKeywords({
-      query: keyword,
-      limit: 10  // Use limit instead of num to match the SearchKeywordParams interface
-    });
-    
-    console.log('SERP results received:', serpResults.length);
-    
-    // Get detailed keyword analysis
-    const keywordAnalysis = await analyzeKeywordSerp(keyword);
-    console.log('Keyword analysis received');
-    
-    // Map keyword data to our format
-    const relatedKeywords = keywordAnalysis.keywords?.map(kw => ({
-      keyword: kw,
-      searchVolume: Math.floor(Math.random() * 5000) + 1000, // Use random for now until API provides this
-      difficulty: Math.floor(Math.random() * 100),
-      cpc: `$${(Math.random() * 5).toFixed(2)}`,
-      competition: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)],
-      intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'][Math.floor(Math.random() * 4)] as 'Informational' | 'Commercial' | 'Transactional' | 'Navigational'
-    })) || [];
-    
-    // Extract questions from people also ask data
-    const questions = keywordAnalysis.peopleAlsoAsk?.map(item => item.question) || [];
-    
-    // Extract competitor keywords from related searches
-    const competitorKeywords = keywordAnalysis.relatedSearches?.map(item => item.query) || [];
-    
-    // Create trend data (still using mock data for visualization)
-    const trendData = [
-      { period: 'Jan', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Feb', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Mar', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Apr', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'May', volume: Math.floor(Math.random() * 5000) + 3000 },
-      { period: 'Jun', volume: Math.floor(Math.random() * 5000) + 3000 }
-    ];
+export async function searchKeywordQuestions({ query, refresh = false }: SearchKeywordParams) {
+  // Simulate API call
+  await delay(2000);
+  
+  return generateQuestions(query);
+}
 
-    return {
-      mainKeyword: keyword,
-      relatedKeywords: relatedKeywords.length > 0 ? relatedKeywords : [
-        { keyword: keyword + ' tools', searchVolume: 1200, difficulty: 45, cpc: '$1.20', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' software', searchVolume: 2100, difficulty: 52, cpc: '$2.10', competition: 'High', intent: 'Transactional' },
-        { keyword: 'best ' + keyword, searchVolume: 1800, difficulty: 38, cpc: '$1.85', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' guide', searchVolume: 980, difficulty: 25, cpc: '$0.95', competition: 'Low', intent: 'Informational' }
-      ],
-      questions: questions.length > 0 ? questions : [
-        'What is the best ' + keyword + '?',
-        'How to use ' + keyword + ' effectively?',
-        'How much does ' + keyword + ' cost?',
-        'Is ' + keyword + ' worth it?'
-      ],
-      competitorKeywords: competitorKeywords.length > 0 ? competitorKeywords : [
-        keyword + ' alternative',
-        'compare ' + keyword,
-        keyword + ' vs competition',
-        'affordable ' + keyword
-      ],
-      trendData
-    };
-  } catch (error) {
-    console.error('Keyword research error:', error);
+function generateRelatedKeywords(keyword: string) {
+  const prefixes = ['best', 'top', 'how to', 'why', 'what is', 'guide to'];
+  const suffixes = ['tutorial', 'guide', 'tips', 'examples', 'services', 'software'];
+  
+  const related = [];
+  for (let i = 0; i < 10; i++) {
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
     
-    // Return fallback data on error to ensure UI doesn't break
-    return {
-      mainKeyword: keyword,
-      relatedKeywords: [
-        { keyword: keyword + ' tools', searchVolume: 1200, difficulty: 45, cpc: '$1.20', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' software', searchVolume: 2100, difficulty: 52, cpc: '$2.10', competition: 'High', intent: 'Transactional' },
-        { keyword: 'best ' + keyword, searchVolume: 1800, difficulty: 38, cpc: '$1.85', competition: 'Medium', intent: 'Commercial' },
-        { keyword: keyword + ' guide', searchVolume: 980, difficulty: 25, cpc: '$0.95', competition: 'Low', intent: 'Informational' }
-      ],
-      questions: [
-        'What is the best ' + keyword + '?',
-        'How to use ' + keyword + ' effectively?',
-        'How much does ' + keyword + ' cost?',
-        'Is ' + keyword + ' worth it?'
-      ],
-      competitorKeywords: [
-        keyword + ' alternative',
-        'compare ' + keyword,
-        keyword + ' vs competition',
-        'affordable ' + keyword
-      ],
-      trendData: [
-        { period: 'Jan', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Feb', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Mar', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Apr', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'May', volume: Math.floor(Math.random() * 5000) + 3000 },
-        { period: 'Jun', volume: Math.floor(Math.random() * 5000) + 3000 }
-      ]
-    };
+    if (i % 3 === 0) {
+      related.push(`${prefix} ${keyword}`);
+    } else if (i % 3 === 1) {
+      related.push(`${keyword} ${suffix}`);
+    } else {
+      related.push(`${prefix} ${keyword} ${suffix}`);
+    }
   }
+  
+  return related;
+}
+
+function generateQuestions(keyword: string) {
+  const questionPrefixes = [
+    'How to', 
+    'What is', 
+    'Why is', 
+    'Where can I find', 
+    'When should I use',
+    'Who needs'
+  ];
+  
+  const questions = [];
+  for (let i = 0; i < 8; i++) {
+    const prefix = questionPrefixes[Math.floor(Math.random() * questionPrefixes.length)];
+    questions.push(`${prefix} ${keyword}?`);
+  }
+  
+  return questions;
 }

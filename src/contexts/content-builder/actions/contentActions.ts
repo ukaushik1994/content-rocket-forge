@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { OutlineSection } from '../types/outline-types';
 import { ContentType, ContentFormat, ContentIntent } from '../types/content-types';
@@ -12,11 +11,11 @@ export const createContentActions = (
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
   };
   
-  const setContentFormat = (format: ContentFormat) => {
+  const setContentFormat = (format: string) => {
     dispatch({ type: 'SET_CONTENT_FORMAT', payload: format });
   };
   
-  const setContentIntent = (intent: ContentIntent) => {
+  const setContentIntent = (intent: string) => {
     dispatch({ type: 'SET_CONTENT_INTENT', payload: intent });
   };
   

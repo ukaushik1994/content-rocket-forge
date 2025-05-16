@@ -9,41 +9,52 @@ export const initialState: ContentBuilderState = {
     {
       id: 0,
       name: 'Keyword Selection',
+      title: 'Keyword Selection',
       description: 'Choose your target keywords',
       completed: false,
-      visited: false
+      visited: false,
+      analyzed: false
     },
     {
       id: 1,
       name: 'Content Type',
+      title: 'Content Type',
       description: 'Select your content format',
       completed: false,
-      visited: false
+      visited: false,
+      analyzed: false
     },
     {
       id: 2,
       name: 'SERP Analysis',
+      title: 'SERP Analysis',
       description: 'Analyze search results',
       completed: false,
-      visited: false
+      visited: false,
+      analyzed: false
     },
     {
       id: 3,
       name: 'Content Outline',
+      title: 'Content Outline',
       description: 'Create your content structure',
       completed: false,
-      visited: false
+      visited: false,
+      analyzed: false
     },
     {
       id: 4,
       name: 'Content Writing',
+      title: 'Content Writing',
       description: 'Write your content',
       completed: false,
-      visited: false
+      visited: false,
+      analyzed: false
     },
     {
       id: 5,
       name: 'Optimize & Review',
+      title: 'Optimize & Review',
       description: 'Enhance your content',
       completed: false,
       visited: false,
@@ -65,7 +76,7 @@ export const initialState: ContentBuilderState = {
   suggestedTitles: [],
   selectedCluster: null,
   contentType: 'blog', // Using string literal instead of ContentType.BLOG_POST
-  contentFormat: ContentFormat.ARTICLE,
+  contentFormat: ContentFormat.LONG_FORM,
   contentIntent: ContentIntent.INFORM,
   selectedSolution: null,
   seoScore: 0,

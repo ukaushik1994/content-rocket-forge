@@ -16,24 +16,26 @@ export type ContentType =
   | 'social'
   | 'custom';
 
-export type ContentFormat =
-  | 'long-form'
-  | 'short-form'
-  | 'listicle'
-  | 'how-to'
-  | 'news'
-  | 'opinion'
-  | 'tutorial'
-  | 'custom';
+export enum ContentFormat {
+  LONG_FORM = 'long-form',
+  SHORT_FORM = 'short-form',
+  LISTICLE = 'listicle',
+  HOW_TO = 'how-to',
+  NEWS = 'news',
+  OPINION = 'opinion',
+  TUTORIAL = 'tutorial',
+  CUSTOM = 'custom'
+}
 
-export type ContentIntent =
-  | 'inform'
-  | 'educate'
-  | 'entertain'
-  | 'convert'
-  | 'engage'
-  | 'persuade'
-  | 'custom';
+export enum ContentIntent {
+  INFORM = 'inform',
+  EDUCATE = 'educate',
+  ENTERTAIN = 'entertain',
+  CONVERT = 'convert',
+  ENGAGE = 'engage',
+  PERSUADE = 'persuade',
+  CUSTOM = 'custom'
+}
 
 export interface SaveContentParams {
   title: string;
@@ -42,6 +44,8 @@ export interface SaveContentParams {
   metaDescription?: string;
   keywords?: string[];
   contentType?: ContentType;
+  contentFormat?: string;
+  contentIntent?: string;
   seoScore?: number;
   isPublished?: boolean;
   customFields?: Record<string, any>;
@@ -51,6 +55,7 @@ export interface SaveContentParams {
   outlineSections?: any[];
   serpSelections?: any[];
   serpData?: any;
+  solutionInfo?: any;
 }
 
 export interface KeywordUsage {
@@ -59,7 +64,12 @@ export interface KeywordUsage {
   density: string;
   isPrimary?: boolean;
   usageCount?: number;
-  usedIn?: string[];
+  usedIn?: {
+    contentId: string;
+    contentTitle: string;
+    isPrimary: boolean;
+    status: string;
+  }[];
 }
 
 // Search country type for SERP analysis
