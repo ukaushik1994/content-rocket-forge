@@ -59,7 +59,7 @@ export function useOptimizeReview() {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
   
-  // Wrapper functions that properly return Promise<void>
+  // Both functions now return Promise<void>
   const handleSaveToDraftWrapper = async (): Promise<void> => {
     try {
       await handleSaveToDraft();

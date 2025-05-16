@@ -31,6 +31,11 @@ export function useSaveContent() {
         ...(state.selectedKeywords || [])
       ];
       
+      // Convert outline to string array if it's not already
+      const outlineAsStringArray = Array.isArray(state.outline) 
+        ? state.outline.map(item => typeof item === 'string' ? item : item.title)
+        : state.outline ? [state.outline].map(item => typeof item === 'string' ? item : item.title) : [];
+      
       // Draft content item
       const contentItem = {
         status: "draft" as const,
@@ -46,7 +51,7 @@ export function useSaveContent() {
         metadata: {
           mainKeyword: state.mainKeyword,
           secondaryKeywords: state.selectedKeywords,
-          outline: Array.isArray(state.outline) ? state.outline : [state.outline].filter(Boolean), // Ensure outline is an array
+          outline: outlineAsStringArray, // Now properly formatted as string[]
           outlineSections: JSON.stringify(state.outlineSections),
           additionalInstructions: state.additionalInstructions,
           contentType: state.contentType,
@@ -58,9 +63,9 @@ export function useSaveContent() {
         }
       };
       
-      const id = await addContentItem(contentItem);
+      const result = await addContentItem(contentItem);
       
-      if (id) {
+      if (result) {
         toast.success("Content saved to drafts");
         setIsSavedToDraft(true);
       } else {
@@ -101,6 +106,11 @@ export function useSaveContent() {
         ...(state.selectedKeywords || [])
       ];
       
+      // Convert outline to string array if it's not already
+      const outlineAsStringArray = Array.isArray(state.outline) 
+        ? state.outline.map(item => typeof item === 'string' ? item : item.title)
+        : state.outline ? [state.outline].map(item => typeof item === 'string' ? item : item.title) : [];
+      
       // Published content item
       const contentItem = {
         status: "published" as const,
@@ -116,7 +126,7 @@ export function useSaveContent() {
         metadata: {
           mainKeyword: state.mainKeyword,
           secondaryKeywords: state.selectedKeywords,
-          outline: Array.isArray(state.outline) ? state.outline : [state.outline].filter(Boolean), // Ensure outline is an array
+          outline: outlineAsStringArray, // Now properly formatted as string[]
           outlineSections: JSON.stringify(state.outlineSections),
           additionalInstructions: state.additionalInstructions,
           contentType: state.contentType,
@@ -129,9 +139,9 @@ export function useSaveContent() {
         }
       };
       
-      const id = await addContentItem(contentItem);
+      const result = await addContentItem(contentItem);
       
-      if (id) {
+      if (result) {
         toast.success("Content published successfully!");
       } else {
         toast.error("Failed to publish content");
