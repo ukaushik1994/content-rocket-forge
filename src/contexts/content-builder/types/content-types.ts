@@ -1,98 +1,46 @@
 
 /**
- * Content type definitions
+ * Content-related type definitions for the content builder
  */
 
-export type ContentType = 
-  | 'blog'
-  | 'article'
-  | 'landing-page'
-  | 'product-page'
-  | 'guide'
-  | 'review'
-  | 'comparison'
-  | 'info-page'
-  | 'email'
-  | 'social'
-  | 'custom';
+export type ContentType = 'article' | 'blog' | 'product' | 'landing' | 'service';
 
-export enum ContentFormat {
-  LONG_FORM = 'long-form',
-  SHORT_FORM = 'short-form',
-  LISTICLE = 'listicle',
-  HOW_TO = 'how-to',
-  NEWS = 'news',
-  OPINION = 'opinion',
-  TUTORIAL = 'tutorial',
-  CUSTOM = 'custom'
-}
+export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'review' | 'comparison';
 
-export enum ContentIntent {
-  INFORM = 'inform',
-  EDUCATE = 'educate',
-  ENTERTAIN = 'entertain',
-  CONVERT = 'convert',
-  ENGAGE = 'engage',
-  PERSUADE = 'persuade',
-  CUSTOM = 'custom'
-}
+export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'inspire';
 
-export interface SaveContentParams {
-  title: string;
-  content: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  keywords?: string[];
-  contentType?: ContentType;
-  contentFormat?: string;
-  contentIntent?: string;
-  seoScore?: number;
-  isPublished?: boolean;
-  customFields?: Record<string, any>;
-  mainKeyword?: string;
-  secondaryKeywords?: string[];
-  outline?: string[];
-  outlineSections?: any[];
-  serpSelections?: any[];
-  serpData?: any;
-  solutionInfo?: any;
-}
-
-export interface KeywordUsage {
+export type KeywordUsage = {
   keyword: string;
   count: number;
   density: string;
-  isPrimary?: boolean;
-  usageCount?: number;
-  usedIn?: {
-    contentId: string;
-    contentTitle: string;
-    isPrimary: boolean;
-    status: string;
-  }[];
-}
+};
 
-// Search country type for SERP analysis
-export interface SearchCountry {
-  id: string;
-  code: string;
-  name: string;
-  flag: string;
-}
-
-// Available countries for SERP analysis
-export const AVAILABLE_COUNTRIES: SearchCountry[] = [
-  { id: 'us', code: 'us', name: 'United States', flag: '🇺🇸' },
-  { id: 'uk', code: 'uk', name: 'United Kingdom', flag: '🇬🇧' },
-  { id: 'ca', code: 'ca', name: 'Canada', flag: '🇨🇦' },
-  { id: 'au', code: 'au', name: 'Australia', flag: '🇦🇺' },
-  { id: 'mea', code: 'mea', name: 'Middle East', flag: '🌍' },
-  { id: 'global', code: 'global', name: 'Global', flag: '🌐' }
-];
-
-// Define the proper type for search parameters
-export interface SearchKeywordParams {
+export type SearchKeywordParams = {
   query: string;
-  refresh?: boolean;
-  limit?: number;
+  country?: string;
+  language?: string;
+};
+
+export type SearchCountry = 
+  'us' | 'gb' | 'ca' | 'au' | 'de' | 
+  'fr' | 'es' | 'it' | 'nl' | 'se' | 
+  'br' | 'mx' | 'in' | 'jp' | 'sg';
+
+export interface ContentData {
+  title: string;
+  content: string;
+  mainKeyword: string;
+  selectedKeywords: string[];
+  contentType?: ContentType;
+  contentFormat?: ContentFormat;
+  contentIntent?: ContentIntent;
+  metaTitle?: string;
+  metaDescription?: string;
+  seoScore?: number;
+}
+
+export interface SaveContentParams extends ContentData {
+  status: 'draft' | 'published' | 'archived';
+  userId?: string;
+  solutionInfo?: any;
 }

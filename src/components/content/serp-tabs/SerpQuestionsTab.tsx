@@ -23,24 +23,28 @@ export function SerpQuestionsTab({ serpData, onAddToContent = () => {} }: SerpQu
     <div className="space-y-4">
       <h3 className="font-medium text-lg mb-2">People Also Ask</h3>
       <div className="grid grid-cols-1 gap-3">
-        {serpData.peopleAlsoAsk?.map((question, index) => (
-          <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
-            <CardContent className="p-0">
-              <div className="flex justify-between items-center p-4">
-                <p className="font-medium">{question}</p>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => onAddToContent(question, 'question')}
-                  className="hover:bg-primary/10"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {serpData.peopleAlsoAsk?.map((question, index) => {
+          const questionText = typeof question === 'string' ? question : question.question;
+          
+          return (
+            <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className="p-0">
+                <div className="flex justify-between items-center p-4">
+                  <p className="font-medium">{questionText}</p>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => onAddToContent(questionText, 'question')}
+                    className="hover:bg-primary/10"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

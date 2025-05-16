@@ -1,129 +1,160 @@
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
-import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
-import { useNavigate } from 'react-router-dom';
+import { ContentType } from '@/contexts/content-builder/types';
 
-export const useSaveContent = () => {
-  const { state, setContentTitle } = useContentBuilder();
-  const { addContentItem } = useContent();
-  const navigate = useNavigate();
-  
-  // Added state for tracking saving status
+export function useSaveContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
-
-  const handleSaveToDraft = useCallback(async (overrideTitle?: string) => {
+  const [isPublishing, setIsPublishing] = useState(false);
+  const { state } = useContentBuilder();
+  const { addContentItem } = useContent();
+  
+  const handleSaveToDraft = async () => {
     try {
       setIsSaving(true);
-      const title = overrideTitle || state.contentTitle || state.metaTitle || `Article about ${state.mainKeyword}`;
+      console.log("Saving content to draft...");
       
-      const contentData: SaveContentParams = {
-        title,
+      if (!state.content || !state.mainKeyword) {
+        toast.error("Content or main keyword is missing");
+        setIsSaving(false);
+        return null;
+      }
+      
+      const title = state.metaTitle || `${state.mainKeyword} - Draft`;
+      
+      // Prepare keywords array from main keyword and selected keywords
+      const keywords = [
+        state.mainKeyword,
+        ...(state.selectedKeywords || [])
+      ];
+      
+      // Draft content item
+      const contentItem = {
+        status: "draft" as const,
+        title: title,
         content: state.content,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
-        keywords: state.selectedKeywords,
-        contentType: state.contentType as any, // Cast to satisfy TS
+        keywords: keywords.filter(Boolean),
+        contentType: state.contentType as ContentType,
         contentFormat: state.contentFormat,
         contentIntent: state.contentIntent,
-        seoScore: state.seoScore,
-        isPublished: false,
-        mainKeyword: state.mainKeyword,
-        secondaryKeywords: state.selectedKeywords.filter(k => k !== state.mainKeyword),
-        outline: Array.isArray(state.outline) && typeof state.outline[0] === 'string' 
-          ? state.outline as string[]
-          : state.outlineSections.map(section => section.title),
-        outlineSections: state.outlineSections,
-        serpSelections: state.serpSelections,
-        serpData: state.serpData,
-        solutionInfo: state.selectedSolution
+        seo_score: state.seoScore || 0,
+        metadata: {
+          mainKeyword: state.mainKeyword,
+          secondaryKeywords: state.selectedKeywords,
+          outline: state.outline,
+          outlineSections: state.outlineSections,
+          additionalInstructions: state.additionalInstructions,
+          contentType: state.contentType,
+          contentFormat: state.contentFormat,
+          contentIntent: state.contentIntent,
+          metaTitle: state.metaTitle,
+          metaDescription: state.metaDescription,
+          solutionInfo: state.selectedSolution
+        }
       };
-
-      // Update title in content builder state
-      if (setContentTitle && overrideTitle) {
-        setContentTitle(overrideTitle);
+      
+      const id = await addContentItem(contentItem);
+      
+      if (id) {
+        toast.success("Content saved to drafts");
+        setIsSavedToDraft(true);
+        return id;
+      } else {
+        toast.error("Failed to save content");
+        return null;
       }
-
-      // Use the content provider to add the content item
-      // This should be fixed to not include created_at/updated_at
-      const contentId = await addContentItem({
-        ...contentData,
-        status: 'draft',
-      });
-
-      setIsSavedToDraft(true);
-      toast.success('Content saved as draft');
-      return contentId;
     } catch (error) {
-      console.error('Error saving content as draft:', error);
-      toast.error('Failed to save content');
+      console.error("Error in handleSaveToDraft:", error);
+      toast.error("An error occurred while saving the content");
       return null;
     } finally {
       setIsSaving(false);
     }
-  }, [state, setContentTitle, addContentItem]);
-
-  const handlePublish = useCallback(async (overrideTitle?: string) => {
+  };
+  
+  const handlePublish = async () => {
     try {
-      setIsSaving(true);
-      const title = overrideTitle || state.contentTitle || state.metaTitle || `Article about ${state.mainKeyword}`;
+      setIsPublishing(true);
+      console.log("Publishing content...");
       
-      const contentData: SaveContentParams = {
-        title,
+      if (!state.content || !state.mainKeyword) {
+        toast.error("Content or main keyword is missing");
+        setIsPublishing(false);
+        return null;
+      }
+      
+      // Check for minimum SEO score before publishing
+      if (state.seoScore < 50) {
+        if (!confirm("This content has a low SEO score. Are you sure you want to publish it?")) {
+          setIsPublishing(false);
+          return null;
+        }
+      }
+      
+      const title = state.metaTitle || `${state.mainKeyword}`;
+      
+      // Prepare keywords array from main keyword and selected keywords
+      const keywords = [
+        state.mainKeyword,
+        ...(state.selectedKeywords || [])
+      ];
+      
+      // Published content item
+      const contentItem = {
+        status: "published" as const,
+        title: title,
         content: state.content,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
-        keywords: state.selectedKeywords,
-        contentType: state.contentType as any, // Cast to satisfy TS
+        keywords: keywords.filter(Boolean),
+        contentType: state.contentType as ContentType,
         contentFormat: state.contentFormat,
         contentIntent: state.contentIntent,
-        seoScore: state.seoScore,
-        isPublished: true,
-        mainKeyword: state.mainKeyword,
-        secondaryKeywords: state.selectedKeywords.filter(k => k !== state.mainKeyword),
-        outline: Array.isArray(state.outline) && typeof state.outline[0] === 'string' 
-          ? state.outline as string[]
-          : state.outlineSections.map(section => section.title),
-        outlineSections: state.outlineSections,
-        serpSelections: state.serpSelections,
-        serpData: state.serpData,
-        solutionInfo: state.selectedSolution
+        seo_score: state.seoScore || 0,
+        metadata: {
+          mainKeyword: state.mainKeyword,
+          secondaryKeywords: state.selectedKeywords,
+          outline: state.outline,
+          outlineSections: state.outlineSections,
+          additionalInstructions: state.additionalInstructions,
+          contentType: state.contentType,
+          contentFormat: state.contentFormat,
+          contentIntent: state.contentIntent,
+          metaTitle: state.metaTitle,
+          metaDescription: state.metaDescription,
+          publishedAt: new Date().toISOString(),
+          solutionInfo: state.selectedSolution
+        }
       };
-
-      // Update title in content builder state
-      if (setContentTitle && overrideTitle) {
-        setContentTitle(overrideTitle);
+      
+      const id = await addContentItem(contentItem);
+      
+      if (id) {
+        toast.success("Content published successfully!");
+        return id;
+      } else {
+        toast.error("Failed to publish content");
+        return null;
       }
-
-      // Use the content provider to add the content item
-      // This should be fixed to not include created_at/updated_at
-      const contentId = await addContentItem({
-        ...contentData,
-        status: 'published',
-      });
-
-      toast.success('Content published successfully');
-      
-      // Navigate to content view
-      navigate(`/content/${contentId}`);
-      
-      return contentId;
     } catch (error) {
-      console.error('Error publishing content:', error);
-      toast.error('Failed to publish content');
+      console.error("Error in handlePublish:", error);
+      toast.error("An error occurred while publishing the content");
       return null;
     } finally {
-      setIsSaving(false);
+      setIsPublishing(false);
     }
-  }, [state, setContentTitle, addContentItem, navigate]);
-
+  };
+  
   return {
     handleSaveToDraft,
     handlePublish,
     isSaving,
+    isPublishing,
     isSavedToDraft
   };
-};
+}

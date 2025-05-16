@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { SerpAnalysisResult } from '@/types/serp';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface SerpKeywordsTabProps {
   serpData: SerpAnalysisResult;
@@ -11,7 +11,7 @@ interface SerpKeywordsTabProps {
 }
 
 export function SerpKeywordsTab({ serpData, onAddToContent = () => {} }: SerpKeywordsTabProps) {
-  if (!serpData.keywords || serpData.keywords.length === 0) {
+  if (!serpData.relatedKeywords || serpData.relatedKeywords.length === 0) {
     return (
       <div className="text-center p-6 text-muted-foreground">
         No keyword data available for this search.
@@ -19,63 +19,48 @@ export function SerpKeywordsTab({ serpData, onAddToContent = () => {} }: SerpKey
     );
   }
 
+  const keywords = serpData.relatedKeywords || [];
+  
   return (
     <div className="space-y-4">
-      {/* Related Keywords Section */}
-      <div>
-        <h3 className="font-medium text-lg mb-2">Related Keywords</h3>
-        <div className="flex flex-wrap gap-2">
-          {serpData.keywords?.slice(0, 10).map((keyword, index) => (
-            <Badge 
-              key={index} 
-              variant="outline" 
-              className="cursor-pointer hover:bg-primary/10 py-1.5"
-              onClick={() => onAddToContent(keyword, 'keyword')}
-            >
-              {keyword}
-            </Badge>
-          ))}
-        </div>
+      <h3 className="font-medium text-lg mb-2">Related Keywords</h3>
+      <div className="grid grid-cols-1 gap-3">
+        {keywords.map((keyword, index) => (
+          <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
+            <CardContent className="p-0">
+              <div className="flex justify-between items-center p-4">
+                <div className="font-medium">{typeof keyword === 'string' ? keyword : keyword.query}</div>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => onAddToContent(typeof keyword === 'string' ? keyword : keyword.query, 'keyword')}
+                  className="hover:bg-primary/10"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
       
-      {/* Related Searches Section */}
-      {serpData.relatedSearches && serpData.relatedSearches.length > 0 && (
-        <div>
-          <h3 className="font-medium text-lg mb-2 mt-6">Related Searches</h3>
-          <div className="flex flex-wrap gap-2">
-            {serpData.relatedSearches.slice(0, 8).map((search, index) => (
-              <Badge 
-                key={index} 
-                variant="outline" 
-                className="cursor-pointer hover:bg-primary/10 py-1.5"
-                onClick={() => onAddToContent(search, 'keyword')}
-              >
-                {search}
-              </Badge>
+      {/* Volume data section - we'll only render this if available */}
+      {serpData.volumeData && serpData.volumeData.length > 0 && (
+        <div className="mt-8">
+          <h3 className="font-medium text-lg mb-2">Keyword Volume Data</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {serpData.volumeData.map((item, index) => (
+              <Card key={index} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="text-sm font-medium">{item.keyword}</div>
+                  <div className="text-xl mt-1">{item.volume || 'N/A'}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Monthly searches</div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
-      )}
-      
-      {/* Keyword Analytics */}
-      {serpData.volumeData && (
-        <Card className="p-4 mt-6">
-          <h3 className="font-medium text-lg mb-2">Keyword Analytics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Monthly Search Volume</p>
-              <p className="text-2xl font-bold">{serpData.volumeData?.volume || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Competition</p>
-              <p className="text-2xl font-bold">{serpData.volumeData?.competition || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">CPC</p>
-              <p className="text-2xl font-bold">${serpData.volumeData?.cpc || 'N/A'}</p>
-            </div>
-          </div>
-        </Card>
       )}
     </div>
   );
