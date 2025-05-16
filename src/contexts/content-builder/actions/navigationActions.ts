@@ -53,7 +53,22 @@ export const createNavigationActions = (
     dispatch({ type: 'SET_CURRENT_STEP', payload: step });
   };
   
+  const goToStep = (stepIndex: number) => {
+    navigateToStep(stepIndex);
+  };
+
+  const prevStep = () => {
+    navigateToStep(state.currentStep - 1);
+  };
+
+  const nextStep = () => {
+    navigateToStep(state.currentStep + 1);
+  };
+  
   return {
-    navigateToStep
+    navigateToStep,
+    goToStep,
+    prevStep,
+    nextStep
   };
 };

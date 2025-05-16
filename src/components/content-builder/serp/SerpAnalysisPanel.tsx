@@ -141,27 +141,27 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
         
         <div className="p-4 bg-background flex-1 overflow-y-auto">
           {activeTab === 'keywords' && (
-            <SerpKeywordsSection serpData={serpData} onAddToContent={onAddToContent} />
+            <SerpKeywordsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'questions' && (
-            <SerpQuestionsSection serpData={serpData} onAddToContent={onAddToContent} />
+            <SerpQuestionsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'entities' && (
-            <SerpEntitiesSection serpData={serpData} onAddToContent={onAddToContent} />
+            <SerpEntitiesSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'headings' && (
-            <SerpHeadingsSection serpData={serpData} onAddToContent={onAddToContent} />
+            <SerpHeadingsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'content-gaps' && (
-            <SerpContentGapsSection serpData={serpData} onAddToContent={onAddToContent} />
+            <SerpContentGapsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'competitors' && (
-            <SerpCompetitorsSection serpData={serpData} onAddToContent={onAddToContent} />
+            <SerpCompetitorsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
           )}
         </div>
       </CardContent>

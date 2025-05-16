@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { OutlineSection } from '../types/outline-types';
 import { ContentType, ContentFormat, ContentIntent } from '../types/content-types';
@@ -42,7 +43,7 @@ export const createContentActions = (
     dispatch({ type: 'SET_CONTENT', payload: content });
   };
 
-  const generateContent = async (outline: OutlineSection[]): Promise<void> => {
+  const generateContent = async (): Promise<void> => {
     dispatch({ type: 'SET_IS_GENERATING', payload: true });
     
     try {
@@ -51,7 +52,7 @@ export const createContentActions = (
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Generate placeholder content based on outline
-      const content = generatePlaceholderContent(outline);
+      const content = generatePlaceholderContent(state.outlineSections);
       
       // Set the generated content
       dispatch({ type: 'SET_CONTENT', payload: content });
