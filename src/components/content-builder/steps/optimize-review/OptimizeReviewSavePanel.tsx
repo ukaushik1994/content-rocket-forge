@@ -4,8 +4,8 @@ import { SaveAndExportPanel } from '../../final-review/SaveAndExportPanel';
 
 interface OptimizeReviewSavePanelProps {
   completionPercentage: number;
-  onSave: () => void;
-  onPublish: () => void;
+  onSave: () => Promise<void>;
+  onPublish: () => Promise<void>;
   isSaving: boolean;
   isSavedToDraft: boolean;
 }

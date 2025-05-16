@@ -47,7 +47,7 @@ export interface SerpAnalysisResult {
     level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     subtext?: string;
     type?: string; // Added this missing field
-  }>;
+  }> | string[];
   contentGaps?: Array<{
     topic: string;
     description: string;
@@ -57,4 +57,8 @@ export interface SerpAnalysisResult {
     source?: string; // Added missing field
   }>;
   searchCountries?: string[]; // Added the missing searchCountries property
+  
+  // Add fields for SerpKeywordsTab compatibility
+  relatedKeywords?: string[] | Array<{query: string; volume?: number}>;
+  volumeData?: Array<{keyword: string; volume?: number}>;
 }

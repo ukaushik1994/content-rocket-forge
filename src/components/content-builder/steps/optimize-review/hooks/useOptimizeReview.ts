@@ -59,21 +59,19 @@ export function useOptimizeReview() {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
   
-  // Wrapper functions to convert Promise<string | null> to Promise<void>
-  const handleSaveToDraftWrapper = async () => {
+  // Wrapper functions that properly return Promise<void>
+  const handleSaveToDraftWrapper = async (): Promise<void> => {
     try {
       await handleSaveToDraft();
-      // Don't need to return anything for void
     } catch (error) {
       console.error("Error saving to draft:", error);
       toast.error("Failed to save to draft");
     }
   };
   
-  const handlePublishWrapper = async () => {
+  const handlePublishWrapper = async (): Promise<void> => {
     try {
       await handlePublish();
-      // Don't need to return anything for void
     } catch (error) {
       console.error("Error publishing:", error);
       toast.error("Failed to publish content");

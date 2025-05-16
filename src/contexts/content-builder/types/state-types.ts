@@ -31,9 +31,9 @@ export interface ContentBuilderState {
   contentTitle: string;
   suggestedTitles: string[];
   selectedCluster: ContentCluster | null;
-  contentType: string;
-  contentFormat: string;
-  contentIntent: string;
+  contentType: ContentType;
+  contentFormat: ContentFormat;
+  contentIntent: ContentIntent;
   selectedSolution: Solution | null;
   seoScore: number;
   seoImprovements: SeoImprovement[];
