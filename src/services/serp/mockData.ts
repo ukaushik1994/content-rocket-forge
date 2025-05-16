@@ -37,9 +37,9 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
       { query: `quarterly ${keyword} format`, volume: 450 }
     ],
     peopleAlsoAsk: [
-      { question: `What should be included in a ${keyword}?`, source: "https://example.com/components" },
-      { question: `How often should ${keyword}s be created?`, source: "https://example.com/frequency" },
-      { question: `What is the difference between a ${keyword} and a statement?`, source: "https://example.com/differences" }
+      { question: `What should be included in a ${keyword}?`, source: "https://example.com/components", answer: "" },
+      { question: `How often should ${keyword}s be created?`, source: "https://example.com/frequency", answer: "" },
+      { question: `What is the difference between a ${keyword} and a statement?`, source: "https://example.com/differences", answer: "" }
     ],
     entities: [
       { name: "Income Statement", type: "document", importance: 9, description: "A financial statement showing revenues and expenses" },
@@ -47,11 +47,11 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
       { name: "Cash Flow Statement", type: "document", importance: 7, description: "A financial statement showing cash inflows and outflows" }
     ],
     headings: [
-      { text: `Components of ${keyword}s`, level: "h2" },
-      { text: "Creating an Effective Income Statement", level: "h2" },
-      { text: "Balance Sheet Best Practices", level: "h2" },
-      { text: "Cash Flow Analysis Techniques", level: "h3" },
-      { text: "Financial Ratio Analysis", level: "h2" }
+      { text: `Components of ${keyword}s`, level: "h2" as const },
+      { text: "Creating an Effective Income Statement", level: "h2" as const },
+      { text: "Balance Sheet Best Practices", level: "h2" as const },
+      { text: "Cash Flow Analysis Techniques", level: "h3" as const },
+      { text: "Financial Ratio Analysis", level: "h2" as const }
     ],
     contentGaps: [
       { topic: `${keyword} Automation Tools`, description: "Tools and software for automating reporting processes" },
@@ -66,6 +66,13 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
       `${keyword} format`, 
       `${keyword} analysis`, 
       `${keyword} software`
+    ],
+    featuredSnippets: [
+      { 
+        content: `A ${keyword} is a comprehensive document that provides financial information about a company's performance over a specific period.`,
+        source: "https://example.com/financial-reports-definition",
+        type: "definition"
+      }
     ],
     searchCountries: countries,
     isMockData: true

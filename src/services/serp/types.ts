@@ -7,6 +7,7 @@ export interface SearchKeywordParams {
   countries?: string[];
 }
 
+// Updated to match the types expected by components
 export interface SerpAnalysisResult {
   keyword: string;
   searchVolume?: number;
@@ -15,8 +16,9 @@ export interface SerpAnalysisResult {
   topResults?: Array<{
     title: string;
     link: string;
-    snippet?: string;
+    snippet: string; // Changed from optional to required
     position: number;
+    country?: string; // Added country field to match src/types/serp.ts
   }>;
   relatedSearches?: Array<{
     query: string;
@@ -24,7 +26,8 @@ export interface SerpAnalysisResult {
   }>;
   peopleAlsoAsk?: Array<{
     question: string;
-    source?: string;
+    source: string; // Changed from optional to required
+    answer?: string; // Added answer field to match src/types/serp.ts
   }>;
   entities?: Array<{
     name: string;
@@ -34,7 +37,9 @@ export interface SerpAnalysisResult {
   }>;
   headings?: Array<{
     text: string;
-    level: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'; // Changed from string to specific union type
+    subtext?: string;
+    type?: string;
   }>;
   contentGaps?: Array<{
     topic: string;
@@ -44,4 +49,14 @@ export interface SerpAnalysisResult {
   relatedKeywords?: string[];
   searchCountries?: string[];
   isMockData?: boolean;
+  featuredSnippets?: Array<{
+    content: string;
+    source: string;
+    type?: string;
+  }>;
+  recommendations?: string[];
+  volumeData?: Array<{
+    keyword: string;
+    volume?: number;
+  }>;
 }
