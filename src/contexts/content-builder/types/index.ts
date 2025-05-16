@@ -9,5 +9,7 @@ export * from './outline-types';
 export * from './document-types';
 export * from './serp-types';
 export * from './state-types';
+export * from './context-types';
+export * from './step-types';
 
 // Any other shared types or interfaces can be defined here

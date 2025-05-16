@@ -9,6 +9,7 @@ export interface Step {
   name: string;
   description: string;
   title?: string;
+  icon?: string;
   completed: boolean;
   visited: boolean;
   analyzed?: boolean;

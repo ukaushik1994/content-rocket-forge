@@ -6,20 +6,12 @@ import { SeoImprovement } from './seo-types';
 import { OutlineSection } from './outline-types';
 import { DocumentStructure } from './document-types';
 import { SerpSelection } from './serp-types';
-
-export interface Step {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  completed: boolean;
-  visited: boolean;
-  analyzed?: boolean;
-}
+import { Step } from './step-types';
 
 export interface ContentBuilderState {
   steps: Step[];
   currentStep: number;
+  activeStep?: number;
   mainKeyword: string;
   searchedKeywords: string[];
   selectedKeywords: string[];

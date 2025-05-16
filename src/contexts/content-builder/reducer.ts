@@ -1,4 +1,4 @@
-import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent } from './types';
+import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent, OutlineSection } from './types';
 import { v4 as uuid } from 'uuid';
 
 /**
@@ -127,9 +127,12 @@ export const contentBuilderReducer = (
     }
       
     case 'SET_OUTLINE':
+      // Handle both string[] and OutlineSection[] types
       return {
         ...state,
-        outline: action.payload
+        outline: Array.isArray(action.payload) && typeof action.payload[0] === 'string' 
+          ? action.payload as string[]
+          : (action.payload as OutlineSection[]).map(section => section.title)
       };
       
     case 'SET_OUTLINE_SECTIONS':
