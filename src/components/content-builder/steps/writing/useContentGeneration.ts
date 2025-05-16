@@ -1,11 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
 import { ContentBuilderState } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
-
-type AiProvider = 'openai' | 'gemini';
+import { AiProvider } from '@/services/aiService/types';
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,7 +27,7 @@ export function useContentGeneration() {
       setAvailableProviders(providers);
       
       // Set default provider from preferences or first available
-      const defaultProvider = getUserPreference('defaultAiProvider');
+      const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
       if (defaultProvider && providers.includes(defaultProvider)) {
         setAiProvider(defaultProvider);
       } else if (providers.length > 0) {
