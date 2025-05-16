@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { SerpAnalysisResult } from '@/services/serp/types';
 import { useNavigate } from 'react-router-dom';
+import { convertSerpTypes } from '@/types/serp-compatibility';
 
 // Import the needed SERP components
 import { SerpKeywordsSection } from '@/components/content/serp-analysis/SerpKeywordsSection';
@@ -93,75 +94,77 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col">
         <div className="p-3 border-b border-border">
-          <TabsList className="w-full h-auto p-0.5 bg-muted/30">
-            <TabsTrigger 
-              value="keywords"
-              className="data-[state=active]:bg-accent"
-              onClick={() => setActiveTab('keywords')}
-            >
-              Keywords
-            </TabsTrigger>
-            <TabsTrigger 
-              value="questions"
-              className="data-[state=active]:bg-accent"
-              onClick={() => setActiveTab('questions')}
-            >
-              Questions
-            </TabsTrigger>
-            <TabsTrigger 
-              value="entities"
-              className="data-[state=active]:bg-accent"
-              onClick={() => setActiveTab('entities')}
-            >
-              Entities
-            </TabsTrigger>
-            <TabsTrigger 
-              value="headings"
-              className="data-[state=active]:bg-accent"
-              onClick={() => setActiveTab('headings')}
-            >
-              Headings
-            </TabsTrigger>
-            <TabsTrigger 
-              value="content-gaps"
-              className="data-[state=active]:bg-accent"
-              onClick={() => setActiveTab('content-gaps')}
-            >
-              Gaps
-            </TabsTrigger>
-            <TabsTrigger 
-              value="competitors"
-              className="data-[state=active]:bg-accent"
-              onClick={() => setActiveTab('competitors')}
-            >
-              Competition
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full h-auto p-0.5 bg-muted/30">
+              <TabsTrigger 
+                value="keywords"
+                className="data-[state=active]:bg-accent"
+                onClick={() => setActiveTab('keywords')}
+              >
+                Keywords
+              </TabsTrigger>
+              <TabsTrigger 
+                value="questions"
+                className="data-[state=active]:bg-accent"
+                onClick={() => setActiveTab('questions')}
+              >
+                Questions
+              </TabsTrigger>
+              <TabsTrigger 
+                value="entities"
+                className="data-[state=active]:bg-accent"
+                onClick={() => setActiveTab('entities')}
+              >
+                Entities
+              </TabsTrigger>
+              <TabsTrigger 
+                value="headings"
+                className="data-[state=active]:bg-accent"
+                onClick={() => setActiveTab('headings')}
+              >
+                Headings
+              </TabsTrigger>
+              <TabsTrigger 
+                value="content-gaps"
+                className="data-[state=active]:bg-accent"
+                onClick={() => setActiveTab('content-gaps')}
+              >
+                Gaps
+              </TabsTrigger>
+              <TabsTrigger 
+                value="competitors"
+                className="data-[state=active]:bg-accent"
+                onClick={() => setActiveTab('competitors')}
+              >
+                Competition
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         
         <div className="p-4 bg-background flex-1 overflow-y-auto">
           {activeTab === 'keywords' && (
-            <SerpKeywordsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
+            <SerpKeywordsSection serpData={convertSerpTypes(serpData)} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'questions' && (
-            <SerpQuestionsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
+            <SerpQuestionsSection serpData={convertSerpTypes(serpData)} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'entities' && (
-            <SerpEntitiesSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
+            <SerpEntitiesSection serpData={convertSerpTypes(serpData)} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'headings' && (
-            <SerpHeadingsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
+            <SerpHeadingsSection serpData={convertSerpTypes(serpData)} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'content-gaps' && (
-            <SerpContentGapsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
+            <SerpContentGapsSection serpData={convertSerpTypes(serpData)} onAddToContent={onAddToContent} expanded={true} />
           )}
           
           {activeTab === 'competitors' && (
-            <SerpCompetitorsSection serpData={serpData} onAddToContent={onAddToContent} expanded={true} />
+            <SerpCompetitorsSection serpData={convertSerpTypes(serpData)} onAddToContent={onAddToContent} expanded={true} />
           )}
         </div>
       </CardContent>
