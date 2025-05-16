@@ -62,7 +62,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
         <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
           <h4 className="text-xs text-muted-foreground font-medium">Heading Structure</h4>
           
-          {h1.length > 0 && (
+          {h1 && h1.length > 0 && (
             <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H1</Badge>
               <ul className="space-y-1 pl-4 text-sm">
@@ -73,7 +73,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
             </div>
           )}
           
-          {h2.length > 0 && (
+          {h2 && h2.length > 0 && (
             <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H2</Badge>
               <ul className="space-y-1 pl-4 text-sm">
@@ -84,7 +84,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
             </div>
           )}
           
-          {h3.length > 0 && (
+          {h3 && h3.length > 0 && (
             <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H3</Badge>
               <ul className="space-y-1 pl-4 text-sm">
@@ -95,7 +95,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
             </div>
           )}
           
-          {h4.length > 0 && (
+          {h4 && h4.length > 0 && (
             <div className="mb-2">
               <Badge variant="secondary" className="mb-1">H4</Badge>
               <ul className="space-y-1 pl-4 text-sm">
@@ -106,7 +106,7 @@ export const DocumentStructureCard = ({ documentStructure }: DocumentStructureCa
             </div>
           )}
           
-          {h1.length === 0 && h2.length === 0 && h3.length === 0 && h4.length === 0 && (
+          {(!h1 || h1.length === 0) && (!h2 || h2.length === 0) && (!h3 || h3.length === 0) && (!h4 || h4.length === 0) && (
             <p className="text-muted-foreground text-sm italic">No headings found in your content.</p>
           )}
         </div>

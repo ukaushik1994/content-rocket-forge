@@ -41,7 +41,7 @@ export const initialState: ContentBuilderState = {
       score: 0,
       level: 'standard'
     },
-    headings: {
+    headingCounts: {
       h1: 0,
       h2: 0,
       h3: 0,

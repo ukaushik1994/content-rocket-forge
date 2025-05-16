@@ -41,7 +41,7 @@ export interface DocumentStructure {
     score: number;
     level: string;
   };
-  headings?: {
+  headingCounts?: {
     h1: number;
     h2: number;
     h3: number;
