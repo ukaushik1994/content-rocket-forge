@@ -9,8 +9,8 @@ export const initialState: ContentBuilderState = {
     {
       id: 0,
       name: 'Keyword Selection',
-      title: 'Keyword Selection',
       description: 'Choose your target keywords',
+      title: 'Keyword Selection', 
       completed: false,
       visited: false,
       analyzed: false
@@ -18,8 +18,8 @@ export const initialState: ContentBuilderState = {
     {
       id: 1,
       name: 'Content Type',
-      title: 'Content Type',
       description: 'Select your content format',
+      title: 'Content Type',
       completed: false,
       visited: false,
       analyzed: false
@@ -27,8 +27,8 @@ export const initialState: ContentBuilderState = {
     {
       id: 2,
       name: 'SERP Analysis',
-      title: 'SERP Analysis',
       description: 'Analyze search results',
+      title: 'SERP Analysis',
       completed: false,
       visited: false,
       analyzed: false
@@ -36,8 +36,8 @@ export const initialState: ContentBuilderState = {
     {
       id: 3,
       name: 'Content Outline',
-      title: 'Content Outline',
       description: 'Create your content structure',
+      title: 'Content Outline',
       completed: false,
       visited: false,
       analyzed: false
@@ -45,8 +45,8 @@ export const initialState: ContentBuilderState = {
     {
       id: 4,
       name: 'Content Writing',
-      title: 'Content Writing',
       description: 'Write your content',
+      title: 'Content Writing',
       completed: false,
       visited: false,
       analyzed: false
@@ -54,8 +54,8 @@ export const initialState: ContentBuilderState = {
     {
       id: 5,
       name: 'Optimize & Review',
-      title: 'Optimize & Review',
       description: 'Enhance your content',
+      title: 'Optimize & Review',
       completed: false,
       visited: false,
       analyzed: false

@@ -89,3 +89,10 @@ export const AVAILABLE_COUNTRIES: SearchCountry[] = [
   { id: 'mea', code: 'mea', name: 'Middle East', flag: '🌍' },
   { id: 'global', code: 'global', name: 'Global', flag: '🌐' }
 ];
+
+// Define the proper type for search parameters
+export interface SearchKeywordParams {
+  query: string;
+  refresh?: boolean;
+  limit?: number;
+}

@@ -8,6 +8,7 @@ export interface Step {
   id: number;
   name: string;
   description: string;
+  title?: string;
   completed: boolean;
   visited: boolean;
   analyzed?: boolean;

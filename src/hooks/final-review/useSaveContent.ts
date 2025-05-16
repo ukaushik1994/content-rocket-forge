@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
@@ -10,9 +10,14 @@ export const useSaveContent = () => {
   const { state, setContentTitle } = useContentBuilder();
   const { addContentItem } = useContent();
   const navigate = useNavigate();
+  
+  // Added state for tracking saving status
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavedToDraft, setIsSavedToDraft] = useState(false);
 
   const handleSaveToDraft = useCallback(async (overrideTitle?: string) => {
     try {
+      setIsSaving(true);
       const title = overrideTitle || state.contentTitle || state.metaTitle || `Article about ${state.mainKeyword}`;
       
       const contentData: SaveContentParams = {
@@ -42,25 +47,28 @@ export const useSaveContent = () => {
         setContentTitle(overrideTitle);
       }
 
+      // Use the content provider to add the content item
+      // This should be fixed to not include created_at/updated_at
       const contentId = await addContentItem({
         ...contentData,
         status: 'draft',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        seo_score: state.seoScore,
       });
 
+      setIsSavedToDraft(true);
       toast.success('Content saved as draft');
       return contentId;
     } catch (error) {
       console.error('Error saving content as draft:', error);
       toast.error('Failed to save content');
       return null;
+    } finally {
+      setIsSaving(false);
     }
   }, [state, setContentTitle, addContentItem]);
 
   const handlePublish = useCallback(async (overrideTitle?: string) => {
     try {
+      setIsSaving(true);
       const title = overrideTitle || state.contentTitle || state.metaTitle || `Article about ${state.mainKeyword}`;
       
       const contentData: SaveContentParams = {
@@ -90,12 +98,11 @@ export const useSaveContent = () => {
         setContentTitle(overrideTitle);
       }
 
+      // Use the content provider to add the content item
+      // This should be fixed to not include created_at/updated_at
       const contentId = await addContentItem({
         ...contentData,
         status: 'published',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        seo_score: state.seoScore,
       });
 
       toast.success('Content published successfully');
@@ -108,11 +115,15 @@ export const useSaveContent = () => {
       console.error('Error publishing content:', error);
       toast.error('Failed to publish content');
       return null;
+    } finally {
+      setIsSaving(false);
     }
   }, [state, setContentTitle, addContentItem, navigate]);
 
   return {
     handleSaveToDraft,
-    handlePublish
+    handlePublish,
+    isSaving,
+    isSavedToDraft
   };
 };

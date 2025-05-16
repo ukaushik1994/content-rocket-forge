@@ -1,40 +1,35 @@
 
 import { delay } from '@/utils/cacheUtils';
+import { SearchKeywordParams } from '@/contexts/content-builder/types/content-types';
 
-// Define the proper type for search parameters
-export interface SearchKeywordParams {
-  query: string;
-  refresh?: boolean;
-  limit?: number; // Adding limit as an optional parameter
-}
-
-export async function searchKeywordIdeas({ query, refresh = false }: SearchKeywordParams) {
+export async function searchKeywordIdeas({ query, refresh = false, limit = 10 }: SearchKeywordParams) {
   // Simulate API call
   await delay(1500);
   
   // Return mock data
   return {
     primary: query,
-    related: generateRelatedKeywords(query),
+    related: generateRelatedKeywords(query, limit),
     volume: Math.floor(Math.random() * 10000) + 1000,
     competition: Math.random().toFixed(2),
     cpc: (Math.random() * 5).toFixed(2),
   };
 }
 
-export async function searchKeywordQuestions({ query, refresh = false }: SearchKeywordParams) {
+export async function searchKeywordQuestions({ query, refresh = false, limit = 8 }: SearchKeywordParams) {
   // Simulate API call
   await delay(2000);
   
-  return generateQuestions(query);
+  return generateQuestions(query, limit);
 }
 
-function generateRelatedKeywords(keyword: string) {
+// Added optional limit parameter for flexibility
+function generateRelatedKeywords(keyword: string, limit: number = 10) {
   const prefixes = ['best', 'top', 'how to', 'why', 'what is', 'guide to'];
   const suffixes = ['tutorial', 'guide', 'tips', 'examples', 'services', 'software'];
   
   const related = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < limit; i++) {
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
     
@@ -50,7 +45,8 @@ function generateRelatedKeywords(keyword: string) {
   return related;
 }
 
-function generateQuestions(keyword: string) {
+// Added optional limit parameter for flexibility
+function generateQuestions(keyword: string, limit: number = 8) {
   const questionPrefixes = [
     'How to', 
     'What is', 
@@ -61,10 +57,15 @@ function generateQuestions(keyword: string) {
   ];
   
   const questions = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < limit; i++) {
     const prefix = questionPrefixes[Math.floor(Math.random() * questionPrefixes.length)];
     questions.push(`${prefix} ${keyword}?`);
   }
   
   return questions;
 }
+
+// Export a research keyword wrapper for compatibility with keywordService
+export const researchKeyword = async (keyword: string, refresh: boolean = false) => {
+  return await searchKeywordIdeas({ query: keyword, refresh });
+};
