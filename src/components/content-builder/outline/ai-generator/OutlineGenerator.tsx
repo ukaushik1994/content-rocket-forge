@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { sendChatRequest } from '@/services/aiService';
@@ -12,7 +13,7 @@ import { getApiKey } from '@/services/apiKeyService';
 import { AiProvider } from '@/services/aiService/types';
 
 export function OutlineGenerator() {
-  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions, setContentTitle } = useContentBuilder();
   const { 
     mainKeyword, 
     selectedKeywords,
@@ -234,6 +235,7 @@ export function OutlineGenerator() {
     if (!contentTitle) {
       const suggestedTitle = `Complete Guide to ${mainKeyword}: Everything You Need to Know`;
       dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
+      setContentTitle(suggestedTitle);
     }
     
     // Mark the outline step as completed
@@ -258,7 +260,7 @@ export function OutlineGenerator() {
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">AI Outline Generator</h3>
             <p className="text-sm text-white/70">
-              Generate a structured outline based on your research
+              Generate a structured outline based on your research and title
             </p>
           </div>
         </div>

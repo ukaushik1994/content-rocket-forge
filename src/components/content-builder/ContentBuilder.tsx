@@ -21,7 +21,7 @@ export const ContentBuilder = () => {
   const { contentItems, loading } = useContent();
   const location = useLocation();
   const { steps, currentStep } = state;
-  const activeStep = currentStep; // Use currentStep as activeStep
+  const activeStep = currentStep;
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
@@ -37,6 +37,17 @@ export const ContentBuilder = () => {
   const handleNextStep = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
+    
+    // Before navigation, verify if there are any requirements for the current step
+    if (currentStepId === 0 && !state.mainKeyword) {
+      console.log("Can't navigate: No main keyword selected");
+      return;
+    }
+    
+    if (currentStepId === 3 && (!state.outline || state.outline.length === 0)) {
+      console.log("Can't navigate: No outline created");
+      return;
+    }
     
     navigateToStep(activeStep + 1);
   };

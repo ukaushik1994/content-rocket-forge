@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
@@ -9,14 +10,14 @@ import { toast } from 'sonner';
 
 export const OutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
-  const { outline, serpSelections } = state;
+  const { outline, serpSelections, contentTitle } = state;
   
   useEffect(() => {
-    // Mark as complete if we have an outline with at least 3 sections
-    if (outline && outline.length >= 3) {
+    // Mark as complete if we have a title and an outline with at least 3 sections
+    if (contentTitle && outline && outline.length >= 3) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
     }
-  }, [outline, dispatch]);
+  }, [outline, contentTitle, dispatch]);
   
   const handleSaveOutline = (updatedOutline: any[]) => {
     console.log('Saving outline:', updatedOutline);
@@ -31,7 +32,7 @@ export const OutlineStep = () => {
         <div>
           <h3 className="text-lg font-medium">Content Outline</h3>
           <p className="text-sm text-muted-foreground">
-            Create and edit your content structure
+            Define your title and create the structure for your content
           </p>
         </div>
       </div>
