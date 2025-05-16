@@ -1,119 +1,52 @@
 
-import { ContentBuilderState } from './types/state-types';
+import { ContentBuilderState } from './types/index';
 
 export const initialState: ContentBuilderState = {
-  currentStep: 0,
-  activeStep: 0,
   steps: [
-    {
-      id: 0,
-      name: 'Keyword Selection',
-      description: 'Choose your target keywords',
-      title: 'Keyword Selection', 
-      completed: false,
-      visited: false,
-      analyzed: false
-    },
-    {
-      id: 1,
-      name: 'Content Type',
-      description: 'Select your content format',
-      title: 'Content Type',
-      completed: false,
-      visited: false,
-      analyzed: false
-    },
-    {
-      id: 2,
-      name: 'SERP Analysis',
-      description: 'Analyze search results',
-      title: 'SERP Analysis',
-      completed: false,
-      visited: false,
-      analyzed: false
-    },
-    {
-      id: 3,
-      name: 'Content Outline',
-      description: 'Create your content structure',
-      title: 'Content Outline',
-      completed: false,
-      visited: false,
-      analyzed: false
-    },
-    {
-      id: 4,
-      name: 'Content Writing',
-      description: 'Write your content',
-      title: 'Content Writing',
-      completed: false,
-      visited: false,
-      analyzed: false
-    },
-    {
-      id: 5,
-      name: 'Optimize & Review',
-      description: 'Enhance your content',
-      title: 'Optimize & Review',
-      completed: false,
-      visited: false,
-      analyzed: false
-    }
+    { id: 1, name: 'Keyword Selection', completed: false, visited: false },
+    { id: 2, name: 'SERP Analysis', completed: false, visited: false },
+    { id: 3, name: 'Outline Creation', completed: false, visited: false },
+    { id: 4, name: 'Content Writing', completed: false, visited: false },
+    { id: 5, name: 'Optimize & Review', completed: false, visited: false },
+    { id: 6, name: 'Save & Export', completed: false, visited: false }
   ],
+  currentStep: 1,
   mainKeyword: '',
-  selectedKeywords: [],
   searchedKeywords: [],
+  selectedKeywords: [],
+  selectedCluster: null,
   serpData: null,
-  isAnalyzing: false,
-  isSavingData: false,
   serpSelections: [],
+  isAnalyzing: false,
   outline: [],
   outlineSections: [],
-  isGenerating: false,
   content: '',
+  isGenerating: false,
+  isSavingData: false,
   contentTitle: '',
   suggestedTitles: [],
-  selectedCluster: null,
-  contentType: 'blog', // Using string literal instead of ContentType.BLOG_POST
-  contentFormat: 'long-form', // Use string literal instead of ContentFormat.LONG_FORM
-  contentIntent: 'inform', // Use string literal instead of ContentIntent.INFORM
-  selectedSolution: null,
   seoScore: 0,
   seoImprovements: [],
+  contentType: 'article',
+  contentFormat: 'blog',
+  contentIntent: 'informational',
+  selectedSolution: null,
   metaTitle: '',
   metaDescription: '',
-  additionalInstructions: '',
-  solutionIntegrationMetrics: {
-    keywordMatches: 0,
-    featureCoverage: 0,
-    naturalIntegration: 0,
-    overallScore: 0,
-    featureIncorporation: 0,
-    positioningScore: 0,
-    mentionedFeatures: [],
-    painPointsAddressed: [],
-    nameMentions: 0,
-    audienceAlignment: 0,
-    ctaEffectiveness: 0
-  },
-  selectedRegions: ['uk', 'us', 'mea', 'global'],
   documentStructure: {
-    h1: [],
-    h2: [],
-    h3: [],
-    h4: [],
-    h5: [],
-    h6: [],
-    hasSingleH1: false,
-    hasLogicalHierarchy: false,
-    headings: [],
-    paragraphs: [],
-    lists: [],
-    images: [],
-    links: [],
-    metadata: {
-      wordCount: 0,
-      characterCount: 0
-    }
-  }
+    headingsCount: 0,
+    paragraphsCount: 0,
+    wordsCount: 0,
+    readingTime: 0,
+    hasIntroduction: false,
+    hasConclusion: false,
+    hasFAQSection: false,
+  },
+  solutionIntegrationMetrics: {
+    keywordRelevance: 0,
+    contentMatch: 0,
+    overallScore: 0,
+  },
+  additionalInstructions: '',
+  selectedRegions: ['us'], // Default to US region
 };
