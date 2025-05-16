@@ -89,16 +89,6 @@ export const extractDocumentStructure = (content: string): DocumentStructure => 
     }
     currentLevel = Math.max(currentLevel, heading.level);
   }
-
-  // Create headingCounts object
-  const headingCounts = {
-    h1: h1.length,
-    h2: h2.length,
-    h3: h3.length,
-    h4: h4.length,
-    h5: h5.length,
-    h6: h6.length
-  };
   
   return {
     h1,
@@ -110,7 +100,6 @@ export const extractDocumentStructure = (content: string): DocumentStructure => 
     hasSingleH1,
     hasLogicalHierarchy,
     headings,
-    headingCounts,
     paragraphs,
     lists,
     images,

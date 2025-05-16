@@ -1,177 +1,152 @@
 
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { useContent } from '@/contexts/content';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ContentType } from '@/contexts/content-builder/types';
-import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
+import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
+import { useContent } from '@/contexts/content';
 
-export function useSaveContent() {
+/**
+ * Hook for managing content saving and publishing functionality
+ */
+export const useSaveContent = () => {
+  const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const { state } = useContentBuilder();
-  const { addContentItem } = useContent();
-  
-  // Helper function to safely extract titles from outline items
-  const extractOutlineTitles = (outline: any): string[] => {
-    if (!outline) return [];
-    
-    if (!Array.isArray(outline)) {
-      outline = [outline];
-    }
-    
-    return outline.map(item => {
-      // If item is a string, return it directly
-      if (typeof item === 'string') return item;
-      
-      // If item is an OutlineSection or has a title property
-      if (item && typeof item === 'object' && 'title' in item) {
-        return item.title;
-      }
-      
-      // Fallback
-      return String(item);
-    }).filter(Boolean);
-  };
-  
+  const { addContentItem, refreshContent } = useContent();
+  const navigate = useNavigate();
+
   const handleSaveToDraft = async (): Promise<void> => {
     try {
       setIsSaving(true);
-      console.log("Saving content to draft...");
       
-      if (!state.content || !state.mainKeyword) {
-        toast.error("Content or main keyword is missing");
-        setIsSaving(false);
-        return;
-      }
-      
-      const title = state.metaTitle || `${state.mainKeyword} - Draft`;
-      
-      // Prepare keywords array from main keyword and selected keywords
-      const keywords = [
-        state.mainKeyword,
-        ...(state.selectedKeywords || [])
-      ];
-      
-      // Convert outline to string array using our helper function
-      const outlineAsStringArray = extractOutlineTitles(state.outline);
-      
-      // Draft content item
-      const contentItem = {
-        status: "draft" as const,
-        title: title,
+      // Prepare content for saving with extended metadata
+      const saveParams: SaveContentParams = {
+        title: state.contentTitle || state.metaTitle || state.mainKeyword,
         content: state.content,
+        mainKeyword: state.mainKeyword,
+        secondaryKeywords: state.selectedKeywords,
+        contentType: state.contentType,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
-        keywords: keywords.filter(Boolean),
-        contentType: state.contentType as ContentType,
-        contentFormat: state.contentFormat,
-        contentIntent: state.contentIntent,
-        seo_score: state.seoScore || 0,
-        metadata: {
-          mainKeyword: state.mainKeyword,
-          secondaryKeywords: state.selectedKeywords,
-          outline: outlineAsStringArray, // Now properly formatted as string[]
-          outlineSections: JSON.stringify(state.outlineSections),
-          additionalInstructions: state.additionalInstructions,
-          contentType: state.contentType,
-          contentFormat: state.contentFormat,
-          contentIntent: state.contentIntent,
-          metaTitle: state.metaTitle,
-          metaDescription: state.metaDescription,
-          solutionInfo: state.selectedSolution
-        }
+        status: 'draft',
+        notes: '',
+        outline: state.outline,
+        serpSelections: state.serpSelections,
+        serpData: state.serpData
       };
       
-      await addContentItem(contentItem);
+      console.log('[useSaveContent] Saving content with params:', saveParams);
       
-      // Don't check the result, just assume it worked if no error was thrown
-      toast.success("Content saved to drafts");
+      // Try saving using content builder context first
+      let contentId = await saveContentToDraft(saveParams);
+      
+      // If that doesn't work, use the content context directly
+      if (!contentId) {
+        console.log('[useSaveContent] No content ID returned, adding directly to content repository');
+        await addContentItem({
+          title: saveParams.title,
+          content: saveParams.content || '',
+          status: 'draft',
+          seo_score: state.seoScore,
+          keywords: [state.mainKeyword, ...state.selectedKeywords],
+          metadata: {
+            metaTitle: state.metaTitle,
+            metaDescription: state.metaDescription,
+            outline: state.outline,
+            serpSelections: state.serpSelections
+          }
+        });
+      }
+      
+      // Force refresh the content list to make sure it shows up
+      await refreshContent();
+      
       setIsSavedToDraft(true);
+      toast.success('Content saved to drafts successfully');
+      
+      // Navigate to drafts page
+      setTimeout(() => {
+        navigate('/drafts', { state: { contentRefresh: true } });
+      }, 1000);
     } catch (error) {
-      console.error("Error in handleSaveToDraft:", error);
-      toast.error("An error occurred while saving the content");
+      console.error('Error saving content to draft:', error);
+      toast.error('Failed to save content to drafts');
     } finally {
       setIsSaving(false);
     }
   };
-  
+
   const handlePublish = async (): Promise<void> => {
     try {
-      setIsPublishing(true);
-      console.log("Publishing content...");
+      setIsSaving(true);
       
-      if (!state.content || !state.mainKeyword) {
-        toast.error("Content or main keyword is missing");
-        setIsPublishing(false);
-        return;
-      }
-      
-      // Check for minimum SEO score before publishing
-      if (state.seoScore < 50) {
-        if (!confirm("This content has a low SEO score. Are you sure you want to publish it?")) {
-          setIsPublishing(false);
-          return;
-        }
-      }
-      
-      const title = state.metaTitle || `${state.mainKeyword}`;
-      
-      // Prepare keywords array from main keyword and selected keywords
-      const keywords = [
-        state.mainKeyword,
-        ...(state.selectedKeywords || [])
-      ];
-      
-      // Convert outline to string array using our helper function
-      const outlineAsStringArray = extractOutlineTitles(state.outline);
-      
-      // Published content item
-      const contentItem = {
-        status: "published" as const,
-        title: title,
+      // Prepare content for publishing with extended metadata
+      const publishParams: SaveContentParams = {
+        title: state.contentTitle || state.metaTitle || state.mainKeyword,
         content: state.content,
+        mainKeyword: state.mainKeyword,
+        secondaryKeywords: state.selectedKeywords,
+        contentType: state.contentType,
         metaTitle: state.metaTitle,
         metaDescription: state.metaDescription,
-        keywords: keywords.filter(Boolean),
-        contentType: state.contentType as ContentType,
-        contentFormat: state.contentFormat,
-        contentIntent: state.contentIntent,
-        seo_score: state.seoScore || 0,
-        metadata: {
-          mainKeyword: state.mainKeyword,
-          secondaryKeywords: state.selectedKeywords,
-          outline: outlineAsStringArray, // Now properly formatted as string[]
-          outlineSections: JSON.stringify(state.outlineSections),
-          additionalInstructions: state.additionalInstructions,
-          contentType: state.contentType,
-          contentFormat: state.contentFormat,
-          contentIntent: state.contentIntent,
-          metaTitle: state.metaTitle,
-          metaDescription: state.metaDescription,
-          publishedAt: new Date().toISOString(),
-          solutionInfo: state.selectedSolution
-        }
+        status: 'published',
+        notes: '',
+        seoScore: state.seoScore,
+        outline: state.outline,
+        serpSelections: state.serpSelections,
+        serpData: state.serpData
       };
       
-      await addContentItem(contentItem);
+      console.log('[useSaveContent] Publishing content with params:', publishParams);
       
-      // Don't check the result, just assume it worked if no error was thrown
-      toast.success("Content published successfully!");
+      // Try publishing using content builder context
+      let contentId = await saveContentToPublished(publishParams);
+      
+      // If that doesn't work, use the content context directly
+      if (!contentId) {
+        console.log('[useSaveContent] No content ID returned, adding directly to content repository');
+        await addContentItem({
+          title: publishParams.title,
+          content: publishParams.content || '',
+          status: 'published',
+          seo_score: state.seoScore,
+          keywords: [state.mainKeyword, ...state.selectedKeywords],
+          metadata: {
+            metaTitle: state.metaTitle,
+            metaDescription: state.metaDescription,
+            outline: state.outline,
+            serpSelections: state.serpSelections
+          }
+        });
+        
+        // Force refresh the content list
+        await refreshContent();
+      }
+      
+      toast.success('Content published successfully');
+      
+      // Navigate to drafts page with a refresh parameter
+      sessionStorage.setItem('from_content_builder', 'true');
+      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
+      
+      setTimeout(() => {
+        navigate('/drafts', { 
+          state: { contentRefresh: true }
+        });
+      }, 1000);
     } catch (error) {
-      console.error("Error in handlePublish:", error);
-      toast.error("An error occurred while publishing the content");
+      console.error('Error publishing content:', error);
+      toast.error('Failed to publish content');
     } finally {
-      setIsPublishing(false);
+      setIsSaving(false);
     }
   };
-  
+
   return {
-    handleSaveToDraft,
-    handlePublish,
     isSaving,
-    isPublishing,
-    isSavedToDraft
+    isSavedToDraft,
+    handleSaveToDraft,
+    handlePublish
   };
-}
+};

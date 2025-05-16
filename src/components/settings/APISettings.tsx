@@ -7,14 +7,13 @@ import { API_PROVIDERS } from './api/types';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { toast } from 'sonner';
-import { AiProvider } from '@/services/aiService/types';
 
 export function APISettings() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
     API_PROVIDERS.filter(p => p.required).map(p => p.id)
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [defaultAiProvider, setDefaultAiProvider] = useState<AiProvider | undefined>(
+  const [defaultAiProvider, setDefaultAiProvider] = useState<'openai' | 'anthropic' | 'gemini' | undefined>(
     undefined
   );
   
@@ -22,7 +21,7 @@ export function APISettings() {
   useEffect(() => {
     const savedProvider = getUserPreference('defaultAiProvider');
     if (savedProvider) {
-      setDefaultAiProvider(savedProvider as AiProvider);
+      setDefaultAiProvider(savedProvider);
     } else {
       // Default to OpenAI if no preference is set
       setDefaultAiProvider('openai');
@@ -45,7 +44,7 @@ export function APISettings() {
     }
   };
 
-  const handleDefaultAiProviderChange = async (provider: AiProvider) => {
+  const handleDefaultAiProviderChange = async (provider: 'openai' | 'anthropic' | 'gemini') => {
     setDefaultAiProvider(provider);
     const success = await saveUserPreference('defaultAiProvider', provider);
     if (success) {

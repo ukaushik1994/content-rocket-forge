@@ -1,51 +1,36 @@
 
 /**
- * Solution-related type definitions
+ * Solution related type definitions
  */
 
-// Solution Type
+export interface SolutionResource {
+  title: string;
+  url: string;
+}
+
 export interface Solution {
   id: string;
   name: string;
   description: string;
   features: string[];
-  benefits?: string[];
-  category: string;
-  tags?: string[];
-  url?: string;
-  imageUrl?: string;
-  logoUrl?: string | null;
-  externalUrl?: string | null;
-  useCases?: string[];
-  painPoints?: string[];
-  targetAudience?: string[];
-  resources?: any[];
+  useCases: string[];
+  painPoints: string[];
+  targetAudience: string[];
+  category: string; // Added category property
+  logoUrl: string | null;
+  externalUrl: string | null;
+  resources: SolutionResource[];
 }
 
-// Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
   featureIncorporation: number;
   positioningScore: number;
+  painPointsAddressed: string[];
+  ctaEffectiveness: number;
+  overallScore: number;
+  mentions: number | string;
   audienceAlignment: number;
-  overall: number;  // Added missing property
-  keywordMatches?: number;
-  featureCoverage?: number;
-  naturalIntegration?: number;
-  mentionedFeatures?: string[];
-  painPointsAddressed?: string[] | number;
-  nameMentions?: number;
-  ctaEffectiveness?: number;
-  ctaMentions?: number;
-  mentions?: string;
-  overallScore?: number;
+  nameMentions: number;
+  ctaMentions: number;
+  mentionedFeatures: string[]; // Added mentionedFeatures property
 }
-
-// Solution Analysis Result
-export interface SolutionAnalysisResult {
-  solutionMentioned: boolean;
-  keywordMatches: number;
-  featuresCovered: number;
-  naturalIntegration: number;
-  recommendations: string[];
-}
-

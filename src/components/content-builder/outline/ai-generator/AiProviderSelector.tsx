@@ -12,13 +12,15 @@ interface AiProviderSelectorProps {
 export function AiProviderSelector({ 
   aiProvider, 
   setAiProvider,
-  availableProviders = ['openai', 'gemini']
+  availableProviders = ['openai', 'anthropic', 'gemini', 'mistral']
 }: AiProviderSelectorProps) {
   // Get display names for providers
   const getProviderDisplayName = (provider: string): string => {
     switch(provider) {
       case 'openai': return 'OpenAI';
+      case 'anthropic': return 'Claude';
       case 'gemini': return 'Gemini';
+      case 'mistral': return 'Mistral';
       default: return provider;
     }
   };
@@ -46,7 +48,7 @@ export function AiProviderSelector({
             </button>
           ))
         ) : (
-          ['openai', 'gemini'].map((provider) => (
+          ['openai', 'anthropic', 'gemini', 'mistral'].map((provider) => (
             <button
               key={provider}
               className="px-3 py-1 text-xs rounded-full bg-white/5 text-white/40 cursor-not-allowed"

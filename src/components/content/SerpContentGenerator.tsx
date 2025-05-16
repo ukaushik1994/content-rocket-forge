@@ -1,14 +1,10 @@
 
-import React, { useState } from 'react';
-import { SerpAnalysisResult } from '@/services/serp/types';
+import React from 'react';
+import { SerpAnalysisResult } from '@/services/serpApiService';
 import { ContentTemplatesHeader } from './templates/ContentTemplatesHeader';
 import { ContentTemplatesGrid } from './templates/ContentTemplatesGrid';
 import { ContentStrategyTips } from './templates/ContentStrategyTips';
 import { EmptyState } from './templates/EmptyState';
-import { RefreshButton } from '@/components/ui/refresh-button';
-import { analyzeKeywordSerp } from '@/services/serp/keywordService';
-import { toast } from 'sonner';
-import { SerpApiKeyMissing } from '@/components/content-builder/serp/SerpApiKeyMissing';
 
 interface SerpContentGeneratorProps {
   serpData: SerpAnalysisResult | null;
@@ -21,116 +17,18 @@ export function SerpContentGenerator({
   onGenerateContent,
   mainKeyword
 }: SerpContentGeneratorProps) {
-  const [isRefreshingKeywords, setIsRefreshingKeywords] = useState(false);
-  const [isRefreshingHeadings, setIsRefreshingHeadings] = useState(false);
-  const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
-  const [isRefreshingEntities, setIsRefreshingEntities] = useState(false);
-  const [localSerpData, setLocalSerpData] = useState<SerpAnalysisResult | null>(serpData);
-
   if (!serpData) {
-    return <EmptyState message="No SERP data available. Please add your API key in settings and analyze a keyword." />;
+    return <EmptyState />;
   }
-
-  // Check if the data is mock data
-  if (serpData.isMockData) {
-    return <SerpApiKeyMissing />;
-  }
-
-  const refreshSection = async (section: 'keywords' | 'headings' | 'questions' | 'entities') => {
-    if (!mainKeyword) return;
-
-    // Set the appropriate loading state
-    switch(section) {
-      case 'keywords':
-        setIsRefreshingKeywords(true);
-        break;
-      case 'headings':
-        setIsRefreshingHeadings(true);
-        break;
-      case 'questions':
-        setIsRefreshingQuestions(true);
-        break;
-      case 'entities':
-        setIsRefreshingEntities(true);
-        break;
-    }
-
-    try {
-      // Get countries from existing data or default to US
-      const countries = (serpData.searchCountries && serpData.searchCountries.length > 0) 
-        ? serpData.searchCountries 
-        : ['us'];
-      
-      // Fetch new SERP data with refresh flag set to true
-      const newSerpData = await analyzeKeywordSerp(mainKeyword, true, countries);
-      
-      if (newSerpData && !newSerpData.isMockData) {
-        // Create updated data by merging the new section data with existing data
-        const updatedData = { ...localSerpData } as SerpAnalysisResult;
-        
-        switch(section) {
-          case 'keywords':
-            updatedData.keywords = newSerpData.keywords;
-            updatedData.relatedSearches = newSerpData.relatedSearches;
-            toast.success('Keywords refreshed successfully');
-            break;
-          case 'headings':
-            updatedData.headings = newSerpData.headings;
-            toast.success('Headings refreshed successfully');
-            break;
-          case 'questions':
-            updatedData.peopleAlsoAsk = newSerpData.peopleAlsoAsk;
-            toast.success('Questions refreshed successfully');
-            break;
-          case 'entities':
-            updatedData.entities = newSerpData.entities;
-            toast.success('Entities refreshed successfully');
-            break;
-        }
-        
-        // Update the local state
-        setLocalSerpData(updatedData);
-      } else {
-        toast.error('Failed to get real SERP data. Please check your API key.');
-      }
-    } catch (error) {
-      console.error(`Error refreshing ${section}:`, error);
-      toast.error(`Failed to refresh ${section}. Please try again.`);
-    } finally {
-      // Reset the loading state
-      switch(section) {
-        case 'keywords':
-          setIsRefreshingKeywords(false);
-          break;
-        case 'headings':
-          setIsRefreshingHeadings(false);
-          break;
-        case 'questions':
-          setIsRefreshingQuestions(false);
-          break;
-        case 'entities':
-          setIsRefreshingEntities(false);
-          break;
-      }
-    }
-  };
-
-  // Use localSerpData if available, otherwise use the prop
-  const displayData = localSerpData || serpData;
 
   return (
     <div className="space-y-8">
       <ContentTemplatesHeader />
       
       <ContentTemplatesGrid 
-        serpData={displayData}
+        serpData={serpData}
         onGenerateContent={onGenerateContent}
         mainKeyword={mainKeyword}
-        onRefreshSection={refreshSection}
-        isRefreshingKeywords={isRefreshingKeywords}
-        isRefreshingHeadings={isRefreshingHeadings}
-        isRefreshingQuestions={isRefreshingQuestions}
-        isRefreshingEntities={isRefreshingEntities}
       />
       
       <ContentStrategyTips />

@@ -12,11 +12,11 @@ export const createContentActions = (
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
   };
   
-  const setContentFormat = (format: string) => {
+  const setContentFormat = (format: ContentFormat) => {
     dispatch({ type: 'SET_CONTENT_FORMAT', payload: format });
   };
   
-  const setContentIntent = (intent: string) => {
+  const setContentIntent = (intent: ContentIntent) => {
     dispatch({ type: 'SET_CONTENT_INTENT', payload: intent });
   };
   
@@ -43,7 +43,7 @@ export const createContentActions = (
     dispatch({ type: 'SET_CONTENT', payload: content });
   };
 
-  const generateContent = async (): Promise<void> => {
+  const generateContent = async (outline: OutlineSection[]): Promise<void> => {
     dispatch({ type: 'SET_IS_GENERATING', payload: true });
     
     try {
@@ -52,7 +52,7 @@ export const createContentActions = (
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Generate placeholder content based on outline
-      const content = generatePlaceholderContent(state.outlineSections);
+      const content = generatePlaceholderContent(outline);
       
       // Set the generated content
       dispatch({ type: 'SET_CONTENT', payload: content });

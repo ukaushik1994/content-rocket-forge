@@ -5,8 +5,6 @@ import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
-import { useLocation } from 'react-router-dom';
-import { useContent } from '@/contexts/content';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
@@ -17,11 +15,8 @@ import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SaveStep } from './steps/save';
 
 export const ContentBuilder = () => {
-  const { state, navigateToStep, setMainKeyword, addKeyword, setContentTitle, setContentType, setContentFormat, setContentIntent, setContent, setMetaTitle, setMetaDescription, setOutline, setOutlineSections, updateContent, setAdditionalInstructions } = useContentBuilder();
-  const { contentItems, loading } = useContent();
-  const location = useLocation();
-  const { steps, currentStep } = state;
-  const activeStep = currentStep;
+  const { state, navigateToStep } = useContentBuilder();
+  const { activeStep, steps } = state;
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
@@ -31,23 +26,12 @@ export const ContentBuilder = () => {
   // Check current step status
   const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
   const currentStepId = steps[activeStep] ? steps[activeStep].id : -1;
-  const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || activeStep === 0);
+  const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || state.activeStep === 0);
   
   // Handle next step navigation
   const handleNextStep = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
-    
-    // Before navigation, verify if there are any requirements for the current step
-    if (currentStepId === 0 && !state.mainKeyword) {
-      console.log("Can't navigate: No main keyword selected");
-      return;
-    }
-    
-    if (currentStepId === 3 && (!state.outline || state.outline.length === 0)) {
-      console.log("Can't navigate: No outline created");
-      return;
-    }
     
     navigateToStep(activeStep + 1);
   };
@@ -74,7 +58,6 @@ export const ContentBuilder = () => {
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizeAndReviewStep />;
-      case 6: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -94,40 +77,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 6;
-  
-  // --- Load draft data if editing ---
-  React.useEffect(() => {
-    // Only run on mount and when content items are loaded
-    if (loading) return;
-    
-    const navState = location.state as { contentId?: string } | undefined;
-    const contentId = navState?.contentId;
-    if (!contentId) return;
-
-    // Find the draft in contentItems
-    const draft = contentItems.find(item => item.id === contentId);
-    if (!draft) return;
-
-    // Populate context state with draft data
-    setMainKeyword(draft.metadata?.mainKeyword || '');
-    (draft.metadata?.secondaryKeywords || []).forEach((kw: string) => addKeyword(kw));
-    setContentTitle(draft.title || '');
-    setContentType(draft.metadata?.contentType || 'article');
-    setContentFormat(draft.metadata?.contentFormat || 'long-form');
-    setContentIntent(draft.metadata?.contentIntent || 'inform');
-    setContent(draft.content || '');
-    setMetaTitle(draft.metadata?.metaTitle || '');
-    setMetaDescription(draft.metadata?.metaDescription || '');
-    if (typeof draft.metadata?.outline !== 'undefined') {
-      setOutline(draft.metadata.outline);
-    }
-    if (typeof draft.metadata?.outlineSections !== 'undefined') {
-      setOutlineSections(draft.metadata.outlineSections);
-    }
-    setAdditionalInstructions(draft.metadata?.additionalInstructions || '');
-    // Add more fields as needed
-  }, [location.state, contentItems, loading]);
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">

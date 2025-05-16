@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavigateFunction } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       title: "Content Creation",
       description: "Generate optimized content with AI that ranks well on search engines.",
       icon: <FileText className="h-5 w-5 text-neon-purple" />,
-      action: () => navigate('/content-builder'),
+      action: () => navigate('/content'),
       buttonText: "Create Content",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-neon-purple/20 to-neon-pink/10",

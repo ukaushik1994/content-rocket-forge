@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Solution } from '@/contexts/content-builder/types';
@@ -58,9 +59,9 @@ export function useSolutionsData() {
               ? solution.target_audience.filter(a => a).map(a => String(a)) 
               : [],
             description: `${solution.name || 'Unnamed Solution'} - Business Solution`, // Default description
-            category: solution.category || "Business Solution", // Now using the DB column with fallback
             logoUrl: solution.logo_url,
             externalUrl: solution.external_url,
+            category: solution.category || "Business Solution", // Add default category value
             resources: Array.isArray(solution.resources) 
               ? solution.resources.map(resource => {
                   if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
@@ -99,7 +100,7 @@ export function useSolutionsData() {
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"],
-        category: "Business Solution", // Default category value
+        category: "Business Solution", // Add default category
         logoUrl: null,
         externalUrl: null,
         resources: []
@@ -120,7 +121,7 @@ export function useSolutionsData() {
     targetAudience: string[];
     externalUrl?: string | null;
     resources?: Array<{ title: string; url: string; }>;
-    category?: string; // Category parameter
+    category?: string; // Add category as optional parameter
   }, logoUrl?: string): Promise<boolean> => {
     // Input validation
     if (!solutionData.name || solutionData.name.trim() === '') {
@@ -173,9 +174,9 @@ export function useSolutionsData() {
             ? data[0].target_audience.map(String) 
             : [],
           description: `${data[0].name} - Business Solution`,
-          category: data[0].category || "Business Solution", // Using category from data
           logoUrl: data[0].logo_url,
           externalUrl: data[0].external_url,
+          category: data[0].category || "Business Solution",
           resources: Array.isArray(data[0].resources) 
             ? data[0].resources.map((resource: any) => {
                 if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
@@ -207,7 +208,7 @@ export function useSolutionsData() {
     targetAudience: string[];
     externalUrl?: string | null;
     resources?: Array<{ title: string; url: string; }>;
-    category?: string; // Category parameter
+    category?: string; // Add optional category parameter
   }, logoUrl?: string): Promise<boolean> => {
     // Input validation
     if (!solutionData.name || solutionData.name.trim() === '') {
@@ -230,7 +231,7 @@ export function useSolutionsData() {
         target_audience: solutionData.targetAudience.filter(a => a && a.trim() !== ''),
         external_url: solutionData.externalUrl || null,
         resources: solutionData.resources || [],
-        category: solutionData.category || "Business Solution" // Using category with default
+        category: solutionData.category || "Business Solution" // Add category with default
       };
       
       // Only update logo_url if a new one is provided

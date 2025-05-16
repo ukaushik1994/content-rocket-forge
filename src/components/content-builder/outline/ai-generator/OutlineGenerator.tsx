@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { sendChatRequest } from '@/services/aiService';
@@ -12,7 +12,7 @@ import { getApiKey } from '@/services/apiKeyService';
 import { AiProvider } from '@/services/aiService/types';
 
 export function OutlineGenerator() {
-  const { state, dispatch, setAdditionalInstructions, setContentTitle } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
   const { 
     mainKeyword, 
     selectedKeywords,
@@ -33,10 +33,14 @@ export function OutlineGenerator() {
       
       // Check which providers have API keys configured
       const openaiKey = await getApiKey('openai');
+      const anthropicKey = await getApiKey('anthropic');
       const geminiKey = await getApiKey('gemini');
+      const mistralKey = await getApiKey('mistral');
       
       if (openaiKey) providers.push('openai');
+      if (anthropicKey) providers.push('anthropic');
       if (geminiKey) providers.push('gemini');
+      if (mistralKey) providers.push('mistral');
       
       setAvailableProviders(providers);
       
@@ -105,18 +109,26 @@ export function OutlineGenerator() {
     selectedItems: Array<{type: string, content: string, selected: boolean}>,
     customInstructions: string
   ) => {
+    // Separate primary and secondary keywords
+    const secondaryKeywords = selectedKeywords.filter(kw => kw !== mainKeyword);
+    
     // Create a detailed prompt for the AI
     const selectedItemsText = selectedItems.map(item => 
       `${item.type.toUpperCase()}: ${item.content}`
     ).join('\n\n');
     
-    const keywordsText = selectedKeywords.join(', ');
+    const secondaryKeywordsText = secondaryKeywords.join(', ');
     
     return `
     Create a detailed content outline for an article about "${mainKeyword}".
     
-    Primary keyword: ${mainKeyword}
-    Secondary keywords: ${keywordsText}
+    PRIMARY KEYWORD: ${mainKeyword} 
+    - This is the main focus keyword for the article
+    - Ensure it appears in at least one main heading and introduction section
+    
+    ${secondaryKeywords.length > 0 ? `SECONDARY KEYWORDS: ${secondaryKeywordsText}
+    - Include sections or points that will allow addressing these keywords in the content
+    - Ensure the outline has places where all these keywords can be naturally incorporated` : ''}
     
     I've researched the topic and gathered these key points:
     ${selectedItemsText}
@@ -127,8 +139,10 @@ export function OutlineGenerator() {
     1. Include at least 5-7 main sections with descriptive headings
     2. Format the outline with clear hierarchy
     3. Focus on covering the topic comprehensively
-    4. Ensure all selected keywords are addressed
-    5. Optimize for search intent and reader value
+    4. Ensure the structure allows for primary keyword to appear with 0.5%-3% density
+    5. Include sections where all secondary keywords can be mentioned at least once
+    6. Optimize for search intent and reader value
+    7. Include a section for call-to-action
     
     Return ONLY the outline in this exact format:
     1. [First Section Title]
@@ -216,21 +230,13 @@ export function OutlineGenerator() {
       return;
     }
     
-    // Convert the outline array into structured sections with IDs and levels
-    const structuredOutline = outlineArray.map((title, index) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      title,
-      level: 1
-    }));
-    
-    // Update the outline in state with structured sections
-    dispatch({ type: 'SET_OUTLINE', payload: structuredOutline });
+    // Update the outline in state
+    dispatch({ type: 'SET_OUTLINE', payload: outlineArray });
     
     // Set a title if none exists
     if (!contentTitle) {
       const suggestedTitle = `Complete Guide to ${mainKeyword}: Everything You Need to Know`;
       dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
-      setContentTitle(suggestedTitle);
     }
     
     // Mark the outline step as completed
@@ -255,7 +261,7 @@ export function OutlineGenerator() {
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">AI Outline Generator</h3>
             <p className="text-sm text-white/70">
-              Generate a structured outline based on your research and title
+              Generate a structured outline based on your research
             </p>
           </div>
         </div>

@@ -15,7 +15,6 @@ export interface SerpAnalysisResult {
     link: string;
     snippet: string;
     position: number;
-    country?: string;  // Added country field
   }>;
   relatedSearches?: Array<{
     query: string;
@@ -40,26 +39,20 @@ export interface SerpAnalysisResult {
     name: string;
     type?: string;
     importance?: number;
-    description?: string;
+    description?: string; // Added this missing field
   }>;
-  // Make headings consistently typed as an object with properties
   headings?: Array<{
     text: string;
     level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     subtext?: string;
-    type?: string;
+    type?: string; // Added this missing field
   }>;
   contentGaps?: Array<{
     topic: string;
     description: string;
     recommendation?: string;
-    content?: string;
-    opportunity?: string;
-    source?: string;
+    content?: string; // Added missing field
+    opportunity?: string; // Added missing field
+    source?: string; // Added missing field
   }>;
-  searchCountries?: string[];
-  
-  // Support for SerpKeywordsTab
-  relatedKeywords?: string[] | Array<{query: string; volume?: number}>;
-  volumeData?: Array<{keyword: string; volume?: number}>;
 }

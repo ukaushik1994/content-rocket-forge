@@ -2,15 +2,16 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Download, 
+  CreditCard,
   Key, 
   User, 
   Bell, 
+  Palette,
+  Download,
   Settings as SettingsIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Link, useLocation } from 'react-router-dom';
 
 interface SettingsLayoutProps {
   children: React.ReactNode;
@@ -19,8 +20,6 @@ interface SettingsLayoutProps {
 }
 
 export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLayoutProps) {
-  const location = useLocation();
-  
   const handleValueChange = (value: string) => {
     if (onTabChange) {
       onTabChange(value);
@@ -36,39 +35,53 @@ export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLay
           orientation="vertical"
           className="h-full"
         >
-          <Card className="bg-card/50 backdrop-blur-sm border-border/30 shadow-lg">
+          <Card>
             <TabsList className="flex flex-col h-full w-full bg-transparent space-y-1 p-2">
               <TabsTrigger
                 value="profile"
-                className="justify-start gap-2 w-full"
+                className="justify-start gap-2"
               >
                 <User className="h-4 w-4" />
                 Profile
               </TabsTrigger>
               <TabsTrigger
                 value="api"
-                className="justify-start gap-2 w-full"
+                className="justify-start gap-2"
               >
                 <Key className="h-4 w-4" />
                 API Settings
               </TabsTrigger>
               <TabsTrigger
                 value="notifications"
-                className="justify-start gap-2 w-full"
+                className="justify-start gap-2"
               >
                 <Bell className="h-4 w-4" />
                 Notifications
               </TabsTrigger>
               <TabsTrigger
+                value="appearance"
+                className="justify-start gap-2"
+              >
+                <Palette className="h-4 w-4" />
+                Appearance
+              </TabsTrigger>
+              <TabsTrigger
+                value="billing"
+                className="justify-start gap-2"
+              >
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </TabsTrigger>
+              <TabsTrigger
                 value="export"
-                className="justify-start gap-2 w-full"
+                className="justify-start gap-2"
               >
                 <Download className="h-4 w-4" />
                 Export
               </TabsTrigger>
               <TabsTrigger
                 value="advanced"
-                className="justify-start gap-2 w-full"
+                className="justify-start gap-2"
               >
                 <SettingsIcon className="h-4 w-4" />
                 Advanced
@@ -86,9 +99,7 @@ export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLay
           transition={{ duration: 0.3 }}
           className="w-full"
         >
-          <Card className="p-6 border-border/30 shadow-lg bg-card/50 backdrop-blur-sm">
-            {children}
-          </Card>
+          {children}
         </motion.div>
       </div>
     </div>

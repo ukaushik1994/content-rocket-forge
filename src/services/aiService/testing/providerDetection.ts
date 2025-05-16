@@ -12,14 +12,24 @@ export async function detectAiKeyType(key: string): Promise<AiProvider | null> {
     return null;
   }
   
-  // OpenAI API keys start with "sk-"
-  if (key.startsWith('sk-')) {
+  // OpenAI API keys start with "sk-" but not "sk-ant-"
+  if (key.startsWith('sk-') && !key.startsWith('sk-ant-')) {
     return 'openai';
+  } 
+  
+  // Anthropic API keys start with "sk-ant-"
+  else if (key.startsWith('sk-ant-')) {
+    return 'anthropic';
   } 
   
   // Gemini/Google API keys often start with "AIza"
   else if (key.startsWith('AIza')) {
     return 'gemini';
+  }
+  
+  // LM Studio uses a URL format (http://localhost:port)
+  else if (key.startsWith('http://') || key.startsWith('https://')) {
+    return 'lmstudio';
   }
   
   // Unknown format
@@ -35,8 +45,14 @@ export function getProviderFriendlyName(provider: AiProvider): string {
   switch (provider) {
     case 'openai':
       return 'OpenAI';
+    case 'anthropic':
+      return 'Anthropic';
     case 'gemini':
       return 'Google Gemini';
+    case 'mistral':
+      return 'Mistral AI';
+    case 'lmstudio':
+      return 'LM Studio';
     default:
       return provider.charAt(0).toUpperCase() + provider.slice(1);
   }

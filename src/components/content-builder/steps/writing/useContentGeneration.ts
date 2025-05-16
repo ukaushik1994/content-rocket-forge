@@ -5,7 +5,8 @@ import { sendChatRequest } from '@/services/aiService';
 import { ContentBuilderState } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
-import { AiProvider } from '@/services/aiService/types';
+
+type AiProvider = 'openai' | 'anthropic' | 'gemini';
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -19,15 +20,17 @@ export function useContentGeneration() {
       
       // Check which providers have API keys configured
       const openaiKey = await getApiKey('openai');
+      const anthropicKey = await getApiKey('anthropic');
       const geminiKey = await getApiKey('gemini');
       
       if (openaiKey) providers.push('openai');
+      if (anthropicKey) providers.push('anthropic');
       if (geminiKey) providers.push('gemini');
       
       setAvailableProviders(providers);
       
       // Set default provider from preferences or first available
-      const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
+      const defaultProvider = getUserPreference('defaultAiProvider');
       if (defaultProvider && providers.includes(defaultProvider)) {
         setAiProvider(defaultProvider);
       } else if (providers.length > 0) {
@@ -79,15 +82,27 @@ export function useContentGeneration() {
         : '';
         
       // Prepare secondary keywords
-      const secondaryKeywords = selectedKeywords?.join(', ') || '';
+      const secondaryKeywords = selectedKeywords
+        .filter(keyword => keyword !== mainKeyword) // Ensure we don't include the primary keyword
+        .join(', ');
       
-      // Create a detailed prompt for the AI
+      // Create a detailed prompt for the AI with enhanced keyword instructions
       const prompt = `
       Write comprehensive, high-quality content for an article about "${mainKeyword}".
       
       Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
-      Primary Keyword: ${mainKeyword}
-      ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
+      
+      PRIMARY KEYWORD INSTRUCTIONS:
+      - Primary Keyword: ${mainKeyword}
+      - This is the main keyword that should be used throughout the content
+      - Maintain optimal keyword density between 0.5% and 3% for this primary keyword
+      - Include it in headings, introduction, and conclusion
+      
+      SECONDARY KEYWORDS INSTRUCTIONS:
+      ${secondaryKeywords ? `- Secondary Keywords: ${secondaryKeywords}
+      - Include ALL of these secondary keywords naturally in the content
+      - Distribute them throughout different sections
+      - Use variations where appropriate` : ''}
       
       Use this outline structure:
       ${outlineText}
@@ -97,8 +112,15 @@ export function useContentGeneration() {
       ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
       
       Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
-      Include a compelling introduction and a strong conclusion. 
-      Optimize the content for readability and search engines.
+      Include a compelling introduction and a strong conclusion.
+      Ensure there are relevant calls-to-action (CTAs) in the content.
+      
+      IMPORTANT CONTENT QUALITY CHECKLIST:
+      - Primary keyword (${mainKeyword}) is used with optimal density (0.5%-3%)
+      - All secondary keywords are included at least once
+      - Content includes relevant call-to-action statements
+      - Solution features are naturally incorporated
+      - Content follows the provided outline structure
       `;
       
       // Call the AI API via our service
@@ -111,7 +133,7 @@ export function useContentGeneration() {
       try {
         const chatResponse = await sendChatRequest(aiProvider, {
           messages: [
-            { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
+            { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally. Maintain keyword density between 0.5% and 3% for the primary keyword. Include all secondary keywords at least once.' },
             { role: 'user', content: prompt }
           ],
           temperature: 0.7,

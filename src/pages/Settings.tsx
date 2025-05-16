@@ -1,33 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfileSettings } from '@/components/settings';
 import { APISettings } from '@/components/settings';
 import { NotificationSettings } from '@/components/settings';
 import { AdvancedSettings } from '@/components/settings';
+import { BillingSettings } from '@/components/settings';
 import { ExportSettings } from '@/components/settings';
+import { AppearanceSettings } from '@/components/settings';
 import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { loading } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  // Extract tab from URL path
-  const getTabFromPath = () => {
-    const path = location.pathname.split('/');
-    return path.length > 2 ? path[2] : "profile";
-  };
-  
-  const [activeTab, setActiveTab] = useState(getTabFromPath());
-  
-  // Update tab when location changes
-  useEffect(() => {
-    setActiveTab(getTabFromPath());
-  }, [location]);
+  const [activeTab, setActiveTab] = useState("profile");
   
   if (loading) {
     return (
@@ -42,7 +32,6 @@ export default function Settings() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    navigate(`/settings/${tab}`);
   };
 
   // Render the appropriate content based on the active tab
@@ -54,6 +43,10 @@ export default function Settings() {
         return <APISettings />;
       case "notifications":
         return <NotificationSettings />;
+      case "appearance":
+        return <AppearanceSettings />;
+      case "billing":
+        return <BillingSettings />;
       case "export":
         return <ExportSettings />;
       case "advanced":
@@ -73,7 +66,7 @@ export default function Settings() {
       
       <main className="flex-1 container py-8">
         <div className="space-y-0.5 mb-6">
-          <h2 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">Settings</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">
             Manage your account settings and preferences.
           </p>

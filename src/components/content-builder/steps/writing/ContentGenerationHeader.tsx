@@ -1,41 +1,22 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  PenLine, 
-  ListTree, 
-  BookText, 
-  ClipboardList, 
-  Wand2,
-  Loader2
-} from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Sparkles, Clipboard, EyeOff, Eye } from "lucide-react";
+import { AiProviderSelector } from "@/components/content-builder/outline/ai-generator/AiProviderSelector";
 import { AiProvider } from '@/services/aiService/types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CountrySelector, AVAILABLE_COUNTRIES, SearchCountry } from '@/components/content-builder/keyword/CountrySelector';
-
-// Export for types
-export { AVAILABLE_COUNTRIES, type SearchCountry };
 
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
-  handleGenerateContent: () => Promise<void>;
+  handleGenerateContent: () => void;
   handleToggleOutline: () => void;
   handleToggleGenerator: () => void;
   showOutline: boolean;
   outlineLength: number;
   aiProvider: AiProvider;
   onAiProviderChange: (provider: AiProvider) => void;
-  selectedCountries: string[];
-  onCountriesChange: (countries: string[]) => void;
 }
 
-export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
+export function ContentGenerationHeader({
   isGenerating,
   handleGenerateContent,
   handleToggleOutline,
@@ -43,76 +24,57 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   showOutline,
   outlineLength,
   aiProvider,
-  onAiProviderChange,
-  selectedCountries,
-  onCountriesChange
-}) => {
-  const selectedRegion = selectedCountries.length > 0 ? selectedCountries[0] : 'us';
-  
-  const handleCountryChange = (country: string) => {
-    onCountriesChange([country]);
-  };
-  
+  onAiProviderChange
+}: ContentGenerationHeaderProps) {
   return (
-    <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
-      <div className="flex items-center space-x-2">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-2">
+      <div className="flex items-center gap-2">
         <Button
+          size="sm"
+          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all"
           onClick={handleGenerateContent}
-          disabled={isGenerating || outlineLength === 0}
-          className={`bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg`}
+          disabled={isGenerating}
         >
-          {isGenerating ? (
+          <Sparkles className="h-4 w-4 mr-2" />
+          {isGenerating ? 'Generating...' : 'Generate Content'}
+        </Button>
+        
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-glass border border-white/10 hover:border-white/20"
+          onClick={handleToggleGenerator}
+        >
+          <Clipboard className="h-4 w-4 mr-2" />
+          Templates
+        </Button>
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-4">
+        <AiProviderSelector 
+          aiProvider={aiProvider}
+          setAiProvider={onAiProviderChange}
+        />
+        
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-glass border border-white/10 hover:border-white/20"
+          onClick={handleToggleOutline}
+        >
+          {showOutline ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
+              <EyeOff className="h-4 w-4 mr-2" />
+              Hide Outline
             </>
           ) : (
             <>
-              <Wand2 className="mr-2 h-4 w-4" />
-              Generate Content
+              <Eye className="h-4 w-4 mr-2" />
+              Show Outline ({outlineLength})
             </>
           )}
-        </Button>
-
-        <Select
-          value={aiProvider}
-          onValueChange={(value: string) => onAiProviderChange(value as AiProvider)}
-        >
-          <SelectTrigger className="w-36 bg-background/50 text-xs border-white/10">
-            <SelectValue placeholder="AI Provider" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="openai">OpenAI</SelectItem>
-            <SelectItem value="anthropic">Anthropic</SelectItem>
-            <SelectItem value="gemini">Google Gemini</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <CountrySelector 
-          selectedCountry={selectedRegion}
-          onCountryChange={handleCountryChange}
-        />
-      </div>
-      
-      <div className="flex flex-wrap gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleToggleOutline}
-          className={`flex gap-1 ${showOutline ? 'bg-muted/70 text-white' : 'bg-background/50'} text-xs border-white/10`}
-        >
-          <ListTree className="h-3.5 w-3.5" /> Outline
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleToggleGenerator}
-          className="flex gap-1 bg-background/50 text-xs border-white/10"
-        >
-          <ClipboardList className="h-3.5 w-3.5" /> Templates
         </Button>
       </div>
     </div>
   );
-};
+}

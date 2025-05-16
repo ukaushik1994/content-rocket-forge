@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentCluster } from '../types/index';
+import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 
 export const createKeywordActions = (
   state: ContentBuilderState, 
@@ -17,14 +17,10 @@ export const createKeywordActions = (
     dispatch({ type: 'REMOVE_KEYWORD', payload: keyword });
   };
 
-  const selectCluster = (cluster: ContentCluster | null) => {
-    dispatch({ type: 'SELECT_CLUSTER', payload: cluster });
-  };
-
   return {
     setMainKeyword,
     addKeyword,
-    removeKeyword,
-    selectCluster
+    removeKeyword
   };
 };
+

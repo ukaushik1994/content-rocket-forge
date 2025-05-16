@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -14,37 +15,23 @@ import { toast } from 'sonner';
 import { OutlineSection } from '@/contexts/content-builder/types';
 
 interface OutlineTableProps {
-  outline: (string | OutlineSection)[];
-  onSave: (updatedOutline: (string | OutlineSection)[]) => void;
+  outline: string[];
+  onSave: (updatedOutline: string[]) => void;
 }
 
 export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) => {
-  const [editableOutline, setEditableOutline] = useState<(string | OutlineSection)[]>(outline);
+  const [editableOutline, setEditableOutline] = useState<string[]>(outline);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Update editableOutline when outline prop changes
-  useEffect(() => {
-    setEditableOutline(outline);
-  }, [outline]);
-
   const handleEdit = (index: number, value: string) => {
     const newOutline = [...editableOutline];
-    if (typeof newOutline[index] === 'string') {
-      newOutline[index] = value;
-    } else {
-      newOutline[index] = { ...newOutline[index] as OutlineSection, title: value };
-    }
+    newOutline[index] = value;
     setEditableOutline(newOutline);
   };
 
   const handleAddSection = () => {
-    const newSection = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: 'New Section',
-      level: 1
-    };
-    setEditableOutline([...editableOutline, newSection]);
+    setEditableOutline([...editableOutline, 'New Section']);
     setEditingIndex(editableOutline.length);
   };
 
@@ -59,10 +46,7 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
 
   const handleSaveOutline = () => {
     // Validate that no empty sections exist
-    if (editableOutline.some(section => {
-      const title = typeof section === 'string' ? section : section.title;
-      return title.trim() === '';
-    })) {
+    if (editableOutline.some(section => section.trim() === '')) {
       toast.error("Section titles cannot be empty");
       return;
     }
@@ -71,10 +55,6 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
     setIsEditing(false);
     setEditingIndex(null);
     toast.success("Outline saved successfully");
-  };
-
-  const getSectionTitle = (section: string | OutlineSection): string => {
-    return typeof section === 'string' ? section : section.title;
   };
 
   return (
@@ -123,12 +103,12 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
           <TableBody>
             {editableOutline.length > 0 ? (
               editableOutline.map((section, index) => (
-                <TableRow key={typeof section === 'string' ? index : section.id}>
+                <TableRow key={index}>
                   <TableCell className="text-center font-medium">{index + 1}</TableCell>
                   <TableCell>
                     {isEditing && editingIndex === index ? (
                       <Input
-                        value={getSectionTitle(section)}
+                        value={section}
                         onChange={(e) => handleEdit(index, e.target.value)}
                         autoFocus
                         onBlur={() => setEditingIndex(null)}
@@ -141,7 +121,7 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
                         className={isEditing ? "cursor-pointer hover:bg-muted px-2 py-1 rounded" : ""}
                         onClick={() => isEditing && setEditingIndex(index)}
                       >
-                        {getSectionTitle(section)}
+                        {section}
                       </div>
                     )}
                   </TableCell>

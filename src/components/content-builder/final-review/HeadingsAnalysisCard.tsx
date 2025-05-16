@@ -3,11 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 
-export interface Heading {
+interface Heading {
   text: string;
   level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   subtext?: string;
-  type?: string;
 }
 
 interface HeadingsAnalysisCardProps {

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -28,12 +29,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Define validation schema
 const formSchema = z.object({
   name: z.string().min(1, "Solution name is required").max(100, "Name is too long"),
-  category: z.string().min(1, "Category is required"),
   features: z.string().max(1000, "Features text is too long"),
   useCases: z.string().max(1000, "Use cases text is too long"),
   painPoints: z.string().max(1000, "Pain points text is too long"),
@@ -46,19 +45,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-// Solution categories
-const SOLUTION_CATEGORIES = [
-  "Business Solution",
-  "Analytics Tool",
-  "Marketing Platform",
-  "Collaboration Tool",
-  "Customer Service",
-  "E-Commerce",
-  "Development Tool",
-  "Integration Tool",
-  "Other"
-];
 
 interface SolutionFormDialogProps {
   open: boolean;
@@ -83,7 +69,6 @@ export const SolutionFormDialog: React.FC<SolutionFormDialogProps> = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: solution?.name || '',
-      category: solution?.category || 'Business Solution',
       features: solution?.features?.join(', ') || '',
       useCases: solution?.useCases?.join(', ') || '',
       painPoints: solution?.painPoints?.join(', ') || '',
@@ -104,7 +89,6 @@ export const SolutionFormDialog: React.FC<SolutionFormDialogProps> = ({
     if (open) {
       form.reset({
         name: solution?.name || '',
-        category: solution?.category || 'Business Solution',
         features: solution?.features?.join(', ') || '',
         useCases: solution?.useCases?.join(', ') || '',
         painPoints: solution?.painPoints?.join(', ') || '',
@@ -207,38 +191,6 @@ export const SolutionFormDialog: React.FC<SolutionFormDialogProps> = ({
                   <FormControl>
                     <Input placeholder="e.g., Enterprise Analytics Dashboard" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Category selection */}
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {SOLUTION_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the category that best describes your solution
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

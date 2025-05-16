@@ -44,7 +44,6 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
-          metadata: Json | null
           seo_score: number | null
           status: string
           title: string
@@ -55,7 +54,6 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
-          metadata?: Json | null
           seo_score?: number | null
           status?: string
           title: string
@@ -66,7 +64,6 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
-          metadata?: Json | null
           seo_score?: number | null
           status?: string
           title?: string
@@ -215,7 +212,6 @@ export type Database = {
       }
       solutions: {
         Row: {
-          category: string | null
           created_at: string
           external_url: string | null
           features: Json | null
@@ -230,7 +226,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          category?: string | null
           created_at?: string
           external_url?: string | null
           features?: Json | null
@@ -245,7 +240,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          category?: string | null
           created_at?: string
           external_url?: string | null
           features?: Json | null

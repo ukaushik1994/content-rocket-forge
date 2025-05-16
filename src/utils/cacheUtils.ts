@@ -27,7 +27,7 @@ export class SimpleCache<T> {
   }
 
   /**
-   * Set item to cache
+   * Save item to cache
    */
   set(key: string, data: T): void {
     this.cache[key] = {
@@ -53,10 +53,3 @@ export class SimpleCache<T> {
 
 // Create cache instances
 export const serpResultsCache = new SimpleCache<any>(60 * 60 * 1000); // 1 hour
-
-/**
- * Helper function to simulate API delay
- */
-export const delay = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};

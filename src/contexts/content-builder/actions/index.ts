@@ -1,35 +1,36 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types/index';
-import { createNavigationActions } from './navigationActions';
+import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from '../types/index';
 import { createKeywordActions } from './keywordActions';
-import { createSerpActions } from './serpActions';
-import { createOutlineActions } from './outlineActions';
 import { createContentActions } from './contentActions';
-import { createSettingsActions } from './settingsActions';
+import { createSerpActions } from './serpActions';
+import { createNavigationActions } from './navigationActions';
+import { createPublishActions } from './publishActions';
 import { createSeoActions } from './seoActions';
-import { createReviewActions } from './reviewActions';
 
+/**
+ * Creates and combines all content builder actions
+ */
 export const createContentBuilderActions = (
-  state: ContentBuilderState,
+  state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
-) => {
-  const navigationActions = createNavigationActions(state, dispatch);
+): Omit<ContentBuilderContextType, 'state' | 'dispatch'> => {
+  
+  // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
-  const serpActions = createSerpActions(state, dispatch);
-  const outlineActions = createOutlineActions(state, dispatch);
   const contentActions = createContentActions(state, dispatch);
-  const settingsActions = createSettingsActions(state, dispatch);
+  const serpActions = createSerpActions(state, dispatch);
+  const navigationActions = createNavigationActions(state, dispatch);
+  const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
-  const reviewActions = createReviewActions(state, dispatch);
 
+  // Merge all action groups and return
   return {
-    ...navigationActions,
     ...keywordActions,
-    ...serpActions,
-    ...outlineActions,
     ...contentActions,
-    ...settingsActions,
-    ...seoActions,
-    ...reviewActions
+    ...serpActions,
+    ...navigationActions,
+    ...publishActions,
+    ...seoActions
   };
 };
+

@@ -1,10 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AiProvider } from "@/services/aiService/types";
 
 interface UserPreferences {
-  defaultAiProvider?: AiProvider;
+  defaultAiProvider?: 'openai' | 'anthropic' | 'gemini';
   enableAiFallback?: boolean;
   // We can add more user preferences here in the future
 }

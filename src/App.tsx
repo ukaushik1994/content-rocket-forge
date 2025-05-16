@@ -39,19 +39,7 @@ const App = () => (
                 <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
                 <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
-                
-                {/* Settings routes */}
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>}>
-                  <Route path="api" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="profile" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="notifications" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="appearance" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="billing" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="export" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="advanced" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route index element={<Navigate to="/settings/profile" replace />} />
-                </Route>
-                
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

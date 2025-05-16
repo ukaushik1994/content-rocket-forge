@@ -10,17 +10,16 @@ import { toast } from 'sonner';
 
 export const OutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
-  const { outline, serpSelections, contentTitle } = state;
+  const { outline, serpSelections } = state;
   
   useEffect(() => {
-    // Mark as complete if we have a title and an outline with at least 3 sections
-    if (contentTitle && outline && outline.length >= 3) {
+    // Mark as complete if we have an outline with at least 3 sections
+    if (outline.length >= 3) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
     }
-  }, [outline, contentTitle, dispatch]);
+  }, [outline, dispatch]);
   
-  const handleSaveOutline = (updatedOutline: any[]) => {
-    console.log('Saving outline:', updatedOutline);
+  const handleSaveOutline = (updatedOutline: string[]) => {
     dispatch({ type: 'SET_OUTLINE', payload: updatedOutline });
   };
 
@@ -32,7 +31,7 @@ export const OutlineStep = () => {
         <div>
           <h3 className="text-lg font-medium">Content Outline</h3>
           <p className="text-sm text-muted-foreground">
-            Define your title and create the structure for your content
+            Create and edit your content structure
           </p>
         </div>
       </div>
@@ -50,7 +49,7 @@ export const OutlineStep = () => {
       <Card>
         <CardContent className="pt-6">
           <OutlineTable 
-            outline={outline || []} 
+            outline={outline} 
             onSave={handleSaveOutline} 
           />
         </CardContent>

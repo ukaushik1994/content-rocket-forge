@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
-import { KeywordSearchWithApiCheck } from '../keyword/KeywordSearchWithApiCheck';
+import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
@@ -43,8 +44,7 @@ export const KeywordSelectionStep = () => {
     selectedCluster,
     serpData,
     serpSelections,
-    isAnalyzing,
-    selectedRegions
+    isAnalyzing
   } = state;
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -90,9 +90,7 @@ export const KeywordSelectionStep = () => {
 
     // Automatically start SERP analysis when a keyword is entered
     setHasSearched(true);
-    
-    // Pass the selected regions to the analyzeKeyword function
-    await analyzeKeyword(keyword, selectedRegions);
+    await analyzeKeyword(keyword);
   };
   
   const handleAddKeyword = (kw: string) => {
@@ -155,8 +153,7 @@ export const KeywordSelectionStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      // Pass the selected regions to the analyzeKeyword function
-      await analyzeKeyword(mainKeyword, selectedRegions);
+      await analyzeKeyword(mainKeyword);
     }
   };
   
@@ -194,7 +191,7 @@ export const KeywordSelectionStep = () => {
             </div>
           </div>
           <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
-            <KeywordSearchWithApiCheck initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
+            <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
           </div>
         </div>
 
@@ -251,7 +248,6 @@ export const KeywordSelectionStep = () => {
                     isLoading={isAnalyzing}
                     mainKeyword={mainKeyword}
                     onAddToContent={handleAddToContent}
-                    onRetry={handleReanalyze}
                   />
                 </div>
               </div>

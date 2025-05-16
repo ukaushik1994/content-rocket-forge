@@ -13,9 +13,12 @@ export function getFallbackConfig() {
   
   // Define fallback order depending on the primary provider
   const fallbackProviders: Record<AiProvider, AiProvider[]> = {
-    'openai': ['gemini'],
-    'gemini': ['openai'],
-    'other': ['openai', 'gemini']
+    'openai': ['anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'anthropic': ['openai', 'gemini', 'mistral', 'lmstudio'],
+    'gemini': ['openai', 'anthropic', 'mistral', 'lmstudio'],
+    'mistral': ['openai', 'anthropic', 'gemini', 'lmstudio'],
+    'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral'],
+    'other': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
   };
   
   return {

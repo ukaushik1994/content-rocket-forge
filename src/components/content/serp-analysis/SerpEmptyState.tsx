@@ -1,42 +1,26 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Search, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { Search } from 'lucide-react';
 
-interface SerpEmptyStateProps {
-  keyword?: string;
-  onAddApiKey: () => void;
-}
-
-export function SerpEmptyState({ keyword, onAddApiKey }: SerpEmptyStateProps) {
+export function SerpEmptyState() {
   return (
-    <Card className="h-full min-h-[300px] flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-950/20 to-black/20 border border-blue-500/20">
-      <div className="text-center space-y-4 max-w-md">
-        <div className="bg-blue-900/20 p-3 rounded-full inline-flex mx-auto mb-2">
-          <Search className="h-8 w-8 text-blue-400" />
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="text-center py-16 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
+    >
+      <div className="flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue/50 flex items-center justify-center mb-4 animate-pulse">
+          <Search className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-xl font-medium">No Search Results Data</h3>
-        <p className="text-sm text-muted-foreground">
-          {keyword 
-            ? `We couldn't find any SERP data for "${keyword}".`
-            : "Enter a keyword to analyze search engine results data."
-          }
+        <h3 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+          No Analysis Data Yet
+        </h3>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Enter a keyword and click "Analyze" to get search insights and content recommendations.
         </p>
-        <p className="text-sm text-muted-foreground">
-          To enable SERP analysis, you'll need to add your SERP API key in Settings.
-        </p>
-        <div className="pt-4 flex justify-center">
-          <Button 
-            variant="outline" 
-            className="border-blue-500/30 hover:border-blue-500/50"
-            onClick={onAddApiKey}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Add API Key
-          </Button>
-        </div>
       </div>
-    </Card>
+    </motion.div>
   );
 }

@@ -1,51 +1,40 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { AlertTriangle, RefreshCcw, Settings } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SerpNoDataFoundProps {
-  onAddApiKey: () => void;
-  onRetry?: () => void;
+  mainKeyword: string;
+  onRetry: () => void;
 }
 
-export function SerpNoDataFound({ onAddApiKey, onRetry }: SerpNoDataFoundProps) {
+export function SerpNoDataFound({ mainKeyword, onRetry }: SerpNoDataFoundProps) {
   return (
-    <Card className="h-full min-h-[300px] flex flex-col items-center justify-center p-6 bg-gradient-to-br from-amber-950/20 to-black/20 border border-amber-500/30">
-      <div className="text-center space-y-4 max-w-md">
-        <div className="bg-amber-900/20 p-3 rounded-full inline-flex mx-auto mb-2">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="text-center py-16 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
+    >
+      <div className="flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
           <AlertTriangle className="h-8 w-8 text-amber-500" />
         </div>
-        <h3 className="text-xl font-medium">No SERP data found</h3>
-        <p className="text-sm text-muted-foreground">
-          We couldn't retrieve any search results data. This might be because:
+        <h3 className="text-xl font-semibold mb-2">
+          No Data Found
+        </h3>
+        <p className="text-muted-foreground max-w-md mx-auto mb-6">
+          We couldn't retrieve analysis data for <span className="font-medium text-amber-500">"{mainKeyword}"</span>. 
+          This could be due to a temporary API issue or connectivity problem.
         </p>
-        <ul className="text-sm text-muted-foreground list-disc text-left space-y-2 pl-5">
-          <li>Your SERP API key is missing or invalid</li>
-          <li>The SERP API service is temporarily unavailable</li>
-          <li>There are no results for this search query</li>
-        </ul>
-        <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button 
-            variant="outline" 
-            className="border-amber-500/30 hover:border-amber-500/50"
-            onClick={onAddApiKey}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Add API Key
-          </Button>
-          
-          {onRetry && (
-            <Button 
-              variant="default"
-              onClick={onRetry}
-            >
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Retry
-            </Button>
-          )}
-        </div>
+        <Button 
+          variant="outline" 
+          className="bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
+          onClick={onRetry}
+        >
+          Try Again
+        </Button>
       </div>
-    </Card>
+    </motion.div>
   );
 }

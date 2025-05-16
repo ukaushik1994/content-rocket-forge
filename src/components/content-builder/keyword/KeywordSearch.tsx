@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { searchKeywords } from '@/services/serpApiService';
-import { RefreshButton } from '@/components/ui/refresh-button';
 
 interface KeywordSearchProps {
   initialKeyword: string;
@@ -62,48 +62,6 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
       setIsSearching(false);
     }
   };
-  
-  const handleRefresh = async () => {
-    if (!keyword.trim()) {
-      toast.error('Please enter a keyword to refresh suggestions');
-      return;
-    }
-    
-    setIsSearching(true);
-    try {
-      const results = await searchKeywords({ query: keyword, refresh: true });
-      
-      if (Array.isArray(results)) {
-        // Extract different keywords for variety
-        const extractedKeywords = results.map(result => {
-          const title = result.title ? String(result.title) : '';
-          // Use a slightly different extraction strategy for refreshed results
-          return title
-            .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')
-            .trim()
-            .split(' ')
-            .slice(0, 4) // Get more words for variety
-            .join(' ');
-        });
-        
-        // Filter and shuffle the results for variety
-        const filteredKeywords = [...new Set(extractedKeywords)]
-          .filter(k => k.length > 3)
-          .sort(() => Math.random() - 0.5) // Shuffle
-          .slice(0, 10);
-        
-        onKeywordSearch(keyword, filteredKeywords);
-        toast.success('Refreshed keyword suggestions');
-      } else {
-        toast.warning('No new keyword suggestions found');
-      }
-    } catch (error) {
-      console.error('Error refreshing keywords:', error);
-      toast.error('Failed to refresh keyword suggestions');
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   return (
     <div className="space-y-2">
@@ -136,13 +94,6 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
             </>
           )}
         </Button>
-        
-        <RefreshButton 
-          onClick={handleRefresh}
-          isRefreshing={isSearching}
-          disabled={isSearching || !keyword.trim()}
-          title="Refresh keyword suggestions"
-        />
       </div>
     </div>
   );

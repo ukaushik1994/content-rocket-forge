@@ -1,21 +1,24 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SerpKeywordsTab } from './serp-tabs/SerpKeywordsTab';
-import { SerpQuestionsTab } from './serp-tabs/SerpQuestionsTab';
-import { SerpEntitiesTab } from './serp-tabs/SerpEntitiesTab';
-import { SerpHeadingsTab } from './serp-tabs/SerpHeadingsTab';
-import { SerpAnalysisResult } from '@/types/serp';
-import { SerpContentGapsTab } from './serp-tabs/SerpContentGapsTab';
-import { SerpCompetitorsTab } from './serp-tabs/SerpCompetitorsTab';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCcw, Settings, GlobeIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { getApiKey } from '@/services/apiKeyService';
-import { AVAILABLE_COUNTRIES } from '@/components/content-builder/keyword/CountrySelector';
+import { motion } from 'framer-motion';
+import { Search, Sparkles } from 'lucide-react';
+import { SerpAnalysisResult } from '@/services/serpApiService';
 
-interface SerpAnalysisPanelProps {
+// Import refactored components
+import {
+  SerpSectionHeader,
+  SerpEmptyState,
+  SerpNoDataFound,
+  SerpMetricsSection,
+  SerpKeywordsSection,
+  SerpQuestionsSection,
+  SerpCompetitorsSection,
+  SerpEntitiesSection,
+  SerpHeadingsSection,
+  SerpContentGapsSection
+} from './serp-analysis';
+
+export interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
   isLoading: boolean;
   mainKeyword: string;
@@ -30,179 +33,240 @@ export function SerpAnalysisPanel({
   onAddToContent = () => {},
   onRetry = () => {}
 }: SerpAnalysisPanelProps) {
-  const [activeTab, setActiveTab] = useState('keywords');
-  const [isCheckingKey, setIsCheckingKey] = React.useState(false);
-  const [hasApiKey, setHasApiKey] = React.useState<boolean | null>(null);
+  const [expandedSections, setExpandedSections] = useState<{
+    searchMetrics: boolean;
+    keywords: boolean;
+    questions: boolean;
+    competitors: boolean;
+    entities: boolean;
+    headings: boolean;
+    contentGaps: boolean;
+  }>({
+    searchMetrics: true,
+    keywords: false,
+    questions: false,
+    competitors: false,
+    entities: false,
+    headings: false,
+    contentGaps: false
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   
-  // Check for API key on mount
-  React.useEffect(() => {
-    const checkApiKey = async () => {
-      setIsCheckingKey(true);
-      try {
-        const apiKey = await getApiKey('serp');
-        setHasApiKey(!!apiKey);
-      } catch (error) {
-        console.error('Error checking SERP API key:', error);
-        setHasApiKey(false);
-      } finally {
-        setIsCheckingKey(false);
-      }
-    };
-    
-    checkApiKey();
-  }, []);
-
-  if (isLoading || isCheckingKey) {
-    return <SerpLoadingState />;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col items-center justify-center py-12 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary h-8 w-8 animate-pulse" />
+          </div>
+          <p className="mt-6 text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">Analyzing search results...</p>
+          <p className="text-sm text-muted-foreground mt-2">Extracting insights from top-ranking content</p>
+        </div>
+      </div>
+    );
   }
 
-  // Only show API key missing if we've confirmed it's not there
-  if (hasApiKey === false) {
-    return <SerpNoApiKeyState onRetry={onRetry} />;
+  // If serpData is null, show the NoDataFound component
+  if (serpData === null && mainKeyword) {
+    return <SerpNoDataFound mainKeyword={mainKeyword} onRetry={onRetry} />;
   }
 
+  // If serpData is undefined or empty object, show the EmptyState
   if (!serpData) {
-    // Note this case may happen even with an API key, if the API call fails
-    return <SerpNoDataState keyword={mainKeyword} onRetry={onRetry} />;
+    return <SerpEmptyState />;
   }
-
-  if (Object.keys(serpData).length === 0) {
-    return <SerpNoDataState keyword={mainKeyword} onRetry={onRetry} />;
-  }
-  
-  // Format the countries for display
-  const searchCountriesDisplay = serpData.searchCountries && serpData.searchCountries.length > 0 
-    ? serpData.searchCountries.map(code => {
-        const country = AVAILABLE_COUNTRIES.find(c => c.value === code);
-        return country ? country.label : code;
-      }).join(", ")
-    : "US";
 
   return (
-    <div className="border rounded-lg shadow-lg overflow-hidden">
-      <Tabs defaultValue="keywords" value={activeTab} onValueChange={setActiveTab}>
-        <div className="bg-card border-b px-4 py-2">
-          <div className="flex items-center justify-between mb-2">
-            <TabsList className="grid grid-cols-3 md:grid-cols-6">
-              <TabsTrigger value="keywords">Keywords</TabsTrigger>
-              <TabsTrigger value="questions">Questions</TabsTrigger>
-              <TabsTrigger value="entities">Entities</TabsTrigger>
-              <TabsTrigger value="headings">Headings</TabsTrigger>
-              <TabsTrigger value="contentGaps">Gaps</TabsTrigger>
-              <TabsTrigger value="competitors">Competition</TabsTrigger>
-            </TabsList>
-            
-            {serpData.searchCountries && serpData.searchCountries.length > 0 && (
-              <div className="hidden md:flex items-center text-xs text-muted-foreground">
-                <GlobeIcon className="h-3 w-3 mr-1" />
-                <span>{searchCountriesDisplay}</span>
-              </div>
-            )}
+    <div className="space-y-8">
+      {/* Header with Search Metrics */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 p-5 rounded-xl border border-white/10 backdrop-blur-xl shadow-xl relative overflow-hidden"
+      >
+        {/* Interactive background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-grid-white/5 opacity-10"></div>
+          <motion.div
+            className="absolute left-0 right-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            animate={{
+              left: ['-100%', '100%'],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+          <motion.div
+            className="absolute w-20 h-20 rounded-full bg-purple-500/10 filter blur-xl"
+            animate={{
+              x: ['-10%', '110%'],
+              y: ['30%', '50%'],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute w-32 h-32 rounded-full bg-blue-500/10 filter blur-xl"
+            animate={{
+              x: ['110%', '-10%'],
+              y: ['60%', '40%'],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+          />
+        </div>
+        
+        <div className="flex items-center gap-3 mb-6 relative z-10">
+          <div className="p-2 bg-primary/20 rounded-full">
+            <Search className="text-primary h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-xl">
+              Analysis for: <span className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">{mainKeyword}</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">Interactive insights from top-ranking content</p>
           </div>
         </div>
         
-        <div className="p-4 bg-background">
-          <TabsContent value="keywords">
-            <SerpKeywordsTab serpData={serpData} onAddToContent={onAddToContent} />
-          </TabsContent>
-          
-          <TabsContent value="questions">
-            <SerpQuestionsTab serpData={serpData} onAddToContent={onAddToContent} />
-          </TabsContent>
-          
-          <TabsContent value="entities">
-            <SerpEntitiesTab serpData={serpData} onAddToContent={onAddToContent} />
-          </TabsContent>
-          
-          <TabsContent value="headings">
-            <SerpHeadingsTab serpData={serpData} onAddToContent={onAddToContent} />
-          </TabsContent>
-          
-          <TabsContent value="contentGaps">
-            <SerpContentGapsTab serpData={serpData} onAddToContent={onAddToContent} />
-          </TabsContent>
-          
-          <TabsContent value="competitors">
-            <SerpCompetitorsTab serpData={serpData} onAddToContent={onAddToContent} />
-          </TabsContent>
-        </div>
-      </Tabs>
-    </div>
-  );
-}
+        {/* Search Metrics Section */}
+        <SerpSectionHeader 
+          title="Search Metrics" 
+          expanded={expandedSections.searchMetrics}
+          onToggle={() => toggleSection('searchMetrics')}
+          variant="blue"
+          description="Keyword metrics to understand search volume and competition"
+        />
+        
+        <SerpMetricsSection 
+          serpData={serpData} 
+          mainKeyword={mainKeyword} 
+          expanded={expandedSections.searchMetrics} 
+        />
+      </motion.div>
 
-// Loading state component
-function SerpLoadingState() {
-  return (
-    <div className="border rounded-lg shadow-lg p-6 space-y-4">
-      <div className="space-y-2">
-        <Skeleton className="h-6 w-[250px]" />
-        <Skeleton className="h-4 w-[400px]" />
+      {/* Related Keywords Section */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Related Keywords" 
+          expanded={expandedSections.keywords}
+          onToggle={() => toggleSection('keywords')}
+          variant="blue"
+          description="Select keywords to include in your content"
+          count={serpData?.relatedSearches?.length || 0}
+        />
+        
+        <SerpKeywordsSection 
+          serpData={serpData}
+          expanded={expandedSections.keywords}
+          onAddToContent={onAddToContent}
+        />
       </div>
       
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
+      {/* Questions Section */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="People Also Ask" 
+          expanded={expandedSections.questions}
+          onToggle={() => toggleSection('questions')}
+          variant="amber"
+          description="Common questions people search about this topic"
+          count={serpData?.peopleAlsoAsk?.length || 0}
+        />
+        
+        <SerpQuestionsSection 
+          serpData={serpData}
+          expanded={expandedSections.questions}
+          onAddToContent={onAddToContent}
+        />
       </div>
-    </div>
-  );
-}
-
-// No API Key state component
-function SerpNoApiKeyState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="border rounded-lg shadow-lg p-6">
-      <div className="text-center py-8 space-y-4">
-        <div className="bg-amber-500/10 text-amber-500 p-4 rounded-full inline-flex">
-          <Settings size={28} />
-        </div>
-        <h3 className="text-xl font-semibold">SERP API Key Required</h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          A SERP API key is needed to analyze keywords and get search data. Please add your API key in Settings.
-        </p>
-        <div className="flex justify-center gap-3 pt-2">
-          <Button variant="outline" onClick={onRetry}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-          <Button asChild>
-            <Link to="/settings/api">
-              <Settings className="mr-2 h-4 w-4" />
-              API Settings
-            </Link>
-          </Button>
-        </div>
+      
+      {/* Entities Section */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Key Entities" 
+          expanded={expandedSections.entities}
+          onToggle={() => toggleSection('entities')}
+          variant="indigo"
+          description="Important entities and concepts related to this topic"
+          count={serpData?.entities?.length || 0}
+        />
+        
+        <SerpEntitiesSection 
+          serpData={serpData}
+          expanded={expandedSections.entities}
+          onAddToContent={onAddToContent}
+        />
       </div>
-    </div>
-  );
-}
-
-// No Data found state component
-function SerpNoDataState({ keyword, onRetry }: { keyword: string, onRetry: () => void }) {
-  return (
-    <div className="border rounded-lg shadow-lg p-6">
-      <div className="text-center py-8 space-y-4">
-        <div className="bg-red-500/10 text-red-500 p-4 rounded-full inline-flex">
-          <AlertCircle size={28} />
-        </div>
-        <h3 className="text-xl font-semibold">No Search Data Found</h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          We couldn't find any SERP data for "{keyword}". Please try another keyword or ensure your API key is valid.
-        </p>
-        <div className="flex justify-center gap-3 pt-2">
-          <Button onClick={onRetry}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
+      
+      {/* Headings Section */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Top Headings" 
+          expanded={expandedSections.headings}
+          onToggle={() => toggleSection('headings')}
+          variant="teal"
+          description="Common headings used by top-ranking content"
+          count={serpData?.headings?.length || 0}
+        />
+        
+        <SerpHeadingsSection 
+          serpData={serpData}
+          expanded={expandedSections.headings}
+          onAddToContent={onAddToContent}
+        />
+      </div>
+      
+      {/* Content Gaps Section */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Content Gaps" 
+          expanded={expandedSections.contentGaps}
+          onToggle={() => toggleSection('contentGaps')}
+          variant="rose"
+          description="Topics competitors are missing that you can cover"
+          count={serpData?.contentGaps?.length || 0}
+        />
+        
+        <SerpContentGapsSection 
+          serpData={serpData}
+          expanded={expandedSections.contentGaps}
+          onAddToContent={onAddToContent}
+        />
+      </div>
+      
+      {/* Top Ranks Section - Renamed from Competitor Analysis */}
+      <div className="space-y-4">
+        <SerpSectionHeader 
+          title="Top Ranks" 
+          expanded={expandedSections.competitors}
+          onToggle={() => toggleSection('competitors')}
+          variant="green"
+          description="Top-ranking content for this keyword"
+          count={serpData?.topResults?.length || 0}
+        />
+        
+        <SerpCompetitorsSection 
+          serpData={serpData}
+          expanded={expandedSections.competitors}
+          onAddToContent={onAddToContent}
+        />
       </div>
     </div>
   );

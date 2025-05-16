@@ -18,7 +18,7 @@ export const KeywordsGroup: React.FC<SelectedItemsGroupProps> = ({
     <div>
       <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
         <Tag className="h-3.5 w-3.5 text-blue-400" />
-        Secondary Keywords ({count})
+        Keywords ({count})
       </h4>
       <div className="flex flex-wrap gap-2">
         {selectedItems.map((item, i) => {

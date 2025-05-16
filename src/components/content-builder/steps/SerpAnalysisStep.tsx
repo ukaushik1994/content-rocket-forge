@@ -1,34 +1,22 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
-import { CountrySelector } from '@/components/content-builder/keyword/CountrySelector';
 
 export const SerpAnalysisStep = () => {
-  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections, setSelectedRegions } = useContentBuilder();
-  const { mainKeyword, serpData, isAnalyzing, serpSelections, selectedRegions } = state;
+  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
+  const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   
   // Get selection statistics
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
   
-  // Use the first region as the selected one, or default to 'us'
-  const selectedRegion = selectedRegions.length > 0 ? selectedRegions[0] : 'us';
-  
-  // Handle changing the selected country/region
-  const handleCountryChange = (country: string) => {
-    setSelectedRegions([country]);
-    if (mainKeyword) {
-      analyzeKeyword(mainKeyword, [country]);
-    }
-  };
-  
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, [selectedRegion]);
+      await analyzeKeyword(mainKeyword);
     }
   };
   
@@ -56,29 +44,15 @@ export const SerpAnalysisStep = () => {
     handleToggleSelection(type, content);
   };
   
-  // Set default region on component mount if not already set
-  useEffect(() => {
-    if (selectedRegions.length === 0) {
-      setSelectedRegions(['us']);
-    }
-  }, [selectedRegions, setSelectedRegions]);
-  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between">
-        <SerpAnalysisHeader
-          mainKeyword={mainKeyword}
-          isAnalyzing={isAnalyzing}
-          totalSelected={totalSelected}
-          handleReanalyze={handleReanalyze}
-          handleContinueWithSelections={handleContinueWithSelections}
-        />
-        
-        <CountrySelector 
-          selectedCountry={selectedRegion}
-          onCountryChange={handleCountryChange}
-        />
-      </div>
+      <SerpAnalysisHeader
+        mainKeyword={mainKeyword}
+        isAnalyzing={isAnalyzing}
+        totalSelected={totalSelected}
+        handleReanalyze={handleReanalyze}
+        handleContinueWithSelections={handleContinueWithSelections}
+      />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
         <div className="lg:col-span-3">
