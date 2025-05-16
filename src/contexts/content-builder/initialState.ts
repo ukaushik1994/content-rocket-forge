@@ -28,8 +28,8 @@ export const initialState: ContentBuilderState = {
   seoScore: 0,
   seoImprovements: [],
   contentType: 'article',
-  contentFormat: 'long-form', // Changed from 'blog' to valid ContentFormat
-  contentIntent: 'inform', // Changed from 'informational' to valid ContentIntent
+  contentFormat: 'long-form',
+  contentIntent: 'inform',
   selectedSolution: null,
   metaTitle: '',
   metaDescription: '',
@@ -52,9 +52,19 @@ export const initialState: ContentBuilderState = {
     hasFAQSection: false
   },
   solutionIntegrationMetrics: {
-    relevanceScore: 0,
-    contentMatchScore: 0,
-    integrationScore: 0
+    keywordMatches: 0,
+    featureCoverage: 0,
+    naturalIntegration: 0,
+    overallScore: 0,
+    featureIncorporation: 0,
+    positioningScore: 0,
+    mentionedFeatures: [],
+    painPointsAddressed: [],
+    nameMentions: 0,
+    audienceAlignment: 0,
+    ctaEffectiveness: 0,
+    ctaMentions: 0,
+    mentions: ''
   },
   additionalInstructions: '',
   selectedRegions: ['us'], // Default to US region

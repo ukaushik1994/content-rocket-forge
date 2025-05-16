@@ -34,18 +34,36 @@ export interface DocumentMetadata {
 }
 
 export interface DocumentStructure {
-  h1: string[];
-  h2: string[];
-  h3: string[];
-  h4: string[];
-  h5: string[];
-  h6: string[];
-  hasSingleH1: boolean;
-  hasLogicalHierarchy: boolean;
-  headings: DocumentHeading[];
-  paragraphs: DocumentParagraph[];
-  lists: DocumentList[];
-  images: DocumentImage[];
-  links: DocumentLink[];
-  metadata: DocumentMetadata;
+  totalWordCount?: number;
+  paragraphCount?: number;
+  sentenceCount?: number;
+  readability?: {
+    score: number;
+    level: string;
+  };
+  headings?: {
+    h1: number;
+    h2: number;
+    h3: number;
+    h4: number;
+    h5?: number;
+    h6?: number;
+  };
+  h1?: string[];
+  h2?: string[];
+  h3?: string[];
+  h4?: string[];
+  h5?: string[];
+  h6?: string[];
+  hasSingleH1?: boolean;
+  hasLogicalHierarchy?: boolean;
+  headings?: DocumentHeading[];
+  paragraphs?: DocumentParagraph[];
+  lists?: DocumentList[];
+  images?: DocumentImage[];
+  links?: DocumentLink[];
+  metadata?: DocumentMetadata;
+  hasIntroduction?: boolean;
+  hasConclusion?: boolean;
+  hasFAQSection?: boolean;
 }
