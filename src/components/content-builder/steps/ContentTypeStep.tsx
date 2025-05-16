@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { ContentType, ContentFormat } from '@/contexts/content-builder/types';
@@ -72,19 +71,33 @@ const contentFormatOptions: { value: string; label: string; icon: React.ReactNod
   }
 ];
 
-// Mock solutions for demonstration
+// Mock solutions for demonstration - updated to match Solution interface
 const mockSolutions: Solution[] = [
   {
     id: '1',
     name: 'Content Optimizer Pro',
+    description: 'AI-powered content optimization tool for better search rankings',
     features: ['AI content generation', 'Keyword optimization', 'Readability analysis'],
-    painPoints: ['Poor content quality', 'Time-consuming content creation', 'Low search rankings']
+    useCases: ['Blog optimization', 'SEO improvement'],
+    painPoints: ['Poor content quality', 'Time-consuming content creation', 'Low search rankings'],
+    targetAudience: ['Content marketers', 'SEO specialists'],
+    category: 'Content Marketing',
+    logoUrl: null,
+    externalUrl: null,
+    resources: []
   },
   {
     id: '2',
     name: 'SEO Wizard',
+    description: 'Complete SEO toolkit for optimizing website visibility',
     features: ['Keyword research', 'Competitor analysis', 'Backlink tracking'],
-    painPoints: ['Low organic traffic', 'Poor keyword targeting', 'Limited SEO knowledge']
+    useCases: ['SEO strategy', 'Competitive analysis'],
+    painPoints: ['Low organic traffic', 'Poor keyword targeting', 'Limited SEO knowledge'],
+    targetAudience: ['Digital marketers', 'Business owners'],
+    category: 'SEO Tools',
+    logoUrl: null,
+    externalUrl: null,
+    resources: []
   }
 ];
 
