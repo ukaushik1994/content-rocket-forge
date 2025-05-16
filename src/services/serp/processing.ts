@@ -15,7 +15,8 @@ export function processSerpResponse(data: any): SerpAnalysisResult {
       title: result.title || '',
       link: result.link || '',
       snippet: result.snippet || '', // Always provide a string, even if empty
-      position: index + 1
+      position: index + 1,
+      country: data.searchCountries?.[0] || 'us'  // Add country info if available
     }));
     
     // Extract related searches
@@ -55,7 +56,11 @@ export function processSerpResponse(data: any): SerpAnalysisResult {
     // Use existing content gaps or create mock ones
     const contentGaps = data.contentGaps ? data.contentGaps.map((gap: any) => ({
       topic: gap.topic || '',
-      description: gap.description || ''
+      description: gap.description || '', // Always provide a string, even if empty
+      recommendation: gap.recommendation,
+      content: gap.content,
+      opportunity: gap.opportunity,
+      source: gap.source
     })) : [];
     
     // Extract keywords from the results
@@ -97,7 +102,9 @@ export function processSerpResponse(data: any): SerpAnalysisResult {
     return {
       keyword: data.keyword || 'unknown',
       isMockData: true,
-      searchCountries: ['us']
+      searchCountries: ['us'],
+      topResults: [],
+      contentGaps: []
     };
   }
 }

@@ -43,7 +43,11 @@ export interface SerpAnalysisResult {
   }>;
   contentGaps?: Array<{
     topic: string;
-    description?: string;
+    description: string; // Changed from optional to required
+    recommendation?: string;
+    content?: string;
+    opportunity?: string;
+    source?: string;
   }>;
   keywords?: string[];
   relatedKeywords?: string[];

@@ -15,19 +15,22 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
         title: "How to Create Financial Reports - A Complete Guide",
         link: "https://example.com/finance-reports-guide",
         snippet: "Learn how to create comprehensive financial reports with our step-by-step guide. Includes templates and best practices.",
-        position: 1
+        position: 1,
+        country: countries[0]
       },
       {
         title: "Financial Reporting 101: Templates & Examples",
         link: "https://example.com/financial-reporting",
         snippet: "Download our free financial report templates and see examples of professional financial reports for businesses of all sizes.",
-        position: 2
+        position: 2,
+        country: countries[0]
       },
       {
         title: "Annual Financial Reports: Everything You Need to Know",
         link: "https://example.com/annual-reports",
         snippet: "Comprehensive guide to creating annual financial reports. Learn about requirements, deadlines, and common mistakes to avoid.",
-        position: 3
+        position: 3,
+        country: countries[0]
       }
     ],
     relatedSearches: [
@@ -37,9 +40,9 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
       { query: `quarterly ${keyword} format`, volume: 450 }
     ],
     peopleAlsoAsk: [
-      { question: `What should be included in a ${keyword}?`, source: "https://example.com/components", answer: "" },
-      { question: `How often should ${keyword}s be created?`, source: "https://example.com/frequency", answer: "" },
-      { question: `What is the difference between a ${keyword} and a statement?`, source: "https://example.com/differences", answer: "" }
+      { question: `What should be included in a ${keyword}?`, source: "https://example.com/components", answer: "A comprehensive breakdown of income, expenses, assets, and liabilities for the reporting period." },
+      { question: `How often should ${keyword}s be created?`, source: "https://example.com/frequency", answer: "Typically quarterly and annually, though monthly reports may be useful for internal purposes." },
+      { question: `What is the difference between a ${keyword} and a statement?`, source: "https://example.com/differences", answer: "Financial reports are comprehensive documents that may contain multiple statements along with analysis and context." }
     ],
     entities: [
       { name: "Income Statement", type: "document", importance: 9, description: "A financial statement showing revenues and expenses" },
@@ -47,15 +50,29 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
       { name: "Cash Flow Statement", type: "document", importance: 7, description: "A financial statement showing cash inflows and outflows" }
     ],
     headings: [
-      { text: `Components of ${keyword}s`, level: "h2" as const },
-      { text: "Creating an Effective Income Statement", level: "h2" as const },
-      { text: "Balance Sheet Best Practices", level: "h2" as const },
-      { text: "Cash Flow Analysis Techniques", level: "h3" as const },
-      { text: "Financial Ratio Analysis", level: "h2" as const }
+      { text: `Components of ${keyword}s`, level: "h2" as const, subtext: "Essential elements", type: "informational" },
+      { text: "Creating an Effective Income Statement", level: "h2" as const, subtext: "Step by step guide", type: "tutorial" },
+      { text: "Balance Sheet Best Practices", level: "h2" as const, subtext: "Expert tips", type: "best-practices" },
+      { text: "Cash Flow Analysis Techniques", level: "h3" as const, subtext: "Advanced methods", type: "tutorial" },
+      { text: "Financial Ratio Analysis", level: "h2" as const, subtext: "Key metrics", type: "analytical" }
     ],
     contentGaps: [
-      { topic: `${keyword} Automation Tools`, description: "Tools and software for automating reporting processes" },
-      { topic: `Regulatory Compliance in ${keyword}`, description: "How to ensure your reports meet industry regulations" }
+      { 
+        topic: `${keyword} Automation Tools`, 
+        description: "Tools and software for automating reporting processes",
+        recommendation: "Include a section on modern automation tools",
+        content: "Popular options include QuickBooks, Xero, and FreshBooks",
+        opportunity: "high",
+        source: "competitor analysis"
+      },
+      { 
+        topic: `Regulatory Compliance in ${keyword}`, 
+        description: "How to ensure your reports meet industry regulations",
+        recommendation: "Add information about GAAP and IFRS standards",
+        content: "Cover the essential regulations for public and private companies",
+        opportunity: "medium",
+        source: "search trends"
+      }
     ],
     keywords: [
       keyword, 
@@ -75,7 +92,12 @@ export function generateMockData(keyword: string, countries: string[] = ['us']):
       }
     ],
     searchCountries: countries,
-    isMockData: true
+    isMockData: true,
+    recommendations: [
+      `Include a section on ${keyword} automation tools`,
+      `Add more details about regulatory compliance for ${keyword}s`,
+      `Consider explaining the difference between ${keyword}s and financial statements`
+    ]
   };
 }
 
