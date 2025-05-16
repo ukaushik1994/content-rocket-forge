@@ -30,11 +30,11 @@ export function SerpHeadingsTab({ serpData, onAddToContent = () => {} }: SerpHea
           <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
             <CardContent className="p-0">
               <div className="flex justify-between items-center p-4">
-                <p className="font-medium">{typeof heading === 'string' ? heading : heading.text}</p>
+                <p className="font-medium">{heading.text}</p>
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  onClick={() => onAddToContent(typeof heading === 'string' ? heading : heading.text, 'heading')}
+                  onClick={() => onAddToContent(heading.text, 'heading')}
                   className="hover:bg-primary/10"
                 >
                   <Plus className="h-4 w-4 mr-1" />

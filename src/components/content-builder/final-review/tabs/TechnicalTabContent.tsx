@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { DocumentStructureCard } from '../DocumentStructureCard';
 import { EntitiesAnalysisCard } from '../EntitiesAnalysisCard';
-import { HeadingsAnalysisCard } from '../HeadingsAnalysisCard';
+import { HeadingsAnalysisCard, Heading } from '../HeadingsAnalysisCard';
 import { ContentGapsCard } from '../ContentGapsCard';
 import { FeaturedSnippetsCard } from '../FeaturedSnippetsCard';
 import { DocumentStructure } from '@/contexts/content-builder/types';
@@ -22,6 +23,18 @@ export const TechnicalTabContent = ({
   metaDescription,
   serpData
 }: TechnicalTabContentProps) => {
+  // Transform headings data to ensure it matches the Heading type
+  const processedHeadings: Heading[] | undefined = serpData?.headings?.map(heading => {
+    if (typeof heading === 'string') {
+      // Convert string headings to the proper format
+      return {
+        text: heading,
+        level: 'h3' // Default level for string headings
+      };
+    }
+    return heading;
+  });
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main technical area */}
@@ -30,7 +43,7 @@ export const TechnicalTabContent = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <EntitiesAnalysisCard entities={serpData?.entities} />
-          <HeadingsAnalysisCard headings={serpData?.headings} />
+          <HeadingsAnalysisCard headings={processedHeadings} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

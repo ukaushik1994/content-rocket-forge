@@ -46,8 +46,8 @@ export function useSaveContent() {
         metadata: {
           mainKeyword: state.mainKeyword,
           secondaryKeywords: state.selectedKeywords,
-          outline: state.outline,
-          outlineSections: state.outlineSections,
+          outline: JSON.stringify(state.outline), // Convert complex objects to string
+          outlineSections: JSON.stringify(state.outlineSections),
           additionalInstructions: state.additionalInstructions,
           contentType: state.contentType,
           contentFormat: state.contentFormat,
@@ -119,8 +119,8 @@ export function useSaveContent() {
         metadata: {
           mainKeyword: state.mainKeyword,
           secondaryKeywords: state.selectedKeywords,
-          outline: state.outline,
-          outlineSections: state.outlineSections,
+          outline: JSON.stringify(state.outline), // Convert complex objects to string
+          outlineSections: JSON.stringify(state.outlineSections),
           additionalInstructions: state.additionalInstructions,
           contentType: state.contentType,
           contentFormat: state.contentFormat,

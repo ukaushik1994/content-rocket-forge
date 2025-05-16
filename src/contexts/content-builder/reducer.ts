@@ -1,5 +1,4 @@
-
-import { ContentBuilderState, ContentBuilderAction } from './types';
+import { ContentBuilderState, ContentBuilderAction, ContentType, ContentFormat, ContentIntent } from './types';
 import { v4 as uuid } from 'uuid';
 
 /**
@@ -224,19 +223,19 @@ export const contentBuilderReducer = (
     case 'SET_CONTENT_TYPE':
       return {
         ...state,
-        contentType: action.payload
+        contentType: action.payload as ContentType
       };
       
     case 'SET_CONTENT_FORMAT':
       return {
         ...state,
-        contentFormat: action.payload
+        contentFormat: action.payload as ContentFormat
       };
       
     case 'SET_CONTENT_INTENT':
       return {
         ...state,
-        contentIntent: action.payload
+        contentIntent: action.payload as ContentIntent
       };
       
     case 'SELECT_SOLUTION':

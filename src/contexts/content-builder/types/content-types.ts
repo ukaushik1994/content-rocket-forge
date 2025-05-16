@@ -27,6 +27,8 @@ export type SearchKeywordParams = {
   query: string;
   country?: string;
   language?: string;
+  refresh?: boolean;
+  limit?: number;
 };
 
 export type SearchCountry = 
@@ -53,6 +55,7 @@ export interface SaveContentParams extends ContentData {
   solutionInfo?: any;
   secondaryKeywords?: string[];
   outline?: string[] | any[];
+  outlineSections?: any[];
   serpSelections?: any[];
   serpData?: any;
 }

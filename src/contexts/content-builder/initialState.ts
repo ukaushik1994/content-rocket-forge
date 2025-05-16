@@ -1,6 +1,5 @@
 
 import { ContentBuilderState } from './types/state-types';
-import { ContentFormat, ContentIntent } from './types/content-types';
 
 export const initialState: ContentBuilderState = {
   currentStep: 0,
@@ -76,8 +75,8 @@ export const initialState: ContentBuilderState = {
   suggestedTitles: [],
   selectedCluster: null,
   contentType: 'blog', // Using string literal instead of ContentType.BLOG_POST
-  contentFormat: ContentFormat.LONG_FORM,
-  contentIntent: ContentIntent.INFORM,
+  contentFormat: 'long-form', // Use string literal instead of ContentFormat.LONG_FORM
+  contentIntent: 'inform', // Use string literal instead of ContentIntent.INFORM
   selectedSolution: null,
   seoScore: 0,
   seoImprovements: [],
