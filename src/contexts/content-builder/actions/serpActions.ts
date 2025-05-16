@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -62,14 +61,21 @@ export const createSerpActions = (
       });
     }
     
-    // Add questions from peopleAlsoAsk
+    // Add questions from peopleAlsoAsk - ensuring we capture all FAQ data properly
     if (serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0) {
       serpData.peopleAlsoAsk.forEach((item: any) => {
+        // Extract the question text properly
+        const questionText = typeof item === 'string' ? item : item.question;
+        
         selections.push({
           type: 'question',
-          content: item.question,
+          content: questionText,
           selected: false,
-          source: item.source
+          source: item.source || '',
+          metadata: { 
+            answer: item.answer || '',
+            type: 'faq'
+          }
         });
       });
     }

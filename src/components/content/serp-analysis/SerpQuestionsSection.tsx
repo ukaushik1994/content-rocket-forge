@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SerpQuestionsSectionProps {
   serpData: SerpAnalysisResult;
@@ -66,9 +67,16 @@ export const SerpQuestionsSection: React.FC<SerpQuestionsSectionProps> = ({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-4"
     >
-      {/* If we have grouped questions by region, display them in separate sections */}
+      {/* Title */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium flex items-center">
+          FAQ Questions ({serpData.peopleAlsoAsk.length})
+        </h3>
+      </div>
+      
+      {/* If we have grouped questions by region, display them in separate cards */}
       {hasMultipleRegions ? (
         Object.entries(questionsByRegion).map(([region, questions]) => {
           // Format the region label for display
@@ -85,20 +93,22 @@ export const SerpQuestionsSection: React.FC<SerpQuestionsSectionProps> = ({
           }
           
           return (
-            <div key={region} className="space-y-4">
-              <h4 className="text-sm font-medium capitalize mb-1">
-                {`${regionLabel} Questions`}
-              </h4>
-              
-              <div className="grid grid-cols-1 gap-4">
+            <Card key={region} className="bg-amber-900/10 border-amber-500/20">
+              <CardHeader className="py-2 px-4 border-b border-amber-500/10">
+                <CardTitle className="text-xs font-medium">{regionLabel} Questions</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2 grid gap-2">
                 {questions.map((item, index) => (
-                  <div key={`${region}-${index}`} className="p-4 bg-amber-900/20 border border-amber-500/20 rounded-lg">
+                  <div 
+                    key={`${region}-${index}`} 
+                    className="p-3 bg-amber-900/20 border border-amber-500/20 rounded-md"
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-sm font-medium text-amber-300">{item.question}</h4>
+                      <p className="text-sm text-amber-200">{item.question}</p>
                       <Button 
                         size="sm" 
                         variant="ghost" 
-                        className="h-auto p-1 text-amber-400 hover:text-amber-300 hover:bg-amber-950/50"
+                        className="h-6 w-6 p-0 text-amber-400 hover:text-amber-300 hover:bg-amber-950/50"
                         onClick={() => onAddToContent(item.question, 'question')}
                       >
                         <PlusCircle className="h-4 w-4" />
@@ -110,48 +120,43 @@ export const SerpQuestionsSection: React.FC<SerpQuestionsSectionProps> = ({
                         {item.answer}
                       </div>
                     )}
-                    
-                    {item.source && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Source: {item.source}
-                      </div>
-                    )}
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })
       ) : (
-        // If no country grouping, show questions as before
-        <div className="grid grid-cols-1 gap-4">
-          {serpData.peopleAlsoAsk.map((item, index) => (
-            <div key={index} className="p-4 bg-amber-900/20 border border-amber-500/20 rounded-lg">
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="text-sm font-medium text-amber-300">{item.question}</h4>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="h-auto p-1 text-amber-400 hover:text-amber-300 hover:bg-amber-950/50"
-                  onClick={() => onAddToContent(item.question, 'question')}
-                >
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
+        // If no country grouping, show questions in a simpler format
+        <div className="grid gap-2">
+          {serpData.peopleAlsoAsk.map((item, index) => {
+            const questionText = typeof item === 'string' ? item : item.question;
+            
+            return (
+              <div
+                key={index}
+                className="p-3 bg-amber-900/20 border border-amber-500/20 rounded-md"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm text-amber-200">{questionText}</p>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 w-6 p-0 text-amber-400 hover:text-amber-300 hover:bg-amber-950/50"
+                    onClick={() => onAddToContent(questionText, 'question')}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {item.answer && (
+                  <div className="mt-2 text-xs text-muted-foreground bg-white/5 p-2 rounded">
+                    {item.answer}
+                  </div>
+                )}
               </div>
-              
-              {item.answer && (
-                <div className="mt-2 text-xs text-muted-foreground bg-white/5 p-2 rounded">
-                  {item.answer}
-                </div>
-              )}
-              
-              {item.source && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Source: {item.source}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </motion.div>
