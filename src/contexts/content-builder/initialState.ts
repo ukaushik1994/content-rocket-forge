@@ -1,21 +1,67 @@
 
-import { ContentBuilderState } from './types/index';
+import { ContentBuilderState } from './types';
 
+/**
+ * Initial state for the Content Builder
+ */
 export const initialState: ContentBuilderState = {
   steps: [
-    { id: 1, name: 'Keyword Selection', description: 'Select primary and secondary keywords for your content', completed: false, visited: false },
-    { id: 2, name: 'SERP Analysis', description: 'Analyze search results to understand search intent', completed: false, visited: false },
-    { id: 3, name: 'Outline Creation', description: 'Generate a structured outline for your content', completed: false, visited: false },
-    { id: 4, name: 'Content Writing', description: 'Create engaging content based on your outline', completed: false, visited: false },
-    { id: 5, name: 'Optimize & Review', description: 'Analyze and improve content performance', completed: false, visited: false },
-    { id: 6, name: 'Save & Export', description: 'Save your content and export it to desired formats', completed: false, visited: false }
+    {
+      id: 0,
+      name: 'Keyword Selection',
+      description: 'Select target keywords for your content',
+      completed: false,
+      visited: false,
+    },
+    {
+      id: 1,
+      name: 'Content Type',
+      description: 'Choose the type of content to create',
+      completed: false,
+      visited: false,
+    },
+    {
+      id: 2,
+      name: 'SERP Analysis',
+      description: 'Analyze search results for insights',
+      completed: false,
+      visited: false,
+    },
+    {
+      id: 3,
+      name: 'Outline Creation',
+      description: 'Create a structured content outline',
+      completed: false,
+      visited: false,
+    },
+    {
+      id: 4,
+      name: 'Content Writing',
+      description: 'Generate and refine your content',
+      completed: false,
+      visited: false,
+    },
+    {
+      id: 5,
+      name: 'Optimize & Review',
+      description: 'Analyze and improve content performance',
+      completed: false,
+      visited: false,
+    },
+    {
+      id: 6, 
+      name: 'Save & Export',
+      description: 'Download or save your content',
+      completed: false,
+      visited: false,
+    }
   ],
-  currentStep: 1,
+  currentStep: 0,
   mainKeyword: '',
   searchedKeywords: [],
   selectedKeywords: [],
   selectedCluster: null,
-  serpData: null,
+  serpData: {},
   serpSelections: [],
   isAnalyzing: false,
   outline: [],
@@ -34,38 +80,38 @@ export const initialState: ContentBuilderState = {
   metaTitle: '',
   metaDescription: '',
   documentStructure: {
-    totalWordCount: 0,
-    paragraphCount: 0,
-    sentenceCount: 0,
-    readability: {
-      score: 0,
-      level: 'standard'
-    },
+    h1: [],
+    h2: [],
+    h3: [],
+    h4: [],
+    h5: [],
+    h6: [],
+    hasSingleH1: false,
+    hasLogicalHierarchy: false,
+    headings: [],
     headingCounts: {
       h1: 0,
       h2: 0,
       h3: 0,
-      h4: 0
+      h4: 0,
+      h5: 0,
+      h6: 0
     },
-    hasIntroduction: false,
-    hasConclusion: false,
-    hasFAQSection: false
+    paragraphs: [],
+    lists: [],
+    images: [],
+    links: [],
+    metadata: {
+      wordCount: 0,
+      characterCount: 0
+    }
   },
   solutionIntegrationMetrics: {
-    keywordMatches: 0,
-    featureCoverage: 0,
-    naturalIntegration: 0,
-    overallScore: 0,
     featureIncorporation: 0,
     positioningScore: 0,
-    mentionedFeatures: [],
-    painPointsAddressed: [],
-    nameMentions: 0,
     audienceAlignment: 0,
-    ctaEffectiveness: 0,
-    ctaMentions: 0,
-    mentions: ''
+    overall: 0
   },
   additionalInstructions: '',
-  selectedRegions: ['us'], // Default to US region
+  selectedRegions: []
 };
