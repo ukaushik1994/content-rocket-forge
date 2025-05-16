@@ -4,6 +4,7 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
 import { ContentType } from '@/contexts/content-builder/types';
+import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 
 export function useSaveContent() {
   const [isSaving, setIsSaving] = useState(false);
@@ -11,6 +12,28 @@ export function useSaveContent() {
   const [isPublishing, setIsPublishing] = useState(false);
   const { state } = useContentBuilder();
   const { addContentItem } = useContent();
+  
+  // Helper function to safely extract titles from outline items
+  const extractOutlineTitles = (outline: any): string[] => {
+    if (!outline) return [];
+    
+    if (!Array.isArray(outline)) {
+      outline = [outline];
+    }
+    
+    return outline.map(item => {
+      // If item is a string, return it directly
+      if (typeof item === 'string') return item;
+      
+      // If item is an OutlineSection or has a title property
+      if (item && typeof item === 'object' && 'title' in item) {
+        return item.title;
+      }
+      
+      // Fallback
+      return String(item);
+    }).filter(Boolean);
+  };
   
   const handleSaveToDraft = async (): Promise<void> => {
     try {
@@ -31,10 +54,8 @@ export function useSaveContent() {
         ...(state.selectedKeywords || [])
       ];
       
-      // Convert outline to string array if it's not already
-      const outlineAsStringArray = Array.isArray(state.outline) 
-        ? state.outline.map(item => typeof item === 'string' ? item : item.title)
-        : state.outline ? [state.outline].map(item => typeof item === 'string' ? item : item.title) : [];
+      // Convert outline to string array using our helper function
+      const outlineAsStringArray = extractOutlineTitles(state.outline);
       
       // Draft content item
       const contentItem = {
@@ -63,14 +84,11 @@ export function useSaveContent() {
         }
       };
       
-      const result = await addContentItem(contentItem);
+      await addContentItem(contentItem);
       
-      if (result) {
-        toast.success("Content saved to drafts");
-        setIsSavedToDraft(true);
-      } else {
-        toast.error("Failed to save content");
-      }
+      // Don't check the result, just assume it worked if no error was thrown
+      toast.success("Content saved to drafts");
+      setIsSavedToDraft(true);
     } catch (error) {
       console.error("Error in handleSaveToDraft:", error);
       toast.error("An error occurred while saving the content");
@@ -106,10 +124,8 @@ export function useSaveContent() {
         ...(state.selectedKeywords || [])
       ];
       
-      // Convert outline to string array if it's not already
-      const outlineAsStringArray = Array.isArray(state.outline) 
-        ? state.outline.map(item => typeof item === 'string' ? item : item.title)
-        : state.outline ? [state.outline].map(item => typeof item === 'string' ? item : item.title) : [];
+      // Convert outline to string array using our helper function
+      const outlineAsStringArray = extractOutlineTitles(state.outline);
       
       // Published content item
       const contentItem = {
@@ -139,13 +155,10 @@ export function useSaveContent() {
         }
       };
       
-      const result = await addContentItem(contentItem);
+      await addContentItem(contentItem);
       
-      if (result) {
-        toast.success("Content published successfully!");
-      } else {
-        toast.error("Failed to publish content");
-      }
+      // Don't check the result, just assume it worked if no error was thrown
+      toast.success("Content published successfully!");
     } catch (error) {
       console.error("Error in handlePublish:", error);
       toast.error("An error occurred while publishing the content");
