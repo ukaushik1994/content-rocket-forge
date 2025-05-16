@@ -5,15 +5,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Server, Key, AlertTriangle, Bell, Check, Binary } from 'lucide-react';
+import { Zap, Server, Key, AlertTriangle, Bell, Check } from 'lucide-react';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 import { testApiKey } from '@/services/apiKeys/testing';
 import { toast } from 'sonner';
 
 interface DefaultAiProviderSelectorProps {
-  defaultAiProvider?: 'openai' | 'anthropic' | 'gemini' | 'mistral';
-  onDefaultAiProviderChange: (provider: 'openai' | 'anthropic' | 'gemini' | 'mistral') => void;
+  defaultAiProvider?: 'openai' | 'gemini';
+  onDefaultAiProviderChange: (provider: 'openai' | 'gemini') => void;
 }
 
 export function DefaultAiProviderSelector({ 
@@ -23,9 +23,7 @@ export function DefaultAiProviderSelector({
   const [enableFallback, setEnableFallback] = useState<boolean>(false);
   const [providerStatus, setProviderStatus] = useState<Record<string, boolean>>({
     openai: false,
-    anthropic: false,
-    gemini: false,
-    mistral: false
+    gemini: false
   });
   const [checkingStatus, setCheckingStatus] = useState<boolean>(false);
   
@@ -42,12 +40,10 @@ export function DefaultAiProviderSelector({
   const checkProviderStatus = async () => {
     setCheckingStatus(true);
     
-    const providers = ['openai', 'anthropic', 'gemini', 'mistral'];
+    const providers = ['openai', 'gemini'];
     const statusResults: Record<string, boolean> = {
       openai: false,
-      anthropic: false,
-      gemini: false,
-      mistral: false
+      gemini: false
     };
     
     for (const provider of providers) {
@@ -90,14 +86,8 @@ export function DefaultAiProviderSelector({
       case 'openai':
         icon = <Zap className="h-4 w-4 text-blue-400" />;
         break;
-      case 'anthropic':
-        icon = <Server className="h-4 w-4 text-purple-400" />;
-        break;
       case 'gemini':
         icon = <Key className="h-4 w-4 text-emerald-400" />;
-        break;
-      case 'mistral':
-        icon = <Binary className="h-4 w-4 text-indigo-400" />;
         break;
       default:
         icon = <Bell className="h-4 w-4 text-gray-400" />;
@@ -134,7 +124,7 @@ export function DefaultAiProviderSelector({
       <CardContent>
         <RadioGroup
           value={defaultAiProvider}
-          onValueChange={(value) => onDefaultAiProviderChange(value as 'openai' | 'anthropic' | 'gemini' | 'mistral')}
+          onValueChange={(value) => onDefaultAiProviderChange(value as 'openai' | 'gemini')}
           className="flex flex-col sm:flex-row gap-4 flex-wrap"
         >
           <div className="flex items-center space-x-2">
@@ -147,29 +137,11 @@ export function DefaultAiProviderSelector({
           </div>
           
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="anthropic" id="anthropic" />
-            <Label htmlFor="anthropic" className="flex items-center gap-2 cursor-pointer">
-              {getProviderDetails('anthropic').icon}
-              <span>Claude</span>
-              {getProviderDetails('anthropic').statusBadge}
-            </Label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
             <RadioGroupItem value="gemini" id="gemini" />
             <Label htmlFor="gemini" className="flex items-center gap-2 cursor-pointer">
               {getProviderDetails('gemini').icon}
               <span>Gemini</span>
               {getProviderDetails('gemini').statusBadge}
-            </Label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mistral" id="mistral" />
-            <Label htmlFor="mistral" className="flex items-center gap-2 cursor-pointer">
-              {getProviderDetails('mistral').icon}
-              <span>Mistral</span>
-              {getProviderDetails('mistral').statusBadge}
             </Label>
           </div>
         </RadioGroup>

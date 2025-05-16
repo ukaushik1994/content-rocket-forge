@@ -8,7 +8,6 @@ import { NotificationSettings } from '@/components/settings';
 import { AdvancedSettings } from '@/components/settings';
 import { ExportSettings } from '@/components/settings';
 import { Helmet } from 'react-helmet-async';
-import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
 import { useLocation, useNavigate } from 'react-router-dom';
 

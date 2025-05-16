@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
@@ -6,7 +5,7 @@ import { ContentBuilderState } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 
-type AiProvider = 'openai' | 'anthropic' | 'gemini';
+type AiProvider = 'openai' | 'gemini';
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -20,11 +19,9 @@ export function useContentGeneration() {
       
       // Check which providers have API keys configured
       const openaiKey = await getApiKey('openai');
-      const anthropicKey = await getApiKey('anthropic');
       const geminiKey = await getApiKey('gemini');
       
       if (openaiKey) providers.push('openai');
-      if (anthropicKey) providers.push('anthropic');
       if (geminiKey) providers.push('gemini');
       
       setAvailableProviders(providers);

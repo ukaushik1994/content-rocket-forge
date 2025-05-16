@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, Loader2 } from 'lucide-react';
@@ -34,14 +33,10 @@ export function OutlineGenerator() {
       
       // Check which providers have API keys configured
       const openaiKey = await getApiKey('openai');
-      const anthropicKey = await getApiKey('anthropic');
       const geminiKey = await getApiKey('gemini');
-      const mistralKey = await getApiKey('mistral');
       
       if (openaiKey) providers.push('openai');
-      if (anthropicKey) providers.push('anthropic');
       if (geminiKey) providers.push('gemini');
-      if (mistralKey) providers.push('mistral');
       
       setAvailableProviders(providers);
       
