@@ -18,41 +18,61 @@ export default async function handler(req, res) {
 
     // Test SERP API key
     if (service === 'serp') {
-      const url = `https://serpapi.com/account?api_key=${apiKey}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        return res.status(400).json({ 
-          success: false, 
-          message: `SERP API key invalid: ${response.statusText}` 
+      try {
+        const url = `https://serpapi.com/account?api_key=${apiKey}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `SERP API key invalid: ${response.statusText}` 
+          });
+        }
+        
+        const data = await response.json();
+        console.log("SERP API test response:", data);
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: 'SERP API key is valid' 
+        });
+      } catch (error) {
+        console.error('Error testing SERP API key:', error);
+        return res.status(500).json({
+          success: false,
+          message: `Error testing SERP API key: ${error.message || 'Unknown error'}`
         });
       }
-      
-      return res.status(200).json({ 
-        success: true, 
-        message: 'SERP API key is valid' 
-      });
     }
 
     // Test OpenAI API key
     if (service === 'openai') {
-      const response = await fetch('https://api.openai.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-      });
-      
-      if (!response.ok) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'OpenAI API key invalid' 
+      try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          },
+        });
+        
+        if (!response.ok) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'OpenAI API key invalid' 
+          });
+        }
+        
+        const data = await response.json();
+        return res.status(200).json({ 
+          success: true, 
+          message: 'OpenAI API key is valid' 
+        });
+      } catch (error) {
+        console.error('Error testing OpenAI API key:', error);
+        return res.status(500).json({
+          success: false,
+          message: `Error testing OpenAI API key: ${error.message || 'Unknown error'}`
         });
       }
-      
-      return res.status(200).json({ 
-        success: true, 
-        message: 'OpenAI API key is valid' 
-      });
     }
 
     // Default response for unsupported services

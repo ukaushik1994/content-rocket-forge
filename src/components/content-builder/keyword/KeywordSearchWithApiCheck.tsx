@@ -15,6 +15,7 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
   const { state, setSelectedRegions } = useContentBuilder();
   const { selectedRegions } = state;
   
+  // Check for API key on mount
   React.useEffect(() => {
     const checkApiKey = async () => {
       setIsChecking(true);
@@ -48,6 +49,8 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
       return;
     }
     
+    // We'll proceed with keyword search even if API validation failed
+    // This allows users to still use the app with mock data when API issues occur
     await onKeywordSearch(keyword, suggestions);
   };
   
