@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
 import { processSerpResponse } from './serpProcessingService';
+import { getApiKey } from './apiKeyService';
 
 interface SearchKeywordParams {
   query: string;
@@ -16,19 +17,15 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
     const { query, refresh = false, countries = ['us'] } = params;
     
-    // Get the SERP API key from the user's settings
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('encrypted_key')
-      .eq('service', 'serp')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!apiKeyData?.encrypted_key) {
+    // Use the apiKeyService instead of direct database query
+    const apiKey = await getApiKey('serp');
+    if (!apiKey) {
       console.error('No SERP API key found in settings');
       toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return [];
     }
+    
+    console.log('SERP API key found, making API request');
     
     // Make the actual API call to the SERP service
     const response = await fetch('/api/serp/search-keywords', {
@@ -61,19 +58,15 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
   try {
     console.log('Analyzing keyword:', keyword, 'refresh:', refresh, 'countries:', countries);
     
-    // Get the SERP API key from the user's settings
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('encrypted_key')
-      .eq('service', 'serp')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!apiKeyData?.encrypted_key) {
+    // Use the apiKeyService instead of direct database query
+    const apiKey = await getApiKey('serp');
+    if (!apiKey) {
       console.warn('No SERP API key found in settings');
       toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return null;
     }
+    
+    console.log('SERP API key found, making API request');
     
     // Make the actual API call to the SERP service
     const response = await fetch('/api/serp/analyze-keyword', {
@@ -117,19 +110,15 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
 
 export const searchRelatedKeywords = async (keyword: string, countries: string[] = ['us']) => {
   try {
-    // Get the SERP API key from the user's settings
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('encrypted_key')
-      .eq('service', 'serp')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!apiKeyData?.encrypted_key) {
+    // Use the apiKeyService instead of direct database query
+    const apiKey = await getApiKey('serp');
+    if (!apiKey) {
       console.warn('No SERP API key found in settings');
       toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return [];
     }
+    
+    console.log('SERP API key found, making API request');
     
     // Make the actual API call to the SERP service
     const response = await fetch('/api/serp/related-keywords', {

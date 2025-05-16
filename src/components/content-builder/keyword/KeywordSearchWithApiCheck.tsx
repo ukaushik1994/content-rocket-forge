@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SerpApiKeyMissing } from '@/components/content-builder/serp/SerpApiKeyMissing';
+import { getApiKey } from '@/services/apiKeyService';
 
 export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
   const navigate = useNavigate();
@@ -16,14 +17,18 @@ export function KeywordSearchWithApiCheck({ initialKeyword, onKeywordSearch }) {
     const checkApiKey = async () => {
       setIsChecking(true);
       try {
-        const { data } = await supabase
-          .from('api_keys')
-          .select('encrypted_key')
-          .eq('service', 'serp')
-          .eq('is_active', true)
-          .maybeSingle();
-          
-        setHasApiKey(!!data?.encrypted_key);
+        // Use the apiKeyService to check if the key exists
+        // This is more reliable as it leverages shared logic for API key management
+        const apiKey = await getApiKey('serp');
+        
+        // If we get a key back, it exists
+        setHasApiKey(!!apiKey);
+        
+        if (apiKey) {
+          console.log('SERP API key found in settings');
+        } else {
+          console.log('No SERP API key found in settings');
+        }
       } catch (error) {
         console.error('Error checking API key:', error);
         setHasApiKey(false);

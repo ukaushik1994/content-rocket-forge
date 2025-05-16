@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCcw, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getApiKey } from '@/services/apiKeyService';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -29,13 +30,39 @@ export function SerpAnalysisPanel({
   onRetry = () => {}
 }: SerpAnalysisPanelProps) {
   const [activeTab, setActiveTab] = useState('keywords');
+  const [isCheckingKey, setIsCheckingKey] = React.useState(false);
+  const [hasApiKey, setHasApiKey] = React.useState<boolean | null>(null);
+  
+  // Check for API key on mount
+  React.useEffect(() => {
+    const checkApiKey = async () => {
+      setIsCheckingKey(true);
+      try {
+        const apiKey = await getApiKey('serp');
+        setHasApiKey(!!apiKey);
+      } catch (error) {
+        console.error('Error checking SERP API key:', error);
+        setHasApiKey(false);
+      } finally {
+        setIsCheckingKey(false);
+      }
+    };
+    
+    checkApiKey();
+  }, []);
 
-  if (isLoading) {
+  if (isLoading || isCheckingKey) {
     return <SerpLoadingState />;
   }
 
-  if (!serpData) {
+  // Only show API key missing if we've confirmed it's not there
+  if (hasApiKey === false) {
     return <SerpNoApiKeyState onRetry={onRetry} />;
+  }
+
+  if (!serpData) {
+    // Note this case may happen even with an API key, if the API call fails
+    return <SerpNoDataState keyword={mainKeyword} onRetry={onRetry} />;
   }
 
   if (Object.keys(serpData).length === 0) {
