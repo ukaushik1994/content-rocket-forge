@@ -6,8 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { SerpAnalysisResult } from '@/types/serp';
 import { useNavigate } from 'react-router-dom';
 
-// Import the needed SERP components directly from src/components/content/serp-analysis
-// instead of trying to use relative paths
+// Import the needed SERP components
 import { SerpKeywordsSection } from '@/components/content/serp-analysis/SerpKeywordsSection';
 import { SerpQuestionsSection } from '@/components/content/serp-analysis/SerpQuestionsSection';
 import { SerpHeadingsSection } from '@/components/content/serp-analysis/SerpHeadingsSection';
@@ -16,6 +15,7 @@ import { SerpContentGapsSection } from '@/components/content/serp-analysis/SerpC
 import { SerpCompetitorsSection } from '@/components/content/serp-analysis/SerpCompetitorsSection';
 import { SerpNoDataFound } from '@/components/content/serp-analysis/SerpNoDataFound';
 import { SerpEmptyState } from '@/components/content/serp-analysis/SerpEmptyState';
+import { SerpApiKeyMissing } from './SerpApiKeyMissing';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -34,9 +34,6 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>('keywords');
   const navigate = useNavigate();
-  
-  console.log("SerpAnalysisPanel - serpData:", serpData);
-  console.log("SerpAnalysisPanel - isLoading:", isLoading);
   
   // Helper to check if data exists for a tab
   const hasTabData = (tabName: string): boolean => {
@@ -71,12 +68,12 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
     );
   }
   
+  // If serpData is null, it likely means there's no API key configured
   if (!serpData) {
-    return (
-      <SerpNoDataFound onAddApiKey={() => navigate('/settings/api')} onRetry={onRetry} />
-    );
+    return <SerpApiKeyMissing />;
   }
   
+  // If serpData is an empty object, it means the API request succeeded but returned no data
   if (Object.keys(serpData).length === 0) {
     return (
       <SerpEmptyState 
@@ -96,106 +93,75 @@ export const SerpAnalysisPanel: React.FC<SerpAnalysisPanelProps> = ({
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col">
         <div className="p-3 border-b border-border">
-          <Tabs 
-            defaultValue="keywords" 
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="w-full h-auto p-0.5 bg-muted/30">
-              <TabsTrigger 
-                value="keywords"
-                className="data-[state=active]:bg-accent"
-                disabled={!hasTabData('keywords')}
-              >
-                Keywords
-              </TabsTrigger>
-              <TabsTrigger 
-                value="questions"
-                className="data-[state=active]:bg-accent"
-                disabled={!hasTabData('questions')}
-              >
-                Questions
-              </TabsTrigger>
-              <TabsTrigger 
-                value="headings"
-                className="data-[state=active]:bg-accent"
-                disabled={!hasTabData('headings')}
-              >
-                Headings
-              </TabsTrigger>
-              <TabsTrigger 
-                value="entities"
-                className="data-[state=active]:bg-accent"
-                disabled={!hasTabData('entities')}
-              >
-                Entities
-              </TabsTrigger>
-              <TabsTrigger 
-                value="content-gaps"
-                className="data-[state=active]:bg-accent"
-                disabled={!hasTabData('content-gaps')}
-              >
-                Content Gaps
-              </TabsTrigger>
-              <TabsTrigger 
-                value="competitors"
-                className="data-[state=active]:bg-accent"
-                disabled={!hasTabData('competitors')}
-              >
-                Top Results
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <TabsList className="w-full h-auto p-0.5 bg-muted/30">
+            <TabsTrigger 
+              value="keywords"
+              className="data-[state=active]:bg-accent"
+              onClick={() => setActiveTab('keywords')}
+            >
+              Keywords
+            </TabsTrigger>
+            <TabsTrigger 
+              value="questions"
+              className="data-[state=active]:bg-accent"
+              onClick={() => setActiveTab('questions')}
+            >
+              Questions
+            </TabsTrigger>
+            <TabsTrigger 
+              value="entities"
+              className="data-[state=active]:bg-accent"
+              onClick={() => setActiveTab('entities')}
+            >
+              Entities
+            </TabsTrigger>
+            <TabsTrigger 
+              value="headings"
+              className="data-[state=active]:bg-accent"
+              onClick={() => setActiveTab('headings')}
+            >
+              Headings
+            </TabsTrigger>
+            <TabsTrigger 
+              value="content-gaps"
+              className="data-[state=active]:bg-accent"
+              onClick={() => setActiveTab('content-gaps')}
+            >
+              Gaps
+            </TabsTrigger>
+            <TabsTrigger 
+              value="competitors"
+              className="data-[state=active]:bg-accent"
+              onClick={() => setActiveTab('competitors')}
+            >
+              Competition
+            </TabsTrigger>
+          </TabsList>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="p-4 bg-background flex-1 overflow-y-auto">
           {activeTab === 'keywords' && (
-            <SerpKeywordsSection 
-              serpData={serpData}
-              expanded={true} 
-              onAddToContent={onAddToContent}
-            />
+            <SerpKeywordsSection serpData={serpData} onAddToContent={onAddToContent} />
           )}
           
           {activeTab === 'questions' && (
-            <SerpQuestionsSection 
-              serpData={serpData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
-          )}
-          
-          {activeTab === 'headings' && (
-            <SerpHeadingsSection 
-              serpData={serpData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
+            <SerpQuestionsSection serpData={serpData} onAddToContent={onAddToContent} />
           )}
           
           {activeTab === 'entities' && (
-            <SerpEntitiesSection 
-              serpData={serpData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
+            <SerpEntitiesSection serpData={serpData} onAddToContent={onAddToContent} />
+          )}
+          
+          {activeTab === 'headings' && (
+            <SerpHeadingsSection serpData={serpData} onAddToContent={onAddToContent} />
           )}
           
           {activeTab === 'content-gaps' && (
-            <SerpContentGapsSection 
-              serpData={serpData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
+            <SerpContentGapsSection serpData={serpData} onAddToContent={onAddToContent} />
           )}
           
           {activeTab === 'competitors' && (
-            <SerpCompetitorsSection 
-              serpData={serpData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
+            <SerpCompetitorsSection serpData={serpData} onAddToContent={onAddToContent} />
           )}
         </div>
       </CardContent>

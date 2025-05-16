@@ -1,58 +1,50 @@
 
-/**
- * Context-related type definitions
- */
-
-import { ContentBuilderState } from './state-types';
-import { ContentBuilderAction } from './action-types';
-import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
-import { Solution } from './solution-types';
+import React from 'react';
+import { ContentBuilderState, ContentBuilderAction } from './state-types';
+import { ContentCluster } from './cluster-types';
 import { OutlineSection } from './outline-types';
 
-// Context Type
 export interface ContentBuilderContextType {
   state: ContentBuilderState;
   dispatch: React.Dispatch<ContentBuilderAction>;
   
-  // Navigation Actions
-  navigateToStep: (step: number) => void;
+  // Navigation actions
+  goToStep: (stepIndex: number) => void;
+  prevStep: () => void;
+  nextStep: () => void;
   
-  // Keyword Actions
+  // Keywords actions
   setMainKeyword: (keyword: string) => void;
   addKeyword: (keyword: string) => void;
   removeKeyword: (keyword: string) => void;
+  selectCluster: (cluster: ContentCluster | null) => void;
   
-  // SERP Actions
+  // SERP analysis actions
   analyzeKeyword: (keyword: string, regions?: string[]) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
-  
-  // Content Actions
-  setContentTitle: (title: string) => void;
-  setContentType: (type: ContentType) => void;
-  setContentFormat: (format: ContentFormat) => void;
-  setContentIntent: (intent: ContentIntent) => void;
-  generateContent: (outline: OutlineSection[]) => Promise<void>;
-  saveContent: (options: { title: string; content: string }) => Promise<boolean>;
-  setContent: (content: string) => void;
-  updateContent: (content: string) => void;
-  setOutline: (outline: string[]) => void;
-  setOutlineSections: (sections: OutlineSection[]) => void;
-  
-  // Meta Actions
-  setMetaTitle: (title: string) => void;
-  setMetaDescription: (description: string) => void;
-  
-  // SEO Actions
-  analyzeSeo: (content: string) => Promise<void>;
-  applySeoImprovement: (id: string) => void;
-  skipOptimizationStep: () => void;
-
-  // Advanced Content Actions
-  saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
-  saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
-  setAdditionalInstructions: (instructions: string) => void;
-  
-  // SERP Region Settings
   setSelectedRegions: (regions: string[]) => void;
+  
+  // Outline actions
+  addOutlineSection: (title: string, level: number) => void;
+  updateOutlineSection: (sectionId: string, title: string, level: number) => void;
+  removeOutlineSection: (sectionId: string) => void;
+  reorderOutlineSections: (sections: OutlineSection[]) => void;
+  
+  // Content actions
+  generateContent: () => Promise<void>;
+  updateContent: (content: string) => void;
+  
+  // Settings actions
+  setContentType: (type: string) => void;
+  setContentFormat: (format: string) => void;
+  setContentIntent: (intent: string) => void;
+  
+  // SEO actions
+  setSeoScore: (score: number) => void;
+  updateMetaTitle: (title: string) => void;
+  updateMetaDescription: (description: string) => void;
+  
+  // Review actions
+  updateAdditionalInstructions: (instructions: string) => void;
 }

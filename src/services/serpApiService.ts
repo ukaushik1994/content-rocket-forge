@@ -17,14 +17,14 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     const { query, refresh = false, countries = ['us'] } = params;
     
     // Get the SERP API key from the user's settings
-    const { data: apiKey } = await supabase
+    const { data: apiKeyData } = await supabase
       .from('api_keys')
       .select('encrypted_key')
       .eq('service', 'serp')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (!apiKey) {
+    if (!apiKeyData?.encrypted_key) {
       console.error('No SERP API key found in settings');
       toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return [];
@@ -62,14 +62,14 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
     console.log('Analyzing keyword:', keyword, 'refresh:', refresh, 'countries:', countries);
     
     // Get the SERP API key from the user's settings
-    const { data: apiKey } = await supabase
+    const { data: apiKeyData } = await supabase
       .from('api_keys')
       .select('encrypted_key')
       .eq('service', 'serp')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (!apiKey) {
+    if (!apiKeyData?.encrypted_key) {
       console.warn('No SERP API key found in settings');
       toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return null;
@@ -89,7 +89,9 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      const errorText = await response.text();
+      console.error('API error response:', errorText);
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
@@ -116,14 +118,14 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, cou
 export const searchRelatedKeywords = async (keyword: string, countries: string[] = ['us']) => {
   try {
     // Get the SERP API key from the user's settings
-    const { data: apiKey } = await supabase
+    const { data: apiKeyData } = await supabase
       .from('api_keys')
       .select('encrypted_key')
       .eq('service', 'serp')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (!apiKey) {
+    if (!apiKeyData?.encrypted_key) {
       console.warn('No SERP API key found in settings');
       toast.error('Missing SERP API key. Please add your API key in Settings → API.');
       return [];

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
-import { KeywordSearch } from '../keyword/KeywordSearch';
+import { KeywordSearchWithApiCheck } from '../keyword/KeywordSearchWithApiCheck';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
@@ -191,7 +190,7 @@ export const KeywordSelectionStep = () => {
             </div>
           </div>
           <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
-            <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
+            <KeywordSearchWithApiCheck initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
           </div>
         </div>
 
@@ -248,6 +247,7 @@ export const KeywordSelectionStep = () => {
                     isLoading={isAnalyzing}
                     mainKeyword={mainKeyword}
                     onAddToContent={handleAddToContent}
+                    onRetry={handleReanalyze}
                   />
                 </div>
               </div>
