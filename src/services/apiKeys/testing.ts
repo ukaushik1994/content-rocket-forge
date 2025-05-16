@@ -37,6 +37,8 @@ export async function testApiKey(service: string, apiKey?: string): Promise<bool
     // For both SERP API and OpenAI, we test using our API proxy to avoid CORS issues
     if (service === 'serp' || service === 'openai') {
       try {
+        console.log(`Sending API key test request for ${service}...`);
+        
         // Use the API proxy function instead of direct API call to avoid CORS issues
         const response = await fetch('/api/proxy/test-api-key', {
           method: 'POST',
@@ -74,7 +76,8 @@ export async function testApiKey(service: string, apiKey?: string): Promise<bool
             toast.success(`${service} API key verified successfully`);
             return true;
           } else {
-            toast.error(`API key verification failed: ${data.message || 'Unknown error'}`);
+            console.error(`${service} API key test failed:`, data);
+            toast.error(data?.message || `${service} API connection failed`);
             return false;
           }
         } catch (jsonError) {
@@ -90,7 +93,13 @@ export async function testApiKey(service: string, apiKey?: string): Promise<bool
         // If the API proxy endpoint is not available, we'll fall back to a simpler validation
         if (service === 'serp') {
           // Just check if the key looks like a valid SERP API key format
-          return decryptedKey && decryptedKey.length > 20;
+          const isValidFormat = decryptedKey && decryptedKey.length > 20;
+          if (isValidFormat) {
+            console.warn('SERP API proxy test failed, but key format appears valid. This could be a network or CORS issue.');
+            toast.warning('Cannot connect to SERP API for verification. Key format appears valid but please ensure it has available credits.');
+            return true; // Return true since the key format is valid even though we couldn't test it
+          }
+          return false;
         } else if (service === 'openai') {
           // Check if it looks like a valid OpenAI key
           return decryptedKey.startsWith('sk-') && decryptedKey.length > 30;

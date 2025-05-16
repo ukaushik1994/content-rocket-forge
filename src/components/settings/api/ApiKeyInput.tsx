@@ -126,7 +126,16 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       setTestSuccessful(success);
       
       if (!success) {
-        setError(`${provider.name} API key could not be verified. Please double-check that you've entered a valid API key.`);
+        if (provider.serviceKey === 'serp') {
+          setError(`SERP API key could not be verified. Please check:
+          
+1. The key is correct and copied exactly from your SerpApi dashboard
+2. Your SerpApi account has available credits
+3. Your network connection allows access to serpapi.com
+4. Try clearing your browser cache and refreshing the page`);
+        } else {
+          setError(`${provider.name} API key could not be verified. Please double-check that you've entered a valid API key.`);
+        }
       }
     } catch (error: any) {
       console.error(`Error testing ${provider.name} API key:`, error);
@@ -213,6 +222,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
                 <li>Check that your SerpApi account has remaining credits</li>
                 <li>Try using a different browser or network connection</li>
                 <li>Visit <a href="https://serpapi.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">SerpApi website</a> to verify your account status</li>
+                <li>Ensure no spaces or extra characters were copied with your key</li>
               </ul>
             </div>
           )}

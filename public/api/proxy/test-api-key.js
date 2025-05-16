@@ -20,36 +20,72 @@ export default async function handler(req, res) {
     if (service === 'serp') {
       try {
         console.log("Testing SERP API key...");
+        
+        // First test with account endpoint to get account info
         const url = `https://serpapi.com/account?api_key=${apiKey}`;
         
+        console.log("Sending request to SERP API account endpoint...");
         const response = await fetch(url);
-        
         console.log("SERP API test response status:", response.status);
         
         if (!response.ok) {
           const errorText = await response.text();
           console.error("SERP API error response:", errorText);
           
+          let errorMessage = `SERP API key invalid: ${response.status} - ${response.statusText}`;
+          
+          // Check for specific error conditions
+          if (response.status === 401) {
+            errorMessage = "Invalid SERP API key. Please check that you've entered the correct key.";
+          } else if (response.status === 429) {
+            errorMessage = "SERP API rate limit exceeded. Your account may have run out of credits.";
+          }
+          
           return res.status(400).json({ 
             success: false, 
-            message: `SERP API key invalid: ${response.status} - ${response.statusText}`,
+            message: errorMessage,
             details: errorText
           });
         }
         
-        const data = await response.json();
-        console.log("SERP API test successful, account data:", data);
+        const accountData = await response.json();
+        console.log("SERP API account test successful:", accountData);
         
+        // Next, let's try a simple search to fully verify the key works
+        try {
+          console.log("Testing SERP API with a search query...");
+          const testSearchUrl = `https://serpapi.com/search?q=test&api_key=${apiKey}&num=1`;
+          const searchResponse = await fetch(testSearchUrl);
+          
+          if (!searchResponse.ok) {
+            const searchErrorText = await searchResponse.text();
+            console.error("SERP API search test failed:", searchErrorText);
+            
+            return res.status(200).json({ 
+              success: true, 
+              message: 'SERP API key is valid, but search test failed. Your account may have limited credits.',
+              account: accountData,
+              searchTestFailed: true
+            });
+          }
+          
+          console.log("SERP API search test successful");
+        } catch (searchError) {
+          console.error("Error during SERP API search test:", searchError);
+          // We still consider the key valid if the account check passed
+        }
+        
+        // If we reach here, the key is valid
         return res.status(200).json({ 
           success: true, 
-          message: 'SERP API key is valid',
-          account: data
+          message: 'SERP API key is valid and active',
+          account: accountData
         });
       } catch (error) {
         console.error('Error testing SERP API key:', error);
         return res.status(500).json({
           success: false,
-          message: `Error testing SERP API key: ${error.message || 'Unknown error'}`,
+          message: `Error testing SERP API key: ${error.message || 'Network error'}`,
           error: error.toString()
         });
       }
@@ -80,7 +116,7 @@ export default async function handler(req, res) {
         console.error('Error testing OpenAI API key:', error);
         return res.status(500).json({
           success: false,
-          message: `Error testing OpenAI API key: ${error.message || 'Unknown error'}`
+          message: `Error testing OpenAI API key: ${error.message || 'Network error'}`
         });
       }
     }
