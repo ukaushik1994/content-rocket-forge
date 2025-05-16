@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,7 +45,8 @@ export const createAddContentAction = (
           ...data,
           keywords: item.keywords || [],
           content: data.content || '',
-          status: data.status as 'draft' | 'published' | 'archived'
+          status: data.status as 'draft' | 'published' | 'archived',
+          metadata: data.metadata
         };
         
         setContentItems(prev => [createdItem, ...prev]);

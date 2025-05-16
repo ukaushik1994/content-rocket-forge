@@ -1,4 +1,3 @@
-
 export type ContentItemType = {
   id: string;
   title: string;
@@ -15,7 +14,7 @@ export type ContentItemType = {
     outline?: string[];
     serpSelections?: any[];
     serpData?: any;
-  };
+  } | null;
 };
 
 export type ContentContextType = {

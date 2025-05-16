@@ -1,38 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Solution } from '@/contexts/content-builder/types';
 import { useSolutionsData } from '@/components/solutions/hooks/useSolutionsData';
-import { SolutionCard } from '@/components/solutions/SolutionCard';
 import { Sparkles, FileText, LayoutGrid, Search, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { ContentTypeCard } from '../content-type/ContentTypeCard';
 import { ContentTypeSelector } from '../content-type/ContentTypeSelector';
 import { SolutionSelector } from '../content-type/SolutionSelector';
+import { ContentType, ContentFormat } from '@/contexts/content-builder/types';
 
 // Content type definitions
 const contentTypes = [
   {
-    id: 'blog',
+    id: 'blog' as ContentType,
     title: 'Blog Post',
     description: 'Informative, educational content to attract and engage your audience',
     icon: <FileText className="h-5 w-5" />,
     formats: ['How-to Guide', 'List Post', 'Ultimate Guide', 'Case Study', 'Opinion Piece']
   },
   {
-    id: 'landing',
+    id: 'landing' as ContentType,
     title: 'Landing Page',
     description: 'Conversion-focused content designed to drive specific actions',
     icon: <LayoutGrid className="h-5 w-5" />,
     formats: ['Product Page', 'Service Page', 'Lead Generation', 'Feature Highlight']
   },
   {
-    id: 'seo',
+    id: 'seo' as ContentType,
     title: 'SEO Content',
     description: 'Keyword-optimized content designed to rank well in search results',
     icon: <Search className="h-5 w-5" />,
@@ -87,8 +85,8 @@ export const ContentTypeStep = () => {
   const { state, dispatch, setContentType, setSelectedSolution } = useContentBuilder();
   const { solutions, isLoading, fetchSolutions } = useSolutionsData();
   
-  const [selectedType, setSelectedType] = useState(state.contentType || '');
-  const [selectedFormat, setSelectedFormat] = useState(state.contentFormat || '');
+  const [selectedType, setSelectedType] = useState<ContentType | ''>(state.contentType || '');
+  const [selectedFormat, setSelectedFormat] = useState<string>(state.contentFormat || '');
   const [activeTab, setActiveTab] = useState('type');
   const [availableSolutions, setAvailableSolutions] = useState<Solution[]>([]);
   
@@ -118,7 +116,7 @@ export const ContentTypeStep = () => {
   }, [state.contentType, state.contentFormat]);
   
   // Handle content type selection
-  const handleTypeSelect = (typeId: string) => {
+  const handleTypeSelect = (typeId: ContentType) => {
     setSelectedType(typeId);
     setContentType(typeId);
     
@@ -136,7 +134,7 @@ export const ContentTypeStep = () => {
     setSelectedFormat(format);
     dispatch({
       type: 'SET_CONTENT_FORMAT',
-      payload: format
+      payload: format as ContentFormat
     });
   };
   

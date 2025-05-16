@@ -37,6 +37,9 @@ export interface ContentBuilderContextType {
   setContent: (content: string) => void;
   updateContent: (content: string) => void;
   
+  // Solution Actions
+  setSelectedSolution: (solution: Solution | null) => void;
+  
   // Meta Actions
   setMetaTitle: (title: string) => void;
   setMetaDescription: (description: string) => void;

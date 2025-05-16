@@ -1,7 +1,7 @@
-
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { OutlineSection } from '../types/outline-types';
 import { ContentType, ContentFormat, ContentIntent } from '../types/content-types';
+import { Solution } from '../types/solution-types';
 
 export const createContentActions = (
   state: ContentBuilderState, 
@@ -41,6 +41,10 @@ export const createContentActions = (
   
   const setContent = (content: string) => {
     dispatch({ type: 'SET_CONTENT', payload: content });
+  };
+
+  const setSelectedSolution = (solution: Solution | null) => {
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
   };
 
   const generateContent = async (outline: OutlineSection[]): Promise<void> => {
@@ -128,6 +132,7 @@ export const createContentActions = (
     setContentTitle,
     setSuggestedTitles,
     setMetaTitle,
-    setMetaDescription
+    setMetaDescription,
+    setSelectedSolution
   };
 };
