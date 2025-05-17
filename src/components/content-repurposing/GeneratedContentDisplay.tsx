@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Copy, Download, Save, LayoutGrid, Image } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 
@@ -59,48 +58,58 @@ const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
 
   const formatIds = Object.keys(generatedContents);
   
-  // Ensure we have an active format selected
-  if (!activeFormat && formatIds.length > 0) {
-    setActiveFormat(formatIds[0]);
-  }
-
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="text-lg">Generated Content</CardTitle>
+        <CardTitle className="text-lg">Generated Content Formats</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col">
-        <Tabs 
-          value={activeFormat || formatIds[0]} 
-          onValueChange={setActiveFormat}
-          className="flex-grow flex flex-col"
-        >
-          <TabsList className="mb-4 flex flex-wrap h-auto">
-            {formatIds.map(formatId => (
-              <TabsTrigger key={formatId} value={formatId} className="flex items-center">
-                {getFormatIcon(formatId)}
-                {getFormatName(formatId)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
+      <CardContent className="flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {formatIds.map(formatId => (
-            <TabsContent 
+            <Card 
               key={formatId} 
-              value={formatId} 
-              className="flex-grow flex flex-col data-[state=active]:flex-grow"
+              className={`cursor-pointer transition-shadow hover:shadow-md ${
+                activeFormat === formatId ? 'border-primary ring-1 ring-primary' : ''
+              }`}
+              onClick={() => setActiveFormat(formatId)}
             >
-              <div className="flex-grow mb-4 relative">
-                <pre className="h-full overflow-auto p-4 rounded-md bg-muted text-sm font-mono whitespace-pre-wrap">
-                  {generatedContents[formatId]}
+              <CardHeader className="pb-2">
+                <div className="flex items-center">
+                  {getFormatIcon(formatId)}
+                  <span className="font-medium">{getFormatName(formatId)}</span>
+                </div>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <div className="h-24 overflow-hidden text-sm text-muted-foreground">
+                  <p className="line-clamp-3">
+                    {generatedContents[formatId].substring(0, 150)}
+                    {generatedContents[formatId].length > 150 ? '...' : ''}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {activeFormat && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center">
+                  {getFormatIcon(activeFormat)}
+                  {getFormatName(activeFormat)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="whitespace-pre-wrap rounded-md bg-muted p-4 text-sm font-mono overflow-auto max-h-[400px]">
+                  {generatedContents[activeFormat]}
                 </pre>
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-auto">
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onCopyToClipboard(generatedContents[formatId])}
+                  onClick={() => onCopyToClipboard(generatedContents[activeFormat])}
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copy
@@ -108,7 +117,10 @@ const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onDownloadAsText(generatedContents[formatId], getFormatName(formatId))}
+                  onClick={() => onDownloadAsText(
+                    generatedContents[activeFormat], 
+                    getFormatName(activeFormat)
+                  )}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download
@@ -116,15 +128,15 @@ const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
                 <Button 
                   variant="default" 
                   size="sm"
-                  onClick={() => onSaveAsNewContent(formatId, generatedContents[formatId])}
+                  onClick={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save as Content
                 </Button>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
