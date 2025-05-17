@@ -48,7 +48,6 @@ export interface ContentBuilderContextType {
   // Meta Actions
   setMetaTitle: (title: string) => void;
   setMetaDescription: (description: string) => void;
-  generateSeoMeta: () => Promise<boolean>; // Added missing method
   
   // SEO Actions
   analyzeSeo: (content: string) => Promise<void>;

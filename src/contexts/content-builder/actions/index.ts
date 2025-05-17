@@ -1,84 +1,40 @@
 
+import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from '../types/index';
 import { createKeywordActions } from './keywordActions';
-import { createSerpActions } from './serpActions';
 import { createContentActions } from './contentActions';
-import { createOutlineActions } from './outlineActions';
-import { createOptimizationActions } from './optimizationActions';
-import { createContextActions } from './contextActions';
+import { createSerpActions } from './serpActions';
 import { createNavigationActions } from './navigationActions';
-import { createSolutionActions } from './solutionActions';
 import { createPublishActions } from './publishActions';
-import { createAnalysisActions } from './analysisActions';
-import { ContentBuilderState, ContentBuilderAction } from '../types';
-import { ContentBuilderContextType } from '../types';
+import { createSeoActions } from './seoActions';
 
+/**
+ * Creates and combines all content builder actions
+ */
 export const createContentBuilderActions = (
-  state: ContentBuilderState,
+  state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ): Omit<ContentBuilderContextType, 'state' | 'dispatch'> => {
-  // Create actions from each category
+  
+  // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
-  const serpActions = createSerpActions(state, dispatch);
   const contentActions = createContentActions(state, dispatch);
-  const outlineActions = createOutlineActions(state, dispatch);
-  const optimizationActions = createOptimizationActions(state, dispatch);
-  const contextActions = createContextActions(state, dispatch);
+  const serpActionGroup = createSerpActions(state, dispatch);
   const navigationActions = createNavigationActions(state, dispatch);
-  const solutionActions = createSolutionActions(state, dispatch);
   const publishActions = createPublishActions(state, dispatch);
-  const analysisActions = createAnalysisActions(state, dispatch);
-  
-  // Function to generate SEO meta with AI
-  const generateSeoMeta = async (): Promise<boolean> => {
-    try {
-      if (!state.mainKeyword || !state.content) {
-        console.error('Missing required data for SEO meta generation');
-        return false;
-      }
-      
-      // In a real implementation, call an AI service to generate
-      // meta information based on the content and keyword
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      // Generate a meta title (70 chars max)
-      const title = `${state.mainKeyword} - Comprehensive Guide ${new Date().getFullYear()}`;
-      dispatch({ type: 'SET_META_TITLE', payload: title });
-      
-      // Generate a meta description (160 chars max)
-      const description = `Learn everything about ${state.mainKeyword} in our comprehensive guide. Discover tips, strategies, and expert insights to master ${state.mainKeyword} effectively.`;
-      dispatch({ type: 'SET_META_DESCRIPTION', payload: description });
-      
-      return true;
-    } catch (error) {
-      console.error('Error generating SEO meta:', error);
-      return false;
-    }
-  };
-  
-  // Function to set additional instructions
-  const setAdditionalInstructions = (instructions: string) => {
-    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
-  };
-  
-  // Combine all actions
+  const seoActions = createSeoActions(state, dispatch);
+
+  // Extract serpActions from serpActionGroup
+  const { toggleSerpSelection } = serpActionGroup;
+  const serpActions = { toggleSerpSelection };
+
+  // Merge all action groups and return
   return {
     ...keywordActions,
-    ...serpActions,
     ...contentActions,
-    ...outlineActions,
-    ...optimizationActions,
-    ...contextActions,
+    ...serpActionGroup,
     ...navigationActions,
-    ...solutionActions,
     ...publishActions,
-    ...analysisActions,
-    generateSeoMeta,
-    setAdditionalInstructions,
-    serpActions: {
-      toggleSerpSelection: (index: number) => {
-        // Example implementation - adjust as needed
-        console.log('Toggle SERP selection:', index);
-      }
-    }
+    ...seoActions,
+    serpActions // Add serpActions object explicitly
   };
 };

@@ -2,32 +2,41 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, FileText } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
+import { useContent } from '@/contexts/content';
 
 export function DraftsHeader() {
   const navigate = useNavigate();
+  const { contentItems } = useContent();
   
-  const handleCreateContent = () => {
+  // Filter drafts from content items
+  const drafts = contentItems.filter(item => item.status === 'draft');
+  
+  const handleCreateNew = () => {
     navigate('/content-builder');
   };
   
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
       <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+        <h1 className="text-3xl font-bold mb-1 flex items-center gap-2">
+          <FileText className="h-8 w-8 text-primary" />
           Content Drafts
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage and edit your content drafts and published articles
+        <p className="text-muted-foreground">
+          Manage your content drafts and published pieces
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {drafts.length} draft{drafts.length !== 1 ? 's' : ''} available
         </p>
       </div>
       
       <Button 
-        onClick={handleCreateContent}
-        className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all shadow-lg"
+        onClick={handleCreateNew}
+        className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
       >
-        <PlusCircle className="mr-2 h-4 w-4" />
-        Create Content
+        <Plus className="h-4 w-4 mr-2" />
+        Create New Content
       </Button>
     </div>
   );

@@ -1,24 +1,34 @@
 
-export type ContentType = 'blog' | 'product' | 'landing' | 'case-study' | 'article';
-export type ContentFormat = 'article' | 'how-to' | 'faq' | 'newsletter' | 'long-form';
+/**
+ * Content-related type definitions
+ */
+
+// Content Type Options
+export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'landingPage' | 'productDescription' | 'email' | 'social' | 'case-study';
+
+// Content Format Options
+export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'article' | 'faq' | 'newsletter';
+
+// Content Intent Options
 export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';
 
+// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
   mainKeyword: string;
-  format?: ContentFormat;
-  contentType?: ContentType;
-  intent?: ContentIntent;
-  keywords?: string[];
-  secondaryKeywords?: string[];
-  outline?: string[];
-  metaTitle?: string;
-  metaDescription?: string;
-  serpSelections?: any[];
-  metadata?: string;
-  status?: string;
-  notes?: string;
+  secondaryKeywords: string[];
+  contentType: ContentType;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  status: 'draft' | 'published' | 'archived';
+  notes: string;
+  // Optional fields
   seoScore?: number;
+  outlineJson?: string;
+  
+  // Adding missing properties
+  outline?: string[];
+  serpSelections?: any[];
   serpData?: any;
 }

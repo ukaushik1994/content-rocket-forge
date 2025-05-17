@@ -41,14 +41,14 @@ const Drafts = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
         <title>Content Drafts | Content Platform</title>
       </Helmet>
       
       <Navbar />
       
-      <main className="flex-1 container py-12 px-4 md:px-8 max-w-7xl mx-auto">
+      <main className="flex-1 container py-8">
         <DraftsHeader />
         <DraftsList />
         

@@ -89,39 +89,37 @@ export const ContentBuilder = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Progress indicator */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/50 px-6 py-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/40 px-6 py-3">
+          <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <div className="bg-primary/10 p-1.5 rounded-full">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <h1 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
                 {steps[activeStep].name}
               </h1>
             </div>
-            <div className="text-xs font-medium text-foreground/80 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
+            <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
               Step {stepInfo.current} of {stepInfo.total}
             </div>
           </div>
-          <Progress value={progressPercentage} className="h-2 bg-white/10" />
+          <Progress value={progressPercentage} className="h-1.5 bg-white/5" />
         </div>
         
         {/* Step content */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-background to-background/95">
-          <div className="max-w-5xl mx-auto space-y-6 pb-24">
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="max-w-5xl mx-auto space-y-6">
             {renderStepContent()}
           </div>
         </div>
         
         {/* Navigation controls */}
         {!isLastStep && (
-          <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur-md border-t border-border/50 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
+          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
             <div className="flex justify-between max-w-5xl mx-auto">
               <Button
                 variant="outline"
                 onClick={handlePrevStep}
                 disabled={activeStep === 0}
-                className="gap-1 bg-white/5 border border-white/10 hover:border-white/20 transition-all"
+                className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
               >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
