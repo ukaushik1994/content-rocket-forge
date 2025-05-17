@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { RepurposeTab } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
+import { sendChatRequest } from '@/services/aiService';
 
 // Define the contentFormats array that was missing
 const contentFormats = [
@@ -28,8 +29,8 @@ const ContentRepurposing = () => {
   const { contentItems, getContentItem, addContentItem } = useContent();
   
   const [content, setContent] = useState<any>(null);
-  const [selectedFormat, setSelectedFormat] = useState<string>('');
-  const [generatedContent, setGeneratedContent] = useState<string>('');
+  const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
+  const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -63,9 +64,9 @@ const ContentRepurposing = () => {
     }
   };
   
-  const handleGenerateContent = async () => {
-    if (!selectedFormat) {
-      toast.error('Please select a content format');
+  const handleGenerateContent = async (contentTypeIds: string[]) => {
+    if (contentTypeIds.length === 0) {
+      toast.error('Please select at least one content format');
       return;
     }
     
@@ -75,32 +76,74 @@ const ContentRepurposing = () => {
     }
     
     setIsGenerating(true);
+    setSelectedFormats(contentTypeIds);
     
     try {
-      // In a real implementation, this would call an AI service to transform the content
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const newGeneratedContents: Record<string, string> = {};
       
-      const formatInfo = contentFormats.find(f => f.id === selectedFormat);
-      
-      let mockContent = '';
-      
-      if (selectedFormat.startsWith('social')) {
-        mockContent = `${content.title}\n\n${content.content.substring(0, 200)}...\n\n#ContentRepurposed #${formatInfo?.name.replace(/\s+/g, '')}`;
-      } else if (selectedFormat === 'email-newsletter') {
-        mockContent = `Subject: ${content.title}\n\nHello,\n\nI hope this email finds you well. Here's our latest content:\n\n${content.content.substring(0, 300)}...\n\nRead more on our website.\n\nBest regards,\nThe Team`;
-      } else if (selectedFormat.includes('script')) {
-        mockContent = `TITLE: ${content.title.toUpperCase()}\n\nINTRO:\n[Greeting and introduction]\n\nMAIN CONTENT:\n${content.content.substring(0, 400)}...\n\nCLOSING:\n[Call to action and sign off]`;
-      } else {
-        mockContent = `# ${content.title}\n\n${content.content}\n\n## Key Points\n- Point 1\n- Point 2\n- Point 3\n\n## Conclusion\nRepurposed for ${formatInfo?.name}.`;
+      // In a real implementation, we would use AI to generate content for each format
+      for (const formatId of contentTypeIds) {
+        const formatInfo = contentFormats.find(f => f.id === formatId);
+        
+        try {
+          // Try to use the AI service to generate content
+          const response = await sendChatRequest('openai', {
+            messages: [
+              { 
+                role: 'system', 
+                content: `You are an expert at repurposing content for different formats. 
+                          Take the provided content and transform it for the specified format.
+                          Create high-quality, engaging content that's optimized for the target format.` 
+              },
+              { 
+                role: 'user', 
+                content: `Transform this content titled "${content.title}" into a ${formatInfo?.name} format.
+                          Original content: ${content.content.substring(0, 1500)}...
+                          
+                          Make it appropriate for the ${formatInfo?.name} format with all necessary elements.
+                          For Twitter/X, include hashtags. For LinkedIn, make it professional.
+                          For email newsletters, include subject line and clear sections.
+                          For scripts, include proper formatting with sections for narration.
+                          For infographics, organize data into clear bullet points and sections.`
+              }
+            ]
+          });
+          
+          if (response?.choices?.[0]?.message?.content) {
+            newGeneratedContents[formatId] = response.choices[0].message.content;
+          } else {
+            // Fallback if AI generation fails
+            newGeneratedContents[formatId] = generateFallbackContent(formatId, content);
+          }
+        } catch (error) {
+          console.error('Error generating content with AI:', error);
+          // Fallback content if AI fails
+          newGeneratedContents[formatId] = generateFallbackContent(formatId, content);
+        }
       }
       
-      setGeneratedContent(mockContent);
-      toast.success(`Generated ${formatInfo?.name} content`);
+      setGeneratedContents(newGeneratedContents);
+      toast.success(`Generated content for ${contentTypeIds.length} format(s)`);
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('Error in content generation process:', error);
       toast.error('Failed to generate content');
     } finally {
       setIsGenerating(false);
+    }
+  };
+  
+  // Fallback content generator in case AI service fails
+  const generateFallbackContent = (formatId: string, content: any): string => {
+    const formatInfo = contentFormats.find(f => f.id === formatId);
+    
+    if (formatId.startsWith('social')) {
+      return `${content.title}\n\n${content.content.substring(0, 200)}...\n\n#ContentRepurposed #${formatInfo?.name.replace(/\s+/g, '')}`;
+    } else if (formatId === 'email-newsletter') {
+      return `Subject: ${content.title}\n\nHello,\n\nI hope this email finds you well. Here's our latest content:\n\n${content.content.substring(0, 300)}...\n\nRead more on our website.\n\nBest regards,\nThe Team`;
+    } else if (formatId.includes('script')) {
+      return `TITLE: ${content.title.toUpperCase()}\n\nINTRO:\n[Greeting and introduction]\n\nMAIN CONTENT:\n${content.content.substring(0, 400)}...\n\nCLOSING:\n[Call to action and sign off]`;
+    } else {
+      return `# ${content.title}\n\n${content.content}\n\n## Key Points\n- Point 1\n- Point 2\n- Point 3\n\n## Conclusion\nRepurposed for ${formatInfo?.name}.`;
     }
   };
   
@@ -255,9 +298,8 @@ const ContentRepurposing = () => {
           content={content.content} 
           title={content.title}
           isGenerating={isGenerating}
-          onGenerateRepurposedContent={async (contentType) => {
-            setSelectedFormat(contentType);
-            await handleGenerateContent();
+          onGenerateRepurposedContent={async (contentTypes) => {
+            await handleGenerateContent(contentTypes);
           }}
         />
       </motion.main>

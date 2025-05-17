@@ -8,12 +8,13 @@ import { FileText, Loader2, Copy, Twitter, Linkedin, Mail, Video, Headphones, Im
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { CustomBadge } from '@/components/ui/custom-badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface RepurposeTabProps {
   content: string;
   title: string;
   isGenerating?: boolean;
-  onGenerateRepurposedContent?: (contentType: string) => Promise<void>;
+  onGenerateRepurposedContent?: (contentTypes: string[]) => Promise<void>;
 }
 
 export const RepurposeTab: React.FC<RepurposeTabProps> = ({
@@ -22,9 +23,10 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
   isGenerating = false,
   onGenerateRepurposedContent = async () => {}
 }) => {
-  const [selectedContentType, setSelectedContentType] = useState<string>('');
-  const [repurposedContent, setRepurposedContent] = useState<string>('');
+  const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
+  const [repurposedContent, setRepurposedContent] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [activeContentType, setActiveContentType] = useState<string | null>(null);
   
   const contentTypes = [
     { id: 'social-twitter', name: 'Twitter/X Post', icon: Twitter },
@@ -35,34 +37,47 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
     { id: 'infographic', name: 'Infographic Content', icon: Image },
   ];
   
-  const handleContentTypeChange = (value: string) => {
-    setSelectedContentType(value);
-    setRepurposedContent(''); // Reset when changing type
+  const handleContentTypeToggle = (contentTypeId: string) => {
+    setSelectedContentTypes(prev => {
+      if (prev.includes(contentTypeId)) {
+        return prev.filter(id => id !== contentTypeId);
+      } else {
+        return [...prev, contentTypeId];
+      }
+    });
   };
   
   const handleGenerateContent = async () => {
-    if (!selectedContentType) {
-      toast.error('Please select a content type first');
+    if (selectedContentTypes.length === 0) {
+      toast.error('Please select at least one content type');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      await onGenerateRepurposedContent(selectedContentType);
+      await onGenerateRepurposedContent(selectedContentTypes);
       
-      // Mock content generation for demonstration
-      // In a real implementation, this would come from the AI generation service
-      const mockContent = `This is a repurposed version of "${title}" for ${
-        contentTypes.find(type => type.id === selectedContentType)?.name
-      }.\n\nThe original content has been transformed to fit this format...\n\n${
-        content.substring(0, 200)
-      }...(transformed for ${selectedContentType})`;
+      // In a real implementation, repurposedContent would be set by the parent component
+      // This mock is just for demonstration
+      const newRepurposedContent: Record<string, string> = {};
+      selectedContentTypes.forEach(contentTypeId => {
+        const selectedType = contentTypes.find(type => type.id === contentTypeId);
+        newRepurposedContent[contentTypeId] = `This is a repurposed version of "${title}" for ${
+          selectedType?.name
+        }.\n\nThe original content has been transformed to fit this format...\n\n${
+          content.substring(0, 200)
+        }...(transformed for ${contentTypeId})`;
+      });
       
-      setRepurposedContent(mockContent);
-      toast.success(`Generated ${
-        contentTypes.find(type => type.id === selectedContentType)?.name
-      } content`);
+      setRepurposedContent(newRepurposedContent);
+      
+      // Set the first content type as active if none is active
+      if (!activeContentType && selectedContentTypes.length > 0) {
+        setActiveContentType(selectedContentTypes[0]);
+      }
+      
+      toast.success(`Generated content for ${selectedContentTypes.length} format(s)`);
     } catch (error) {
       console.error('Error generating repurposed content:', error);
       toast.error('Failed to generate repurposed content');
@@ -71,22 +86,16 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
     }
   };
   
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(repurposedContent);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
   };
   
-  const saveAsDraft = () => {
+  const saveAsDraft = (contentType: string) => {
     // In a real implementation, this would save the repurposed content as a new draft
-    toast.success('Saved as new draft');
+    toast.success(`Saved ${contentTypes.find(t => t.id === contentType)?.name} as new draft`);
   };
 
-  // Find the selected content type object
-  const selectedType = contentTypes.find(type => type.id === selectedContentType);
-  
-  // Create a component for the icon
-  const SelectedIcon = selectedType?.icon;
-  
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -117,53 +126,60 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                 <ChevronRight className="h-3 w-3 text-white" />
               </div>
               <span className="bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
-                Content Repurposing Engine
+                Multi-Format Content Repurposing
               </span>
             </CardTitle>
             <CardDescription className="text-white/60">
-              Transform your content into different formats optimized for various platforms
+              Transform your content into multiple formats simultaneously with AI assistance
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             <div className="flex flex-col md:flex-row gap-6">
               <motion.div variants={itemVariants} className="w-full md:w-1/3 space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-white">Content Type</p>
-                  <Select value={selectedContentType} onValueChange={handleContentTypeChange}>
-                    <SelectTrigger className="bg-black/30 border-white/10 backdrop-blur-md">
-                      <SelectValue placeholder="Select content type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-black/80 backdrop-blur-xl border-white/10">
-                      <SelectGroup>
-                        <SelectLabel className="text-white/60">Social Media</SelectLabel>
-                        {contentTypes.filter(type => type.id.startsWith('social')).map(type => (
-                          <SelectItem key={type.id} value={type.id} className="text-white focus:bg-white/10">
-                            <div className="flex items-center">
-                              {React.createElement(type.icon, { className: "h-4 w-4 mr-2" })}
-                              {type.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel className="text-white/60">Long-form</SelectLabel>
-                        {contentTypes.filter(type => !type.id.startsWith('social')).map(type => (
-                          <SelectItem key={type.id} value={type.id} className="text-white focus:bg-white/10">
-                            <div className="flex items-center">
-                              {React.createElement(type.icon, { className: "h-4 w-4 mr-2" })}
-                              {type.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-white">Select Content Types</p>
+                  
+                  <div className="space-y-2 p-4 rounded-md bg-black/30 border border-white/10">
+                    {contentTypes.map(type => (
+                      <div key={type.id} className="flex items-center space-x-2 p-2 hover:bg-white/5 rounded-md transition-colors">
+                        <Checkbox 
+                          id={`type-${type.id}`}
+                          checked={selectedContentTypes.includes(type.id)}
+                          onCheckedChange={() => handleContentTypeToggle(type.id)}
+                          className="data-[state=checked]:bg-neon-purple data-[state=checked]:border-neon-purple"
+                        />
+                        <label 
+                          htmlFor={`type-${type.id}`}
+                          className="flex items-center cursor-pointer text-sm font-medium flex-1"
+                        >
+                          {React.createElement(type.icon, { className: "h-4 w-4 mr-2 text-white/70" })}
+                          {type.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-white/60">
+                      {selectedContentTypes.length} format{selectedContentTypes.length !== 1 ? 's' : ''} selected
+                    </p>
+                    {selectedContentTypes.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs text-white/60 hover:text-white hover:bg-white/10"
+                        onClick={() => setSelectedContentTypes([])}
+                      >
+                        Clear all
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
                 <Button 
                   onClick={handleGenerateContent} 
                   className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/90 hover:to-neon-blue/90 shadow-[0_0_15px_rgba(155,135,245,0.2)] transition-all duration-300"
-                  disabled={isLoading || !selectedContentType}
+                  disabled={isLoading || selectedContentTypes.length === 0}
                 >
                   {isLoading ? (
                     <>
@@ -173,53 +189,85 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                   ) : (
                     <>
                       <FileText className="h-4 w-4 mr-2" />
-                      Transform Content
+                      {selectedContentTypes.length > 1
+                        ? `Transform to ${selectedContentTypes.length} Formats`
+                        : 'Transform Content'}
                     </>
                   )}
                 </Button>
                 
-                {selectedContentType && selectedType && (
+                {selectedContentTypes.length > 0 && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }} 
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-4 p-3 rounded-lg bg-black/30 border border-white/10"
                   >
-                    <p className="text-sm text-white/60 mb-2">Selected format:</p>
-                    <CustomBadge 
-                      animated
-                      className="bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border-white/10 text-white"
-                      icon={SelectedIcon && React.createElement(SelectedIcon, { className: "h-3 w-3" })}
-                    >
-                      {selectedType.name}
-                    </CustomBadge>
-                    
-                    <div className="mt-4">
-                      <p className="text-xs text-white/40">
-                        {selectedType.id === 'social-twitter' && "Perfect for short-form social sharing with hashtags and mentions."}
-                        {selectedType.id === 'social-linkedin' && "Professional format optimized for business audience and engagement."}
-                        {selectedType.id === 'email-newsletter' && "Designed for email campaigns with clear sections and call-to-actions."}
-                        {selectedType.id === 'video-script' && "Structured for video narration with scene descriptions and timings."}
-                        {selectedType.id === 'podcast-script' && "Conversational format with host notes and segment breakdowns."}
-                        {selectedType.id === 'infographic' && "Visual-friendly bullet points and data optimized for graphics."}
-                      </p>
+                    <p className="text-sm text-white/60 mb-2">Selected formats:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedContentTypes.map(typeId => {
+                        const selectedType = contentTypes.find(type => type.id === typeId);
+                        const SelectedIcon = selectedType?.icon;
+                        
+                        return (
+                          <CustomBadge 
+                            key={typeId}
+                            animated
+                            className={`bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border-white/10 text-white cursor-pointer ${activeContentType === typeId ? 'ring-1 ring-neon-purple' : ''}`}
+                            icon={SelectedIcon && React.createElement(SelectedIcon, { className: "h-3 w-3" })}
+                            onClick={() => {
+                              if (repurposedContent[typeId]) {
+                                setActiveContentType(typeId);
+                              }
+                            }}
+                          >
+                            {selectedType?.name}
+                          </CustomBadge>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}
               </motion.div>
               
               <motion.div variants={itemVariants} className="w-full md:w-2/3">
-                {repurposedContent ? (
+                {isLoading ? (
+                  <div className="border border-dashed border-white/10 rounded-lg p-10 h-full flex items-center justify-center backdrop-blur-sm bg-black/20">
+                    <motion.div 
+                      className="text-center"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-neon-purple animate-pulse-glow" />
+                      <p className="text-white/60">Transforming your content...</p>
+                      <p className="text-white/40 text-sm mt-2">
+                        Generating {selectedContentTypes.length} format{selectedContentTypes.length !== 1 ? 's' : ''}
+                      </p>
+                    </motion.div>
+                  </div>
+                ) : Object.keys(repurposedContent).length > 0 && activeContentType ? (
                   <div className="rounded-lg border border-white/10 overflow-hidden">
                     <div className="bg-black/40 backdrop-blur-sm p-3 border-b border-white/10 flex justify-between items-center">
                       <div className="flex items-center">
                         <div className="h-3 w-3 rounded-full bg-neon-purple mr-2"></div>
-                        <h3 className="text-sm font-medium text-white">Generated Content</h3>
+                        <h3 className="text-sm font-medium text-white">
+                          {contentTypes.find(t => t.id === activeContentType)?.name}
+                        </h3>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="ghost" onClick={copyToClipboard} className="text-xs h-8 hover:bg-white/10">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => copyToClipboard(repurposedContent[activeContentType])}
+                          className="text-xs h-8 hover:bg-white/10"
+                        >
                           <Copy className="h-3 w-3 mr-1" /> Copy
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={saveAsDraft} className="text-xs h-8 hover:bg-white/10">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => saveAsDraft(activeContentType)}
+                          className="text-xs h-8 hover:bg-white/10"
+                        >
                           <Save className="h-3 w-3 mr-1" /> Save Draft
                         </Button>
                         <Button size="sm" variant="ghost" className="text-xs h-8 hover:bg-white/10">
@@ -229,46 +277,31 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                     </div>
                     <div className="p-4 bg-black/20 backdrop-blur-sm">
                       <div className="whitespace-pre-wrap text-sm mt-2 font-mono text-white/80 p-3 rounded bg-black/20 border border-white/5 shadow-inner">
-                        {repurposedContent}
+                        {repurposedContent[activeContentType]}
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="border border-dashed border-white/10 rounded-lg p-10 h-full flex items-center justify-center backdrop-blur-sm bg-black/20">
-                    {isLoading ? (
-                      <motion.div 
-                        className="text-center"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
-                        <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-neon-purple animate-pulse-glow" />
-                        <p className="text-white/60">Transforming your content...</p>
-                        <p className="text-white/40 text-sm mt-2">This might take a few moments</p>
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        className="text-center max-w-md"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
-                        <div className="h-16 w-16 rounded-full bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 flex items-center justify-center mx-auto mb-4">
-                          {selectedContentType ? 
-                            (SelectedIcon && React.createElement(SelectedIcon, { className: "h-8 w-8 text-white/40" })) : 
-                            <FileText className="h-8 w-8 text-white/40" />
-                          }
-                        </div>
-                        <p className="text-white/60 mb-2">
-                          {selectedContentType 
-                            ? "Ready to transform your content" 
-                            : "Select a content type to get started"}
-                        </p>
-                        <p className="text-white/40 text-sm">
-                          {selectedContentType 
-                            ? "Click 'Transform Content' to generate content optimized for " + contentTypes.find(t => t.id === selectedContentType)?.name 
-                            : "Choose from various content formats to repurpose your existing content"}
-                        </p>
-                      </motion.div>
-                    )}
+                    <motion.div 
+                      className="text-center max-w-md"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <div className="h-16 w-16 rounded-full bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 flex items-center justify-center mx-auto mb-4">
+                        <FileText className="h-8 w-8 text-white/40" />
+                      </div>
+                      <p className="text-white/60 mb-2">
+                        {selectedContentTypes.length > 0 
+                          ? "Select content types and click 'Transform'" 
+                          : "Select content types to get started"}
+                      </p>
+                      <p className="text-white/40 text-sm">
+                        {selectedContentTypes.length > 0 
+                          ? `Choose from ${selectedContentTypes.length} format${selectedContentTypes.length !== 1 ? 's' : ''} to transform your content` 
+                          : "Choose from various content formats to repurpose your existing content"}
+                      </p>
+                    </motion.div>
                   </div>
                 )}
               </motion.div>
