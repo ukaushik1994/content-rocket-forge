@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { AiProvider } from '@/types/aiProvider';
 
 export const useWritingStep = () => {
   const { state, dispatch, setContent, setAdditionalInstructions } = useContentBuilder();
@@ -12,7 +13,7 @@ export const useWritingStep = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState('');
   const [saveNote, setSaveNote] = useState('');
-  const [aiProvider, setAiProvider] = useState('gpt-4o');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('gpt-4o');
   
   // Get values from state
   const { 
@@ -58,7 +59,7 @@ export const useWritingStep = () => {
   };
   
   // Handle AI provider change
-  const handleAiProviderChange = (provider: string) => {
+  const handleAiProviderChange = (provider: AiProvider) => {
     setAiProvider(provider);
   };
   

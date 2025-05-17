@@ -14,15 +14,17 @@ import { useSeoAnalysis } from '@/hooks/useSeoAnalysis';
 import { useContentRewriter } from '@/hooks/useContentRewriter';
 
 export const OptimizeAndReviewStep = () => {
-  const { state, analyzeKeyword } = useContentBuilder();
+  const { state, skipOptimizationStep } = useContentBuilder();
   const { content, mainKeyword, seoScore, optimizationSkipped } = state;
   
   // Use SEO analysis hook
   const { 
     isAnalyzing, 
     recommendations,
-    analyzeContent, 
-    handleApplyRecommendation
+    recommendationIds,
+    keywordUsage,
+    runSeoAnalysis,
+    forceSkipAnalysis
   } = useSeoAnalysis();
   
   // Use content rewriter hook
@@ -32,15 +34,27 @@ export const OptimizeAndReviewStep = () => {
     rewriteSection, 
     sectionToRewrite, 
     setSectionToRewrite,
-    isRewriting
+    isRewriting,
+    selectedRecommendation,
+    rewriteType,
+    rewrittenContent,
+    handleRewriteContent,
+    applyRewrittenContent,
+    isRecommendationApplied
   } = useContentRewriter();
   
   return (
     <div className="space-y-6">
       {/* SEO Analysis Header */}
       <SeoAnalysisHeader 
+        seoScore={seoScore}
         isAnalyzing={isAnalyzing}
-        onAnalyze={() => analyzeContent(content, mainKeyword)}
+        runSeoAnalysis={runSeoAnalysis}
+        hasRunAnalysis={recommendations.length > 0}
+        skipOptimizationStep={skipOptimizationStep}
+        content={content}
+        analysisError={null}
+        onAnalyze={runSeoAnalysis}
       />
       
       {/* Display selected SERP items */}
@@ -48,36 +62,50 @@ export const OptimizeAndReviewStep = () => {
       
       {/* If optimization is skipped, show warning */}
       {optimizationSkipped ? (
-        <SkipWarning />
+        <SkipWarning 
+          onSkip={skipOptimizationStep} 
+          onCancel={() => console.log('Cancel skip')}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* SEO Score Card */}
-            <SeoScoreCard score={seoScore} />
+            <SeoScoreCard scores={{
+              keywordUsage: seoScore,
+              contentLength: seoScore,
+              readability: seoScore
+            }} />
             
             {/* Progress Bar */}
             <div className="md:col-span-2">
-              <ProgressBar score={seoScore} />
+              <ProgressBar value={seoScore} />
             </div>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-6">
               {/* Keyword Analysis */}
-              <KeywordAnalysisCard mainKeyword={mainKeyword} />
+              <KeywordAnalysisCard 
+                mainKeyword={mainKeyword} 
+                keywordUsage={keywordUsage || []}
+              />
               
               {/* Recommendations */}
               <RecommendationsCard 
                 recommendations={recommendations}
-                onApply={handleApplyRecommendation}
-                isLoading={isAnalyzing}
+                recommendationIds={recommendationIds || []}
+                isAnalyzing={isAnalyzing}
+                handleRewriteContent={handleRewriteContent}
+                isRecommendationApplied={isRecommendationApplied}
+                showRecoveryOption={isAnalyzing && isAnalyzing}
+                onForceSkip={forceSkipAnalysis}
               />
             </div>
             
             <div className="lg:col-span-2">
               {/* Content Optimization Container */}
               <ContentOptimizationContainer 
-                content={content}
+                contentValue={content}
                 onRewriteSection={(section) => {
                   setSectionToRewrite(section);
                   setShowRewriteDialog(true);
@@ -90,11 +118,13 @@ export const OptimizeAndReviewStep = () => {
       
       {/* Content Rewrite Dialog */}
       <ContentRewriteDialog 
-        isOpen={showRewriteDialog}
-        onClose={() => setShowRewriteDialog(false)}
-        sectionContent={sectionToRewrite}
+        open={showRewriteDialog}
+        onOpenChange={setShowRewriteDialog}
+        selectedRecommendation={selectedRecommendation}
+        rewriteType={rewriteType}
+        rewrittenContent={rewrittenContent}
         isRewriting={isRewriting}
-        onRewrite={rewriteSection}
+        onApplyContent={applyRewrittenContent}
       />
     </div>
   );

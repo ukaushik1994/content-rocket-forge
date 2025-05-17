@@ -8,6 +8,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
+import { AiProvider } from '@/types/aiProvider';
 
 export const ContentWritingStep = () => {
   const {
@@ -57,7 +58,7 @@ export const ContentWritingStep = () => {
     const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
     
     await generateContent(
-      aiProvider,
+      aiProvider as AiProvider,
       mainKeyword,
       state.contentTitle,
       outlineText,
@@ -88,7 +89,7 @@ export const ContentWritingStep = () => {
         handleToggleOutline={handleToggleOutline}
         showOutline={showOutline}
         outlineLength={state.outline.length}
-        aiProvider={aiProvider}
+        aiProvider={aiProvider as AiProvider}
         onAiProviderChange={handleAiProviderChange}
       />
       
