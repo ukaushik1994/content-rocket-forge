@@ -36,3 +36,57 @@ export interface ChatCompletionResponse {
   model: string;
   choices: ChatCompletionChoice[];
 }
+
+// Adding missing type definitions
+export interface AiModelInfo {
+  id: string;
+  provider: AiProvider;
+  name: string;
+  description: string;
+  maxTokens: number;
+  type: 'chat' | 'completion';
+  capabilities: string[];
+  isDefault?: boolean;
+}
+
+export interface AiApiParams {
+  provider: string;
+  endpoint?: string;
+  service?: string;
+  params?: any;
+  apiKey?: string;
+}
+
+export interface AiChatParams {
+  messages: ChatMessage[];
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface AiChatResponse {
+  content: string;
+  model: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+export interface AiCompletionParams {
+  prompt: string;
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface AiCompletionResponse {
+  content: string;
+  model: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
