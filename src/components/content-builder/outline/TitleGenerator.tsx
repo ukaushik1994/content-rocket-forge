@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Sparkles, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
+import { sendChatRequest } from '@/services/aiService';
+import { AiProvider } from '@/services/aiService/types';
 
 export function TitleGenerator() {
   const { state, dispatch } = useContentBuilder();
@@ -13,8 +15,9 @@ export function TitleGenerator() {
   
   const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiProvider] = useState<AiProvider>('openai');
 
-  // Generate titles based on the selected SERP items and keywords
+  // Generate titles based on selected SERP items, AI content generation and keywords
   const handleGenerateTitles = async () => {
     if (!mainKeyword) {
       toast.error("Main keyword is required to generate title suggestions");
@@ -30,7 +33,44 @@ export function TitleGenerator() {
         .map(item => item.content)
         .join(" ");
       
-      // Generate title suggestions using the utility
+      // Try to use AI service first
+      try {
+        const chatResponse = await sendChatRequest(aiProvider, {
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are an expert at creating compelling SEO-optimized titles.' 
+            },
+            { 
+              role: 'user', 
+              content: `Generate 5-8 engaging, SEO-friendly title suggestions for an article about "${mainKeyword}". 
+              Secondary keywords to consider: ${selectedKeywords.join(', ')}.
+              Content context: ${(selectedContent || content || '').substring(0, 500)}
+              Format each title on a new line with no numbering or extra formatting.`
+            }
+          ],
+          temperature: 0.7
+        });
+        
+        if (chatResponse?.choices?.[0]?.message?.content) {
+          // Parse the AI response into individual titles
+          const aiTitles = chatResponse.choices[0].message.content
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => line.replace(/^[0-9]+\.\s*/, '')) // Remove any numbering
+            .slice(0, 8); // Limit to 8 titles
+          
+          setSuggestedTitles(aiTitles);
+          toast.success(`Generated ${aiTitles.length} title suggestions using AI`);
+          setIsGenerating(false);
+          return;
+        }
+      } catch (aiError) {
+        console.error("AI title generation failed, falling back to template:", aiError);
+      }
+      
+      // Fallback: Generate title suggestions using the utility if AI fails
       const titles = await generateTitleSuggestions(
         selectedContent || content || mainKeyword,
         mainKeyword,
@@ -77,7 +117,7 @@ export function TitleGenerator() {
           ) : (
             <RefreshCw className="h-3.5 w-3.5" />
           )}
-          <span className="text-xs">Generate</span>
+          <span className="text-xs">{suggestedTitles.length > 0 ? 'Regenerate' : 'Generate'}</span>
         </Button>
       </CardHeader>
       <CardContent className="p-4">

@@ -23,8 +23,9 @@ export const createNavigationActions = (
       // First get all steps with IDs less than the target step's ID
       const previousSteps = state.steps.filter(s => s.id < targetStep.id);
       
-      // Skip SERP Analysis (step with id 2) in the completion check
-      const requiredCompletedSteps = previousSteps.filter(s => s.id !== 2);
+      // Skip SERP Analysis (step with id 2) and ContentType (id 1) in the completion check
+      // This allows users to navigate directly from keyword selection to outline
+      const requiredCompletedSteps = previousSteps.filter(s => s.id !== 2 && s.id !== 1);
       
       // Check if all required previous steps are completed
       const allPreviousStepsCompleted = requiredCompletedSteps.every(s => s.completed);
@@ -37,8 +38,8 @@ export const createNavigationActions = (
     
     // Skip SERP Analysis (step with id 2) when navigating between steps
     if (state.activeStep === 0 && step > state.activeStep) {
-      // If going from keyword selection to content type, move forward normally
-      dispatch({ type: 'SET_CURRENT_STEP', payload: step });
+      // If going from keyword selection to outline, move forward to step ID 3
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
       return;
     }
     
