@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -79,10 +78,18 @@ export const OptimizeAndReviewStep = () => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
 
-  // Mock function to handle repurposing content
-  const handleRepurposeContent = async (contentType: string) => {
-    toast.info(`Repurposing content to ${contentType} format`);
-    // In a real implementation, this would call an AI service to transform the content
+  // Updated Mock function to handle repurposing content to support multiple content types
+  const handleRepurposeContent = async (contentTypes: string[]) => {
+    if (contentTypes.length === 0) {
+      toast.error("Please select at least one content format");
+      return;
+    }
+    
+    toast.info(`Repurposing content to ${contentTypes.length} format(s)`);
+    for (const contentType of contentTypes) {
+      toast.info(`Processing: ${contentType} format`);
+      // In a real implementation, this would call an AI service to transform the content
+    }
   };
   
   // Wrapper functions to convert Promise<string | null> to Promise<void>
