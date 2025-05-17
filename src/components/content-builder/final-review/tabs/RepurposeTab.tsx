@@ -78,6 +78,12 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
     // In a real implementation, this would save the repurposed content as a new draft
     toast.success('Saved as new draft');
   };
+
+  // Find the selected content type object
+  const selectedType = contentTypes.find(type => type.id === selectedContentType);
+  
+  // Create a component for the icon
+  const SelectedIcon = selectedType?.icon;
   
   return (
     <div className="space-y-6">
@@ -101,7 +107,7 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                     {contentTypes.filter(type => type.id.startsWith('social')).map(type => (
                       <SelectItem key={type.id} value={type.id}>
                         <div className="flex items-center">
-                          <type.icon className="h-4 w-4 mr-2" />
+                          {React.createElement(type.icon, { className: "h-4 w-4 mr-2" })}
                           {type.name}
                         </div>
                       </SelectItem>
@@ -112,7 +118,7 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                     {contentTypes.filter(type => !type.id.startsWith('social')).map(type => (
                       <SelectItem key={type.id} value={type.id}>
                         <div className="flex items-center">
-                          <type.icon className="h-4 w-4 mr-2" />
+                          {React.createElement(type.icon, { className: "h-4 w-4 mr-2" })}
                           {type.name}
                         </div>
                       </SelectItem>
@@ -139,14 +145,12 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                 )}
               </Button>
               
-              {selectedContentType && (
+              {selectedContentType && selectedType && (
                 <div className="mt-4">
                   <p className="text-sm text-muted-foreground mb-2">Selected format:</p>
                   <Badge variant="outline" className="flex items-center gap-1">
-                    {contentTypes.find(type => type.id === selectedContentType)?.icon && (
-                      <contentTypes.find(type => type.id === selectedContentType)!.icon className="h-3 w-3" />
-                    )}
-                    {contentTypes.find(type => type.id === selectedContentType)?.name}
+                    {SelectedIcon && <SelectedIcon className="h-3 w-3" />}
+                    {selectedType.name}
                   </Badge>
                 </div>
               )}
