@@ -3,18 +3,37 @@ import React from 'react';
 import { ContentTypeOptions } from './content-type/ContentTypeOptions';
 import { ContentFormatOptions } from './content-type/ContentFormatOptions';
 import { SolutionOptions } from './content-type/SolutionOptions';
-import { useContentTypeSelection } from './content-type/hooks/useContentTypeSelection';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 export const ContentTypeStep = () => {
-  const {
-    contentType,
-    contentFormat,
-    selectedSolution,
-    handleContentTypeSelect,
-    handleFormatSelect,
-    handleSolutionSelect,
-    handleClearSolution
-  } = useContentTypeSelection();
+  const { 
+    state,
+    setContentType,
+    setContentFormat,
+    setSelectedSolution
+  } = useContentBuilder();
+  
+  const { contentType, contentFormat, selectedSolution } = state;
+  
+  // Handle content type selection
+  const handleContentTypeSelect = (value: string) => {
+    setContentType(value as any); // Cast to ContentType
+  };
+  
+  // Handle content format selection
+  const handleFormatSelect = (value: string) => {
+    setContentFormat(value as any); // Cast to ContentFormat
+  };
+  
+  // Handle solution selection
+  const handleSolutionSelect = (solution: any) => {
+    setSelectedSolution(solution);
+  };
+
+  // Clear solution selection
+  const handleClearSolution = () => {
+    setSelectedSolution(null);
+  };
   
   return (
     <div className="space-y-6">
