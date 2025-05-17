@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -10,6 +11,16 @@ import { toast } from 'sonner';
 import { RepurposeTab } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
+
+// Define the contentFormats array that was missing
+const contentFormats = [
+  { id: 'social-twitter', name: 'Twitter/X Post' },
+  { id: 'social-linkedin', name: 'LinkedIn Post' },
+  { id: 'email-newsletter', name: 'Email Newsletter' },
+  { id: 'video-script', name: 'Video Script' },
+  { id: 'podcast-script', name: 'Podcast Script' },
+  { id: 'infographic', name: 'Infographic Content' },
+];
 
 const ContentRepurposing = () => {
   const location = useLocation();
