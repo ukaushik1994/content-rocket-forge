@@ -86,11 +86,17 @@ const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
                     {getFormatIcon(format.id)}
                     <span className="font-medium">{format.name}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{format.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {format.id === 'carousel' 
+                      ? 'Text content for sequential slides' 
+                      : format.id === 'meme' 
+                        ? 'Text suggestions for meme creation' 
+                        : format.description}
+                  </p>
                 </div>
               </div>
               <Badge variant="outline" className="ml-2">
-                {format.id === 'meme' || format.id === 'carousel' ? 'Visual' : 'Text'}
+                {format.id === 'meme' || format.id === 'carousel' ? 'Text Content' : 'Text'}
               </Badge>
             </div>
           ))}
