@@ -3,9 +3,9 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { PromptTemplate } from '@/services/userPreferencesService';
+import { PromptTemplate } from '@/services/userPreferences';
 import { getFormatTypeLabel } from './types';
-import { Image, Carousel } from 'lucide-react';
+import { Image, CarouselHorizontal } from 'lucide-react';
 
 interface PreviewDialogProps {
   open: boolean;
@@ -26,7 +26,7 @@ export const PreviewDialog: React.FC<PreviewDialogProps> = ({
   const getFormatIcon = () => {
     switch (template.formatType) {
       case 'carousel':
-        return <Carousel className="h-5 w-5 mr-2" />;
+        return <CarouselHorizontal className="h-5 w-5 mr-2" />;
       case 'meme':
         return <Image className="h-5 w-5 mr-2" />;
       default:

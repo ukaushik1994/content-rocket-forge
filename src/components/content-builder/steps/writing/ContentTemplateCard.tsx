@@ -3,8 +3,8 @@ import React from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PromptTemplate } from '@/services/userPreferencesService';
-import { Image, Carousel } from 'lucide-react';
+import { PromptTemplate } from '@/services/userPreferences';
+import { Image, CarouselHorizontal } from 'lucide-react';
 import { getFormatTypeLabel } from '@/components/settings/prompt-templates/types';
 
 interface ContentTemplateCardProps {
@@ -20,7 +20,7 @@ export const ContentTemplateCard: React.FC<ContentTemplateCardProps> = ({
   const getTemplateIcon = () => {
     switch (template.formatType) {
       case 'carousel':
-        return <Carousel className="h-5 w-5" />;
+        return <CarouselHorizontal className="h-5 w-5" />;
       case 'meme':
         return <Image className="h-5 w-5" />;
       default:

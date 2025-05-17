@@ -1,5 +1,10 @@
 
-import { PromptTemplate, getPromptTemplateById, getPromptTemplatesByType, getBrandGuidelines } from './userPreferencesService';
+import { 
+  PromptTemplate, 
+  getPromptTemplateById, 
+  getPromptTemplatesByType, 
+  getBrandGuidelines 
+} from './userPreferences';
 import { sendChatRequest } from './aiService';
 import { toast } from 'sonner';
 

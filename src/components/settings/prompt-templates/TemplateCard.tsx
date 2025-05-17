@@ -3,8 +3,8 @@ import React from 'react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Copy, Trash2, Image, Carousel } from 'lucide-react';
-import { PromptTemplate } from '@/services/userPreferencesService';
+import { Edit, Trash2, Copy, FileText, Image, CarouselHorizontal } from 'lucide-react';
+import { PromptTemplate } from '@/services/userPreferences';
 import { getFormatTypeLabel } from './types';
 
 interface TemplateCardProps {
@@ -15,7 +15,7 @@ interface TemplateCardProps {
   onPreview: (template: PromptTemplate) => void;
 }
 
-export const TemplateCard: React.FC<TemplateCardProps> = ({ 
+export const TemplateCard: React.FC<TemplateCardProps> = ({
   template,
   onEdit,
   onDuplicate,
@@ -26,11 +26,11 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
   const getFormatIcon = () => {
     switch (template.formatType) {
       case 'carousel':
-        return <Carousel className="h-4 w-4 mr-1" />;
+        return <CarouselHorizontal className="h-4 w-4 mr-1" />;
       case 'meme':
         return <Image className="h-4 w-4 mr-1" />;
       default:
-        return null;
+        return <FileText className="h-4 w-4 mr-1" />;
     }
   };
 
@@ -38,9 +38,11 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
     <Card key={template.id} className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="flex items-center">
-            {getFormatIcon()}
-            {getFormatTypeLabel(template.formatType)}
+          <Badge variant="outline">
+            <div className="flex items-center">
+              {getFormatIcon()}
+              <span>{getFormatTypeLabel(template.formatType)}</span>
+            </div>
           </Badge>
           <div className="flex space-x-1">
             <Button 

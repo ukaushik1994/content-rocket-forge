@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Info, Image, Carousel } from 'lucide-react';
+import { Info, Image, CarouselHorizontal } from 'lucide-react';
 
 interface EmptyTemplatesStateProps {
   activeTab: string;
@@ -19,7 +19,7 @@ export const EmptyTemplatesState: React.FC<EmptyTemplatesStateProps> = ({
   const getFormatIcon = () => {
     switch (activeTab) {
       case 'carousel':
-        return <Carousel className="h-6 w-6 text-muted-foreground" />;
+        return <CarouselHorizontal className="h-6 w-6 text-muted-foreground" />;
       case 'meme':
         return <Image className="h-6 w-6 text-muted-foreground" />;
       default:
