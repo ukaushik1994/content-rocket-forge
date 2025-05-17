@@ -52,7 +52,7 @@ export interface ContentBuilderState {
   // SEO
   seoScore: number;
   seoImprovements: SeoImprovement[];
-  optimizationSkipped: boolean; // New field to track if optimization was skipped
+  optimizationSkipped: boolean;
   
   // Selected Cluster
   selectedCluster: ContentCluster | null;

@@ -55,6 +55,11 @@ export const createContentBuilderActions = (
     }
   };
   
+  // Function to set additional instructions
+  const setAdditionalInstructions = (instructions: string) => {
+    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: instructions });
+  };
+  
   // Combine all actions
   return {
     ...keywordActions,
@@ -68,5 +73,12 @@ export const createContentBuilderActions = (
     ...publishActions,
     ...analysisActions,
     generateSeoMeta,
+    setAdditionalInstructions,
+    serpActions: {
+      toggleSerpSelection: (index: number) => {
+        // Example implementation - adjust as needed
+        console.log('Toggle SERP selection:', index);
+      }
+    }
   };
 };
