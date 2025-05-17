@@ -1,12 +1,8 @@
 
-/**
- * SEO related type definitions
- */
-
 export interface SeoImprovement {
   id: string;
-  type: string;
-  recommendation: string;
-  impact: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
   applied: boolean;
 }

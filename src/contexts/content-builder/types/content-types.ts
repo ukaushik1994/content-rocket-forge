@@ -1,6 +1,6 @@
 
-export type ContentType = 'blog' | 'product' | 'landing' | 'case-study';
-export type ContentFormat = 'article' | 'how-to' | 'faq' | 'newsletter';
+export type ContentType = 'blog' | 'product' | 'landing' | 'case-study' | 'article';
+export type ContentFormat = 'article' | 'how-to' | 'faq' | 'newsletter' | 'long-form';
 export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';
 
 export interface SaveContentParams {
@@ -11,9 +11,10 @@ export interface SaveContentParams {
   contentType?: ContentType;
   intent?: ContentIntent;
   keywords?: string[];
+  secondaryKeywords?: string[];
   outline?: string[];
   metaTitle?: string;
   metaDescription?: string;
   serpSelections?: any[];
-  metadata?: string; // Added missing property
+  metadata?: string;
 }

@@ -1,5 +1,6 @@
 
 import { ContentBuilderState, ContentBuilderAction, OutlineSection } from '../types';
+import { v4 as uuid } from 'uuid';
 
 export const createOutlineActions = (
   state: ContentBuilderState, 
@@ -23,9 +24,11 @@ export const createOutlineActions = (
     
     // Create outline sections from SERP selections
     const outlineSections = state.serpSelections.map(selection => ({
+      id: uuid(),
       title: selection.content.substring(0, 100),
       content: '',
-      type: selection.type
+      type: selection.type,
+      level: 1
     }));
     
     setOutlineSections(outlineSections);

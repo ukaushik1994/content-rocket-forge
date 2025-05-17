@@ -16,12 +16,16 @@ export type ContentBuilderActionType =
   // Navigation
   | 'SET_ACTIVE_STEP'
   | 'MARK_STEP_COMPLETED'
+  | 'SET_CURRENT_STEP'
+  | 'MARK_STEP_VISITED'
+  | 'MARK_STEP_ANALYZED'
   
   // Keywords
   | 'SET_MAIN_KEYWORD'
   | 'ADD_KEYWORD'
   | 'REMOVE_KEYWORD'
   | 'SET_SEARCHED_KEYWORDS'
+  | 'ADD_SEARCHED_KEYWORD'
   
   // Content Type
   | 'SET_CONTENT_TYPE'
@@ -35,6 +39,7 @@ export type ContentBuilderActionType =
   | 'SET_SERP_DATA'
   | 'ADD_SERP_SELECTION'
   | 'REMOVE_SERP_SELECTION'
+  | 'TOGGLE_SERP_SELECTION'
   | 'SET_IS_ANALYZING'
   
   // Titles
@@ -53,10 +58,14 @@ export type ContentBuilderActionType =
   // SEO
   | 'SET_SEO_SCORE'
   | 'SET_SEO_IMPROVEMENTS'
+  | 'SKIP_OPTIMIZATION_STEP'
   | 'SET_OPTIMIZATION_SKIPPED'
+  | 'ADD_SEO_IMPROVEMENT'
+  | 'APPLY_SEO_IMPROVEMENT'
   
   // Clusters
   | 'SET_SELECTED_CLUSTER'
+  | 'SELECT_CLUSTER'
   
   // Meta
   | 'SET_META_TITLE'

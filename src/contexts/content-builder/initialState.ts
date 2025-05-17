@@ -5,12 +5,13 @@ export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
   steps: [
-    { id: 0, name: 'Keyword Selection', description: 'Choose your target keywords', completed: false, visited: true },
-    // Content Type step removed
-    { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
-    { id: 3, name: 'Content Outline', description: 'Create your outline', completed: false, visited: false },
-    { id: 4, name: 'Content Writing', description: 'Write your content', completed: false, visited: false },
-    { id: 5, name: 'Optimize & Review', description: 'Optimize and review your content', completed: false, visited: false, analyzed: false }
+    { id: 0, name: 'Keywords', completed: false, visited: true },
+    { id: 1, name: 'Content Type', completed: false, visited: false },
+    { id: 2, name: 'SERP Analysis', completed: false, visited: false },
+    { id: 3, name: 'Outline', completed: false, visited: false },
+    { id: 4, name: 'Write Content', completed: false, visited: false },
+    { id: 5, name: 'Optimize', completed: false, visited: false },
+    { id: 6, name: 'Publish', completed: false, visited: false }
   ],
   
   // Keywords
@@ -19,8 +20,8 @@ export const initialState: ContentBuilderState = {
   searchedKeywords: [],
   
   // Content Type
-  contentType: 'article',
-  contentFormat: 'long-form',
+  contentType: 'article' as const,
+  contentFormat: 'article' as const,
   contentIntent: 'inform',
   
   // Solutions
