@@ -1,20 +1,21 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Save, LayoutGrid, Image } from 'lucide-react';
+import { FileText, Copy, Download, Save, Book, Images, Image } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { toast } from 'sonner';
 
 interface GeneratedContentDisplayProps {
   generatedContents: Record<string, string>;
   activeFormat: string | null;
-  setActiveFormat: (format: string) => void;
+  setActiveFormat: React.Dispatch<React.SetStateAction<string | null>>;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
-  onSaveAsNewContent: (formatId: string, content: string) => void;
+  onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
 }
 
-const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
+export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
   generatedContents,
   activeFormat,
   setActiveFormat,
@@ -22,119 +23,109 @@ const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
   onDownloadAsText,
   onSaveAsNewContent
 }) => {
-  // Helper function to get format name from ID
-  const getFormatName = (formatId: string) => {
-    const format = contentFormats.find(f => f.id === formatId);
-    return format?.name || formatId;
-  };
-  
-  // Helper function to get icon for content format
+  // Helper function to get the appropriate icon for a format
   const getFormatIcon = (formatId: string) => {
     switch (formatId) {
+      case 'glossary':
+        return <Book className="h-4 w-4" />;
       case 'carousel':
-        return <LayoutGrid className="h-4 w-4 mr-1" />;
+        return <Images className="h-4 w-4" />;
       case 'meme':
-        return <Image className="h-4 w-4 mr-1" />;
+        return <Image className="h-4 w-4" />;
       default:
         return null;
     }
   };
 
-  // If no content has been generated yet
-  if (Object.keys(generatedContents).length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Generated Content</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-12">
-          <p className="text-muted-foreground">
-            Select content formats on the left and click "Generate" to create repurposed content
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const formatIds = Object.keys(generatedContents);
-  
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-lg">Generated Content Formats</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {formatIds.map(formatId => (
-            <Card 
-              key={formatId} 
-              className={`cursor-pointer transition-shadow hover:shadow-md ${
-                activeFormat === formatId ? 'border-primary ring-1 ring-primary' : ''
-              }`}
-              onClick={() => setActiveFormat(formatId)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-center">
-                  {getFormatIcon(formatId)}
-                  <span className="font-medium">{getFormatName(formatId)}</span>
-                </div>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="h-24 overflow-hidden text-sm text-muted-foreground">
-                  <p className="line-clamp-3">
-                    {generatedContents[formatId].substring(0, 150)}
-                    {generatedContents[formatId].length > 150 ? '...' : ''}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+    <Card className="h-full">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-lg">Generated Content</CardTitle>
+          <CardDescription>
+            {Object.keys(generatedContents).length > 0
+              ? `${Object.keys(generatedContents).length} format(s) generated`
+              : 'Select formats and generate content'}
+          </CardDescription>
         </div>
-        
-        {activeFormat && (
-          <div className="mt-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center">
-                  {getFormatIcon(activeFormat)}
-                  {getFormatName(activeFormat)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="whitespace-pre-wrap rounded-md bg-muted p-4 text-sm font-mono overflow-auto max-h-[400px]">
-                  {generatedContents[activeFormat]}
-                </pre>
-              </CardContent>
-              <CardFooter className="flex justify-end gap-2">
-                <Button 
-                  variant="outline" 
+
+        {Object.keys(generatedContents).length > 0 && (
+          <div className="flex gap-2 overflow-x-auto py-1">
+            {Object.keys(generatedContents).map((formatId) => {
+              const format = contentFormats.find(f => f.id === formatId);
+              const icon = getFormatIcon(formatId);
+              return (
+                <Button
+                  key={formatId}
                   size="sm"
-                  onClick={() => onCopyToClipboard(generatedContents[activeFormat])}
+                  variant={activeFormat === formatId ? "default" : "outline"}
+                  onClick={() => setActiveFormat(formatId)}
+                  className={activeFormat === formatId 
+                    ? "bg-gradient-to-r from-neon-purple to-neon-blue border-none" 
+                    : "border-white/10"
+                  }
                 >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
+                  {icon && <span className="mr-1">{icon}</span>}
+                  {format?.name || formatId}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onDownloadAsText(
-                    generatedContents[activeFormat], 
-                    getFormatName(activeFormat)
-                  )}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save as Content
-                </Button>
-              </CardFooter>
-            </Card>
+              );
+            })}
+          </div>
+        )}
+      </CardHeader>
+
+      <CardContent className="p-4 h-[500px] flex flex-col">
+        {Object.keys(generatedContents).length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Content Generated Yet</h3>
+            <p className="text-muted-foreground max-w-md mb-6">
+              Select content formats from the left panel and click "Generate" to transform your content
+            </p>
+          </div>
+        ) : activeFormat ? (
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4">
+              <pre className="whitespace-pre-wrap font-mono text-sm">
+                {generatedContents[activeFormat]}
+              </pre>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onCopyToClipboard(generatedContents[activeFormat])}
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Copy
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const format = contentFormats.find(f => f.id === activeFormat);
+                  onDownloadAsText(
+                    generatedContents[activeFormat],
+                    format?.name || 'content'
+                  );
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
+              >
+                <Save className="h-4 w-4 mr-1" />
+                Save as Content
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <p>Select a content format to view</p>
           </div>
         )}
       </CardContent>

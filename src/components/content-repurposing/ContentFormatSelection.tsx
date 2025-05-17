@@ -1,122 +1,97 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Image, LayoutGrid } from 'lucide-react';
+import { Check, Loader2, Book, Images, Image } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
-import { CheckIcon } from 'lucide-react';
 
 interface ContentFormatSelectionProps {
   selectedFormats: string[];
-  setSelectedFormats: (formats: string[]) => void;
-  onGenerateContent: (formats: string[]) => void;  // Updated parameter to accept formats
+  setSelectedFormats: React.Dispatch<React.SetStateAction<string[]>>;
+  onGenerateContent: (formatIds: string[]) => void;
   isGenerating: boolean;
 }
 
-const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
+export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   selectedFormats,
   setSelectedFormats,
   onGenerateContent,
   isGenerating
 }) => {
-  // Helper function to get icon for content format
+  // Helper function to get the appropriate icon for a format
   const getFormatIcon = (formatId: string) => {
     switch (formatId) {
+      case 'glossary':
+        return <Book className="h-4 w-4 text-muted-foreground" />;
       case 'carousel':
-        return <LayoutGrid className="h-4 w-4 mr-1" />;
+        return <Images className="h-4 w-4 text-muted-foreground" />;
       case 'meme':
-        return <Image className="h-4 w-4 mr-1" />;
+        return <Image className="h-4 w-4 text-muted-foreground" />;
       default:
         return null;
-    }
-  };
-  
-  const handleToggleFormat = (formatId: string) => {
-    if (selectedFormats.includes(formatId)) {
-      setSelectedFormats(selectedFormats.filter(id => id !== formatId));
-    } else {
-      setSelectedFormats([...selectedFormats, formatId]);
-    }
-  };
-  
-  const handleSelectAll = () => {
-    if (selectedFormats.length === contentFormats.length) {
-      setSelectedFormats([]);
-    } else {
-      setSelectedFormats(contentFormats.map(format => format.id));
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between mb-2">
-          <CardTitle className="text-lg">Content Formats</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleSelectAll}>
-            {selectedFormats.length === contentFormats.length ? 'Deselect All' : 'Select All'}
-          </Button>
-        </div>
-        <CardDescription>
-          Select which formats you want to generate
-        </CardDescription>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Content Formats</CardTitle>
+        <CardDescription>Select formats to transform your content</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {contentFormats.map(format => (
-            <div 
+        <div className="space-y-2">
+          {contentFormats.map((format) => (
+            <div
               key={format.id}
-              onClick={() => handleToggleFormat(format.id)}
-              className={`p-3 border rounded-lg cursor-pointer flex items-center justify-between ${
-                selectedFormats.includes(format.id) 
-                  ? 'border-primary bg-primary/5' 
-                  : 'hover:border-primary/50'
+              className={`flex items-center p-2 rounded-md cursor-pointer ${
+                selectedFormats.includes(format.id)
+                  ? 'bg-primary/20 border border-primary/50'
+                  : 'hover:bg-accent/10 border border-transparent'
               }`}
+              onClick={() => {
+                if (selectedFormats.includes(format.id)) {
+                  setSelectedFormats(selectedFormats.filter(f => f !== format.id));
+                } else {
+                  setSelectedFormats([...selectedFormats, format.id]);
+                }
+              }}
             >
-              <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded-sm border flex items-center justify-center ${
-                  selectedFormats.includes(format.id) ? 'bg-primary border-primary' : 'border-muted-foreground'
-                }`}>
-                  {selectedFormats.includes(format.id) && (
-                    <CheckIcon className="h-3 w-3 text-primary-foreground" />
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center">
-                    {getFormatIcon(format.id)}
-                    <span className="font-medium">{format.name}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {format.id === 'carousel' 
-                      ? 'Text content for sequential slides' 
-                      : format.id === 'meme' 
-                        ? 'Text suggestions for meme creation' 
-                        : format.description}
-                  </p>
-                </div>
+              <div
+                className={`w-4 h-4 rounded mr-2 flex items-center justify-center ${
+                  selectedFormats.includes(format.id)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-muted-foreground'
+                }`}
+              >
+                {selectedFormats.includes(format.id) && <Check className="h-3 w-3" />}
               </div>
-              <Badge variant="outline" className="ml-2">
-                {format.id === 'meme' || format.id === 'carousel' ? 'Text Content' : 'Text'}
-              </Badge>
+              <div className="flex-1">
+                <span className="text-sm font-medium flex items-center gap-1">
+                  {format.name}
+                  {getFormatIcon(format.id)}
+                </span>
+                <p className="text-xs text-muted-foreground">{format.description}</p>
+              </div>
             </div>
           ))}
-          
-          <Button 
-            onClick={() => onGenerateContent(selectedFormats)}  // Pass the selected formats
-            disabled={selectedFormats.length === 0 || isGenerating}
-            className="w-full mt-4"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Content...
-              </>
-            ) : (
-              `Generate ${selectedFormats.length} Format${selectedFormats.length !== 1 ? 's' : ''}`
-            )}
-          </Button>
         </div>
       </CardContent>
+      <CardFooter>
+        <Button
+          className="w-full"
+          disabled={selectedFormats.length === 0 || isGenerating}
+          onClick={() => onGenerateContent(selectedFormats)}
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            `Generate ${selectedFormats.length} Format${selectedFormats.length !== 1 ? 's' : ''}`
+          )}
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { CheckIcon, Loader2, Copy, Download, FileText, LayoutGrid, Image } from 'lucide-react';
+import { CheckIcon, Loader2, Copy, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,16 +21,16 @@ import { getPromptTemplatesByType } from '@/services/userPreferencesService';
 
 // Content format options
 export const contentFormats = [
-  { id: 'social-twitter', name: 'Twitter/X Post', description: 'Short-form content under 280 characters', icon: null },
-  { id: 'social-linkedin', name: 'LinkedIn Post', description: 'Professional content for LinkedIn', icon: null },
-  { id: 'social-facebook', name: 'Facebook Post', description: 'Engaging content for Facebook', icon: null },
-  { id: 'email', name: 'Email Newsletter', description: 'Email-ready content with subject line', icon: null },
-  { id: 'script', name: 'Video/Podcast Script', description: 'Script for audio or video content', icon: null },
-  { id: 'infographic', name: 'Infographic Content', description: 'Structured content for visual presentation', icon: null },
-  { id: 'blog', name: 'Blog Summary', description: 'Condensed version of the content', icon: null },
-  { id: 'glossary', name: 'Glossary', description: 'List of definitions and terminology', icon: null },
-  { id: 'carousel', name: 'Carousel', description: 'Content split into sequential slides', icon: <LayoutGrid className="h-4 w-4 mr-2" /> },
-  { id: 'meme', name: 'Meme', description: 'Humorous content with viral potential', icon: <Image className="h-4 w-4 mr-2" /> }
+  { id: 'social-twitter', name: 'Twitter/X Post', description: 'Short-form content under 280 characters' },
+  { id: 'social-linkedin', name: 'LinkedIn Post', description: 'Professional content for LinkedIn' },
+  { id: 'social-facebook', name: 'Facebook Post', description: 'Engaging content for Facebook' },
+  { id: 'email', name: 'Email Newsletter', description: 'Email-ready content with subject line' },
+  { id: 'script', name: 'Video/Podcast Script', description: 'Script for audio or video content' },
+  { id: 'infographic', name: 'Infographic Content', description: 'Structured content for visual presentation' },
+  { id: 'blog', name: 'Blog Summary', description: 'Condensed version of the content' },
+  { id: 'glossary', name: 'Glossary', description: 'List of definitions and terminology' },
+  { id: 'carousel', name: 'Carousel', description: 'Content split into sequential slides' },
+  { id: 'meme', name: 'Meme', description: 'Humorous content with viral potential' }
 ];
 
 interface RepurposeTabProps {
@@ -121,12 +121,6 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
     }
     return 'Default template';
   };
-
-  // Get icon for a specific format
-  const getFormatIcon = (formatId: string) => {
-    const format = contentFormats.find(f => f.id === formatId);
-    return format?.icon || null;
-  };
   
   return (
     <div className="space-y-6">
@@ -165,10 +159,7 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                         <CheckIcon className="h-3 w-3" />
                       )}
                     </div>
-                    <span className="font-medium flex items-center">
-                      {format.icon}
-                      {format.name}
-                    </span>
+                    <span className="font-medium">{format.name}</span>
                   </div>
                   
                   <Tooltip>
@@ -210,7 +201,7 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Generated Content</h3>
-            <div className="flex flex-wrap space-x-2">
+            <div className="flex space-x-2">
               {contentFormats
                 .filter(format => generatedContents[format.id])
                 .map(format => (
@@ -219,9 +210,7 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
                     variant={activeFormat === format.id ? "default" : "outline"}
                     size="sm"
                     onClick={() => setActiveFormat(format.id)}
-                    className="mb-2 flex items-center"
                   >
-                    {format.icon}
                     {format.name}
                   </Button>
                 ))}
@@ -231,8 +220,7 @@ export const RepurposeTab: React.FC<RepurposeTabProps> = ({
           {activeFormat && generatedContents[activeFormat] ? (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  {getFormatIcon(activeFormat)}
+                <CardTitle className="text-base">
                   {contentFormats.find(f => f.id === activeFormat)?.name}
                 </CardTitle>
               </CardHeader>

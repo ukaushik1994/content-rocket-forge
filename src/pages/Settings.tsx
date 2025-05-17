@@ -12,7 +12,6 @@ import { BillingSettings } from '@/components/settings';
 import { ExportSettings } from '@/components/settings';
 import { AppearanceSettings } from '@/components/settings';
 import { PromptTemplatesSettings } from '@/components/settings';
-import { BrandGuidelinesSettings } from '@/components/settings';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
@@ -49,8 +48,6 @@ export default function Settings() {
         return <AppearanceSettings />;
       case "promptTemplates":
         return <PromptTemplatesSettings />;
-      case "brandGuidelines":
-        return <BrandGuidelinesSettings />;
       case "billing":
         return <BillingSettings />;
       case "export":

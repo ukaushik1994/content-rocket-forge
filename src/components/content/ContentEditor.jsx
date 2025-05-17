@@ -7,10 +7,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const ContentEditor = ({
   content,
-  onChange
+  onContentChange
 }) => {
   const handleChange = e => {
-    onChange(e.target.value);
+    onContentChange(e.target.value);
   };
 
   // Simple Markdown to HTML converter

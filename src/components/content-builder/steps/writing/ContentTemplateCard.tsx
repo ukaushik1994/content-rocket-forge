@@ -1,65 +1,31 @@
 
 import React from 'react';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { PromptTemplate } from '@/services/userPreferences';
-import { Image, LayoutGrid } from 'lucide-react';
-import { getFormatTypeLabel } from '@/components/settings/prompt-templates/types';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { SerpContentGenerator } from '@/components/content/SerpContentGenerator';
 
 interface ContentTemplateCardProps {
-  template: PromptTemplate;
-  onSelectTemplate: (template: PromptTemplate) => void;
+  serpData: any;
+  onGenerateContent: (template: string) => void;
+  mainKeyword: string;
 }
 
 export const ContentTemplateCard: React.FC<ContentTemplateCardProps> = ({
-  template,
-  onSelectTemplate
+  serpData,
+  onGenerateContent,
+  mainKeyword
 }) => {
-  // Get the appropriate icon based on template format type
-  const getTemplateIcon = () => {
-    switch (template.formatType) {
-      case 'carousel':
-        return <LayoutGrid className="h-4 w-4 mr-1" />;
-      case 'meme':
-        return <Image className="h-4 w-4 mr-1" />;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="mt-4">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="mb-1">
-            <div className="flex items-center gap-1">
-              {getTemplateIcon()}
-              <span>{getFormatTypeLabel(template.formatType)}</span>
-            </div>
-          </Badge>
-        </div>
-        <h3 className="text-lg font-medium">{template.name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-3">
-          {template.description}
-        </p>
+        <CardTitle className="text-sm">Content Templates</CardTitle>
       </CardHeader>
-      <CardContent className="pb-2 flex-grow">
-        <div className="bg-muted rounded-md p-3 h-28 overflow-hidden">
-          <p className="text-xs text-muted-foreground line-clamp-7">
-            {template.promptTemplate.substring(0, 200)}
-            {template.promptTemplate.length > 200 ? '...' : ''}
-          </p>
-        </div>
+      <CardContent>
+        <SerpContentGenerator 
+          serpData={serpData}
+          onGenerateContent={onGenerateContent}
+          mainKeyword={mainKeyword}
+        />
       </CardContent>
-      <CardFooter>
-        <Button 
-          className="w-full" 
-          onClick={() => onSelectTemplate(template)}
-        >
-          Use Template
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

@@ -235,7 +235,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
                 <div className="h-[60vh]">
                   <ContentEditor
                     content={editedContent}
-                    onChange={handleContentChange}
+                    onContentChange={handleContentChange}
                   />
                 </div>
               </TabsContent>

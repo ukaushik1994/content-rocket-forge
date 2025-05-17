@@ -16,11 +16,6 @@ const Drafts = () => {
   } = useContent();
   const [selectedDraft, setSelectedDraft] = useState<any | null>(null);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
-  const [viewPreference, setViewPreference] = useState<'grid' | 'list'>(() => {
-    // Try to get saved preference from localStorage
-    const saved = localStorage.getItem('drafts_view_mode');
-    return (saved === 'grid' || saved === 'list') ? saved : 'grid';
-  });
 
   // Refresh content when component mounts
   useEffect(() => {
@@ -59,11 +54,6 @@ const Drafts = () => {
       console.log('[Drafts] Cleanup: session storage flags cleared');
     };
   }, [refreshContent, contentItems.length]);
-
-  // Save view preference when it changes
-  useEffect(() => {
-    localStorage.setItem('drafts_view_mode', viewPreference);
-  }, [viewPreference]);
 
   const handleOpenDetailView = (draft: any) => {
     setSelectedDraft(draft);

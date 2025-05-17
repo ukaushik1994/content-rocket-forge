@@ -16,16 +16,12 @@ export const ContentApprovalView: React.FC = () => {
     statusFilter === 'all' || item.status === statusFilter
   );
   
-  // Calculate content statistics with additional repurposed count
+  // Calculate content statistics
   const contentStats = {
     all: contentItems.length,
     draft: contentItems.filter(item => item.status === 'draft').length,
     approved: contentItems.filter(item => item.status === 'approved').length,
-    published: contentItems.filter(item => item.status === 'published').length,
-    repurposed: contentItems.filter(item => 
-      item.metadata?.repurposed === true || 
-      (item.metadata?.repurposedFrom !== undefined)
-    ).length
+    published: contentItems.filter(item => item.status === 'published').length
   };
   
   // Handle status filter change

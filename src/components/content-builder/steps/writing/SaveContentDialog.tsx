@@ -1,73 +1,126 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { Label } from '@/components/ui/label';
 
 interface SaveContentDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (title: string, metadata: any) => void;
-  keyword: string;
+  showSaveDialog: boolean;
+  setShowSaveDialog: React.Dispatch<React.SetStateAction<boolean>>;
+  saveTitle: string;
+  setSaveTitle: React.Dispatch<React.SetStateAction<string>>;
+  saveNote: string;
+  setSaveNote: React.Dispatch<React.SetStateAction<string>>;
+  handleSaveToDraft: () => Promise<void>;
+  isSaving: boolean;
+  mainKeyword: string;
+  secondaryKeywords: string[];
+  content: string;
+  outlineLength: number;
 }
 
-export const SaveContentDialog: React.FC<SaveContentDialogProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSave,
-  keyword 
-}) => {
-  const [title, setTitle] = useState(`Content about ${keyword}`);
-  const [notes, setNotes] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+export function SaveContentDialog({
+  showSaveDialog,
+  setShowSaveDialog,
+  saveTitle,
+  setSaveTitle,
+  saveNote,
+  setSaveNote,
+  handleSaveToDraft,
+  isSaving,
+  mainKeyword,
+  secondaryKeywords,
+  content,
+  outlineLength
+}: SaveContentDialogProps) {
+  const { state } = useContentBuilder();
+  const { serpSelections } = state;
 
-  const handleSave = () => {
-    setIsSaving(true);
-    onSave(title, { notes });
-    setIsSaving(false);
-  };
+  // Get selected SERP items count
+  const selectedSerpCount = serpSelections ? serpSelections.filter(item => item.selected).length : 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Save Content</DialogTitle>
+          <DialogTitle>Save Content to Drafts</DialogTitle>
           <DialogDescription>
-            Save your content to your repository for later use or publishing.
+            Save your content as a draft to continue working on it later.
           </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
+          <div className="grid gap-2">
+            <Label htmlFor="title">Content Title</Label>
+            <Input 
               id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={saveTitle}
+              onChange={(e) => setSaveTitle(e.target.value)}
               placeholder="Enter title for your content"
             />
           </div>
-          <div className="space-y-2">
+
+          <div className="grid gap-2">
             <Label htmlFor="notes">Notes (optional)</Label>
             <Textarea
               id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about this content"
-              rows={3}
+              value={saveNote}
+              onChange={(e) => setSaveNote(e.target.value)}
+              placeholder="Add any notes about this draft..."
+              className="min-h-[100px]"
             />
           </div>
+
+          <div>
+            <Label>Content Summary</Label>
+            <div className="bg-muted p-3 rounded-md mt-1 text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Content Length:</span>
+                <span>{content.length} characters</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Main Keyword:</span>
+                <Badge variant="outline">{mainKeyword}</Badge>
+              </div>
+              {secondaryKeywords.length > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Secondary Keywords:</span>
+                  <span>{secondaryKeywords.length}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Outline Sections:</span>
+                <span>{outlineLength}</span>
+              </div>
+              {selectedSerpCount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">SERP Selections:</span>
+                  <span>{selectedSerpCount}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSaveDialog(false)}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!title.trim() || isSaving}>
-            {isSaving ? "Saving..." : "Save Content"}
+          <Button 
+            onClick={handleSaveToDraft}
+            disabled={isSaving || !saveTitle.trim()}
+          >
+            {isSaving ? 'Saving...' : 'Save to Drafts'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
