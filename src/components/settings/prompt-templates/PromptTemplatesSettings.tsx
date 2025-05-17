@@ -16,6 +16,7 @@ import {
 import { TemplateGrid } from './TemplateGrid';
 import { TemplateDialog } from './TemplateDialog';
 import { PreviewDialog } from './PreviewDialog';
+import { getFormatTypeLabel } from './types';
 
 export function PromptTemplatesSettings() {
   const [activeTab, setActiveTab] = useState('all');
@@ -186,7 +187,7 @@ export function PromptTemplatesSettings() {
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([formatType]) => (
                   <TabsTrigger key={formatType} value={formatType}>
-                    {formatType}
+                    {getFormatTypeLabel(formatType)}
                   </TabsTrigger>
                 ))}
             </TabsList>
