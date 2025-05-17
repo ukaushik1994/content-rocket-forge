@@ -207,7 +207,7 @@ Keep the tone professional yet conversational, and structure it with short parag
 6. Clear call to action
 
 Write in a conversational tone appropriate for video delivery. Include timing guidelines.`,
-        structureTemplate: '[0:00-0:30] HOOK: Attention-grabbing opening\n\n[0:30-1:00] INTRO: "In this video, you'll learn..."\n\n[1:00-3:00] MAIN POINT 1: [Description with visual cues]\n\n[3:00-5:00] MAIN POINT 2: [Description with visual cues]\n\n[5:00-7:00] MAIN POINT 3: [Description with visual cues]\n\n[7:00-7:30] CONCLUSION: Summary of key points\n\n[7:30-8:00] CTA: "Subscribe/Comment/Visit website"'
+        structureTemplate: "[0:00-0:30] HOOK: Attention-grabbing opening\n\n[0:30-1:00] INTRO: \"In this video, you will learn...\"\n\n[1:00-3:00] MAIN POINT 1: [Description with visual cues]\n\n[3:00-5:00] MAIN POINT 2: [Description with visual cues]\n\n[5:00-7:00] MAIN POINT 3: [Description with visual cues]\n\n[7:00-7:30] CONCLUSION: Summary of key points\n\n[7:30-8:00] CTA: \"Subscribe/Comment/Visit website\""
       },
       {
         name: 'Email Newsletter',
