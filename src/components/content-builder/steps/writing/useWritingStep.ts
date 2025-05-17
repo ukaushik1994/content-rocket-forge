@@ -1,80 +1,81 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { OutlineSection } from '@/contexts/content-builder/types';
-import { AiProvider } from '@/services/aiService/types';
 
-export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
-  const { 
-    mainKeyword, 
-    outline, 
-    content, 
-    additionalInstructions, 
-    serpData, 
-    selectedSolution,
-    contentTitle
-  } = state;
+export const useWritingStep = () => {
+  const { state, dispatch, setContent, setAdditionalInstructions } = useContentBuilder();
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [showOutline, setShowOutline] = useState(true);
   const [showGenerator, setShowGenerator] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
+  const [saveTitle, setSaveTitle] = useState('');
   const [saveNote, setSaveNote] = useState('');
-  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
-
-  // Mark this step as complete when we have content
+  const [aiProvider, setAiProvider] = useState('gpt-4o');
+  
+  // Get values from state
+  const { 
+    mainKeyword, 
+    selectedKeywords, 
+    contentTitle,
+    outline,
+    content,
+    additionalInstructions,
+    selectedSolution,
+    contentType,
+    contentFormat,
+    serpSelections
+  } = state;
+  
+  // Set the save title when contentTitle changes
   useEffect(() => {
-    if (content && content.trim().length > 100) {
+    if (contentTitle) {
+      setSaveTitle(contentTitle);
+    } else if (mainKeyword) {
+      setSaveTitle(`${mainKeyword} - ${new Date().toLocaleDateString()}`);
+    }
+  }, [contentTitle, mainKeyword]);
+  
+  // Handle content change
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+    
+    // Mark step as completed if content is not empty
+    if (newContent.trim().length > 0) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
     }
-  }, [content, dispatch]);
-
-  useEffect(() => {
-    if (contentTitle && contentTitle !== saveTitle) {
-      setSaveTitle(contentTitle);
-    }
-  }, [contentTitle, saveTitle]);
-
-  const handleContentChange = (newContent: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: newContent });
   };
-
-  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setAdditionalInstructions(e.target.value);
-  };
-
+  
+  // Handle toggle outline
   const handleToggleOutline = () => {
     setShowOutline(!showOutline);
   };
   
+  // Handle toggle generator
   const handleToggleGenerator = () => {
     setShowGenerator(!showGenerator);
   };
-
-  const handleContentTemplateSelection = (template: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: template });
-    setShowGenerator(false);
-  };
-
-  const handleAiProviderChange = (provider: AiProvider) => {
+  
+  // Handle AI provider change
+  const handleAiProviderChange = (provider: string) => {
     setAiProvider(provider);
   };
-
-  // Convert outline to the appropriate format for the sidebar component
-  const processedOutline = Array.isArray(outline) 
-    ? outline.map(item => {
-        if (typeof item === 'string') {
-          return { id: Math.random().toString(), title: item, level: 2 };
-        } else if (item && typeof item === 'object' && 'title' in item) {
-          return item as OutlineSection;
-        }
-        return { id: Math.random().toString(), title: '', level: 2 };
-      })
-    : [];
-
+  
+  // Handle additional instructions change
+  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAdditionalInstructions(e.target.value);
+  };
+  
+  // Handle content template selection
+  const handleContentTemplateSelection = (template: string) => {
+    setContent(template);
+    setShowGenerator(false);
+    
+    // Mark step as completed
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+  };
+  
   return {
     state,
     isGenerating,
@@ -93,8 +94,11 @@ export function useWritingStep() {
     additionalInstructions,
     content,
     mainKeyword,
-    outline: processedOutline,
+    outline,
     selectedSolution,
+    contentType,
+    contentFormat,
+    serpSelections,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
@@ -102,4 +106,4 @@ export function useWritingStep() {
     handleContentTemplateSelection,
     handleAiProviderChange
   };
-}
+};

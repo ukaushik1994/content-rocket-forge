@@ -4,10 +4,10 @@ import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
-import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
+import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 
 export const ContentWritingStep = () => {
   const {
@@ -15,7 +15,6 @@ export const ContentWritingStep = () => {
     isGenerating,
     setIsGenerating,
     showOutline,
-    showGenerator,
     isSaving,
     setIsSaving,
     showSaveDialog,
@@ -33,8 +32,6 @@ export const ContentWritingStep = () => {
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
-    handleToggleGenerator,
-    handleContentTemplateSelection,
     handleAiProviderChange
   } = useWritingStep();
 
@@ -89,20 +86,14 @@ export const ContentWritingStep = () => {
         isGenerating={isGenerating}
         handleGenerateContent={handleGenerateContent}
         handleToggleOutline={handleToggleOutline}
-        handleToggleGenerator={handleToggleGenerator}
         showOutline={showOutline}
         outlineLength={state.outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
       />
       
-      {showGenerator && (
-        <ContentTemplateCard
-          serpData={state.serpData}
-          onGenerateContent={handleContentTemplateSelection}
-          mainKeyword={mainKeyword}
-        />
-      )}
+      {/* Show selected SERP items */}
+      <SelectedSerpItemsCard />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {showOutline && (
