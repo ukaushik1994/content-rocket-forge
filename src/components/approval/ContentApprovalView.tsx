@@ -9,7 +9,12 @@ import { ApprovalProvider } from './context/ApprovalContext';
 export const ContentApprovalView: React.FC = () => {
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
-  const { contentItems, loading } = useContent();
+  const { contentItems, loading, refreshContent } = useContent();
+  
+  // Force refresh when component mounts to ensure we have the latest data
+  useEffect(() => {
+    refreshContent();
+  }, [refreshContent]);
   
   // Filter content based on selected status
   const filteredContent = contentItems.filter(item => 
@@ -21,7 +26,8 @@ export const ContentApprovalView: React.FC = () => {
     all: contentItems.length,
     draft: contentItems.filter(item => item.status === 'draft').length,
     approved: contentItems.filter(item => item.status === 'approved').length,
-    published: contentItems.filter(item => item.status === 'published').length
+    published: contentItems.filter(item => item.status === 'published').length,
+    repurposed: contentItems.filter(item => item.metadata?.repurposedType || item.metadata?.originalContentId).length
   };
   
   // Handle status filter change
