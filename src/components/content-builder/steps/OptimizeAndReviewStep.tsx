@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { FinalReviewHeader } from '../final-review/FinalReviewHeader';
 import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { OptimizeTab } from '../final-review/tabs/OptimizeTab';
 import { SeoTabContent } from '../final-review/tabs/SeoTabContent';
@@ -102,13 +100,6 @@ export const OptimizeAndReviewStep = () => {
   
   return (
     <div className="space-y-8">
-      <FinalReviewHeader 
-        completionPercentage={completionPercentage} 
-        passedChecks={passedChecks}
-        totalChecks={totalChecks}
-        seoScore={state.seoScore}
-      />
-      
       <SaveAndExportPanel 
         completionPercentage={completionPercentage}
         onSave={handleSaveToDraftWrapper}

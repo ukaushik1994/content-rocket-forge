@@ -5,5 +5,4 @@ export * from './KeywordUsageSummaryCard';
 export * from './MetaInformationCard';
 export * from './SolutionIntegrationCard';
 export * from './ContentReviewCard';
-export * from './FinalReviewHeader';
 export * from './tabs';
