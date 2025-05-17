@@ -9,15 +9,17 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Copy, Download, FileText, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Copy, Download, FileText, Loader2, Save, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { RepurposeTab } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 
 const ContentRepurposing = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { getContentItem, addContentItem } = useContent();
+  const { getContentItem, getAllContentItems, addContentItem } = useContent();
   
   const [content, setContent] = useState<any>(null);
+  const [contentItems, setContentItems] = useState<any[]>([]);
   const [selectedFormat, setSelectedFormat] = useState<string>('');
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -37,6 +39,11 @@ const ContentRepurposing = () => {
   
   // Load content when component mounts
   useEffect(() => {
+    // Load all content items for selection
+    const items = getAllContentItems();
+    setContentItems(items);
+    
+    // Check if we have a specific content ID from URL param
     const contentId = new URLSearchParams(location.search).get('id');
     if (contentId) {
       const contentItem = getContentItem(contentId);
@@ -45,17 +52,27 @@ const ContentRepurposing = () => {
         setContent(contentItem);
       } else {
         toast.error('Content not found');
-        navigate('/drafts');
       }
-    } else {
-      toast.error('No content ID provided');
-      navigate('/drafts');
     }
-  }, [location, getContentItem, navigate]);
+  }, [location, getContentItem, getAllContentItems]);
+  
+  const handleContentSelection = (contentId: string) => {
+    const selectedContent = getContentItem(contentId);
+    if (selectedContent) {
+      setContent(selectedContent);
+      // Update the URL without page reload
+      navigate(`/content-repurposing?id=${contentId}`, { replace: true });
+    }
+  };
   
   const handleGenerateContent = async () => {
     if (!selectedFormat) {
       toast.error('Please select a content format');
+      return;
+    }
+    
+    if (!content) {
+      toast.error('Please select content to repurpose');
       return;
     }
     
@@ -116,10 +133,9 @@ const ContentRepurposing = () => {
       
       toast.success('Saved as new draft');
       
-      // Redirect to drafts after a short delay
-      setTimeout(() => {
-        navigate('/drafts');
-      }, 1500);
+      // Reset the form
+      setGeneratedContent('');
+      setSelectedFormat('');
     } catch (error) {
       console.error('Error saving draft:', error);
       toast.error('Failed to save draft');
@@ -130,14 +146,64 @@ const ContentRepurposing = () => {
     navigator.clipboard.writeText(generatedContent);
     toast.success('Copied to clipboard');
   };
-  
+
+  // If no content is selected yet, show the content selection view
   if (!content) {
     return (
       <div className="min-h-screen flex flex-col bg-black">
+        <Helmet>
+          <title>Content Repurposing | Content Platform</title>
+        </Helmet>
+        
         <Navbar />
-        <div className="flex-1 container py-8 flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-t-2 border-blue-500 border-opacity-50 rounded-full"></div>
-        </div>
+        
+        <main className="flex-1 container py-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold">Content Repurposing</h1>
+            <p className="text-muted-foreground">Select content to repurpose into different formats</p>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Content</CardTitle>
+              <CardDescription>Select a piece of content to repurpose</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {contentItems.length === 0 ? (
+                <div className="text-center p-8">
+                  <p className="text-muted-foreground mb-4">No content available to repurpose</p>
+                  <Button onClick={() => navigate('/content-builder')}>
+                    Create New Content
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">{contentItems.length} items available</p>
+                    <Button variant="outline" size="sm" className="flex gap-1">
+                      <Filter className="h-3 w-3" />
+                      Filter
+                    </Button>
+                  </div>
+                  <div className="grid gap-4">
+                    {contentItems.map(item => (
+                      <Card key={item.id} className="cursor-pointer hover:bg-accent/5" onClick={() => handleContentSelection(item.id)}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col">
+                            <h3 className="font-medium">{item.title}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {item.content?.substring(0, 120)}...
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
@@ -156,166 +222,31 @@ const ContentRepurposing = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/drafts')}
+            onClick={() => {
+              setContent(null);
+              navigate('/content-repurposing');
+            }}
             className="gap-1"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Drafts
+            Back to Content List
           </Button>
           
           <h1 className="text-2xl font-bold text-center flex-1">Content Repurposing</h1>
           
           <div className="w-24"></div> {/* For balance */}
         </div>
-        
-        {/* Content title and information */}
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle>Original Content</CardTitle>
-            <CardDescription>Repurposing "{content.title}"</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              Original content: {content.content?.substring(0, 150)}...
-            </p>
-          </CardContent>
-        </Card>
-        
-        {/* Main repurposing interface */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left column: Format selection */}
-          <Card className="md:col-span-1">
-            <CardHeader>
-              <CardTitle>Select Format</CardTitle>
-              <CardDescription>Choose a format to repurpose your content</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select content format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Social Media</SelectLabel>
-                    {contentFormats.filter(format => format.id.startsWith('social')).map(format => (
-                      <SelectItem key={format.id} value={format.id}>
-                        {format.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Long-form</SelectLabel>
-                    {contentFormats.filter(format => !format.id.startsWith('social')).map(format => (
-                      <SelectItem key={format.id} value={format.id}>
-                        {format.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              
-              {selectedFormat && (
-                <p className="text-sm text-muted-foreground">
-                  {contentFormats.find(f => f.id === selectedFormat)?.description}
-                </p>
-              )}
-              
-              <Button 
-                className="w-full"
-                onClick={handleGenerateContent}
-                disabled={!selectedFormat || isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate Content
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-          
-          {/* Right column: Generated content and actions */}
-          <Card className="md:col-span-2">
-            <CardHeader className="pb-3">
-              <Tabs defaultValue="transform" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="transform">Transform</TabsTrigger>
-                  <TabsTrigger value="preview">Preview</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            <CardContent>
-              {activeTab === 'transform' ? (
-                <div className="space-y-4">
-                  {generatedContent ? (
-                    <Textarea 
-                      value={generatedContent}
-                      onChange={(e) => setGeneratedContent(e.target.value)}
-                      className="min-h-[300px] font-mono"
-                    />
-                  ) : (
-                    <div className="border border-dashed rounded-md p-8 flex items-center justify-center min-h-[300px]">
-                      {isGenerating ? (
-                        <div className="text-center">
-                          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
-                          <p>Generating {contentFormats.find(f => f.id === selectedFormat)?.name}...</p>
-                          <p className="text-sm text-muted-foreground mt-2">This may take a moment</p>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-muted-foreground">
-                            {selectedFormat 
-                              ? "Select Generate Content to begin" 
-                              : "Select a content format to get started"}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {generatedContent && (
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" onClick={copyToClipboard}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy
-                      </Button>
-                      <Button variant="outline" onClick={handleSaveAsDraft}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save as Draft
-                      </Button>
-                      <Button variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="border rounded-md p-4 min-h-[300px]">
-                  {generatedContent ? (
-                    <div className="prose prose-invert max-w-none">
-                      <div className="whitespace-pre-wrap">
-                        {generatedContent}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">
-                        No content to preview yet
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
+        {/* Use the RepurposeTab component for the main repurposing interface */}
+        <RepurposeTab 
+          content={content.content} 
+          title={content.title}
+          isGenerating={isGenerating}
+          onGenerateRepurposedContent={async (contentType) => {
+            setSelectedFormat(contentType);
+            await handleGenerateContent();
+          }}
+        />
       </main>
     </div>
   );

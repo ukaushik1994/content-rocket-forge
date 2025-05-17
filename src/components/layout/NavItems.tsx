@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Settings, BarChart3, Puzzle, CheckCircle } from 'lucide-react';
+import { Home, FileText, Settings, BarChart3, Puzzle, CheckCircle, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -63,6 +63,12 @@ export default function NavItems() {
         icon={<Puzzle className="h-4 w-4" />} 
         label="Builder" 
         active={location.pathname === '/content-builder'} 
+      />
+      <NavItem 
+        to="/content-repurposing" 
+        icon={<Repeat className="h-4 w-4" />} 
+        label="Repurpose" 
+        active={location.pathname === '/content-repurposing'} 
       />
       <NavItem 
         to="/content-approval" 
