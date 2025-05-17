@@ -8,7 +8,8 @@ import {
   Bell, 
   Palette,
   Download,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  FileText
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -64,6 +65,13 @@ export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLay
               >
                 <Palette className="h-4 w-4" />
                 Appearance
+              </TabsTrigger>
+              <TabsTrigger
+                value="promptTemplates"
+                className="justify-start gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Prompt Templates
               </TabsTrigger>
               <TabsTrigger
                 value="billing"

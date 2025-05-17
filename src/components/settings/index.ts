@@ -9,3 +9,4 @@ export * from './AppearanceSettings';
 export * from './ExportSettings';
 export * from './BillingSettings';
 export * from './AdvancedSettings';
+export * from './PromptTemplatesSettings';

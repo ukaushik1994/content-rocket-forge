@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -13,10 +14,15 @@ import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
+import { 
+  generateContentWithTemplate, 
+  generateContentByFormatType 
+} from '@/services/contentTemplateService';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { state, dispatch } = useContentBuilder();
+  const [generatedFormats, setGeneratedFormats] = useState<Record<string, string>>({});
   
   const {
     isAnalyzing,
@@ -79,7 +85,7 @@ export const OptimizeAndReviewStep = () => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
 
-  // Updated function to handle repurposing content with multiple formats
+  // Updated function to handle repurposing content with multiple formats using templates
   const handleRepurposeContent = async (contentTypes: string[]) => {
     if (contentTypes.length === 0) {
       toast.error("Please select at least one content format");
@@ -88,27 +94,52 @@ export const OptimizeAndReviewStep = () => {
     
     toast.info(`Repurposing content to ${contentTypes.length} format(s)`);
     
+    const newGeneratedFormats: Record<string, string> = { ...generatedFormats };
+    
     try {
       for (const contentType of contentTypes) {
         toast.info(`Processing: ${contentType} format`);
         
-        // Use AI service to transform content
-        await sendChatRequest('openai', {
-          messages: [
-            { 
-              role: 'system', 
-              content: 'You are an expert content repurposing specialist. Transform the provided content into the requested format while maintaining its core message and value.' 
-            },
-            { 
-              role: 'user', 
-              content: `Transform this content titled "${state.contentTitle}" for the ${contentType} format.
-                        Content: ${state.content?.substring(0, 1500)}...
-                        
-                        Make it appropriate for the ${contentType} format with all necessary elements.`
-            }
-          ]
-        });
+        // Try to generate content using a template for this format type
+        const generatedContent = await generateContentByFormatType(
+          contentType,
+          state.contentTitle || state.mainKeyword,
+          {
+            content: state.content?.substring(0, 1500) || '',
+            keyword: state.mainKeyword
+          }
+        );
+        
+        if (generatedContent) {
+          newGeneratedFormats[contentType] = generatedContent;
+        } else {
+          // Fallback to generic generation if no template or generation failed
+          const response = await sendChatRequest('openai', {
+            messages: [
+              { 
+                role: 'system', 
+                content: 'You are an expert content repurposing specialist. Transform the provided content into the requested format while maintaining its core message and value.' 
+              },
+              { 
+                role: 'user', 
+                content: `Transform this content titled "${state.contentTitle}" for the ${contentType} format.
+                          Content: ${state.content?.substring(0, 1500)}...
+                          
+                          Make it appropriate for the ${contentType} format with all necessary elements.`
+              }
+            ]
+          });
+          
+          if (response?.choices?.[0]?.message?.content) {
+            newGeneratedFormats[contentType] = response.choices[0].message.content;
+          } else {
+            toast.error(`Failed to generate content for ${contentType} format`);
+          }
+        }
       }
+      
+      setGeneratedFormats(newGeneratedFormats);
+      
     } catch (error) {
       console.error("Error repurposing content:", error);
       toast.error("Failed to repurpose content");
@@ -258,7 +289,7 @@ export const OptimizeAndReviewStep = () => {
           <RepurposeTab
             content={state.content || ''}
             title={state.contentTitle || ''}
-            isGenerating={false}
+            isGenerating={isAnalyzing}
             onGenerateRepurposedContent={handleRepurposeContent}
           />
         </TabsContent>

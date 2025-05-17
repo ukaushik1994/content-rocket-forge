@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -10,7 +11,10 @@ import { toast } from 'sonner';
 import { RepurposeTab, contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
-import { sendChatRequest } from '@/services/aiService';
+import { 
+  generateContentByFormatType, 
+  generateContentWithTemplate 
+} from '@/services/contentTemplateService';
 
 const ContentRepurposing = () => {
   const location = useLocation();
@@ -22,6 +26,7 @@ const ContentRepurposing = () => {
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeFormat, setActiveFormat] = useState<string | null>(null);
   
   // Filter content items based on search query
   const filteredItems = contentItems.filter(item => 
@@ -70,44 +75,30 @@ const ContentRepurposing = () => {
     try {
       const newGeneratedContents: Record<string, string> = {};
       
-      // Generate content for each selected format using the AI service
+      // Generate content for each selected format using templates
       for (const formatId of contentTypeIds) {
         const formatInfo = contentFormats.find(f => f.id === formatId);
         
         try {
           toast.info(`Generating ${formatInfo?.name} content...`);
           
-          // Use the AI service to generate content
-          const response = await sendChatRequest('openai', {
-            messages: [
-              { 
-                role: 'system', 
-                content: `You are an expert at repurposing content for different formats. 
-                          Take the provided content and transform it for the specified format.
-                          Create high-quality, engaging content that's optimized for the target format.` 
-              },
-              { 
-                role: 'user', 
-                content: `Transform this content titled "${content.title}" into a ${formatInfo?.name} format.
-                          Original content: ${content.content.substring(0, 1500)}...
-                          
-                          Make it appropriate for the ${formatInfo?.name} format with all necessary elements.
-                          For Twitter/X, include hashtags and keep it under 280 characters. 
-                          For LinkedIn, make it professional and include relevant hashtags.
-                          For email newsletters, include subject line and clear sections.
-                          For scripts, include proper formatting with sections for narration.
-                          For infographics, organize data into clear bullet points and sections.`
-              }
-            ]
-          });
+          // Use our template service to generate content
+          const generatedContent = await generateContentByFormatType(
+            formatId,
+            content.title,
+            {
+              content: content.content.substring(0, 1500) || '',
+              keyword: content.keyword || ''
+            }
+          );
           
-          if (response?.choices?.[0]?.message?.content) {
-            newGeneratedContents[formatId] = response.choices[0].message.content;
+          if (generatedContent) {
+            newGeneratedContents[formatId] = generatedContent;
           } else {
             toast.error(`Failed to generate ${formatInfo?.name} content`);
           }
         } catch (error) {
-          console.error('Error generating content with AI:', error);
+          console.error('Error generating content:', error);
           toast.error(`Failed to generate ${formatInfo?.name} content`);
         }
       }
@@ -115,6 +106,7 @@ const ContentRepurposing = () => {
       setGeneratedContents(newGeneratedContents);
       
       if (Object.keys(newGeneratedContents).length > 0) {
+        setActiveFormat(Object.keys(newGeneratedContents)[0]);
         toast.success(`Generated content for ${Object.keys(newGeneratedContents).length} format(s)`);
       } else {
         toast.error('Failed to generate any content');
@@ -124,6 +116,50 @@ const ContentRepurposing = () => {
       toast.error('Failed to generate content');
     } finally {
       setIsGenerating(false);
+    }
+  };
+  
+  const copyToClipboard = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast.success('Copied to clipboard');
+  };
+  
+  const downloadAsText = (content: string, formatName: string) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${content?.title ? content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'content'}_${formatName.toLowerCase().replace(' ', '_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded as ${a.download}`);
+  };
+  
+  const saveAsNewContent = async (formatId: string, generatedContent: string) => {
+    if (!content) return;
+    
+    try {
+      const formatInfo = contentFormats.find(f => f.id === formatId);
+      const formatName = formatInfo?.name || 'Repurposed';
+      
+      // Add as new content item
+      await addContentItem({
+        title: `${content.title} (${formatName})`,
+        content: generatedContent,
+        status: 'draft',
+        metadata: {
+          originalContentId: content.id,
+          repurposedType: formatId,
+          repurposedFrom: content.title
+        }
+      });
+      
+      toast.success(`Saved as new content item`);
+    } catch (error) {
+      console.error('Error saving as new content:', error);
+      toast.error('Failed to save content');
     }
   };
   
@@ -151,7 +187,7 @@ const ContentRepurposing = () => {
           <Card className="overflow-hidden border-none shadow-lg bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-md border border-white/10">
             <CardHeader className="border-b border-white/10 bg-black/30">
               <CardTitle className="text-xl flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-neon-purple animate-pulse-glow" />
+                <Sparkles className="h-5 w-5 text-neon-purple animate-pulse" />
                 Available Content
               </CardTitle>
               <CardDescription>Select content to transform into different formats</CardDescription>
@@ -273,15 +309,177 @@ const ContentRepurposing = () => {
           <div className="w-24"></div> {/* For balance */}
         </div>
 
-        {/* Use the RepurposeTab component for the main repurposing interface */}
-        <RepurposeTab 
-          content={content.content} 
-          title={content.title}
-          isGenerating={isGenerating}
-          onGenerateRepurposedContent={async (contentTypes) => {
-            await handleGenerateContent(contentTypes);
-          }}
-        />
+        {/* Selection of content formats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 space-y-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Content Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Title</h3>
+                  <p className="font-medium">{content.title}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Content Preview</h3>
+                  <p className="text-sm line-clamp-4">{content.content?.substring(0, 200)}...</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Content Formats</CardTitle>
+                <CardDescription>Select formats to transform your content</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {contentFormats.map((format) => (
+                    <div
+                      key={format.id}
+                      className={`flex items-center p-2 rounded-md cursor-pointer ${
+                        selectedFormats.includes(format.id)
+                          ? 'bg-primary/20 border border-primary/50'
+                          : 'hover:bg-accent/10 border border-transparent'
+                      }`}
+                      onClick={() => {
+                        if (selectedFormats.includes(format.id)) {
+                          setSelectedFormats(selectedFormats.filter(f => f !== format.id));
+                        } else {
+                          setSelectedFormats([...selectedFormats, format.id]);
+                        }
+                      }}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded mr-2 flex items-center justify-center ${
+                          selectedFormats.includes(format.id)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'border border-muted-foreground'
+                        }`}
+                      >
+                        {selectedFormats.includes(format.id) && <Check className="h-3 w-3" />}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">{format.name}</span>
+                        <p className="text-xs text-muted-foreground">{format.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  disabled={selectedFormats.length === 0 || isGenerating}
+                  onClick={() => handleGenerateContent(selectedFormats)}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    `Generate ${selectedFormats.length} Format${selectedFormats.length !== 1 ? 's' : ''}`
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div className="md:col-span-2">
+            <Card className="h-full">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Generated Content</CardTitle>
+                  <CardDescription>
+                    {Object.keys(generatedContents).length > 0
+                      ? `${Object.keys(generatedContents).length} format(s) generated`
+                      : 'Select formats and generate content'}
+                  </CardDescription>
+                </div>
+
+                {Object.keys(generatedContents).length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto py-1">
+                    {Object.keys(generatedContents).map((formatId) => {
+                      const format = contentFormats.find(f => f.id === formatId);
+                      return (
+                        <Button
+                          key={formatId}
+                          size="sm"
+                          variant={activeFormat === formatId ? "default" : "outline"}
+                          onClick={() => setActiveFormat(formatId)}
+                          className={activeFormat === formatId 
+                            ? "bg-gradient-to-r from-neon-purple to-neon-blue border-none" 
+                            : "border-white/10"
+                          }
+                        >
+                          {format?.name || formatId}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardHeader>
+
+              <CardContent className="p-4 h-[500px] flex flex-col">
+                {Object.keys(generatedContents).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No Content Generated Yet</h3>
+                    <p className="text-muted-foreground max-w-md mb-6">
+                      Select content formats from the left panel and click "Generate" to transform your content
+                    </p>
+                  </div>
+                ) : activeFormat ? (
+                  <div className="flex flex-col h-full">
+                    <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4">
+                      <pre className="whitespace-pre-wrap font-mono text-sm">
+                        {generatedContents[activeFormat]}
+                      </pre>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(generatedContents[activeFormat])}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const format = contentFormats.find(f => f.id === activeFormat);
+                          downloadAsText(
+                            generatedContents[activeFormat],
+                            format?.name || 'content'
+                          );
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => saveAsNewContent(activeFormat, generatedContents[activeFormat])}
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Save as Content
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <p>Select a content format to view</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </motion.main>
     </div>
   );
