@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,8 +20,7 @@ export const OutlineEditor: React.FC<OutlineEditorProps> = ({
     const newSection: OutlineSection = {
       id: `section-${Date.now()}`,
       title: `New Section ${sections.length + 1}`,
-      content: '',
-      order: sections.length
+      level: 1, // Default level for new sections
     };
     
     setSections([...sections, newSection]);

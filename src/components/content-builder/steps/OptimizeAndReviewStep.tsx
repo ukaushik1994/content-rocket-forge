@@ -5,6 +5,7 @@ import { OptimizeHeader } from './optimize/OptimizeHeader';
 import { ContentPreview } from './optimize/ContentPreview';
 import { SeoSuggestionsList } from './optimize/SeoSuggestionsList';
 import { SerpSelectedItemsSidebar } from '../serp/SerpSelectedItemsSidebar';
+import { SeoImprovement as ContextSeoImprovement } from '@/contexts/content-builder/types/seo-types';
 
 export const OptimizeAndReviewStep = () => {
   const { state, analyzeSeo, applySeoImprovement, skipOptimizationStep } = useContentBuilder();

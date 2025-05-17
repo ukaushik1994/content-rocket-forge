@@ -5,14 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Sparkles, ArrowRightCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-interface SeoImprovement {
-  id: string;
-  title: string;
-  description: string;
-  impact: 'high' | 'medium' | 'low';
-  applied: boolean;
-}
+import { SeoImprovement } from '@/contexts/content-builder/types/seo-types';
 
 interface SeoSuggestionsListProps {
   improvements: SeoImprovement[];
@@ -72,14 +65,14 @@ export const SeoSuggestionsList: React.FC<SeoSuggestionsListProps> = ({
                 className={`border rounded-lg p-3 ${improvement.applied ? 'bg-green-500/10 border-green-500/30' : 'bg-card border-white/10'}`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-sm">{improvement.title}</h3>
+                  <h3 className="font-medium text-sm">{improvement.type}</h3>
                   <Badge className={`${getImpactColor(improvement.impact)} text-xs`}>
                     {improvement.impact} impact
                   </Badge>
                 </div>
                 
                 <p className="text-xs text-muted-foreground mb-3">
-                  {improvement.description}
+                  {improvement.recommendation}
                 </p>
                 
                 {improvement.applied ? (
