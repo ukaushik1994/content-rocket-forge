@@ -12,7 +12,7 @@ import {
   updatePromptTemplate, 
   deletePromptTemplate,
   initializeDefaultPromptTemplates 
-} from '@/services/userPreferencesService';
+} from '@/services/userPreferences';
 import { TemplateGrid } from './TemplateGrid';
 import { TemplateDialog } from './TemplateDialog';
 import { PreviewDialog } from './PreviewDialog';

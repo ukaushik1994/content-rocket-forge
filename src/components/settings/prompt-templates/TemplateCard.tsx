@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Copy, FileText, Image, CarouselHorizontal } from 'lucide-react';
+import { Edit, Trash2, Copy, FileText, Image } from 'lucide-react';
 import { PromptTemplate } from '@/services/userPreferences';
 import { getFormatTypeLabel } from './types';
 
@@ -26,7 +26,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
   const getFormatIcon = () => {
     switch (template.formatType) {
       case 'carousel':
-        return <CarouselHorizontal className="h-4 w-4 mr-1" />;
+        return <span className="flex items-center">📊</span>;
       case 'meme':
         return <Image className="h-4 w-4 mr-1" />;
       default:

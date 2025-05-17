@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PromptTemplate } from '@/services/userPreferencesService';
+import { PromptTemplate } from '@/services/userPreferences';
 import { TemplateCard } from './TemplateCard';
 import { EmptyTemplatesState } from './EmptyTemplatesState';
 import { getFormatTypeLabel } from './types';
