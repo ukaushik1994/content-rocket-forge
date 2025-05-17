@@ -7,7 +7,7 @@ interface ContentBuilderSidebarProps {
   steps: {
     id: number;
     name: string;
-    description: string;
+    description?: string; // Make description optional to match ContentBuilderStep
     completed: boolean;
   }[];
   activeStep: number;
@@ -89,12 +89,14 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
                 
                 <div className="flex-1">
                   <div className="font-medium">{step.name}</div>
-                  <div className={cn(
-                    "text-xs line-clamp-1",
-                    isActive ? "text-white/70" : "text-white/50"
-                  )}>
-                    {step.description}
-                  </div>
+                  {step.description && (
+                    <div className={cn(
+                      "text-xs line-clamp-1",
+                      isActive ? "text-white/70" : "text-white/50"
+                    )}>
+                      {step.description}
+                    </div>
+                  )}
                 </div>
                 
                 {isActive && (

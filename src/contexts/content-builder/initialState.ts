@@ -5,13 +5,13 @@ export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
   steps: [
-    { id: 0, name: 'Keywords', completed: false, visited: true },
-    { id: 1, name: 'Content Type', completed: false, visited: false },
-    { id: 2, name: 'SERP Analysis', completed: false, visited: false },
-    { id: 3, name: 'Outline', completed: false, visited: false },
-    { id: 4, name: 'Write Content', completed: false, visited: false },
-    { id: 5, name: 'Optimize', completed: false, visited: false },
-    { id: 6, name: 'Publish', completed: false, visited: false }
+    { id: 0, name: 'Keywords', description: 'Select main and secondary keywords', completed: false, visited: true },
+    { id: 1, name: 'Content Type', description: 'Choose content format and intent', completed: false, visited: false },
+    { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
+    { id: 3, name: 'Outline', description: 'Create content structure', completed: false, visited: false },
+    { id: 4, name: 'Write Content', description: 'Compose your content', completed: false, visited: false },
+    { id: 5, name: 'Optimize', description: 'Enhance SEO performance', completed: false, visited: false },
+    { id: 6, name: 'Publish', description: 'Review and publish content', completed: false, visited: false }
   ],
   
   // Keywords
@@ -20,7 +20,7 @@ export const initialState: ContentBuilderState = {
   searchedKeywords: [],
   
   // Content Type
-  contentType: 'article' as const,
+  contentType: 'blog' as const,
   contentFormat: 'article' as const,
   contentIntent: 'inform',
   
