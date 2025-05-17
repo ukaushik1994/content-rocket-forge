@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { detectCTAs } from '@/utils/seo/content/detectCTAs';
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
+import { KeywordUsage } from '@/hooks/seo-analysis/types';
 
 /**
  * Custom hook for analyzing content
@@ -11,7 +12,7 @@ export const useContentAnalysis = () => {
   const { state } = useContentBuilder();
   const { content, mainKeyword, selectedKeywords } = state;
   
-  const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
+  const [keywordUsage, setKeywordUsage] = useState<KeywordUsage[]>([]);
   const [ctaInfo, setCTAInfo] = useState<{ hasCTA: boolean; ctaText: string[] }>({ hasCTA: false, ctaText: [] });
   
   // Analyze content when it changes

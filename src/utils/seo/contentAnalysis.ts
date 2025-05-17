@@ -79,7 +79,7 @@ export const generateRecommendations = (
     );
     
     if (mainKeywordItem) {
-      const density = parseFloat(mainKeywordItem.density.replace('%', ''));
+      const density = parseFloat(mainKeywordItem.density);
       
       if (density < 1) {
         recommendations.push(`Increase main keyword "${mainKeyword}" usage. Current density is ${mainKeywordItem.density}.`);

@@ -4,8 +4,9 @@ import { Dispatch, SetStateAction } from 'react';
 export type KeywordUsage = {
   keyword: string;
   count: number;
-  density: number;
+  density: string;
   isPrimary: boolean;
+  isOptimalDensity?: boolean;
 };
 
 export type SeoAnalysisScores = {

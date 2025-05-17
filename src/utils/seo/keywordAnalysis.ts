@@ -75,7 +75,7 @@ export const calculateKeywordUsageScore = (
   
   // Get density as number
   const densityStr = mainKeywordUsage.density;
-  const density = parseFloat(densityStr.replace('%', ''));
+  const density = parseFloat(densityStr);
   
   // Calculate score based on ideal density range (0.5% - 3%)
   if (density < 0.5) return 40; // Too low

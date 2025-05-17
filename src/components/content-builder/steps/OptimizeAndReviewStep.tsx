@@ -24,7 +24,11 @@ export const OptimizeAndReviewStep = () => {
     recommendationIds,
     keywordUsage,
     runSeoAnalysis,
-    forceSkipAnalysis
+    analyzeContent,
+    getScoreColor,
+    forceSkipAnalysis,
+    handleApplyRecommendation,
+    isRecommendationApplied
   } = useSeoAnalysis();
   
   // Use content rewriter hook
@@ -40,7 +44,7 @@ export const OptimizeAndReviewStep = () => {
     rewrittenContent,
     handleRewriteContent,
     applyRewrittenContent,
-    isRecommendationApplied
+    isRecommendationApplied: isRecommendationAppliedFromRewriter
   } = useContentRewriter();
   
   return (
@@ -54,7 +58,7 @@ export const OptimizeAndReviewStep = () => {
         skipOptimizationStep={skipOptimizationStep}
         content={content}
         analysisError={null}
-        onAnalyze={runSeoAnalysis}
+        onAnalyze={analyzeContent}
       />
       
       {/* Display selected SERP items */}
@@ -64,17 +68,21 @@ export const OptimizeAndReviewStep = () => {
       {optimizationSkipped ? (
         <SkipWarning 
           onSkip={skipOptimizationStep} 
-          onCancel={() => console.log('Cancel skip')}
+          onCancel={() => runSeoAnalysis()}
         />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* SEO Score Card */}
-            <SeoScoreCard scores={{
-              keywordUsage: seoScore,
-              contentLength: seoScore,
-              readability: seoScore
-            }} />
+            <SeoScoreCard 
+              seoScore={seoScore}
+              scores={{
+                keywordUsage: seoScore,
+                contentLength: seoScore,
+                readability: seoScore
+              }}
+              getScoreColor={getScoreColor}
+            />
             
             {/* Progress Bar */}
             <div className="md:col-span-2">
@@ -87,7 +95,7 @@ export const OptimizeAndReviewStep = () => {
               {/* Keyword Analysis */}
               <KeywordAnalysisCard 
                 mainKeyword={mainKeyword} 
-                keywordUsage={keywordUsage || []}
+                keywordUsage={keywordUsage}
               />
               
               {/* Recommendations */}

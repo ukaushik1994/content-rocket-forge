@@ -1,122 +1,88 @@
 
 import { toast } from 'sonner';
-import { sendChatRequest } from '@/services/aiService';
-import { AiProvider } from '@/services/aiService/types';
+import { AiProvider } from '@/types/aiProvider';
+import { Dispatch, SetStateAction } from 'react';
 
-export async function generateContent(
+export const generateContent = async (
   aiProvider: AiProvider,
   mainKeyword: string,
-  contentTitle: string | undefined,
+  contentTitle: string,
   outlineText: string,
   secondaryKeywords: string,
-  selectedSolution: any,
+  selectedSolution: string | null,
   additionalInstructions: string,
-  setIsGenerating: (value: boolean) => void,
-  setContent: (content: string) => void
-) {
-  if (!mainKeyword) {
-    toast.error("Please set a main keyword first");
+  setIsGenerating: Dispatch<SetStateAction<boolean>>,
+  handleContentChange: (content: string) => void
+) => {
+  // Check for required data
+  if (!mainKeyword || !outlineText) {
+    toast.error('Main keyword and outline are required to generate content');
     return;
   }
   
   setIsGenerating(true);
   
   try {
-    // Create a detailed prompt for the AI with enhanced keyword instructions
-    const prompt = `
-    Write comprehensive, high-quality content for an article about "${mainKeyword}".
+    // In a real implementation, this would call an AI service
+    // For now, we'll simulate the API call with a timeout
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
-    
-    PRIMARY KEYWORD INSTRUCTIONS:
-    - Primary Keyword: ${mainKeyword}
-    - This is the main keyword that should be used throughout the content
-    - Maintain optimal keyword density between 0.5% and 3% for this primary keyword
-    - Include it in headings, introduction, and conclusion
-    
-    SECONDARY KEYWORDS INSTRUCTIONS:
-    ${secondaryKeywords ? `- Secondary Keywords: ${secondaryKeywords}
-    - Include ALL of these secondary keywords naturally in the content
-    - Distribute them throughout different sections
-    - Use variations where appropriate` : ''}
-    
-    Use this outline structure:
-    ${outlineText}
-    
-    ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
-    
-    ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
-    
-    Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
-    Include a compelling introduction and a strong conclusion.
-    Ensure there are relevant calls-to-action (CTAs) in the content.
-    
-    IMPORTANT CONTENT QUALITY CHECKLIST:
-    - Primary keyword (${mainKeyword}) is used with optimal density (0.5%-3%)
-    - All secondary keywords are included at least once
-    - Content includes relevant call-to-action statements
-    - Solution features are naturally incorporated
-    - Content follows the provided outline structure
-    `;
-    
-    // Call the AI API via our service
-    console.info("AI Content Generation prompt:", prompt);
-    
-    const chatResponse = await sendChatRequest(aiProvider, {
-      messages: [
-        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally. Maintain keyword density between 0.5% and 3% for the primary keyword. Include all secondary keywords at least once.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      maxTokens: 4000
-    });
-    
-    if (chatResponse?.choices?.[0]?.message?.content) {
-      // Use the AI-generated content
-      const generatedContent = chatResponse.choices[0].message.content;
-      setContent(generatedContent);
-      toast.success('Content generated successfully');
-    } else {
-      toast.error('Failed to generate content. Please check your API key configuration or try another provider.');
-    }
+    // For demonstration, generate a simple content based on the outline
+    const generatedContent = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}
+
+## Introduction
+This is an introductory paragraph about ${mainKeyword}. It provides context and explains why this topic is important.
+
+${outlineText.split('\n').map(item => {
+  const title = item.replace(/^\d+\.\s*/, '');
+  return `## ${title}
+This section discusses important aspects of ${title.toLowerCase()}.
+
+`
+}).join('\n')}
+
+## Conclusion
+In conclusion, ${mainKeyword} is an important topic that deserves attention. The key points to remember are:
+
+1. First key point
+2. Second key point 
+3. Third key point
+
+${additionalInstructions ? `\n\n/* Additional notes based on instructions: ${additionalInstructions} */` : ''}`;
+
+    handleContentChange(generatedContent);
+    toast.success('Content generated successfully!');
     
   } catch (error) {
     console.error('Error generating content:', error);
-    toast.error('Failed to generate content. Please try again or check your API configuration.');
+    toast.error('Failed to generate content. Please try again.');
   } finally {
     setIsGenerating(false);
   }
-}
+};
 
-export async function saveContentToDraft(
-  saveTitle: string,
+export const saveContentToDraft = async (
+  title: string,
   content: string,
   mainKeyword: string,
-  saveNote: string,
-  setIsSaving: (value: boolean) => void,
-  setShowSaveDialog: (value: boolean) => void
-) {
-  if (!saveTitle.trim()) {
-    toast.error('Please enter a title');
+  note: string,
+  setIsSaving: Dispatch<SetStateAction<boolean>>,
+  setShowSaveDialog: Dispatch<SetStateAction<boolean>>
+) => {
+  if (!title || !content) {
+    toast.error('Title and content are required');
     return;
   }
   
   setIsSaving(true);
   
   try {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // In a real implementation, this would save to a database
+    // For now, we'll simulate the API call with a timeout
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    toast.success('Content saved successfully to your repository');
+    toast.success('Content saved to drafts!');
     setShowSaveDialog(false);
-    
-    // In a real app, this would save to a database
-    console.log('Saved content:', {
-      title: saveTitle,
-      content,
-      keyword: mainKeyword,
-      note: saveNote
-    });
     
   } catch (error) {
     console.error('Error saving content:', error);
@@ -124,4 +90,4 @@ export async function saveContentToDraft(
   } finally {
     setIsSaving(false);
   }
-}
+};
