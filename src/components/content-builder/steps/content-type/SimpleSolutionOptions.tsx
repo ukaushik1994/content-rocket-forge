@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Solution } from '@/contexts/content-builder/types/solution-types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Sparkles, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { CustomBadge } from '@/components/ui/custom-badge';
 
 interface SimpleSolutionOptionsProps {
   selectedSolution: Solution | null;
@@ -41,6 +43,16 @@ const mockSolutions: Solution[] = [
   }
 ];
 
+// Helper function to get appropriate icon based on solution category
+const getSolutionIcon = (solution: Solution) => {
+  switch (solution.category) {
+    case 'seo':
+      return <Search className="h-3 w-3 text-primary flex-shrink-0" />;
+    default:
+      return <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />;
+  }
+};
+
 export const SimpleSolutionOptions: React.FC<SimpleSolutionOptionsProps> = ({
   selectedSolution,
   onSolutionSelect,
@@ -71,14 +83,16 @@ export const SimpleSolutionOptions: React.FC<SimpleSolutionOptionsProps> = ({
               onClick={() => onSolutionSelect(solution)}
             >
               <Badge 
-                className={`w-full py-2 px-3 justify-center items-center gap-1 flex ${
+                className={`w-full py-2 px-3 justify-center items-center gap-1.5 flex ${
                   selectedSolution?.id === solution.id 
                     ? 'bg-primary/20 hover:bg-primary/30 border-primary/40' 
                     : 'bg-white/5 hover:bg-white/10 border-white/10'
                 }`}
               >
-                {selectedSolution?.id === solution.id && (
+                {selectedSolution?.id === solution.id ? (
                   <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" />
+                ) : (
+                  getSolutionIcon(solution)
                 )}
                 <span className="truncate">{solution.name}</span>
               </Badge>
