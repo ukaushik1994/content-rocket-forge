@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -6,12 +5,11 @@ import { useContent } from '@/contexts/content';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Copy, Download, FileText, Loader2, Save, Filter } from 'lucide-react';
+import { ArrowLeft, Copy, Download, FileText, Loader2, Save, Filter, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { RepurposeTab } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { motion } from 'framer-motion';
+import { Input } from '@/components/ui/input';
 
 const ContentRepurposing = () => {
   const location = useLocation();
@@ -22,19 +20,13 @@ const ContentRepurposing = () => {
   const [selectedFormat, setSelectedFormat] = useState<string>('');
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>('transform');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Available content formats for repurposing
-  const contentFormats = [
-    { id: 'social-twitter', name: 'Twitter/X Post', description: 'Short posts with max 280 characters' },
-    { id: 'social-linkedin', name: 'LinkedIn Post', description: 'Professional content optimized for LinkedIn' },
-    { id: 'social-facebook', name: 'Facebook Post', description: 'Engaging social content for Facebook' },
-    { id: 'email-newsletter', name: 'Email Newsletter', description: 'Email-friendly version for newsletters' },
-    { id: 'blog-post', name: 'Blog Post', description: 'Longer format optimized for blogs' },
-    { id: 'video-script', name: 'Video Script', description: 'Script formatted for video production' },
-    { id: 'podcast-script', name: 'Podcast Script', description: 'Audio-friendly script for podcasts' },
-    { id: 'infographic', name: 'Infographic Content', description: 'Visual-friendly bullet points' }
-  ];
+  // Filter content items based on search query
+  const filteredItems = contentItems.filter(item => 
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
   
   // Load content when component mounts
   useEffect(() => {
@@ -75,7 +67,6 @@ const ContentRepurposing = () => {
     
     try {
       // In a real implementation, this would call an AI service to transform the content
-      // For now, we'll simulate a delay and return a mock transformation
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const formatInfo = contentFormats.find(f => f.id === selectedFormat);
@@ -102,46 +93,6 @@ const ContentRepurposing = () => {
     }
   };
   
-  const handleSaveAsDraft = async () => {
-    if (!generatedContent) {
-      toast.error('No content to save');
-      return;
-    }
-    
-    try {
-      const formatInfo = contentFormats.find(f => f.id === selectedFormat);
-      
-      // Create a new draft with the repurposed content
-      await addContentItem({
-        title: `${formatInfo?.name}: ${content.title}`,
-        content: generatedContent,
-        status: 'draft',
-        seo_score: content.seo_score || 0,
-        keywords: content.keywords || [],
-        metadata: {
-          ...content.metadata,
-          repurposedFrom: content.id,
-          repurposedFormat: selectedFormat,
-          originalTitle: content.title
-        }
-      });
-      
-      toast.success('Saved as new draft');
-      
-      // Reset the form
-      setGeneratedContent('');
-      setSelectedFormat('');
-    } catch (error) {
-      console.error('Error saving draft:', error);
-      toast.error('Failed to save draft');
-    }
-  };
-  
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedContent);
-    toast.success('Copied to clipboard');
-  };
-
   // If no content is selected yet, show the content selection view
   if (!content) {
     return (
@@ -152,53 +103,102 @@ const ContentRepurposing = () => {
         
         <Navbar />
         
-        <main className="flex-1 container py-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Content Repurposing</h1>
-            <p className="text-muted-foreground">Select content to repurpose into different formats</p>
+        <motion.main 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
+        >
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">Content Repurposing</h1>
+            <p className="text-muted-foreground mt-2 max-w-2xl">Transform your existing content into various formats and platforms with AI assistance</p>
           </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Available Content</CardTitle>
-              <CardDescription>Select a piece of content to repurpose</CardDescription>
+          <Card className="overflow-hidden border-none shadow-lg bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-md border border-white/10">
+            <CardHeader className="border-b border-white/10 bg-black/30">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-neon-purple animate-pulse-glow" />
+                Available Content
+              </CardTitle>
+              <CardDescription>Select content to transform into different formats</CardDescription>
             </CardHeader>
-            <CardContent>
+            
+            <CardContent className="p-6">
               {contentItems.length === 0 ? (
-                <div className="text-center p-8">
-                  <p className="text-muted-foreground mb-4">No content available to repurpose</p>
-                  <Button onClick={() => navigate('/content-builder')}>
+                <div className="text-center p-12">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-8 w-8 text-white/70" />
+                  </div>
+                  <p className="text-muted-foreground mb-6">No content available to repurpose</p>
+                  <Button onClick={() => navigate('/content-builder')} className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-purple/90 hover:to-neon-blue/90">
                     Create New Content
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">{contentItems.length} items available</p>
-                    <Button variant="outline" size="sm" className="flex gap-1">
-                      <Filter className="h-3 w-3" />
-                      Filter
-                    </Button>
+                    <div className="flex gap-2">
+                      <div className="relative">
+                        <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                        <Input 
+                          placeholder="Search content..." 
+                          className="pl-9 bg-black/30 border-white/10"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <Button variant="outline" size="icon" className="border-white/10">
+                        <Filter className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
+                  
                   <div className="grid gap-4">
-                    {contentItems.map(item => (
-                      <Card key={item.id} className="cursor-pointer hover:bg-accent/5" onClick={() => handleContentSelection(item.id)}>
-                        <CardContent className="p-4">
-                          <div className="flex flex-col">
-                            <h3 className="font-medium">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                              {item.content?.substring(0, 120)}...
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
+                    {filteredItems.map(item => (
+                      <motion.div 
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        whileHover={{ scale: 1.01 }}
+                        className="card-3d"
+                      >
+                        <Card 
+                          key={item.id} 
+                          className="cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm bg-black/30 border border-white/10 transition-all duration-200"
+                          onClick={() => handleContentSelection(item.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex flex-col">
+                              <h3 className="font-medium text-white">{item.title}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                {item.content?.substring(0, 120)}...
+                              </p>
+                              <div className="flex justify-end mt-3">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-xs text-neon-purple hover:text-neon-blue hover:bg-white/5"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleContentSelection(item.id);
+                                  }}
+                                >
+                                  Select for Repurposing →
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
-        </main>
+        </motion.main>
       </div>
     );
   }
@@ -211,7 +211,12 @@ const ContentRepurposing = () => {
       
       <Navbar />
       
-      <main className="flex-1 container py-8">
+      <motion.main 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
+      >
         {/* Header with back button */}
         <div className="flex items-center justify-between mb-8">
           <Button 
@@ -221,13 +226,15 @@ const ContentRepurposing = () => {
               setContent(null);
               navigate('/content-repurposing');
             }}
-            className="gap-1"
+            className="gap-1 hover:bg-white/5"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Content List
           </Button>
           
-          <h1 className="text-2xl font-bold text-center flex-1">Content Repurposing</h1>
+          <h1 className="text-3xl font-bold text-center flex-1 bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
+            Content Repurposing
+          </h1>
           
           <div className="w-24"></div> {/* For balance */}
         </div>
@@ -242,7 +249,7 @@ const ContentRepurposing = () => {
             await handleGenerateContent();
           }}
         />
-      </main>
+      </motion.main>
     </div>
   );
 };
