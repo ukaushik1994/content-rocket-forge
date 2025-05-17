@@ -124,12 +124,14 @@ const ContentRepurposing = () => {
     toast.success('Copied to clipboard');
   };
   
-  const downloadAsText = (content: string, formatName: string) => {
-    const blob = new Blob([content], { type: 'text/plain' });
+  const downloadAsText = (content: ContentItemType | null, formatName: string) => {
+    if (!content) return;
+    
+    const blob = new Blob([content?.content || ''], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${content?.title ? content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'content'}_${formatName.toLowerCase().replace(' ', '_')}.txt`;
+    a.download = `${content.title ? content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'content'}_${formatName.toLowerCase().replace(' ', '_')}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
