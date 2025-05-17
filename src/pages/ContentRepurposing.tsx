@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,20 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Download, FileText, Loader2, Save, Filter, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { RepurposeTab } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { RepurposeTab, contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { sendChatRequest } from '@/services/aiService';
-
-// Define the contentFormats array that was missing
-const contentFormats = [
-  { id: 'social-twitter', name: 'Twitter/X Post' },
-  { id: 'social-linkedin', name: 'LinkedIn Post' },
-  { id: 'email-newsletter', name: 'Email Newsletter' },
-  { id: 'video-script', name: 'Video Script' },
-  { id: 'podcast-script', name: 'Podcast Script' },
-  { id: 'infographic', name: 'Infographic Content' },
-];
 
 const ContentRepurposing = () => {
   const location = useLocation();
@@ -81,12 +70,14 @@ const ContentRepurposing = () => {
     try {
       const newGeneratedContents: Record<string, string> = {};
       
-      // In a real implementation, we would use AI to generate content for each format
+      // Generate content for each selected format using the AI service
       for (const formatId of contentTypeIds) {
         const formatInfo = contentFormats.find(f => f.id === formatId);
         
         try {
-          // Try to use the AI service to generate content
+          toast.info(`Generating ${formatInfo?.name} content...`);
+          
+          // Use the AI service to generate content
           const response = await sendChatRequest('openai', {
             messages: [
               { 
@@ -101,7 +92,8 @@ const ContentRepurposing = () => {
                           Original content: ${content.content.substring(0, 1500)}...
                           
                           Make it appropriate for the ${formatInfo?.name} format with all necessary elements.
-                          For Twitter/X, include hashtags. For LinkedIn, make it professional.
+                          For Twitter/X, include hashtags and keep it under 280 characters. 
+                          For LinkedIn, make it professional and include relevant hashtags.
                           For email newsletters, include subject line and clear sections.
                           For scripts, include proper formatting with sections for narration.
                           For infographics, organize data into clear bullet points and sections.`
@@ -112,38 +104,26 @@ const ContentRepurposing = () => {
           if (response?.choices?.[0]?.message?.content) {
             newGeneratedContents[formatId] = response.choices[0].message.content;
           } else {
-            // Fallback if AI generation fails
-            newGeneratedContents[formatId] = generateFallbackContent(formatId, content);
+            toast.error(`Failed to generate ${formatInfo?.name} content`);
           }
         } catch (error) {
           console.error('Error generating content with AI:', error);
-          // Fallback content if AI fails
-          newGeneratedContents[formatId] = generateFallbackContent(formatId, content);
+          toast.error(`Failed to generate ${formatInfo?.name} content`);
         }
       }
       
       setGeneratedContents(newGeneratedContents);
-      toast.success(`Generated content for ${contentTypeIds.length} format(s)`);
+      
+      if (Object.keys(newGeneratedContents).length > 0) {
+        toast.success(`Generated content for ${Object.keys(newGeneratedContents).length} format(s)`);
+      } else {
+        toast.error('Failed to generate any content');
+      }
     } catch (error) {
       console.error('Error in content generation process:', error);
       toast.error('Failed to generate content');
     } finally {
       setIsGenerating(false);
-    }
-  };
-  
-  // Fallback content generator in case AI service fails
-  const generateFallbackContent = (formatId: string, content: any): string => {
-    const formatInfo = contentFormats.find(f => f.id === formatId);
-    
-    if (formatId.startsWith('social')) {
-      return `${content.title}\n\n${content.content.substring(0, 200)}...\n\n#ContentRepurposed #${formatInfo?.name.replace(/\s+/g, '')}`;
-    } else if (formatId === 'email-newsletter') {
-      return `Subject: ${content.title}\n\nHello,\n\nI hope this email finds you well. Here's our latest content:\n\n${content.content.substring(0, 300)}...\n\nRead more on our website.\n\nBest regards,\nThe Team`;
-    } else if (formatId.includes('script')) {
-      return `TITLE: ${content.title.toUpperCase()}\n\nINTRO:\n[Greeting and introduction]\n\nMAIN CONTENT:\n${content.content.substring(0, 400)}...\n\nCLOSING:\n[Call to action and sign off]`;
-    } else {
-      return `# ${content.title}\n\n${content.content}\n\n## Key Points\n- Point 1\n- Point 2\n- Point 3\n\n## Conclusion\nRepurposed for ${formatInfo?.name}.`;
     }
   };
   

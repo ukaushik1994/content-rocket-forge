@@ -12,6 +12,7 @@ import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
 import { toast } from 'sonner';
+import { sendChatRequest } from '@/services/aiService';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -78,7 +79,7 @@ export const OptimizeAndReviewStep = () => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
 
-  // Updated Mock function to handle repurposing content to support multiple content types
+  // Updated function to handle repurposing content with multiple formats
   const handleRepurposeContent = async (contentTypes: string[]) => {
     if (contentTypes.length === 0) {
       toast.error("Please select at least one content format");
@@ -86,9 +87,31 @@ export const OptimizeAndReviewStep = () => {
     }
     
     toast.info(`Repurposing content to ${contentTypes.length} format(s)`);
-    for (const contentType of contentTypes) {
-      toast.info(`Processing: ${contentType} format`);
-      // In a real implementation, this would call an AI service to transform the content
+    
+    try {
+      for (const contentType of contentTypes) {
+        toast.info(`Processing: ${contentType} format`);
+        
+        // Use AI service to transform content
+        await sendChatRequest('openai', {
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are an expert content repurposing specialist. Transform the provided content into the requested format while maintaining its core message and value.' 
+            },
+            { 
+              role: 'user', 
+              content: `Transform this content titled "${state.contentTitle}" for the ${contentType} format.
+                        Content: ${state.content?.substring(0, 1500)}...
+                        
+                        Make it appropriate for the ${contentType} format with all necessary elements.`
+            }
+          ]
+        });
+      }
+    } catch (error) {
+      console.error("Error repurposing content:", error);
+      toast.error("Failed to repurpose content");
     }
   };
   
@@ -233,8 +256,8 @@ export const OptimizeAndReviewStep = () => {
         
         <TabsContent value="repurpose">
           <RepurposeTab
-            content={state.content}
-            title={state.contentTitle}
+            content={state.content || ''}
+            title={state.contentTitle || ''}
             isGenerating={false}
             onGenerateRepurposedContent={handleRepurposeContent}
           />
