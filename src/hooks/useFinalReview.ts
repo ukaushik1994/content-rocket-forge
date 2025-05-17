@@ -23,7 +23,7 @@ export const useFinalReview = () => {
   } = state;
   
   // Use refactored hooks
-  const { keywordUsage, ctaInfo } = useContentAnalysis();
+  const { keywordUsage, rawKeywordData, ctaInfo } = useContentAnalysis();
   const { titleSuggestions, isGeneratingTitles, generateTitleSuggestions } = useTitleSuggestions();
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
   const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
@@ -48,6 +48,7 @@ export const useFinalReview = () => {
     isGeneratingTitles,
     isRunningAllChecks,
     keywordUsage,
+    rawKeywordData,
     ctaInfo,
     titleSuggestions,
     serpData,

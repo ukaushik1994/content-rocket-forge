@@ -6,7 +6,7 @@ import { detectCTAs } from '@/utils/seo/content/detectCTAs';
 
 export const useContentAnalysis = () => {
   const { state } = useContentBuilder();
-  const { content, mainKeyword, keywords } = state;
+  const { content, mainKeyword, selectedKeywords } = state;
   
   const [keywordUsage, setKeywordUsage] = useState<KeywordUsage[]>([]);
   const [formattedKeywordUsage, setFormattedKeywordUsage] = useState({
@@ -43,7 +43,7 @@ export const useContentAnalysis = () => {
     };
     
     // Create related keywords data
-    const relatedKeywordsData: KeywordUsage[] = keywords.map(keyword => {
+    const relatedKeywordsData: KeywordUsage[] = selectedKeywords.map(keyword => {
       const keywordRegex = new RegExp(keyword, 'gi');
       const keywordMatches = content.match(keywordRegex) || [];
       const keywordCount = keywordMatches.length;
@@ -68,7 +68,7 @@ export const useContentAnalysis = () => {
         count: mainKeywordCount,
         density: mainKeywordDensity
       },
-      relatedKeywords: keywords.map(keyword => {
+      relatedKeywords: selectedKeywords.map(keyword => {
         const kw = allKeywords.find(k => k.keyword === keyword);
         return {
           keyword,
@@ -84,7 +84,7 @@ export const useContentAnalysis = () => {
       ctaCount: ctaResult.ctaCount,
       ctaPositioning: ctaResult.ctaPositioning
     });
-  }, [content, mainKeyword, keywords]);
+  }, [content, mainKeyword, selectedKeywords]);
   
   return {
     keywordUsage: formattedKeywordUsage,

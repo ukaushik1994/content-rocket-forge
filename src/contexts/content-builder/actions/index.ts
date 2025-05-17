@@ -18,19 +18,23 @@ export const createContentBuilderActions = (
   // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
   const contentActions = createContentActions(state, dispatch);
-  const serpActions = createSerpActions(state, dispatch);
+  const serpActionGroup = createSerpActions(state, dispatch);
   const navigationActions = createNavigationActions(state, dispatch);
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
+
+  // Extract serpActions from serpActionGroup
+  const { toggleSerpSelection } = serpActionGroup;
+  const serpActions = { toggleSerpSelection };
 
   // Merge all action groups and return
   return {
     ...keywordActions,
     ...contentActions,
-    ...serpActions,
+    ...serpActionGroup,
     ...navigationActions,
     ...publishActions,
-    ...seoActions
+    ...seoActions,
+    serpActions // Add serpActions object explicitly
   };
 };
-
