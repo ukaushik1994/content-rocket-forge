@@ -4,9 +4,9 @@ import Navbar from '@/components/layout/Navbar';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useContent } from '@/contexts/content';
 import { Helmet } from 'react-helmet-async';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy, Download, FileText, Loader2, Save, Filter, Search, Sparkles } from 'lucide-react';
+import { ArrowLeft, Copy, Download, FileText, Loader2, Save, Filter, Search, Sparkles, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { RepurposeTab, contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { motion } from 'framer-motion';
@@ -15,13 +15,14 @@ import {
   generateContentByFormatType, 
   generateContentWithTemplate 
 } from '@/services/contentTemplateService';
+import { ContentItemType } from '@/contexts/content/types';
 
 const ContentRepurposing = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { contentItems, getContentItem, addContentItem } = useContent();
   
-  const [content, setContent] = useState<any>(null);
+  const [content, setContent] = useState<ContentItemType | null>(null);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -88,7 +89,7 @@ const ContentRepurposing = () => {
             content.title,
             {
               content: content.content.substring(0, 1500) || '',
-              keyword: content.keyword || ''
+              keyword: content.keywords ? content.keywords[0] : ''
             }
           );
           
@@ -149,6 +150,8 @@ const ContentRepurposing = () => {
         title: `${content.title} (${formatName})`,
         content: generatedContent,
         status: 'draft',
+        seo_score: 0, // Adding the required property
+        keywords: [], // Adding the required property
         metadata: {
           originalContentId: content.id,
           repurposedType: formatId,
