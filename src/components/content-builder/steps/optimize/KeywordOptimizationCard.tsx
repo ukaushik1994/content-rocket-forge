@@ -3,7 +3,9 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Search, AlertCircle } from 'lucide-react';
+import { KeywordUsage } from '@/hooks/seo-analysis/types';
 
+// Update the prop type to match what we're receiving from useFinalReview hook
 interface KeywordOptimizationCardProps {
   keywordUsage: {
     mainKeyword: {
@@ -14,10 +16,49 @@ interface KeywordOptimizationCardProps {
       keyword: string,
       count: number
     }[]
-  }
+  } | KeywordUsage[]
 }
 
 export function KeywordOptimizationCard({ keywordUsage }: KeywordOptimizationCardProps) {
+  // Check if keywordUsage is in the old format (array of KeywordUsage)
+  if (Array.isArray(keywordUsage)) {
+    // Convert the array format to the expected object format
+    const mainKeywordObj = keywordUsage.find(k => k.isPrimary) || keywordUsage[0];
+    const relatedKeywordsArray = keywordUsage.filter(k => !k.isPrimary || k !== mainKeywordObj);
+    
+    // Create the expected structure
+    const formattedKeywordUsage = {
+      mainKeyword: {
+        count: mainKeywordObj?.count || 0,
+        density: parseFloat(mainKeywordObj?.density || '0')
+      },
+      relatedKeywords: relatedKeywordsArray.map(k => ({
+        keyword: k.keyword,
+        count: k.count
+      }))
+    };
+    
+    // Use the transformed data
+    return <KeywordOptimizationCardContent keywordUsage={formattedKeywordUsage} />;
+  }
+  
+  // If keywordUsage is already in the right format
+  return <KeywordOptimizationCardContent keywordUsage={keywordUsage} />;
+}
+
+// Internal component that expects the correctly structured data
+function KeywordOptimizationCardContent({ keywordUsage }: { 
+  keywordUsage: {
+    mainKeyword: {
+      count: number,
+      density: number
+    },
+    relatedKeywords: {
+      keyword: string,
+      count: number
+    }[]
+  } 
+}) {
   const { mainKeyword, relatedKeywords } = keywordUsage;
   
   // Determine keyword density status

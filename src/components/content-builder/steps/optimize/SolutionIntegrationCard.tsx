@@ -33,10 +33,10 @@ export function SolutionIntegrationCard() {
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            {selectedSolution.icon && (
+            {selectedSolution.logoUrl && (
               <div className="h-8 w-8 rounded bg-white/10 flex items-center justify-center">
                 <img 
-                  src={selectedSolution.icon} 
+                  src={selectedSolution.logoUrl} 
                   alt={selectedSolution.name} 
                   className="h-6 w-6"
                 />

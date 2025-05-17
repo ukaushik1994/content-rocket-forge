@@ -27,10 +27,10 @@ export interface ContentBuilderContextType {
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
-  serpActions?: {
+  serpActions: {
     toggleSerpSelection: (index: number) => void;
   };
-  setOutline: (outline: string[]) => void;
+  setOutline: (outline: string[] | OutlineSection[]) => void;
   
   // Content Actions
   setContentTitle: (title: string) => void;

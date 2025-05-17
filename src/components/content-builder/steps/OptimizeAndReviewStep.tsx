@@ -54,7 +54,7 @@ export const OptimizeAndReviewStep = () => {
 
   // Handle skip optimization
   const handleSkipOptimization = () => {
-    dispatch({ type: 'SET_OPTIMIZATION_SKIPPED', payload: true });
+    dispatch({ type: 'SKIP_OPTIMIZATION_STEP' });
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
     toast.info('Optimization step skipped and marked as completed');
     console.info('Optimization step skipped and marked as completed');
