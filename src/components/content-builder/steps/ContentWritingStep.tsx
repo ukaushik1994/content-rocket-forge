@@ -12,17 +12,21 @@ import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { getPromptTemplates } from '@/services/userPreferences';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 export function ContentWritingStep() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const location = useLocation();
+  const { state } = useContentBuilder();
+  const { mainKeyword } = state || {};
+  
+  // Use our content generation hook
   const {
-    mainKeyword,
-    serpData,
-    generatedContent,
     isGenerating,
+    generatedContent,
     handleGenerateContent,
     setGeneratedContent,
+    serpData
   } = useContentGeneration();
 
   // Template selection
@@ -66,7 +70,7 @@ export function ContentWritingStep() {
   return (
     <div className="h-full flex flex-col">
       <ContentGenerationHeader
-        keyword={mainKeyword}
+        mainKeyword={mainKeyword}
         onSave={() => setSaveDialogOpen(true)}
         isGenerating={isGenerating}
       />
@@ -116,7 +120,7 @@ export function ContentWritingStep() {
               ) : (
                 generatedContent && (
                   <ContentEditor
-                    initialValue={generatedContent}
+                    content={generatedContent}
                     onChange={setGeneratedContent}
                   />
                 )
@@ -128,7 +132,7 @@ export function ContentWritingStep() {
         {/* Sidebar */}
         {!showTemplates && !isGenerating && (
           <ContentSidebar
-            mainKeyword={mainKeyword}
+            keyword={mainKeyword}
             serpData={serpData}
             onGenerateNew={() => setShowTemplates(true)}
           />
@@ -136,10 +140,10 @@ export function ContentWritingStep() {
       </div>
 
       <SaveContentDialog
-        open={saveDialogOpen}
-        onOpenChange={setSaveDialogOpen}
+        isOpen={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
         onSave={handleSaveContent}
-        mainKeyword={mainKeyword}
+        keyword={mainKeyword}
       />
     </div>
   );
