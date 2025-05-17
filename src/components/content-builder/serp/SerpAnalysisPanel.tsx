@@ -11,5 +11,9 @@ interface SerpAnalysisPanelProps {
 }
 
 export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
-  return <CoreSerpAnalysisPanel {...props} />;
+  return (
+    <div className="rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm overflow-hidden shadow-lg">
+      <CoreSerpAnalysisPanel {...props} />
+    </div>
+  );
 }

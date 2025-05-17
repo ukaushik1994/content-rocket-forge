@@ -46,6 +46,15 @@ export const createPublishActions = (
       if (state.metaDescription) {
         content.metaDescription = state.metaDescription;
       }
+
+      // Create metadata object for storage
+      const metadata = {
+        metaTitle: state.metaTitle || content.metaTitle,
+        metaDescription: state.metaDescription || content.metaDescription
+      };
+      
+      // Add metadata to content as JSON string
+      content.metadata = JSON.stringify(metadata);
       
       // Update state with saved content info
       if (content.metaTitle) {
@@ -108,6 +117,15 @@ export const createPublishActions = (
       if (state.metaDescription) {
         content.metaDescription = state.metaDescription;
       }
+
+      // Create metadata object for storage
+      const metadata = {
+        metaTitle: state.metaTitle || content.metaTitle,
+        metaDescription: state.metaDescription || content.metaDescription
+      };
+      
+      // Add metadata to content as JSON string
+      content.metadata = JSON.stringify(metadata);
       
       // In a real implementation, this would call an API to publish the content
       const mockId = 'published-' + Date.now();

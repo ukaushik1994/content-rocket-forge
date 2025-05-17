@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -13,8 +14,6 @@ import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { Solution } from '@/contexts/content-builder/types/solution-types';
-
-// Import the SimpleSolutionOptions component (we'll create this)
 import { SimpleSolutionOptions } from './content-type/SimpleSolutionOptions';
 
 // Mock data for clusters until we integrate with backend
@@ -176,36 +175,38 @@ export const KeywordSelectionStep = () => {
     <div className="space-y-8">
       {/* Header with animation */}
       <motion.div 
-        className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5"
+        className="relative overflow-hidden rounded-xl glass-panel border border-white/20 p-6 shadow-xl"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-3xl rounded-full"></div>
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <h3 className="text-lg font-semibold">Selection & Analysis</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="bg-primary/20 p-1.5 rounded-full">
+              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+            </div>
+            <h3 className="text-xl font-semibold">Selection & Analysis</h3>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Enter your main keyword below to analyze search trends and discover content opportunities
           </p>
         </div>
       </motion.div>
       
       {/* Keyword search section */}
-      <div className="space-y-6">
-        <div className="space-y-3">
+      <div className="space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <Label htmlFor="main-keyword" className="text-base font-medium flex items-center gap-2">
-              <Search className="h-4 w-4 text-primary" />
+            <Label htmlFor="main-keyword" className="text-lg font-medium flex items-center gap-2">
+              <Search className="h-5 w-5 text-primary" />
               Main Keyword
             </Label>
-            <div className="text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
+            <div className="text-sm text-muted-foreground bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
               Power your content with the right keywords
             </div>
           </div>
-          <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
+          <div className="backdrop-blur-sm bg-white/5 rounded-xl p-1 border border-white/20 shadow-lg">
             <KeywordSearch initialKeyword={mainKeyword} onKeywordSearch={handleKeywordSearch} />
           </div>
         </div>

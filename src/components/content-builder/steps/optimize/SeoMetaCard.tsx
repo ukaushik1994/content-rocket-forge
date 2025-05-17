@@ -1,215 +1,93 @@
 
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Search, Edit, Wand2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { sendChatRequest } from '@/services/aiService';
 
-export function SeoMetaCard() {
-  const { state, setMetaTitle, setMetaDescription } = useContentBuilder();
+export const SeoMetaCard = () => {
+  const { state, dispatch, generateSeoMeta } = useContentBuilder();
   const { metaTitle, metaDescription, mainKeyword, content } = state;
-  
-  const [title, setTitle] = useState(metaTitle || '');
-  const [description, setDescription] = useState(metaDescription || '');
-  const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleSaveMetaData = () => {
-    setMetaTitle(title);
-    setMetaDescription(description);
-    setIsEditing(false);
-    toast.success("SEO meta information saved");
+  
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch({ type: 'SET_META_TITLE', payload: e.target.value });
   };
   
-  const handleGenerateMetaData = async () => {
-    if (!mainKeyword) {
-      toast.error("Primary keyword is required to generate meta information");
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    dispatch({ type: 'SET_META_DESCRIPTION', payload: e.target.value });
+  };
+
+  const handleGenerateSeoMeta = async () => {
+    if (!mainKeyword || !content) {
+      toast.error('Need main keyword and content to generate SEO meta');
       return;
     }
     
     setIsGenerating(true);
-    
     try {
-      const contentExcerpt = content ? content.substring(0, 1000) : '';
-      
-      const metaResponse = await sendChatRequest('openai', {
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a specialist in SEO and meta tag generation. Generate a concise meta title and meta description based on the content and keyword provided. Meta title should be at most 60 characters. Meta description should be at most 160 characters.'
-          },
-          { 
-            role: 'user', 
-            content: `Primary Keyword: ${mainKeyword}\n\nContent excerpt: ${contentExcerpt}\n\nGenerate a SEO-optimized meta title (max 60 characters) and meta description (max 160 characters) that include the primary keyword.`
-          }
-        ],
-        temperature: 0.7
-      });
-
-      if (metaResponse?.choices?.[0]?.message?.content) {
-        const aiResponse = metaResponse.choices[0].message.content;
-        console.log("[SeoMetaCard] AI response:", aiResponse);
-        
-        // Parse the AI response to extract meta title and description
-        let generatedTitle = '';
-        let generatedDescription = '';
-        
-        // Try to find meta title in the response
-        const titleMatch = aiResponse.match(/(?:Meta Title:|Title:)\s*(.*?)(?:\n|$)/i);
-        if (titleMatch && titleMatch[1]) {
-          generatedTitle = titleMatch[1].trim();
-        }
-        
-        // Try to find meta description in the response
-        const descMatch = aiResponse.match(/(?:Meta Description:|Description:)\s*(.*?)(?:\n|$)/i);
-        if (descMatch && descMatch[1]) {
-          generatedDescription = descMatch[1].trim();
-        }
-        
-        // If we couldn't parse the AI response, create a fallback
-        if (!generatedTitle) {
-          generatedTitle = `${mainKeyword} - Complete Guide & Tips`;
-          if (generatedTitle.length > 60) {
-            generatedTitle = generatedTitle.substring(0, 57) + '...';
-          }
-        }
-        
-        if (!generatedDescription) {
-          generatedDescription = `Learn all about ${mainKeyword} in this comprehensive guide. Discover expert tips, strategies, and insights to improve your understanding and skills.`;
-          if (generatedDescription.length > 160) {
-            generatedDescription = generatedDescription.substring(0, 157) + '...';
-          }
-        }
-        
-        // Update the local state and context
-        setTitle(generatedTitle);
-        setDescription(generatedDescription);
-        setMetaTitle(generatedTitle);
-        setMetaDescription(generatedDescription);
-        
-        toast.success("Generated SEO meta information successfully");
-        
-        // Enable editing mode to show the generated content
-        setIsEditing(true);
-      } else {
-        toast.error("Failed to generate meta information. Please try again.");
+      // Generate SEO meta using AI based on content and keyword
+      const result = await generateSeoMeta();
+      if (result) {
+        toast.success('Generated SEO meta information');
       }
     } catch (error) {
-      console.error("Error generating meta information:", error);
-      toast.error("An error occurred while generating meta information");
+      toast.error('Failed to generate SEO meta');
+      console.error('Error generating SEO meta:', error);
     } finally {
       setIsGenerating(false);
     }
   };
   
   return (
-    <Card className="border border-white/10">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-primary" />
-            SEO Meta Information
-          </div>
-          <div className="flex items-center gap-1">
-            {!isEditing && (
-              <>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 w-7 p-0" 
-                  onClick={handleGenerateMetaData}
-                  disabled={isGenerating}
-                >
-                  <Wand2 className="h-3.5 w-3.5" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 w-7 p-0" 
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                </Button>
-              </>
-            )}
-          </div>
-        </CardTitle>
+    <Card className="border border-white/20 bg-card/30 backdrop-blur-sm shadow-lg">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardTitle className="text-base font-medium">SEO Meta Information</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-1 border-neon-purple/50 bg-neon-purple/10 hover:bg-neon-purple/20 text-neon-purple"
+          onClick={handleGenerateSeoMeta}
+          disabled={isGenerating}
+        >
+          <Wand2 className="h-3.5 w-3.5" />
+          {isGenerating ? 'Generating...' : 'Generate'}
+        </Button>
       </CardHeader>
-      <CardContent>
-        {isEditing ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-medium">Meta Title</label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter meta title"
-                className="h-8 text-sm"
-              />
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {mainKeyword ? `Include "${mainKeyword}"` : 'Use your main keyword'}
-                </span>
-                <span className={`${title.length > 60 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                  {title.length}/60 characters
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-medium">Meta Description</label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter meta description"
-                className="text-sm min-h-[80px]"
-              />
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Include main keyword and CTA</span>
-                <span className={`${description.length > 160 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                  {description.length}/160 characters
-                </span>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSaveMetaData}
-              >
-                Save
-              </Button>
-            </div>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="meta-title" className="text-xs text-muted-foreground">Meta Title</Label>
+          <Input 
+            id="meta-title"
+            value={metaTitle} 
+            onChange={handleTitleChange}
+            placeholder="Enter SEO optimized title"
+            className="bg-white/5 border-white/10 focus-visible:ring-primary/30"
+          />
+          <div className="text-xs text-muted-foreground">
+            {metaTitle?.length || 0}/60 characters
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-medium mb-1">Meta Title</p>
-              <div className="p-2 rounded bg-white/5 border border-white/10 text-sm">
-                {metaTitle || <span className="text-muted-foreground">No meta title set</span>}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium mb-1">Meta Description</p>
-              <div className="p-2 rounded bg-white/5 border border-white/10 text-sm">
-                {metaDescription || <span className="text-muted-foreground">No meta description set</span>}
-              </div>
-            </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="meta-description" className="text-xs text-muted-foreground">Meta Description</Label>
+          <Textarea 
+            id="meta-description"
+            value={metaDescription} 
+            onChange={handleDescriptionChange}
+            placeholder="Enter SEO optimized description"
+            className="bg-white/5 border-white/10 focus-visible:ring-primary/30"
+            rows={3}
+          />
+          <div className="text-xs text-muted-foreground">
+            {metaDescription?.length || 0}/160 characters
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
-}
+};
