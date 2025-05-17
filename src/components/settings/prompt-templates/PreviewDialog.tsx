@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { PromptTemplate } from '@/services/userPreferencesService';
 import { getFormatTypeLabel } from './types';
+import { Image, Carousel } from 'lucide-react';
 
 interface PreviewDialogProps {
   open: boolean;
@@ -20,14 +21,29 @@ export const PreviewDialog: React.FC<PreviewDialogProps> = ({
   onEdit
 }) => {
   if (!template) return null;
+
+  // Get the appropriate icon based on template format type
+  const getFormatIcon = () => {
+    switch (template.formatType) {
+      case 'carousel':
+        return <Carousel className="h-5 w-5 mr-2" />;
+      case 'meme':
+        return <Image className="h-5 w-5 mr-2" />;
+      default:
+        return null;
+    }
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{template.name}</DialogTitle>
+          <DialogTitle className="flex items-center">
+            {getFormatIcon()}
+            {template?.name}
+          </DialogTitle>
           <DialogDescription>
-            Template preview for {getFormatTypeLabel(template.formatType || '')}
+            Template preview for {getFormatTypeLabel(template?.formatType || '')}
           </DialogDescription>
         </DialogHeader>
         
@@ -35,15 +51,15 @@ export const PreviewDialog: React.FC<PreviewDialogProps> = ({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Prompt Template</Label>
             <div className="bg-muted rounded-md p-4 overflow-auto max-h-[200px]">
-              <pre className="text-sm whitespace-pre-wrap">{template.promptTemplate}</pre>
+              <pre className="text-sm whitespace-pre-wrap">{template?.promptTemplate}</pre>
             </div>
           </div>
           
-          {template.structureTemplate && (
+          {template?.structureTemplate && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">Structure Template</Label>
               <div className="bg-muted rounded-md p-4 overflow-auto max-h-[200px]">
-                <pre className="text-sm whitespace-pre-wrap">{template.structureTemplate}</pre>
+                <pre className="text-sm whitespace-pre-wrap">{template?.structureTemplate}</pre>
               </div>
             </div>
           )}

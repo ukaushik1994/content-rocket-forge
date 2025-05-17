@@ -147,9 +147,9 @@ function getSystemMessageForContentType(formatType: string): string {
     case 'glossary':
       return 'You are a technical writer specializing in creating clear, concise definitions and explanations for complex topics. Provide comprehensive information in an accessible format.';
     case 'carousel':
-      return 'You are a social media content specialist who excels at creating engaging carousel posts with concise, impactful slides that flow well together. Each slide should be focused on a single point and include suggestions for complementary visuals.';
+      return 'You are a social media content specialist who excels at creating engaging carousel posts with concise, impactful slides that flow well together. Each slide should be focused on a single point and include suggestions for complementary visuals. Number each slide clearly (Slide 1, Slide 2, etc.) and provide a title and brief engaging content for each slide. Include a compelling opening slide and summary closing slide.';
     case 'meme':
-      return 'You are a creative social media marketer who specializes in creating humorous, relevant meme concepts that resonate with the target audience while aligning with brand values. Your memes should be clever, accessible, and shareable.';
+      return 'You are a creative social media marketer who specializes in creating humorous, relevant meme concepts that resonate with the target audience while aligning with brand values. Describe both the image and text components clearly, and explain how the meme relates to the topic. Provide text for the top and bottom of the meme, or whichever format is most appropriate for the concept.';
     default:
       return 'You are an expert content writer who creates high-quality, engaging content. Follow the provided guidelines and structure to create content that meets the user\'s needs.';
   }

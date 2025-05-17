@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Info } from 'lucide-react';
+import { Info, Image, Carousel } from 'lucide-react';
 
 interface EmptyTemplatesStateProps {
   activeTab: string;
@@ -10,18 +10,30 @@ interface EmptyTemplatesStateProps {
   onCreateNew: () => void;
 }
 
-export const EmptyTemplatesState: React.FC<EmptyTemplatesStateProps> = ({ 
-  activeTab, 
-  formatTypeLabel, 
-  onCreateNew 
+export const EmptyTemplatesState: React.FC<EmptyTemplatesStateProps> = ({
+  activeTab,
+  formatTypeLabel,
+  onCreateNew
 }) => {
+  // Get the appropriate icon based on template format type
+  const getFormatIcon = () => {
+    switch (activeTab) {
+      case 'carousel':
+        return <Carousel className="h-6 w-6 text-muted-foreground" />;
+      case 'meme':
+        return <Image className="h-6 w-6 text-muted-foreground" />;
+      default:
+        return <Info className="h-6 w-6 text-muted-foreground" />;
+    }
+  };
+
   return (
     <Card>
       <CardContent className="py-10">
         <div className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-              <Info className="h-6 w-6 text-muted-foreground" />
+              {getFormatIcon()}
             </div>
           </div>
           <h3 className="text-lg font-medium">No templates found</h3>
