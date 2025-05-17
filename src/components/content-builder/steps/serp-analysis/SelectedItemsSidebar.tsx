@@ -17,8 +17,8 @@ export function SelectedItemsSidebar({
   const [selectedTab, setSelectedTab] = useState('all');
   
   return (
-    <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10 backdrop-blur-lg shadow-xl sticky top-4 h-[calc(100vh-100px)] flex flex-col">
-      <CardHeader className="pb-2 border-b border-white/10 bg-gradient-to-r from-blue-900/30 to-purple-900/20 flex-shrink-0">
+    <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border border-white/10 backdrop-blur-lg shadow-xl sticky top-4 h-[calc(100vh-100px)] flex flex-col">
+      <CardHeader className="pb-2 border-b border-white/10 bg-gradient-to-r from-blue-900/40 to-purple-900/30 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
             <div className="p-1.5 bg-gradient-to-r from-neon-purple to-neon-blue rounded-full">
@@ -26,7 +26,7 @@ export function SelectedItemsSidebar({
             </div>
             Selected Items
             {totalSelected > 0 && (
-              <Badge variant="secondary" className="bg-white/10 text-xs">
+              <Badge variant="secondary" className="bg-white/10 text-xs ml-1">
                 {totalSelected}
               </Badge>
             )}

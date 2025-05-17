@@ -6,6 +6,8 @@
 export interface SolutionResource {
   title: string;
   url: string;
+  id?: string; // Added optional id property
+  type?: string; // Added optional type property
 }
 
 export interface Solution {
@@ -23,11 +25,11 @@ export interface Solution {
 }
 
 export interface SolutionIntegrationMetrics {
-  featureIncorporation: number;
-  positioningScore: number;
+  featureIncorporation: number; // Added missing properties
+  positioningScore: number; // Added missing properties
   painPointsAddressed: string[];
   ctaEffectiveness: number;
-  overallScore: number;
+  overallScore: number; // Added missing properties
   mentions: number | string;
   audienceAlignment: number;
   nameMentions: number;
