@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Book, Images, Image } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 
 interface ContentFormatSelectionProps {
@@ -18,6 +18,20 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   onGenerateContent,
   isGenerating
 }) => {
+  // Helper function to get the appropriate icon for a format
+  const getFormatIcon = (formatId: string) => {
+    switch (formatId) {
+      case 'glossary':
+        return <Book className="h-4 w-4 text-muted-foreground" />;
+      case 'carousel':
+        return <Images className="h-4 w-4 text-muted-foreground" />;
+      case 'meme':
+        return <Image className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -51,8 +65,11 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
               >
                 {selectedFormats.includes(format.id) && <Check className="h-3 w-3" />}
               </div>
-              <div>
-                <span className="text-sm font-medium">{format.name}</span>
+              <div className="flex-1">
+                <span className="text-sm font-medium flex items-center gap-1">
+                  {format.name}
+                  {getFormatIcon(format.id)}
+                </span>
                 <p className="text-xs text-muted-foreground">{format.description}</p>
               </div>
             </div>

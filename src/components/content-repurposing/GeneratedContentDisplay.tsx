@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Copy, Download, Save } from 'lucide-react';
+import { FileText, Copy, Download, Save, Book, Images, Image } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { toast } from 'sonner';
 
@@ -23,6 +23,20 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   onDownloadAsText,
   onSaveAsNewContent
 }) => {
+  // Helper function to get the appropriate icon for a format
+  const getFormatIcon = (formatId: string) => {
+    switch (formatId) {
+      case 'glossary':
+        return <Book className="h-4 w-4" />;
+      case 'carousel':
+        return <Images className="h-4 w-4" />;
+      case 'meme':
+        return <Image className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -39,6 +53,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
           <div className="flex gap-2 overflow-x-auto py-1">
             {Object.keys(generatedContents).map((formatId) => {
               const format = contentFormats.find(f => f.id === formatId);
+              const icon = getFormatIcon(formatId);
               return (
                 <Button
                   key={formatId}
@@ -50,6 +65,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                     : "border-white/10"
                   }
                 >
+                  {icon && <span className="mr-1">{icon}</span>}
                   {format?.name || formatId}
                 </Button>
               );

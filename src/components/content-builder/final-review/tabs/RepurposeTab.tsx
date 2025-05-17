@@ -27,7 +27,10 @@ export const contentFormats = [
   { id: 'email', name: 'Email Newsletter', description: 'Email-ready content with subject line' },
   { id: 'script', name: 'Video/Podcast Script', description: 'Script for audio or video content' },
   { id: 'infographic', name: 'Infographic Content', description: 'Structured content for visual presentation' },
-  { id: 'blog', name: 'Blog Summary', description: 'Condensed version of the content' }
+  { id: 'blog', name: 'Blog Summary', description: 'Condensed version of the content' },
+  { id: 'glossary', name: 'Glossary', description: 'List of definitions and terminology' },
+  { id: 'carousel', name: 'Carousel', description: 'Content split into sequential slides' },
+  { id: 'meme', name: 'Meme', description: 'Humorous content with viral potential' }
 ];
 
 interface RepurposeTabProps {
