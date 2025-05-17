@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PromptTemplate } from '@/services/userPreferences';
-import { Image } from 'lucide-react';
+import { Image, LayoutGrid } from 'lucide-react';
 import { getFormatTypeLabel } from '@/components/settings/prompt-templates/types';
 
 interface ContentTemplateCardProps {
@@ -20,9 +20,9 @@ export const ContentTemplateCard: React.FC<ContentTemplateCardProps> = ({
   const getTemplateIcon = () => {
     switch (template.formatType) {
       case 'carousel':
-        return <span className="text-xl">📊</span>;
+        return <LayoutGrid className="h-4 w-4 mr-1" />;
       case 'meme':
-        return <Image className="h-5 w-5" />;
+        return <Image className="h-4 w-4 mr-1" />;
       default:
         return null;
     }

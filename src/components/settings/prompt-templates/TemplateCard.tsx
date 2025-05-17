@@ -1,11 +1,19 @@
 
 import React from 'react';
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Copy, FileText, Image } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Copy, Pencil, Trash, Eye, LayoutGrid, Image } from 'lucide-react';
 import { PromptTemplate } from '@/services/userPreferences';
 import { getFormatTypeLabel } from './types';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TemplateCardProps {
   template: PromptTemplate;
@@ -23,73 +31,81 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
   onPreview
 }) => {
   // Get the appropriate icon based on template format type
-  const getFormatIcon = () => {
-    switch (template.formatType) {
+  const getFormatIcon = (formatType: string) => {
+    switch (formatType) {
       case 'carousel':
-        return <span className="flex items-center">📊</span>;
+        return <LayoutGrid className="h-4 w-4 mr-1" />;
       case 'meme':
         return <Image className="h-4 w-4 mr-1" />;
       default:
-        return <FileText className="h-4 w-4 mr-1" />;
+        return null;
     }
   };
 
   return (
-    <Card key={template.id} className="overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <Badge variant="outline">
-            <div className="flex items-center">
-              {getFormatIcon()}
-              <span>{getFormatTypeLabel(template.formatType)}</span>
-            </div>
+    <Card className="hover:shadow-md transition-shadow duration-200">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <Badge variant="outline" className="flex items-center">
+            {getFormatIcon(template.formatType)}
+            {getFormatTypeLabel(template.formatType)}
           </Badge>
-          <div className="flex space-x-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={() => onEdit(template)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={() => onDuplicate(template)}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-destructive hover:text-destructive" 
-              onClick={() => onDelete(template)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+        </div>
+        <CardTitle className="text-lg">{template.name}</CardTitle>
+        <CardDescription className="line-clamp-2">{template.description}</CardDescription>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="bg-muted p-3 rounded-md h-[100px] overflow-hidden text-xs text-muted-foreground">
+          <div className="line-clamp-5">
+            {template.promptTemplate.substring(0, 200)}
+            {template.promptTemplate.length > 200 ? '...' : ''}
           </div>
         </div>
-        <CardTitle className="text-lg mt-2">{template.name}</CardTitle>
-        {template.description && (
-          <CardDescription className="line-clamp-2">{template.description}</CardDescription>
-        )}
-      </CardHeader>
-      <CardContent className="pb-2">
-        <div className="bg-muted rounded-md p-3 overflow-hidden">
-          <p className="text-xs text-muted-foreground line-clamp-4">{template.promptTemplate}</p>
-        </div>
       </CardContent>
-      <CardFooter className="pt-1">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full" 
-          onClick={() => onPreview(template)}
-        >
-          Preview Template
-        </Button>
+      
+      <CardFooter className="flex justify-between">
+        <div className="text-xs text-muted-foreground">
+          {new Date(template.updatedAt).toLocaleDateString()}
+        </div>
+        
+        <div className="flex gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => onPreview(template)}>
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Preview</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => onEdit(template)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => onDuplicate(template)}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Duplicate</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(template)}>
+                <Trash className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete</TooltipContent>
+          </Tooltip>
+        </div>
       </CardFooter>
     </Card>
   );
