@@ -3,7 +3,6 @@ import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { OutlineSection } from '../types/outline-types';
 import { ContentType, ContentFormat, ContentIntent } from '../types/content-types';
 import { Solution } from '../types/solution-types';
-import { toast } from 'sonner';
 
 export const createContentActions = (
   state: ContentBuilderState, 
@@ -43,11 +42,6 @@ export const createContentActions = (
   
   const setContent = (content: string) => {
     dispatch({ type: 'SET_CONTENT', payload: content });
-    
-    // Mark content writing step as completed if there's enough content
-    if (content && content.length >= 300) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
-    }
   };
 
   const setSelectedSolution = (solution: Solution | null) => {
@@ -55,11 +49,6 @@ export const createContentActions = (
   };
 
   const generateContent = async (outline: OutlineSection[]): Promise<void> => {
-    if (!state.mainKeyword) {
-      toast.error("Main keyword is required to generate content");
-      return;
-    }
-    
     dispatch({ type: 'SET_IS_GENERATING', payload: true });
     
     try {
@@ -68,29 +57,21 @@ export const createContentActions = (
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Generate placeholder content based on outline
-      const content = generatePlaceholderContent(outline, state.mainKeyword);
+      const content = generatePlaceholderContent(outline);
       
       // Set the generated content
       dispatch({ type: 'SET_CONTENT', payload: content });
       
       // Mark content writing step as completed
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
-      
-      toast.success("Content generated successfully!");
     } catch (error) {
       console.error('Error generating content:', error);
-      toast.error("Failed to generate content");
     } finally {
       dispatch({ type: 'SET_IS_GENERATING', payload: false });
     }
   };
   
   const saveContent = async (options: { title: string; content: string }): Promise<boolean> => {
-    if (!options.title || !options.content) {
-      toast.error("Title and content are required");
-      return false;
-    }
-    
     dispatch({ type: 'SET_IS_SAVING', payload: true });
     
     try {
@@ -102,14 +83,9 @@ export const createContentActions = (
       dispatch({ type: 'SET_CONTENT_TITLE', payload: options.title });
       dispatch({ type: 'SET_CONTENT', payload: options.content });
       
-      // Mark save step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 6 });
-      
-      toast.success("Content saved successfully");
       return true;
     } catch (error) {
       console.error('Error saving content:', error);
-      toast.error("Failed to save content");
       return false;
     } finally {
       dispatch({ type: 'SET_IS_SAVING', payload: false });
@@ -136,34 +112,13 @@ export const createContentActions = (
     dispatch({ type: 'SET_META_DESCRIPTION', payload: description });
   };
   
-  // Helper function to generate placeholder content with improved structure
-  const generatePlaceholderContent = (outline: OutlineSection[], mainKeyword: string): string => {
-    let content = `# Complete Guide to ${mainKeyword}\n\n`;
-    
-    // Add introduction
-    content += `## Introduction\n\nThis comprehensive guide explores ${mainKeyword} in detail. We'll cover everything you need to know about this topic and provide valuable insights to help you understand it better.\n\n`;
-    
-    // Add sections from outline
-    outline.forEach(section => {
-      content += `## ${section.title}\n\n`;
-      content += `This section discusses ${section.title.toLowerCase()}. It covers important aspects of ${mainKeyword} related to this topic and provides practical guidance.\n\n`;
-      
-      // Add some subsections if this is a major section
-      if (section.level <= 2) {
-        content += `### Key Aspects of ${section.title}\n\n`;
-        content += `Here we explore the most important elements of ${section.title.toLowerCase()} as they relate to ${mainKeyword}.\n\n`;
-        
-        content += `### Best Practices for ${section.title}\n\n`;
-        content += `Follow these recommended practices to get the most out of your ${mainKeyword} strategy in the context of ${section.title.toLowerCase()}.\n\n`;
-      }
-    });
-    
-    // Add conclusion
-    content += `## Conclusion\n\nIn this guide, we've explored ${mainKeyword} in depth. By implementing the strategies and insights shared here, you'll be well-equipped to leverage ${mainKeyword} effectively for your specific needs.\n\n`;
-    
-    return content;
+  // Helper function to generate placeholder content
+  const generatePlaceholderContent = (outline: OutlineSection[]): string => {
+    return outline.map(section => {
+      return `# ${section.title}\n\nThis section will discuss ${section.title.toLowerCase()}. It will cover various aspects and provide valuable insights for the reader.\n\n`;
+    }).join('\n');
   };
-  
+
   return {
     setContentType,
     setContentFormat,

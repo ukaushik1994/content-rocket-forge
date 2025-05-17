@@ -1,9 +1,13 @@
 
 /**
- * Solution-related type definitions
+ * Solution related type definitions
  */
 
-// Solution Type
+export interface SolutionResource {
+  title: string;
+  url: string;
+}
+
 export interface Solution {
   id: string;
   name: string;
@@ -12,32 +16,21 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  category: string;
+  category: string; // Added category property
   logoUrl: string | null;
   externalUrl: string | null;
   resources: SolutionResource[];
 }
 
-// Solution Resource Type
-export interface SolutionResource {
-  id: string;
-  title: string;
-  url: string;
-  type: 'documentation' | 'tutorial' | 'video' | 'case-study' | 'other';
-}
-
-// Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
-  integrationScore: number;
-  recommendations: SolutionRecommendation[];
-  integrationPoints: number;
-  totalPossiblePoints: number;
-}
-
-// Solution Recommendation
-export interface SolutionRecommendation {
-  id: string;
-  text: string;
-  priority: 'high' | 'medium' | 'low';
-  applied: boolean;
+  featureIncorporation: number;
+  positioningScore: number;
+  painPointsAddressed: string[];
+  ctaEffectiveness: number;
+  overallScore: number;
+  mentions: number | string;
+  audienceAlignment: number;
+  nameMentions: number;
+  ctaMentions: number;
+  mentionedFeatures: string[]; // Added mentionedFeatures property
 }
