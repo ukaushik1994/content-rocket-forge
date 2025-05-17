@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2, RefreshCcw, List, Tag } from 'lucide-react';
+import { Eye, Edit, Trash2, RefreshCcw, List, Tag, Undo } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { RepurposeButton } from './RepurposeButton';
 
 interface DraftsListProps {
   onOpenDetailView?: (draft: any) => void;
@@ -103,6 +104,11 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
       toast.success('Content refreshed successfully', { id: toastId });
       setRefreshCount(prev => prev + 1);
     });
+  };
+
+  const handleRepurpose = (id: string) => {
+    // Navigate to content repurposing page with content id
+    navigate(`/content-repurposing?id=${id}`);
   };
 
   if (loading) {
@@ -226,6 +232,7 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
               </Button>
+              <RepurposeButton contentId={item.id} />
               <Button 
                 size="sm" 
                 variant="ghost" 

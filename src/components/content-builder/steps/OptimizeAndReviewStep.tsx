@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -6,6 +7,7 @@ import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { OptimizeTab } from '../final-review/tabs/OptimizeTab';
 import { SeoTabContent } from '../final-review/tabs/SeoTabContent';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
+import { RepurposeTab } from '../final-review/tabs/RepurposeTab';
 import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions';
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
@@ -76,6 +78,12 @@ export const OptimizeAndReviewStep = () => {
   const onMetaDescriptionChange = (value: string) => {
     dispatch({ type: 'SET_META_DESCRIPTION', payload: value });
   };
+
+  // Mock function to handle repurposing content
+  const handleRepurposeContent = async (contentType: string) => {
+    toast.info(`Repurposing content to ${contentType} format`);
+    // In a real implementation, this would call an AI service to transform the content
+  };
   
   // Wrapper functions to convert Promise<string | null> to Promise<void>
   const handleSaveToDraftWrapper = async () => {
@@ -140,6 +148,12 @@ export const OptimizeAndReviewStep = () => {
             className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
           >
             Technical
+          </TabsTrigger>
+          <TabsTrigger 
+            value="repurpose"
+            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
+          >
+            Repurpose
           </TabsTrigger>
         </TabsList>
         
@@ -207,6 +221,15 @@ export const OptimizeAndReviewStep = () => {
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
             serpData={serpData}
+          />
+        </TabsContent>
+        
+        <TabsContent value="repurpose">
+          <RepurposeTab
+            content={state.content}
+            title={state.contentTitle}
+            isGenerating={false}
+            onGenerateRepurposedContent={handleRepurposeContent}
           />
         </TabsContent>
       </Tabs>
