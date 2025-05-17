@@ -13,10 +13,22 @@ export interface PromptTemplate {
   updatedAt: Date;
 }
 
+export interface BrandGuidelines {
+  brandName: string;
+  brandTone: string;
+  targetAudience: string;
+  keyValues: string[];
+  doGuidelines: string[];
+  dontGuidelines: string[];
+  companyDescription?: string;
+  updatedAt: Date;
+}
+
 interface UserPreferences {
   defaultAiProvider?: 'openai' | 'anthropic' | 'gemini';
   enableAiFallback?: boolean;
   promptTemplates?: PromptTemplate[];
+  brandGuidelines?: BrandGuidelines;
   // We can add more user preferences here in the future
 }
 
@@ -144,6 +156,26 @@ export async function deletePromptTemplate(id: string): Promise<boolean> {
 }
 
 /**
+ * Get brand guidelines
+ */
+export function getBrandGuidelines(): BrandGuidelines | undefined {
+  const preferences = getUserPreferences();
+  return preferences.brandGuidelines;
+}
+
+/**
+ * Save brand guidelines
+ */
+export async function saveBrandGuidelines(guidelines: Omit<BrandGuidelines, 'updatedAt'>): Promise<boolean> {
+  const updatedGuidelines: BrandGuidelines = {
+    ...guidelines,
+    updatedAt: new Date()
+  };
+  
+  return saveUserPreference('brandGuidelines', updatedGuidelines);
+}
+
+/**
  * Create default prompt templates if none exist
  */
 export async function initializeDefaultPromptTemplates(): Promise<void> {
@@ -239,6 +271,33 @@ Use a conversational, friendly tone and keep paragraphs short for easy reading o
 
 Use clear, precise language appropriate for educational purposes.`,
         structureTemplate: '## {Term}\n\n### Definition\n[Concise 1-2 sentence definition]\n\n### Extended Explanation\n[Detailed 3-4 sentence explanation]\n\n### Example Usage\n[Example of term used in context]\n\n### Historical Context\n[Brief history or etymology]\n\n### Related Terms\n- [Related term 1]\n- [Related term 2]\n- [Related term 3]\n\n### Industry Applications\n[How the term is used in specific industries]'
+      },
+      {
+        name: 'Carousel Post',
+        formatType: 'carousel',
+        description: 'Content formatted for social media carousel slides',
+        promptTemplate: `Create a carousel post about {topic} with:
+1. An attention-grabbing first slide (headline and hook)
+2. 5-7 content slides, each focused on a single point or tip
+3. A final slide with call-to-action
+4. Each slide should be concise (30-50 words max)
+5. Include suggested visuals for each slide in [brackets]
+
+Make sure each slide can stand alone but also flows naturally from one to the next.`,
+        structureTemplate: 'SLIDE 1: [Headline/Hook]\n[Attention-grabbing opening that introduces the topic]\n[Suggested visual: Eye-catching image related to topic]\n\nSLIDE 2: [First Point/Tip]\n[Brief explanation in 30-50 words]\n[Suggested visual: Relevant illustration]\n\nSLIDE 3: [Second Point/Tip]\n[Brief explanation in 30-50 words]\n[Suggested visual: Relevant illustration]\n\n... continue for all content slides ...\n\nFINAL SLIDE: [Call-to-Action]\n[Brief CTA that encourages engagement]\n[Suggested visual: Brand-related image]'
+      },
+      {
+        name: 'Meme Template',
+        formatType: 'meme',
+        description: 'Humorous meme concept with image suggestion and text',
+        promptTemplate: `Create a humorous meme concept related to {topic} with:
+1. A popular meme format suggestion (e.g., "Distracted Boyfriend," "Two Buttons," etc.)
+2. Exact text to appear on each part of the meme
+3. Brief explanation of the joke for context
+4. Alternative format suggestion as a backup option
+
+Keep it clean, clever, and relevant to the target audience. Avoid controversial topics or offensive humor.`,
+        structureTemplate: '### Meme Format\n[Suggested popular meme template/format]\n\n### Meme Text\nText Element 1: [Exact text]\nText Element 2: [Exact text]\n... (additional text elements as needed)\n\n### Joke Explanation\n[Brief explanation of why this is humorous/relevant]\n\n### Alternative Format\n[Alternative meme format if the first isn\'t suitable]'
       }
     ];
     
@@ -247,5 +306,39 @@ Use clear, precise language appropriate for educational purposes.`,
     }
     
     console.log('Default prompt templates initialized');
+  }
+}
+
+/**
+ * Initialize default brand guidelines if none exist
+ */
+export async function initializeDefaultBrandGuidelines(): Promise<void> {
+  const guidelines = getBrandGuidelines();
+  
+  // Only initialize if no guidelines exist
+  if (!guidelines) {
+    const defaultGuidelines: Omit<BrandGuidelines, 'updatedAt'> = {
+      brandName: 'Your Company',
+      brandTone: 'Professional yet conversational',
+      targetAudience: 'Business professionals aged 25-45',
+      keyValues: ['Quality', 'Innovation', 'Reliability', 'Customer Service'],
+      doGuidelines: [
+        'Use a friendly, conversational tone',
+        'Focus on benefits, not features',
+        'Include a clear call to action',
+        'Use consistent terminology'
+      ],
+      dontGuidelines: [
+        'Don\'t use jargon or complex language',
+        'Avoid negative language',
+        'Don\'t make unsubstantiated claims',
+        'Don\'t use overly sales-focused language'
+      ],
+      companyDescription: 'A brief description of your company and its mission.'
+    };
+    
+    await saveBrandGuidelines(defaultGuidelines);
+    
+    console.log('Default brand guidelines initialized');
   }
 }

@@ -1,115 +1,65 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  CreditCard,
-  Key, 
-  User, 
-  Bell, 
-  Palette,
-  Download,
-  Settings as SettingsIcon,
-  FileText
-} from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
+import { User, Key, Bell, Palette, FileText, CreditCard, FileOutput, Settings, BookText } from 'lucide-react';
 
 interface SettingsLayoutProps {
   children: React.ReactNode;
-  onTabChange?: (tab: string) => void;
   activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLayoutProps) {
-  const handleValueChange = (value: string) => {
-    if (onTabChange) {
-      onTabChange(value);
-    }
-  };
-
+export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ 
+  children, 
+  activeTab, 
+  onTabChange 
+}) => {
+  const tabItems = [
+    { id: 'profile', label: 'Profile', icon: <User className="h-4 w-4" /> },
+    { id: 'api', label: 'API Keys', icon: <Key className="h-4 w-4" /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell className="h-4 w-4" /> },
+    { id: 'appearance', label: 'Appearance', icon: <Palette className="h-4 w-4" /> },
+    { id: 'promptTemplates', label: 'Prompt Templates', icon: <FileText className="h-4 w-4" /> },
+    { id: 'brandGuidelines', label: 'Brand Guidelines', icon: <BookText className="h-4 w-4" /> },
+    { id: 'billing', label: 'Billing', icon: <CreditCard className="h-4 w-4" /> },
+    { id: 'export', label: 'Export', icon: <FileOutput className="h-4 w-4" /> },
+    { id: 'advanced', label: 'Advanced', icon: <Settings className="h-4 w-4" /> },
+  ];
+  
   return (
-    <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-      <aside className="-mx-4 lg:w-1/5">
-        <Tabs 
-          value={activeTab} 
-          onValueChange={handleValueChange}
-          orientation="vertical"
-          className="h-full"
-        >
-          <Card>
-            <TabsList className="flex flex-col h-full w-full bg-transparent space-y-1 p-2">
+    <Tabs
+      defaultValue={activeTab}
+      value={activeTab}
+      onValueChange={onTabChange}
+      className="space-y-4"
+    >
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Sidebar */}
+        <Card className="p-2 lg:min-w-[240px] lg:max-w-[240px] flex-shrink-0">
+          <TabsList className="flex flex-col h-auto p-0 bg-transparent">
+            {tabItems.map(item => (
               <TabsTrigger
-                value="profile"
-                className="justify-start gap-2"
+                key={item.id}
+                value={item.id}
+                className="justify-start py-2 px-3 w-full rounded-md text-sm"
               >
-                <User className="h-4 w-4" />
-                Profile
+                <div className="flex items-center gap-2">
+                  {item.icon}
+                  <span>{item.label}</span>
+                </div>
               </TabsTrigger>
-              <TabsTrigger
-                value="api"
-                className="justify-start gap-2"
-              >
-                <Key className="h-4 w-4" />
-                API Settings
-              </TabsTrigger>
-              <TabsTrigger
-                value="notifications"
-                className="justify-start gap-2"
-              >
-                <Bell className="h-4 w-4" />
-                Notifications
-              </TabsTrigger>
-              <TabsTrigger
-                value="appearance"
-                className="justify-start gap-2"
-              >
-                <Palette className="h-4 w-4" />
-                Appearance
-              </TabsTrigger>
-              <TabsTrigger
-                value="promptTemplates"
-                className="justify-start gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Prompt Templates
-              </TabsTrigger>
-              <TabsTrigger
-                value="billing"
-                className="justify-start gap-2"
-              >
-                <CreditCard className="h-4 w-4" />
-                Billing
-              </TabsTrigger>
-              <TabsTrigger
-                value="export"
-                className="justify-start gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </TabsTrigger>
-              <TabsTrigger
-                value="advanced"
-                className="justify-start gap-2"
-              >
-                <SettingsIcon className="h-4 w-4" />
-                Advanced
-              </TabsTrigger>
-            </TabsList>
-          </Card>
-        </Tabs>
-      </aside>
-      
-      <div className="flex-1 lg:max-w-3xl">
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-          className="w-full"
-        >
-          {children}
-        </motion.div>
+            ))}
+          </TabsList>
+        </Card>
+
+        {/* Main Content */}
+        <div className="flex-1 max-w-full">
+          <TabsContent value={activeTab} className="m-0 outline-none">
+            {children}
+          </TabsContent>
+        </div>
       </div>
-    </div>
+    </Tabs>
   );
-}
+};

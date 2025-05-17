@@ -1,5 +1,5 @@
 
-import { PromptTemplate, getPromptTemplateById, getPromptTemplatesByType } from './userPreferencesService';
+import { PromptTemplate, getPromptTemplateById, getPromptTemplatesByType, getBrandGuidelines } from './userPreferencesService';
 import { sendChatRequest } from './aiService';
 import { toast } from 'sonner';
 
@@ -74,12 +74,38 @@ async function generateWithTemplate(
       promptText += structureInfo;
     }
     
+    // Add brand guidelines if available
+    const brandGuidelines = getBrandGuidelines();
+    let brandGuidelinesText = '';
+    
+    if (brandGuidelines) {
+      brandGuidelinesText = `
+IMPORTANT: Follow these brand guidelines when creating the content:
+
+Brand Name: ${brandGuidelines.brandName}
+Brand Tone: ${brandGuidelines.brandTone}
+Target Audience: ${brandGuidelines.targetAudience}
+
+Key Brand Values:
+${brandGuidelines.keyValues.map(value => `- ${value}`).join('\n')}
+
+Do:
+${brandGuidelines.doGuidelines.map(guideline => `- ${guideline}`).join('\n')}
+
+Don't:
+${brandGuidelines.dontGuidelines.map(guideline => `- ${guideline}`).join('\n')}
+${brandGuidelines.companyDescription ? `\nCompany Description: ${brandGuidelines.companyDescription}` : ''}
+`;
+
+      promptText += `\n\n${brandGuidelinesText}`;
+    }
+    
     // Make the API call
     const response = await sendChatRequest('openai', {
       messages: [
         { 
           role: 'system', 
-          content: systemMessage
+          content: systemMessage + (brandGuidelines ? "\n\nAdhere strictly to the brand guidelines provided in the user's message." : "")
         },
         { 
           role: 'user', 
@@ -120,6 +146,10 @@ function getSystemMessageForContentType(formatType: string): string {
       return 'You are an email marketing specialist who creates compelling newsletter content with high open and click-through rates. Create content that is scannable and drives action.';
     case 'glossary':
       return 'You are a technical writer specializing in creating clear, concise definitions and explanations for complex topics. Provide comprehensive information in an accessible format.';
+    case 'carousel':
+      return 'You are a social media content specialist who excels at creating engaging carousel posts with concise, impactful slides that flow well together. Each slide should be focused on a single point and include suggestions for complementary visuals.';
+    case 'meme':
+      return 'You are a creative social media marketer who specializes in creating humorous, relevant meme concepts that resonate with the target audience while aligning with brand values. Your memes should be clever, accessible, and shareable.';
     default:
       return 'You are an expert content writer who creates high-quality, engaging content. Follow the provided guidelines and structure to create content that meets the user\'s needs.';
   }

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
 import { ContentBuilderState } from '@/contexts/content-builder/types';
-import { getUserPreference } from '@/services/userPreferencesService';
+import { getUserPreference, getBrandGuidelines } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini';
@@ -84,6 +84,29 @@ export function useContentGeneration() {
       // Prepare secondary keywords
       const secondaryKeywords = selectedKeywords?.join(', ') || '';
       
+      // Get brand guidelines
+      const brandGuidelines = getBrandGuidelines();
+      let brandGuidelinesText = '';
+      
+      if (brandGuidelines) {
+        brandGuidelinesText = `
+IMPORTANT - BRAND GUIDELINES:
+Brand Name: ${brandGuidelines.brandName}
+Brand Tone: ${brandGuidelines.brandTone}
+Target Audience: ${brandGuidelines.targetAudience}
+
+Key Brand Values:
+${brandGuidelines.keyValues.map(value => `- ${value}`).join('\n')}
+
+Do:
+${brandGuidelines.doGuidelines.map(guideline => `- ${guideline}`).join('\n')}
+
+Don't:
+${brandGuidelines.dontGuidelines.map(guideline => `- ${guideline}`).join('\n')}
+${brandGuidelines.companyDescription ? `\nCompany Description: ${brandGuidelines.companyDescription}` : ''}
+`;
+      }
+      
       // Create a detailed prompt for the AI
       const prompt = `
       Write comprehensive, high-quality content for an article about "${mainKeyword}".
@@ -102,6 +125,8 @@ export function useContentGeneration() {
       Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
       Include a compelling introduction and a strong conclusion. 
       Optimize the content for readability and search engines.
+      
+      ${brandGuidelinesText}
       `;
       
       // Call the AI API via our service
@@ -114,7 +139,7 @@ export function useContentGeneration() {
       try {
         const chatResponse = await sendChatRequest(aiProvider, {
           messages: [
-            { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
+            { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' + (brandGuidelinesText ? ' Adhere strictly to the brand guidelines provided in the user\'s message.' : '') },
             { role: 'user', content: prompt }
           ],
           temperature: 0.7,
@@ -142,7 +167,7 @@ export function useContentGeneration() {
             
             const fallbackResponse = await sendChatRequest(fallbackProvider, {
               messages: [
-                { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
+                { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' + (brandGuidelinesText ? ' Adhere strictly to the brand guidelines provided in the user\'s message.' : '') },
                 { role: 'user', content: prompt }
               ],
               temperature: 0.7,
