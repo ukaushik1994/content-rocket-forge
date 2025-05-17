@@ -119,7 +119,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         <TabsContent value="edit" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
           <ContentEditor 
             content={editedContent}
-            onContentChange={handleContentChange}
+            onChange={handleContentChange}
           />
         </TabsContent>
         

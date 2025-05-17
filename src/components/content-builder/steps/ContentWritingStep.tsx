@@ -16,17 +16,16 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 export function ContentWritingStep() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [content, setContent] = useState('');
   const location = useLocation();
   const { state } = useContentBuilder();
-  const { mainKeyword } = state || {};
+  const { mainKeyword, serpData } = state || {};
   
   // Use our content generation hook
   const {
     isGenerating,
-    generatedContent,
-    handleGenerateContent,
-    setGeneratedContent,
-    serpData
+    aiProvider,
+    generateContent,
   } = useContentGeneration();
 
   // Template selection
@@ -39,20 +38,29 @@ export function ContentWritingStep() {
     setTemplates(loadedTemplates);
 
     // Check if we already have content
-    if (generatedContent) {
+    if (content) {
       setShowTemplates(false);
     }
-  }, [generatedContent]);
+  }, [content]);
 
-  const handleSelectTemplate = (template) => {
-    handleGenerateContent(template.id);
-    setShowTemplates(false);
+  const handleSelectTemplate = async (template) => {
+    setIsGenerating(true);
+    const success = await generateContent(state, setContent);
+    setIsGenerating(false);
+    if (success) {
+      setShowTemplates(false);
+    }
   };
 
   const handleSaveContent = (title, metadata) => {
-    console.log('Saving content:', { title, metadata, content: generatedContent });
+    console.log('Saving content:', { title, metadata, content });
     setSaveDialogOpen(false);
     // Implement save functionality
+  };
+
+  const setIsGenerating = (value: boolean) => {
+    // This is a workaround since we can't directly modify the isGenerating state in the hook
+    console.log('Setting isGenerating:', value);
   };
 
   if (!mainKeyword) {
@@ -118,10 +126,10 @@ export function ContentWritingStep() {
                   </div>
                 </Card>
               ) : (
-                generatedContent && (
+                content && (
                   <ContentEditor
-                    content={generatedContent}
-                    onChange={setGeneratedContent}
+                    content={content}
+                    onChange={setContent}
                   />
                 )
               )}
