@@ -142,13 +142,13 @@ function getSystemMessageForContentType(formatType: string): string {
       return 'You are an expert content writer specializing in SEO-optimized blog posts. Create well-structured, engaging content that follows the provided guidelines.';
     
     case 'social-twitter':
-      return 'You are a social media expert who creates concise, engaging Twitter content. Create content that follows Twitter's 280 character limit per tweet, uses effective hashtags, and drives engagement. For threads, ensure a cohesive flow between tweets.';
+      return 'You are a social media expert who creates concise, engaging Twitter content. Create content that follows Twitter\'s 280 character limit per tweet, uses effective hashtags, and drives engagement. For threads, ensure a cohesive flow between tweets.';
     
     case 'social-linkedin':
       return 'You are a LinkedIn content strategist who creates professional, thought-leadership content optimized for the platform. Create content that establishes expertise, uses appropriate professional tone, and encourages meaningful engagement from a professional network.';
     
     case 'social-facebook':
-      return 'You are a social media expert who creates engaging Facebook posts that drive community interaction. Create content that encourages comments and shares, uses a conversational tone, and works well with Facebook's algorithm.';
+      return 'You are a social media expert who creates engaging Facebook posts that drive community interaction. Create content that encourages comments and shares, uses a conversational tone, and works well with Facebook\'s algorithm.';
     
     case 'social-instagram':
       return 'You are an Instagram caption specialist who creates engaging, authentic captions that complement visual content. Create captions that include effective hashtags, encourage engagement, and maintain an authentic voice that resonates with Instagram audiences.';
