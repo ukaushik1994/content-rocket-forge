@@ -72,6 +72,7 @@ export interface AiChatResponse {
     completionTokens: number;
     totalTokens: number;
   };
+  choices?: ChatCompletionChoice[]; // Add the choices property that several files are using
 }
 
 export interface AiCompletionParams {
@@ -89,4 +90,5 @@ export interface AiCompletionResponse {
     completionTokens: number;
     totalTokens: number;
   };
+  choices?: ChatCompletionChoice[]; // Add the choices property here as well
 }

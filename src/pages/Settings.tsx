@@ -12,6 +12,8 @@ import { AdvancedSettings } from '@/components/settings/AdvancedSettings';
 import { ExportSettings } from '@/components/settings/ExportSettings';
 
 const SettingsPage = () => {
+  const [activeTab, setActiveTab] = React.useState('api');
+  
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
@@ -21,7 +23,7 @@ const SettingsPage = () => {
       <Navbar />
       
       <main className="flex-1 container py-8">
-        <SettingsLayout>
+        <SettingsLayout activeTab={activeTab} onTabChange={setActiveTab}>
           <APISettings />
           <ProfileSettings />
           <NotificationSettings />
