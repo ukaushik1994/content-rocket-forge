@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -15,8 +14,8 @@ import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { Solution } from '@/contexts/content-builder/types/solution-types';
 
-// Import the SolutionOptions component
-import { SolutionOptions } from './content-type/SolutionOptions';
+// Import the SimpleSolutionOptions component (we'll create this)
+import { SimpleSolutionOptions } from './content-type/SimpleSolutionOptions';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -248,6 +247,15 @@ export const KeywordSelectionStep = () => {
                     />
                   </div>
                   
+                  {/* Solution Selection - Moved here */}
+                  {selectedKeywords.length > 0 && (
+                    <SimpleSolutionOptions
+                      selectedSolution={selectedSolution}
+                      onSolutionSelect={handleSolutionSelect}
+                      onClearSelection={handleClearSolution}
+                    />
+                  )}
+                  
                   {/* Selected Items Sidebar */}
                   <SelectedItemsSidebar 
                     serpSelections={serpSelections}
@@ -255,20 +263,6 @@ export const KeywordSelectionStep = () => {
                     selectedCounts={selectedCounts}
                     handleToggleSelection={handleToggleSelection}
                   />
-
-                  {/* Solution Selection Card */}
-                  <Card className="bg-white/5 border border-white/10 overflow-hidden">
-                    <CardHeader className="bg-white/5 pb-3">
-                      <CardTitle className="text-sm">Select Solution (optional)</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <SolutionOptions
-                        selectedSolution={selectedSolution}
-                        onSolutionSelect={handleSolutionSelect}
-                        onClearSelection={handleClearSolution}
-                      />
-                    </CardContent>
-                  </Card>
                 </div>
                 
                 {/* Right column - SERP Analysis */}
