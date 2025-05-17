@@ -57,13 +57,16 @@ export const ContentWritingStep = () => {
     // Prepare secondary keywords
     const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
     
+    // Convert solution to string if needed
+    const solutionName = selectedSolution?.name || '';
+    
     await generateContent(
-      aiProvider as AiProvider,
+      aiProvider,
       mainKeyword,
       state.contentTitle,
       outlineText,
       secondaryKeywords,
-      selectedSolution,
+      solutionName, // Pass the solution name instead of the object
       additionalInstructions,
       setIsGenerating,
       handleContentChange
@@ -89,7 +92,7 @@ export const ContentWritingStep = () => {
         handleToggleOutline={handleToggleOutline}
         showOutline={showOutline}
         outlineLength={state.outline.length}
-        aiProvider={aiProvider as AiProvider}
+        aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
       />
       

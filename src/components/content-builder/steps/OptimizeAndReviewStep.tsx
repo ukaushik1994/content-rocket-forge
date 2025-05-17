@@ -47,6 +47,12 @@ export const OptimizeAndReviewStep = () => {
     isRecommendationApplied: isRecommendationAppliedFromRewriter
   } = useContentRewriter();
   
+  // Calculate applied recommendations
+  const appliedCount = recommendationIds ? recommendationIds.filter(id => 
+    isRecommendationApplied(id)).length : 0;
+  const totalCount = recommendationIds ? recommendationIds.length : 0;
+  const progressPercentage = totalCount > 0 ? Math.round((appliedCount / totalCount) * 100) : 0;
+  
   return (
     <div className="space-y-6">
       {/* SEO Analysis Header */}
@@ -86,7 +92,11 @@ export const OptimizeAndReviewStep = () => {
             
             {/* Progress Bar */}
             <div className="md:col-span-2">
-              <ProgressBar value={seoScore} />
+              <ProgressBar 
+                appliedCount={appliedCount}
+                totalCount={totalCount}
+                progressPercentage={progressPercentage}
+              />
             </div>
           </div>
           
