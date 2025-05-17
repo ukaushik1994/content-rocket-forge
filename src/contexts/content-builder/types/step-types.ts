@@ -6,7 +6,7 @@
 export interface ContentBuilderStep {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   completed: boolean;
   visited: boolean;
   analyzed?: boolean; // Field to track if analysis has been run

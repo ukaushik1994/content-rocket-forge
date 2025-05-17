@@ -17,4 +17,8 @@ export interface SaveContentParams {
   metaDescription?: string;
   serpSelections?: any[];
   metadata?: string;
+  status?: string;
+  notes?: string;
+  seoScore?: number;
+  serpData?: any;
 }

@@ -5,4 +5,5 @@ export interface OutlineSection {
   level: number;
   content?: string;
   type?: string;
+  children?: OutlineSection[];
 }
