@@ -18,7 +18,10 @@ export const useSaveStep = () => {
     contentTitle,
     seoImprovements,
     selectedKeywords,
-    content
+    content,
+    outline,
+    serpSelections,
+    serpData
   } = state;
   
   const { contentItems, refreshContent } = useContent();
@@ -39,6 +42,7 @@ export const useSaveStep = () => {
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveCompleted, setSaveCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Update the local state when global state changes
   useEffect(() => {
@@ -108,6 +112,8 @@ export const useSaveStep = () => {
       return;
     }
 
+    setError(null);
+    
     // Save to content library
     try {
       setIsSubmitting(true);
@@ -115,6 +121,22 @@ export const useSaveStep = () => {
       console.log("[SaveStep] Using description:", description);
       console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
       
+      // Prepare the metadata with all necessary content builder state
+      const metadata = {
+        metaTitle: metaTitle || title,
+        metaDescription: metaDescription || description,
+        contentType,
+        outline: outline || [],
+        serpSelections: serpSelections || [],
+        serpData: serpData || null,
+        seoScore,
+        selectedSolution: selectedSolution ? {
+          id: selectedSolution.id,
+          name: selectedSolution.name
+        } : null
+      };
+      
+      // Call handleSaveToDraft with the prepared metadata
       await handleSaveToDraft();
       
       // Force refresh content before navigating
@@ -131,6 +153,7 @@ export const useSaveStep = () => {
       }, 1000);
     } catch (error) {
       console.error('Error saving content:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save content');
       toast.error('Failed to save content');
     } finally {
       setIsSubmitting(false);
@@ -169,6 +192,7 @@ export const useSaveStep = () => {
     seoScore,
     contentType,
     content,
-    saveCompleted
+    saveCompleted,
+    error
   };
 };
