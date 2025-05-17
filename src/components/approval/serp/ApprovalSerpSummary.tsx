@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw, Globe } from 'lucide-react';
+import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,6 @@ import {
   SerpEntitiesSection,
   SerpHeadingsSection
 } from '@/components/content/serp-analysis';
-import { AVAILABLE_COUNTRIES, SearchCountry } from '@/components/content-builder/steps/writing/ContentGenerationHeader';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check } from 'lucide-react';
 
 interface ApprovalSerpSummaryProps {
   serpData: SerpAnalysisResult | null;
@@ -40,20 +34,6 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
   const [activeTab, setActiveTab] = useState('keywords');
   const [localSerpData, setLocalSerpData] = useState<SerpAnalysisResult | null>(serpData);
   const [isRefreshingSection, setIsRefreshingSection] = useState(false);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>(
-    serpData?.searchCountries || ['us']
-  );
-  const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState(false);
-
-  const toggleCountry = (countryCode: string) => {
-    if (selectedCountries.includes(countryCode)) {
-      if (selectedCountries.length > 1) { // Always keep at least one country selected
-        setSelectedCountries(selectedCountries.filter(code => code !== countryCode));
-      }
-    } else {
-      setSelectedCountries([...selectedCountries, countryCode]);
-    }
-  };
 
   const refreshCurrentSection = async () => {
     if (!mainKeyword || isRefreshingSection) return;
@@ -61,8 +41,8 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
     setIsRefreshingSection(true);
     
     try {
-      // Fetch new SERP data with refresh flag set to true and selected countries
-      const newSerpData = await analyzeKeywordSerp(mainKeyword, true, selectedCountries);
+      // Fetch new SERP data with refresh flag set to true
+      const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
       
       if (newSerpData && localSerpData) {
         // Create updated data by merging the new section data with existing data
@@ -88,36 +68,12 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
             break;
         }
         
-        updatedData.searchCountries = selectedCountries;
-        
         // Update the local state
         setLocalSerpData(updatedData);
       }
     } catch (error) {
       console.error(`Error refreshing ${activeTab}:`, error);
       toast.error(`Failed to refresh ${activeTab}`);
-    } finally {
-      setIsRefreshingSection(false);
-    }
-  };
-
-  const refreshWithNewCountries = async () => {
-    if (!mainKeyword || isRefreshingSection) return;
-    
-    setIsRefreshingSection(true);
-    
-    try {
-      // Fetch new SERP data with the updated country selection
-      const newSerpData = await analyzeKeywordSerp(mainKeyword, true, selectedCountries);
-      
-      // Update the local state with the new data
-      setLocalSerpData(newSerpData);
-      setIsCountryPopoverOpen(false);
-      
-      toast.success(`SERP data refreshed for selected countries`);
-    } catch (error) {
-      console.error(`Error refreshing data with new countries:`, error);
-      toast.error(`Failed to refresh data`);
     } finally {
       setIsRefreshingSection(false);
     }
@@ -159,94 +115,16 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
             </h3>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Popover open={isCountryPopoverOpen} onOpenChange={setIsCountryPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 px-2 text-xs text-white/70 hover:text-white"
-                >
-                  <Globe className="h-3.5 w-3.5 mr-1" />
-                  {selectedCountries.length === 1 
-                    ? AVAILABLE_COUNTRIES.find(c => c.code === selectedCountries[0])?.name
-                    : `${selectedCountries.length} Countries`}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-2" align="end">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Select Search Countries</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Data will be fetched from selected countries
-                  </p>
-                  
-                  <ScrollArea className="h-60 pr-4 mt-2">
-                    <div className="space-y-2">
-                      {AVAILABLE_COUNTRIES.map((country) => (
-                        <div 
-                          key={country.code} 
-                          className="flex items-center space-x-2 py-1.5 px-1 rounded hover:bg-white/5"
-                        >
-                          <Checkbox 
-                            id={`country-${country.code}`}
-                            checked={selectedCountries.includes(country.code)}
-                            onCheckedChange={() => toggleCountry(country.code)}
-                            disabled={selectedCountries.length === 1 && selectedCountries.includes(country.code)}
-                          />
-                          <label 
-                            htmlFor={`country-${country.code}`}
-                            className="flex-1 text-sm cursor-pointer"
-                          >
-                            {country.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                  
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedCountries.map(code => {
-                      const country = AVAILABLE_COUNTRIES.find(c => c.code === code);
-                      return (
-                        <Badge key={code} variant="outline" className="bg-white/10 flex items-center gap-1">
-                          {country?.name}
-                          {selectedCountries.length > 1 && (
-                            <button 
-                              className="ml-1 text-white/70 hover:text-white" 
-                              onClick={() => toggleCountry(code)}
-                            >
-                              <span className="sr-only">Remove</span>
-                              ×
-                            </button>
-                          )}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button 
-                    size="sm" 
-                    className="w-full mt-2"
-                    onClick={refreshWithNewCountries}
-                    disabled={isRefreshingSection}
-                  >
-                    <Check className="h-4 w-4 mr-1" /> Apply & Refresh
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={refreshCurrentSection}
-              disabled={isRefreshingSection}
-              className="h-7 px-2 text-xs text-white/70 hover:text-white"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshingSection ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={refreshCurrentSection}
+            disabled={isRefreshingSection}
+            className="h-7 px-2 text-xs text-white/70 hover:text-white"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshingSection ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 
