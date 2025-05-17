@@ -77,14 +77,28 @@ const mockSolutions: Solution[] = [
   {
     id: '1',
     name: 'Content Optimizer Pro',
+    description: '',
     features: ['AI content generation', 'Keyword optimization', 'Readability analysis'],
-    painPoints: ['Poor content quality', 'Time-consuming content creation', 'Low search rankings']
+    painPoints: ['Poor content quality', 'Time-consuming content creation', 'Low search rankings'],
+    useCases: [],
+    targetAudience: [],
+    category: 'seo',
+    logoUrl: null,
+    externalUrl: null,
+    resources: []
   },
   {
     id: '2',
     name: 'SEO Wizard',
+    description: '',
     features: ['Keyword research', 'Competitor analysis', 'Backlink tracking'],
-    painPoints: ['Low organic traffic', 'Poor keyword targeting', 'Limited SEO knowledge']
+    painPoints: ['Low organic traffic', 'Poor keyword targeting', 'Limited SEO knowledge'],
+    useCases: [],
+    targetAudience: [],
+    category: 'seo',
+    logoUrl: null,
+    externalUrl: null,
+    resources: []
   }
 ];
 
