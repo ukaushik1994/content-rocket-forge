@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from './types';
 import { fetchItemKeywords } from './utils';
@@ -101,7 +102,11 @@ export const createContentActions = (
           keywords: item.keywords || [],
           content: data.content || '',
           status: data.status as 'draft' | 'approved' | 'published' | 'archived',
-          metadata: data.metadata
+          metadata: data.metadata ? 
+            (typeof data.metadata === 'string' ? 
+              JSON.parse(data.metadata as string) : 
+              data.metadata
+            ) : null
         };
         
         setContentItems(prev => [createdItem, ...prev]);

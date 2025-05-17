@@ -49,7 +49,7 @@ const contentTypeOptions: { value: ContentType; label: string; icon: React.React
 ];
 
 // Content format options
-const contentFormatOptions: { value: string; label: string; icon: React.ReactNode }[] = [
+const contentFormatOptions: { value: ContentFormat; label: string; icon: React.ReactNode }[] = [
   {
     value: 'article',
     label: 'Article',
