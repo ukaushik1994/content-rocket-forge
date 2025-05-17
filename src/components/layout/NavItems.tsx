@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Settings, BarChart3, Puzzle, CheckCircle, Repeat } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -87,12 +87,6 @@ export default function NavItems() {
         icon={<BarChart3 className="h-4 w-4" />} 
         label="Analytics" 
         active={location.pathname === '/analytics'} 
-      />
-      <NavItem 
-        to="/settings" 
-        icon={<Settings className="h-4 w-4" />} 
-        label="Settings" 
-        active={location.pathname === '/settings'} 
       />
     </div>
   );
