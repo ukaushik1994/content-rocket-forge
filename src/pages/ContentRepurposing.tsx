@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -88,7 +87,7 @@ const ContentRepurposing = () => {
             formatId,
             content.title,
             {
-              content: content.content.substring(0, 1500) || '',
+              content: content.content?.substring(0, 1500) || '',
               keyword: content.keywords ? content.keywords[0] : ''
             }
           );
@@ -145,12 +144,12 @@ const ContentRepurposing = () => {
       const formatInfo = contentFormats.find(f => f.id === formatId);
       const formatName = formatInfo?.name || 'Repurposed';
       
-      // Add as new content item
+      // Add as new content item with required properties
       await addContentItem({
         title: `${content.title} (${formatName})`,
         content: generatedContent,
         status: 'draft',
-        seo_score: 0, // Adding the required property
+        seo_score: 0,
         keywords: [], // Adding the required property
         metadata: {
           originalContentId: content.id,
