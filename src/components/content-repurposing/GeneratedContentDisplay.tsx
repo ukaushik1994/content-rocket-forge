@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Copy, Download, Save, Book, Images, Image } from 'lucide-react';
+import { FileText, Copy, Download, Save, Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { toast } from 'sonner';
 
@@ -32,8 +32,20 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
         return <Images className="h-4 w-4" />;
       case 'meme':
         return <Image className="h-4 w-4" />;
+      case 'social-twitter':
+        return <Twitter className="h-4 w-4" />;
+      case 'social-linkedin':
+        return <Linkedin className="h-4 w-4" />;
+      case 'social-facebook': 
+        return <Facebook className="h-4 w-4" />;
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'infographic':
+        return <BarChart className="h-4 w-4" />;
+      case 'blog':
+      case 'script':
       default:
-        return null;
+        return <FileText className="h-4 w-4" />;
     }
   };
   

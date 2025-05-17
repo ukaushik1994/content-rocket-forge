@@ -9,7 +9,7 @@ import { generateContentByFormatType } from '@/services/contentTemplateService';
 export const useContentRepurposing = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { contentItems, getContentItem, addContentItem } = useContent();
+  const { contentItems, getContentItem, addContentItem, updateContentItem } = useContent();
   
   const [content, setContent] = useState<ContentItemType | null>(null);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -128,7 +128,7 @@ export const useContentRepurposing = () => {
       const formatName = formatInfo?.name || 'Repurposed';
       
       // Add as new content item with required properties
-      await addContentItem({
+      const newContentId = await addContentItem({
         title: `${content.title} (${formatName})`,
         content: generatedContent,
         status: 'draft',
@@ -140,6 +140,29 @@ export const useContentRepurposing = () => {
           repurposedFrom: content.title
         }
       });
+      
+      // Update the original content's metadata to track repurposed formats
+      if (content && newContentId) {
+        // Get the current metadata or initialize an empty object
+        const currentMetadata = content.metadata || {};
+        
+        // Get existing repurposed formats or initialize an empty array
+        const repurposedFormats = currentMetadata.repurposedFormats || [];
+        
+        // Add the new format if not already present
+        if (!repurposedFormats.includes(formatId)) {
+          const updatedRepurposedFormats = [...repurposedFormats, formatId];
+          
+          // Update the content with the new metadata
+          await updateContentItem(content.id, {
+            ...content,
+            metadata: {
+              ...currentMetadata,
+              repurposedFormats: updatedRepurposedFormats
+            }
+          });
+        }
+      }
       
       toast.success(`Saved as new content item`);
     } catch (error) {
