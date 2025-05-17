@@ -1,5 +1,6 @@
 
-import { ContentBuilderState, ContentBuilderAction } from './state-types';
+import { ContentBuilderState } from './state-types';
+import { ContentBuilderAction, ContentBuilderActionType } from './action-types';
 import { ContentBuilderContextType } from './context-types';
 import { Solution, SolutionIntegrationMetrics, SolutionResource } from './solution-types';
 import { SerpSelection } from './serp-types';
@@ -14,6 +15,7 @@ import { ContentBuilderStep } from './step-types';
 export type {
   ContentBuilderState,
   ContentBuilderAction,
+  ContentBuilderActionType,
   ContentBuilderContextType,
   Solution,
   SolutionIntegrationMetrics,
