@@ -14,9 +14,20 @@ interface InterLinkingSuggestionsProps {
   content: ContentItemType;
 }
 
+// Define a proper type for our suggestions
+interface SuggestionsType {
+  relevant: ContentItemType[];
+  popular: ContentItemType[];
+  recent: ContentItemType[];
+}
+
 export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = ({ content }) => {
   const { contentItems } = useContent();
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestionsType>({
+    relevant: [],
+    popular: [],
+    recent: []
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('relevant');
   
@@ -145,7 +156,7 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
             ) : (
               <>
                 <TabsContent value="relevant" className="mt-0">
-                  {suggestions.relevant?.length > 0 ? (
+                  {suggestions.relevant.length > 0 ? (
                     suggestions.relevant.map(renderContentCard)
                   ) : (
                     <div className="text-center py-8 bg-white/5 border border-white/10 rounded-lg">
@@ -156,7 +167,7 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
                 </TabsContent>
                 
                 <TabsContent value="popular" className="mt-0">
-                  {suggestions.popular?.length > 0 ? (
+                  {suggestions.popular.length > 0 ? (
                     suggestions.popular.map(renderContentCard)
                   ) : (
                     <div className="text-center py-8 bg-white/5 border border-white/10 rounded-lg">
@@ -167,7 +178,7 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
                 </TabsContent>
                 
                 <TabsContent value="recent" className="mt-0">
-                  {suggestions.recent?.length > 0 ? (
+                  {suggestions.recent.length > 0 ? (
                     suggestions.recent.map(renderContentCard)
                   ) : (
                     <div className="text-center py-8 bg-white/5 border border-white/10 rounded-lg">
