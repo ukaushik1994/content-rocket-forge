@@ -1,25 +1,24 @@
 
 import React from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { ContentEditor } from '@/components/content-builder/editor/ContentEditor';
+import { ContentEditor } from '@/components/content/ContentEditor';
+import { toast } from 'sonner';
+import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
-import { ContentWritingHeader } from './writing/ContentWritingHeader';
+import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
-import { ContentSaveDialog } from './writing/ContentSaveDialog';
-import { SerpSelectedItemsSidebar } from '../serp/SerpSelectedItemsSidebar';
+import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
+import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
+import { AiProvider } from '@/services/aiService/types';
 
 export const ContentWritingStep = () => {
   const {
     state,
-    handleContentChange,
-    handleInstructionsChange,
-    handleToggleOutline,
-    handleToggleGenerator,
-    handleContentTemplateSelection,
-    handleAiProviderChange,
+    isGenerating,
+    setIsGenerating,
     showOutline,
     showGenerator,
     isSaving,
+    setIsSaving,
     showSaveDialog,
     setShowSaveDialog,
     saveTitle,
@@ -32,64 +31,111 @@ export const ContentWritingStep = () => {
     mainKeyword,
     outline,
     selectedSolution,
-    contentType,
-    contentFormat,
-    serpSelections
+    handleContentChange,
+    handleInstructionsChange,
+    handleToggleOutline,
+    handleToggleGenerator,
+    handleAiProviderChange
   } = useWritingStep();
 
+  const handleGenerateContent = async () => {
+    if (!mainKeyword) {
+      toast.error("Please set a main keyword first");
+      return;
+    }
+    
+    // Convert outline to a formatted string for the prompt
+    const outlineText = Array.isArray(state.outline) 
+      ? state.outline.map((item, index) => {
+          if (typeof item === 'string') {
+            return `${index + 1}. ${item}`;
+          } else if (item && typeof item === 'object' && 'title' in item) {
+            return `${index + 1}. ${(item as { title: string }).title}`;
+          }
+          return '';
+        }).filter(Boolean).join('\n')
+      : '';
+        
+    // Prepare secondary keywords
+    const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
+    
+    // Convert solution to string if needed
+    const solutionName = selectedSolution?.name || '';
+    
+    await generateContent(
+      aiProvider,
+      mainKeyword,
+      state.contentTitle,
+      outlineText,
+      secondaryKeywords,
+      solutionName,
+      additionalInstructions,
+      setIsGenerating,
+      handleContentChange
+    );
+  };
+  
+  const handleSaveToDraft = async () => {
+    await saveContentToDraft(
+      saveTitle,
+      content,
+      mainKeyword,
+      saveNote,
+      setIsSaving,
+      setShowSaveDialog
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header with actions */}
-      <ContentWritingHeader
-        showOutline={showOutline}
-        showGenerator={showGenerator}
+    <div className="space-y-6 h-full flex flex-col">
+      <ContentGenerationHeader
+        isGenerating={isGenerating}
+        handleGenerateContent={handleGenerateContent}
         handleToggleOutline={handleToggleOutline}
         handleToggleGenerator={handleToggleGenerator}
-        mainKeyword={mainKeyword}
-        setShowSaveDialog={setShowSaveDialog}
+        showOutline={showOutline}
+        outlineLength={state.outline.length}
+        aiProvider={aiProvider}
+        onAiProviderChange={handleAiProviderChange}
       />
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* SERP Selected Items Sidebar - Left */}
-        <div className="lg:col-span-1">
-          <SerpSelectedItemsSidebar serpSelections={serpSelections} />
-        </div>
-
-        {/* Main Content Editor - Center */}
-        <div className="lg:col-span-2">
+      
+      {/* Show selected SERP items */}
+      <SelectedSerpItemsCard />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+        {showOutline && (
+          <div className="lg:col-span-1 space-y-4 h-full">
+            <ContentSidebar
+              outline={outline}
+              selectedSolution={selectedSolution}
+              additionalInstructions={additionalInstructions}
+              handleInstructionsChange={handleInstructionsChange}
+              showGenerator={showGenerator}
+            />
+          </div>
+        )}
+        
+        <div className={`${showOutline ? 'lg:col-span-2' : 'lg:col-span-3'} h-full flex`}>
           <ContentEditor
             content={content}
-            onChange={handleContentChange}
-            outline={outline}
-            showOutline={showOutline}
-            solutionName={selectedSolution?.name || ''}
-          />
-        </div>
-
-        {/* Content Sidebar - Right */}
-        <div className="lg:col-span-1 space-y-4">
-          <ContentSidebar
-            outline={outline}
-            selectedSolution={selectedSolution}
-            additionalInstructions={additionalInstructions}
-            handleInstructionsChange={handleInstructionsChange}
-            showGenerator={showGenerator}
+            onContentChange={handleContentChange}
           />
         </div>
       </div>
 
-      {/* Content Save Dialog */}
-      {showSaveDialog && (
-        <ContentSaveDialog
-          open={showSaveDialog}
-          onOpenChange={setShowSaveDialog}
-          isSaving={isSaving}
-          title={saveTitle}
-          setTitle={setSaveTitle}
-          notes={saveNote}
-          setNotes={setSaveNote}
-        />
-      )}
+      <SaveContentDialog
+        showSaveDialog={showSaveDialog}
+        setShowSaveDialog={setShowSaveDialog}
+        saveTitle={saveTitle}
+        setSaveTitle={setSaveTitle}
+        saveNote={saveNote}
+        setSaveNote={setSaveNote}
+        handleSaveToDraft={handleSaveToDraft}
+        isSaving={isSaving}
+        mainKeyword={mainKeyword}
+        content={content}
+        outlineLength={state.outline.length}
+      />
     </div>
   );
 };
