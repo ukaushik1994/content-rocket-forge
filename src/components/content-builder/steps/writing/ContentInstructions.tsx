@@ -45,7 +45,7 @@ export const ContentInstructions: React.FC<ContentInstructionsProps> = ({
       </div>
       
       {selectedSerpItems === 0 && (
-        <Alert variant="warning" className="bg-amber-950/20 border-amber-500/30 text-amber-200">
+        <Alert variant="destructive" className="bg-amber-950/20 border-amber-500/30 text-amber-200">
           <Info className="h-4 w-4" />
           <AlertTitle>No SERP items selected</AlertTitle>
           <AlertDescription className="text-xs">
