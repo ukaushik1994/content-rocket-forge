@@ -5,52 +5,45 @@ export const createNavigationActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const navigateToStep = (step: number) => {
-    if (step < 0 || step >= state.steps.length) {
+  const navigateToStep = (stepIndex: number) => {
+    // Ensure the step index is valid
+    if (stepIndex < 0 || stepIndex >= state.steps.length) {
+      console.error(`Invalid step index: ${stepIndex}`);
       return;
     }
-    
-    // Get the current step and target step
-    const currentStep = state.steps[state.activeStep];
-    const targetStep = state.steps[step];
-    
-    // Always mark the current step as visited
-    dispatch({ type: 'MARK_STEP_VISITED', payload: state.activeStep });
-    
-    // Check if trying to navigate forward
-    if (step > state.activeStep) {
-      // Check if all previous steps are completed before allowing forward navigation
-      // First get all steps with IDs less than the target step's ID
-      const previousSteps = state.steps.filter(s => s.id < targetStep.id);
+
+    // Validate navigation - prevent skipping incomplete required steps
+    if (stepIndex > state.activeStep + 1) {
+      // Get all steps between current and target
+      const intermediateSteps = state.steps.slice(state.activeStep + 1, stepIndex);
       
-      // Skip SERP Analysis (step with id 2) in the completion check
-      const requiredCompletedSteps = previousSteps.filter(s => s.id !== 2);
+      // Check if all intermediate required steps are completed
+      const canSkip = intermediateSteps.every(step => 
+        step.completed || step.id === 2 // Allow skipping SERP Analysis
+      );
       
-      // Check if all required previous steps are completed
-      const allPreviousStepsCompleted = requiredCompletedSteps.every(s => s.completed);
-      
-      if (!allPreviousStepsCompleted) {
-        console.warn('Cannot navigate forward. Not all previous steps are completed.');
+      if (!canSkip) {
+        console.warn('Cannot skip incomplete required steps');
         return;
       }
     }
+
+    // Mark the new step as visited
+    const updatedSteps = state.steps.map((step, index) =>
+      index === stepIndex ? { ...step, visited: true } : step
+    );
     
-    // Skip SERP Analysis (step with id 2) when navigating between steps
-    if (state.activeStep === 0 && step > state.activeStep) {
-      // If going from keyword selection to content type, move forward normally
-      dispatch({ type: 'SET_CURRENT_STEP', payload: step });
-      return;
-    }
+    // Update the state with the new active step and updated steps
+    dispatch({ 
+      type: 'SET_CURRENT_STEP', 
+      payload: stepIndex
+    });
     
-    if (targetStep.id === 2) {
-      // If trying to navigate to SERP Analysis (id 2), skip to next valid step
-      const nextValidStep = step + 1 < state.steps.length ? step + 1 : state.activeStep;
-      dispatch({ type: 'SET_CURRENT_STEP', payload: nextValidStep });
-      return;
-    }
-    
-    // Normal navigation
-    dispatch({ type: 'SET_CURRENT_STEP', payload: step });
+    // Also mark the step as visited explicitly
+    dispatch({
+      type: 'MARK_STEP_VISITED',
+      payload: state.steps[stepIndex].id
+    });
   };
   
   return {

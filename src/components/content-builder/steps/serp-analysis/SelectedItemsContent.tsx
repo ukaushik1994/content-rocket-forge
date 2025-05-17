@@ -57,7 +57,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="space-y-5"
+          className="space-y-6"
         >
           {/* Keywords - combine regular keywords and related searches */}
           {(selectedCounts.keyword > 0 || keywordItems.filter(item => item.selected).length > 0) && (
@@ -71,7 +71,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {/* Questions - combine question and peopleAlsoAsk */}
           {(selectedCounts.question > 0 || questionItems.filter(item => item.selected).length > 0) && (
             <>
-              {selectedCounts.keyword > 0 && <Separator className="my-3 opacity-30" />}
+              {selectedCounts.keyword > 0 && <Separator className="my-4 opacity-50" />}
               <QuestionsGroup 
                 count={questionItems.filter(item => item.selected).length}
                 items={questionItems}
@@ -84,7 +84,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {(selectedCounts.snippet > 0 || snippetItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0) && 
-                <Separator className="my-3 opacity-30" />
+                <Separator className="my-4 opacity-50" />
               }
               <SnippetsGroup 
                 count={snippetItems.filter(item => item.selected).length}
@@ -98,7 +98,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
           {(selectedCounts.entity > 0 || entityItems.filter(item => item.selected).length > 0) && (
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || selectedCounts.snippet > 0) && 
-                <Separator className="my-3 opacity-30" />
+                <Separator className="my-4 opacity-50" />
               }
               <EntitiesGroup 
                 count={entityItems.filter(item => item.selected).length}
@@ -113,7 +113,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
             <>
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
                 selectedCounts.snippet > 0 || selectedCounts.entity > 0) && 
-                <Separator className="my-3 opacity-30" />
+                <Separator className="my-4 opacity-50" />
               }
               <HeadingsGroup 
                 count={headingItems.filter(item => item.selected).length}
@@ -129,7 +129,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
                 selectedCounts.snippet > 0 || selectedCounts.entity > 0 || 
                 selectedCounts.heading > 0) && 
-                <Separator className="my-3 opacity-30" />
+                <Separator className="my-4 opacity-50" />
               }
               <ContentGapsGroup 
                 count={contentGapItems.filter(item => item.selected).length}
@@ -146,7 +146,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
               {(selectedCounts.keyword > 0 || selectedCounts.question > 0 || 
                 selectedCounts.snippet > 0 || selectedCounts.entity > 0 || 
                 selectedCounts.heading > 0 || selectedCounts.contentGap > 0) && 
-                <Separator className="my-3 opacity-30" />
+                <Separator className="my-4 opacity-50" />
               }
               <TopRanksGroup 
                 count={topRankItems.filter(item => item.selected).length}

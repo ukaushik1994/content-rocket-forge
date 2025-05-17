@@ -58,6 +58,8 @@ export const ContentBuilder = () => {
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizeAndReviewStep />;
+      // Add the SaveStep as case 6
+      case 6: return <SaveStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -77,7 +79,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 6;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">

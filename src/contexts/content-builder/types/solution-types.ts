@@ -1,15 +1,9 @@
 
 /**
- * Solution related type definitions
+ * Solution-related type definitions
  */
 
-export interface SolutionResource {
-  title: string;
-  url: string;
-  id?: string; // Added optional id property
-  type?: string; // Added optional type property
-}
-
+// Solution Type
 export interface Solution {
   id: string;
   name: string;
@@ -18,21 +12,32 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  category: string; // Added category property
+  category: string;
   logoUrl: string | null;
   externalUrl: string | null;
   resources: SolutionResource[];
 }
 
+// Solution Resource Type
+export interface SolutionResource {
+  id: string;
+  title: string;
+  url: string;
+  type: 'documentation' | 'tutorial' | 'video' | 'case-study' | 'other';
+}
+
+// Solution Integration Metrics
 export interface SolutionIntegrationMetrics {
-  featureIncorporation: number; // Added missing properties
-  positioningScore: number; // Added missing properties
-  painPointsAddressed: string[];
-  ctaEffectiveness: number;
-  overallScore: number; // Added missing properties
-  mentions: number | string;
-  audienceAlignment: number;
-  nameMentions: number;
-  ctaMentions: number;
-  mentionedFeatures: string[]; // Added mentionedFeatures property
+  integrationScore: number;
+  recommendations: SolutionRecommendation[];
+  integrationPoints: number;
+  totalPossiblePoints: number;
+}
+
+// Solution Recommendation
+export interface SolutionRecommendation {
+  id: string;
+  text: string;
+  priority: 'high' | 'medium' | 'low';
+  applied: boolean;
 }
