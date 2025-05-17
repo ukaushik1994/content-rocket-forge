@@ -109,26 +109,18 @@ export function OutlineGenerator() {
     selectedItems: Array<{type: string, content: string, selected: boolean}>,
     customInstructions: string
   ) => {
-    // Separate primary and secondary keywords
-    const secondaryKeywords = selectedKeywords.filter(kw => kw !== mainKeyword);
-    
     // Create a detailed prompt for the AI
     const selectedItemsText = selectedItems.map(item => 
       `${item.type.toUpperCase()}: ${item.content}`
     ).join('\n\n');
     
-    const secondaryKeywordsText = secondaryKeywords.join(', ');
+    const keywordsText = selectedKeywords.join(', ');
     
     return `
     Create a detailed content outline for an article about "${mainKeyword}".
     
-    PRIMARY KEYWORD: ${mainKeyword} 
-    - This is the main focus keyword for the article
-    - Ensure it appears in at least one main heading and introduction section
-    
-    ${secondaryKeywords.length > 0 ? `SECONDARY KEYWORDS: ${secondaryKeywordsText}
-    - Include sections or points that will allow addressing these keywords in the content
-    - Ensure the outline has places where all these keywords can be naturally incorporated` : ''}
+    Primary keyword: ${mainKeyword}
+    Secondary keywords: ${keywordsText}
     
     I've researched the topic and gathered these key points:
     ${selectedItemsText}
@@ -139,10 +131,8 @@ export function OutlineGenerator() {
     1. Include at least 5-7 main sections with descriptive headings
     2. Format the outline with clear hierarchy
     3. Focus on covering the topic comprehensively
-    4. Ensure the structure allows for primary keyword to appear with 0.5%-3% density
-    5. Include sections where all secondary keywords can be mentioned at least once
-    6. Optimize for search intent and reader value
-    7. Include a section for call-to-action
+    4. Ensure all selected keywords are addressed
+    5. Optimize for search intent and reader value
     
     Return ONLY the outline in this exact format:
     1. [First Section Title]

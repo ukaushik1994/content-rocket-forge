@@ -2,10 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { KeywordUsage } from '@/hooks/seo-analysis/types';
 
 interface KeywordAnalysisCardProps {
-  keywordUsage: KeywordUsage[];
+  keywordUsage: { keyword: string; count: number; density: string }[];
   mainKeyword: string;
 }
 

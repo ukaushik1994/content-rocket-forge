@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { SerpAnalysisResult } from '@/services/serpApiService';
+import { SerpAnalysisResult } from '@/types/serp';
 import { SerpSelection } from '@/contexts/content-builder/types';
 import { 
   KeywordOverviewCard,

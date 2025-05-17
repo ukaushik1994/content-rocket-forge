@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
+import { ContentTypeStep } from './steps/ContentTypeStep';
 import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
@@ -53,6 +54,7 @@ export const ContentBuilder = () => {
     
     switch (stepID) {
       case 0: return <KeywordSelectionStep />;
+      case 1: return <ContentTypeStep />;
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizeAndReviewStep />;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -12,10 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
-import { Solution } from '@/contexts/content-builder/types/solution-types';
-
-// Import the SimpleSolutionOptions component (we'll create this)
-import { SimpleSolutionOptions } from './content-type/SimpleSolutionOptions';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -38,8 +35,7 @@ export const KeywordSelectionStep = () => {
     dispatch,
     analyzeKeyword,
     addContentFromSerp,
-    generateOutlineFromSelections,
-    setSelectedSolution
+    generateOutlineFromSelections
   } = useContentBuilder();
   
   const {
@@ -48,8 +44,7 @@ export const KeywordSelectionStep = () => {
     selectedCluster,
     serpData,
     serpSelections,
-    isAnalyzing,
-    selectedSolution
+    isAnalyzing
   } = state;
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -161,16 +156,6 @@ export const KeywordSelectionStep = () => {
       await analyzeKeyword(mainKeyword);
     }
   };
-
-  // Handle solution selection
-  const handleSolutionSelect = (solution: Solution) => {
-    setSelectedSolution(solution);
-  };
-
-  // Handle clearing solution
-  const handleClearSolution = () => {
-    setSelectedSolution(null);
-  };
   
   return (
     <div className="space-y-8">
@@ -246,15 +231,6 @@ export const KeywordSelectionStep = () => {
                       onRemoveKeyword={handleRemoveKeyword} 
                     />
                   </div>
-                  
-                  {/* Solution Selection - Moved here */}
-                  {selectedKeywords.length > 0 && (
-                    <SimpleSolutionOptions
-                      selectedSolution={selectedSolution}
-                      onSolutionSelect={handleSolutionSelect}
-                      onClearSelection={handleClearSolution}
-                    />
-                  )}
                   
                   {/* Selected Items Sidebar */}
                   <SelectedItemsSidebar 

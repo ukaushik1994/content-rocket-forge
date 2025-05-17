@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { analyzeKeyword } from '@/services/contentAnalysisService';
 import { toast } from 'sonner';
-import { Search, Plus, ArrowRight } from 'lucide-react';
+import { Search, Plus, ArrowRight, RefreshCw } from 'lucide-react';
+import { RefreshButton } from '@/components/ui/refresh-button';
 
 interface SerpKeywordSuggestionsProps {
   onKeywordSelect: (keyword: string) => void;
@@ -43,6 +45,34 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
     } catch (error) {
       console.error('Error analyzing keyword:', error);
       toast.error("Failed to analyze keyword. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleRefresh = async () => {
+    if (!primaryKeyword.trim()) {
+      toast.error("Please enter a keyword to refresh suggestions");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Add a refresh parameter using an options object
+      const result = await analyzeKeyword(primaryKeyword.trim(), true);
+      
+      // If we got new keywords, update the state
+      if (result.keywords && result.keywords.length > 0) {
+        // Shuffle the keywords for variety
+        const shuffled = [...result.keywords].sort(() => Math.random() - 0.5);
+        setRelatedKeywords(shuffled);
+        toast.success(`Refreshed with ${shuffled.length} related keywords`);
+      } else {
+        toast.info("No new keyword suggestions available");
+      }
+    } catch (error) {
+      console.error('Error refreshing keywords:', error);
+      toast.error("Failed to refresh keyword suggestions");
     } finally {
       setIsLoading(false);
     }
@@ -141,16 +171,24 @@ export const SerpKeywordSuggestions: React.FC<SerpKeywordSuggestionsProps> = ({
                     </div>
                   )}
                 </div>
-                {selectedKeywords.length > 0 && (
-                  <Button 
-                    size="sm" 
-                    onClick={handleAddSelectedKeywords}
-                    className="bg-gradient-to-r from-neon-purple to-neon-blue"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Selected ({selectedKeywords.length})
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {selectedKeywords.length > 0 && (
+                    <Button 
+                      size="sm" 
+                      onClick={handleAddSelectedKeywords}
+                      className="bg-gradient-to-r from-neon-purple to-neon-blue"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Selected ({selectedKeywords.length})
+                    </Button>
+                  )}
+                  <RefreshButton
+                    onClick={handleRefresh}
+                    isRefreshing={isLoading}
+                    disabled={isLoading}
+                    size="sm"
+                  />
+                </div>
               </div>
               
               <div className="flex flex-wrap gap-2">

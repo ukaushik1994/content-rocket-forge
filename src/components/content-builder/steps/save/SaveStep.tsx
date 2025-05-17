@@ -38,7 +38,8 @@ export const SaveStep = () => {
   useEffect(() => {
     if (saveCompleted) {
       console.log('[SaveStep] Save completed, setting session storage flag');
-      sessionStorage.setItem('from_content_builder', 'true');
+      // Use consistent flag names across the app
+      sessionStorage.setItem('content_draft_saved', 'true');
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
       toast.success('Content saved successfully! Navigating to content library...');
     }

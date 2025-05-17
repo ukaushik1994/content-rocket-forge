@@ -29,8 +29,7 @@ export const createContentActions = (
         content: item.content,
         status: item.status,
         seo_score: item.seo_score,
-        user_id: userId,
-        metadata: item.metadata || null
+        user_id: userId
       };
       
       const { data, error } = await supabase
@@ -101,12 +100,8 @@ export const createContentActions = (
           ...data,
           keywords: item.keywords || [],
           content: data.content || '',
-          status: data.status as 'draft' | 'approved' | 'published' | 'archived',
-          metadata: data.metadata ? 
-            (typeof data.metadata === 'string' ? 
-              JSON.parse(data.metadata as string) : 
-              data.metadata
-            ) : null
+          status: data.status as 'draft' | 'published' | 'archived',
+          metadata: (data.metadata as ContentItemType['metadata']) || {}
         };
         
         setContentItems(prev => [createdItem, ...prev]);

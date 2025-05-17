@@ -1,82 +1,81 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { AiProvider } from '@/types/aiProvider';
+import { OutlineSection } from '@/contexts/content-builder/types';
+import { AiProvider } from '@/services/aiService/types';
 
-export const useWritingStep = () => {
-  const { state, dispatch, setContent, setAdditionalInstructions } = useContentBuilder();
+export function useWritingStep() {
+  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
+  const { 
+    mainKeyword, 
+    outline, 
+    content, 
+    additionalInstructions, 
+    serpData, 
+    selectedSolution,
+    contentTitle,
+    selectedKeywords
+  } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [showOutline, setShowOutline] = useState(true);
   const [showGenerator, setShowGenerator] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveTitle, setSaveTitle] = useState('');
+  const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
   const [saveNote, setSaveNote] = useState('');
-  const [aiProvider, setAiProvider] = useState<AiProvider>('gpt-4o');
-  
-  // Get values from state
-  const { 
-    mainKeyword, 
-    selectedKeywords, 
-    contentTitle,
-    outline,
-    content,
-    additionalInstructions,
-    selectedSolution,
-    contentType,
-    contentFormat,
-    serpSelections
-  } = state;
-  
-  // Set the save title when contentTitle changes
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
+
+  // Mark this step as complete when we have content
   useEffect(() => {
-    if (contentTitle) {
-      setSaveTitle(contentTitle);
-    } else if (mainKeyword) {
-      setSaveTitle(`${mainKeyword} - ${new Date().toLocaleDateString()}`);
-    }
-  }, [contentTitle, mainKeyword]);
-  
-  // Handle content change
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent);
-    
-    // Mark step as completed if content is not empty
-    if (newContent.trim().length > 0) {
+    if (content && content.trim().length > 100) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
     }
+  }, [content, dispatch]);
+
+  useEffect(() => {
+    if (contentTitle && contentTitle !== saveTitle) {
+      setSaveTitle(contentTitle);
+    }
+  }, [contentTitle, saveTitle]);
+
+  const handleContentChange = (newContent: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: newContent });
   };
-  
-  // Handle toggle outline
+
+  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAdditionalInstructions(e.target.value);
+  };
+
   const handleToggleOutline = () => {
     setShowOutline(!showOutline);
   };
   
-  // Handle toggle generator
   const handleToggleGenerator = () => {
     setShowGenerator(!showGenerator);
   };
-  
-  // Handle AI provider change
+
+  const handleContentTemplateSelection = (template: string) => {
+    dispatch({ type: 'SET_CONTENT', payload: template });
+    setShowGenerator(false);
+  };
+
   const handleAiProviderChange = (provider: AiProvider) => {
     setAiProvider(provider);
   };
-  
-  // Handle additional instructions change
-  const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setAdditionalInstructions(e.target.value);
-  };
-  
-  // Handle content template selection
-  const handleContentTemplateSelection = (template: string) => {
-    setContent(template);
-    setShowGenerator(false);
-    
-    // Mark step as completed
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
-  };
-  
+
+  // Convert outline to the appropriate format for the sidebar component
+  const processedOutline = Array.isArray(outline) 
+    ? outline.map(item => {
+        if (typeof item === 'string') {
+          return { id: Math.random().toString(), title: item, level: 2 };
+        } else if (item && typeof item === 'object' && 'title' in item) {
+          return item as OutlineSection;
+        }
+        return { id: Math.random().toString(), title: '', level: 2 };
+      })
+    : [];
+
   return {
     state,
     isGenerating,
@@ -95,11 +94,9 @@ export const useWritingStep = () => {
     additionalInstructions,
     content,
     mainKeyword,
-    outline,
+    secondaryKeywords: selectedKeywords,
+    outline: processedOutline,
     selectedSolution,
-    contentType,
-    contentFormat,
-    serpSelections,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
@@ -107,4 +104,4 @@ export const useWritingStep = () => {
     handleContentTemplateSelection,
     handleAiProviderChange
   };
-};
+}

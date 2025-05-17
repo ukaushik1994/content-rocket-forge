@@ -17,7 +17,6 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [keywordUsage, setKeywordUsage] = useState<KeywordUsage[]>([]);
   const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [recommendationIds, setRecommendationIds] = useState<string[]>([]);
   const [scores, setScores] = useState<SeoAnalysisScores>({
     keywordUsage: 0,
     contentLength: 0,
@@ -93,15 +92,9 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
       setAnalysisError
     );
     
-    // Generate random recommendation IDs
-    setRecommendationIds(Array(recommendations.length || 5).fill(0).map(() => Math.random().toString(36).substring(2, 9)));
-    
     // Always mark step as analyzed after running analysis
     dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
-  }, [runAnalysis, isAnalyzing, dispatch, recommendations]);
-  
-  // Alias for runSeoAnalysis to match expected interface
-  const analyzeContent = runSeoAnalysis;
+  }, [runAnalysis, isAnalyzing, dispatch]);
   
   // Force skip analysis if it's taking too long
   const forceSkipAnalysis = useCallback(() => {
@@ -119,32 +112,16 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
     
     toast.success('Optimization step skipped. You can continue to the next step.');
   }, [dispatch, abortAnalysis]);
-  
-  // Handle recommendation application
-  const handleApplyRecommendation = useCallback((id: string) => {
-    console.log(`Applied recommendation with ID: ${id}`);
-    // In a real app, this would apply the recommendation to the content
-  }, []);
-  
-  // Check if a recommendation is applied
-  const isRecommendationApplied = useCallback((id: string) => {
-    // In a real app, this would check if the recommendation is applied
-    return false;
-  }, []);
 
   return {
     isAnalyzing,
     keywordUsage,
     recommendations,
-    recommendationIds,
     scores,
     improvements,
     analysisError,
     runSeoAnalysis,
-    analyzeContent,
     getScoreColor,
-    forceSkipAnalysis,
-    handleApplyRecommendation,
-    isRecommendationApplied
+    forceSkipAnalysis
   };
 };

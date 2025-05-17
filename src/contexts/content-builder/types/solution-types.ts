@@ -16,7 +16,7 @@ export interface Solution {
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];
-  category: string; // Added category property
+  category: string; // This property is required and defined
   logoUrl: string | null;
   externalUrl: string | null;
   resources: SolutionResource[];
@@ -32,5 +32,5 @@ export interface SolutionIntegrationMetrics {
   audienceAlignment: number;
   nameMentions: number;
   ctaMentions: number;
-  mentionedFeatures: string[]; // Added mentionedFeatures property
+  mentionedFeatures: string[]; 
 }

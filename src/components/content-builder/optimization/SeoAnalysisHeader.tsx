@@ -5,7 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, BarChart2, Sparkles, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { SeoAnalysisHeaderProps } from '@/hooks/seo-analysis/types';
+
+interface SeoAnalysisHeaderProps {
+  seoScore: number;
+  isAnalyzing: boolean;
+  runSeoAnalysis: () => void;
+  hasRunAnalysis: boolean;
+  skipOptimizationStep: () => void;
+  content: string;
+  analysisError?: string | null;
+}
 
 // Use memo to prevent unnecessary re-renders
 export const SeoAnalysisHeader = memo(({ 
@@ -15,8 +24,7 @@ export const SeoAnalysisHeader = memo(({
   hasRunAnalysis,
   skipOptimizationStep,
   content,
-  analysisError,
-  onAnalyze
+  analysisError
 }: SeoAnalysisHeaderProps) => {
   // Don't allow analysis if content is too short or analysis is already in progress
   const canAnalyze = !isAnalyzing && content && content.length >= 300;
@@ -24,7 +32,7 @@ export const SeoAnalysisHeader = memo(({
   // Handle analyze click with error prevention
   const handleAnalyzeClick = () => {
     if (canAnalyze) {
-      onAnalyze();
+      runSeoAnalysis();
     }
   };
   

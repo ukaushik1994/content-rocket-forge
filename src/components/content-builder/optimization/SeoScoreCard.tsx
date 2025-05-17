@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart2, BookOpen, KeyRound, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export interface SeoScoreCardProps {
+interface SeoScoreCardProps {
   seoScore: number;
   scores: {
     keywordUsage: number;

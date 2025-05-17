@@ -23,7 +23,7 @@ export const createAddContentAction = (
         status: item.status,
         seo_score: item.seo_score,
         user_id: userId,
-        metadata: item.metadata || null
+        metadata: item.metadata || {}
       };
       
       const { data, error } = await supabase
@@ -47,12 +47,12 @@ export const createAddContentAction = (
           ...data,
           keywords: item.keywords || [],
           content: data.content || '',
-          status: data.status as 'draft' | 'approved' | 'published' | 'archived',
-          // Safely handle metadata by explicitly treating it as the expected type
-          metadata: data.metadata as ContentItemType['metadata']
+          status: data.status as 'draft' | 'published' | 'archived',
+          metadata: (data.metadata as ContentItemType['metadata']) || {}
         };
         
         setContentItems(prev => [createdItem, ...prev]);
+        return data.id;
       }
     } catch (error: any) {
       console.error('Error adding content item:', error);
@@ -71,6 +71,7 @@ export const createAddContentAction = (
         setContentItems(prev => [newItem, ...prev]);
         toast.info('Created content in memory (development mode)');
       }
+      return null;
     }
   };
 };

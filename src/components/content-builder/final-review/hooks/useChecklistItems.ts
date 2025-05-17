@@ -16,7 +16,7 @@ export const useChecklistItems = () => {
     selectedKeywords
   } = state;
 
-  const { keywordUsage, rawKeywordData, ctaInfo } = useFinalReview();
+  const { keywordUsage, ctaInfo } = useFinalReview();
 
   // Build checklist items
   const checklistItems = [
@@ -50,14 +50,14 @@ export const useChecklistItems = () => {
     },
     {
       title: 'Primary keyword has optimal density (0.5% - 3%)',
-      passed: rawKeywordData.some(k => k.keyword === mainKeyword && 
+      passed: keywordUsage.some(k => k.keyword === mainKeyword && 
         parseFloat(k.density) >= 0.5 && 
         parseFloat(k.density) <= 3)
     },
     {
       title: 'Secondary keywords are included in content',
       passed: selectedKeywords.filter(k => k !== mainKeyword).some(k => 
-        rawKeywordData.some(usage => usage.keyword === k && usage.count > 0)
+        keywordUsage.some(usage => usage.keyword === k && usage.count > 0)
       )
     }
   ];

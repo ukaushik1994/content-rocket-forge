@@ -8,7 +8,6 @@ import { ContentBuilderAction } from './action-types';
 import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
 import { Solution } from './solution-types';
 import { OutlineSection } from './outline-types';
-import { SerpSelection } from './serp-types';
 
 // Context Type
 export interface ContentBuilderContextType {
@@ -27,10 +26,6 @@ export interface ContentBuilderContextType {
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
-  serpActions: {
-    toggleSerpSelection: (index: number) => void;
-  };
-  setOutline: (outline: string[] | OutlineSection[]) => void;
   
   // Content Actions
   setContentTitle: (title: string) => void;
@@ -41,9 +36,6 @@ export interface ContentBuilderContextType {
   saveContent: (options: { title: string; content: string }) => Promise<boolean>;
   setContent: (content: string) => void;
   updateContent: (content: string) => void;
-  
-  // Solution Actions
-  setSelectedSolution: (solution: Solution | null) => void;
   
   // Meta Actions
   setMetaTitle: (title: string) => void;

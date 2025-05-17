@@ -1,14 +1,13 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ListChecks, PenLine, Target } from 'lucide-react';
-import { Solution } from '@/contexts/content-builder/types/solution-types';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Solution, OutlineSection } from '@/contexts/content-builder/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ContentSidebarProps {
-  outline: string[];
+  outline: OutlineSection[];
   selectedSolution: Solution | null;
   additionalInstructions: string;
   handleInstructionsChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -21,76 +20,88 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
   handleInstructionsChange
 }) => {
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="flex flex-col gap-4 h-full">
       {/* Outline Card */}
-      <Card className="bg-white/5 border border-white/10 flex-grow">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <ListChecks className="h-4 w-4 text-primary" />
-            Content Outline
-          </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">
-            The AI will follow this structure
-          </CardDescription>
+      <Card className="flex-1 flex flex-col border">
+        <CardHeader className="px-4 py-3 border-b">
+          <CardTitle className="text-sm font-medium">Content Outline</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="max-h-[300px] overflow-y-auto p-4">
-            {outline.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                No outline sections defined yet
-              </div>
-            ) : (
-              <ol className="space-y-3 ml-1">
-                {outline.map((section, index) => (
-                  <li key={index} className="text-sm border-l-2 border-primary/30 pl-3 py-1">
-                    {section}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-        </CardContent>
+        <ScrollArea className="flex-1">
+          <CardContent className="p-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Section</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {outline.length > 0 ? (
+                  outline.map((section, index) => (
+                    <TableRow key={section.id || index}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell>{typeof section === 'string' ? section : section.title}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
+                      No outline sections yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </ScrollArea>
       </Card>
-
-      {/* Solution Card - if selected */}
+      
+      {/* Solution Info Card */}
       {selectedSolution && (
-        <Card className="bg-white/5 border border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
-              Selected Solution
-            </CardTitle>
+        <Card className="border">
+          <CardHeader className="px-4 py-3 border-b">
+            <CardTitle className="text-sm font-medium">Solution Reference</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Badge variant="outline" className="bg-primary/10">
-                {selectedSolution.name}
-              </Badge>
-              <div className="text-xs text-muted-foreground">
-                <p className="mt-1 font-medium">Key features:</p>
-                <ul className="list-disc ml-4 mt-1 space-y-1">
-                  {selectedSolution.features.slice(0, 3).map((feature, i) => (
-                    <li key={i}>{feature}</li>
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-medium mb-2">{selectedSolution.name}</h3>
+              <p className="text-xs text-muted-foreground">{selectedSolution.description}</p>
+            </div>
+            
+            {selectedSolution.features.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium mb-1">Features</h4>
+                <ul className="text-xs list-disc pl-4 space-y-1">
+                  {selectedSolution.features.slice(0, 3).map((feature, index) => (
+                    <li key={index}>{feature}</li>
                   ))}
                 </ul>
               </div>
-            </div>
+            )}
+            
+            {selectedSolution.useCases.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium mb-1">Use Cases</h4>
+                <ul className="text-xs list-disc pl-4 space-y-1">
+                  {selectedSolution.useCases.slice(0, 2).map((useCase, index) => (
+                    <li key={index}>{useCase}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
-
+      
       {/* Additional Instructions Card */}
-      <Card className="bg-white/5 border border-white/10">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <PenLine className="h-4 w-4 text-indigo-400" />
-            Additional Instructions
-          </CardTitle>
+      <Card className="border">
+        <CardHeader className="px-4 py-3 border-b">
+          <CardTitle className="text-sm font-medium">Additional Instructions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <Textarea
             placeholder="Add any specific instructions for content generation..."
-            className="min-h-[120px] bg-white/5 border-white/10"
+            className="resize-none h-24"
             value={additionalInstructions}
             onChange={handleInstructionsChange}
           />

@@ -15,7 +15,9 @@ export type ContentItemType = {
     outline?: string[];
     serpSelections?: any[];
     serpData?: any;
-  } | Record<string, any> | null;
+    notes?: string;
+    [key: string]: any;  // Allow for additional properties
+  };
 };
 
 export type ContentContextType = {

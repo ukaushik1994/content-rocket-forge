@@ -1,14 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
+import { ContentTemplateCard } from './writing/ContentTemplateCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
-import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
-import { AiProvider } from '@/services/aiService/types';
+import { Link } from 'react-router-dom';
 
 export const ContentWritingStep = () => {
   const {
@@ -16,6 +16,7 @@ export const ContentWritingStep = () => {
     isGenerating,
     setIsGenerating,
     showOutline,
+    showGenerator,
     isSaving,
     setIsSaving,
     showSaveDialog,
@@ -28,14 +29,19 @@ export const ContentWritingStep = () => {
     additionalInstructions,
     content,
     mainKeyword,
+    secondaryKeywords,
     outline,
     selectedSolution,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
     handleToggleGenerator,
+    handleContentTemplateSelection,
     handleAiProviderChange
   } = useWritingStep();
+
+  // Add state for selected countries
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(['us']);
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
@@ -56,21 +62,19 @@ export const ContentWritingStep = () => {
       : '';
         
     // Prepare secondary keywords
-    const secondaryKeywords = state.selectedKeywords?.join(', ') || '';
-    
-    // Convert solution to string if needed
-    const solutionName = selectedSolution?.name || '';
+    const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
     
     await generateContent(
       aiProvider,
       mainKeyword,
       state.contentTitle,
       outlineText,
-      secondaryKeywords,
-      solutionName, // Pass the solution name instead of the object
+      secondaryKeywordsStr,
+      selectedSolution,
       additionalInstructions,
       setIsGenerating,
-      handleContentChange
+      handleContentChange,
+      selectedCountries // Pass selected countries
     );
   };
   
@@ -79,7 +83,9 @@ export const ContentWritingStep = () => {
       saveTitle,
       content,
       mainKeyword,
+      secondaryKeywords || [],
       saveNote,
+      Array.isArray(outline) ? outline.map(item => typeof item === 'string' ? item : item.title) : [],
       setIsSaving,
       setShowSaveDialog
     );
@@ -96,10 +102,17 @@ export const ContentWritingStep = () => {
         outlineLength={state.outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
+        selectedCountries={selectedCountries}
+        onCountriesChange={setSelectedCountries}
       />
       
-      {/* Show selected SERP items */}
-      <SelectedSerpItemsCard />
+      {showGenerator && (
+        <ContentTemplateCard
+          serpData={state.serpData}
+          onGenerateContent={handleContentTemplateSelection}
+          mainKeyword={mainKeyword}
+        />
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {showOutline && (
@@ -131,6 +144,7 @@ export const ContentWritingStep = () => {
         handleSaveToDraft={handleSaveToDraft}
         isSaving={isSaving}
         mainKeyword={mainKeyword}
+        secondaryKeywords={secondaryKeywords || []}
         content={content}
         outlineLength={state.outline.length}
       />
