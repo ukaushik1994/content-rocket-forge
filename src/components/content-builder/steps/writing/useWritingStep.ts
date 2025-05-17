@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { AiProvider } from '@/types/aiProvider';
+import { AiProvider } from '@/services/aiService/types';
+import { toast } from 'sonner';
 
 export const useWritingStep = () => {
   const { state, dispatch, setContent, setAdditionalInstructions } = useContentBuilder();
@@ -45,6 +46,7 @@ export const useWritingStep = () => {
     // Mark step as completed if content is not empty
     if (newContent.trim().length > 0) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+      toast.success("Content updated", { id: "content-updated" });
     }
   };
   
@@ -55,7 +57,11 @@ export const useWritingStep = () => {
   
   // Handle toggle generator
   const handleToggleGenerator = () => {
-    setShowGenerator(!showGenerator);
+    const newState = !showGenerator;
+    setShowGenerator(newState);
+    if (newState) {
+      toast.info("AI Generator opened");
+    }
   };
   
   // Handle AI provider change
@@ -66,12 +72,18 @@ export const useWritingStep = () => {
   // Handle additional instructions change
   const handleInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setAdditionalInstructions(e.target.value);
+    
+    // Debounce toast to avoid too many notifications
+    if (e.target.value.length % 20 === 0) {
+      toast.info("Instructions updated", { id: "instructions-updated" });
+    }
   };
   
   // Handle content template selection
   const handleContentTemplateSelection = (template: string) => {
     setContent(template);
     setShowGenerator(false);
+    toast.success("Template applied successfully");
     
     // Mark step as completed
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });

@@ -1,90 +1,38 @@
 
-// Common types for AI service
+export type AiProvider = 
+  | 'openai'
+  | 'anthropic'
+  | 'gemini'
+  | 'mistral'
+  | 'lmstudio'
+  | 'other'
+  | 'gpt-4o'  
+  | 'gpt-4'
+  | 'gpt-3.5-turbo'
+  | 'claude-3';
 
-export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'other' | 'gpt-4o' | 'gpt-4' | 'gpt-3.5-turbo' | 'claude-3';
-
-export type AiModelType = 'chat' | 'completion' | 'embedding' | 'image';
-
-export interface AiModelInfo {
-  id: string;
-  provider: AiProvider;
-  name: string;
-  description: string;
-  maxTokens: number;
-  type: AiModelType;
-  capabilities: string[];
-  isDefault?: boolean;
-}
-
-export interface AiChatMessage {
+export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-export interface AiChatParams {
-  model: string;
-  messages: AiChatMessage[];
+export interface ChatCompletionOptions {
+  messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
+  model?: string;
 }
 
-export interface AiCompletionParams {
+export interface ChatCompletionChoice {
+  message: ChatMessage;
+  finish_reason: string;
+  index: number;
+}
+
+export interface ChatCompletionResponse {
+  id: string;
+  object: string;
+  created: number;
   model: string;
-  prompt: string;
-  temperature?: number;
-  maxTokens?: number;
-}
-
-export interface AiEmbeddingParams {
-  model: string;
-  input: string | string[];
-}
-
-// Type for API requests to the Edge Function
-export interface AiApiParams {
-  provider: AiProvider;
-  endpoint: string;
-  params: AiChatParams | AiCompletionParams | AiEmbeddingParams;
-  apiKey?: string;
-}
-
-// Response types
-export interface AiChatResponse {
-  id: string;
-  choices: {
-    message: AiChatMessage;
-    index: number;
-    finishReason: string | null;
-  }[];
-  usage?: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-}
-
-export interface AiCompletionResponse {
-  id: string;
-  choices: {
-    text: string;
-    index: number;
-    finishReason: string | null;
-  }[];
-  usage?: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-}
-
-export interface AiEmbeddingResponse {
-  id: string;
-  data: {
-    embedding: number[];
-    index: number;
-  }[];
-  usage?: {
-    promptTokens: number;
-    totalTokens: number;
-  };
+  choices: ChatCompletionChoice[];
 }

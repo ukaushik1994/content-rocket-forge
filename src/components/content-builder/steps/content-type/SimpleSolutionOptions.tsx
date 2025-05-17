@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Sparkles, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { CustomBadge } from '@/components/ui/custom-badge';
+import { toast } from 'sonner';
 
 interface SimpleSolutionOptionsProps {
   selectedSolution: Solution | null;
@@ -58,6 +58,18 @@ export const SimpleSolutionOptions: React.FC<SimpleSolutionOptionsProps> = ({
   onSolutionSelect,
   onClearSelection
 }) => {
+  // Add toast feedback when selecting a solution
+  const handleSolutionSelect = (solution: Solution) => {
+    onSolutionSelect(solution);
+    toast.success(`Solution "${solution.name}" selected`);
+  };
+
+  // Add toast feedback when clearing a solution
+  const handleClearSelection = () => {
+    onClearSelection();
+    toast.info("Solution selection cleared");
+  };
+
   return (
     <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
       <CardContent className="p-4">
@@ -65,7 +77,7 @@ export const SimpleSolutionOptions: React.FC<SimpleSolutionOptionsProps> = ({
           <h3 className="text-sm font-medium">Solution Options</h3>
           {selectedSolution && (
             <button 
-              onClick={onClearSelection}
+              onClick={handleClearSelection}
               className="text-xs text-muted-foreground hover:text-primary transition-colors"
             >
               Clear
@@ -80,7 +92,7 @@ export const SimpleSolutionOptions: React.FC<SimpleSolutionOptionsProps> = ({
               initial={{ opacity: 0.9, scale: 0.95 }}
               whileHover={{ opacity: 1, scale: 1.05 }}
               className={`flex-1 cursor-pointer`}
-              onClick={() => onSolutionSelect(solution)}
+              onClick={() => handleSolutionSelect(solution)}
             >
               <Badge 
                 className={`w-full py-2 px-3 justify-center items-center gap-1.5 flex ${
