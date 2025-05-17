@@ -16,7 +16,6 @@ export const ContentWritingStep = () => {
     isGenerating,
     setIsGenerating,
     showOutline,
-    showGenerator,
     isSaving,
     setIsSaving,
     showSaveDialog,
@@ -68,7 +67,7 @@ export const ContentWritingStep = () => {
       state.contentTitle,
       outlineText,
       secondaryKeywords,
-      solutionName,
+      solutionName, // Pass the solution name instead of the object
       additionalInstructions,
       setIsGenerating,
       handleContentChange
@@ -110,7 +109,6 @@ export const ContentWritingStep = () => {
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}
-              showGenerator={showGenerator}
             />
           </div>
         )}

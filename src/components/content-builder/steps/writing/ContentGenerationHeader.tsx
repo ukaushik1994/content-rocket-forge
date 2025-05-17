@@ -1,15 +1,13 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Sparkles, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Sparkles, Clipboard, EyeOff, Eye } from "lucide-react";
+import { AiProviderSelector } from "@/components/content-builder/outline/ai-generator/AiProviderSelector";
 import { AiProvider } from '@/services/aiService/types';
-import { AiProviderSelector } from './AiProviderSelector';
 
-export interface ContentGenerationHeaderProps {
+interface ContentGenerationHeaderProps {
   isGenerating: boolean;
-  handleGenerateContent: () => Promise<void>;
+  handleGenerateContent: () => void;
   handleToggleOutline: () => void;
   handleToggleGenerator: () => void;
   showOutline: boolean;
@@ -18,7 +16,7 @@ export interface ContentGenerationHeaderProps {
   onAiProviderChange: (provider: AiProvider) => void;
 }
 
-export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
+export function ContentGenerationHeader({
   isGenerating,
   handleGenerateContent,
   handleToggleOutline,
@@ -27,65 +25,56 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   outlineLength,
   aiProvider,
   onAiProviderChange
-}) => {
+}: ContentGenerationHeaderProps) {
   return (
-    <Card className="border border-white/10 bg-white/5 backdrop-blur-sm p-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-white/10 bg-white/5"
-            onClick={handleToggleOutline}
-          >
-            {showOutline ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1" /> Hide Outline
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1" /> Show Outline {outlineLength > 0 && `(${outlineLength})`}
-              </>
-            )}
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-white/10 bg-white/5"
-            onClick={handleToggleGenerator}
-          >
-            {showOutline ? (
-              <>AI Generator</>
-            ) : (
-              <>Show Generator</>
-            )}
-          </Button>
-        </div>
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-2">
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all"
+          onClick={handleGenerateContent}
+          disabled={isGenerating}
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          {isGenerating ? 'Generating...' : 'Generate Content'}
+        </Button>
         
-        <div className="flex items-center gap-3">
-          <AiProviderSelector 
-            selectedProvider={aiProvider}
-            onChange={onAiProviderChange}
-          />
-          
-          <Button
-            onClick={handleGenerateContent}
-            disabled={isGenerating}
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" /> Generate Content
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-glass border border-white/10 hover:border-white/20"
+          onClick={handleToggleGenerator}
+        >
+          <Clipboard className="h-4 w-4 mr-2" />
+          Templates
+        </Button>
       </div>
-    </Card>
+      
+      <div className="flex flex-wrap items-center gap-4">
+        <AiProviderSelector 
+          aiProvider={aiProvider}
+          setAiProvider={onAiProviderChange}
+        />
+        
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-glass border border-white/10 hover:border-white/20"
+          onClick={handleToggleOutline}
+        >
+          {showOutline ? (
+            <>
+              <EyeOff className="h-4 w-4 mr-2" />
+              Hide Outline
+            </>
+          ) : (
+            <>
+              <Eye className="h-4 w-4 mr-2" />
+              Show Outline ({outlineLength})
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   );
-};
+}

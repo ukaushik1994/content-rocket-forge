@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { getUserPreference } from "@/services/userPreferencesService";
 import { AiProvider } from "./types";
@@ -18,11 +19,11 @@ export function getFallbackConfig() {
     'mistral': ['openai', 'anthropic', 'gemini', 'lmstudio'],
     'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral'],
     'other': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
-    // Add the new providers with proper fallback preferences
-    'gpt-4o': ['openai', 'gpt-4', 'anthropic', 'gemini', 'mistral'],
-    'gpt-4': ['gpt-4o', 'openai', 'anthropic', 'gemini', 'mistral'],
-    'gpt-3.5-turbo': ['openai', 'gpt-4o', 'anthropic', 'gemini', 'mistral'],
-    'claude-3': ['anthropic', 'gpt-4o', 'openai', 'gemini', 'mistral']
+    // Add the new providers
+    'gpt-4o': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'gpt-4': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'gpt-3.5-turbo': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'claude-3': ['anthropic', 'openai', 'gemini', 'mistral', 'lmstudio']
   };
   
   return {

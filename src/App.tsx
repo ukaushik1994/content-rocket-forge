@@ -1,61 +1,57 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
-import { ThemeProvider } from 'next-themes';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
-import { Toaster } from 'sonner';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Drafts from "./pages/Drafts";
+import ContentBuilder from "./pages/ContentBuilder";
+import ContentApproval from "./pages/ContentApproval";
+import Solutions from "./pages/Solutions";
+import Settings from "./pages/Settings";
+import Analytics from "./pages/Analytics";
+import NotFound from "./pages/NotFound";
+import { ContentProvider } from "./contexts/content";
+import { AuthProvider } from "./contexts/AuthContext";
+import { FeedbackProvider } from "./contexts/FeedbackContext";
+import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-import { AuthProvider } from './contexts/AuthContext';
-import { ContentProvider } from './contexts/content';
-import { FeedbackProvider } from './contexts/FeedbackContext';
-
-// Routes
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import HomePage from './pages/Home';
-import LoginPage from './pages/Login';
-import DashboardPage from './pages/Dashboard';
-import SettingsPage from './pages/Settings';
-import KeywordResearchPage from './pages/Keywords';
-import ContentBuilderPage from './pages/ContentBuilder';
-import ContentPage from './pages/Content';
-import NotFoundPage from './pages/NotFound';
-
-// Create a react-query client
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <ContentProvider>
-                <FeedbackProvider>
-                  <Router>
-                    <Routes>
-                      <Route path="/" element={<HomePage />} />
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-                      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-                      <Route path="/keywords" element={<ProtectedRoute><KeywordResearchPage /></ProtectedRoute>} />
-                      <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
-                      <Route path="/content" element={<ProtectedRoute><ContentPage /></ProtectedRoute>} />
-                      <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
-                  </Router>
-                  {/* Add Sonner Toaster component */}
-                  <Toaster position="bottom-right" />
-                </FeedbackProvider>
-              </ContentProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <ContentProvider>
+          <FeedbackProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Protected routes */}
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
+                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
+                <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <FloatingFeedbackButton />
+            </BrowserRouter>
+          </FeedbackProvider>
+        </ContentProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

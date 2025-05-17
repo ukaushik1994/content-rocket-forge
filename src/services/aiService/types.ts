@@ -1,94 +1,90 @@
 
-export type AiProvider = 
-  | 'openai'
-  | 'anthropic'
-  | 'gemini'
-  | 'mistral'
-  | 'lmstudio'
-  | 'other'
-  | 'gpt-4o'  
-  | 'gpt-4'
-  | 'gpt-3.5-turbo'
-  | 'claude-3';
+// Common types for AI service
 
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'other' | 'gpt-4o' | 'gpt-4' | 'gpt-3.5-turbo' | 'claude-3';
 
-export interface ChatCompletionOptions {
-  messages: ChatMessage[];
-  temperature?: number;
-  maxTokens?: number;
-  model?: string;
-}
+export type AiModelType = 'chat' | 'completion' | 'embedding' | 'image';
 
-export interface ChatCompletionChoice {
-  message: ChatMessage;
-  finish_reason: string;
-  index: number;
-}
-
-export interface ChatCompletionResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: ChatCompletionChoice[];
-}
-
-// Adding missing type definitions
 export interface AiModelInfo {
   id: string;
   provider: AiProvider;
   name: string;
   description: string;
   maxTokens: number;
-  type: 'chat' | 'completion';
+  type: AiModelType;
   capabilities: string[];
   isDefault?: boolean;
 }
 
-export interface AiApiParams {
-  provider: string;
-  endpoint?: string;
-  service?: string;
-  params?: any;
-  apiKey?: string;
+export interface AiChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
 }
 
 export interface AiChatParams {
-  messages: ChatMessage[];
   model: string;
+  messages: AiChatMessage[];
   temperature?: number;
   maxTokens?: number;
-}
-
-export interface AiChatResponse {
-  content: string;
-  model: string;
-  usage?: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-  choices?: ChatCompletionChoice[]; // Add the choices property that several files are using
 }
 
 export interface AiCompletionParams {
-  prompt: string;
   model: string;
+  prompt: string;
   temperature?: number;
   maxTokens?: number;
 }
 
-export interface AiCompletionResponse {
-  content: string;
+export interface AiEmbeddingParams {
   model: string;
+  input: string | string[];
+}
+
+// Type for API requests to the Edge Function
+export interface AiApiParams {
+  provider: AiProvider;
+  endpoint: string;
+  params: AiChatParams | AiCompletionParams | AiEmbeddingParams;
+  apiKey?: string;
+}
+
+// Response types
+export interface AiChatResponse {
+  id: string;
+  choices: {
+    message: AiChatMessage;
+    index: number;
+    finishReason: string | null;
+  }[];
   usage?: {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
   };
-  choices?: ChatCompletionChoice[]; // Add the choices property here as well
+}
+
+export interface AiCompletionResponse {
+  id: string;
+  choices: {
+    text: string;
+    index: number;
+    finishReason: string | null;
+  }[];
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+export interface AiEmbeddingResponse {
+  id: string;
+  data: {
+    embedding: number[];
+    index: number;
+  }[];
+  usage?: {
+    promptTokens: number;
+    totalTokens: number;
+  };
 }
