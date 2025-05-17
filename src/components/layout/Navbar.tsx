@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, PanelRight, LogOut, UserCircle, User } from 'lucide-react';
+import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -63,7 +62,29 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <FeedbackButton className="hidden md:flex" />
+          {/* Settings button as icon */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full overflow-hidden border border-border"
+            onClick={() => navigate('/settings')}
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+
+          {/* Feedback button as icon */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full overflow-hidden border border-border"
+            onClick={() => document.dispatchEvent(new CustomEvent('open-feedback'))}
+            title="Feedback"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+          </Button>
+
+          {/* User profile dropdown - keeping as is */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full overflow-hidden border border-border">
@@ -112,8 +133,30 @@ const Navbar = () => {
             <nav className="flex flex-col space-y-4">
               <NavItems />
               
-              <div className="pt-2">
-                <FeedbackButton className="w-full justify-center" />
+              {/* Mobile menu buttons - keep text versions for better usability on mobile */}
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 items-center justify-center gap-2" 
+                  onClick={() => {
+                    navigate('/settings');
+                    setShowMobileMenu(false);
+                  }}
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 items-center justify-center gap-2"
+                  onClick={() => {
+                    document.dispatchEvent(new CustomEvent('open-feedback'));
+                    setShowMobileMenu(false);
+                  }}
+                >
+                  <MessageSquarePlus className="h-4 w-4" />
+                  Feedback
+                </Button>
               </div>
               
               <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={handleSignOut}>
