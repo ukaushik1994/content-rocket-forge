@@ -15,7 +15,6 @@ export interface SerpAnalysisResult {
     link: string;
     snippet: string;
     position: number;
-    country?: string;  // Added country field
   }>;
   relatedSearches?: Array<{
     query: string;
@@ -56,5 +55,4 @@ export interface SerpAnalysisResult {
     opportunity?: string; // Added missing field
     source?: string; // Added missing field
   }>;
-  searchCountries?: string[]; // Added the missing searchCountries property
 }

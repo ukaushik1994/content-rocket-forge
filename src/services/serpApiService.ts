@@ -115,10 +115,9 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
   const uniqueHeadings = new Set<string>();
   const uniqueRelatedSearches = new Set<string>();
   const uniqueEntities = new Set<string>();
-  const uniqueContentGaps = new Set<string>();
   
   // Combine data from all selected countries
-  countries.forEach((country) => {
+  countries.forEach((country, index) => {
     // Add country-specific keywords
     [`${country}: ${keyword} strategy`, 
      `${country}: ${keyword} tools`, 
@@ -130,34 +129,28 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
      `${country}: ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
     
     // Add country-specific questions
-    [`${country}: How does ${keyword} work in ${country}?`,
-     `${country}: What is the best ${keyword} tool in ${country}?`,
-     `${country}: Why is ${keyword} important for SEO in ${country}?`,
-     `${country}: When should I use ${keyword} in ${country}?`].forEach(q => uniqueQuestions.add(q));
+    [`How does ${keyword} work in ${country}?`,
+     `What is the best ${keyword} tool in ${country}?`,
+     `Why is ${keyword} important for SEO in ${country}?`,
+     `When should I use ${keyword} in ${country}?`].forEach(q => uniqueQuestions.add(q));
     
     // Add country-specific headings
-    [`${country}: Understanding ${keyword} in ${country}`,
-     `${country}: Benefits of ${keyword} for ${country} markets`,
-     `${country}: How to Implement ${keyword} in ${country}`,
-     `${country}: ${keyword} Best Practices for ${country}`].forEach(h => uniqueHeadings.add(h));
+    [`Understanding ${keyword} in ${country}`,
+     `Benefits of ${keyword} for ${country} markets`,
+     `How to Implement ${keyword} in ${country}`,
+     `${keyword} Best Practices for ${country}`].forEach(h => uniqueHeadings.add(h));
     
     // Add country-specific related searches
-    [`${country}: ${keyword} strategy`,
-     `${country}: ${keyword} tools`,
-     `${country}: best ${keyword} practices in ${country}`,
-     `${country}: ${keyword} guide`].forEach(rs => uniqueRelatedSearches.add(rs));
+    [`${country} ${keyword} strategy`,
+     `${country} ${keyword} tools`,
+     `best ${keyword} practices in ${country}`,
+     `${country} ${keyword} guide`].forEach(rs => uniqueRelatedSearches.add(rs));
      
     // Add country-specific entities
-    [`${country}: ${keyword} platform`,
-     `${country}: ${keyword} strategy`,
-     `${country}: ${keyword} tools`,
-     `${country}: ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
-
-    // Add country-specific content gaps
-    [`${country}: ${keyword} for beginners in ${country}`,
-     `${country}: Advanced ${keyword} techniques for ${country}`,
-     `${country}: ${keyword} ROI measurement in ${country}`,
-     `${country}: ${keyword} vs competitors in ${country}`].forEach(cg => uniqueContentGaps.add(cg));
+    [`${country} ${keyword} platform`,
+     `${country} ${keyword} strategy`,
+     `${country} ${keyword} tools`,
+     `${country} ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
   });
   
   // Add global keywords that are relevant across regions
@@ -166,53 +159,17 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
    `universal ${keyword} practices`,
    `worldwide ${keyword} trends`].forEach(kw => uniqueKeywords.add(kw));
    
-  // Add global questions
-  [`How does ${keyword} work globally?`,
-   `What are the best ${keyword} practices worldwide?`,
-   `Why is ${keyword} important for international SEO?`,
-   `When should I implement ${keyword} across markets?`].forEach(q => uniqueQuestions.add(q));
-
-  // Add global headings
-  [`Global approach to ${keyword}`,
-   `International ${keyword} implementation`,
-   `Universal benefits of ${keyword}`,
-   `Cross-market ${keyword} strategies`].forEach(h => uniqueHeadings.add(h));
-   
-  // Add global entities
-  [`${keyword} global platform`,
-   `international ${keyword} framework`,
-   `cross-market ${keyword} methodology`,
-   `universal ${keyword} metrics`].forEach(e => uniqueEntities.add(e));
-   
-  // Add global content gaps
-  [`${keyword} for global markets`,
-   `International ${keyword} best practices`,
-   `Cross-border ${keyword} implementation`,
-   `Multilingual ${keyword} strategies`].forEach(cg => uniqueContentGaps.add(cg));
-   
   // Add refresh-specific items if needed
   if (refresh) {
     countries.forEach(country => {
-      [`${country}: ${keyword} certification`,
-       `${country}: ${keyword} for startups`,
-       `${country}: ${keyword} ROI`,
-       `${country}: ${keyword} software comparison`].forEach(kw => uniqueKeywords.add(kw));
+      [`${country} ${keyword} certification`,
+       `${country} ${keyword} for startups`,
+       `${country} ${keyword} ROI`,
+       `${country} ${keyword} software comparison`].forEach(kw => uniqueKeywords.add(kw));
        
-      [`${country}: What are the advantages of ${keyword} in ${country}?`,
-       `${country}: How much does ${keyword} cost on average in ${country}?`,
-       `${country}: Can ${keyword} be integrated with other systems in ${country}?`].forEach(q => uniqueQuestions.add(q));
-       
-      [`${country}: Cost analysis of ${keyword} in ${country}`,
-       `${country}: ${keyword} integration options for ${country}`,
-       `${country}: Future of ${keyword} in ${country} market`].forEach(h => uniqueHeadings.add(h));
-       
-      [`${country}: ${keyword} pricing model`,
-       `${country}: ${keyword} certification authority`,
-       `${country}: ${keyword} compliance in ${country}`].forEach(e => uniqueEntities.add(e));
-       
-      [`${country}: ${keyword} cost optimization in ${country}`,
-       `${country}: ${keyword} compliance requirements for ${country}`,
-       `${country}: ${keyword} implementation case studies in ${country}`].forEach(cg => uniqueContentGaps.add(cg));
+      [`What are the advantages of ${keyword} in ${country}?`,
+       `How much does ${keyword} cost on average in ${country}?`,
+       `Can ${keyword} be integrated with other systems in ${country}?`].forEach(q => uniqueQuestions.add(q));
     });
   }
   
@@ -225,34 +182,24 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
     entities: Array.from(uniqueEntities).map(name => ({ name, type: 'entity' })),
     peopleAlsoAsk: Array.from(uniqueQuestions).map(question => ({ question, source: 'search' })),
     headings: Array.from(uniqueHeadings).map(text => ({ text, level: 'h2' as const })),
-    contentGaps: Array.from(uniqueContentGaps).map(topic => ({ 
-      topic, 
-      description: `Content opportunity for ${topic}`, 
-      recommendation: `Create comprehensive content about ${topic}` 
+    contentGaps: [
+      { topic: `${keyword} for beginners`, description: 'Beginner guide', recommendation: 'Create a 101 guide' },
+      { topic: `Advanced ${keyword} techniques`, description: 'For experts', recommendation: 'Share advanced tips' },
+      { topic: `${keyword} ROI measurement`, description: 'Measuring success', recommendation: 'Create calculator' },
+      { topic: `${keyword} vs competitors`, description: 'Comparison', recommendation: 'Create comparison chart' },
+      ...countries.map(country => ({ 
+        topic: `${keyword} for ${country} market`, 
+        description: `${country.toUpperCase()} specific guide`, 
+        recommendation: `Create localized content for ${country.toUpperCase()}`
+      }))
+    ],
+    topResults: countries.map((country, idx) => ({
+      title: `The Ultimate Guide to ${keyword} in ${country.toUpperCase()}`,
+      link: `https://example.com/${country}/${keyword}-guide`,
+      snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide for ${country.toUpperCase()}.`,
+      position: idx + 1,
+      country
     })),
-    topResults: countries.flatMap((country, idx) => ([
-      {
-        title: `The Ultimate Guide to ${keyword} in ${country.toUpperCase()}`,
-        link: `https://example.com/${country}/${keyword}-guide`,
-        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide for ${country.toUpperCase()}.`,
-        position: idx * 5 + 1,
-        country
-      },
-      {
-        title: `${country.toUpperCase()}: Best ${keyword} Practices in ${new Date().getFullYear()}`,
-        link: `https://example.com/${country}/${keyword}-best-practices`,
-        snippet: `Discover the most effective ${keyword} practices for ${country.toUpperCase()} markets in ${new Date().getFullYear()}.`,
-        position: idx * 5 + 2,
-        country
-      },
-      {
-        title: `${country.toUpperCase()}: How to Implement ${keyword} Successfully`,
-        link: `https://example.com/${country}/${keyword}-implementation`,
-        snippet: `Step-by-step guide to successfully implementing ${keyword} strategies in ${country.toUpperCase()}.`,
-        position: idx * 5 + 3,
-        country
-      }
-    ])),
     relatedSearches: Array.from(uniqueRelatedSearches).map(query => ({ query })),
     keywords: Array.from(uniqueKeywords),
     recommendations: [
@@ -264,7 +211,7 @@ function generateMockSerpData(keyword: string, refresh?: boolean, countries: str
       ...countries.map(country => `Create localized content for ${country.toUpperCase()} market`)
     ],
     isMockData: true,
-    searchCountries: countries  // Property explicitly added to match type
+    searchCountries: countries
   };
 }
 
