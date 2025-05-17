@@ -38,6 +38,15 @@ export const createPublishActions = (
         content.outline = state.outline;
       }
       
+      // Save meta information if available
+      if (state.metaTitle) {
+        content.metaTitle = state.metaTitle;
+      }
+      
+      if (state.metaDescription) {
+        content.metaDescription = state.metaDescription;
+      }
+      
       // Update state with saved content info
       if (content.metaTitle) {
         dispatch({ type: 'SET_META_TITLE', payload: content.metaTitle });
@@ -89,6 +98,15 @@ export const createPublishActions = (
       // Save outline if available
       if (state.outline && state.outline.length > 0) {
         content.outline = state.outline;
+      }
+      
+      // Save meta information if available
+      if (state.metaTitle) {
+        content.metaTitle = state.metaTitle;
+      }
+      
+      if (state.metaDescription) {
+        content.metaDescription = state.metaDescription;
       }
       
       // In a real implementation, this would call an API to publish the content
