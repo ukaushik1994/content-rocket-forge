@@ -17,6 +17,7 @@ export type ContentBuilderAction =
   | { type: 'MARK_STEP_VISITED'; payload: number }
   | { type: 'MARK_STEP_ANALYZED'; payload: number }
   | { type: 'SKIP_OPTIMIZATION_STEP' }
+  | { type: 'SET_OPTIMIZATION_SKIPPED'; payload: boolean }
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
   | { type: 'SET_SERP_DATA'; payload: any }

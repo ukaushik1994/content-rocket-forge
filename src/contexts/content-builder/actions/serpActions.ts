@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
@@ -44,6 +43,36 @@ export const createSerpActions = (
       type: 'TOGGLE_SERP_SELECTION', 
       payload: { type, content } 
     });
+  };
+
+  const toggleSerpSelection = (index: number) => {
+    if (index < 0 || index >= state.serpSelections.length) return;
+    
+    const updatedSelections = [...state.serpSelections];
+    updatedSelections[index] = {
+      ...updatedSelections[index],
+      selected: !updatedSelections[index].selected
+    };
+    
+    // If we're deselecting, just update the selection state
+    // If we're selecting, we keep it in the list but mark as not selected
+    if (!updatedSelections[index].selected) {
+      dispatch({ 
+        type: 'TOGGLE_SERP_SELECTION', 
+        payload: { 
+          type: updatedSelections[index].type,
+          content: updatedSelections[index].content
+        } 
+      });
+    } else {
+      dispatch({ 
+        type: 'TOGGLE_SERP_SELECTION', 
+        payload: { 
+          type: updatedSelections[index].type,
+          content: updatedSelections[index].content
+        } 
+      });
+    }
   };
   
   const generateOutlineFromSelections = () => {
@@ -138,5 +167,6 @@ export const createSerpActions = (
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
+    toggleSerpSelection,
   };
 };

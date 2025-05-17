@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 import { OutlineSection } from './types/outline-types';
 
@@ -44,6 +43,12 @@ export const contentBuilderReducer = (
       return {
         ...state,
         optimizationSkipped: true
+      };
+      
+    case 'SET_OPTIMIZATION_SKIPPED':
+      return {
+        ...state,
+        optimizationSkipped: action.payload
       };
       
     case 'SET_MAIN_KEYWORD':
@@ -258,4 +263,3 @@ export const contentBuilderReducer = (
       return state;
   }
 };
-

@@ -2,13 +2,12 @@
 import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { KeywordOptimizationCard } from './optimize/KeywordOptimizationCard';
 import { ContentPreviewCard } from './optimize/ContentPreviewCard';
 import { ReadabilityCard } from './optimize/ReadabilityCard';
 import { SolutionIntegrationCard } from './optimize/SolutionIntegrationCard';
-import { CheckCircle, Save, ArrowRight, FileText } from 'lucide-react';
+import { CheckCircle, Save, ArrowRight } from 'lucide-react';
 import { useFinalReview } from '@/hooks/useFinalReview';
 import { SeoMetaCard } from './optimize/SeoMetaCard';
 import { SaveContentDialog } from './writing/SaveContentDialog';

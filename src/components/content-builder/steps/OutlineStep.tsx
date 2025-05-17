@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export const OutlineStep = () => {
-  const { state, setOutline } = useContentBuilder();
+  const { state, updateContent, setOutline } = useContentBuilder();
   const [activeTab, setActiveTab] = useState<'manual' | 'ai'>('ai');
   
   // Handle submission of the outline
