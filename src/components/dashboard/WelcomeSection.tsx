@@ -1,12 +1,15 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { RocketIcon, MessageCircle, Sparkles, BarChart3 } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
+
 interface WelcomeSectionProps {
   setFeedbackOpen: (open: boolean) => void;
   navigate: NavigateFunction;
 }
+
 export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
   setFeedbackOpen,
   navigate
