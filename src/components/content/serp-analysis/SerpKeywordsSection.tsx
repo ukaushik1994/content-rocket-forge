@@ -18,11 +18,11 @@ export const SerpKeywordsSection: React.FC<SerpKeywordsSectionProps> = ({
 }) => {
   if (!expanded) return null;
   
-  // Combine all keyword sources
-  const keywords = [
+  // Combine all keyword sources and remove duplicates
+  const keywords = Array.from(new Set([
     ...(serpData.keywords || []),
     ...(serpData.relatedSearches?.map(item => item.query) || [])
-  ].filter(Boolean);
+  ])).filter(Boolean);
   
   if (!keywords.length) return null;
   
