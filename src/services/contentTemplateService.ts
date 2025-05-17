@@ -34,12 +34,134 @@ export async function generateContentByFormatType(
   const templates = getPromptTemplatesByType(formatType);
   
   if (!templates || templates.length === 0) {
-    toast.error(`No templates found for ${formatType}`);
-    return null;
+    // No custom template found, use format-specific default prompts
+    return generateWithDefaultPrompt(formatType, topic, additionalContext);
   }
   
   // Use the first template
   return generateWithTemplate(templates[0], topic, additionalContext);
+}
+
+/**
+ * Generate content using default prompts when no custom template is available
+ */
+async function generateWithDefaultPrompt(
+  formatType: string,
+  topic: string,
+  additionalContext?: Record<string, string>
+): Promise<string | null> {
+  try {
+    // Create default prompt based on format type
+    const { prompt, systemMessage } = createDefaultPrompt(formatType, topic, additionalContext);
+    
+    // Make the API call
+    const response = await sendChatRequest('openai', {
+      messages: [
+        { 
+          role: 'system', 
+          content: systemMessage
+        },
+        { 
+          role: 'user', 
+          content: prompt 
+        }
+      ],
+      temperature: 0.7
+    });
+    
+    if (response?.choices?.[0]?.message?.content) {
+      return response.choices[0].message.content;
+    } else {
+      toast.error(`Failed to generate ${formatType} content`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error generating content with default prompt:', error);
+    toast.error('Error generating content');
+    return null;
+  }
+}
+
+/**
+ * Creates default prompts based on format type
+ */
+function createDefaultPrompt(
+  formatType: string, 
+  topic: string, 
+  additionalContext?: Record<string, string>
+): { prompt: string, systemMessage: string } {
+  const content = additionalContext?.content || '';
+  const keyword = additionalContext?.keyword || topic;
+
+  switch (formatType) {
+    case 'meme':
+      return {
+        systemMessage: 'You are a creative meme writer who can transform serious content into humorous meme text. Create appropriate captions for top text and bottom text format.',
+        prompt: `Create a meme based on this content about "${topic}". 
+        Original content: ${content.substring(0, 500)}...
+        
+        Provide the meme in this format:
+        Image description: [describe what image would work well]
+        Top text: [catchy phrase for the top of the meme]
+        Bottom text: [punchline for the bottom of the meme]
+        Alternative caption: [single caption alternative]
+        Context explanation: [brief explanation of the joke for those who might not get it]`
+      };
+      
+    case 'carousel':
+      return {
+        systemMessage: 'You are an expert in creating engaging social media carousel content that breaks down complex topics into digestible slides.',
+        prompt: `Transform this content about "${topic}" into a 5-7 slide carousel post format.
+        Original content: ${content.substring(0, 800)}...
+        
+        Format your response as:
+        
+        Slide 1: [attention-grabbing headline and introduction]
+        
+        Slide 2: [key point 1]
+        
+        Slide 3: [key point 2]
+        
+        Slide 4: [key point 3]
+        
+        Slide 5: [key point 4 if applicable]
+        
+        Slide 6: [key point 5 if applicable]
+        
+        Final Slide: [call to action]
+        
+        Each slide should have no more than 2-3 sentences. Make it engaging and visual-friendly.`
+      };
+      
+    // Handle other format types with their specific structures
+    case 'social-twitter':
+      return {
+        systemMessage: 'You are a Twitter/X specialist who creates engaging tweets within character limits.',
+        prompt: `Create a Twitter/X post (max 280 characters) about "${topic}" based on this content: ${content.substring(0, 300)}...`
+      };
+      
+    case 'glossary':
+      return {
+        systemMessage: 'You are a technical writer specializing in creating clear, concise definitions and explanations.',
+        prompt: `Create a glossary of key terms related to "${topic}" based on this content: ${content.substring(0, 800)}...
+        
+        Format each entry as:
+        
+        Term: [term]
+        Definition: [concise definition]
+        Usage example: [example of the term in context]
+        
+        Include at least 5-8 key terms from the content.`
+      };
+      
+    default:
+      return {
+        systemMessage: 'You are an expert content writer who creates high-quality, engaging content.',
+        prompt: `Transform this content about "${topic}" for the ${formatType} format.
+                Content: ${content.substring(0, 800)}...
+                Make it appropriate for the ${formatType} format with all necessary elements.`
+      };
+  }
 }
 
 /**
@@ -120,6 +242,10 @@ function getSystemMessageForContentType(formatType: string): string {
       return 'You are an email marketing specialist who creates compelling newsletter content with high open and click-through rates. Create content that is scannable and drives action.';
     case 'glossary':
       return 'You are a technical writer specializing in creating clear, concise definitions and explanations for complex topics. Provide comprehensive information in an accessible format.';
+    case 'meme':
+      return 'You are a creative meme writer who can transform serious content into humorous meme text. Create appropriate captions that would work well in meme format.';
+    case 'carousel':
+      return 'You are an expert in creating engaging social media carousel content that breaks down complex topics into digestible slides. Structure content to flow naturally across multiple slides.';
     default:
       return 'You are an expert content writer who creates high-quality, engaging content. Follow the provided guidelines and structure to create content that meets the user\'s needs.';
   }
