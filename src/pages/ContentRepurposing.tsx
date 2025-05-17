@@ -16,10 +16,9 @@ import { RepurposeTab } from '@/components/content-builder/final-review/tabs/Rep
 const ContentRepurposing = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { getContentItem, getAllContentItems, addContentItem } = useContent();
+  const { contentItems, getContentItem, addContentItem } = useContent();
   
   const [content, setContent] = useState<any>(null);
-  const [contentItems, setContentItems] = useState<any[]>([]);
   const [selectedFormat, setSelectedFormat] = useState<string>('');
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -39,10 +38,6 @@ const ContentRepurposing = () => {
   
   // Load content when component mounts
   useEffect(() => {
-    // Load all content items for selection
-    const items = getAllContentItems();
-    setContentItems(items);
-    
     // Check if we have a specific content ID from URL param
     const contentId = new URLSearchParams(location.search).get('id');
     if (contentId) {
@@ -54,7 +49,7 @@ const ContentRepurposing = () => {
         toast.error('Content not found');
       }
     }
-  }, [location, getContentItem, getAllContentItems]);
+  }, [location, getContentItem]);
   
   const handleContentSelection = (contentId: string) => {
     const selectedContent = getContentItem(contentId);
