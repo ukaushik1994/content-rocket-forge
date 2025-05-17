@@ -18,7 +18,12 @@ export function getFallbackConfig() {
     'gemini': ['openai', 'anthropic', 'mistral', 'lmstudio'],
     'mistral': ['openai', 'anthropic', 'gemini', 'lmstudio'],
     'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral'],
-    'other': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
+    'other': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    // Add the new providers
+    'gpt-4o': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'gpt-4': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'gpt-3.5-turbo': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'claude-3': ['anthropic', 'openai', 'gemini', 'mistral', 'lmstudio']
   };
   
   return {

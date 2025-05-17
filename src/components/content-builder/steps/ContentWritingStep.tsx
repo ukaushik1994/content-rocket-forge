@@ -8,7 +8,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
-import { AiProvider } from '@/types/aiProvider';
+import { AiProvider } from '@/services/aiService/types';
 
 export const ContentWritingStep = () => {
   const {
@@ -33,6 +33,7 @@ export const ContentWritingStep = () => {
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
+    handleToggleGenerator,
     handleAiProviderChange
   } = useWritingStep();
 
@@ -90,6 +91,7 @@ export const ContentWritingStep = () => {
         isGenerating={isGenerating}
         handleGenerateContent={handleGenerateContent}
         handleToggleOutline={handleToggleOutline}
+        handleToggleGenerator={handleToggleGenerator}
         showOutline={showOutline}
         outlineLength={state.outline.length}
         aiProvider={aiProvider}
