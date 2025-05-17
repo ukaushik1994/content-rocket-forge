@@ -1,149 +1,60 @@
 
 import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
-import { ContentOptimizationContainer } from '../optimization/ContentOptimizationContainer';
-import { ContentRewriteDialog } from '../optimization/ContentRewriteDialog';
-import { KeywordAnalysisCard } from '../optimization/KeywordAnalysisCard';
-import { ProgressBar } from '../optimization/ProgressBar';
-import { RecommendationsCard } from '../optimization/RecommendationsCard';
-import { SeoAnalysisHeader } from '../optimization/SeoAnalysisHeader';
-import { SeoScoreCard } from '../optimization/SeoScoreCard';
-import { SkipWarning } from '../optimization/SkipWarning';
-import { useSeoAnalysis } from '@/hooks/useSeoAnalysis';
-import { useContentRewriter } from '@/hooks/useContentRewriter';
+import { OptimizeHeader } from './optimize/OptimizeHeader';
+import { ContentPreview } from './optimize/ContentPreview';
+import { SeoSuggestionsList } from './optimize/SeoSuggestionsList';
+import { SerpSelectedItemsSidebar } from '../serp/SerpSelectedItemsSidebar';
 
 export const OptimizeAndReviewStep = () => {
-  const { state, skipOptimizationStep } = useContentBuilder();
-  const { content, mainKeyword, seoScore, optimizationSkipped } = state;
+  const { state, analyzeSeo, applySeoImprovement, skipOptimizationStep } = useContentBuilder();
+  const { content, seoImprovements, seoScore, mainKeyword, isAnalyzing, optimizationSkipped, serpSelections } = state;
   
-  // Use SEO analysis hook
-  const { 
-    isAnalyzing, 
-    recommendations,
-    recommendationIds,
-    keywordUsage,
-    runSeoAnalysis,
-    analyzeContent,
-    getScoreColor,
-    forceSkipAnalysis,
-    handleApplyRecommendation,
-    isRecommendationApplied
-  } = useSeoAnalysis();
+  // Handle analyze SEO action
+  const handleAnalyzeSeo = () => {
+    analyzeSeo(content);
+  };
   
-  // Use content rewriter hook
-  const { 
-    showRewriteDialog, 
-    setShowRewriteDialog,
-    rewriteSection, 
-    sectionToRewrite, 
-    setSectionToRewrite,
-    isRewriting,
-    selectedRecommendation,
-    rewriteType,
-    rewrittenContent,
-    handleRewriteContent,
-    applyRewrittenContent,
-    isRecommendationApplied: isRecommendationAppliedFromRewriter
-  } = useContentRewriter();
+  // Handle improvement click
+  const handleImprovementClick = (id: string) => {
+    applySeoImprovement(id);
+  };
   
-  // Calculate applied recommendations
-  const appliedCount = recommendationIds ? recommendationIds.filter(id => 
-    isRecommendationApplied(id)).length : 0;
-  const totalCount = recommendationIds ? recommendationIds.length : 0;
-  const progressPercentage = totalCount > 0 ? Math.round((appliedCount / totalCount) * 100) : 0;
+  // Handle skip optimization
+  const handleSkipOptimization = () => {
+    skipOptimizationStep();
+  };
   
   return (
     <div className="space-y-6">
-      {/* SEO Analysis Header */}
-      <SeoAnalysisHeader 
+      <OptimizeHeader 
         seoScore={seoScore}
         isAnalyzing={isAnalyzing}
-        runSeoAnalysis={runSeoAnalysis}
-        hasRunAnalysis={recommendations.length > 0}
-        skipOptimizationStep={skipOptimizationStep}
-        content={content}
-        analysisError={null}
-        onAnalyze={analyzeContent}
+        optimizationSkipped={optimizationSkipped}
+        onAnalyze={handleAnalyzeSeo}
+        onSkip={handleSkipOptimization}
       />
       
-      {/* Display selected SERP items */}
-      <SelectedSerpItemsCard />
-      
-      {/* If optimization is skipped, show warning */}
-      {optimizationSkipped ? (
-        <SkipWarning 
-          onSkip={skipOptimizationStep} 
-          onCancel={() => runSeoAnalysis()}
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {/* SEO Score Card */}
-            <SeoScoreCard 
-              seoScore={seoScore}
-              scores={{
-                keywordUsage: seoScore,
-                contentLength: seoScore,
-                readability: seoScore
-              }}
-              getScoreColor={getScoreColor}
-            />
-            
-            {/* Progress Bar */}
-            <div className="md:col-span-2">
-              <ProgressBar 
-                appliedCount={appliedCount}
-                totalCount={totalCount}
-                progressPercentage={progressPercentage}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-6">
-              {/* Keyword Analysis */}
-              <KeywordAnalysisCard 
-                mainKeyword={mainKeyword} 
-                keywordUsage={keywordUsage}
-              />
-              
-              {/* Recommendations */}
-              <RecommendationsCard 
-                recommendations={recommendations}
-                recommendationIds={recommendationIds || []}
-                isAnalyzing={isAnalyzing}
-                handleRewriteContent={handleRewriteContent}
-                isRecommendationApplied={isRecommendationApplied}
-                showRecoveryOption={isAnalyzing && isAnalyzing}
-                onForceSkip={forceSkipAnalysis}
-              />
-            </div>
-            
-            <div className="lg:col-span-2">
-              {/* Content Optimization Container */}
-              <ContentOptimizationContainer 
-                contentValue={content}
-                onRewriteSection={(section) => {
-                  setSectionToRewrite(section);
-                  setShowRewriteDialog(true);
-                }}
-              />
-            </div>
-          </div>
-        </>
-      )}
-      
-      {/* Content Rewrite Dialog */}
-      <ContentRewriteDialog 
-        open={showRewriteDialog}
-        onOpenChange={setShowRewriteDialog}
-        selectedRecommendation={selectedRecommendation}
-        rewriteType={rewriteType}
-        rewrittenContent={rewrittenContent}
-        isRewriting={isRewriting}
-        onApplyContent={applyRewrittenContent}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* SERP Selected Items Sidebar - Left */}
+        <div className="lg:col-span-1">
+          <SerpSelectedItemsSidebar serpSelections={serpSelections} />
+        </div>
+        
+        {/* Main content preview area */}
+        <div className="lg:col-span-2">
+          <ContentPreview content={content} mainKeyword={mainKeyword} />
+        </div>
+        
+        {/* SEO Suggestions list */}
+        <div className="lg:col-span-1">
+          <SeoSuggestionsList 
+            improvements={seoImprovements} 
+            onImprovementClick={handleImprovementClick}
+            isAnalyzing={isAnalyzing}
+          />
+        </div>
+      </div>
     </div>
   );
 };

@@ -53,7 +53,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
         </CardContent>
       </Card>
       
-      {/* Selected Solution Card */}
+      {/* Selected Solution Card - Enhanced with better null handling */}
       {selectedSolution && (
         <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
           <CardHeader className="pb-3">
@@ -66,6 +66,9 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
             <div className="space-y-3">
               <div>
                 <h4 className="text-sm font-semibold">{selectedSolution.name}</h4>
+                {selectedSolution.description && (
+                  <p className="text-xs text-muted-foreground mt-1">{selectedSolution.description}</p>
+                )}
               </div>
               
               {selectedSolution.features && selectedSolution.features.length > 0 && (
@@ -75,6 +78,22 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                     {selectedSolution.features.slice(0, 3).map((feature, index) => (
                       <li key={index} className="text-muted-foreground">
                         {feature}
+                      </li>
+                    ))}
+                    {selectedSolution.features.length > 3 && (
+                      <li className="text-primary text-xs">+{selectedSolution.features.length - 3} more features</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {selectedSolution.useCases && selectedSolution.useCases.length > 0 && (
+                <div>
+                  <h5 className="text-xs text-muted-foreground mb-1">Use Cases:</h5>
+                  <ul className="list-disc list-inside space-y-0.5 text-xs">
+                    {selectedSolution.useCases.slice(0, 2).map((useCase, index) => (
+                      <li key={index} className="text-muted-foreground">
+                        {useCase}
                       </li>
                     ))}
                   </ul>

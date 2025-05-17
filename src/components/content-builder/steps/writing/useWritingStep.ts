@@ -87,6 +87,31 @@ export const useWritingStep = () => {
     
     // Mark step as completed
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+
+    // If there's a selected solution, add a solution integration section to the content
+    if (selectedSolution) {
+      const solutionSection = `
+## How ${selectedSolution.name} Can Help
+
+${selectedSolution.description || `${selectedSolution.name} provides a comprehensive solution for ${mainKeyword}.`}
+
+### Key Features:
+${selectedSolution.features ? 
+  selectedSolution.features.map(feature => `- ${feature}`).join('\n') : 
+  '- Feature information not available'
+}
+
+${selectedSolution.useCases && selectedSolution.useCases.length > 0 ? 
+  `### Common Use Cases:
+${selectedSolution.useCases.map(useCase => `- ${useCase}`).join('\n')}` : 
+  ''
+}
+`;
+      
+      // Append the solution section to the content
+      const updatedContent = template + '\n\n' + solutionSection;
+      setContent(updatedContent);
+    }
   };
   
   return {

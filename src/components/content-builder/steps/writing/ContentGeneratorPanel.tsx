@@ -1,148 +1,87 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, FileText, Clipboard, Users, Code } from 'lucide-react';
-import { toast } from 'sonner';
+import { Loader2, Sparkles } from 'lucide-react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { SerpContentGenerator } from '@/components/content/SerpContentGenerator';
+import { ContentInstructions } from './ContentInstructions';
+import { AiProviderTabs } from './AiProviderTabs';
 
-export const ContentGeneratorPanel: React.FC = () => {
+export const ContentGeneratorPanel = () => {
   const { state, setContent } = useContentBuilder();
-  const { mainKeyword, contentTitle, outline } = state;
-
-  const generateTemplate = (type: string) => {
-    // Generate a basic template based on the outline
-    let template = '';
-    const title = contentTitle || `Complete Guide to ${mainKeyword}`;
-
-    switch (type) {
-      case 'blog':
-        template = `# ${title}
-
-## Introduction
-An engaging introduction about ${mainKeyword} that hooks the reader and outlines what they'll learn.
-
-${outline.map((section, index) => `## ${section}
-Key insights and information about "${section}" with practical examples and actionable advice.
-
-`).join('')}
-## Conclusion
-A summary of the key points covered about ${mainKeyword}, with final thoughts and a call to action.
-`;
-        break;
-        
-      case 'guide':
-        template = `# The Ultimate ${title}
-
-## What You'll Learn
-This comprehensive guide will teach you everything you need to know about ${mainKeyword}.
-
-${outline.map((section, index) => `## ${section}
-Detailed explanation and step-by-step instructions for this section.
-
-### Key Points:
-- Important point about ${section}
-- Another crucial aspect to understand
-- Practical application tip
-
-`).join('')}
-## Next Steps
-Now that you understand ${mainKeyword}, here's what you should do next to apply this knowledge.
-`;
-        break;
-        
-      case 'technical':
-        template = `# Technical Documentation: ${title}
-
-\`\`\`
-Status: Draft
-Last Updated: ${new Date().toLocaleDateString()}
-\`\`\`
-
-## Overview
-Technical specifications and implementation details for ${mainKeyword}.
-
-${outline.map((section, index) => `## ${section}
-Technical details, specifications, and implementation guidance.
-
-\`\`\`
-// Example code or configuration
-const ${mainKeyword.replace(/\s+/g, '')} = {
-  configuration: {
-    option1: true,
-    option2: false
-  }
-};
-\`\`\`
-
-`).join('')}
-## References
-- Technical documentation
-- API specifications
-- Implementation guides
-`;
-        break;
-        
-      default:
-        template = `# ${title}
-
-${outline.map((section, index) => `## ${section}
-Content for ${section}
-
-`).join('')}`;
-    }
-
-    setContent(template);
-    toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} template applied`);
+  const { mainKeyword, serpData, serpSelections, contentType } = state;
+  
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedAiProvider, setSelectedAiProvider] = useState('openai');
+  
+  // Handle AI content generation
+  const handleGenerateContent = (template: string) => {
+    // In a real implementation, this would call an API endpoint
+    setIsGenerating(true);
+    
+    setTimeout(() => {
+      // Simulate AI generation
+      setContent(template);
+      setIsGenerating(false);
+    }, 1500);
   };
-
+  
+  // Calculate how many SERP items are selected
+  const selectedSerpItems = serpSelections.filter(item => item.selected).length;
+  
   return (
-    <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center text-sm font-medium">
-          <Sparkles className="h-4 w-4 mr-2 text-primary" />
-          Content Templates
+    <Card className="border-neon-purple/20 bg-gradient-to-br from-indigo-950/20 to-black/30">
+      <CardHeader className="pb-3 border-b border-white/10">
+        <CardTitle className="text-sm font-medium flex items-center">
+          <Sparkles className="h-4 w-4 mr-2 text-neon-purple" />
+          Content Generator
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-3 pt-0 space-y-3">
-        <p className="text-xs text-muted-foreground">
-          Choose a template to quickly generate content based on your outline.
-        </p>
-        
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start border-white/10 bg-white/5 hover:bg-white/10"
-            onClick={() => generateTemplate('blog')}
-          >
-            <FileText className="h-4 w-4 mr-2 text-neon-purple" />
-            Blog Post Template
-          </Button>
-          
-          <Button
-            variant="outline"
-            className="w-full justify-start border-white/10 bg-white/5 hover:bg-white/10"
-            onClick={() => generateTemplate('guide')}
-          >
-            <Clipboard className="h-4 w-4 mr-2 text-neon-blue" />
-            How-to Guide Template
-          </Button>
-          
-          <Button
-            variant="outline"
-            className="w-full justify-start border-white/10 bg-white/5 hover:bg-white/10"
-            onClick={() => generateTemplate('technical')}
-          >
-            <Code className="h-4 w-4 mr-2 text-green-500" />
-            Technical Doc Template
-          </Button>
-        </div>
-        
-        <div className="text-center pt-2">
-          <p className="text-xs text-muted-foreground">
-            Templates provide a starting structure that you can customize.
-          </p>
-        </div>
+      
+      <CardContent className="p-4 pt-4">
+        {isGenerating ? (
+          <div className="flex flex-col items-center justify-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-neon-purple mb-4" />
+            <p className="text-center text-white/70">
+              Generating content based on your outline and {selectedSerpItems} selected SERP items...
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <AiProviderTabs 
+              selectedProvider={selectedAiProvider}
+              onSelectProvider={setSelectedAiProvider}
+            />
+            
+            <ContentInstructions 
+              customPrompt={customPrompt}
+              setCustomPrompt={setCustomPrompt}
+              mainKeyword={mainKeyword}
+              contentType={contentType}
+              selectedSerpItems={selectedSerpItems}
+            />
+            
+            {/* Templates based on SERP data */}
+            <div className="mt-6">
+              <h3 className="text-sm font-medium mb-3">Content Templates</h3>
+              <SerpContentGenerator 
+                serpData={serpData} 
+                onGenerateContent={handleGenerateContent} 
+                mainKeyword={mainKeyword} 
+              />
+            </div>
+            
+            <Button 
+              onClick={() => handleGenerateContent(customPrompt)}
+              className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate Custom Content
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
