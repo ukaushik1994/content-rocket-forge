@@ -2,17 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OutlineSection } from '@/contexts/content-builder/types';
-import { toast } from 'sonner';
-import { useContentGeneration } from './useContentGeneration';
+import { AiProvider } from '@/services/aiService/types';
 
 export function useWritingStep() {
-  const { 
-    state, 
-    dispatch, 
-    setAdditionalInstructions, 
-    generateContent: contextGenerateContent 
-  } = useContentBuilder();
-  
+  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 
@@ -23,20 +16,14 @@ export function useWritingStep() {
     contentTitle
   } = state;
   
-  const {
-    isGenerating: aiIsGenerating,
-    aiProvider,
-    setAiProvider,
-    generateContent: aiGenerateContent,
-    availableProviders
-  } = useContentGeneration();
-  
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showOutline, setShowOutline] = useState(true);
   const [showGenerator, setShowGenerator] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
   const [saveNote, setSaveNote] = useState('');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
 
   // Mark this step as complete when we have content
   useEffect(() => {
@@ -70,68 +57,28 @@ export function useWritingStep() {
   const handleContentTemplateSelection = (template: string) => {
     dispatch({ type: 'SET_CONTENT', payload: template });
     setShowGenerator(false);
-    toast.success("Content template applied");
   };
-  
-  // Generate content function with improved error handling
-  const handleGenerateContent = async () => {
-    if (!mainKeyword) {
-      toast.error("Main keyword is required");
-      return;
-    }
-    
-    if (!outline || outline.length === 0) {
-      toast.error("Content outline is required");
-      return;
-    }
-    
-    try {
-      // Convert outline to OutlineSection[] format if it's not already
-      const processedOutline: OutlineSection[] = Array.isArray(outline) 
-        ? outline.map((item, index) => {
-            if (typeof item === 'string') {
-              return { 
-                id: `section-${index}`, 
-                title: item, 
-                level: 2 
-              };
-            } else if (item && typeof item === 'object' && 'title' in item) {
-              return item as OutlineSection;
-            }
-            return { id: `section-${index}`, title: '', level: 2 };
-          })
-        : [];
-      
-      // Use AI generation if available, otherwise use context generation
-      if (aiGenerateContent) {
-        const success = await aiGenerateContent(state, handleContentChange);
-        if (success) {
-          toast.success("Content generated successfully!");
-        }
-      } else {
-        await contextGenerateContent(processedOutline);
-      }
-    } catch (error) {
-      console.error("Error generating content:", error);
-      toast.error("Failed to generate content. Please try again.");
-    }
+
+  const handleAiProviderChange = (provider: AiProvider) => {
+    setAiProvider(provider);
   };
 
   // Convert outline to the appropriate format for the sidebar component
   const processedOutline = Array.isArray(outline) 
-    ? outline.map((item, index) => {
+    ? outline.map(item => {
         if (typeof item === 'string') {
-          return { id: `section-${index}`, title: item, level: 2 };
+          return { id: Math.random().toString(), title: item, level: 2 };
         } else if (item && typeof item === 'object' && 'title' in item) {
           return item as OutlineSection;
         }
-        return { id: `section-${index}`, title: '', level: 2 };
+        return { id: Math.random().toString(), title: '', level: 2 };
       })
     : [];
 
   return {
     state,
-    isGenerating: aiIsGenerating,
+    isGenerating,
+    setIsGenerating,
     showOutline,
     showGenerator,
     isSaving,
@@ -153,8 +100,6 @@ export function useWritingStep() {
     handleToggleOutline,
     handleToggleGenerator,
     handleContentTemplateSelection,
-    setAiProvider,
-    handleGenerateContent,
-    availableProviders
+    handleAiProviderChange
   };
 }

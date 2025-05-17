@@ -101,8 +101,7 @@ export const createContentActions = (
           keywords: item.keywords || [],
           content: data.content || '',
           status: data.status as 'draft' | 'approved' | 'published' | 'archived',
-          // Handle metadata correctly - ensure it's an object
-          metadata: typeof data.metadata === 'object' ? data.metadata : {}
+          metadata: data.metadata
         };
         
         setContentItems(prev => [createdItem, ...prev]);

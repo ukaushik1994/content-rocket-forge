@@ -23,7 +23,7 @@ export const createAddContentAction = (
         status: item.status,
         seo_score: item.seo_score,
         user_id: userId,
-        metadata: item.metadata || {}
+        metadata: item.metadata || null
       };
       
       const { data, error } = await supabase
@@ -48,8 +48,8 @@ export const createAddContentAction = (
           keywords: item.keywords || [],
           content: data.content || '',
           status: data.status as 'draft' | 'approved' | 'published' | 'archived',
-          // Safely handle metadata by ensuring it's an object
-          metadata: typeof data.metadata === 'object' ? data.metadata : {}
+          // Safely handle metadata by explicitly treating it as the expected type
+          metadata: data.metadata as ContentItemType['metadata']
         };
         
         setContentItems(prev => [createdItem, ...prev]);
