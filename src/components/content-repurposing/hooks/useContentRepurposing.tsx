@@ -190,7 +190,7 @@ export const useContentRepurposing = () => {
         if (!repurposedFormats.includes(formatId)) {
           const updatedRepurposedFormats = [...repurposedFormats, formatId];
           
-          // Update the content with the new metadata
+          // Fixed: Don't check the return value of updateContentItem since it returns void
           await updateContentItem(content.id, {
             ...content,
             metadata: {
@@ -198,9 +198,11 @@ export const useContentRepurposing = () => {
               repurposedFormats: updatedRepurposedFormats
             }
           });
+          
+          return true; // Return a boolean value for success
         }
         
-        return true; // Return a boolean value for success
+        return true; // Return a boolean value for success even if format exists
       }
       
       return false; // Return a boolean value for failure
@@ -241,7 +243,7 @@ export const useContentRepurposing = () => {
           // Remove the format from the list
           const updatedFormats = repurposedFormats.filter(format => format !== repurposedType);
           
-          // Update the original content with the new metadata
+          // Fixed: Don't check the return value of updateContentItem since it returns void
           await updateContentItem(originalContentId, {
             ...originalContent,
             metadata: {
