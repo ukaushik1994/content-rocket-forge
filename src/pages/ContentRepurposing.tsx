@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-// Import our new components
+// Import our components
 import ContentSelection from '@/components/content-repurposing/ContentSelection';
 import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
@@ -24,10 +24,14 @@ const ContentRepurposing = () => {
     generatedContents,
     isGenerating,
     activeFormat,
+    repurposedDialogOpen,
+    selectedRepurposedContent,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
+    handleOpenRepurposedContent,
+    handleCloseRepurposedDialog,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
@@ -57,6 +61,12 @@ const ContentRepurposing = () => {
           <ContentSelection 
             contentItems={contentItems}
             onSelectContent={handleContentSelection}
+            onOpenRepurposedContent={handleOpenRepurposedContent}
+            repurposedDialogOpen={repurposedDialogOpen}
+            onCloseRepurposedDialog={handleCloseRepurposedDialog}
+            selectedRepurposedContent={selectedRepurposedContent}
+            onCopyToClipboard={copyToClipboard}
+            onDownloadAsText={downloadAsText}
           />
         </motion.main>
       </div>

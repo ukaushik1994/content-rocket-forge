@@ -16,6 +16,13 @@ export const useContentRepurposing = () => {
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
+  const [repurposedDialogOpen, setRepurposedDialogOpen] = useState<boolean>(false);
+  const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<{
+    content: string;
+    formatId: string;
+    contentId: string;
+    title: string;
+  } | null>(null);
   
   // Load content when component mounts
   useEffect(() => {
@@ -32,6 +39,14 @@ export const useContentRepurposing = () => {
     }
   }, [location, getContentItem]);
   
+  // Utility function to find repurposed content by original content ID and format
+  const findRepurposedContent = (originalContentId: string, formatId: string): ContentItemType | null => {
+    return contentItems.find(item => 
+      item.metadata?.originalContentId === originalContentId && 
+      item.metadata?.repurposedType === formatId
+    ) || null;
+  };
+  
   const handleContentSelection = (contentId: string) => {
     const selectedContent = getContentItem(contentId);
     if (selectedContent) {
@@ -39,6 +54,27 @@ export const useContentRepurposing = () => {
       // Update the URL without page reload
       navigate(`/content-repurposing?id=${contentId}`, { replace: true });
     }
+  };
+  
+  const handleOpenRepurposedContent = (contentId: string, formatId: string) => {
+    const repurposedItem = findRepurposedContent(contentId, formatId);
+    
+    if (repurposedItem) {
+      setSelectedRepurposedContent({
+        content: repurposedItem.content || '',
+        formatId: formatId,
+        contentId: repurposedItem.id,
+        title: repurposedItem.title
+      });
+      setRepurposedDialogOpen(true);
+    } else {
+      toast.error('Repurposed content not found');
+    }
+  };
+  
+  const handleCloseRepurposedDialog = () => {
+    setRepurposedDialogOpen(false);
+    setSelectedRepurposedContent(null);
   };
   
   const handleGenerateContent = async (contentTypeIds: string[]) => {
@@ -180,13 +216,18 @@ export const useContentRepurposing = () => {
     generatedContents,
     isGenerating,
     activeFormat,
+    repurposedDialogOpen,
+    selectedRepurposedContent,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
+    handleOpenRepurposedContent,
+    handleCloseRepurposedDialog,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
+    findRepurposedContent,
   };
 };
 
