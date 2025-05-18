@@ -1,82 +1,130 @@
 
-import React from 'react';
-import { useWritingStep } from './useWritingStep';
-import { ContentGenerationHeader } from './ContentGenerationHeader';
-import { UnsavedChangesDialog } from '@/components/content-builder/UnsavedChangesDialog';
-import { useContentGeneration } from './useContentGeneration';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { toast } from 'sonner';
+import { AiProvider } from '@/services/aiService/types';
+import { Solution } from '@/contexts/content-builder/types';
+import { sendChatRequest } from '@/services/aiService';
+import { getUserPreference } from '@/services/userPreferencesService';
 
-export const ContentGenerationService = () => {
-  const {
-    state,
-    isGenerating: isLoadingContent,
-    setIsGenerating: setIsLoadingContent,
-    showOutline,
-    aiProvider,
-    hasUnsavedChanges,
-    autoSaveTimestamp,
-    handleToggleOutline,
-    handleToggleGenerator,
-    handleAiProviderChange,
-    handleManualSave,
-    handleGenerateTitle
-  } = useWritingStep();
+/**
+ * Generate content using AI
+ */
+export const generateContent = async (
+  aiProvider: AiProvider,
+  mainKeyword: string,
+  contentTitle: string | null,
+  outlineText: string,
+  secondaryKeywords: string,
+  selectedSolution: Solution | null,
+  additionalInstructions: string,
+  setIsGenerating: (value: boolean) => void,
+  setContent: (content: string) => void
+): Promise<boolean> => {
+  if (!mainKeyword) {
+    toast.error("Please set a main keyword first");
+    return false;
+  }
   
-  const { isGenerating, generateContent } = useContentGeneration();
-  const { dispatch } = useContentBuilder();
-  const [showUnsavedDialog, setShowUnsavedDialog] = React.useState(false);
-  const [pendingAction, setPendingAction] = React.useState<() => void | null>(null);
+  setIsGenerating(true);
   
-  const handleGenerateContent = async () => {
-    setIsLoadingContent(true);
-    const success = await generateContent(state, (content) => {
-      dispatch({ type: 'SET_CONTENT', payload: content });
+  try {
+    // Create a detailed prompt for the AI
+    const prompt = `
+    Write comprehensive, high-quality content for an article about "${mainKeyword}".
+    
+    Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
+    Primary Keyword: ${mainKeyword}
+    ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
+    
+    Use this outline structure:
+    ${outlineText}
+    
+    ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
+    
+    ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
+    
+    Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
+    Include a compelling introduction and a strong conclusion. 
+    Optimize the content for readability and search engines.
+    `;
+    
+    // Call the AI API via our service
+    const chatResponse = await sendChatRequest(aiProvider, {
+      messages: [
+        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      maxTokens: 4000
     });
-    setIsLoadingContent(false);
-    return success;
-  };
-  
-  const handleCloseUnsavedDialog = () => {
-    setShowUnsavedDialog(false);
-    setPendingAction(null);
-  };
-  
-  const handleDiscardChanges = () => {
-    setShowUnsavedDialog(false);
-    if (pendingAction) {
-      pendingAction();
-      setPendingAction(null);
+    
+    if (chatResponse?.choices?.[0]?.message?.content) {
+      // Use the AI-generated content
+      const generatedContent = chatResponse.choices[0].message.content;
+      setContent(generatedContent);
+      toast.success('Content generated successfully');
+      return true;
+    } else {
+      toast.error('Failed to generate content. Please try again.');
+      return false;
     }
-  };
+  } catch (error) {
+    console.error('Error generating content:', error);
+    toast.error('Failed to generate content. Please try again or check your API configuration.');
+    return false;
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+/**
+ * Save content to drafts
+ */
+export const saveContentToDraft = async (
+  title: string,
+  content: string,
+  mainKeyword: string,
+  secondaryKeywords: string[],
+  note: string,
+  outline: string[],
+  setIsSaving: (value: boolean) => void,
+  setShowSaveDialog: (value: boolean) => void
+): Promise<boolean> => {
+  if (!title || !content) {
+    toast.error("Title and content are required");
+    return false;
+  }
   
-  const handleSaveAndContinue = async () => {
-    await handleManualSave();
-    handleDiscardChanges();
-  };
+  setIsSaving(true);
   
-  return (
-    <>
-      <ContentGenerationHeader 
-        isGenerating={isGenerating}
-        handleGenerateContent={handleGenerateContent}
-        handleToggleOutline={handleToggleOutline}
-        handleToggleGenerator={handleToggleGenerator}
-        showOutline={showOutline}
-        outlineLength={state.outline?.length || 0}
-        aiProvider={aiProvider}
-        onAiProviderChange={handleAiProviderChange}
-        autoSaveTimestamp={autoSaveTimestamp}
-        hasUnsavedChanges={hasUnsavedChanges}
-        onManualSave={handleManualSave}
-        onGenerateTitle={handleGenerateTitle}
-      />
-      
-      <UnsavedChangesDialog 
-        open={showUnsavedDialog}
-        onClose={handleCloseUnsavedDialog}
-        onSave={handleSaveAndContinue}
-        onDiscard={handleDiscardChanges}
-      />
-    </>
-  );
+  try {
+    // Here you could implement actual saving to a database or service
+    // For now we're just simulating a successful save
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Store in localStorage as a backup
+    const draft = {
+      title,
+      content,
+      mainKeyword,
+      secondaryKeywords,
+      note,
+      outline,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Save to localStorage
+    const drafts = JSON.parse(localStorage.getItem('content_drafts') || '[]');
+    drafts.push(draft);
+    localStorage.setItem('content_drafts', JSON.stringify(drafts));
+    
+    toast.success('Content saved to drafts');
+    setShowSaveDialog(false);
+    return true;
+  } catch (error) {
+    console.error('Error saving draft:', error);
+    toast.error('Failed to save content');
+    return false;
+  } finally {
+    setIsSaving(false);
+  }
 };
