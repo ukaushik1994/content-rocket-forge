@@ -106,6 +106,7 @@ const ContentRepurposing = () => {
             size="sm" 
             onClick={() => {
               navigate('/content-repurposing');
+              window.location.search = '';
             }}
             className="gap-1 hover:bg-white/5 border border-white/10"
           >
