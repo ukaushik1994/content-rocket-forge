@@ -8,7 +8,7 @@ import FormatsList from './FormatsList';
 
 interface ContentItemProps {
   item: ContentItemType;
-  onSelectContent: (contentId: string) => void;
+  onSelectContent: () => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
 }
 
@@ -33,7 +33,7 @@ const ContentItem: React.FC<ContentItemProps> = ({
     >
       <Card 
         className="h-full cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm bg-black/30 border border-white/10 transition-all duration-200 flex flex-col"
-        onClick={() => onSelectContent(item.id)}
+        onClick={onSelectContent}
       >
         <CardHeader className="pb-3">
           <CardTitle className="font-semibold text-lg text-white line-clamp-2">
@@ -60,12 +60,10 @@ const ContentItem: React.FC<ContentItemProps> = ({
         </CardContent>
         
         <CardFooter className="pt-3 border-t border-white/10">
-          <SelectButton 
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectContent(item.id);
-            }}
-          />
+          <SelectButton onClick={(e) => {
+            e.stopPropagation();
+            onSelectContent();
+          }} />
         </CardFooter>
       </Card>
     </motion.div>

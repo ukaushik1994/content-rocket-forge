@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
 import ContentList from './content-selection/ContentList';
@@ -34,9 +34,16 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
   isDeleting = false,
   isSaving = false
 }) => {
+  // Add state for search functionality
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  
   return (
     <div>
-      <ContentSelectionHeader />
+      <ContentSelectionHeader 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        totalItems={contentItems.length}
+      />
       
       {contentItems.length === 0 ? (
         <EmptyContentState />

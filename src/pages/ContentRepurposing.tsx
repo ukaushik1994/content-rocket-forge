@@ -13,6 +13,7 @@ import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
 import { useContentRepurposing } from '@/components/content-repurposing/hooks/useContentRepurposing';
+import { ContentItemType } from '@/contexts/content/types';
 
 const ContentRepurposing = () => {
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ const ContentRepurposing = () => {
           
           <ContentSelection 
             contentItems={contentItems}
-            onSelectContent={handleContentSelection}
+            onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
             onOpenRepurposedContent={handleOpenRepurposedContent}
             repurposedDialogOpen={repurposedDialogOpen}
             onCloseRepurposedDialog={handleCloseRepurposedDialog}

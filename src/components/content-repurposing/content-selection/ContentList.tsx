@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 interface ContentListProps {
   contentItems: ContentItemType[];
-  onSelectContent: (contentId: string) => void;
+  onSelectContent: (content: ContentItemType) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
 }
 
@@ -36,7 +36,7 @@ const ContentList: React.FC<ContentListProps> = ({
         <ContentItem 
           key={item.id}
           item={item}
-          onSelectContent={onSelectContent}
+          onSelectContent={() => onSelectContent(item)}
           onOpenRepurposedContent={onOpenRepurposedContent}
         />
       ))}
