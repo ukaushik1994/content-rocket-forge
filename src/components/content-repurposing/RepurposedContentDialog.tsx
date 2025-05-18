@@ -19,6 +19,7 @@ interface RepurposedContentDialogProps {
   onDelete?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
   isSaving?: boolean;
+  generatedFormats?: string[]; // Added to track which formats have been generated
 }
 
 const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
@@ -29,7 +30,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   onDownload,
   onDelete,
   isDeleting = false,
-  isSaving = false
+  isSaving = false,
+  generatedFormats = [] // Default to empty array
 }) => {
   if (!content) return null;
   
@@ -37,12 +39,18 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   const format = getFormatByIdOrDefault(content.formatId);
   const formatName = format.name;
   
-  // Get the related formats - in a real app you might get this from the API
-  const relatedFormats = contentFormats.slice(0, 5).map(f => ({
-    id: f.id,
-    name: f.name,
-    isActive: f.id === content.formatId
-  }));
+  // Filter to only show formats that have been generated
+  // First, get all available formats from content formats
+  const availableFormats = contentFormats.slice(0, 5);
+  
+  // Then filter to only those that exist in generatedFormats or match the current format
+  const relatedFormats = availableFormats
+    .filter(f => generatedFormats.includes(f.id) || f.id === content.formatId)
+    .map(f => ({
+      id: f.id,
+      name: f.name,
+      isActive: f.id === content.formatId
+    }));
   
   const handleDelete = async () => {
     if (onDelete && content.contentId && content.formatId) {
@@ -69,20 +77,22 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
           </button>
         </div>
         
-        <div className="bg-black/70 px-4 py-3 border-b border-white/10">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-            {relatedFormats.map(relatedFormat => (
-              <FormatButton
-                key={relatedFormat.id}
-                formatId={relatedFormat.id}
-                name={relatedFormat.name}
-                isActive={relatedFormat.isActive}
-                onClick={() => {}}
-                className={relatedFormat.isActive ? "bg-indigo-500/80 text-white" : ""}
-              />
-            ))}
+        {relatedFormats.length > 1 && (
+          <div className="bg-black/70 px-4 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              {relatedFormats.map(relatedFormat => (
+                <FormatButton
+                  key={relatedFormat.id}
+                  formatId={relatedFormat.id}
+                  name={relatedFormat.name}
+                  isActive={relatedFormat.isActive}
+                  onClick={() => {}}
+                  className={relatedFormat.isActive ? "bg-indigo-500/80 text-white" : ""}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         
         <ContentPreview content={content.content} />
         

@@ -29,13 +29,14 @@ const ContentRepurposing = () => {
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
+    generatedFormats,
     isDeleting,
     isSaving,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
-    handleOpenRepurposedContent,
+    handleOpenRepurposedContentWithFormats, // Use the new function
     handleCloseRepurposedDialog,
     copyToClipboard,
     downloadAsText,
@@ -113,7 +114,7 @@ const ContentRepurposing = () => {
           <ContentSelection 
             contentItems={contentItems}
             onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
-            onOpenRepurposedContent={handleOpenRepurposedContent}
+            onOpenRepurposedContent={handleOpenRepurposedContentWithFormats} // Update to use new function
             repurposedDialogOpen={repurposedDialogOpen}
             onCloseRepurposedDialog={handleCloseRepurposedDialog}
             selectedRepurposedContent={selectedRepurposedContent}
@@ -121,6 +122,7 @@ const ContentRepurposing = () => {
             onDownloadAsText={downloadAsText}
             onDeleteRepurposedContent={deleteRepurposedContent}
             isDeleting={isDeleting}
+            generatedFormats={generatedFormats} // Pass the generated formats
           />
         </motion.main>
       </div>

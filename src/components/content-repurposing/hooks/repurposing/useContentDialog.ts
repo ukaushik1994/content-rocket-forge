@@ -7,8 +7,9 @@ import { getFormatByIdOrDefault } from '../../formats';
 export const useContentDialog = (findRepurposedContent: (originalContentId: string, formatId: string) => string | null) => {
   const [repurposedDialogOpen, setRepurposedDialogOpen] = useState<boolean>(false);
   const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<GeneratedContentFormat | null>(null);
+  const [generatedFormats, setGeneratedFormats] = useState<string[]>([]); // Track generated formats
   
-  const handleOpenRepurposedContent = (contentId: string, formatId: string) => {
+  const handleOpenRepurposedContent = (contentId: string, formatId: string, availableFormats: string[] = []) => {
     const repurposedContent = findRepurposedContent(contentId, formatId);
     
     if (repurposedContent) {
@@ -21,6 +22,7 @@ export const useContentDialog = (findRepurposedContent: (originalContentId: stri
         contentId: contentId,
         title: format.name
       });
+      setGeneratedFormats(availableFormats); // Store the available formats
       setRepurposedDialogOpen(true);
     } else {
       toast.error('Repurposed content not found');
@@ -30,11 +32,13 @@ export const useContentDialog = (findRepurposedContent: (originalContentId: stri
   const handleCloseRepurposedDialog = () => {
     setRepurposedDialogOpen(false);
     setSelectedRepurposedContent(null);
+    setGeneratedFormats([]);
   };
   
   return {
     repurposedDialogOpen,
     selectedRepurposedContent,
+    generatedFormats,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
   };

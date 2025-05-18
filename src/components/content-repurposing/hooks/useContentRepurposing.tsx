@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
@@ -35,6 +34,7 @@ export const useContentRepurposing = () => {
   const {
     repurposedDialogOpen,
     selectedRepurposedContent,
+    generatedFormats,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
   } = useContentDialog(findRepurposedContent);
@@ -43,6 +43,13 @@ export const useContentRepurposing = () => {
   const handleDeleteActiveFormat = async (formatId: string): Promise<boolean> => {
     if (!content) return false;
     return deleteRepurposedContent(content.id, formatId);
+  };
+  
+  // Update this function to pass generated formats
+  const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
+    // Get all formats that have been generated for this content
+    const availableFormats = Object.keys(generatedContents);
+    handleOpenRepurposedContent(contentId, formatId, availableFormats);
   };
   
   return {
@@ -54,13 +61,14 @@ export const useContentRepurposing = () => {
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
+    generatedFormats,
     isDeleting,
     isSaving,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
-    handleOpenRepurposedContent,
+    handleOpenRepurposedContentWithFormats,
     handleCloseRepurposedDialog,
     copyToClipboard,
     downloadAsText,
