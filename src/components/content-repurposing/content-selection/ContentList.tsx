@@ -7,6 +7,8 @@ interface ContentListProps {
   contentItems: ContentItemType[];
   onSelectContent: (contentId: string) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
+  onDeleteContent?: (contentId: string) => void;
+  isDeleting?: boolean;
   viewType?: 'new' | 'repurposed';
 }
 
@@ -14,6 +16,8 @@ const ContentList: React.FC<ContentListProps> = ({
   contentItems,
   onSelectContent,
   onOpenRepurposedContent,
+  onDeleteContent,
+  isDeleting = false,
   viewType = 'new'
 }) => {
   return (
@@ -24,6 +28,8 @@ const ContentList: React.FC<ContentListProps> = ({
           item={item}
           onSelectContent={onSelectContent}
           onOpenRepurposedContent={onOpenRepurposedContent}
+          onDeleteContent={onDeleteContent}
+          isDeleting={isDeleting}
           viewType={viewType}
         />
       ))}

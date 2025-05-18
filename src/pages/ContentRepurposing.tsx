@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -40,6 +39,7 @@ const ContentRepurposing = () => {
     saveAsNewContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
+    deleteContentItem,
   } = useContentRepurposing();
   
   // If no content is selected yet, show the content selection view
@@ -72,7 +72,7 @@ const ContentRepurposing = () => {
             selectedRepurposedContent={selectedRepurposedContent}
             onCopyToClipboard={copyToClipboard}
             onDownloadAsText={downloadAsText}
-            onDeleteRepurposedContent={deleteRepurposedContent}
+            onDeleteRepurposedContent={deleteContentItem}
             isDeleting={isDeleting}
           />
         </motion.main>
