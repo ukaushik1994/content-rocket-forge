@@ -36,6 +36,8 @@ const FormatBadge: React.FC<FormatBadgeProps> = ({
             repeatDelay: 4
           }}
           onClick={isActive ? onClick : undefined}
+          whileHover={isActive ? { scale: 1.2 } : {}}
+          whileTap={isActive ? { scale: 0.9 } : {}}
         >
           {children}
         </motion.div>

@@ -23,11 +23,11 @@ const ContentItem: React.FC<ContentItemProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.01 }}
-      className="card-3d"
+      whileHover={{ scale: 1.01, y: -2 }}
+      className="card-3d transform-gpu"
     >
       <Card 
-        className="cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm bg-black/30 border border-white/10 transition-all duration-200"
+        className="cursor-pointer overflow-hidden backdrop-blur-sm bg-gradient-to-br from-black/40 to-black/20 border border-white/10 transition-all duration-200 hover:shadow-lg hover:shadow-neon-purple/5 group"
         onClick={() => onSelectContent(item.id)}
       >
         <CardContent className="p-4">

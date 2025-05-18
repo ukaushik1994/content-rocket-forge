@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { getFormatByIdOrDefault } from '../formats';
+import { motion } from 'framer-motion';
 
 interface ContentViewerProps {
   content: string;
@@ -22,26 +23,41 @@ const ContentViewer: React.FC<ContentViewerProps> = ({ content, formatId }) => {
         if (imageMatch && (topTextMatch || bottomTextMatch)) {
           return (
             <div className="space-y-4">
-              <div className="bg-black/80 p-4 rounded-lg space-y-2">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="bg-black/80 p-4 rounded-lg space-y-2 shadow-lg"
+              >
                 <p className="text-center text-white font-bold uppercase">{topTextMatch ? topTextMatch[1] : ''}</p>
-                <div className="border border-dashed border-gray-500 h-32 flex items-center justify-center">
+                <div className="border border-dashed border-gray-500 h-32 flex items-center justify-center bg-gray-800/50">
                   <p className="text-gray-400 text-sm">[{imageMatch[1]}]</p>
                 </div>
                 <p className="text-center text-white font-bold uppercase">{bottomTextMatch ? bottomTextMatch[1] : ''}</p>
-              </div>
+              </motion.div>
               
               {altCaptionMatch && (
-                <div className="mt-4">
-                  <p className="text-sm font-semibold">Alternative Caption:</p>
-                  <p className="text-sm">{altCaptionMatch[1]}</p>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mt-4"
+                >
+                  <p className="text-sm font-semibold text-white/80">Alternative Caption:</p>
+                  <p className="text-sm text-white/70">{altCaptionMatch[1]}</p>
+                </motion.div>
               )}
               
               {contextMatch && (
-                <div className="mt-2">
-                  <p className="text-sm font-semibold">Context:</p>
-                  <p className="text-sm">{contextMatch[1]}</p>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="mt-2"
+                >
+                  <p className="text-sm font-semibold text-white/80">Context:</p>
+                  <p className="text-sm text-white/70">{contextMatch[1]}</p>
+                </motion.div>
               )}
             </div>
           );
@@ -62,10 +78,16 @@ const ContentViewer: React.FC<ContentViewerProps> = ({ content, formatId }) => {
               {slides.map((slide, index) => {
                 const [slideTitle, ...slideContent] = slide.split(':');
                 return (
-                  <div key={index} className="border rounded-lg p-4">
-                    <p className="font-semibold">{slideTitle}:</p>
-                    <p>{slideContent.join(':').trim()}</p>
-                  </div>
+                  <motion.div 
+                    key={index} 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 * index }}
+                    className="border border-white/10 rounded-lg p-4 bg-black/30 backdrop-blur-sm"
+                  >
+                    <p className="font-semibold bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">{slideTitle}:</p>
+                    <p className="text-white/80">{slideContent.join(':').trim()}</p>
+                  </motion.div>
                 );
               })}
             </div>
@@ -78,16 +100,21 @@ const ContentViewer: React.FC<ContentViewerProps> = ({ content, formatId }) => {
     
     // Default rendering for other content types or if parsing fails
     return (
-      <pre className="whitespace-pre-wrap font-mono text-sm">
+      <pre className="whitespace-pre-wrap font-mono text-sm text-white/80 overflow-auto p-2">
         {content}
       </pre>
     );
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex-1 overflow-auto bg-gradient-to-br from-black/30 to-black/10 rounded-md p-4 mb-4 border border-white/10 shadow-inner"
+    >
       {formatContent(content, formatId)}
-    </div>
+    </motion.div>
   );
 };
 
