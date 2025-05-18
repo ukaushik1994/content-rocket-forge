@@ -8,12 +8,14 @@ interface SelectButtonProps {
   onClick: (e: React.MouseEvent) => void;
   viewType?: 'new' | 'repurposed';
   isRepurposed?: boolean;
+  isSelected?: boolean;
 }
 
 const SelectButton: React.FC<SelectButtonProps> = ({ 
   onClick,
   viewType = 'new',
-  isRepurposed = false
+  isRepurposed = false,
+  isSelected = false
 }) => {
   const buttonText = viewType === 'new' 
     ? "Repurpose Content →" 
@@ -34,7 +36,8 @@ const SelectButton: React.FC<SelectButtonProps> = ({
         className={`text-xs border hover:bg-white/10 
           ${viewType === 'repurposed' 
             ? 'bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 text-neon-purple hover:text-neon-blue border-neon-purple/30' 
-            : 'bg-white/10 text-white border-white/20 hover:text-white'}`}
+            : 'bg-white/10 text-white border-white/20 hover:text-white'}
+          ${isSelected ? 'ring-1 ring-neon-purple ring-opacity-50' : ''}`}
         onClick={onClick}
       >
         {icon}
