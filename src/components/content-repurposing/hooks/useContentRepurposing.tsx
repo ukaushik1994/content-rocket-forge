@@ -14,10 +14,12 @@ export const useContentRepurposing = () => {
     selectedFormats,
     generatedContents,
     isGenerating,
+    isRegenerating,
     activeFormat,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
+    handleRegenerateContent,
   } = useContentGeneration(content);
   
   const {
@@ -50,6 +52,7 @@ export const useContentRepurposing = () => {
     selectedFormats,
     generatedContents,
     isGenerating,
+    isRegenerating,
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
@@ -58,6 +61,7 @@ export const useContentRepurposing = () => {
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
+    handleRegenerateContent,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
     copyToClipboard,

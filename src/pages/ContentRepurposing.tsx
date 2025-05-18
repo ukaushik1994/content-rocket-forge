@@ -23,6 +23,7 @@ const ContentRepurposing = () => {
     selectedFormats,
     generatedContents,
     isGenerating,
+    isRegenerating,
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
@@ -31,6 +32,7 @@ const ContentRepurposing = () => {
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
+    handleRegenerateContent,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
     copyToClipboard,
@@ -93,14 +95,19 @@ const ContentRepurposing = () => {
         className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
       >
         {/* Header with back button */}
-        <div className="flex items-center justify-between mb-8">
+        <motion.div 
+          className="flex items-center justify-between mb-8"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => {
               navigate('/content-repurposing');
             }}
-            className="gap-1 hover:bg-white/5"
+            className="gap-1 hover:bg-white/5 border border-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Content List
@@ -111,7 +118,7 @@ const ContentRepurposing = () => {
           </h1>
           
           <div className="w-24"></div> {/* For balance */}
-        </div>
+        </motion.div>
 
         {/* Selection of content formats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -134,7 +141,9 @@ const ContentRepurposing = () => {
               onDownloadAsText={downloadAsText}
               onSaveAsNewContent={saveAsNewContent}
               onDeleteRepurposedContent={handleDeleteActiveFormat}
+              onRegenerateContent={handleRegenerateContent}
               isDeleting={isDeleting}
+              isRegenerating={isRegenerating}
             />
           </div>
         </div>

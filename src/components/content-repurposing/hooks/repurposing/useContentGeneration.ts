@@ -9,7 +9,42 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
+  
+  const generateContentForFormat = async (formatId: string) => {
+    if (!content) {
+      toast.error('Please select content to repurpose');
+      return null;
+    }
+    
+    const formatInfo = getFormatByIdOrDefault(formatId);
+    
+    try {
+      toast.info(`Generating ${formatInfo.name} content...`);
+      
+      // Use our template service to generate content
+      const generatedContent = await generateContentByFormatType(
+        formatId,
+        content.title,
+        {
+          content: content.content?.substring(0, 1500) || '',
+          keyword: content.keywords ? content.keywords[0] : ''
+        }
+      );
+      
+      if (generatedContent) {
+        return generatedContent;
+      } else {
+        toast.error(`Failed to generate ${formatInfo.name} content`);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast.error(`Failed to generate ${formatInfo.name} content`);
+      return null;
+    }
+  };
   
   const handleGenerateContent = async (contentTypeIds: string[]) => {
     if (contentTypeIds.length === 0) {
@@ -30,29 +65,10 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       
       // Generate content for each selected format using templates
       for (const formatId of contentTypeIds) {
-        const formatInfo = getFormatByIdOrDefault(formatId);
+        const generatedContent = await generateContentForFormat(formatId);
         
-        try {
-          toast.info(`Generating ${formatInfo.name} content...`);
-          
-          // Use our template service to generate content
-          const generatedContent = await generateContentByFormatType(
-            formatId,
-            content.title,
-            {
-              content: content.content?.substring(0, 1500) || '',
-              keyword: content.keywords ? content.keywords[0] : ''
-            }
-          );
-          
-          if (generatedContent) {
-            newGeneratedContents[formatId] = generatedContent;
-          } else {
-            toast.error(`Failed to generate ${formatInfo.name} content`);
-          }
-        } catch (error) {
-          console.error('Error generating content:', error);
-          toast.error(`Failed to generate ${formatInfo.name} content`);
+        if (generatedContent) {
+          newGeneratedContents[formatId] = generatedContent;
         }
       }
       
@@ -72,13 +88,42 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   };
   
+  const handleRegenerateContent = async (formatId: string) => {
+    if (!content) {
+      toast.error('Please select content to repurpose');
+      return;
+    }
+    
+    setIsRegenerating(true);
+    
+    try {
+      const regeneratedContent = await generateContentForFormat(formatId);
+      
+      if (regeneratedContent) {
+        setGeneratedContents(prev => ({
+          ...prev,
+          [formatId]: regeneratedContent
+        }));
+        
+        toast.success('Content regenerated successfully!');
+      }
+    } catch (error) {
+      console.error('Error regenerating content:', error);
+      toast.error('Failed to regenerate content');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+  
   return {
     selectedFormats,
     generatedContents,
     isGenerating,
+    isRegenerating,
     activeFormat,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
+    handleRegenerateContent,
   };
 };

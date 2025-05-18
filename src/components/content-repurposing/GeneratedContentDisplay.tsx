@@ -18,7 +18,9 @@ interface GeneratedContentDisplayProps {
   onDownloadAsText: (content: string, formatName: string) => void;
   onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
   onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
+  onRegenerateContent?: (formatId: string) => Promise<void>;
   isDeleting?: boolean;
+  isRegenerating?: boolean;
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
@@ -29,16 +31,18 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   onDownloadAsText,
   onSaveAsNewContent,
   onDeleteRepurposedContent,
-  isDeleting = false
+  onRegenerateContent,
+  isDeleting = false,
+  isRegenerating = false
 }) => {
   const generatedFormats = Object.keys(generatedContents);
   const hasGeneratedContent = generatedFormats.length > 0;
   
   return (
-    <Card className="h-full">
+    <Card className="h-full bg-gradient-to-br from-black/80 to-black/90 border border-white/10 overflow-hidden backdrop-blur-sm">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-lg">Generated Content</CardTitle>
+          <CardTitle className="text-lg bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">Generated Content</CardTitle>
           <CardDescription>
             {hasGeneratedContent
               ? `${generatedFormats.length} format(s) generated`
@@ -74,15 +78,14 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                 );
               }}
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
-              onDelete={onDeleteRepurposedContent ? 
-                () => {
-                  if (activeFormat && onDeleteRepurposedContent) {
-                    return onDeleteRepurposedContent(activeFormat);
-                  }
-                  return Promise.resolve(false);
-                } : undefined
+              onDelete={onDeleteRepurposedContent && activeFormat ? 
+                () => onDeleteRepurposedContent(activeFormat) : undefined
+              }
+              onRegenerate={onRegenerateContent && activeFormat ?
+                () => onRegenerateContent(activeFormat) : undefined
               }
               isDeleting={isDeleting}
+              isRegenerating={isRegenerating}
             />
           </div>
         ) : (
