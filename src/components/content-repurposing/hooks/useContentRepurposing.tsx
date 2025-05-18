@@ -165,9 +165,11 @@ export const useContentRepurposing = () => {
       }
       
       toast.success(`Saved as new content item`);
+      return true; // Return a boolean value for success
     } catch (error) {
       console.error('Error saving as new content:', error);
       toast.error('Failed to save content');
+      return false; // Return a boolean value for failure
     }
   };
 
