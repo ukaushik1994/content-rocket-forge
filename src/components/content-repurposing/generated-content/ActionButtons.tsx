@@ -7,7 +7,7 @@ interface ActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
   onSave: () => void;
-  onSaveAll?: () => void;
+  onSaveAll?: () => Promise<boolean>;
   onDelete?: () => Promise<boolean>;
   isDeleting?: boolean;
   isSaving?: boolean;
@@ -75,6 +75,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           onClick={onSaveAll}
           disabled={isSavingAll}
           className="bg-transparent hover:bg-white/5 border-white/10"
+          title="Save all generated content formats"
         >
           {isSavingAll ? (
             <>

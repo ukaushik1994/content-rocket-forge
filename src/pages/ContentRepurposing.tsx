@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 // Import our components
 import ContentSelection from '@/components/content-repurposing/ContentSelection';
@@ -45,24 +46,35 @@ const ContentRepurposing = () => {
   
   // Function to save all generated content
   const handleSaveAllContent = async (): Promise<boolean> => {
-    if (!content || Object.keys(generatedContents).length === 0) return false;
+    if (!content || Object.keys(generatedContents).length === 0) {
+      toast.error('No content to save');
+      return false;
+    }
     
     setIsSavingAll(true);
     try {
       const formatIds = Object.keys(generatedContents);
       let allSuccess = true;
+      let savedCount = 0;
       
       // Save each format one by one
       for (const formatId of formatIds) {
         const success = await saveAsNewContent(formatId, generatedContents[formatId]);
-        if (!success) {
+        if (success) {
+          savedCount++;
+        } else {
           allSuccess = false;
         }
+      }
+      
+      if (savedCount > 0) {
+        toast.success(`Successfully saved ${savedCount} content format${savedCount > 1 ? 's' : ''}`);
       }
       
       return allSuccess;
     } catch (error) {
       console.error('Error saving all content:', error);
+      toast.error('Error saving all content formats');
       return false;
     } finally {
       setIsSavingAll(false);
