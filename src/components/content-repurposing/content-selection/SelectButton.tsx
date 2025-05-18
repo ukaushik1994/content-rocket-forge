@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 interface SelectButtonProps {
   onClick: (e: React.MouseEvent) => void;
@@ -8,14 +9,20 @@ interface SelectButtonProps {
 
 const SelectButton: React.FC<SelectButtonProps> = ({ onClick }) => {
   return (
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      className="text-xs text-neon-purple hover:text-neon-blue hover:bg-white/5"
-      onClick={onClick}
+    <motion.div
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      className="w-full"
     >
-      Select for Repurposing →
-    </Button>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="w-full bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 border border-white/10 hover:bg-white/10 hover:border-neon-purple/50 transition-all duration-300"
+        onClick={onClick}
+      >
+        Select for Repurposing
+      </Button>
+    </motion.div>
   );
 };
 

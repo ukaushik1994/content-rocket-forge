@@ -17,30 +17,24 @@ const FormatBadge: React.FC<FormatBadgeProps> = ({
   children
 }) => {
   return (
-    <Tooltip>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <motion.div
-          className={`w-7 h-7 flex items-center justify-center rounded-full 
+          className={`w-8 h-8 flex items-center justify-center rounded-full 
             ${isActive
               ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-lg cursor-pointer' 
               : 'bg-gray-800/40 text-gray-500'}`}
-          initial={false}
-          animate={isActive ? {
-            scale: [1, 1.15, 1],
-            boxShadow: ['0 0 0px rgba(155, 135, 245, 0.5)', '0 0 15px rgba(155, 135, 245, 0.8)', '0 0 5px rgba(155, 135, 245, 0.5)']
-          } : {}}
-          transition={{
-            duration: 0.5,
-            ease: "easeInOut",
-            repeat: isActive ? Infinity : 0,
-            repeatDelay: 4
+          whileHover={{ 
+            scale: 1.1,
+            boxShadow: '0 0 10px rgba(155, 135, 245, 0.6)' 
           }}
-          onClick={isActive ? onClick : undefined}
+          whileTap={{ scale: 0.9 }}
+          onClick={onClick}
         >
           {children}
         </motion.div>
       </TooltipTrigger>
-      <TooltipContent side="top">
+      <TooltipContent side="top" className="bg-black/90 border-white/10 text-xs">
         <p>{tooltipText}</p>
       </TooltipContent>
     </Tooltip>

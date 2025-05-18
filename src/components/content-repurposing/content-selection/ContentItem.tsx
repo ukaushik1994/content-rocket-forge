@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { ContentItemType } from '@/contexts/content/types';
-import ContentSummary from './ContentSummary';
-import FormatsList from './FormatsList';
 import SelectButton from './SelectButton';
+import FormatsList from './FormatsList';
 
 interface ContentItemProps {
   item: ContentItemType;
@@ -18,38 +17,56 @@ const ContentItem: React.FC<ContentItemProps> = ({
   onSelectContent,
   onOpenRepurposedContent
 }) => {
+  // Check if the item has any repurposed formats
+  const hasRepurposedContent = item.metadata?.repurposedFormats && item.metadata.repurposedFormats.length > 0;
+  
+  const item_animation = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+  
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      variants={item_animation}
       transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.01 }}
-      className="card-3d"
+      className="h-full"
     >
       <Card 
-        className="cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm bg-black/30 border border-white/10 transition-all duration-200"
+        className="h-full cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm bg-black/30 border border-white/10 transition-all duration-200 flex flex-col"
         onClick={() => onSelectContent(item.id)}
       >
-        <CardContent className="p-4">
-          <div className="flex flex-col">
-            <ContentSummary title={item.title} content={item.content} />
-            
-            {/* Format indicators with animated, clickable icons */}
-            <FormatsList 
-              item={item}
-              onOpenRepurposedContent={onOpenRepurposedContent}
-            />
-            
-            <div className="flex justify-end mt-2">
-              <SelectButton 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectContent(item.id);
-                }}
+        <CardHeader className="pb-3">
+          <CardTitle className="font-semibold text-lg text-white line-clamp-2">
+            {item.title}
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="flex-grow">
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+            {item.content?.substring(0, 150)}...
+          </p>
+          
+          {hasRepurposedContent && (
+            <div className="mt-2">
+              <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                Repurposed Content
+              </h4>
+              <FormatsList 
+                item={item}
+                onOpenRepurposedContent={onOpenRepurposedContent}
               />
             </div>
-          </div>
+          )}
         </CardContent>
+        
+        <CardFooter className="pt-3 border-t border-white/10">
+          <SelectButton 
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectContent(item.id);
+            }}
+          />
+        </CardFooter>
       </Card>
     </motion.div>
   );

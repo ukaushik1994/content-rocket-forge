@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { contentFormats } from '@/components/content-repurposing/formats';
 import ContentFormatIcon from './ContentFormatIcon';
 import { ContentItemType } from '@/contexts/content/types';
+import { motion } from 'framer-motion';
 
 interface FormatsListProps {
   item: ContentItemType;
@@ -20,28 +21,36 @@ const FormatsList: React.FC<FormatsListProps> = ({
     const repurposedFormats = item.metadata?.repurposedFormats || [];
     return repurposedFormats.includes(formatId);
   };
+  
+  // Get only the formats that have been repurposed
+  const repurposedFormats = contentFormats.filter(format => 
+    hasRepurposedFormat(item, format.id)
+  );
+  
+  if (repurposedFormats.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-wrap gap-2 mt-3 mb-2">
-      <TooltipProvider>
-        {contentFormats.map(format => {
-          const isFormatUsed = hasRepurposedFormat(item, format.id);
-          return (
-            <ContentFormatIcon 
-              key={format.id}
-              formatId={format.id}
-              isFormatUsed={isFormatUsed}
-              onClick={(e) => {
-                if (isFormatUsed) {
-                  e.stopPropagation();
-                  onOpenRepurposedContent(item.id, format.id);
-                }
-              }}
-            />
-          );
-        })}
-      </TooltipProvider>
-    </div>
+    <TooltipProvider>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-wrap gap-2"
+      >
+        {repurposedFormats.map(format => (
+          <ContentFormatIcon 
+            key={format.id}
+            formatId={format.id}
+            isFormatUsed={true}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenRepurposedContent(item.id, format.id);
+            }}
+          />
+        ))}
+      </motion.div>
+    </TooltipProvider>
   );
 };
 
