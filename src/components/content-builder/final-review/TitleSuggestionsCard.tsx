@@ -70,9 +70,21 @@ export const TitleSuggestionsCard = ({
   return (
     <Card className="h-full shadow-xl bg-gradient-to-br from-background to-purple-950/5 border border-purple-500/20">
       <CardHeader className="pb-2 border-b border-purple-500/10">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          Title Suggestions
+        <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            Title Suggestions
+          </div>
+          <Button
+            onClick={generateNewTitles}
+            disabled={isGenerating}
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 hover:bg-white/10"
+          >
+            <RefreshCw className={`h-3 w-3 ${isGenerating ? 'animate-spin' : ''}`} />
+            <span className="text-xs ml-1">Regenerate</span>
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
@@ -160,22 +172,20 @@ export const TitleSuggestionsCard = ({
         </div>
 
         {/* Generate Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-center">
           <Button
             onClick={generateNewTitles}
             disabled={isGenerating}
-            variant="outline"
-            size="sm"
-            className="gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-500 transition-colors"
+            className="w-full gap-2 bg-blue-500/80 hover:bg-blue-500 transition-colors"
           >
             {isGenerating ? (
               <>
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                Generating...
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Generating Titles...
               </>
             ) : (
               <>
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-4 w-4" />
                 Generate New Titles
               </>
             )}

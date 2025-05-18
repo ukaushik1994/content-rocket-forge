@@ -7,6 +7,7 @@ import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
+import { TitleGenerationButton } from './writing/TitleGenerationButton';
 
 export const ContentWritingStep = () => {
   const {
@@ -120,6 +121,11 @@ export const ContentWritingStep = () => {
         onManualSave={handleManualSave}
         wordCountLimit={wordCountLimit}
       />
+      
+      {/* Title Generation Button */}
+      <div className="flex items-center justify-end">
+        <TitleGenerationButton />
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {showOutline && (

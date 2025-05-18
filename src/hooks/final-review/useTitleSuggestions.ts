@@ -42,8 +42,8 @@ export const useTitleSuggestions = () => {
       
       // Only set a title automatically if there's no existing title
       if (shuffledSuggestions.length > 0 && !metaTitle && !contentTitle) {
-        // Use a random title from the first three suggestions instead of always the first one
-        const randomIndex = Math.floor(Math.random() * Math.min(3, shuffledSuggestions.length));
+        // Use a random title from the first five suggestions instead of always the first one
+        const randomIndex = Math.floor(Math.random() * Math.min(5, shuffledSuggestions.length));
         const initialTitle = shuffledSuggestions[randomIndex];
         console.log("[useTitleSuggestions] Setting initial title:", initialTitle);
         dispatch({ type: 'SET_META_TITLE', payload: initialTitle });
