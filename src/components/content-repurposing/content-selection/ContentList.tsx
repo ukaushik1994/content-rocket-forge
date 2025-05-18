@@ -7,33 +7,21 @@ interface ContentListProps {
   contentItems: ContentItemType[];
   onSelectContent: (contentId: string) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
-  onDeleteContent?: (contentId: string, formatId: string) => Promise<boolean>;
-  isDeleting?: boolean;
-  viewType?: 'new' | 'repurposed';
-  selectedContentId?: string;
 }
 
 const ContentList: React.FC<ContentListProps> = ({
   contentItems,
   onSelectContent,
-  onOpenRepurposedContent,
-  onDeleteContent,
-  isDeleting = false,
-  viewType = 'new',
-  selectedContentId
+  onOpenRepurposedContent
 }) => {
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       {contentItems.map(item => (
         <ContentItem 
           key={item.id}
           item={item}
           onSelectContent={onSelectContent}
           onOpenRepurposedContent={onOpenRepurposedContent}
-          onDeleteContent={onDeleteContent}
-          isDeleting={isDeleting}
-          viewType={viewType}
-          isSelected={selectedContentId === item.id}
         />
       ))}
     </div>

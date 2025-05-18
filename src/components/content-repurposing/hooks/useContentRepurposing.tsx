@@ -4,12 +4,8 @@ import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
 import { useContentDialog } from './repurposing/useContentDialog';
 import { useContentActions } from './repurposing/useContentActions';
-import { useContent } from '@/contexts/content';
 
 export const useContentRepurposing = () => {
-  // Get the deleteContentItem function from the content context
-  const { deleteContentItem: contextDeleteContentItem } = useContent();
-  
   // Compose hooks for different functionality
   const { content, handleContentSelection } = useContentSelection();
   
@@ -18,18 +14,15 @@ export const useContentRepurposing = () => {
     selectedFormats,
     generatedContents,
     isGenerating,
-    isRegenerating,
     activeFormat,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
-    handleRegenerateContent,
   } = useContentGeneration(content);
   
   const {
     contentItems,
     isDeleting,
-    isSaving,
     findRepurposedContent,
     copyToClipboard,
     downloadAsText,
@@ -57,17 +50,14 @@ export const useContentRepurposing = () => {
     selectedFormats,
     generatedContents,
     isGenerating,
-    isRegenerating,
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
     isDeleting,
-    isSaving,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
-    handleRegenerateContent,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
     copyToClipboard,
@@ -76,7 +66,6 @@ export const useContentRepurposing = () => {
     findRepurposedContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
-    deleteContentItem: contextDeleteContentItem,
   };
 };
 

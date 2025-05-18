@@ -1,8 +1,7 @@
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { motion } from 'framer-motion';
-import { getFormatByIdOrDefault, formatCategories, FormatCategory } from './formats';
+import { getFormatByIdOrDefault } from './formats';
 
 // Import our components
 import FormatSelector from './generated-content/FormatSelector';
@@ -17,12 +16,9 @@ interface GeneratedContentDisplayProps {
   setActiveFormat: React.Dispatch<React.SetStateAction<string | null>>;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
-  onSaveAsNewContent: (formatId: string, generatedContent: string) => Promise<boolean>;
+  onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
   onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
-  onRegenerateContent?: (formatId: string) => Promise<void>;
   isDeleting?: boolean;
-  isRegenerating?: boolean;
-  isSaving?: boolean;
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
@@ -33,106 +29,64 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   onDownloadAsText,
   onSaveAsNewContent,
   onDeleteRepurposedContent,
-  onRegenerateContent,
-  isDeleting = false,
-  isRegenerating = false,
-  isSaving = false
+  isDeleting = false
 }) => {
   const generatedFormats = Object.keys(generatedContents);
   const hasGeneratedContent = generatedFormats.length > 0;
   
-  // Group formats by category
-  const formatsByCategory = useMemo(() => {
-    const grouped: Record<FormatCategory, string[]> = {
-      'social': [],
-      'document': [],
-      'visual': [],
-      'audio-video': []
-    };
-    
-    generatedFormats.forEach(formatId => {
-      const format = getFormatByIdOrDefault(formatId);
-      grouped[format.category].push(formatId);
-    });
-    
-    return grouped;
-  }, [generatedFormats]);
-  
-  // Get categories that have content
-  const categoriesWithContent = Object.entries(formatsByCategory)
-    .filter(([_, formats]) => formats.length > 0)
-    .map(([category]) => category as FormatCategory);
-  
   return (
-    <Card className="h-full glass-panel border-white/10 bg-black/40 backdrop-blur-md">
-      <CardHeader className="pb-2 border-b border-white/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
-              Generated Content
-            </CardTitle>
-            <CardDescription>
-              {hasGeneratedContent
-                ? `${generatedFormats.length} format${generatedFormats.length !== 1 ? 's' : ''} generated`
-                : 'Select formats and generate content'}
-            </CardDescription>
-          </div>
+    <Card className="h-full">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-lg">Generated Content</CardTitle>
+          <CardDescription>
+            {hasGeneratedContent
+              ? `${generatedFormats.length} format(s) generated`
+              : 'Select formats and generate content'}
+          </CardDescription>
         </div>
+
+        {hasGeneratedContent && (
+          <FormatSelector 
+            generatedFormats={generatedFormats}
+            activeFormat={activeFormat}
+            setActiveFormat={setActiveFormat}
+          />
+        )}
       </CardHeader>
 
       <CardContent className="p-4 h-[500px] flex flex-col">
         {!hasGeneratedContent ? (
           <NoContentDisplay />
+        ) : activeFormat ? (
+          <div className="flex flex-col h-full">
+            <ContentViewer 
+              content={generatedContents[activeFormat]} 
+              formatId={activeFormat} 
+            />
+            <ActionButtons 
+              onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}
+              onDownload={() => {
+                const format = getFormatByIdOrDefault(activeFormat);
+                onDownloadAsText(
+                  generatedContents[activeFormat],
+                  format.name
+                );
+              }}
+              onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
+              onDelete={onDeleteRepurposedContent ? 
+                () => {
+                  if (activeFormat && onDeleteRepurposedContent) {
+                    return onDeleteRepurposedContent(activeFormat);
+                  }
+                  return Promise.resolve(false);
+                } : undefined
+              }
+              isDeleting={isDeleting}
+            />
+          </div>
         ) : (
-          <>
-            <div className="border-b border-white/10 pb-3 mb-3">
-              <FormatSelector 
-                generatedFormats={generatedFormats}
-                formatsByCategory={formatsByCategory}
-                categoriesWithContent={categoriesWithContent}
-                activeFormat={activeFormat}
-                setActiveFormat={setActiveFormat}
-              />
-            </div>
-            
-            {activeFormat ? (
-              <motion.div
-                className="flex flex-col h-full"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                key={activeFormat}
-              >
-                <ContentViewer 
-                  content={generatedContents[activeFormat]} 
-                  formatId={activeFormat} 
-                />
-                <ActionButtons 
-                  onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}
-                  onDownload={() => {
-                    const format = getFormatByIdOrDefault(activeFormat);
-                    onDownloadAsText(
-                      generatedContents[activeFormat],
-                      format.name
-                    );
-                  }}
-                  onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
-                  onDelete={onDeleteRepurposedContent && activeFormat ? 
-                    () => onDeleteRepurposedContent(activeFormat) : undefined
-                  }
-                  onRegenerate={onRegenerateContent && activeFormat ?
-                    () => onRegenerateContent(activeFormat) : undefined
-                  }
-                  isDeleting={isDeleting}
-                  isRegenerating={isRegenerating}
-                  isSaving={isSaving}
-                  formatId={activeFormat}
-                />
-              </motion.div>
-            ) : (
-              <SelectFormatDisplay />
-            )}
-          </>
+          <SelectFormatDisplay />
         )}
       </CardContent>
     </Card>

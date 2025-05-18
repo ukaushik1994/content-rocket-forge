@@ -3,7 +3,6 @@ import React from 'react';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Copy, Download, Trash } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface DialogActionButtonsProps {
   onCopy: () => void;
@@ -20,41 +19,33 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
 }) => {
   return (
     <DialogFooter className="pt-2 border-t border-white/10 flex items-center justify-end gap-2">
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCopy}
-          className="hover:bg-white/5 border-white/10"
-        >
-          <Copy className="h-4 w-4 mr-1" />
-          Copy
-        </Button>
-      </motion.div>
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onDownload}
-          className="hover:bg-white/5 border-white/10"
-        >
-          <Download className="h-4 w-4 mr-1" />
-          Download
-        </Button>
-      </motion.div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onCopy}
+      >
+        <Copy className="h-4 w-4 mr-1" />
+        Copy
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onDownload}
+      >
+        <Download className="h-4 w-4 mr-1" />
+        Download
+      </Button>
       {onDelete && (
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-500 hover:text-red-600 hover:bg-white/5 border-white/10"
-            onClick={onDelete}
-            disabled={isDeleting}
-          >
-            <Trash className="h-4 w-4 mr-1" />
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        </motion.div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-red-500 hover:text-red-600"
+          onClick={onDelete}
+          disabled={isDeleting}
+        >
+          <Trash className="h-4 w-4 mr-1" />
+          {isDeleting ? 'Deleting...' : 'Delete'}
+        </Button>
       )}
     </DialogFooter>
   );

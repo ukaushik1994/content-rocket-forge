@@ -1,8 +1,9 @@
 
 import React from 'react';
+import { CardTitle, CardDescription } from '@/components/ui/card';
+import { Sparkles, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 interface ContentSelectionHeaderProps {
   searchQuery: string;
@@ -10,51 +11,39 @@ interface ContentSelectionHeaderProps {
   totalItems: number;
 }
 
-const ContentSelectionHeader: React.FC<ContentSelectionHeaderProps> = ({
-  searchQuery,
+const ContentSelectionHeader: React.FC<ContentSelectionHeaderProps> = ({ 
+  searchQuery, 
   setSearchQuery,
-  totalItems,
+  totalItems
 }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-2"
-    >
-      <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground">
-          <motion.div
-            whileHover={{ rotate: 45, scale: 1.1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Search className="h-4 w-4" />
-          </motion.div>
+    <div className="space-y-4">
+      <div>
+        <CardTitle className="text-xl flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-neon-purple animate-pulse" />
+          Available Content
+        </CardTitle>
+        <CardDescription>Select content to transform into different formats</CardDescription>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{totalItems} items available</p>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              placeholder="Search content..." 
+              className="pl-9 bg-black/30 border-white/10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button variant="outline" size="icon" className="border-white/10">
+            <Filter className="h-4 w-4" />
+          </Button>
         </div>
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search content..."
-          className="pl-9 bg-black/50 border-white/10 rounded-lg focus-visible:ring-neon-purple"
-        />
       </div>
-      <div className="flex justify-between items-center">
-        <p className="text-xs text-muted-foreground">
-          {totalItems} {totalItems === 1 ? 'item' : 'items'} found
-        </p>
-        {searchQuery && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setSearchQuery('')}
-            className="text-xs text-neon-purple hover:text-neon-blue transition-colors"
-          >
-            Clear Search
-          </motion.button>
-        )}
-      </div>
-    </motion.div>
+    </div>
   );
 };
 
