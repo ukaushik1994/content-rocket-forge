@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2, Twitter, FileText, Image, Video } from 'lucide-react';
+import { Check, Loader2, TwitterIcon, FileTextIcon, ImageIcon, VideoIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
   contentFormats, 
@@ -52,42 +52,28 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
             let CategoryIcon;
             
             switch(category) {
-              case 'social': CategoryIcon = Twitter; break;
-              case 'document': CategoryIcon = FileText; break;
-              case 'visual': CategoryIcon = Image; break;
-              case 'audio-video': CategoryIcon = Video; break;
-              default: CategoryIcon = FileText;
+              case 'social': CategoryIcon = TwitterIcon; break;
+              case 'document': CategoryIcon = FileTextIcon; break;
+              case 'visual': CategoryIcon = ImageIcon; break;
+              case 'audio-video': CategoryIcon = VideoIcon; break;
+              default: CategoryIcon = FileTextIcon;
             }
             
             return (
-              <motion.div
+              <Button
                 key={category}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative"
+                size="sm"
+                variant={activeCategory === category ? "default" : "outline"}
+                className={`
+                  ${activeCategory === category 
+                    ? `bg-gradient-to-r ${categoryInfo.color} border-none text-white` 
+                    : 'bg-black/20 border-white/10 hover:bg-white/10'}
+                `}
+                onClick={() => setActiveCategory(category)}
               >
-                <Button
-                  size="sm"
-                  variant={activeCategory === category ? "default" : "outline"}
-                  className={`
-                    ${activeCategory === category 
-                      ? `bg-gradient-to-r ${categoryInfo.color} border-none text-white` 
-                      : 'bg-black/20 border-white/10 hover:bg-white/10'}
-                    relative overflow-hidden
-                  `}
-                  onClick={() => setActiveCategory(category)}
-                >
-                  <CategoryIcon className="h-4 w-4 mr-2" />
-                  {categoryInfo.name}
-                </Button>
-                {activeCategory === category && (
-                  <motion.div 
-                    className={`absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r ${categoryInfo.color}`}
-                    layoutId="activeCategoryIndicator"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-              </motion.div>
+                <CategoryIcon className="h-4 w-4 mr-2" />
+                {categoryInfo.name}
+              </Button>
             );
           })}
         </div>
@@ -99,7 +85,6 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          key={activeCategory} // Re-render animation when category changes
         >
           {getFormatsByCategory(activeCategory).map((format) => {
             const IconComponent = getFormatIconComponent(format.id);
@@ -125,18 +110,9 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
                     ${isSelected
                       ? `bg-gradient-to-r ${categoryColor} text-white`
                       : 'border border-white/20 bg-black/40'}
-                    transition-all duration-300
                   `}
                 >
-                  {isSelected && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", bounce: 0.4 }}
-                    >
-                      <Check className="h-3 w-3" />
-                    </motion.div>
-                  )}
+                  {isSelected && <Check className="h-3 w-3" />}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center">
@@ -154,27 +130,20 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
       </CardContent>
       
       <CardFooter className="border-t border-white/10 pt-4">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full"
+        <Button
+          className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity"
+          disabled={selectedFormats.length === 0 || isGenerating}
+          onClick={() => onGenerateContent(selectedFormats)}
         >
-          <Button
-            className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity relative overflow-hidden group"
-            disabled={selectedFormats.length === 0 || isGenerating}
-            onClick={() => onGenerateContent(selectedFormats)}
-          >
-            <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              `Generate ${selectedFormats.length} Format${selectedFormats.length !== 1 ? 's' : ''}`
-            )}
-          </Button>
-        </motion.div>
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            `Generate ${selectedFormats.length} Format${selectedFormats.length !== 1 ? 's' : ''}`
+          )}
+        </Button>
       </CardFooter>
     </Card>
   );
