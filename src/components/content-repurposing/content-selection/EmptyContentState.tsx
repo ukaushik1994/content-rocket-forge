@@ -7,12 +7,28 @@ import { useNavigate } from 'react-router-dom';
 
 interface EmptyContentStateProps {
   message?: string;
+  viewType?: 'new' | 'repurposed';
 }
 
 const EmptyContentState: React.FC<EmptyContentStateProps> = ({ 
-  message = "No content items found"
+  message = "No content items found",
+  viewType = 'new'
 }) => {
   const navigate = useNavigate();
+  
+  const getEmptyStateMessage = () => {
+    if (viewType === 'new') {
+      return "No content items available to repurpose";
+    }
+    return "No repurposed content yet";
+  };
+  
+  const getDescription = () => {
+    if (viewType === 'new') {
+      return "Create content in the content editor or repository first, then repurpose it for different formats and platforms.";
+    }
+    return "Select content from the 'New Content' tab to transform it into different formats.";
+  };
   
   return (
     <motion.div 
@@ -26,11 +42,11 @@ const EmptyContentState: React.FC<EmptyContentStateProps> = ({
       </div>
       
       <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
-        {message}
+        {message || getEmptyStateMessage()}
       </h3>
       
       <p className="text-muted-foreground mt-2 mb-6 max-w-md">
-        Create content in the content editor or repository first, then repurpose it for different formats and platforms.
+        {getDescription()}
       </p>
       
       <Button 

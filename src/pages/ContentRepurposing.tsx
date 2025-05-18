@@ -42,6 +42,23 @@ const ContentRepurposing = () => {
     deleteContentItem,
   } = useContentRepurposing();
   
+  // Function to handle content item deletion from selection view
+  const handleContentItemDelete = async (contentId: string, formatId: string = ''): Promise<boolean> => {
+    try {
+      if (formatId) {
+        // If formatId is provided, delete only that specific format
+        await deleteRepurposedContent(contentId, formatId);
+      } else {
+        // Otherwise delete the entire content item
+        await deleteContentItem(contentId);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      return false;
+    }
+  };
+  
   // If no content is selected yet, show the content selection view
   if (!content) {
     return (
@@ -72,7 +89,7 @@ const ContentRepurposing = () => {
             selectedRepurposedContent={selectedRepurposedContent}
             onCopyToClipboard={copyToClipboard}
             onDownloadAsText={downloadAsText}
-            onDeleteRepurposedContent={deleteContentItem}
+            onDeleteRepurposedContent={handleContentItemDelete}
             isDeleting={isDeleting}
           />
         </motion.main>
