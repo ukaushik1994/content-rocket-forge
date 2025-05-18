@@ -37,7 +37,6 @@ export const ContentWritingStep = () => {
     handleInstructionsChange,
     handleToggleOutline,
     handleToggleGenerator,
-    handleContentTemplateSelection,
     handleAiProviderChange,
     handleManualSave,
     handleGenerateTitle
