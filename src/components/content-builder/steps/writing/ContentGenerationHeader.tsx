@@ -9,7 +9,7 @@ import {
   PenSquare, 
   Cog, 
   Bot, 
-  Human, 
+  UserRound, 
   Wand2,
   Save
 } from 'lucide-react';
@@ -127,7 +127,7 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
             className={`text-xs px-2 ${aiProvider === 'anthropic' ? 'bg-white/10' : ''}`}
             onClick={() => onAiProviderChange('anthropic')}
           >
-            <Human className="h-3 w-3 mr-1" />
+            <UserRound className="h-3 w-3 mr-1" />
             Claude
           </Button>
         </div>
