@@ -123,7 +123,16 @@ export const ContentWritingStep = () => {
       />
       
       {/* Title Generation Button */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-medium">
+          {state.contentTitle ? (
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+              {state.contentTitle}
+            </span>
+          ) : (
+            <span className="text-muted-foreground text-base">No title set</span>
+          )}
+        </h2>
         <TitleGenerationButton />
       </div>
       

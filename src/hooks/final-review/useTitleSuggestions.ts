@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
 import { toast } from 'sonner';
@@ -21,7 +21,7 @@ export const useTitleSuggestions = () => {
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
   
   // Generate title suggestions
-  const generateTitleSuggestionsAsync = async () => {
+  const generateTitleSuggestionsAsync = useCallback(async () => {
     if (!content || !mainKeyword) {
       toast.error('Content or main keyword not available for generating titles', toastConfig.error);
       return;
@@ -55,11 +55,23 @@ export const useTitleSuggestions = () => {
     } finally {
       setIsGeneratingTitles(false);
     }
-  };
+  }, [content, mainKeyword, selectedKeywords, metaTitle, contentTitle, dispatch]);
+
+  // Apply a specific title from suggestions
+  const applyTitle = useCallback((title: string) => {
+    if (!title) return;
+    
+    dispatch({ type: 'SET_META_TITLE', payload: title });
+    dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
+    toast.success('Title applied successfully', toastConfig.success);
+    console.log("[useTitleSuggestions] Applied title:", title);
+  }, [dispatch]);
 
   return {
     isGeneratingTitles,
     titleSuggestions,
-    generateTitleSuggestions: generateTitleSuggestionsAsync
+    generateTitleSuggestions: generateTitleSuggestionsAsync,
+    applyTitle,
+    currentTitle: contentTitle || metaTitle
   };
 };

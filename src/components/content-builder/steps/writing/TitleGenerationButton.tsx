@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RefreshButton } from '@/components/ui/refresh-button';
@@ -10,13 +10,29 @@ import { toast } from 'sonner';
 
 export const TitleGenerationButton = () => {
   const [showDialog, setShowDialog] = useState(false);
-  const { state, dispatch } = useContentBuilder();
+  const { state } = useContentBuilder();
   const { 
     titleSuggestions, 
     isGeneratingTitles, 
-    generateTitleSuggestions 
+    generateTitleSuggestions,
+    applyTitle,
+    currentTitle 
   } = useTitleSuggestions();
+  
   const [selectedTitleIndex, setSelectedTitleIndex] = useState<number | null>(null);
+  
+  // Reset selected index when suggestions change
+  useEffect(() => {
+    // Find if current title is in the suggestions
+    if (currentTitle && titleSuggestions.length > 0) {
+      const index = titleSuggestions.findIndex(title => title === currentTitle);
+      if (index >= 0) {
+        setSelectedTitleIndex(index);
+      } else {
+        setSelectedTitleIndex(null);
+      }
+    }
+  }, [titleSuggestions, currentTitle]);
   
   const handleOpenDialog = async () => {
     setShowDialog(true);
@@ -38,9 +54,7 @@ export const TitleGenerationButton = () => {
   const handleApplyTitle = () => {
     if (selectedTitleIndex !== null && titleSuggestions[selectedTitleIndex]) {
       const selectedTitle = titleSuggestions[selectedTitleIndex];
-      dispatch({ type: 'SET_CONTENT_TITLE', payload: selectedTitle });
-      dispatch({ type: 'SET_META_TITLE', payload: selectedTitle });
-      toast.success("Title applied successfully!");
+      applyTitle(selectedTitle);
       setShowDialog(false);
     } else {
       toast.error("Please select a title first");
@@ -56,7 +70,7 @@ export const TitleGenerationButton = () => {
         className="gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10"
       >
         <Sparkles className="h-3.5 w-3.5" />
-        Generate Title
+        {currentTitle ? "Change Title" : "Generate Title"}
       </Button>
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
@@ -64,11 +78,18 @@ export const TitleGenerationButton = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Generate Unique Title
+              {currentTitle ? "Update Content Title" : "Generate Unique Title"}
             </DialogTitle>
           </DialogHeader>
           
           <div className="py-4">
+            {currentTitle && (
+              <div className="mb-4 p-3 bg-secondary/20 rounded-md border border-secondary/30">
+                <p className="text-xs text-muted-foreground mb-1">Current Title:</p>
+                <p className="text-sm font-medium">{currentTitle}</p>
+              </div>
+            )}
+            
             <div className="flex justify-end mb-4">
               <RefreshButton 
                 isRefreshing={isGeneratingTitles} 

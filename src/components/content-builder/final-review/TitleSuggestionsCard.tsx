@@ -5,33 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Check, RefreshCw, Sparkles, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
-interface TitleSuggestionsCardProps {
-  currentTitle: string | null;
-  mainKeyword: string;
-  selectedKeywords: string[];
-  onSelectTitle: (title: string) => void;
-  generateNewTitles: () => void;
-  suggestions: string[];
-  isGenerating: boolean;
-}
-
-export const TitleSuggestionsCard = ({
-  currentTitle,
-  mainKeyword,
-  selectedKeywords,
-  onSelectTitle,
-  generateNewTitles,
-  suggestions,
-  isGenerating
-}: TitleSuggestionsCardProps) => {
+export const TitleSuggestionsCard = () => {
+  const { state } = useContentBuilder();
   const [selected, setSelected] = useState<number | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   
+  const {
+    isGeneratingTitles,
+    titleSuggestions,
+    generateTitleSuggestions,
+    applyTitle,
+    currentTitle
+  } = useTitleSuggestions();
+  
   // Effect to preselect a title that matches the current title if it exists
   useEffect(() => {
-    if (currentTitle && suggestions.length > 0) {
-      const currentTitleIndex = suggestions.findIndex(
+    if (currentTitle && titleSuggestions.length > 0) {
+      const currentTitleIndex = titleSuggestions.findIndex(
         suggestion => suggestion === currentTitle
       );
       
@@ -42,14 +35,13 @@ export const TitleSuggestionsCard = ({
         setSelected(null);
       }
     }
-  }, [currentTitle, suggestions]);
+  }, [currentTitle, titleSuggestions]);
 
   const handleSelectTitle = (index: number) => {
     setSelected(index);
-    const selectedTitle = suggestions[index];
-    onSelectTitle(selectedTitle);
+    const selectedTitle = titleSuggestions[index];
+    applyTitle(selectedTitle);
     console.log("[TitleSuggestionsCard] Title selected:", selectedTitle);
-    toast.success("Title updated successfully");
   };
 
   const container = {
@@ -76,13 +68,13 @@ export const TitleSuggestionsCard = ({
             Title Suggestions
           </div>
           <Button
-            onClick={generateNewTitles}
-            disabled={isGenerating}
+            onClick={generateTitleSuggestions}
+            disabled={isGeneratingTitles}
             variant="ghost"
             size="sm"
             className="h-7 px-2 hover:bg-white/10"
           >
-            <RefreshCw className={`h-3 w-3 ${isGenerating ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 ${isGeneratingTitles ? 'animate-spin' : ''}`} />
             <span className="text-xs ml-1">Regenerate</span>
           </Button>
         </CardTitle>
@@ -106,14 +98,14 @@ export const TitleSuggestionsCard = ({
         {/* Title Suggestions */}
         <div className="space-y-2 mb-4 max-h-[300px] overflow-y-auto pr-2">
           <AnimatePresence>
-            {suggestions.length > 0 ? (
+            {titleSuggestions.length > 0 ? (
               <motion.div
                 className="space-y-2"
                 variants={container}
                 initial="hidden"
                 animate="show"
               >
-                {suggestions.map((suggestion, index) => (
+                {titleSuggestions.map((suggestion, index) => (
                   <motion.div 
                     key={index}
                     className={`p-3 rounded-md border cursor-pointer transition-all duration-200 ${
@@ -152,7 +144,7 @@ export const TitleSuggestionsCard = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {isGenerating ? (
+                {isGeneratingTitles ? (
                   <div className="flex flex-col items-center">
                     <RefreshCw className="h-10 w-10 text-blue-500/70 animate-spin mb-3" />
                     <p className="text-muted-foreground">Generating title suggestions...</p>
@@ -174,11 +166,11 @@ export const TitleSuggestionsCard = ({
         {/* Generate Button */}
         <div className="flex justify-center">
           <Button
-            onClick={generateNewTitles}
-            disabled={isGenerating}
+            onClick={generateTitleSuggestions}
+            disabled={isGeneratingTitles}
             className="w-full gap-2 bg-blue-500/80 hover:bg-blue-500 transition-colors"
           >
-            {isGenerating ? (
+            {isGeneratingTitles ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 Generating Titles...
