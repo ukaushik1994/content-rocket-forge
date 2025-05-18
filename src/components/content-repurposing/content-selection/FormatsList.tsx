@@ -9,11 +9,13 @@ import { motion } from 'framer-motion';
 interface FormatsListProps {
   item: ContentItemType;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
+  isMobile?: boolean;
 }
 
 const FormatsList: React.FC<FormatsListProps> = ({
   item,
-  onOpenRepurposedContent
+  onOpenRepurposedContent,
+  isMobile = false
 }) => {
   // Check if a content item has been repurposed for a specific format
   const hasRepurposedFormat = (item: ContentItemType, formatId: string): boolean => {
@@ -32,11 +34,11 @@ const FormatsList: React.FC<FormatsListProps> = ({
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={isMobile ? 100 : 300}>
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex flex-wrap gap-2"
+        className="flex flex-wrap gap-1 sm:gap-2"
       >
         {repurposedFormats.map(format => (
           <ContentFormatIcon 
@@ -47,6 +49,7 @@ const FormatsList: React.FC<FormatsListProps> = ({
               e.stopPropagation();
               onOpenRepurposedContent(item.id, format.id);
             }}
+            isMobile={isMobile}
           />
         ))}
       </motion.div>

@@ -8,19 +8,23 @@ interface FormatBadgeProps {
   tooltipText: string;
   onClick: (e: React.MouseEvent) => void;
   children: React.ReactNode;
+  isMobile?: boolean;
 }
 
 const FormatBadge: React.FC<FormatBadgeProps> = ({
   isActive,
   tooltipText,
   onClick,
-  children
+  children,
+  isMobile = false
 }) => {
+  const badgeSize = isMobile ? "w-6 h-6" : "w-8 h-8";
+  
   return (
-    <Tooltip delayDuration={300}>
+    <Tooltip delayDuration={isMobile ? 100 : 300}>
       <TooltipTrigger asChild>
         <motion.div
-          className={`w-8 h-8 flex items-center justify-center rounded-full 
+          className={`${badgeSize} flex items-center justify-center rounded-full 
             ${isActive
               ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-lg cursor-pointer' 
               : 'bg-gray-800/40 text-gray-500'}`}
@@ -34,7 +38,7 @@ const FormatBadge: React.FC<FormatBadgeProps> = ({
           {children}
         </motion.div>
       </TooltipTrigger>
-      <TooltipContent side="top" className="bg-black/90 border-white/10 text-xs">
+      <TooltipContent side={isMobile ? "bottom" : "top"} className="bg-black/90 border-white/10 text-xs">
         <p>{tooltipText}</p>
       </TooltipContent>
     </Tooltip>

@@ -7,12 +7,14 @@ interface ContentFormatIconProps {
   formatId: string;
   isFormatUsed: boolean;
   onClick: (e: React.MouseEvent) => void;
+  isMobile?: boolean;
 }
 
 const ContentFormatIcon: React.FC<ContentFormatIconProps> = ({
   formatId,
   isFormatUsed,
-  onClick
+  onClick,
+  isMobile = false
 }) => {
   const IconComponent = getFormatIconComponent(formatId);
   const format = getFormatByIdOrDefault(formatId);
@@ -23,6 +25,7 @@ const ContentFormatIcon: React.FC<ContentFormatIconProps> = ({
       isActive={isFormatUsed}
       tooltipText={tooltipText}
       onClick={onClick}
+      isMobile={isMobile}
     >
       <IconComponent className="h-full w-full" />
     </FormatBadge>

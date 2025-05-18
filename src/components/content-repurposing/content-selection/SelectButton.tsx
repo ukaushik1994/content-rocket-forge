@@ -1,28 +1,24 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 
 interface SelectButtonProps {
   onClick: (e: React.MouseEvent) => void;
+  isMobile?: boolean;
 }
 
-const SelectButton: React.FC<SelectButtonProps> = ({ onClick }) => {
+const SelectButton: React.FC<SelectButtonProps> = ({ onClick, isMobile = false }) => {
   return (
-    <motion.div
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      className="w-full"
+    <Button
+      variant="outline"
+      size={isMobile ? "sm" : "default"}
+      onClick={onClick}
+      className="w-full bg-gradient-to-r from-indigo-500/10 to-blue-500/10 hover:from-indigo-500/20 hover:to-blue-500/20 border-indigo-500/30 text-white"
     >
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="w-full bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 border border-white/10 hover:bg-white/10 hover:border-neon-purple/50 transition-all duration-300"
-        onClick={onClick}
-      >
-        Select for Repurposing
-      </Button>
-    </motion.div>
+      <span>{isMobile ? "Select" : "Select for Repurposing"}</span>
+      <ArrowRight className="h-4 w-4 ml-1" />
+    </Button>
   );
 };
 

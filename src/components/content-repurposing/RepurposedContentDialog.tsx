@@ -8,6 +8,7 @@ import DialogActionButtons from './dialog/DialogActionButtons';
 import FormatButton from './generated-content/FormatButton';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RepurposedContentDialogProps {
   open: boolean;
@@ -34,6 +35,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   isSaving = false,
   generatedFormats = []
 }) => {
+  const isMobile = useIsMobile();
+  
   if (!content) return null;
 
   // Find the format information
@@ -69,11 +72,13 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/50">
+      <DialogContent className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg`}>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-black/50">
           <div className="flex flex-col">
-            <h2 className="text-xl font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent">{formatName}</h2>
-            <p className="text-sm text-white/70">{content.title}</p>
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent`}>
+              {formatName}
+            </h2>
+            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title}</p>
           </div>
           <button 
             onClick={onClose}
@@ -88,9 +93,9 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
           <motion.div 
             initial={{ opacity: 0, y: -5 }} 
             animate={{ opacity: 1, y: 0 }} 
-            className="bg-black/70 px-4 py-3 border-b border-white/10 backdrop-blur-sm"
+            className="bg-black/70 px-3 sm:px-4 py-2 sm:py-3 border-b border-white/10 backdrop-blur-sm"
           >
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
               {relatedFormats.map(relatedFormat => (
                 <FormatButton 
                   key={relatedFormat.id} 

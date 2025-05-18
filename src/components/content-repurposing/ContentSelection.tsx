@@ -6,6 +6,7 @@ import ContentList from './content-selection/ContentList';
 import EmptyContentState from './content-selection/EmptyContentState';
 import { GeneratedContentFormat } from './hooks/repurposing/types';
 import RepurposedContentDialog from './RepurposedContentDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ContentSelectionProps {
   contentItems: ContentItemType[];
@@ -19,6 +20,7 @@ interface ContentSelectionProps {
   onDeleteRepurposedContent?: (contentId: string, formatId: string) => Promise<boolean>;
   onFormatChange?: (contentId: string, formatId: string) => void;
   isDeleting?: boolean;
+  isLoadingFormat?: boolean;
   generatedFormats?: string[];
 }
 
@@ -34,10 +36,18 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
   onDeleteRepurposedContent,
   onFormatChange,
   isDeleting = false,
+  isLoadingFormat = false,
   generatedFormats = []
 }) => {
   // Add state for search functionality
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const isMobile = useIsMobile();
+  
+  // Filter content items based on search query
+  const filteredItems = contentItems.filter(item => 
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
   
   return (
     <div>
@@ -51,9 +61,10 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
         <EmptyContentState />
       ) : (
         <ContentList
-          contentItems={contentItems}
+          contentItems={filteredItems}
           onSelectContent={onSelectContent}
           onOpenRepurposedContent={onOpenRepurposedContent}
+          isMobile={isMobile}
         />
       )}
       
@@ -66,6 +77,7 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
         onDelete={onDeleteRepurposedContent}
         onFormatChange={onFormatChange}
         isDeleting={isDeleting}
+        isSaving={isLoadingFormat}
         generatedFormats={generatedFormats}
       />
     </div>

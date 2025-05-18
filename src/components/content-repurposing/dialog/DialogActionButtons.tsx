@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, Download, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DialogActionButtonsProps {
   onCopy: () => void;
@@ -20,6 +21,7 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
   isSaving = false
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const isMobile = useIsMobile();
   
   const handleCopy = () => {
     onCopy();
@@ -38,33 +40,33 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
   };
 
   return (
-    <div className="flex justify-end gap-3 p-5 border-t border-white/10 bg-black/70 backdrop-blur-sm">
+    <div className="flex justify-end gap-2 sm:gap-3 p-3 sm:p-5 border-t border-white/10 bg-black/70 backdrop-blur-sm">
       <Button 
         variant="ghost" 
-        size="sm" 
+        size={isMobile ? "sm" : "default"} 
         onClick={handleCopy}
         className="hover:bg-white/10 text-white/90 hover:text-white transition-colors duration-200 rounded-lg"
         disabled={isSaving || isDeleting}
       >
-        <Copy className="h-5 w-5 mr-2" />
+        <Copy className="h-4 w-4 mr-1 sm:mr-2" />
         <span>Copy</span>
       </Button>
       
       <Button 
         variant="ghost" 
-        size="sm" 
+        size={isMobile ? "sm" : "default"} 
         onClick={onDownload}
         className="hover:bg-white/10 text-white/90 hover:text-white transition-colors duration-200 rounded-lg"
         disabled={isSaving || isDeleting}
       >
-        <Download className="h-5 w-5 mr-2" />
+        <Download className="h-4 w-4 mr-1 sm:mr-2" />
         <span>Download</span>
       </Button>
       
       {onDelete && (
         <Button 
           variant="ghost" 
-          size="sm" 
+          size={isMobile ? "sm" : "default"} 
           onClick={handleDelete}
           disabled={isDeleting}
           className={showDeleteConfirm 
@@ -73,10 +75,10 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
           }
         >
           {isDeleting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <>
-              <Trash2 className="h-5 w-5 mr-2" />
+              <Trash2 className="h-4 w-4 mr-1 sm:mr-2" />
               <span>{showDeleteConfirm ? "Confirm" : "Delete"}</span>
             </>
           )}

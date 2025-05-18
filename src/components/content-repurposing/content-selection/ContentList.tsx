@@ -8,26 +8,28 @@ interface ContentListProps {
   contentItems: ContentItemType[];
   onSelectContent: (content: ContentItemType) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
+  isMobile?: boolean;
 }
 
 const ContentList: React.FC<ContentListProps> = ({
   contentItems,
   onSelectContent,
-  onOpenRepurposedContent
+  onOpenRepurposedContent,
+  isMobile = false
 }) => {
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05
       }
     }
   };
   
   return (
     <motion.div 
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+      className={`grid grid-cols-1 ${isMobile ? '' : 'sm:grid-cols-2 lg:grid-cols-3'} gap-4 sm:gap-6`}
       variants={container}
       initial="hidden"
       animate="show"
@@ -38,6 +40,7 @@ const ContentList: React.FC<ContentListProps> = ({
           item={item}
           onSelectContent={() => onSelectContent(item)}
           onOpenRepurposedContent={onOpenRepurposedContent}
+          isMobile={isMobile}
         />
       ))}
     </motion.div>
