@@ -32,14 +32,17 @@ export const generateContent = async (
   try {
     // Create a detailed prompt for the AI
     const prompt = `
-    Write comprehensive, high-quality content for an article about "${mainKeyword}".
+    Write comprehensive, high-quality content for an article with the title: "${contentTitle || `Complete Guide to ${mainKeyword}`}".
     
     Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
     Primary Keyword: ${mainKeyword}
     ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
     ${wordCountLimit ? `Word Count Target: Approximately ${wordCountLimit} words` : ''}
     
-    Use this outline structure:
+    The content MUST start with the title as an H1 heading. For example:
+    # ${contentTitle || `Complete Guide to ${mainKeyword}`}
+    
+    Then use this outline structure for the rest of the content:
     ${outlineText}
     
     ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
@@ -55,7 +58,7 @@ export const generateContent = async (
     // Call the AI API via our service
     const chatResponse = await sendChatRequest(aiProvider, {
       messages: [
-        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally.' },
+        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally. Always start with the title as an H1 heading.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
@@ -65,9 +68,19 @@ export const generateContent = async (
     if (chatResponse?.choices?.[0]?.message?.content) {
       // Use the AI-generated content
       const generatedContent = chatResponse.choices[0].message.content;
-      if (setContent) {
-        setContent(generatedContent);
+      
+      // If content doesn't start with the title as an H1, add it
+      let finalContent = generatedContent;
+      const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
+      
+      if (!finalContent.trim().startsWith('#')) {
+        finalContent = `${titleAsH1}\n\n${finalContent}`;
       }
+      
+      if (setContent) {
+        setContent(finalContent);
+      }
+      
       toast.success('Content generated successfully');
       return true;
     } else {
