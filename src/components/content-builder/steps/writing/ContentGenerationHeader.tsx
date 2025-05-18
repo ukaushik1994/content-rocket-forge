@@ -29,6 +29,7 @@ interface ContentGenerationHeaderProps {
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
   onGenerateTitle?: () => void;
+  wordCountLimit?: number;
 }
 
 export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
@@ -43,7 +44,8 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   autoSaveTimestamp,
   hasUnsavedChanges,
   onManualSave,
-  onGenerateTitle
+  onGenerateTitle,
+  wordCountLimit
 }) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -56,7 +58,7 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
           {isGenerating ? (
             <><Sparkles className="mr-2 h-4 w-4 animate-pulse" /> Generating...</>
           ) : (
-            <><Sparkles className="mr-2 h-4 w-4" /> Generate Content</>
+            <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
           )}
         </Button>
         
@@ -77,15 +79,6 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
             className="bg-slate-900/30 data-[state=on]:bg-slate-800/70 border border-white/10 hover:bg-slate-800/50"
           >
             <ListTodo className="h-4 w-4" />
-          </Toggle>
-          
-          <Toggle
-            variant="outline"
-            onPressedChange={handleToggleGenerator}
-            aria-label="Toggle content generator"
-            className="bg-slate-900/30 data-[state=on]:bg-slate-800/70 border border-white/10 hover:bg-slate-800/50"
-          >
-            <Wand2 className="h-4 w-4" />
           </Toggle>
         </div>
       </div>

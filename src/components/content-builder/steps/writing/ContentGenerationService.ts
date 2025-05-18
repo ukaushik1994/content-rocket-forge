@@ -16,15 +16,18 @@ export const generateContent = async (
   secondaryKeywords: string,
   selectedSolution: Solution | null,
   additionalInstructions: string,
-  setIsGenerating: (value: boolean) => void,
-  setContent: (content: string) => void
+  wordCountLimit?: number,
+  setIsGenerating?: (value: boolean) => void,
+  setContent?: (content: string) => void
 ): Promise<boolean> => {
   if (!mainKeyword) {
     toast.error("Please set a main keyword first");
     return false;
   }
   
-  setIsGenerating(true);
+  if (setIsGenerating) {
+    setIsGenerating(true);
+  }
   
   try {
     // Create a detailed prompt for the AI
@@ -34,6 +37,7 @@ export const generateContent = async (
     Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
     Primary Keyword: ${mainKeyword}
     ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
+    ${wordCountLimit ? `Word Count Target: Approximately ${wordCountLimit} words` : ''}
     
     Use this outline structure:
     ${outlineText}
@@ -45,6 +49,7 @@ export const generateContent = async (
     Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
     Include a compelling introduction and a strong conclusion. 
     Optimize the content for readability and search engines.
+    ${wordCountLimit ? `Stay close to the target of ${wordCountLimit} words.` : ''}
     `;
     
     // Call the AI API via our service
@@ -60,7 +65,9 @@ export const generateContent = async (
     if (chatResponse?.choices?.[0]?.message?.content) {
       // Use the AI-generated content
       const generatedContent = chatResponse.choices[0].message.content;
-      setContent(generatedContent);
+      if (setContent) {
+        setContent(generatedContent);
+      }
       toast.success('Content generated successfully');
       return true;
     } else {
@@ -72,7 +79,9 @@ export const generateContent = async (
     toast.error('Failed to generate content. Please try again or check your API configuration.');
     return false;
   } finally {
-    setIsGenerating(false);
+    if (setIsGenerating) {
+      setIsGenerating(false);
+    }
   }
 };
 
