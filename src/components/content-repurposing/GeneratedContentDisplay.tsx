@@ -16,11 +16,12 @@ interface GeneratedContentDisplayProps {
   setActiveFormat: React.Dispatch<React.SetStateAction<string | null>>;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
-  onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
+  onSaveAsNewContent: (formatId: string, generatedContent: string) => Promise<boolean>;
   onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
   onRegenerateContent?: (formatId: string) => Promise<void>;
   isDeleting?: boolean;
   isRegenerating?: boolean;
+  isSaving?: boolean;
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
@@ -33,7 +34,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   onDeleteRepurposedContent,
   onRegenerateContent,
   isDeleting = false,
-  isRegenerating = false
+  isRegenerating = false,
+  isSaving = false
 }) => {
   const generatedFormats = Object.keys(generatedContents);
   const hasGeneratedContent = generatedFormats.length > 0;
@@ -86,6 +88,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
               }
               isDeleting={isDeleting}
               isRegenerating={isRegenerating}
+              isSaving={isSaving}
             />
           </div>
         ) : (

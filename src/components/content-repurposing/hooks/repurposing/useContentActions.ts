@@ -8,6 +8,7 @@ import { getFormatByIdOrDefault } from '../../formats';
 export const useContentActions = (content: ContentItemType | null) => {
   const { contentItems, addContentItem, updateContentItem, deleteContentItem } = useContent();
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Utility function to find content by original content ID and format
   const findRepurposedContent = (originalContentId: string, formatId: string): string | null => {
@@ -42,6 +43,8 @@ export const useContentActions = (content: ContentItemType | null) => {
   
   const saveAsNewContent = async (formatId: string, generatedContent: string): Promise<boolean> => {
     if (!content) return false;
+    
+    setIsSaving(true);
     
     try {
       const formatInfo = getFormatByIdOrDefault(formatId);
@@ -78,6 +81,8 @@ export const useContentActions = (content: ContentItemType | null) => {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');
       return false;
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -127,6 +132,7 @@ export const useContentActions = (content: ContentItemType | null) => {
   return {
     contentItems,
     isDeleting,
+    isSaving,
     findRepurposedContent,
     copyToClipboard,
     downloadAsText,

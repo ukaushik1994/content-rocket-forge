@@ -19,6 +19,7 @@ interface ContentSelectionProps {
   onDownloadAsText: (content: string, formatName: string) => void;
   onDeleteRepurposedContent?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
+  selectedContentId?: string;
 }
 
 const ContentSelection: React.FC<ContentSelectionProps> = ({
@@ -32,6 +33,7 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
   onDownloadAsText,
   onDeleteRepurposedContent,
   isDeleting,
+  selectedContentId
 }) => {
   const [activeTab, setActiveTab] = useState<'new' | 'repurposed'>('new');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -49,14 +51,14 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
   const filteredNewContent = searchQuery 
     ? newContentItems.filter(item => 
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.content.toLowerCase().includes(searchQuery.toLowerCase())
+        (item.content?.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : newContentItems;
 
   const filteredRepurposedContent = searchQuery
     ? repurposedContentItems.filter(item => 
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.content.toLowerCase().includes(searchQuery.toLowerCase())
+        (item.content?.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : repurposedContentItems;
 
@@ -64,14 +66,14 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
   const showEmptyState = activeItems.length === 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <ContentSelectionHeader 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         totalItems={activeItems.length}
       />
       
-      <div className="flex border border-white/10 rounded-md mb-6 overflow-hidden">
+      <div className="flex border border-white/10 rounded-md mb-4 overflow-hidden">
         <button 
           className={`flex-1 py-2 text-center transition-colors ${activeTab === 'new' ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
           onClick={() => setActiveTab('new')}
@@ -87,25 +89,27 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
       </div>
       
       {showEmptyState ? (
-        <EmptyContentState message={`No ${activeTab} content items found`} />
+        <EmptyContentState viewType={activeTab} searchQuery={searchQuery} />
       ) : (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
+          className="overflow-y-auto"
         >
           <ContentList
             contentItems={activeItems}
             onSelectContent={onSelectContent}
             onOpenRepurposedContent={onOpenRepurposedContent}
-            onDeleteContent={onDeleteRepurposedContent && ((contentId: string) => {
+            onDeleteContent={onDeleteRepurposedContent && ((contentId: string, formatId: string) => {
               if (onDeleteRepurposedContent) {
-                return onDeleteRepurposedContent(contentId, '');
+                return onDeleteRepurposedContent(contentId, formatId);
               }
               return Promise.resolve(false);
             })}
             isDeleting={isDeleting}
             viewType={activeTab}
+            selectedContentId={selectedContentId}
           />
         </motion.div>
       )}
