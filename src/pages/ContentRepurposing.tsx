@@ -59,19 +59,27 @@ const ContentRepurposing = () => {
       
       // Save each format one by one
       for (const formatId of formatIds) {
-        const success = await saveAsNewContent(formatId, generatedContents[formatId]);
-        if (success) {
-          savedCount++;
-        } else {
+        try {
+          const success = await saveAsNewContent(formatId, generatedContents[formatId]);
+          if (success) {
+            savedCount++;
+          } else {
+            allSuccess = false;
+          }
+        } catch (err) {
+          console.error(`Error saving format ${formatId}:`, err);
           allSuccess = false;
         }
       }
       
       if (savedCount > 0) {
         toast.success(`Successfully saved ${savedCount} content format${savedCount > 1 ? 's' : ''}`);
+        return true;
+      } else {
+        toast.error('Failed to save any content formats');
+        return false;
       }
       
-      return allSuccess;
     } catch (error) {
       console.error('Error saving all content:', error);
       toast.error('Error saving all content formats');

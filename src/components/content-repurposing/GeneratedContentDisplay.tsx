@@ -81,14 +81,9 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                 );
               }}
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
-              onSaveAll={onSaveAllContent}
-              onDelete={onDeleteRepurposedContent ? 
-                () => {
-                  if (activeFormat && onDeleteRepurposedContent) {
-                    return onDeleteRepurposedContent(activeFormat);
-                  }
-                  return Promise.resolve(false);
-                } : undefined
+              onSaveAll={hasMultipleFormats && onSaveAllContent ? onSaveAllContent : undefined}
+              onDelete={onDeleteRepurposedContent && activeFormat ? 
+                () => onDeleteRepurposedContent(activeFormat) : undefined
               }
               hasMultipleFormats={hasMultipleFormats}
               isDeleting={isDeleting}

@@ -72,7 +72,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onSaveAll}
+          onClick={async () => {
+            if (onSaveAll) await onSaveAll();
+          }}
           disabled={isSavingAll}
           className="bg-transparent hover:bg-white/5 border-white/10"
           title="Save all generated content formats"
@@ -95,7 +97,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onDelete}
+          onClick={async () => {
+            if (onDelete) await onDelete();
+          }}
           disabled={isDeleting}
           className="bg-transparent hover:bg-white/5 hover:text-red-400 border-white/10"
         >
