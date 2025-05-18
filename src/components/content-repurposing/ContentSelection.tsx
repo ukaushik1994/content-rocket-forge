@@ -5,7 +5,7 @@ import { ContentItemType } from '@/contexts/content/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FileText, Filter, Search, Sparkles } from 'lucide-react';
+import { FileText, Filter, Search, Sparkles, Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -32,27 +32,27 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
   const getFormatIcon = (formatId: string) => {
     switch (formatId) {
       case 'glossary':
-        return { icon: "Book", label: "Glossary" };
+        return <Book className="h-full w-full" />;
       case 'carousel':
-        return { icon: "Images", label: "Carousel" };
+        return <Images className="h-full w-full" />;
       case 'meme':
-        return { icon: "Image", label: "Meme" };
+        return <Image className="h-full w-full" />;
       case 'social-twitter':
-        return { icon: "Twitter", label: "Twitter Post" };
+        return <Twitter className="h-full w-full" />;
       case 'social-linkedin':
-        return { icon: "Linkedin", label: "LinkedIn Post" };
+        return <Linkedin className="h-full w-full" />;
       case 'social-facebook':
-        return { icon: "Facebook", label: "Facebook Post" };
+        return <Facebook className="h-full w-full" />;
       case 'email':
-        return { icon: "Mail", label: "Email Newsletter" };
+        return <Mail className="h-full w-full" />;
       case 'script':
-        return { icon: "FileText", label: "Script" };
+        return <FileText className="h-full w-full" />;
       case 'infographic':
-        return { icon: "BarChart", label: "Infographic" };
+        return <BarChart className="h-full w-full" />;
       case 'blog':
-        return { icon: "FileText", label: "Blog Summary" };
+        return <FileText className="h-full w-full" />;
       default:
-        return { icon: "FileText", label: formatId };
+        return <FileText className="h-full w-full" />;
     }
   };
   
@@ -132,21 +132,30 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
                             {item.content?.substring(0, 120)}...
                           </p>
                           
-                          {/* Format indicators */}
-                          <div className="flex flex-wrap gap-1.5 mt-3 mb-2">
+                          {/* Format indicators with animated icons */}
+                          <div className="flex flex-wrap gap-2 mt-3 mb-2">
                             {contentFormats.map(format => {
                               const isFormatUsed = hasRepurposedFormat(item, format.id);
                               return (
                                 <Tooltip key={format.id}>
                                   <TooltipTrigger asChild>
-                                    <div 
-                                      className={`w-6 h-6 flex items-center justify-center rounded-full 
-                                        ${isFormatUsed 
-                                          ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white' 
+                                    <motion.div
+                                      className={`w-7 h-7 flex items-center justify-center rounded-full 
+                                        ${isFormatUsed
+                                          ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-lg' 
                                           : 'bg-gray-800/40 text-gray-500'}`}
+                                      initial={false}
+                                      animate={isFormatUsed ? {
+                                        scale: [1, 1.15, 1],
+                                        boxShadow: ['0 0 0px rgba(155, 135, 245, 0.5)', '0 0 15px rgba(155, 135, 245, 0.8)', '0 0 5px rgba(155, 135, 245, 0.5)']
+                                      } : {}}
+                                      transition={{
+                                        duration: 0.5,
+                                        ease: "easeInOut"
+                                      }}
                                     >
-                                      <span className="text-xs">{format.id.charAt(0).toUpperCase()}</span>
-                                    </div>
+                                      {getFormatIcon(format.id)}
+                                    </motion.div>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
                                     <p>{format.name} {isFormatUsed ? '(Created)' : ''}</p>

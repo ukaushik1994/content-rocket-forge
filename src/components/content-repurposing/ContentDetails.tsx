@@ -5,12 +5,42 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart, FileText } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ContentDetailsProps {
   content: ContentItemType;
 }
 
 const ContentDetails: React.FC<ContentDetailsProps> = ({ content }) => {
+  // Get format icon for a format ID
+  const getFormatIcon = (formatId: string) => {
+    switch (formatId) {
+      case 'glossary':
+        return <Book className="h-4 w-4" />;
+      case 'carousel':
+        return <Images className="h-4 w-4" />;
+      case 'meme':
+        return <Image className="h-4 w-4" />;
+      case 'social-twitter':
+        return <Twitter className="h-4 w-4" />;
+      case 'social-linkedin':
+        return <Linkedin className="h-4 w-4" />;
+      case 'social-facebook':
+        return <Facebook className="h-4 w-4" />;
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'script':
+        return <FileText className="h-4 w-4" />;
+      case 'infographic':
+        return <BarChart className="h-4 w-4" />;
+      case 'blog':
+        return <FileText className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
   // Check if a content has been repurposed for a specific format
   const hasRepurposedFormat = (formatId: string): boolean => {
     // Check if metadata exists
@@ -57,12 +87,23 @@ const ContentDetails: React.FC<ContentDetailsProps> = ({ content }) => {
                 {repurposedFormats.map(format => (
                   <Tooltip key={format.id}>
                     <TooltipTrigger asChild>
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border border-neon-purple/20"
+                      <motion.div
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border border-neon-purple/20"
+                        whileHover={{ scale: 1.05 }}
+                        initial={{ opacity: 0.8 }}
+                        animate={{ 
+                          opacity: 1,
+                          boxShadow: ['0 0 0px rgba(155, 135, 245, 0.2)', '0 0 8px rgba(155, 135, 245, 0.4)', '0 0 4px rgba(155, 135, 245, 0.2)']
+                        }}
+                        transition={{ 
+                          repeat: Infinity, 
+                          repeatType: "reverse", 
+                          duration: 2 
+                        }}
                       >
-                        {format.name}
-                      </Badge>
+                        <span className="text-white/90">{getFormatIcon(format.id)}</span>
+                        <span className="text-xs">{format.name}</span>
+                      </motion.div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>This content has been repurposed as {format.name}</p>

@@ -120,8 +120,8 @@ export const useContentRepurposing = () => {
     toast.success(`Downloaded as ${a.download}`);
   };
   
-  const saveAsNewContent = async (formatId: string, generatedContent: string) => {
-    if (!content) return;
+  const saveAsNewContent = async (formatId: string, generatedContent: string): Promise<boolean> => {
+    if (!content) return false;
     
     try {
       const formatInfo = contentFormats.find(f => f.id === formatId);
