@@ -48,9 +48,12 @@ export const getFormatIconComponent = (formatId: string) => {
   }
 };
 
+// Changed this function to return a function that creates the icon element
+// instead of returning JSX directly, since this is a .ts file not .tsx
 export const getFormatIcon = (formatId: string) => {
   const IconComponent = getFormatIconComponent(formatId);
-  return <IconComponent className="h-4 w-4" />;
+  // Return a function that when called will create the React element
+  return () => React.createElement(IconComponent, { className: "h-4 w-4" });
 };
 
 export const getFormatByIdOrDefault = (formatId: string): ContentFormatDefinition => {
