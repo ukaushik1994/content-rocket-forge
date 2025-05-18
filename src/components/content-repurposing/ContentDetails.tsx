@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { contentFormats, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ContentDetailsProps {
@@ -15,30 +13,8 @@ interface ContentDetailsProps {
 const ContentDetails: React.FC<ContentDetailsProps> = ({ content }) => {
   // Get format icon for a format ID
   const getFormatIcon = (formatId: string) => {
-    switch (formatId) {
-      case 'glossary':
-        return <Book className="h-4 w-4" />;
-      case 'carousel':
-        return <Images className="h-4 w-4" />;
-      case 'meme':
-        return <Image className="h-4 w-4" />;
-      case 'social-twitter':
-        return <Twitter className="h-4 w-4" />;
-      case 'social-linkedin':
-        return <Linkedin className="h-4 w-4" />;
-      case 'social-facebook':
-        return <Facebook className="h-4 w-4" />;
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'script':
-        return <FileText className="h-4 w-4" />;
-      case 'infographic':
-        return <BarChart className="h-4 w-4" />;
-      case 'blog':
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
+    const IconComponent = getFormatIconComponent(formatId);
+    return <IconComponent className="h-4 w-4" />;
   };
 
   // Check if a content has been repurposed for a specific format
