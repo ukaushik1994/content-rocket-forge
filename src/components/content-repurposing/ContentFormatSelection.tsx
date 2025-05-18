@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2, TwitterIcon, FileTextIcon, ImageIcon, VideoIcon } from 'lucide-react';
+import { Check, Loader2, Twitter, FileText, Image, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
   contentFormats, 
@@ -52,11 +52,11 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
             let CategoryIcon;
             
             switch(category) {
-              case 'social': CategoryIcon = TwitterIcon; break;
-              case 'document': CategoryIcon = FileTextIcon; break;
-              case 'visual': CategoryIcon = ImageIcon; break;
-              case 'audio-video': CategoryIcon = VideoIcon; break;
-              default: CategoryIcon = FileTextIcon;
+              case 'social': CategoryIcon = Twitter; break;
+              case 'document': CategoryIcon = FileText; break;
+              case 'visual': CategoryIcon = Image; break;
+              case 'audio-video': CategoryIcon = Video; break;
+              default: CategoryIcon = FileText;
             }
             
             return (

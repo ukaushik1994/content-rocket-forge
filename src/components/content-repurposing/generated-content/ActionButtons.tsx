@@ -7,12 +7,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
-  onSave: () => void;
+  onSave: () => Promise<boolean>;
   onDelete?: () => Promise<boolean>;
   onRegenerate?: () => Promise<void>;
   isDeleting?: boolean;
   isRegenerating?: boolean;
   isSaving?: boolean;
+  formatId?: string;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -23,7 +24,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onRegenerate,
   isDeleting = false,
   isRegenerating = false,
-  isSaving = false
+  isSaving = false,
+  formatId
 }) => {
   return (
     <div className="flex justify-between items-center mt-4 border-t border-white/10 pt-4">
