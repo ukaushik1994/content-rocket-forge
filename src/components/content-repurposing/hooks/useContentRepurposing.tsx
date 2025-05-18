@@ -9,7 +9,7 @@ import { generateContentByFormatType } from '@/services/contentTemplateService';
 export const useContentRepurposing = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { contentItems, getContentItem, addContentItem, updateContentItem } = useContent();
+  const { contentItems, getContentItem, addContentItem, updateContentItem, deleteContentItem } = useContent();
   
   const [content, setContent] = useState<ContentItemType | null>(null);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -23,6 +23,7 @@ export const useContentRepurposing = () => {
     contentId: string;
     title: string;
   } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   
   // Load content when component mounts
   useEffect(() => {
@@ -198,14 +199,67 @@ export const useContentRepurposing = () => {
             }
           });
         }
+        
+        return true; // Return a boolean value for success
       }
       
-      toast.success(`Saved as new content item`);
-      return true; // Return a boolean value for success
+      return false; // Return a boolean value for failure
     } catch (error) {
       console.error('Error saving as new content:', error);
       toast.error('Failed to save content');
       return false; // Return a boolean value for failure
+    }
+  };
+
+  const deleteRepurposedContent = async (contentId: string): Promise<boolean> => {
+    if (!contentId) return false;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Get the content to be deleted
+      const contentToDelete = getContentItem(contentId);
+      if (!contentToDelete) {
+        toast.error('Content not found');
+        return false;
+      }
+      
+      // Get the original content ID and format
+      const originalContentId = contentToDelete.metadata?.originalContentId;
+      const repurposedType = contentToDelete.metadata?.repurposedType;
+      
+      // Delete the content
+      await deleteContentItem(contentId);
+      
+      // If we have the original content, update its metadata
+      if (originalContentId && repurposedType) {
+        const originalContent = getContentItem(originalContentId);
+        if (originalContent) {
+          const currentMetadata = originalContent.metadata || {};
+          const repurposedFormats = currentMetadata.repurposedFormats || [];
+          
+          // Remove the format from the list
+          const updatedFormats = repurposedFormats.filter(format => format !== repurposedType);
+          
+          // Update the original content with the new metadata
+          await updateContentItem(originalContentId, {
+            ...originalContent,
+            metadata: {
+              ...currentMetadata,
+              repurposedFormats: updatedFormats
+            }
+          });
+        }
+      }
+      
+      toast.success('Content deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      toast.error('Failed to delete content');
+      return false;
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -218,6 +272,7 @@ export const useContentRepurposing = () => {
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
+    isDeleting,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -228,6 +283,7 @@ export const useContentRepurposing = () => {
     downloadAsText,
     saveAsNewContent,
     findRepurposedContent,
+    deleteRepurposedContent,
   };
 };
 

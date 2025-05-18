@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContentItemType } from '@/contexts/content/types';
@@ -25,6 +24,8 @@ interface ContentSelectionProps {
   } | null;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
+  onDeleteRepurposedContent?: (contentId: string) => Promise<boolean>;
+  isDeleting?: boolean;
 }
 
 export const ContentSelection: React.FC<ContentSelectionProps> = ({
@@ -35,7 +36,9 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
   onCloseRepurposedDialog,
   selectedRepurposedContent,
   onCopyToClipboard,
-  onDownloadAsText
+  onDownloadAsText,
+  onDeleteRepurposedContent,
+  isDeleting = false
 }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState<string>('');
@@ -224,6 +227,8 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
         content={selectedRepurposedContent}
         onCopy={onCopyToClipboard}
         onDownload={onDownloadAsText}
+        onDelete={onDeleteRepurposedContent}
+        isDeleting={isDeleting}
       />
     </>
   );

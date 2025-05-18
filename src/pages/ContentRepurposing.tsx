@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
@@ -26,6 +25,7 @@ const ContentRepurposing = () => {
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
+    isDeleting,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -35,6 +35,7 @@ const ContentRepurposing = () => {
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
+    deleteRepurposedContent,
   } = useContentRepurposing();
   
   // If no content is selected yet, show the content selection view
@@ -67,6 +68,8 @@ const ContentRepurposing = () => {
             selectedRepurposedContent={selectedRepurposedContent}
             onCopyToClipboard={copyToClipboard}
             onDownloadAsText={downloadAsText}
+            onDeleteRepurposedContent={deleteRepurposedContent}
+            isDeleting={isDeleting}
           />
         </motion.main>
       </div>
