@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { 
   Book, 
   Images, 
@@ -12,11 +11,7 @@ import {
   FileText, 
   BarChart 
 } from 'lucide-react';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
+import FormatBadge from './FormatBadge';
 
 interface ContentFormatIconProps {
   formatId: string;
@@ -73,34 +68,16 @@ const ContentFormatIcon: React.FC<ContentFormatIconProps> = ({
     }
   })();
 
+  const tooltipText = `${formatName} ${isFormatUsed ? '(Click to view)' : ''}`;
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <motion.div
-          className={`w-7 h-7 flex items-center justify-center rounded-full 
-            ${isFormatUsed
-              ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-lg cursor-pointer' 
-              : 'bg-gray-800/40 text-gray-500'}`}
-          initial={false}
-          animate={isFormatUsed ? {
-            scale: [1, 1.15, 1],
-            boxShadow: ['0 0 0px rgba(155, 135, 245, 0.5)', '0 0 15px rgba(155, 135, 245, 0.8)', '0 0 5px rgba(155, 135, 245, 0.5)']
-          } : {}}
-          transition={{
-            duration: 0.5,
-            ease: "easeInOut",
-            repeat: isFormatUsed ? Infinity : 0,
-            repeatDelay: 4
-          }}
-          onClick={isFormatUsed ? onClick : undefined}
-        >
-          {getFormatIcon(formatId)}
-        </motion.div>
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        <p>{formatName} {isFormatUsed ? '(Click to view)' : ''}</p>
-      </TooltipContent>
-    </Tooltip>
+    <FormatBadge 
+      isActive={isFormatUsed}
+      tooltipText={tooltipText}
+      onClick={onClick}
+    >
+      {getFormatIcon(formatId)}
+    </FormatBadge>
   );
 };
 
