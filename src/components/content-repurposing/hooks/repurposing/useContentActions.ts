@@ -56,8 +56,12 @@ export const useContentActions = (content: ContentItemType | null) => {
         }
       });
       
+      if (!newContentId) {
+        return false;
+      }
+      
       // Update the original content's metadata to track repurposed formats
-      if (content && newContentId) {
+      if (content) {
         // Get the current metadata or initialize an empty object
         const currentMetadata = content.metadata || {};
         
@@ -78,14 +82,14 @@ export const useContentActions = (content: ContentItemType | null) => {
           });
         }
         
-        return true; // Return a boolean value for success
+        return true;
       }
       
-      return false; // Return a boolean value for failure
+      return false;
     } catch (error) {
       console.error('Error saving as new content:', error);
       toast.error('Failed to save content');
-      return false; // Return a boolean value for failure
+      return false;
     }
   };
   
