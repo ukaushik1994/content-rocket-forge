@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
@@ -6,7 +7,7 @@ import { useContentActions } from './repurposing/useContentActions';
 
 export const useContentRepurposing = () => {
   // Compose hooks for different functionality
-  const { content, handleContentSelection } = useContentSelection();
+  const { content, handleContentSelection, resetContent } = useContentSelection();
   
   // Pass content to dependent hooks
   const {
@@ -76,6 +77,7 @@ export const useContentRepurposing = () => {
     findRepurposedContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
+    resetContent, // Export the resetContent function
   };
 };
 

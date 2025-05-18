@@ -36,8 +36,15 @@ export const useContentSelection = () => {
     }
   };
   
+  // Add a resetContent function to clear the selected content and reset the URL
+  const resetContent = () => {
+    setContent(null);
+    navigate('/content-repurposing', { replace: true });
+  };
+  
   return {
     content,
     handleContentSelection,
+    resetContent, // Export the new resetContent function
   };
 };

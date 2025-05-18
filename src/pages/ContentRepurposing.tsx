@@ -36,13 +36,14 @@ const ContentRepurposing = () => {
     setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
-    handleOpenRepurposedContentWithFormats, // Use the new function
+    handleOpenRepurposedContentWithFormats,
     handleCloseRepurposedDialog,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
+    resetContent, // Add the resetContent function to the destructured values
   } = useContentRepurposing();
   
   // Function to save all generated content
@@ -114,7 +115,7 @@ const ContentRepurposing = () => {
           <ContentSelection 
             contentItems={contentItems}
             onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
-            onOpenRepurposedContent={handleOpenRepurposedContentWithFormats} // Update to use new function
+            onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
             repurposedDialogOpen={repurposedDialogOpen}
             onCloseRepurposedDialog={handleCloseRepurposedDialog}
             selectedRepurposedContent={selectedRepurposedContent}
@@ -122,7 +123,7 @@ const ContentRepurposing = () => {
             onDownloadAsText={downloadAsText}
             onDeleteRepurposedContent={deleteRepurposedContent}
             isDeleting={isDeleting}
-            generatedFormats={generatedFormats} // Pass the generated formats
+            generatedFormats={generatedFormats}
           />
         </motion.main>
       </div>
@@ -148,7 +149,7 @@ const ContentRepurposing = () => {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate('/content-repurposing')}
+            onClick={() => resetContent()} // Use the resetContent function directly
             className="hover:bg-white/5"
           >
             <ArrowLeft className="h-5 w-5" />
