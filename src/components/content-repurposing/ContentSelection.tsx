@@ -2,6 +2,8 @@
 import React from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { motion } from 'framer-motion';
 import RepurposedContentDialog from './RepurposedContentDialog';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
 import EmptyContentState from './content-selection/EmptyContentState';
@@ -38,11 +40,21 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
   isDeleting = false
 }) => {
   const [searchQuery, setSearchQuery] = React.useState<string>('');
+  const [activeTab, setActiveTab] = React.useState('new');
   
   // Filter content items based on search query
   const filteredItems = contentItems.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Separate content into new and repurposed
+  const newContentItems = filteredItems.filter(item => 
+    !item.metadata?.repurposedFormats || item.metadata.repurposedFormats.length === 0
+  );
+  
+  const repurposedContentItems = filteredItems.filter(item => 
+    item.metadata?.repurposedFormats && item.metadata.repurposedFormats.length > 0
   );
 
   return (
@@ -57,17 +69,65 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
         </CardHeader>
         
         <CardContent className="p-6">
-          {contentItems.length === 0 ? (
-            <EmptyContentState />
-          ) : (
-            <div className="space-y-6">
-              <ContentList
-                contentItems={filteredItems}
-                onSelectContent={onSelectContent}
-                onOpenRepurposedContent={onOpenRepurposedContent}
-              />
-            </div>
-          )}
+          <Tabs 
+            defaultValue="new" 
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-2 mb-6 bg-black/30 w-full max-w-md mx-auto">
+              <TabsTrigger 
+                value="new"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple data-[state=active]:to-neon-blue data-[state=active]:text-white"
+              >
+                New Content ({newContentItems.length})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="repurposed"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple data-[state=active]:to-neon-blue data-[state=active]:text-white"
+              >
+                Repurposed ({repurposedContentItems.length})
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="new" className="space-y-4">
+              {newContentItems.length === 0 ? (
+                <EmptyContentState message="No new content to repurpose" />
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <ContentList
+                    contentItems={newContentItems}
+                    onSelectContent={onSelectContent}
+                    onOpenRepurposedContent={onOpenRepurposedContent}
+                    viewType="new"
+                  />
+                </motion.div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="repurposed" className="space-y-4">
+              {repurposedContentItems.length === 0 ? (
+                <EmptyContentState message="No repurposed content yet" />
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <ContentList
+                    contentItems={repurposedContentItems}
+                    onSelectContent={onSelectContent}
+                    onOpenRepurposedContent={onOpenRepurposedContent}
+                    viewType="repurposed"
+                  />
+                </motion.div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
       
