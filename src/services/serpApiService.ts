@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
@@ -83,7 +82,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     }
   } catch (error) {
     console.error('Error searching keywords:', error);
-    return getBackupMockResults(query, refresh);
+    return getBackupMockResults(params.query, params.refresh || false);
   }
 };
 

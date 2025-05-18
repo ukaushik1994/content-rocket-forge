@@ -4,14 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useRouter } from "next/router";
 import { Key, Save, Check } from "lucide-react";
 
 export const SerpApiKeySetup: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const router = useRouter();
 
   const handleSaveApiKey = () => {
     if (!apiKey.trim()) {
@@ -31,8 +29,8 @@ export const SerpApiKeySetup: React.FC = () => {
       // Reset the form after success
       setTimeout(() => {
         setIsSuccess(false);
-        // Optional: Redirect to content builder or reload the page
-        router.reload();
+        // Reload the page to reflect the changes
+        window.location.reload();
       }, 2000);
     } catch (error) {
       console.error('Error saving API key:', error);
