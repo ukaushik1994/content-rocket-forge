@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ContentList from './content-selection/ContentList';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
 import EmptyContentState from './content-selection/EmptyContentState';
@@ -73,46 +74,88 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
         totalItems={activeItems.length}
       />
       
-      <div className="flex border border-white/10 rounded-md mb-4 overflow-hidden">
-        <button 
-          className={`flex-1 py-2 text-center transition-colors ${activeTab === 'new' ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
-          onClick={() => setActiveTab('new')}
-        >
-          New Content
-        </button>
-        <button 
-          className={`flex-1 py-2 text-center transition-colors ${activeTab === 'repurposed' ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
-          onClick={() => setActiveTab('repurposed')}
-        >
-          Repurposed Content
-        </button>
-      </div>
-      
-      {showEmptyState ? (
-        <EmptyContentState viewType={activeTab} searchQuery={searchQuery} />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="overflow-y-auto"
-        >
-          <ContentList
-            contentItems={activeItems}
-            onSelectContent={onSelectContent}
-            onOpenRepurposedContent={onOpenRepurposedContent}
-            onDeleteContent={onDeleteRepurposedContent && ((contentId: string, formatId: string) => {
-              if (onDeleteRepurposedContent) {
-                return onDeleteRepurposedContent(contentId, formatId);
-              }
-              return Promise.resolve(false);
-            })}
-            isDeleting={isDeleting}
-            viewType={activeTab}
-            selectedContentId={selectedContentId}
-          />
-        </motion.div>
-      )}
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(value) => setActiveTab(value as 'new' | 'repurposed')}
+      >
+        <TabsList className="w-full bg-black/20 p-0.5 border border-white/10 rounded-lg">
+          <TabsTrigger 
+            value="new" 
+            className="relative data-[state=active]:shadow-none flex-1 py-2"
+          >
+            {activeTab === 'new' && (
+              <motion.div
+                layoutId="activeTabBackground"
+                className="absolute inset-0 bg-white/10 rounded-md"
+                transition={{ duration: 0.3, type: "spring" }}
+              />
+            )}
+            <span className="relative z-10">New Content</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="repurposed" 
+            className="relative data-[state=active]:shadow-none flex-1 py-2"
+          >
+            {activeTab === 'repurposed' && (
+              <motion.div
+                layoutId="activeTabBackground"
+                className="absolute inset-0 bg-white/10 rounded-md"
+                transition={{ duration: 0.3, type: "spring" }}
+              />
+            )}
+            <span className="relative z-10">Repurposed Content</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="new" className="pt-3 focus-visible:outline-none focus-visible:ring-0">
+          {showEmptyState ? (
+            <EmptyContentState viewType="new" searchQuery={searchQuery} />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-y-auto"
+            >
+              <ContentList
+                contentItems={filteredNewContent}
+                onSelectContent={onSelectContent}
+                onOpenRepurposedContent={onOpenRepurposedContent}
+                viewType="new"
+                selectedContentId={selectedContentId}
+              />
+            </motion.div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="repurposed" className="pt-3 focus-visible:outline-none focus-visible:ring-0">
+          {showEmptyState ? (
+            <EmptyContentState viewType="repurposed" searchQuery={searchQuery} />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-y-auto"
+            >
+              <ContentList
+                contentItems={filteredRepurposedContent}
+                onSelectContent={onSelectContent}
+                onOpenRepurposedContent={onOpenRepurposedContent}
+                onDeleteContent={onDeleteRepurposedContent && ((contentId: string, formatId: string) => {
+                  if (onDeleteRepurposedContent) {
+                    return onDeleteRepurposedContent(contentId, formatId);
+                  }
+                  return Promise.resolve(false);
+                })}
+                isDeleting={isDeleting}
+                viewType="repurposed"
+                selectedContentId={selectedContentId}
+              />
+            </motion.div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       {/* Repurposed Content Dialog */}
       <RepurposedContentDialog

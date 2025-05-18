@@ -7,9 +7,10 @@ import { ContentItemType } from '@/contexts/content/types';
 import ContentSummary from './ContentSummary';
 import FormatsList from './FormatsList';
 import SelectButton from './SelectButton';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/content/repository/DeleteConfirmationDialog';
+import { formatDistance } from 'date-fns';
 
 interface ContentItemProps {
   item: ContentItemType;
@@ -50,6 +51,13 @@ const ContentItem: React.FC<ContentItemProps> = ({
     }
     setIsDeleteDialogOpen(false);
   };
+
+  // Calculate how long ago the content was updated
+  const timeAgo = formatDistance(
+    new Date(item.updated_at),
+    new Date(),
+    { addSuffix: true }
+  );
   
   return (
     <>
@@ -61,35 +69,49 @@ const ContentItem: React.FC<ContentItemProps> = ({
         className="card-3d relative"
       >
         <Card 
-          className={`cursor-pointer overflow-hidden backdrop-blur-sm border transition-all duration-200
+          className={`
+            cursor-pointer overflow-hidden backdrop-blur-md border transition-all duration-300
             ${isSelected 
-              ? 'border-neon-purple ring-1 ring-neon-purple/30' 
-              : 'border-white/10 hover:border-white/20'}
-            ${viewType === 'repurposed' 
-              ? 'bg-gradient-to-br from-neon-purple/10 to-neon-blue/5' 
-              : 'bg-black/30'}`}
+              ? 'border-neon-purple ring-1 ring-neon-purple/30 bg-gradient-to-br from-neon-purple/10 to-neon-blue/5' 
+              : 'border-white/10 hover:border-white/20 bg-black/40 hover:bg-black/50'}
+          `}
           onClick={() => onSelectContent(item.id)}
         >
-          <CardContent className="p-3">
+          <CardContent className="p-4">
             <div className="flex flex-col">
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 
-                    ${viewType === 'repurposed' 
+                  <div className={`
+                    w-8 h-8 rounded-full flex items-center justify-center mr-2 
+                    ${viewType === 'repurposed' || isSelected
                       ? 'bg-gradient-to-r from-neon-purple to-neon-blue' 
-                      : 'bg-white/10'}`}>
-                    <FileText className={`h-4 w-4 ${viewType === 'repurposed' ? 'text-white' : 'text-gray-400'}`} />
+                      : 'bg-white/10'}
+                  `}>
+                    <FileText className={`h-4 w-4 ${(viewType === 'repurposed' || isSelected) ? 'text-white' : 'text-gray-400'}`} />
                   </div>
-                  {recentlyUpdated && (
-                    <Badge className="bg-neon-purple text-white ml-2 h-5">New</Badge>
-                  )}
+                  
+                  <div className="flex flex-col">
+                    <h3 className="text-sm font-medium line-clamp-1">
+                      {item.title}
+                    </h3>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{timeAgo}</span>
+                    </div>
+                  </div>
                 </div>
                 
-                {isRepurposed && (
-                  <Badge className="bg-gradient-to-r from-neon-purple to-neon-blue text-white">
-                    {formatCount} {formatCount === 1 ? 'Format' : 'Formats'}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {recentlyUpdated && (
+                    <Badge className="bg-neon-purple text-white h-5">New</Badge>
+                  )}
+                  
+                  {isRepurposed && (
+                    <Badge className="bg-gradient-to-r from-neon-purple to-neon-blue text-white">
+                      {formatCount} {formatCount === 1 ? 'Format' : 'Formats'}
+                    </Badge>
+                  )}
+                </div>
               </div>
               
               <ContentSummary title={item.title} content={item.content} />
@@ -100,7 +122,7 @@ const ContentItem: React.FC<ContentItemProps> = ({
                 onOpenRepurposedContent={onOpenRepurposedContent}
               />
               
-              <div className="flex justify-between items-center mt-3">
+              <div className="flex justify-between items-center mt-3 pt-2 border-t border-white/5">
                 {onDeleteContent && (
                   <motion.div 
                     whileHover={{ scale: 1.05 }} 
@@ -119,15 +141,17 @@ const ContentItem: React.FC<ContentItemProps> = ({
                   </motion.div>
                 )}
                 
-                <SelectButton 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectContent(item.id);
-                  }}
-                  viewType={viewType}
-                  isRepurposed={isRepurposed}
-                  isSelected={isSelected}
-                />
+                <div className="ml-auto">
+                  <SelectButton 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectContent(item.id);
+                    }}
+                    viewType={viewType}
+                    isRepurposed={isRepurposed}
+                    isSelected={isSelected}
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
