@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -8,7 +8,7 @@ interface ContentPreviewProps {
   content: string;
 }
 
-const ContentPreview: React.FC<ContentPreviewProps> = ({ content }) => {
+const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content }) => {
   const isMobile = useIsMobile();
   
   return (
@@ -27,6 +27,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({ content }) => {
       </ScrollArea>
     </motion.div>
   );
-};
+});
+
+ContentPreview.displayName = 'ContentPreview';
 
 export default ContentPreview;

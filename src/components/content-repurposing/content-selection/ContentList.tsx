@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentItem from './ContentItem';
 import { motion } from 'framer-motion';
@@ -11,7 +11,7 @@ interface ContentListProps {
   isMobile?: boolean;
 }
 
-const ContentList: React.FC<ContentListProps> = ({
+const ContentList: React.FC<ContentListProps> = memo(({
   contentItems,
   onSelectContent,
   onOpenRepurposedContent,
@@ -45,6 +45,8 @@ const ContentList: React.FC<ContentListProps> = ({
       ))}
     </motion.div>
   );
-};
+});
+
+ContentList.displayName = 'ContentList';
 
 export default ContentList;

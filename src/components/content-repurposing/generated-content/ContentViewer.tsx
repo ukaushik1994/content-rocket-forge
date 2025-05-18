@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { getFormatByIdOrDefault } from '../formats';
 
 interface ContentViewerProps {
@@ -7,7 +7,7 @@ interface ContentViewerProps {
   formatId: string;
 }
 
-const ContentViewer: React.FC<ContentViewerProps> = ({ content, formatId }) => {
+const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId }) => {
   // Function to format special content types
   const formatContent = (content: string, formatId: string) => {
     if (formatId === 'meme') {
@@ -89,6 +89,8 @@ const ContentViewer: React.FC<ContentViewerProps> = ({ content, formatId }) => {
       {formatContent(content, formatId)}
     </div>
   );
-};
+});
+
+ContentViewer.displayName = 'ContentViewer';
 
 export default ContentViewer;

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { getFormatByIdOrDefault } from '../formats';
 import FormatButton from './FormatButton';
 
@@ -9,7 +9,7 @@ interface FormatSelectorProps {
   setActiveFormat: (format: string) => void;
 }
 
-const FormatSelector: React.FC<FormatSelectorProps> = ({ 
+const FormatSelector: React.FC<FormatSelectorProps> = memo(({ 
   generatedFormats, 
   activeFormat, 
   setActiveFormat 
@@ -30,6 +30,8 @@ const FormatSelector: React.FC<FormatSelectorProps> = ({
       })}
     </div>
   );
-};
+});
+
+FormatSelector.displayName = 'FormatSelector';
 
 export default FormatSelector;

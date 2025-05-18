@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { ContentItemType } from '@/contexts/content/types';
@@ -13,7 +13,7 @@ interface ContentItemProps {
   isMobile?: boolean;
 }
 
-const ContentItem: React.FC<ContentItemProps> = ({
+const ContentItem: React.FC<ContentItemProps> = memo(({
   item,
   onSelectContent,
   onOpenRepurposedContent,
@@ -74,6 +74,8 @@ const ContentItem: React.FC<ContentItemProps> = ({
       </Card>
     </motion.div>
   );
-};
+});
+
+ContentItem.displayName = 'ContentItem';
 
 export default ContentItem;

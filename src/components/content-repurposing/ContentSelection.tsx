@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
 import ContentList from './content-selection/ContentList';
@@ -24,7 +24,7 @@ interface ContentSelectionProps {
   generatedFormats?: string[];
 }
 
-const ContentSelection: React.FC<ContentSelectionProps> = ({
+const ContentSelection: React.FC<ContentSelectionProps> = memo(({
   contentItems,
   onSelectContent,
   onOpenRepurposedContent,
@@ -82,6 +82,8 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
       />
     </div>
   );
-};
+});
+
+ContentSelection.displayName = 'ContentSelection';
 
 export default ContentSelection;

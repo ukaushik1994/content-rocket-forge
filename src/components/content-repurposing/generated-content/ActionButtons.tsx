@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, Download, Save, Trash2, Loader2, SaveAll } from 'lucide-react';
 
@@ -15,7 +15,7 @@ interface ActionButtonsProps {
   hasMultipleFormats?: boolean;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({
+const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   onCopy,
   onDownload,
   onSave,
@@ -112,6 +112,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       )}
     </div>
   );
-};
+});
+
+ActionButtons.displayName = 'ActionButtons';
 
 export default ActionButtons;

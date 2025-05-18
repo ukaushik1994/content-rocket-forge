@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { contentFormats } from '@/components/content-repurposing/formats';
 import ContentFormatIcon from './ContentFormatIcon';
@@ -12,7 +12,7 @@ interface FormatsListProps {
   isMobile?: boolean;
 }
 
-const FormatsList: React.FC<FormatsListProps> = ({
+const FormatsList: React.FC<FormatsListProps> = memo(({
   item,
   onOpenRepurposedContent,
   isMobile = false
@@ -55,6 +55,8 @@ const FormatsList: React.FC<FormatsListProps> = ({
       </motion.div>
     </TooltipProvider>
   );
-};
+});
+
+FormatsList.displayName = 'FormatsList';
 
 export default FormatsList;

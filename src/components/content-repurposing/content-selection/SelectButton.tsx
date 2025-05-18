@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
@@ -8,7 +8,7 @@ interface SelectButtonProps {
   isMobile?: boolean;
 }
 
-const SelectButton: React.FC<SelectButtonProps> = ({ onClick, isMobile = false }) => {
+const SelectButton: React.FC<SelectButtonProps> = memo(({ onClick, isMobile = false }) => {
   return (
     <Button
       variant="outline"
@@ -20,6 +20,8 @@ const SelectButton: React.FC<SelectButtonProps> = ({ onClick, isMobile = false }
       <ArrowRight className="h-4 w-4 ml-1" />
     </Button>
   );
-};
+});
+
+SelectButton.displayName = 'SelectButton';
 
 export default SelectButton;

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getFormatByIdOrDefault } from './formats';
 
@@ -24,7 +24,7 @@ interface GeneratedContentDisplayProps {
   isSavingAll?: boolean;
 }
 
-export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
+export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = memo(({
   generatedContents,
   activeFormat,
   setActiveFormat,
@@ -97,6 +97,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
       </CardContent>
     </Card>
   );
-};
+});
+
+GeneratedContentDisplay.displayName = 'GeneratedContentDisplay';
 
 export default GeneratedContentDisplay;

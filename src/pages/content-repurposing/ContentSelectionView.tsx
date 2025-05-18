@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
@@ -21,7 +21,7 @@ interface ContentSelectionViewProps {
   generatedFormats: string[];
 }
 
-const ContentSelectionView: React.FC<ContentSelectionViewProps> = ({
+const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
   contentItems,
   onSelectContent,
   onOpenRepurposedContent,
@@ -71,6 +71,8 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = ({
       </motion.main>
     </div>
   );
-};
+});
+
+ContentSelectionView.displayName = 'ContentSelectionView';
 
 export default ContentSelectionView;

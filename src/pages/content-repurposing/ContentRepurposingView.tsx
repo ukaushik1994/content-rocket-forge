@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -30,7 +30,7 @@ interface ContentRepurposingViewProps {
   resetContent: () => void;
 }
 
-const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = ({
+const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   content,
   selectedFormats,
   generatedContents,
@@ -113,6 +113,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = ({
       </motion.main>
     </div>
   );
-};
+});
+
+ContentRepurposingView.displayName = 'ContentRepurposingView';
 
 export default ContentRepurposingView;

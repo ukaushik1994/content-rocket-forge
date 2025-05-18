@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { getFormatIconComponent, getFormatByIdOrDefault } from '../formats';
 
@@ -8,10 +8,16 @@ interface FormatButtonProps {
   name: string;
   isActive: boolean;
   onClick: () => void;
-  className?: string; // Added className prop
+  className?: string;
 }
 
-export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isActive, onClick, className }) => {
+export const FormatButton: React.FC<FormatButtonProps> = memo(({ 
+  formatId, 
+  name, 
+  isActive, 
+  onClick, 
+  className 
+}) => {
   const IconComponent = getFormatIconComponent(formatId);
 
   return (
@@ -28,6 +34,8 @@ export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isAc
       {name}
     </Button>
   );
-};
+});
+
+FormatButton.displayName = 'FormatButton';
 
 export default FormatButton;

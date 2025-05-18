@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { GeneratedContentFormat } from './hooks/repurposing/types';
 import { getFormatByIdOrDefault, contentFormats } from './formats';
@@ -23,7 +23,7 @@ interface RepurposedContentDialogProps {
   generatedFormats?: string[];
 }
 
-const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
+const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   open,
   onClose,
   content,
@@ -131,6 +131,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+RepurposedContentDialog.displayName = 'RepurposedContentDialog';
 
 export default RepurposedContentDialog;

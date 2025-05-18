@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -11,7 +11,7 @@ interface FormatBadgeProps {
   isMobile?: boolean;
 }
 
-const FormatBadge: React.FC<FormatBadgeProps> = ({
+const FormatBadge: React.FC<FormatBadgeProps> = memo(({
   isActive,
   tooltipText,
   onClick,
@@ -43,6 +43,8 @@ const FormatBadge: React.FC<FormatBadgeProps> = ({
       </TooltipContent>
     </Tooltip>
   );
-};
+});
+
+FormatBadge.displayName = 'FormatBadge';
 
 export default FormatBadge;

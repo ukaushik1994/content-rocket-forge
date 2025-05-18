@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { getFormatIconComponent, getFormatByIdOrDefault } from '../formats';
 import FormatBadge from './FormatBadge';
 
@@ -10,7 +10,7 @@ interface ContentFormatIconProps {
   isMobile?: boolean;
 }
 
-const ContentFormatIcon: React.FC<ContentFormatIconProps> = ({
+const ContentFormatIcon: React.FC<ContentFormatIconProps> = memo(({
   formatId,
   isFormatUsed,
   onClick,
@@ -30,6 +30,8 @@ const ContentFormatIcon: React.FC<ContentFormatIconProps> = ({
       <IconComponent className="h-full w-full" />
     </FormatBadge>
   );
-};
+});
+
+ContentFormatIcon.displayName = 'ContentFormatIcon';
 
 export default ContentFormatIcon;
