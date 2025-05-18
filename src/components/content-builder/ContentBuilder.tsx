@@ -1,10 +1,11 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
@@ -18,7 +19,16 @@ import { toast } from "sonner";
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
-  const { activeStep, steps } = state;
+  const { activeStep, steps, content } = state;
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<number | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Check for unsaved changes
+  useEffect(() => {
+    const hasDraft = localStorage.getItem('content_builder_draft') !== null;
+    setHasUnsavedChanges(hasDraft);
+  }, [content]);
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
@@ -35,12 +45,54 @@ export const ContentBuilder = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
     
-    navigateToStep(activeStep + 1);
+    if (hasUnsavedChanges && currentStepId === 4) { // Writing step
+      setPendingNavigation(activeStep + 1);
+      setShowUnsavedDialog(true);
+    } else {
+      navigateToStep(activeStep + 1);
+    }
   };
   
   // Handle previous step navigation
   const handlePrevStep = () => {
-    navigateToStep(activeStep - 1);
+    if (hasUnsavedChanges && currentStepId === 4) { // Writing step
+      setPendingNavigation(activeStep - 1);
+      setShowUnsavedDialog(true);
+    } else {
+      navigateToStep(activeStep - 1);
+    }
+  };
+  
+  // Handle save before navigation
+  const handleSaveBeforeNavigation = () => {
+    // Save the current content to localStorage
+    if (content && content.trim().length > 0) {
+      localStorage.setItem('content_builder_draft', content);
+      localStorage.setItem('content_builder_timestamp', new Date().toISOString());
+      toast.success("Content saved");
+    }
+    
+    // Continue with navigation
+    if (pendingNavigation !== null) {
+      navigateToStep(pendingNavigation);
+      setPendingNavigation(null);
+      setShowUnsavedDialog(false);
+    }
+  };
+  
+  // Handle discard changes
+  const handleDiscardChanges = () => {
+    // Clear the draft from localStorage
+    localStorage.removeItem('content_builder_draft');
+    localStorage.removeItem('content_builder_timestamp');
+    
+    // Continue with navigation
+    if (pendingNavigation !== null) {
+      navigateToStep(pendingNavigation);
+      setPendingNavigation(null);
+      setShowUnsavedDialog(false);
+      setHasUnsavedChanges(false);
+    }
   };
   
   // Debug step completion status
@@ -112,7 +164,14 @@ export const ContentBuilder = () => {
       <ContentBuilderSidebar 
         steps={steps} 
         activeStep={activeStep} 
-        navigateToStep={navigateToStep} 
+        navigateToStep={(step) => {
+          if (hasUnsavedChanges && currentStepId === 4) {
+            setPendingNavigation(step);
+            setShowUnsavedDialog(true);
+          } else {
+            navigateToStep(step);
+          }
+        }} 
       />
       
       {/* Main Content Area */}
@@ -164,6 +223,14 @@ export const ContentBuilder = () => {
           </div>
         )}
       </div>
+      
+      {/* Unsaved changes dialog */}
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onClose={() => setShowUnsavedDialog(false)}
+        onSave={handleSaveBeforeNavigation}
+        onDiscard={handleDiscardChanges}
+      />
     </div>
   );
 };

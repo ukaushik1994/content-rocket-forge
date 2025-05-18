@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
@@ -31,13 +31,32 @@ export const ContentWritingStep = () => {
     secondaryKeywords,
     outline,
     selectedSolution,
+    autoSaveTimestamp,
+    hasUnsavedChanges,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
     handleToggleGenerator,
     handleContentTemplateSelection,
-    handleAiProviderChange
+    handleAiProviderChange,
+    handleManualSave
   } = useWritingStep();
+  
+  // Setup leave confirmation
+  useEffect(() => {
+    const handleBeforeNavigate = (e: PopStateEvent) => {
+      if (hasUnsavedChanges) {
+        const confirmMessage = "You have unsaved changes. Are you sure you want to leave?";
+        if (!window.confirm(confirmMessage)) {
+          e.preventDefault();
+          history.pushState(null, '', window.location.pathname);
+        }
+      }
+    };
+    
+    window.addEventListener('popstate', handleBeforeNavigate);
+    return () => window.removeEventListener('popstate', handleBeforeNavigate);
+  }, [hasUnsavedChanges]);
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
@@ -97,6 +116,9 @@ export const ContentWritingStep = () => {
         outlineLength={state.outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
+        autoSaveTimestamp={autoSaveTimestamp}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onManualSave={handleManualSave}
       />
       
       {showGenerator && (
@@ -119,11 +141,27 @@ export const ContentWritingStep = () => {
           </div>
         )}
         
-        <div className={`${showOutline ? 'lg:col-span-2' : 'lg:col-span-3'} h-full flex`}>
+        <div className={`${showOutline ? 'lg:col-span-2' : 'lg:col-span-3'} h-full flex flex-col`}>
           <ContentEditor
             content={content}
             onContentChange={handleContentChange}
           />
+          
+          {/* Add auto-save notice at the bottom */}
+          {(autoSaveTimestamp || hasUnsavedChanges) && (
+            <div className="mt-2 text-xs text-white/50 flex items-center justify-end gap-1 px-4 py-2 border-t border-white/5">
+              {hasUnsavedChanges ? (
+                <>
+                  <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
+                  Unsaved changes
+                </>
+              ) : (
+                <>
+                  <span className="text-green-400">✓</span> Auto-saved
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

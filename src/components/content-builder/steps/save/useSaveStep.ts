@@ -40,6 +40,21 @@ export const useSaveStep = () => {
   const [existingContentId, setExistingContentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveCompleted, setSaveCompleted] = useState(false);
+  const [autoSaved, setAutoSaved] = useState<boolean>(false);
+  
+  // Check for auto-saved content
+  useEffect(() => {
+    const hasDraft = localStorage.getItem('content_builder_draft') !== null;
+    setAutoSaved(hasDraft);
+    
+    // If there's an auto-saved draft, remind the user it needs to be saved properly
+    if (hasDraft && !saveCompleted) {
+      toast.info(
+        "You have auto-saved content that needs to be properly saved to your library",
+        { duration: 5000 }
+      );
+    }
+  }, [saveCompleted]);
   
   // Update the local state when global state changes
   useEffect(() => {
@@ -118,6 +133,10 @@ export const useSaveStep = () => {
       
       await handleSaveToDraft();
       
+      // Clear auto-saved content now that it's properly saved
+      localStorage.removeItem('content_builder_draft');
+      localStorage.removeItem('content_builder_timestamp');
+      
       // Force refresh content before navigating
       console.log("[SaveStep] Draft saved, refreshing content...");
       await refreshContent();
@@ -178,6 +197,7 @@ export const useSaveStep = () => {
     seoScore,
     contentType,
     content,
-    saveCompleted
+    saveCompleted,
+    autoSaved
   };
 };
