@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
-import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
 import { toast } from 'sonner';
-import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
 
 export function useWritingStep() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -156,39 +154,6 @@ export function useWritingStep() {
       toast.success("Content saved as draft");
     }
   };
-  
-  const handleGenerateTitle = async () => {
-    if (!mainKeyword) {
-      toast.error("Please set a main keyword first");
-      return;
-    }
-    
-    try {
-      const titleSuggestions = await generateTitleSuggestions(
-        content || '',
-        mainKeyword,
-        selectedKeywords || []
-      );
-      
-      if (titleSuggestions && titleSuggestions.length > 0) {
-        // Select the first title suggestion
-        const selectedTitle = titleSuggestions[0];
-        
-        // Update the title in the content builder context
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: selectedTitle });
-        
-        // Store the title in localStorage
-        localStorage.setItem('content_builder_title', selectedTitle);
-        
-        toast.success("Title generated successfully");
-      } else {
-        toast.error("Failed to generate title suggestions");
-      }
-    } catch (error) {
-      console.error("Error generating title:", error);
-      toast.error("Failed to generate title");
-    }
-  };
 
   // Convert outline to the appropriate format for the sidebar component
   const processedOutline = Array.isArray(outline) 
@@ -231,7 +196,6 @@ export function useWritingStep() {
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
-    handleManualSave,
-    handleGenerateTitle
+    handleManualSave
   };
 }

@@ -5,13 +5,10 @@ import { Toggle } from '@/components/ui/toggle';
 import { 
   Sparkles, 
   ListTodo, 
-  CheckSquare, 
-  PenSquare, 
-  Cog, 
+  CheckSquare,  
+  Save,
   Bot, 
   UserRound, 
-  Wand2,
-  Save
 } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,7 +17,6 @@ interface ContentGenerationHeaderProps {
   isGenerating: boolean;
   handleGenerateContent: () => void;
   handleToggleOutline: () => void;
-  handleToggleGenerator: () => void;
   showOutline: boolean;
   outlineLength: number;
   aiProvider: AiProvider;
@@ -28,7 +24,6 @@ interface ContentGenerationHeaderProps {
   autoSaveTimestamp?: string | null;
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
-  onGenerateTitle?: () => void;
   wordCountLimit?: number;
 }
 
@@ -36,7 +31,6 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   isGenerating,
   handleGenerateContent,
   handleToggleOutline,
-  handleToggleGenerator,
   showOutline,
   outlineLength,
   aiProvider,
@@ -44,7 +38,6 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   autoSaveTimestamp,
   hasUnsavedChanges,
   onManualSave,
-  onGenerateTitle,
   wordCountLimit
 }) => {
   return (
@@ -60,14 +53,6 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
           ) : (
             <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
           )}
-        </Button>
-        
-        <Button
-          onClick={onGenerateTitle}
-          className="bg-glass border border-white/10 hover:border-white/20"
-          disabled={isGenerating}
-        >
-          <Wand2 className="mr-2 h-4 w-4" /> Generate Title
         </Button>
         
         <div className="flex gap-1 ml-2">

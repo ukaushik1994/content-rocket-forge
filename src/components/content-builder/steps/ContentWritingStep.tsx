@@ -38,8 +38,7 @@ export const ContentWritingStep = () => {
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
-    handleManualSave,
-    handleGenerateTitle
+    handleManualSave
   } = useWritingStep();
   
   // Setup leave confirmation
@@ -112,7 +111,6 @@ export const ContentWritingStep = () => {
         isGenerating={isGenerating}
         handleGenerateContent={handleGenerateContent}
         handleToggleOutline={handleToggleOutline}
-        handleToggleGenerator={handleToggleGenerator}
         showOutline={showOutline}
         outlineLength={state.outline.length}
         aiProvider={aiProvider}
@@ -120,7 +118,6 @@ export const ContentWritingStep = () => {
         autoSaveTimestamp={autoSaveTimestamp}
         hasUnsavedChanges={hasUnsavedChanges}
         onManualSave={handleManualSave}
-        onGenerateTitle={handleGenerateTitle}
         wordCountLimit={wordCountLimit}
       />
       
