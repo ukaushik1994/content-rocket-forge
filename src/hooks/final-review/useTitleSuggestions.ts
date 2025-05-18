@@ -15,7 +15,7 @@ const toastConfig = {
  */
 export const useTitleSuggestions = () => {
   const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, selectedKeywords, metaTitle } = state;
+  const { content, mainKeyword, selectedKeywords, metaTitle, contentTitle } = state;
   
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
@@ -33,13 +33,18 @@ export const useTitleSuggestions = () => {
       // Call the generateTitleSuggestions function from documentAnalysis
       const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
       
-      setTitleSuggestions(suggestions);
-      console.log("[useTitleSuggestions] Generated title suggestions:", suggestions);
+      // Shuffle the suggestions to ensure different ordering each time
+      const shuffledSuggestions = [...suggestions].sort(() => Math.random() - 0.5);
+      
+      setTitleSuggestions(shuffledSuggestions);
+      console.log("[useTitleSuggestions] Generated title suggestions:", shuffledSuggestions);
       toast.success('Generated title suggestions', toastConfig.success);
       
-      // If there's at least one suggestion and no meta title set yet, automatically use the first one
-      if (suggestions.length > 0 && !state.metaTitle) {
-        const initialTitle = suggestions[0];
+      // Only set a title automatically if there's no existing title
+      if (shuffledSuggestions.length > 0 && !metaTitle && !contentTitle) {
+        // Use a random title from the first three suggestions instead of always the first one
+        const randomIndex = Math.floor(Math.random() * Math.min(3, shuffledSuggestions.length));
+        const initialTitle = shuffledSuggestions[randomIndex];
         console.log("[useTitleSuggestions] Setting initial title:", initialTitle);
         dispatch({ type: 'SET_META_TITLE', payload: initialTitle });
         dispatch({ type: 'SET_CONTENT_TITLE', payload: initialTitle });

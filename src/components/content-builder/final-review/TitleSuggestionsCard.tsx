@@ -37,6 +37,9 @@ export const TitleSuggestionsCard = ({
       
       if (currentTitleIndex !== -1) {
         setSelected(currentTitleIndex);
+      } else {
+        // Clear selection if current title isn't in the suggestions
+        setSelected(null);
       }
     }
   }, [currentTitle, suggestions]);
