@@ -72,7 +72,7 @@ export const useContentActions = (content: ContentItemType | null) => {
         if (!repurposedFormats.includes(formatId)) {
           const updatedRepurposedFormats = [...repurposedFormats, formatId];
           
-          // Don't check the return value of updateContentItem since it returns void
+          // Don't check the return value since updateContentItem returns void
           await updateContentItem(content.id, {
             ...content,
             metadata: {
@@ -123,7 +123,7 @@ export const useContentActions = (content: ContentItemType | null) => {
           // Remove the format from the list
           const updatedFormats = repurposedFormats.filter(format => format !== repurposedType);
           
-          // Don't check the return value of updateContentItem since it returns void
+          // Don't check the return value since updateContentItem returns void
           await updateContentItem(originalContentId, {
             ...originalContent,
             metadata: {
