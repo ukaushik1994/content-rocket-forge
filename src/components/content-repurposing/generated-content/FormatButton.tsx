@@ -8,9 +8,10 @@ interface FormatButtonProps {
   name: string;
   isActive: boolean;
   onClick: () => void;
+  className?: string; // Added className prop
 }
 
-export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isActive, onClick }) => {
+export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isActive, onClick, className }) => {
   const IconComponent = getFormatIconComponent(formatId);
 
   return (
@@ -18,10 +19,10 @@ export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isAc
       size="sm"
       variant={isActive ? "default" : "outline"}
       onClick={onClick}
-      className={isActive 
+      className={className || (isActive 
         ? "bg-gradient-to-r from-neon-purple to-neon-blue border-none" 
         : "border-white/10"
-      }
+      )}
     >
       <IconComponent className="h-4 w-4 mr-1" />
       {name}
