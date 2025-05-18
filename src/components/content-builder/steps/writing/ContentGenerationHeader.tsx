@@ -28,6 +28,7 @@ interface ContentGenerationHeaderProps {
   autoSaveTimestamp?: string | null;
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
+  onGenerateTitle?: () => void;
 }
 
 export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
@@ -41,7 +42,8 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   onAiProviderChange,
   autoSaveTimestamp,
   hasUnsavedChanges,
-  onManualSave
+  onManualSave,
+  onGenerateTitle
 }) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -56,6 +58,14 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
           ) : (
             <><Sparkles className="mr-2 h-4 w-4" /> Generate Content</>
           )}
+        </Button>
+        
+        <Button
+          onClick={onGenerateTitle}
+          className="bg-glass border border-white/10 hover:border-white/20"
+          disabled={isGenerating}
+        >
+          <Wand2 className="mr-2 h-4 w-4" /> Generate Title
         </Button>
         
         <div className="flex gap-1 ml-2">

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
+import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
 import { toast } from 'sonner';
 
 export function useWritingStep() {
@@ -28,6 +29,7 @@ export function useWritingStep() {
   const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
   const [autoSaveTimestamp, setAutoSaveTimestamp] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const { generateTitleSuggestions } = useTitleSuggestions();
 
   // Mark this step as complete when we have content
   useEffect(() => {
@@ -152,6 +154,26 @@ export function useWritingStep() {
       toast.success("Content saved as draft");
     }
   };
+  
+  const handleGenerateTitle = async () => {
+    if (!content || content.trim().length < 100) {
+      toast.error("Please generate content first");
+      return;
+    }
+    
+    try {
+      await generateTitleSuggestions();
+      toast.success("Title generated successfully");
+      
+      // Store the title in localStorage
+      if (state.contentTitle) {
+        localStorage.setItem('content_builder_title', state.contentTitle);
+      }
+    } catch (error) {
+      toast.error("Failed to generate title");
+      console.error("Title generation error:", error);
+    }
+  };
 
   // Convert outline to the appropriate format for the sidebar component
   const processedOutline = Array.isArray(outline) 
@@ -194,6 +216,7 @@ export function useWritingStep() {
     handleToggleGenerator,
     handleContentTemplateSelection,
     handleAiProviderChange,
-    handleManualSave
+    handleManualSave,
+    handleGenerateTitle
   };
 }
