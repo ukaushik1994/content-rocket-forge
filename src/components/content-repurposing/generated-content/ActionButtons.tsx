@@ -13,6 +13,7 @@ interface ActionButtonsProps {
   isDeleting?: boolean;
   isRegenerating?: boolean;
   isSaving?: boolean;
+  formatId?: string; // Add the formatId prop to the interface
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -23,7 +24,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onRegenerate,
   isDeleting = false,
   isRegenerating = false,
-  isSaving = false
+  isSaving = false,
+  formatId // Add the formatId prop to the component parameters
 }) => {
   return (
     <div className="flex justify-between items-center mt-4 border-t border-white/10 pt-4">
