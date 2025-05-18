@@ -27,6 +27,7 @@ const ContentRepurposing = () => {
     repurposedDialogOpen,
     selectedRepurposedContent,
     isDeleting,
+    isSaving,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -133,6 +134,7 @@ const ContentRepurposing = () => {
               onSaveAsNewContent={saveAsNewContent}
               onDeleteRepurposedContent={handleDeleteActiveFormat}
               isDeleting={isDeleting}
+              isSaving={isSaving}
             />
           </div>
         </div>

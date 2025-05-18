@@ -1,71 +1,61 @@
 
 import React from 'react';
-import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Trash, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Copy, Download, Trash2, Loader2 } from 'lucide-react';
 
 interface DialogActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
   onDelete?: () => void;
   isDeleting?: boolean;
+  isSaving?: boolean;
 }
 
 const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
   onCopy,
   onDownload,
   onDelete,
-  isDeleting = false
+  isDeleting = false,
+  isSaving = false
 }) => {
   return (
-    <DialogFooter className="px-6 py-4 border-t border-white/10 flex flex-wrap items-center justify-end gap-2">
-      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-        <Button
-          variant="outline"
-          className="border-white/20 hover:bg-white/5"
-          onClick={onCopy}
-        >
-          <Copy className="h-4 w-4 mr-1" />
-          Copy
-        </Button>
-      </motion.div>
+    <div className="flex justify-end gap-2 p-4 border-t border-white/10">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onCopy}
+        className="bg-transparent hover:bg-white/5 border-white/10"
+      >
+        <Copy className="h-4 w-4 mr-1" />
+        Copy
+      </Button>
       
-      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-        <Button
-          variant="outline"
-          className="border-white/20 hover:bg-white/5"
-          onClick={onDownload}
-        >
-          <Download className="h-4 w-4 mr-1" />
-          Download
-        </Button>
-      </motion.div>
-      
-      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-        <Button
-          variant="outline"
-          className="border-white/20 hover:bg-white/5"
-        >
-          <RefreshCw className="h-4 w-4 mr-1" />
-          Regenerate
-        </Button>
-      </motion.div>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onDownload}
+        className="bg-transparent hover:bg-white/5 border-white/10"
+      >
+        <Download className="h-4 w-4 mr-1" />
+        Download
+      </Button>
       
       {onDelete && (
-        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-          <Button
-            variant="outline"
-            className="border-red-500/30 text-red-400 hover:bg-red-950/20 hover:text-red-300"
-            onClick={onDelete}
-            disabled={isDeleting}
-          >
-            <Trash className="h-4 w-4 mr-1" />
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        </motion.div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onDelete}
+          disabled={isDeleting}
+          className="bg-transparent hover:bg-white/5 hover:text-red-400 border-white/10"
+        >
+          {isDeleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </Button>
       )}
-    </DialogFooter>
+    </div>
   );
 };
 

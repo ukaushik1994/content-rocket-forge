@@ -19,6 +19,7 @@ interface GeneratedContentDisplayProps {
   onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
   onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
+  isSaving?: boolean;
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
@@ -29,7 +30,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   onDownloadAsText,
   onSaveAsNewContent,
   onDeleteRepurposedContent,
-  isDeleting = false
+  isDeleting = false,
+  isSaving = false
 }) => {
   const generatedFormats = Object.keys(generatedContents);
   const hasGeneratedContent = generatedFormats.length > 0;
@@ -83,6 +85,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                 } : undefined
               }
               isDeleting={isDeleting}
+              isSaving={isSaving}
             />
           </div>
         ) : (

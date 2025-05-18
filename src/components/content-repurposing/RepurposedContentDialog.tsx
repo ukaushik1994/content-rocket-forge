@@ -17,6 +17,7 @@ interface RepurposedContentDialogProps {
   onDownload: (content: string, formatName: string) => void;
   onDelete?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
+  isSaving?: boolean;
 }
 
 const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
@@ -26,7 +27,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   onCopy,
   onDownload,
   onDelete,
-  isDeleting = false
+  isDeleting = false,
+  isSaving = false
 }) => {
   if (!content) return null;
   
@@ -80,6 +82,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
           onDownload={() => onDownload(content.content, formatName)}
           onDelete={onDelete ? handleDelete : undefined}
           isDeleting={isDeleting}
+          isSaving={isSaving}
         />
       </DialogContent>
     </Dialog>

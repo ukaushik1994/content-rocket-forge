@@ -1,14 +1,15 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Save, Trash } from 'lucide-react';
+import { Copy, Download, Save, Trash2, Loader2 } from 'lucide-react';
 
 interface ActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
   onSave: () => void;
-  onDelete?: () => void;
+  onDelete?: () => Promise<boolean>;
   isDeleting?: boolean;
+  isSaving?: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -16,44 +17,64 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onDownload,
   onSave,
   onDelete,
-  isDeleting = false
+  isDeleting = false,
+  isSaving = false
 }) => {
   return (
-    <div className="flex justify-end gap-2">
-      <Button
-        variant="outline"
-        size="sm"
+    <div className="flex justify-end gap-2 mt-4 border-t border-white/10 pt-4">
+      <Button 
+        variant="outline" 
+        size="sm" 
         onClick={onCopy}
+        className="bg-transparent hover:bg-white/5 border-white/10"
       >
         <Copy className="h-4 w-4 mr-1" />
         Copy
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
         onClick={onDownload}
+        className="bg-transparent hover:bg-white/5 border-white/10"
       >
         <Download className="h-4 w-4 mr-1" />
         Download
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
         onClick={onSave}
+        disabled={isSaving}
+        className="bg-transparent hover:bg-white/5 border-white/10"
       >
-        <Save className="h-4 w-4 mr-1" />
-        Save to Original
+        {isSaving ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            Saving...
+          </>
+        ) : (
+          <>
+            <Save className="h-4 w-4 mr-1" />
+            Save
+          </>
+        )}
       </Button>
+      
       {onDelete && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-red-500 hover:text-red-600"
+        <Button 
+          variant="outline" 
+          size="sm" 
           onClick={onDelete}
           disabled={isDeleting}
+          className="bg-transparent hover:bg-white/5 hover:text-red-400 border-white/10"
         >
-          <Trash className="h-4 w-4 mr-1" />
-          {isDeleting ? 'Deleting...' : 'Delete'}
+          {isDeleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
         </Button>
       )}
     </div>

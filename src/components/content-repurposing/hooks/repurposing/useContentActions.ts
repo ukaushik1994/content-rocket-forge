@@ -8,6 +8,7 @@ import { getFormatByIdOrDefault } from '../../formats';
 export const useContentActions = (content: ContentItemType | null) => {
   const { contentItems, addContentItem, updateContentItem, deleteContentItem } = useContent();
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Utility function to find content by original content ID and format
   const findRepurposedContent = (originalContentId: string, formatId: string): string | null => {
@@ -44,6 +45,7 @@ export const useContentActions = (content: ContentItemType | null) => {
     if (!content) return false;
     
     try {
+      setIsSaving(true);
       const formatInfo = getFormatByIdOrDefault(formatId);
       const formatName = formatInfo.name;
       
@@ -64,7 +66,6 @@ export const useContentActions = (content: ContentItemType | null) => {
       
       // Update the content with the new metadata
       await updateContentItem(content.id, {
-        ...content,
         metadata: {
           ...currentMetadata,
           repurposedFormats,
@@ -78,6 +79,8 @@ export const useContentActions = (content: ContentItemType | null) => {
       console.error('Error saving content:', error);
       toast.error('Failed to save content');
       return false;
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -105,7 +108,6 @@ export const useContentActions = (content: ContentItemType | null) => {
       
       // Update the content with the new metadata
       await updateContentItem(contentId, {
-        ...originalContent,
         metadata: {
           ...currentMetadata,
           repurposedFormats: updatedFormats,
@@ -127,6 +129,7 @@ export const useContentActions = (content: ContentItemType | null) => {
   return {
     contentItems,
     isDeleting,
+    isSaving,
     findRepurposedContent,
     copyToClipboard,
     downloadAsText,
