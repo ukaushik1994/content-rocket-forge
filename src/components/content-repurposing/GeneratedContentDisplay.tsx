@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -205,7 +204,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                 onClick={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
               >
                 <Save className="h-4 w-4 mr-1" />
-                Save as Content
+                Save to Original
               </Button>
             </div>
           </div>

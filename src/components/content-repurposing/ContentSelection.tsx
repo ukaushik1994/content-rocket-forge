@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContentItemType } from '@/contexts/content/types';
@@ -24,7 +25,7 @@ interface ContentSelectionProps {
   } | null;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
-  onDeleteRepurposedContent?: (contentId: string) => Promise<boolean>;
+  onDeleteRepurposedContent?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
 }
 
@@ -79,12 +80,7 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
   
   // Check if a content item has been repurposed for a specific format
   const hasRepurposedFormat = (item: ContentItemType, formatId: string): boolean => {
-    // Check if this content was created as a repurposed version
-    if (item.metadata?.repurposedType === formatId) {
-      return true;
-    }
-    
-    // Check if this content has been repurposed to this format
+    // Check if this content has repurposed formats stored in metadata
     const repurposedFormats = item.metadata?.repurposedFormats || [];
     return repurposedFormats.includes(formatId);
   };

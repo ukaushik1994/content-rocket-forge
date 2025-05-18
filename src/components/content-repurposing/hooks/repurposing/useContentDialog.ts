@@ -1,21 +1,24 @@
 
 import { useState } from 'react';
-import { ContentItemType } from '@/contexts/content/types';
+import { toast } from 'sonner';
 import { GeneratedContentFormat } from './types';
 
-export const useContentDialog = (findRepurposedContent: (originalContentId: string, formatId: string) => ContentItemType | null) => {
+export const useContentDialog = (findRepurposedContent: (originalContentId: string, formatId: string) => string | null) => {
   const [repurposedDialogOpen, setRepurposedDialogOpen] = useState<boolean>(false);
   const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<GeneratedContentFormat | null>(null);
   
   const handleOpenRepurposedContent = (contentId: string, formatId: string) => {
-    const repurposedItem = findRepurposedContent(contentId, formatId);
+    const repurposedContent = findRepurposedContent(contentId, formatId);
     
-    if (repurposedItem) {
+    if (repurposedContent) {
+      // Find the format name
+      const format = contentFormats.find(f => f.id === formatId);
+      
       setSelectedRepurposedContent({
-        content: repurposedItem.content || '',
+        content: repurposedContent,
         formatId: formatId,
-        contentId: repurposedItem.id,
-        title: repurposedItem.title
+        contentId: contentId,
+        title: format?.name || 'Repurposed Content'
       });
       setRepurposedDialogOpen(true);
     } else {
@@ -36,5 +39,5 @@ export const useContentDialog = (findRepurposedContent: (originalContentId: stri
   };
 };
 
-// Add import for toast
-import { toast } from 'sonner';
+// Add import for contentFormats
+import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';

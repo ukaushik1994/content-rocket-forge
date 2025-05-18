@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
@@ -68,7 +69,9 @@ const ContentRepurposing = () => {
             selectedRepurposedContent={selectedRepurposedContent}
             onCopyToClipboard={copyToClipboard}
             onDownloadAsText={downloadAsText}
-            onDeleteRepurposedContent={deleteRepurposedContent}
+            onDeleteRepurposedContent={(contentId, formatId) => 
+              formatId ? deleteRepurposedContent(contentId, formatId) : Promise.resolve(false)
+            }
             isDeleting={isDeleting}
           />
         </motion.main>
