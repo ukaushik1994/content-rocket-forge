@@ -45,8 +45,13 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
         <CardDescription>Select formats to transform your content</CardDescription>
       </CardHeader>
       
-      <div className="p-3 border-b border-white/10">
-        <div className="flex space-x-2 overflow-x-auto pb-2">
+      <div className="p-4 border-b border-white/10">
+        <motion.div 
+          className="flex space-x-2 overflow-x-auto py-1 px-1 scrollbar-hide"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           {categories.map((category) => {
             const categoryInfo = formatCategories[category];
             let CategoryIcon;
@@ -59,31 +64,59 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
               default: CategoryIcon = FileText;
             }
             
+            const isActive = activeCategory === category;
+            
             return (
-              <Button
+              <motion.div
                 key={category}
-                size="sm"
-                variant={activeCategory === category ? "default" : "outline"}
-                className={`
-                  ${activeCategory === category 
-                    ? `bg-gradient-to-r ${categoryInfo.color} border-none text-white` 
-                    : 'bg-black/20 border-white/10 hover:bg-white/10'}
-                `}
-                onClick={() => setActiveCategory(category)}
+                className="relative"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
-                <CategoryIcon className="h-4 w-4 mr-2" />
-                {categoryInfo.name}
-              </Button>
+                <Button
+                  size="sm"
+                  variant={isActive ? "default" : "outline"}
+                  className={`
+                    relative h-auto py-2 px-4 rounded-full transition-all duration-300
+                    ${isActive 
+                      ? `shadow-lg shadow-${category === 'social' ? 'blue' : category === 'document' ? 'green' : category === 'visual' ? 'purple' : 'amber'}-500/20` 
+                      : 'bg-black/20 border-white/10 hover:bg-white/10'}
+                  `}
+                  onClick={() => setActiveCategory(category)}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabBackground"
+                      className={`absolute inset-0 bg-gradient-to-r ${categoryInfo.color} rounded-full -z-10`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                  <CategoryIcon className={`h-4 w-4 mr-2 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${isActive ? 'text-white' : ''}`}>{categoryInfo.name}</span>
+                </Button>
+                
+                {isActive && (
+                  <motion.div 
+                    className={`absolute -bottom-1 left-2 right-2 h-0.5 bg-gradient-to-r ${categoryInfo.color}`}
+                    layoutId="activeTabIndicator"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
       
       <CardContent className="pt-4">
         <motion.div 
           className="space-y-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          key={activeCategory}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
           {getFormatsByCategory(activeCategory).map((format) => {
@@ -94,12 +127,12 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
             return (
               <motion.div
                 key={format.id}
-                whileHover={{ scale: 1.01 }}
+                whileHover={{ scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
                 whileTap={{ scale: 0.99 }}
                 className={`
-                  flex items-center p-3 rounded-md cursor-pointer transition-all duration-200
+                  flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200
                   ${isSelected
-                    ? `bg-gradient-to-r ${categoryColor} bg-opacity-20 border border-white/20`
+                    ? `bg-gradient-to-r ${categoryColor} bg-opacity-20 border border-white/20 shadow-sm`
                     : 'hover:bg-white/5 border border-transparent'}
                 `}
                 onClick={() => handleFormatClick(format.id)}
@@ -131,7 +164,8 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
       
       <CardFooter className="border-t border-white/10 pt-4">
         <Button
-          className="w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-opacity"
+          className={`w-full bg-gradient-to-r from-neon-purple to-neon-blue hover:opacity-90 transition-all duration-300 
+            ${selectedFormats.length > 0 ? 'shadow-lg shadow-neon-purple/20' : ''}`}
           disabled={selectedFormats.length === 0 || isGenerating}
           onClick={() => onGenerateContent(selectedFormats)}
         >
