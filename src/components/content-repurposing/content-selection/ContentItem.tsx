@@ -15,9 +15,10 @@ interface ContentItemProps {
   item: ContentItemType;
   onSelectContent: (contentId: string) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
-  onDeleteContent?: (contentId: string) => void;
+  onDeleteContent?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
   viewType?: 'new' | 'repurposed';
+  isSelected?: boolean;
 }
 
 const ContentItem: React.FC<ContentItemProps> = ({
@@ -26,7 +27,8 @@ const ContentItem: React.FC<ContentItemProps> = ({
   onOpenRepurposedContent,
   onDeleteContent,
   isDeleting = false,
-  viewType = 'new'
+  viewType = 'new',
+  isSelected = false
 }) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
@@ -42,9 +44,9 @@ const ContentItem: React.FC<ContentItemProps> = ({
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (onDeleteContent) {
-      onDeleteContent(item.id);
+      await onDeleteContent(item.id, '');
     }
     setIsDeleteDialogOpen(false);
   };
@@ -59,13 +61,16 @@ const ContentItem: React.FC<ContentItemProps> = ({
         className="card-3d relative"
       >
         <Card 
-          className={`cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm border transition-all duration-200
+          className={`cursor-pointer overflow-hidden backdrop-blur-sm border transition-all duration-200
+            ${isSelected 
+              ? 'border-neon-purple ring-1 ring-neon-purple/30' 
+              : 'border-white/10 hover:border-white/20'}
             ${viewType === 'repurposed' 
-              ? 'bg-gradient-to-br from-neon-purple/10 to-neon-blue/5 border-neon-purple/20' 
-              : 'bg-black/30 border-white/10'}`}
+              ? 'bg-gradient-to-br from-neon-purple/10 to-neon-blue/5' 
+              : 'bg-black/30'}`}
           onClick={() => onSelectContent(item.id)}
         >
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <div className="flex flex-col">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center">
@@ -104,7 +109,7 @@ const ContentItem: React.FC<ContentItemProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                      className="text-red-500 hover:text-red-400 hover:bg-red-500/10 h-8 px-2"
                       onClick={handleDeleteClick}
                       disabled={isDeleting}
                     >
@@ -121,6 +126,7 @@ const ContentItem: React.FC<ContentItemProps> = ({
                   }}
                   viewType={viewType}
                   isRepurposed={isRepurposed}
+                  isSelected={isSelected}
                 />
               </div>
             </div>

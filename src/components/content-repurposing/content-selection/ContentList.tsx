@@ -7,9 +7,10 @@ interface ContentListProps {
   contentItems: ContentItemType[];
   onSelectContent: (contentId: string) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
-  onDeleteContent?: (contentId: string) => void;
+  onDeleteContent?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
   viewType?: 'new' | 'repurposed';
+  selectedContentId?: string;
 }
 
 const ContentList: React.FC<ContentListProps> = ({
@@ -18,10 +19,11 @@ const ContentList: React.FC<ContentListProps> = ({
   onOpenRepurposedContent,
   onDeleteContent,
   isDeleting = false,
-  viewType = 'new'
+  viewType = 'new',
+  selectedContentId
 }) => {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3">
       {contentItems.map(item => (
         <ContentItem 
           key={item.id}
@@ -31,6 +33,7 @@ const ContentList: React.FC<ContentListProps> = ({
           onDeleteContent={onDeleteContent}
           isDeleting={isDeleting}
           viewType={viewType}
+          isSelected={selectedContentId === item.id}
         />
       ))}
     </div>

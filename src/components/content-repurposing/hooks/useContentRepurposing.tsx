@@ -29,6 +29,7 @@ export const useContentRepurposing = () => {
   const {
     contentItems,
     isDeleting,
+    isSaving,
     findRepurposedContent,
     copyToClipboard,
     downloadAsText,
@@ -61,6 +62,7 @@ export const useContentRepurposing = () => {
     repurposedDialogOpen,
     selectedRepurposedContent,
     isDeleting,
+    isSaving,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
