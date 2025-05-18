@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { getFormatByIdOrDefault } from '../formats';
 
 interface ContentViewerProps {
   content: string;

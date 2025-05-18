@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { getFormatByIdOrDefault } from '../formats';
 import FormatButton from './FormatButton';
 
 interface FormatSelectorProps {
@@ -17,12 +17,12 @@ const FormatSelector: React.FC<FormatSelectorProps> = ({
   return (
     <div className="flex gap-2 overflow-x-auto py-1">
       {generatedFormats.map((formatId) => {
-        const format = contentFormats.find(f => f.id === formatId);
+        const format = getFormatByIdOrDefault(formatId);
         return (
           <FormatButton
             key={formatId}
             formatId={formatId}
-            name={format?.name || formatId}
+            name={format.name}
             isActive={activeFormat === formatId}
             onClick={() => setActiveFormat(formatId)}
           />

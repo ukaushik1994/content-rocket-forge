@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { ContentItemType } from '@/contexts/content/types';
 import { generateContentByFormatType } from '@/services/contentTemplateService';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { contentFormats, getFormatByIdOrDefault } from '../../formats';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -30,10 +30,10 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       
       // Generate content for each selected format using templates
       for (const formatId of contentTypeIds) {
-        const formatInfo = contentFormats.find(f => f.id === formatId);
+        const formatInfo = getFormatByIdOrDefault(formatId);
         
         try {
-          toast.info(`Generating ${formatInfo?.name} content...`);
+          toast.info(`Generating ${formatInfo.name} content...`);
           
           // Use our template service to generate content
           const generatedContent = await generateContentByFormatType(
@@ -48,11 +48,11 @@ export const useContentGeneration = (content: ContentItemType | null) => {
           if (generatedContent) {
             newGeneratedContents[formatId] = generatedContent;
           } else {
-            toast.error(`Failed to generate ${formatInfo?.name} content`);
+            toast.error(`Failed to generate ${formatInfo.name} content`);
           }
         } catch (error) {
           console.error('Error generating content:', error);
-          toast.error(`Failed to generate ${formatInfo?.name} content`);
+          toast.error(`Failed to generate ${formatInfo.name} content`);
         }
       }
       

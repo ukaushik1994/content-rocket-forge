@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { contentFormats } from '@/components/content-repurposing/formats';
 import ContentFormatIcon from './ContentFormatIcon';
 import { ContentItemType } from '@/contexts/content/types';
 

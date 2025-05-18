@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { GeneratedContentFormat } from './types';
+import { getFormatByIdOrDefault } from '../../formats';
 
 export const useContentDialog = (findRepurposedContent: (originalContentId: string, formatId: string) => string | null) => {
   const [repurposedDialogOpen, setRepurposedDialogOpen] = useState<boolean>(false);
@@ -12,13 +13,13 @@ export const useContentDialog = (findRepurposedContent: (originalContentId: stri
     
     if (repurposedContent) {
       // Find the format name
-      const format = contentFormats.find(f => f.id === formatId);
+      const format = getFormatByIdOrDefault(formatId);
       
       setSelectedRepurposedContent({
         content: repurposedContent,
         formatId: formatId,
         contentId: contentId,
-        title: format?.name || 'Repurposed Content'
+        title: format.name
       });
       setRepurposedDialogOpen(true);
     } else {
@@ -38,6 +39,3 @@ export const useContentDialog = (findRepurposedContent: (originalContentId: stri
     handleCloseRepurposedDialog,
   };
 };
-
-// Add import for contentFormats
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';

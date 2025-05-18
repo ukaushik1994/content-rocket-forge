@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
-import { toast } from 'sonner';
+import { getFormatByIdOrDefault } from './formats';
 
-// Import our new components
+// Import our components
 import FormatSelector from './generated-content/FormatSelector';
 import ContentViewer from './generated-content/ContentViewer';
 import ActionButtons from './generated-content/ActionButtons';
@@ -68,10 +67,10 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
             <ActionButtons 
               onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}
               onDownload={() => {
-                const format = contentFormats.find(f => f.id === activeFormat);
+                const format = getFormatByIdOrDefault(activeFormat);
                 onDownloadAsText(
                   generatedContents[activeFormat],
-                  format?.name || 'content'
+                  format.name
                 );
               }}
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}

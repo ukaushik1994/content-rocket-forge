@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { getFormatByIdOrDefault } from '../../formats';
 
 export const useContentActions = (content: ContentItemType | null) => {
   const { contentItems, addContentItem, updateContentItem, deleteContentItem } = useContent();
@@ -44,8 +44,8 @@ export const useContentActions = (content: ContentItemType | null) => {
     if (!content) return false;
     
     try {
-      const formatInfo = contentFormats.find(f => f.id === formatId);
-      const formatName = formatInfo?.name || 'Repurposed';
+      const formatInfo = getFormatByIdOrDefault(formatId);
+      const formatName = formatInfo.name;
       
       // Get the current metadata or initialize an empty object
       const currentMetadata = content.metadata || {};

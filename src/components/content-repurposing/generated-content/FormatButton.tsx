@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart, FileText } from 'lucide-react';
+import { getFormatIconComponent, getFormatByIdOrDefault } from '../formats';
 
 interface FormatButtonProps {
   formatId: string;
@@ -11,33 +11,7 @@ interface FormatButtonProps {
 }
 
 export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isActive, onClick }) => {
-  // Helper function to get the appropriate icon for a format
-  const getFormatIcon = (formatId: string) => {
-    switch (formatId) {
-      case 'glossary':
-        return <Book className="h-4 w-4" />;
-      case 'carousel':
-        return <Images className="h-4 w-4" />;
-      case 'meme':
-        return <Image className="h-4 w-4" />;
-      case 'social-twitter':
-        return <Twitter className="h-4 w-4" />;
-      case 'social-linkedin':
-        return <Linkedin className="h-4 w-4" />;
-      case 'social-facebook': 
-        return <Facebook className="h-4 w-4" />;
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'infographic':
-        return <BarChart className="h-4 w-4" />;
-      case 'blog':
-      case 'script':
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const icon = getFormatIcon(formatId);
+  const IconComponent = getFormatIconComponent(formatId);
 
   return (
     <Button
@@ -49,7 +23,7 @@ export const FormatButton: React.FC<FormatButtonProps> = ({ formatId, name, isAc
         : "border-white/10"
       }
     >
-      {icon && <span className="mr-1">{icon}</span>}
+      <IconComponent className="h-4 w-4 mr-1" />
       {name}
     </Button>
   );

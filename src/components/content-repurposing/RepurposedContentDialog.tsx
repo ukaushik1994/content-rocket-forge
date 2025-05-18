@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { GeneratedContentFormat } from './hooks/repurposing/types';
-import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import { getFormatByIdOrDefault } from './formats';
 import DialogHeaderSection from './dialog/DialogHeaderSection';
 import ContentPreview from './dialog/ContentPreview';
 import DialogActionButtons from './dialog/DialogActionButtons';
@@ -29,8 +29,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   if (!content) return null;
   
   // Find the format information
-  const format = contentFormats.find(f => f.id === content.formatId);
-  const formatName = format?.name || 'Repurposed Content';
+  const format = getFormatByIdOrDefault(content.formatId);
+  const formatName = format.name;
   
   const handleDelete = async () => {
     if (onDelete && content.contentId && content.formatId) {
