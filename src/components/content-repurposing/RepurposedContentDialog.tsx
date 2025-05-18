@@ -8,6 +8,7 @@ import ContentPreview from './dialog/ContentPreview';
 import DialogActionButtons from './dialog/DialogActionButtons';
 import FormatButton from './generated-content/FormatButton';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
 interface RepurposedContentDialogProps {
   open: boolean;
@@ -54,15 +55,22 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-br from-black/90 to-black/95 border-white/10 p-0">
-        <DialogHeaderSection 
-          title={content.title}
-          formatName={formatName}
-          onClose={onClose}
-        />
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-black border border-white/10 p-0 rounded-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <div className="flex flex-col">
+            <h2 className="text-xl font-semibold">{formatName}</h2>
+            <p className="text-sm text-muted-foreground">{content.title}</p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
         
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-white/10 overflow-x-auto">
-          <motion.div className="flex gap-2 w-full" layout>
+        <div className="bg-black/70 px-4 py-3 border-b border-white/10">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
             {relatedFormats.map(relatedFormat => (
               <FormatButton
                 key={relatedFormat.id}
@@ -70,9 +78,10 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
                 name={relatedFormat.name}
                 isActive={relatedFormat.isActive}
                 onClick={() => {}}
+                className={relatedFormat.isActive ? "bg-indigo-500/80 text-white" : ""}
               />
             ))}
-          </motion.div>
+          </div>
         </div>
         
         <ContentPreview content={content.content} />

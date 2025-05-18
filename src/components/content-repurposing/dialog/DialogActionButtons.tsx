@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Trash2, Loader2, SaveAll } from 'lucide-react';
+import { Copy, Download, Trash2, Loader2 } from 'lucide-react';
 
 interface DialogActionButtonsProps {
   onCopy: () => void;
@@ -19,39 +19,39 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
   isSaving = false
 }) => {
   return (
-    <div className="flex justify-end gap-2 p-4 border-t border-white/10">
+    <div className="flex justify-end gap-2 p-4 border-t border-white/10 bg-black/50">
       <Button 
-        variant="outline" 
+        variant="ghost" 
         size="sm" 
         onClick={onCopy}
-        className="bg-transparent hover:bg-white/5 border-white/10"
+        className="hover:bg-white/10"
       >
-        <Copy className="h-4 w-4 mr-1" />
-        Copy
+        <Copy className="h-5 w-5" />
+        <span className="ml-2">Copy</span>
       </Button>
       
       <Button 
-        variant="outline" 
+        variant="ghost" 
         size="sm" 
         onClick={onDownload}
-        className="bg-transparent hover:bg-white/5 border-white/10"
+        className="hover:bg-white/10"
       >
-        <Download className="h-4 w-4 mr-1" />
-        Download
+        <Download className="h-5 w-5" />
+        <span className="ml-2">Download</span>
       </Button>
       
       {onDelete && (
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="sm" 
           onClick={onDelete}
           disabled={isDeleting}
-          className="bg-transparent hover:bg-white/5 hover:text-red-400 border-white/10"
+          className="hover:bg-white/10 hover:text-red-400"
         >
           {isDeleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           )}
         </Button>
       )}
