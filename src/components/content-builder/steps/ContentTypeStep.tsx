@@ -1,16 +1,14 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
-  FileText, 
+  BookOpen,
+  ListTree,
   LayoutDashboard, 
   ShoppingBag, 
   Newspaper, 
-  Mail, 
-  MessageCircle,
   Loader2,
   ExternalLink
 } from 'lucide-react';
@@ -22,12 +20,11 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
-  { value: 'blog', label: 'Blog Post', icon: FileText, description: 'Informative, educational content for your blog' },
+  { value: 'blog', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
+  { value: 'glossary', label: 'Glossary', icon: ListTree, description: 'Definitions and explanations of industry terms' },
   { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
-  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
   { value: 'article', label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
-  { value: 'email', label: 'Email', icon: Mail, description: 'Content for email marketing campaigns' },
-  { value: 'social', label: 'Social Media', icon: MessageCircle, description: 'Engaging posts for social platforms' }
+  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' }
 ];
 
 export const ContentTypeStep = () => {
