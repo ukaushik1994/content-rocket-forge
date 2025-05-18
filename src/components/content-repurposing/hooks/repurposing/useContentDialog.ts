@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import { GeneratedContentFormat } from './types';
 import { getFormatByIdOrDefault } from '../../formats';
 
-export const useContentDialog = (findRepurposedContent: (originalContentId: string, formatId: string) => string | null) => {
+export const useContentDialog = (
+  findRepurposedContent: (originalContentId: string, formatId: string) => string | null
+) => {
   const [repurposedDialogOpen, setRepurposedDialogOpen] = useState<boolean>(false);
   const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<GeneratedContentFormat | null>(null);
   const [generatedFormats, setGeneratedFormats] = useState<string[]>([]); // Track generated formats
@@ -35,11 +37,29 @@ export const useContentDialog = (findRepurposedContent: (originalContentId: stri
     setGeneratedFormats([]);
   };
   
+  const handleFormatChange = (contentId: string, formatId: string) => {
+    const repurposedContent = findRepurposedContent(contentId, formatId);
+    
+    if (repurposedContent) {
+      const format = getFormatByIdOrDefault(formatId);
+      
+      setSelectedRepurposedContent({
+        content: repurposedContent,
+        formatId: formatId,
+        contentId: contentId,
+        title: format.name
+      });
+    } else {
+      toast.error(`Failed to load ${getFormatByIdOrDefault(formatId).name} content`);
+    }
+  };
+  
   return {
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
+    handleFormatChange,
   };
 };

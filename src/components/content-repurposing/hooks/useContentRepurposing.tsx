@@ -38,6 +38,7 @@ export const useContentRepurposing = () => {
     generatedFormats,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
+    handleFormatChange: formatChangeHandler,
   } = useContentDialog(findRepurposedContent);
   
   // Handle deleting from the generated content view (when content is already selected)
@@ -51,6 +52,11 @@ export const useContentRepurposing = () => {
     // Get all formats that have been generated for this content
     const availableFormats = Object.keys(generatedContents);
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
+  };
+  
+  // Wrapper for format change handler
+  const handleFormatChange = (contentId: string, formatId: string) => {
+    formatChangeHandler(contentId, formatId);
   };
   
   return {
@@ -71,13 +77,14 @@ export const useContentRepurposing = () => {
     handleGenerateContent,
     handleOpenRepurposedContentWithFormats,
     handleCloseRepurposedDialog,
+    handleFormatChange,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
     findRepurposedContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
-    resetContent, // Export the resetContent function
+    resetContent,
   };
 };
 

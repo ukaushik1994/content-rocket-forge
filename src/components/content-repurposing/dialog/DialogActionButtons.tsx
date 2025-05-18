@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, Download, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DialogActionButtonsProps {
   onCopy: () => void;
@@ -18,16 +19,35 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
   isDeleting = false,
   isSaving = false
 }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  const handleCopy = () => {
+    onCopy();
+    toast.success("Content copied to clipboard");
+  };
+
+  const handleDelete = () => {
+    if (showDeleteConfirm) {
+      onDelete?.();
+      setShowDeleteConfirm(false);
+    } else {
+      setShowDeleteConfirm(true);
+      // Auto-hide after 3 seconds
+      setTimeout(() => setShowDeleteConfirm(false), 3000);
+    }
+  };
+
   return (
     <div className="flex justify-end gap-3 p-5 border-t border-white/10 bg-black/70 backdrop-blur-sm">
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={onCopy}
+        onClick={handleCopy}
         className="hover:bg-white/10 text-white/90 hover:text-white transition-colors duration-200 rounded-lg"
+        disabled={isSaving || isDeleting}
       >
-        <Copy className="h-5 w-5" />
-        <span className="ml-2">Copy</span>
+        <Copy className="h-5 w-5 mr-2" />
+        <span>Copy</span>
       </Button>
       
       <Button 
@@ -35,23 +55,30 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
         size="sm" 
         onClick={onDownload}
         className="hover:bg-white/10 text-white/90 hover:text-white transition-colors duration-200 rounded-lg"
+        disabled={isSaving || isDeleting}
       >
-        <Download className="h-5 w-5" />
-        <span className="ml-2">Download</span>
+        <Download className="h-5 w-5 mr-2" />
+        <span>Download</span>
       </Button>
       
       {onDelete && (
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={onDelete}
+          onClick={handleDelete}
           disabled={isDeleting}
-          className="hover:bg-red-500/10 text-white/90 hover:text-red-400 transition-colors duration-200 rounded-lg"
+          className={showDeleteConfirm 
+            ? "bg-red-500/20 text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors duration-200 rounded-lg"
+            : "hover:bg-red-500/10 text-white/90 hover:text-red-400 transition-colors duration-200 rounded-lg"
+          }
         >
           {isDeleting ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Trash2 className="h-5 w-5" />
+            <>
+              <Trash2 className="h-5 w-5 mr-2" />
+              <span>{showDeleteConfirm ? "Confirm" : "Delete"}</span>
+            </>
           )}
         </Button>
       )}

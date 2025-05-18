@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
@@ -16,8 +17,9 @@ interface ContentSelectionProps {
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
   onDeleteRepurposedContent?: (contentId: string, formatId: string) => Promise<boolean>;
+  onFormatChange?: (contentId: string, formatId: string) => void;
   isDeleting?: boolean;
-  generatedFormats?: string[]; // Add this new prop
+  generatedFormats?: string[];
 }
 
 const ContentSelection: React.FC<ContentSelectionProps> = ({
@@ -30,8 +32,9 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
   onCopyToClipboard,
   onDownloadAsText,
   onDeleteRepurposedContent,
+  onFormatChange,
   isDeleting = false,
-  generatedFormats = [] // Default to empty array
+  generatedFormats = []
 }) => {
   // Add state for search functionality
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -61,6 +64,7 @@ const ContentSelection: React.FC<ContentSelectionProps> = ({
         onCopy={onCopyToClipboard}
         onDownload={onDownloadAsText}
         onDelete={onDeleteRepurposedContent}
+        onFormatChange={onFormatChange}
         isDeleting={isDeleting}
         generatedFormats={generatedFormats}
       />

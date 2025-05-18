@@ -38,12 +38,13 @@ const ContentRepurposing = () => {
     handleGenerateContent,
     handleOpenRepurposedContentWithFormats,
     handleCloseRepurposedDialog,
+    handleFormatChange,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
-    resetContent, // Add the resetContent function to the destructured values
+    resetContent,
   } = useContentRepurposing();
   
   // Function to save all generated content
@@ -122,6 +123,7 @@ const ContentRepurposing = () => {
             onCopyToClipboard={copyToClipboard}
             onDownloadAsText={downloadAsText}
             onDeleteRepurposedContent={deleteRepurposedContent}
+            onFormatChange={handleFormatChange}
             isDeleting={isDeleting}
             generatedFormats={generatedFormats}
           />
@@ -149,7 +151,7 @@ const ContentRepurposing = () => {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => resetContent()} // Use the resetContent function directly
+            onClick={() => resetContent()} 
             className="hover:bg-white/5"
           >
             <ArrowLeft className="h-5 w-5" />
