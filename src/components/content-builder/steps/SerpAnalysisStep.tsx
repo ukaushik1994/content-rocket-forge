@@ -1,14 +1,34 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
+import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
+  const [apiKeyExists, setApiKeyExists] = useState(false);
+  
+  // Check if API key exists
+  useEffect(() => {
+    const checkApiKey = async () => {
+      // Check localStorage first
+      const localApiKey = localStorage.getItem('serp_api_key');
+      if (localApiKey) {
+        setApiKeyExists(true);
+        return;
+      }
+      
+      // We could also check Supabase here if necessary
+      // For now, let's assume we're just using localStorage
+      setApiKeyExists(false);
+    };
+    
+    checkApiKey();
+  }, []);
   
   // Get selection statistics
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -43,6 +63,34 @@ export const SerpAnalysisStep = () => {
   const handleAddToContent = (content: string, type: string) => {
     handleToggleSelection(type, content);
   };
+  
+  // If no API key exists, show the setup component
+  if (!apiKeyExists && !serpData) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
+          <p className="text-muted-foreground">
+            To see real search data, you need to add your SERP API key
+          </p>
+        </div>
+        
+        <SerpApiKeySetup />
+        
+        <div className="text-center mt-4">
+          <p className="text-sm text-muted-foreground">
+            Don&apos;t want to add an API key now?
+          </p>
+          <button 
+            onClick={handleReanalyze}
+            className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
+          >
+            Continue with mock data
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

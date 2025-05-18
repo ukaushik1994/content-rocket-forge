@@ -13,6 +13,8 @@ import { OutlineStep } from './steps/OutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SaveStep } from './steps/save';
+import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
+import { toast } from "sonner";
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
@@ -46,6 +48,30 @@ export const ContentBuilder = () => {
     console.log("Current step:", steps[activeStep]);
     console.log("Steps status:", steps.map(s => `${s.id}: ${s.name} - Completed: ${s.completed}, Analyzed: ${s.analyzed}`));
   }, [activeStep, steps]);
+
+  // Check if SERP API key is set up
+  useEffect(() => {
+    // If on SERP analysis step or moving to it, check for API key
+    if (steps[activeStep]?.id === 2 || currentStepId === 2) {
+      // You could check if API key exists in localStorage or user settings
+      const serpApiKeyExists = localStorage.getItem('serp_api_key');
+      
+      if (!serpApiKeyExists) {
+        toast.warning(
+          "No SERP API key found. Please add your API key in Settings to see real data.",
+          {
+            duration: 5000,
+            action: {
+              label: "Go to Settings",
+              onClick: () => {
+                window.location.href = "/settings/api";
+              }
+            }
+          }
+        );
+      }
+    }
+  }, [activeStep, currentStepId]);
   
   // Render the current step component
   const renderStepContent = () => {
@@ -55,6 +81,7 @@ export const ContentBuilder = () => {
     switch (stepID) {
       case 0: return <KeywordSelectionStep />;
       case 1: return <ContentTypeStep />;
+      case 2: return <SerpAnalysisStep />;
       case 3: return <OutlineStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizeAndReviewStep />;
@@ -107,7 +134,7 @@ export const ContentBuilder = () => {
         </div>
         
         {/* Step content */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-6 overflow-y-auto" id="content-builder-main-content">
           <div className="max-w-5xl mx-auto space-y-6">
             {renderStepContent()}
           </div>
