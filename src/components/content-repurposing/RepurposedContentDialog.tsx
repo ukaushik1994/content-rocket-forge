@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Copy, Download, Trash, X } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { GeneratedContentFormat } from './hooks/repurposing/types';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
+import DialogHeaderSection from './dialog/DialogHeaderSection';
+import ContentPreview from './dialog/ContentPreview';
+import DialogActionButtons from './dialog/DialogActionButtons';
 
 interface RepurposedContentDialogProps {
   open: boolean;
@@ -43,49 +44,20 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-gradient-to-br from-black/90 to-black/95 border-white/10">
-        <DialogHeader className="border-b border-white/10 pb-3">
-          <DialogTitle className="text-xl flex items-center justify-between">
-            <span>{formatName} - {content.title}</span>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
+        <DialogHeaderSection 
+          title={content.title}
+          formatName={formatName}
+          onClose={onClose}
+        />
         
-        <div className="flex-1 overflow-auto my-4 bg-black/30 p-4 rounded">
-          <pre className="whitespace-pre-wrap text-sm">{content.content}</pre>
-        </div>
+        <ContentPreview content={content.content} />
         
-        <DialogFooter className="pt-2 border-t border-white/10 flex items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onCopy(content.content)}
-          >
-            <Copy className="h-4 w-4 mr-1" />
-            Copy
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDownload(content.content, formatName)}
-          >
-            <Download className="h-4 w-4 mr-1" />
-            Download
-          </Button>
-          {onDelete && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-red-500 hover:text-red-600"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              <Trash className="h-4 w-4 mr-1" />
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          )}
-        </DialogFooter>
+        <DialogActionButtons
+          onCopy={() => onCopy(content.content)}
+          onDownload={() => onDownload(content.content, formatName)}
+          onDelete={onDelete ? handleDelete : undefined}
+          isDeleting={isDeleting}
+        />
       </DialogContent>
     </Dialog>
   );
