@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getFormatByIdOrDefault, 
   formatCategories, 
@@ -80,25 +80,33 @@ const FormatSelector: React.FC<FormatSelectorProps> = ({
           })}
         </TabsList>
         
-        {categoriesWithContent.map((category) => (
-          <TabsContent key={category} value={category} className="mt-2">
-            <div className="flex flex-wrap gap-2 pb-1">
-              {formatsByCategory[category].map((formatId) => {
-                const format = getFormatByIdOrDefault(formatId);
-                return (
-                  <FormatButton
-                    key={formatId}
-                    formatId={formatId}
-                    name={format.name}
-                    isActive={activeFormat === formatId}
-                    onClick={() => setActiveFormat(formatId)}
-                    category={format.category}
-                  />
-                );
-              })}
-            </div>
-          </TabsContent>
-        ))}
+        <AnimatePresence mode="wait">
+          {categoriesWithContent.map((category) => (
+            <TabsContent key={category} value={category} className="mt-2">
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-wrap gap-2 pb-1"
+              >
+                {formatsByCategory[category].map((formatId) => {
+                  const format = getFormatByIdOrDefault(formatId);
+                  return (
+                    <FormatButton
+                      key={formatId}
+                      formatId={formatId}
+                      name={format.name}
+                      isActive={activeFormat === formatId}
+                      onClick={() => setActiveFormat(formatId)}
+                      category={format.category}
+                    />
+                  );
+                })}
+              </motion.div>
+            </TabsContent>
+          ))}
+        </AnimatePresence>
       </Tabs>
     </div>
   );
