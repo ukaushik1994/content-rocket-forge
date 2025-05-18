@@ -19,12 +19,12 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
   isSaving = false
 }) => {
   return (
-    <div className="flex justify-end gap-2 p-4 border-t border-white/10 bg-black/50">
+    <div className="flex justify-end gap-3 p-5 border-t border-white/10 bg-black/70 backdrop-blur-sm">
       <Button 
         variant="ghost" 
         size="sm" 
         onClick={onCopy}
-        className="hover:bg-white/10"
+        className="hover:bg-white/10 text-white/90 hover:text-white transition-colors duration-200 rounded-lg"
       >
         <Copy className="h-5 w-5" />
         <span className="ml-2">Copy</span>
@@ -34,7 +34,7 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
         variant="ghost" 
         size="sm" 
         onClick={onDownload}
-        className="hover:bg-white/10"
+        className="hover:bg-white/10 text-white/90 hover:text-white transition-colors duration-200 rounded-lg"
       >
         <Download className="h-5 w-5" />
         <span className="ml-2">Download</span>
@@ -46,7 +46,7 @@ const DialogActionButtons: React.FC<DialogActionButtonsProps> = ({
           size="sm" 
           onClick={onDelete}
           disabled={isDeleting}
-          className="hover:bg-white/10 hover:text-red-400"
+          className="hover:bg-red-500/10 text-white/90 hover:text-red-400 transition-colors duration-200 rounded-lg"
         >
           {isDeleting ? (
             <Loader2 className="h-5 w-5 animate-spin" />

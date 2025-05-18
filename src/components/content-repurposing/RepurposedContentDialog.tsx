@@ -19,7 +19,7 @@ interface RepurposedContentDialogProps {
   onDelete?: (contentId: string, formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
   isSaving?: boolean;
-  generatedFormats?: string[]; // Added to track which formats have been generated
+  generatedFormats?: string[];
 }
 
 const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
@@ -31,7 +31,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   onDelete,
   isDeleting = false,
   isSaving = false,
-  generatedFormats = [] // Default to empty array
+  generatedFormats = []
 }) => {
   if (!content) return null;
   
@@ -40,7 +40,6 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
   const formatName = format.name;
   
   // Filter to only show formats that have been generated
-  // First, get all available formats from content formats
   const availableFormats = contentFormats.slice(0, 5);
   
   // Then filter to only those that exist in generatedFormats or match the current format
@@ -63,22 +62,26 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-black border border-white/10 p-0 rounded-xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/50">
           <div className="flex flex-col">
-            <h2 className="text-xl font-semibold">{formatName}</h2>
-            <p className="text-sm text-muted-foreground">{content.title}</p>
+            <h2 className="text-xl font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text">{formatName}</h2>
+            <p className="text-sm text-white/70">{content.title}</p>
           </div>
           <button 
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10"
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors duration-200"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 text-white/80 hover:text-white" />
           </button>
         </div>
         
         {relatedFormats.length > 1 && (
-          <div className="bg-black/70 px-4 py-3 border-b border-white/10">
+          <motion.div 
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-black/70 px-4 py-3 border-b border-white/10 backdrop-blur-sm"
+          >
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
               {relatedFormats.map(relatedFormat => (
                 <FormatButton
@@ -87,22 +90,28 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = ({
                   name={relatedFormat.name}
                   isActive={relatedFormat.isActive}
                   onClick={() => {}}
-                  className={relatedFormat.isActive ? "bg-indigo-500/80 text-white" : ""}
+                  className={relatedFormat.isActive ? "bg-indigo-500/90 text-white shadow-md shadow-indigo-500/20" : "bg-white/5 hover:bg-white/10 transition-colors duration-200"}
                 />
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
         
         <ContentPreview content={content.content} />
         
-        <DialogActionButtons
-          onCopy={() => onCopy(content.content)}
-          onDownload={() => onDownload(content.content, formatName)}
-          onDelete={onDelete ? handleDelete : undefined}
-          isDeleting={isDeleting}
-          isSaving={isSaving}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <DialogActionButtons
+            onCopy={() => onCopy(content.content)}
+            onDownload={() => onDownload(content.content, formatName)}
+            onDelete={onDelete ? handleDelete : undefined}
+            isDeleting={isDeleting}
+            isSaving={isSaving}
+          />
+        </motion.div>
       </DialogContent>
     </Dialog>
   );

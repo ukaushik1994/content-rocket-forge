@@ -12,11 +12,12 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({ content }) => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex-1 px-4 py-5 overflow-hidden"
+      transition={{ delay: 0.05 }}
+      className="flex-1 px-5 py-6 overflow-hidden bg-black/50"
     >
-      <ScrollArea className="h-[calc(50vh-160px)] w-full">
+      <ScrollArea className="h-[calc(50vh-160px)] w-full pr-2">
         <div className="rounded-md text-white/90">
-          <pre className="whitespace-pre-wrap text-sm font-mono">{content}</pre>
+          <pre className="whitespace-pre-wrap text-sm font-mono bg-black/20 p-4 rounded-lg border border-white/5">{content}</pre>
         </div>
       </ScrollArea>
     </motion.div>
