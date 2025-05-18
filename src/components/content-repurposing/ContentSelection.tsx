@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import RepurposedContentDialog from './RepurposedContentDialog';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
 import EmptyContentState from './content-selection/EmptyContentState';
-import ContentSearchBar from './content-selection/ContentSearchBar';
 import ContentList from './content-selection/ContentList';
 
 interface ContentSelectionProps {
@@ -50,7 +49,11 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
     <>
       <Card className="overflow-hidden border-none shadow-lg bg-gradient-to-br from-black/40 to-black/60 backdrop-blur-md border border-white/10">
         <CardHeader className="border-b border-white/10 bg-black/30">
-          <ContentSelectionHeader />
+          <ContentSelectionHeader 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            totalItems={contentItems.length}
+          />
         </CardHeader>
         
         <CardContent className="p-6">
@@ -58,12 +61,6 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
             <EmptyContentState />
           ) : (
             <div className="space-y-6">
-              <ContentSearchBar 
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                totalItems={contentItems.length}
-              />
-              
               <ContentList
                 contentItems={filteredItems}
                 onSelectContent={onSelectContent}
