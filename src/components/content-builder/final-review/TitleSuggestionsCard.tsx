@@ -1,186 +1,92 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, RefreshCw, Sparkles, Star } from 'lucide-react';
-import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { RefreshButton } from '@/components/ui/refresh-button';
+import { Sparkles } from 'lucide-react';
 
-export const TitleSuggestionsCard = () => {
-  const { state } = useContentBuilder();
-  const [selected, setSelected] = useState<number | null>(null);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  
-  const {
-    isGeneratingTitles,
-    titleSuggestions,
-    generateTitleSuggestions,
-    applyTitle,
-    currentTitle
-  } = useTitleSuggestions();
-  
-  // Effect to preselect a title that matches the current title if it exists
-  useEffect(() => {
-    if (currentTitle && titleSuggestions.length > 0) {
-      const currentTitleIndex = titleSuggestions.findIndex(
-        suggestion => suggestion === currentTitle
-      );
-      
-      if (currentTitleIndex !== -1) {
-        setSelected(currentTitleIndex);
-      } else {
-        // Clear selection if current title isn't in the suggestions
-        setSelected(null);
-      }
-    }
-  }, [currentTitle, titleSuggestions]);
+interface TitleSuggestionsCardProps {
+  currentTitle: string | null;
+  mainKeyword: string;
+  selectedKeywords: string[];
+  onSelectTitle: (title: string) => void;
+  generateNewTitles: () => void;
+  suggestions: string[];
+  isGenerating: boolean;
+}
 
-  const handleSelectTitle = (index: number) => {
-    setSelected(index);
-    const selectedTitle = titleSuggestions[index];
-    applyTitle(selectedTitle);
-    console.log("[TitleSuggestionsCard] Title selected:", selectedTitle);
-  };
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
+export const TitleSuggestionsCard = ({
+  currentTitle,
+  mainKeyword,
+  selectedKeywords,
+  onSelectTitle,
+  generateNewTitles,
+  suggestions,
+  isGenerating
+}: TitleSuggestionsCardProps) => {
   return (
-    <Card className="h-full shadow-xl bg-gradient-to-br from-background to-purple-950/5 border border-purple-500/20">
-      <CardHeader className="pb-2 border-b border-purple-500/10">
-        <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-            Title Suggestions
-          </div>
-          <Button
-            onClick={generateTitleSuggestions}
-            disabled={isGeneratingTitles}
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 hover:bg-white/10"
-          >
-            <RefreshCw className={`h-3 w-3 ${isGeneratingTitles ? 'animate-spin' : ''}`} />
-            <span className="text-xs ml-1">Regenerate</span>
-          </Button>
+    <Card className="border-blue-500/20 shadow-md">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-blue-500" />
+          Title Suggestions
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
-        {/* Current Title */}
-        {currentTitle && (
-          <motion.div 
-            className="mb-4 pb-3 border-b border-border/50"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <p className="text-xs text-muted-foreground mb-1">Current Title:</p>
-            <p className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              {currentTitle}
+      <CardContent>
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-sm text-muted-foreground">
+              Optimized titles using <span className="font-medium text-blue-500">{mainKeyword}</span>
+              {selectedKeywords.length > 0 && ' and secondary keywords'}
             </p>
-          </motion.div>
-        )}
-
-        {/* Title Suggestions */}
-        <div className="space-y-2 mb-4 max-h-[300px] overflow-y-auto pr-2">
-          <AnimatePresence>
-            {titleSuggestions.length > 0 ? (
-              <motion.div
-                className="space-y-2"
-                variants={container}
-                initial="hidden"
-                animate="show"
-              >
-                {titleSuggestions.map((suggestion, index) => (
-                  <motion.div 
-                    key={index}
-                    className={`p-3 rounded-md border cursor-pointer transition-all duration-200 ${
-                      selected === index 
-                        ? 'border-blue-500 bg-blue-500/10 shadow-md' 
-                        : hoveredIndex === index
-                        ? 'border-purple-500/40 bg-purple-500/5'
-                        : 'border-border/50 hover:bg-secondary/30'
-                    }`}
-                    onClick={() => handleSelectTitle(index)}
-                    onMouseEnter={() => setHoveredIndex(index)}
-                    onMouseLeave={() => setHoveredIndex(null)}
-                    variants={item}
-                  >
-                    <div className="flex justify-between items-center gap-2">
-                      <p className="text-sm">
-                        {suggestion}
-                      </p>
-                      {selected === index && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                        >
-                          <Check className="h-4 w-4 text-blue-500" />
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
+            <RefreshButton 
+              isRefreshing={isGenerating} 
+              onClick={generateNewTitles}
+              className="text-xs"
+            >
+              Generate New
+            </RefreshButton>
+          </div>
+          
+          {currentTitle && (
+            <div className="mb-4 p-3 bg-secondary/20 rounded-md border border-secondary/30">
+              <p className="text-xs text-muted-foreground mb-1">Current Title:</p>
+              <p className="text-sm font-medium">{currentTitle}</p>
+            </div>
+          )}
+          
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+            {isGenerating ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : suggestions.length > 0 ? (
+              suggestions.map((title, index) => (
+                <div 
+                  key={index}
+                  className="p-3 rounded-md border cursor-pointer hover:bg-secondary/30 transition-all duration-200"
+                  onClick={() => onSelectTitle(title)}
+                >
+                  <p className="text-sm">{title}</p>
+                </div>
+              ))
             ) : (
-              <motion.div 
-                className="text-center py-12 px-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                {isGeneratingTitles ? (
-                  <div className="flex flex-col items-center">
-                    <RefreshCw className="h-10 w-10 text-blue-500/70 animate-spin mb-3" />
-                    <p className="text-muted-foreground">Generating title suggestions...</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-full mb-3">
-                      <Star className="h-8 w-8 text-blue-500/70" />
-                    </div>
-                    <p className="text-muted-foreground">No title suggestions generated yet.</p>
-                    <p className="text-muted-foreground text-xs mt-1">Click the button below to generate suggestions.</p>
-                  </div>
-                )}
-              </motion.div>
+              <div className="text-center py-6 text-muted-foreground">
+                No title suggestions available. Click "Generate New" to create some.
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
-
-        {/* Generate Button */}
+        
         <div className="flex justify-center">
-          <Button
-            onClick={generateTitleSuggestions}
-            disabled={isGeneratingTitles}
-            className="w-full gap-2 bg-blue-500/80 hover:bg-blue-500 transition-colors"
+          <Button 
+            onClick={generateNewTitles} 
+            variant="default" 
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+            disabled={isGenerating}
           >
-            {isGeneratingTitles ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Generating Titles...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Generate New Titles
-              </>
-            )}
+            <Sparkles className="h-4 w-4 mr-2" />
+            Generate More Title Ideas
           </Button>
         </div>
       </CardContent>
