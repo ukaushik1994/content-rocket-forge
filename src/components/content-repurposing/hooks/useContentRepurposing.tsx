@@ -38,6 +38,12 @@ export const useContentRepurposing = () => {
     handleCloseRepurposedDialog,
   } = useContentDialog(findRepurposedContent);
   
+  // Handle deleting from the generated content view (when content is already selected)
+  const handleDeleteActiveFormat = async (formatId: string): Promise<boolean> => {
+    if (!content) return false;
+    return deleteRepurposedContent(content.id, formatId);
+  };
+  
   return {
     content,
     contentItems,
@@ -59,6 +65,7 @@ export const useContentRepurposing = () => {
     saveAsNewContent,
     findRepurposedContent,
     deleteRepurposedContent,
+    handleDeleteActiveFormat,
   };
 };
 

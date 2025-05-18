@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Copy, Download, Save, Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart } from 'lucide-react';
+import { FileText, Copy, Download, Save, Book, Images, Image, Twitter, Linkedin, Facebook, Mail, BarChart, Trash } from 'lucide-react';
 import { contentFormats } from '@/components/content-builder/final-review/tabs/RepurposeTab';
 import { toast } from 'sonner';
 
@@ -12,6 +13,8 @@ interface GeneratedContentDisplayProps {
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
   onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
+  onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
+  isDeleting?: boolean;
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
@@ -20,7 +23,9 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   setActiveFormat,
   onCopyToClipboard,
   onDownloadAsText,
-  onSaveAsNewContent
+  onSaveAsNewContent,
+  onDeleteRepurposedContent,
+  isDeleting = false
 }) => {
   // Helper function to get the appropriate icon for a format
   const getFormatIcon = (formatId: string) => {
@@ -206,6 +211,22 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                 <Save className="h-4 w-4 mr-1" />
                 Save to Original
               </Button>
+              {onDeleteRepurposedContent && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 hover:text-red-600"
+                  onClick={() => {
+                    if (activeFormat && onDeleteRepurposedContent) {
+                      onDeleteRepurposedContent(activeFormat);
+                    }
+                  }}
+                  disabled={isDeleting}
+                >
+                  <Trash className="h-4 w-4 mr-1" />
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              )}
             </div>
           </div>
         ) : (

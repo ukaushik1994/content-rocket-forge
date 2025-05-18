@@ -216,7 +216,7 @@ export const ContentSelection: React.FC<ContentSelectionProps> = ({
         </CardContent>
       </Card>
       
-      {/* Repurposed Content Dialog */}
+      {/* Repurposed Content Dialog with Delete Button */}
       <RepurposedContentDialog
         open={repurposedDialogOpen}
         onClose={onCloseRepurposedDialog}

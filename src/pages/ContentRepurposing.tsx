@@ -37,6 +37,7 @@ const ContentRepurposing = () => {
     downloadAsText,
     saveAsNewContent,
     deleteRepurposedContent,
+    handleDeleteActiveFormat,
   } = useContentRepurposing();
   
   // If no content is selected yet, show the content selection view
@@ -69,9 +70,7 @@ const ContentRepurposing = () => {
             selectedRepurposedContent={selectedRepurposedContent}
             onCopyToClipboard={copyToClipboard}
             onDownloadAsText={downloadAsText}
-            onDeleteRepurposedContent={(contentId, formatId) => 
-              formatId ? deleteRepurposedContent(contentId, formatId) : Promise.resolve(false)
-            }
+            onDeleteRepurposedContent={deleteRepurposedContent}
             isDeleting={isDeleting}
           />
         </motion.main>
@@ -134,6 +133,8 @@ const ContentRepurposing = () => {
               onCopyToClipboard={copyToClipboard}
               onDownloadAsText={downloadAsText}
               onSaveAsNewContent={saveAsNewContent}
+              onDeleteRepurposedContent={handleDeleteActiveFormat}
+              isDeleting={isDeleting}
             />
           </div>
         </div>
