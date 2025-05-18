@@ -96,21 +96,19 @@ const ContentRepurposing = () => {
         <div className="flex items-center justify-between mb-8">
           <Button 
             variant="ghost" 
-            size="sm" 
-            onClick={() => {
-              navigate('/content-repurposing');
-            }}
-            className="gap-1 hover:bg-white/5"
+            size="icon" 
+            onClick={() => navigate('/content-repurposing')}
+            className="hover:bg-white/5"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Content List
+            <ArrowLeft className="h-5 w-5" />
+            <span className="sr-only">Back to Content List</span>
           </Button>
           
           <h1 className="text-3xl font-bold text-center flex-1 bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">
             Content Repurposing
           </h1>
           
-          <div className="w-24"></div> {/* For balance */}
+          <div className="w-10"></div> {/* For balance */}
         </div>
 
         {/* Selection of content formats */}
