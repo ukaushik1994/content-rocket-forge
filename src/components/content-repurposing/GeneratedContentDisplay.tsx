@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getFormatByIdOrDefault } from './formats';
 
@@ -17,9 +17,11 @@ interface GeneratedContentDisplayProps {
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
   onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
+  onSaveAllContent?: () => Promise<boolean>;
   onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
   isSaving?: boolean;
+  isSavingAll?: boolean;
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
@@ -29,12 +31,15 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   onCopyToClipboard,
   onDownloadAsText,
   onSaveAsNewContent,
+  onSaveAllContent,
   onDeleteRepurposedContent,
   isDeleting = false,
-  isSaving = false
+  isSaving = false,
+  isSavingAll = false
 }) => {
   const generatedFormats = Object.keys(generatedContents);
   const hasGeneratedContent = generatedFormats.length > 0;
+  const hasMultipleFormats = generatedFormats.length > 1;
   
   return (
     <Card className="h-full">
@@ -76,6 +81,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                 );
               }}
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
+              onSaveAll={onSaveAllContent}
               onDelete={onDeleteRepurposedContent ? 
                 () => {
                   if (activeFormat && onDeleteRepurposedContent) {
@@ -84,8 +90,10 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                   return Promise.resolve(false);
                 } : undefined
               }
+              hasMultipleFormats={hasMultipleFormats}
               isDeleting={isDeleting}
               isSaving={isSaving}
+              isSavingAll={isSavingAll}
             />
           </div>
         ) : (

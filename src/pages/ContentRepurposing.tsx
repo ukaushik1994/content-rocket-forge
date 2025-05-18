@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { useContentRepurposing } from '@/components/content-repurposing/hooks/us
 
 const ContentRepurposing = () => {
   const navigate = useNavigate();
+  const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
   
   const {
     content,
@@ -40,6 +41,32 @@ const ContentRepurposing = () => {
     deleteRepurposedContent,
     handleDeleteActiveFormat,
   } = useContentRepurposing();
+  
+  // Function to save all generated content
+  const handleSaveAllContent = async (): Promise<boolean> => {
+    if (!content || Object.keys(generatedContents).length === 0) return false;
+    
+    setIsSavingAll(true);
+    try {
+      const formatIds = Object.keys(generatedContents);
+      let allSuccess = true;
+      
+      // Save each format one by one
+      for (const formatId of formatIds) {
+        const success = await saveAsNewContent(formatId, generatedContents[formatId]);
+        if (!success) {
+          allSuccess = false;
+        }
+      }
+      
+      return allSuccess;
+    } catch (error) {
+      console.error('Error saving all content:', error);
+      return false;
+    } finally {
+      setIsSavingAll(false);
+    }
+  };
   
   // If no content is selected yet, show the content selection view
   if (!content) {
@@ -132,9 +159,11 @@ const ContentRepurposing = () => {
               onCopyToClipboard={copyToClipboard}
               onDownloadAsText={downloadAsText}
               onSaveAsNewContent={saveAsNewContent}
+              onSaveAllContent={handleSaveAllContent}
               onDeleteRepurposedContent={handleDeleteActiveFormat}
               isDeleting={isDeleting}
               isSaving={isSaving}
+              isSavingAll={isSavingAll}
             />
           </div>
         </div>

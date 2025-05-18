@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Trash2, Loader2 } from 'lucide-react';
+import { Copy, Download, Trash2, Loader2, SaveAll } from 'lucide-react';
 
 interface DialogActionButtonsProps {
   onCopy: () => void;
