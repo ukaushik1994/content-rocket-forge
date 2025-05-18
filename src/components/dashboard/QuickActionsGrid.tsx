@@ -3,7 +3,7 @@ import React from 'react';
 import { NavigateFunction } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FileUp, ArrowRight, FileBarChart, Settings } from 'lucide-react';
+import { FileText, FileUp, ArrowRight, FileBarChart, Settings, Repeat, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface QuickActionsGridProps {
@@ -30,6 +30,57 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       iconBg: "bg-gradient-to-br from-neon-purple/30 to-neon-blue/20"
     },
     {
+      title: "Drafts",
+      description: "Access and manage your saved content drafts and works in progress.",
+      icon: <FileText className="h-5 w-5 text-blue-400" />,
+      action: () => navigate('/drafts'),
+      buttonText: "View Drafts",
+      buttonIcon: <ArrowRight className="h-4 w-4" />,
+      gradient: "from-blue-400/20 to-cyan-500/10",
+      delay: 0.15,
+      iconAnimation: {
+        hover: { scale: 1.2, rotate: -5, transition: { duration: 0.3 } },
+        tap: { scale: 0.9, transition: { duration: 0.1 } },
+        initial: { opacity: 0, y: -15 },
+        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.05 } }
+      },
+      iconBg: "bg-gradient-to-br from-blue-400/30 to-cyan-500/20"
+    },
+    {
+      title: "Content Repurposing",
+      description: "Transform existing content into various formats for different platforms.",
+      icon: <Repeat className="h-5 w-5 text-indigo-400" />,
+      action: () => navigate('/content-repurposing'),
+      buttonText: "Repurpose Content",
+      buttonIcon: <ArrowRight className="h-4 w-4" />,
+      gradient: "from-indigo-400/20 to-violet-500/10",
+      delay: 0.2,
+      iconAnimation: {
+        hover: { scale: 1.2, rotate: 180, transition: { duration: 0.5 } },
+        tap: { scale: 0.9, transition: { duration: 0.1 } },
+        initial: { opacity: 0, y: -15 },
+        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.1 } }
+      },
+      iconBg: "bg-gradient-to-br from-indigo-400/30 to-violet-500/20"
+    },
+    {
+      title: "Content Approval",
+      description: "Review and approve content before publishing to ensure quality.",
+      icon: <CheckCircle className="h-5 w-5 text-green-400" />,
+      action: () => navigate('/content-approval'),
+      buttonText: "Review Content",
+      buttonIcon: <ArrowRight className="h-4 w-4" />,
+      gradient: "from-green-400/20 to-emerald-500/10",
+      delay: 0.25,
+      iconAnimation: {
+        hover: { scale: 1.2, y: -5, transition: { duration: 0.3 } },
+        tap: { scale: 0.9, transition: { duration: 0.1 } },
+        initial: { opacity: 0, y: -15 },
+        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.15 } }
+      },
+      iconBg: "bg-gradient-to-br from-green-400/30 to-emerald-500/20"
+    },
+    {
       title: "Solution Upload",
       description: "Upload your products and services to include in generated content.",
       icon: <FileUp className="h-5 w-5 text-neon-pink" />,
@@ -37,40 +88,40 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
       buttonText: "Manage Solutions",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
       gradient: "from-neon-pink/20 to-neon-blue/10",
-      delay: 0.2,
+      delay: 0.3,
       iconAnimation: {
         hover: { scale: 1.2, y: -5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.1 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.2 } }
       },
       iconBg: "bg-gradient-to-br from-neon-pink/30 to-neon-blue/20"
     },
     {
       title: "Analytics Overview",
       description: "Track performance metrics and optimize your content strategy.",
-      icon: <FileBarChart className="h-5 w-5 text-green-400" />,
+      icon: <FileBarChart className="h-5 w-5 text-amber-400" />,
       action: () => navigate('/analytics'),
       buttonText: "View Analytics",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
-      gradient: "from-green-400/20 to-emerald-500/10",
-      delay: 0.3,
+      gradient: "from-amber-400/20 to-orange-500/10",
+      delay: 0.35,
       iconAnimation: {
         hover: { scale: 1.2, rotate: -5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.2 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.25 } }
       },
-      iconBg: "bg-gradient-to-br from-green-400/30 to-emerald-500/20"
+      iconBg: "bg-gradient-to-br from-amber-400/30 to-orange-500/20"
     },
     {
       title: "Configure Settings",
       description: "Customize your workflow and API integrations for optimal results.",
-      icon: <Settings className="h-5 w-5 text-amber-400" />,
+      icon: <Settings className="h-5 w-5 text-purple-400" />,
       action: () => navigate('/settings'),
       buttonText: "Open Settings",
       buttonIcon: <ArrowRight className="h-4 w-4" />,
-      gradient: "from-amber-400/20 to-orange-500/10",
+      gradient: "from-purple-400/20 to-fuchsia-500/10",
       delay: 0.4,
       iconAnimation: {
         hover: { rotate: 90, scale: 1.2, transition: { duration: 0.5 } },
@@ -78,7 +129,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         initial: { opacity: 0, y: -15 },
         animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.3 } }
       },
-      iconBg: "bg-gradient-to-br from-amber-400/30 to-orange-500/20"
+      iconBg: "bg-gradient-to-br from-purple-400/30 to-fuchsia-500/20"
     }
   ];
 
