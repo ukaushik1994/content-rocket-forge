@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 import { OutlineSection } from './types/outline-types';
 
@@ -254,8 +253,13 @@ export const contentBuilderReducer = (
         additionalInstructions: action.payload
       };
       
+    case 'SET_WORD_COUNT_LIMIT':
+      return {
+        ...state,
+        wordCountLimit: action.payload
+      };
+      
     default:
       return state;
   }
 };
-

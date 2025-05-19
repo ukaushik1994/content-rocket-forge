@@ -1,14 +1,16 @@
-
 /**
  * Action-related type definitions
  */
 
 import { ContentType, ContentFormat, ContentIntent } from './content-types';
-import { Solution, SolutionIntegrationMetrics } from './solution-types';
+import { SerpData, SerpAnalysisState } from './serp-types';
+import { Cluster } from './cluster-types';
+import { Solution } from './solution-types';
 import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { OutlineSection } from './outline-types';
-import { DocumentStructure } from './document-types';
+import { Document, DocumentAnalysis } from './document-types';
+import { SolutionIntegrationMetrics } from './seo-types';
 
 // Content Builder Actions
 export type ContentBuilderAction =
@@ -42,6 +44,9 @@ export type ContentBuilderAction =
   | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_META_TITLE'; payload: string }
   | { type: 'SET_META_DESCRIPTION'; payload: string }
+  | { type: 'SET_SLUG_OVERRIDE'; payload: string }
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
+  | { type: 'SET_DRAFT_ID'; payload: string }
+  | { type: 'SET_WORD_COUNT_LIMIT'; payload: number };

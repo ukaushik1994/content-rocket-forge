@@ -1,17 +1,11 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
-import { 
-  Sparkles, 
-  ListTodo, 
-  CheckSquare,  
-  Save,
-  Bot, 
-  UserRound, 
-} from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
-import { formatDistanceToNow } from 'date-fns';
+import { Wand2, Eye, EyeOff, Save, RotateCw } from 'lucide-react';
+import { AiProviderSelector } from '@/components/content-builder/outline/ai-generator/AiProviderSelector';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
@@ -21,13 +15,13 @@ interface ContentGenerationHeaderProps {
   outlineLength: number;
   aiProvider: AiProvider;
   onAiProviderChange: (provider: AiProvider) => void;
-  autoSaveTimestamp?: string | null;
-  hasUnsavedChanges?: boolean;
-  onManualSave?: () => void;
-  wordCountLimit?: number;
+  autoSaveTimestamp: string | null;
+  hasUnsavedChanges: boolean;
+  onManualSave: () => void;
+  wordCountLimit: number | null;
 }
 
-export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
+export const ContentGenerationHeader = ({
   isGenerating,
   handleGenerateContent,
   handleToggleOutline,
@@ -39,86 +33,100 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   hasUnsavedChanges,
   onManualSave,
   wordCountLimit
-}) => {
+}: ContentGenerationHeaderProps) => {
+  const lastSaved = autoSaveTimestamp 
+    ? new Date(autoSaveTimestamp).toLocaleTimeString() 
+    : null;
+    
   return (
-    <div className="flex flex-col sm:flex-row justify-between gap-3">
-      <div className="flex flex-wrap gap-2 items-center">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/5">
+      <div className="flex items-center gap-2">
         <Button
           onClick={handleGenerateContent}
-          disabled={isGenerating || outlineLength === 0}
-          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white"
+          disabled={isGenerating}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
         >
           {isGenerating ? (
-            <><Sparkles className="mr-2 h-4 w-4 animate-pulse" /> Generating...</>
+            <>
+              <RotateCw className="h-4 w-4 mr-2 animate-spin" />
+              Generating...
+            </>
           ) : (
-            <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
+            <>
+              <Wand2 className="h-4 w-4 mr-2" />
+              Generate Content
+            </>
           )}
         </Button>
         
-        <div className="flex gap-1 ml-2">
-          <Toggle
-            variant="outline"
-            pressed={showOutline}
-            onPressedChange={handleToggleOutline}
-            aria-label="Toggle outline"
-            className="bg-slate-900/30 data-[state=on]:bg-slate-800/70 border border-white/10 hover:bg-slate-800/50"
-          >
-            <ListTodo className="h-4 w-4" />
-          </Toggle>
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        {/* Auto-save indicator */}
-        <div className="text-xs text-white/50 flex items-center gap-1">
-          {hasUnsavedChanges ? (
-            <>
-              <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
-              Unsaved changes
-            </>
-          ) : autoSaveTimestamp ? (
-            <>
-              <CheckSquare className="h-3 w-3 text-green-400" />
-              Saved {formatDistanceToNow(new Date(autoSaveTimestamp), { addSuffix: true })}
-            </>
-          ) : null}
-        </div>
-        
-        {/* Manual save button */}
-        {onManualSave && (
+        <div className="hidden sm:flex items-center gap-1.5">
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={onManualSave}
-            disabled={!hasUnsavedChanges}
-            className="text-xs bg-white/5 border-white/10 hover:bg-white/10"
+            onClick={handleToggleOutline}
+            className="gap-1 bg-white/5 hover:bg-white/10 text-sm border-white/10"
           >
-            <Save className="h-3 w-3 mr-1" />
-            Save
-          </Button>
-        )}
-        
-        {/* AI Provider selector */}
-        <div className="flex items-center gap-1 border border-white/10 p-1 rounded-md bg-slate-900/30">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`text-xs px-2 ${aiProvider === 'openai' ? 'bg-white/10' : ''}`}
-            onClick={() => onAiProviderChange('openai')}
-          >
-            <Bot className="h-3 w-3 mr-1" />
-            GPT
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`text-xs px-2 ${aiProvider === 'anthropic' ? 'bg-white/10' : ''}`}
-            onClick={() => onAiProviderChange('anthropic')}
-          >
-            <UserRound className="h-3 w-3 mr-1" />
-            Claude
+            {showOutline ? (
+              <>
+                <EyeOff className="h-3.5 w-3.5" />
+                Hide Outline
+              </>
+            ) : (
+              <>
+                <Eye className="h-3.5 w-3.5" />
+                Show Outline ({outlineLength})
+              </>
+            )}
           </Button>
         </div>
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-2">
+        {wordCountLimit && (
+          <Badge variant="outline" className="bg-white/5 text-xs py-0.5 px-2">
+            {wordCountLimit} words target
+          </Badge>
+        )}
+        
+        <AiProviderSelector 
+          selectedProvider={aiProvider}
+          onProviderChange={onAiProviderChange}
+          size="sm"
+          variant="outline"
+          className="bg-white/5 hover:bg-white/10 border-white/10"
+        />
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-1.5 text-xs border border-white/10 bg-white/5 hover:bg-white/10"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {hasUnsavedChanges ? 'Unsaved' : 'Saved'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Content Saving</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            
+            {lastSaved && (
+              <DropdownMenuItem disabled>
+                Last saved at {lastSaved}
+              </DropdownMenuItem>
+            )}
+            
+            <DropdownMenuItem onClick={onManualSave}>
+              Save manually now
+            </DropdownMenuItem>
+            
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled className="text-xs opacity-50">
+              Content is auto-saved every 30 seconds
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

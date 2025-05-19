@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
@@ -51,11 +50,17 @@ export function useContentGeneration() {
       additionalInstructions, 
       selectedSolution,
       contentTitle,
-      selectedKeywords 
+      selectedKeywords,
+      wordCountLimit
     } = state;
     
     if (!mainKeyword) {
       toast.error("Please set a main keyword first");
+      return false;
+    }
+    
+    if (!contentTitle) {
+      toast.error("Please set a title first for better content structure");
       return false;
     }
     
@@ -84,16 +89,21 @@ export function useContentGeneration() {
       // Prepare secondary keywords
       const secondaryKeywords = selectedKeywords?.join(', ') || '';
       
+      // Define the title for content
+      const title = contentTitle || `Complete Guide to ${mainKeyword}`;
+      const titleAsH1 = `# ${title}`;
+      
       // Create a detailed prompt for the AI
       const prompt = `
-      Write comprehensive, high-quality content for an article with the title: "${contentTitle || `Complete Guide to ${mainKeyword}`}".
+      Write comprehensive, high-quality content for an article with the title: "${title}".
       
-      Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
+      Title: ${title}
       Primary Keyword: ${mainKeyword}
       ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
+      ${wordCountLimit ? `Word Count Target: Approximately ${wordCountLimit} words` : ''}
       
       The content MUST start with the title as an H1 heading. For example:
-      # ${contentTitle || `Complete Guide to ${mainKeyword}`}
+      ${titleAsH1}
       
       Then use this outline structure for the rest of the content:
       ${outlineText}
@@ -105,6 +115,9 @@ export function useContentGeneration() {
       Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
       Include a compelling introduction and a strong conclusion. 
       Optimize the content for readability and search engines.
+      ${wordCountLimit ? `Stay close to the target of ${wordCountLimit} words.` : ''}
+      
+      IMPORTANT: The first line of the content MUST be "${titleAsH1}"
       `;
       
       // Call the AI API via our service
@@ -126,14 +139,16 @@ export function useContentGeneration() {
         
         if (chatResponse?.choices?.[0]?.message?.content) {
           // Use the AI-generated content
-          const generatedContent = chatResponse.choices[0].message.content;
+          let generatedContent = chatResponse.choices[0].message.content;
           
           // If content doesn't start with the title as an H1, add it
           let finalContent = generatedContent;
-          const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
           
           if (!finalContent.trim().startsWith('#')) {
             finalContent = `${titleAsH1}\n\n${finalContent}`;
+          } else if (!finalContent.trim().startsWith(titleAsH1)) {
+            // If it starts with a heading but not our title, replace that heading with our title
+            finalContent = finalContent.replace(/^#\s+.*$/m, titleAsH1);
           }
           
           setContent(finalContent);

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -64,6 +63,11 @@ export const ContentWritingStep = () => {
       return;
     }
     
+    if (!state.contentTitle) {
+      toast.error("Please set a title first using the title generator");
+      return;
+    }
+    
     // Convert outline to a formatted string for the prompt
     const outlineText = Array.isArray(state.outline) 
       ? state.outline.map((item, index) => {
@@ -87,7 +91,7 @@ export const ContentWritingStep = () => {
       secondaryKeywordsStr,
       selectedSolution,
       additionalInstructions,
-      wordCountLimit,
+      wordCountLimit || undefined,
       setIsGenerating,
       handleContentChange
     );
@@ -130,7 +134,7 @@ export const ContentWritingStep = () => {
               {state.contentTitle}
             </span>
           ) : (
-            <span className="text-muted-foreground text-base">No title set</span>
+            <span className="text-muted-foreground text-base">No title set - please generate a title first</span>
           )}
         </h2>
         <TitleGenerationButton />
