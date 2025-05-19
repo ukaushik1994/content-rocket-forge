@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
-import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
+import { SerpSelection } from '@/contexts/content-builder/types';
 import { SelectedCountsType } from './serp-analysis/types';
 
 export interface SelectedItemsSidebarProps {
@@ -137,7 +137,16 @@ export const SerpAnalysisStep = () => {
             className="w-1/3 border-l pl-6"
           >
             <SelectedItemsSidebar 
-              selectedCounts={selectedCounts}
+              selectedCounts={{
+                keyword: selectedCounts.keyword,
+                question: selectedCounts.question,
+                snippet: selectedCounts.snippet,
+                competitor: selectedCounts.competitor,
+                entity: selectedCounts.entity,
+                heading: selectedCounts.heading,
+                contentGap: selectedCounts.contentGap,
+                topRank: selectedCounts.topRank
+              }}
               totalSelected={totalSelected}
               serpSelections={serpSelections}
               handleToggleSelection={handleToggleSelection}
@@ -160,7 +169,16 @@ export const SerpAnalysisStep = () => {
       <div className="md:hidden mt-6">
         {!showSidebar && totalSelected > 0 && (
           <SelectedItemsContent 
-            selectedCounts={selectedCounts}
+            selectedCounts={{
+              keyword: selectedCounts.keyword,
+              question: selectedCounts.question,
+              snippet: selectedCounts.snippet,
+              competitor: selectedCounts.competitor,
+              entity: selectedCounts.entity,
+              heading: selectedCounts.heading,
+              contentGap: selectedCounts.contentGap,
+              topRank: selectedCounts.topRank
+            }}
             totalSelected={totalSelected}
             onGenerateOutline={handleGenerateOutline}
           />
