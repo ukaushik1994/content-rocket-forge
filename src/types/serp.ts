@@ -21,6 +21,7 @@ export interface SerpAnalysisResult {
   relatedSearches: any[];
   keywords: string[];
   recommendations: string[];
+  featuredSnippets?: any[]; // Added the missing property
   isMockData?: boolean;
   provider?: string;
 }

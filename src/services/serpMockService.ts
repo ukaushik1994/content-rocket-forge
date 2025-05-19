@@ -1,4 +1,3 @@
-
 import { SerpAnalysisResult } from '@/types/serp';
 
 /**
