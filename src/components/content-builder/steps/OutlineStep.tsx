@@ -22,7 +22,12 @@ export const OutlineStep = () => {
     }
     
     if (state.outline && state.outline.length > 0) {
-      return state.outline.map((title: string) => ({
+      // Cast to string[] if needed
+      const outlineStrings = Array.isArray(state.outline) 
+        ? state.outline.map(item => typeof item === 'string' ? item : item.title)
+        : [];
+      
+      return outlineStrings.map((title: string) => ({
         id: uuid(),
         title: title,
         level: 1,
@@ -45,6 +50,10 @@ export const OutlineStep = () => {
       navigateToStep(4); // Navigate to Content Writing step
     }
   };
+
+  const handleTitleChange = (title: string) => {
+    /* Handle title change */
+  };
   
   return (
     <div className="space-y-6">
@@ -52,9 +61,7 @@ export const OutlineStep = () => {
       <ContentTitleCard 
         title={state.contentTitle || ''}
         suggestedTitles={state.suggestedTitles || []}
-        onTitleChange={(title: string) => {
-          /* Handle title change */
-        }}
+        onTitleChange={handleTitleChange}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

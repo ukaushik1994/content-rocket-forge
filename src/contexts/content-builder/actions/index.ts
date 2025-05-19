@@ -6,6 +6,7 @@ import { createSerpActions } from './serpActions';
 import { createNavigationActions } from './navigationActions';
 import { createPublishActions } from './publishActions';
 import { createSeoActions } from './seoActions';
+import { Solution } from '../types/solution-types';
 
 /**
  * Creates and combines all content builder actions
@@ -13,7 +14,7 @@ import { createSeoActions } from './seoActions';
 export const createContentBuilderActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
-): Omit<ContentBuilderContextType, 'state' | 'dispatch'> => {
+): Omit<ContentBuilderContextType, "state" | "dispatch"> => {
   
   // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
@@ -30,7 +31,9 @@ export const createContentBuilderActions = (
     addSeoImprovement: (improvement: any) => dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement }),
     skipOptimization: () => dispatch({ type: 'SKIP_OPTIMIZATION_STEP' }),
     setSolutionIntegrationMetrics: (metrics: any) => 
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics })
+      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics }),
+    selectSolution: (solution: Solution | null) => 
+      dispatch({ type: 'SELECT_SOLUTION', payload: solution })
   };
 
   // Merge all action groups and return

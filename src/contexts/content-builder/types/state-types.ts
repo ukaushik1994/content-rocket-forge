@@ -3,7 +3,7 @@ import { SerpData, SerpAnalysisState, SerpSelection } from './serp-types';
 import { Cluster, KeywordGroup, ContentCluster } from './cluster-types';
 import { Solution } from './solution-types';
 import { OutlineSection } from './outline-types';
-import { Document, DocumentAnalysis, DocumentStructure } from './document-types';
+import { DocumentAnalysis, DocumentStructure } from './document-types';
 import { SolutionIntegrationMetrics, SeoImprovement } from './seo-types';
 import { ContentType, ContentFormat, ContentIntent } from './content-types';
 

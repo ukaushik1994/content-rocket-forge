@@ -18,6 +18,7 @@ export interface SelectedCountsType {
   heading: number;
   contentGap: number;
   topRank: number;
+  [key: string]: number; // Add index signature for string keys
 }
 
 export interface SelectedItemsSidebarProps {
@@ -28,10 +29,10 @@ export interface SelectedItemsSidebarProps {
 }
 
 export interface SelectedItemsContentProps {
-  serpSelections: SerpSelection[];
-  totalSelected: number;
   selectedCounts: SelectedCountsType;
-  handleToggleSelection: (type: string, content: string) => void;
-  selectedTab: string;
-  setSelectedTab: Dispatch<SetStateAction<string>>;
+  totalSelected: number;
+  onGenerateOutline?: () => void;
+  serpSelections?: SerpSelection[];
+  selectedTab?: string;
+  setSelectedTab?: Dispatch<SetStateAction<string>>;
 }

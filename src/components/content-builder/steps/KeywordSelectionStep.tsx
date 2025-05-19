@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -239,7 +238,16 @@ export const KeywordSelectionStep = () => {
                   <SelectedItemsSidebar 
                     serpSelections={serpSelections}
                     totalSelected={totalSelected}
-                    selectedCounts={selectedCounts}
+                    selectedCounts={{
+                      keyword: selectedCounts.keyword || 0,
+                      question: selectedCounts.question || 0,
+                      snippet: selectedCounts.snippet || 0,
+                      competitor: selectedCounts.competitor || 0,
+                      entity: selectedCounts.entity || 0,
+                      heading: selectedCounts.heading || 0,
+                      contentGap: selectedCounts.contentGap || 0,
+                      topRank: selectedCounts.topRank || 0
+                    }}
                     handleToggleSelection={handleToggleSelection}
                   />
                 </div>

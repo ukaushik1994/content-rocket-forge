@@ -1,7 +1,7 @@
 
 export * from './SelectedItemsSidebar';
-export * from './SerpSelectionStats';
+export { SerpSelectionStats } from './SerpSelectionStats';
 export * from './groups';
 export * from './EmptySelectionState';
-export * from './SelectedItemsContent';
-export * from './types';
+export { SelectedItemsContent } from './SelectedItemsContent';
+export * from './types'; // Export all types from a single place

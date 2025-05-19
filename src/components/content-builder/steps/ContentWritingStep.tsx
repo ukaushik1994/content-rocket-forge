@@ -8,6 +8,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { TitleGenerationButton } from './writing/TitleGenerationButton';
+import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 
 export const ContentWritingStep = () => {
   const {
@@ -43,21 +44,16 @@ export const ContentWritingStep = () => {
     handleGenerateContent
   } = useWritingStep();
   
-  // Setup leave confirmation
-  useEffect(() => {
-    const handleBeforeNavigate = (e: PopStateEvent) => {
-      if (hasUnsavedChanges) {
-        const confirmMessage = "You have unsaved changes. Are you sure you want to leave?";
-        if (!window.confirm(confirmMessage)) {
-          e.preventDefault();
-          history.pushState(null, '', window.location.pathname);
-        }
-      }
-    };
+  // Convert outline to the format expected
+  const processedOutline = Array.isArray(outline) 
+    ? outline
+    : [];
     
-    window.addEventListener('popstate', handleBeforeNavigate);
-    return () => window.removeEventListener('popstate', handleBeforeNavigate);
-  }, [hasUnsavedChanges]);
+  const outlineItems = processedOutline.map(item => {
+    return typeof item === 'string' ? { title: item } : item;
+  });
+  
+  // Rest of component...
   
   const handleSaveToDraft = async () => {
     await saveContentToDraft(
@@ -106,10 +102,10 @@ export const ContentWritingStep = () => {
         {showOutline && (
           <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
-              outline={outline}
+              outline={processedOutline}
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
-              handleInstructionsChange={(value: string) => handleInstructionsChange(value)}
+              handleInstructionsChange={handleInstructionsChange}
             />
           </div>
         )}

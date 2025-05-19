@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '../serp/SerpAnalysisHeader';
@@ -17,7 +16,7 @@ export interface SelectedItemsSidebarProps {
   selectedCounts: any;
   totalSelected: number;
   serpSelections: SerpSelection[];
-  handleToggleSelection: (item: SerpSelection) => void;
+  handleToggleSelection: (type: string, content: string) => void;
 }
 
 export const SerpAnalysisStep = () => {
@@ -56,9 +55,19 @@ export const SerpAnalysisStep = () => {
     navigateToStep(3); // Navigate to Outline step
   };
 
-  const handleToggleSelection = (item: SerpSelection) => {
-    console.log('Toggle selection for item:', item);
+  // Helper function to toggle selection state
+  const handleToggleSelection = (type: string, content: string) => {
+    console.log('Toggle selection for type:', type, 'content:', content);
     // This would dispatch an action to toggle the selection state
+    dispatch({
+      type: 'TOGGLE_SERP_SELECTION',
+      payload: { type, content }
+    });
+  };
+  
+  // Adapter function to match expected types
+  const handleItemToggle = (item: SerpSelection) => {
+    handleToggleSelection(item.type, item.content);
   };
   
   // If SERP API key is not set, show the setup screen
