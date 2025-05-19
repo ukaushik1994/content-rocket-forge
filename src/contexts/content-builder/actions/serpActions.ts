@@ -39,7 +39,8 @@ export const createSerpActions = (
           keyword: k.query,
           volume: k.volume
         })),
-        insights: serpData.insights,
+        // Use optional chaining for insights which might not exist
+        insights: serpData.recommendations || [],
         timestamp: new Date().toISOString(),
         searchVolume: serpData.searchVolume,
         competitionScore: serpData.competitionScore,

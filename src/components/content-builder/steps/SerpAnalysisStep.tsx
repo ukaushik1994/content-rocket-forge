@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '../serp/SerpAnalysisHeader';
@@ -11,22 +12,25 @@ import { LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
+import { SelectedCountsType } from './serp-analysis/types';
 
 export interface SelectedItemsSidebarProps {
-  selectedCounts: any;
+  selectedCounts: SelectedCountsType;
   totalSelected: number;
   serpSelections: SerpSelection[];
   handleToggleSelection: (type: string, content: string) => void;
 }
 
 export const SerpAnalysisStep = () => {
-  const { state, analyzeKeyword, generateOutlineFromSelections, navigateToStep } = useContentBuilder();
+  const { state, analyzeKeyword, generateOutlineFromSelections, navigateToStep, dispatch } = useContentBuilder();
   const { mainKeyword, isAnalyzing, serpSelections = [] } = state;
   
   const [showSidebar, setShowSidebar] = useState(true);
   const [apiKeyChecked, setApiKeyChecked] = useState(false);
   
-  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
+  // Get the selection stats
+  const stats = SerpSelectionStats({ serpSelections });
+  const { selectedCounts, totalSelected } = stats || { selectedCounts: { keyword: 0, question: 0, snippet: 0, competitor: 0, entity: 0, heading: 0, contentGap: 0, topRank: 0 }, totalSelected: 0 };
   
   // Handle analyzing the main keyword
   useEffect(() => {
@@ -67,7 +71,9 @@ export const SerpAnalysisStep = () => {
   
   // Adapter function to match expected types
   const handleItemToggle = (item: SerpSelection) => {
-    handleToggleSelection(item.type, item.content);
+    if (item && typeof item.type === 'string' && typeof item.content === 'string') {
+      handleToggleSelection(item.type, item.content);
+    }
   };
   
   // If SERP API key is not set, show the setup screen

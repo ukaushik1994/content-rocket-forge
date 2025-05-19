@@ -50,7 +50,13 @@ export const ContentWritingStep = () => {
     : [];
     
   const outlineItems = processedOutline.map(item => {
-    return typeof item === 'string' ? { title: item } : item;
+    if (typeof item === 'string') {
+      return { title: item };
+    } else if (item && typeof item === 'object') {
+      return { title: (item as any).title || '' };
+    } else {
+      return { title: '' };
+    }
   });
   
   // Rest of component...
@@ -62,7 +68,7 @@ export const ContentWritingStep = () => {
       mainKeyword,
       secondaryKeywords || [],
       saveNote,
-      Array.isArray(outline) ? outline.map(item => typeof item === 'string' ? item : item.title) : [],
+      Array.isArray(outline) ? outline.map(item => typeof item === 'string' ? item : (item as any).title || '') : [],
       setIsSaving,
       setShowSaveDialog
     );

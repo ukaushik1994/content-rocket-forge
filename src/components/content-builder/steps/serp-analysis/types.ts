@@ -35,4 +35,5 @@ export interface SelectedItemsContentProps {
   serpSelections?: SerpSelection[];
   selectedTab?: string;
   setSelectedTab?: Dispatch<SetStateAction<string>>;
+  handleToggleSelection?: (type: string, content: string) => void;
 }

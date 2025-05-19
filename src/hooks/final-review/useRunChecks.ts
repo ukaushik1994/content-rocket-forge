@@ -7,6 +7,7 @@ import { useMetaGenerator } from './useMetaGenerator';
 import { useSolutionAnalysis } from './useSolutionAnalysis';
 import { useStepCompletion } from './useStepCompletion';
 import { useTitleSuggestions } from './useTitleSuggestions';
+import { CTAInfo } from '@/utils/seo/content/types';
 
 // Standard toast configuration
 const toastConfig = {
@@ -27,7 +28,7 @@ export const useRunChecks = () => {
   const { ctaInfo } = useContentAnalysis();
   const { generateTitleSuggestions, titleSuggestions } = useTitleSuggestions();
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
-  const { analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
+  const { analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo as CTAInfo);
   const { checkStepCompletion } = useStepCompletion();
   
   // Run all checks at once

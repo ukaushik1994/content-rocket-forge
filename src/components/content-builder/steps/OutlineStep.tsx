@@ -24,7 +24,7 @@ export const OutlineStep = () => {
     if (state.outline && state.outline.length > 0) {
       // Cast to string[] if needed
       const outlineStrings = Array.isArray(state.outline) 
-        ? state.outline.map(item => typeof item === 'string' ? item : item.title)
+        ? state.outline.map(item => typeof item === 'string' ? item : (item as any).title || '')
         : [];
       
       return outlineStrings.map((title: string) => ({
@@ -42,7 +42,8 @@ export const OutlineStep = () => {
   const handleUpdateOutline = (updatedOutline: OutlineSection[]) => {
     setOutlineSections(updatedOutline);
     // Extract titles for the simpler outline array
-    setOutline(updatedOutline.map(section => section.title));
+    const titleArray = updatedOutline.map(section => section.title);
+    setOutline(titleArray);
   };
   
   const handleFinishOutline = () => {

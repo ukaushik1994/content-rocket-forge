@@ -12,6 +12,7 @@ import { useTitleSuggestions } from './final-review/useTitleSuggestions';
 import { useDocumentAnalysis } from './final-review/useDocumentAnalysis';
 import { useRunChecks } from './final-review/useRunChecks';
 import { useDebugLogging } from './final-review/useDebugLogging';
+import { CTAInfo } from '@/utils/seo/content/types';
 
 export const useFinalReview = () => {
   const { state } = useContentBuilder();
@@ -26,7 +27,7 @@ export const useFinalReview = () => {
   const { keywordUsage, ctaInfo } = useContentAnalysis();
   const { titleSuggestions, isGeneratingTitles, generateTitleSuggestions } = useTitleSuggestions();
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
-  const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
+  const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo as CTAInfo);
   const { checkStepCompletion } = useStepCompletion();
   const { documentStructure } = useDocumentAnalysis();
   const { isRunningAllChecks, runAllChecks } = useRunChecks();
