@@ -47,6 +47,27 @@ export function isDataForSeoFormat(key: string): boolean {
 }
 
 /**
+ * Encode DataForSEO email and password as base64 string in the format expected by the API
+ */
+export function encodeDataForSeoCredentials(email: string, password: string): string {
+  return btoa(`${email}:${password}`);
+}
+
+/**
+ * Decode DataForSEO credentials from base64 string
+ */
+export function decodeDataForSeoCredentials(encoded: string): { email: string; password: string } {
+  try {
+    const decoded = atob(encoded);
+    const [email, password] = decoded.split(':');
+    return { email: email || '', password: password || '' };
+  } catch (error) {
+    console.error('Error decoding DataForSEO credentials:', error);
+    return { email: '', password: '' };
+  }
+}
+
+/**
  * Attempts to detect what type of API key this is based on its format
  */
 export function detectApiKeyType(key: string): string | null {

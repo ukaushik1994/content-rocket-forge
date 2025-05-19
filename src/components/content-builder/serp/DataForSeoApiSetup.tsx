@@ -6,72 +6,81 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Key, Save, Check, AlertCircle, Loader2, TestTube } from "lucide-react";
 import { testApiKey } from '@/services/apiKeys/testing';
+import { encodeDataForSeoCredentials } from '@/services/apiKeys/validation';
 
-export const DataForSeoApiSetup: React.FC = () => {
-  const [login, setLogin] = useState('');
+interface DataForSeoApiSetupProps {
+  onConfigured?: () => void;
+}
+
+export const DataForSeoApiSetup: React.FC<DataForSeoApiSetupProps> = ({ onConfigured }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [hasExistingCredentials, setHasExistingCredentials] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{
-    login?: string;
-    password?: string;
-  }>({});
+  const [validationError, setValidationError] = useState<string | undefined>(undefined);
 
-  // Check for existing credentials on component mount
+  // Check for existing API key on component mount
   useEffect(() => {
-    const existingCredentials = localStorage.getItem('dataforseo_api_key');
-    if (existingCredentials) {
+    const existingKey = localStorage.getItem('dataforseo_api_key');
+    if (existingKey) {
       setHasExistingCredentials(true);
-      
-      // Try to decode and get login
       try {
-        const decoded = atob(existingCredentials);
-        const [savedLogin] = decoded.split(':');
-        if (savedLogin) {
-          setLogin(savedLogin);
+        // Try to decode the base64 string
+        const decoded = atob(existingKey);
+        const [storedEmail, storedPassword] = decoded.split(':');
+        if (storedEmail && storedPassword) {
+          setEmail(storedEmail);
+          setPassword(storedPassword);
         }
       } catch (error) {
-        console.error('Error decoding DataForSEO credentials:', error);
+        console.error('Error decoding existing DataForSEO credentials:', error);
       }
     }
   }, []);
 
-  // Validate input fields
-  const validateFields = (): boolean => {
-    const errors: {login?: string; password?: string;} = {};
-    
-    if (!login.trim()) {
-      errors.login = 'Login is required';
-    } else if (!login.includes('@')) {
-      errors.login = 'Login should be a valid email address';
+  // Validate the credentials
+  const validateCredentials = (): boolean => {
+    if (!email.trim()) {
+      setValidationError('Email is required');
+      return false;
     }
     
     if (!password.trim()) {
-      errors.password = 'Password is required';
+      setValidationError('Password is required');
+      return false;
     }
     
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setValidationError('Please enter a valid email address');
+      return false;
+    }
+    
+    setValidationError(undefined);
+    return true;
   };
 
-  // Handle saving credentials
+  // Handle saving the credentials
   const handleSaveCredentials = async () => {
-    if (!validateFields()) {
+    if (!validateCredentials()) {
       return;
     }
 
     setIsSaving(true);
 
     try {
-      // For DataForSEO, we store the base64 encoded credentials
-      const credentials = btoa(`${login.trim()}:${password.trim()}`);
-      localStorage.setItem('dataforseo_api_key', credentials);
+      const encodedCredentials = encodeDataForSeoCredentials(email, password);
+      localStorage.setItem('dataforseo_api_key', encodedCredentials);
       
       setIsSuccess(true);
       setHasExistingCredentials(true);
       toast.success("DataForSEO credentials saved successfully!");
+      
+      // Notify parent component
+      onConfigured?.();
       
       // Reset the success state after a delay
       setTimeout(() => {
@@ -85,28 +94,31 @@ export const DataForSeoApiSetup: React.FC = () => {
     }
   };
   
-  // Handle testing connection
+  // Handle testing the credentials
   const handleTestConnection = async () => {
-    if (!validateFields()) {
+    if (!validateCredentials()) {
       return;
     }
     
     setIsTesting(true);
     
     try {
-      // Create the base64 credentials
-      const credentials = btoa(`${login.trim()}:${password.trim()}`);
+      // Encode the credentials
+      const encodedCredentials = encodeDataForSeoCredentials(email, password);
       
-      // Test the API key
-      const success = await testApiKey('dataforseo', credentials);
+      // Test the credentials
+      const success = await testApiKey('dataforseo', encodedCredentials);
       
       if (success) {
-        toast.success("Successfully connected to DataForSEO API!");
+        toast.success("Successfully connected to DataForSEO!");
         // Save the credentials if test is successful
-        localStorage.setItem('dataforseo_api_key', credentials);
+        localStorage.setItem('dataforseo_api_key', encodedCredentials);
         setHasExistingCredentials(true);
+        
+        // Notify parent component
+        onConfigured?.();
       } else {
-        toast.error("Failed to connect to DataForSEO API. Please check your credentials.");
+        toast.error("Failed to connect to DataForSEO. Please check your credentials.");
       }
     } catch (error: any) {
       console.error('Error testing DataForSEO connection:', error);
@@ -120,8 +132,8 @@ export const DataForSeoApiSetup: React.FC = () => {
     <Card className="border border-white/10 shadow-lg">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center">
-          <Key className="h-5 w-5 mr-2 text-green-500" />
-          DataForSEO API Setup
+          <Key className="h-5 w-5 mr-2 text-blue-500" />
+          DataForSEO Setup
           {hasExistingCredentials && (
             <span className="ml-2 text-xs bg-green-600/20 text-green-500 px-2 py-1 rounded-full">
               Configured
@@ -129,58 +141,55 @@ export const DataForSeoApiSetup: React.FC = () => {
           )}
         </CardTitle>
         <CardDescription>
-          Enter your DataForSEO API credentials to get professional SEO data
+          Enter your DataForSEO email and password to access search engine data
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="api-login" className="text-sm text-white/70 flex justify-between">
-              <span>Login (Email)</span>
-              {validationErrors.login && (
+            <label htmlFor="dataforseo-email" className="text-sm text-white/70 flex justify-between">
+              <span>Email</span>
+              {validationError && validationError.includes('email') && (
                 <span className="text-red-400 flex items-center text-xs">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {validationErrors.login}
+                  {validationError}
                 </span>
               )}
             </label>
             <Input
-              id="api-login"
+              id="dataforseo-email"
               type="email"
-              value={login}
+              value={email}
               onChange={(e) => {
-                setLogin(e.target.value);
-                setValidationErrors(prev => ({...prev, login: undefined}));
+                setEmail(e.target.value);
+                setValidationError(undefined);
               }}
-              className={`flex-1 bg-white/5 border-white/10 ${validationErrors.login ? 'border-red-500' : ''}`}
-              placeholder="user@example.com"
+              className={`flex-1 bg-white/5 border-white/10 ${validationError && validationError.includes('email') ? 'border-red-500' : ''}`}
+              placeholder="Your DataForSEO email"
             />
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="api-password" className="text-sm text-white/70 flex justify-between">
+            <label htmlFor="dataforseo-password" className="text-sm text-white/70 flex justify-between">
               <span>Password</span>
-              {validationErrors.password && (
+              {validationError && validationError.includes('password') && (
                 <span className="text-red-400 flex items-center text-xs">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {validationErrors.password}
+                  {validationError}
                 </span>
               )}
             </label>
             <Input
-              id="api-password"
+              id="dataforseo-password"
               type="password"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setValidationErrors(prev => ({...prev, password: undefined}));
+                setValidationError(undefined);
               }}
-              className={`flex-1 bg-white/5 border-white/10 ${validationErrors.password ? 'border-red-500' : ''}`}
-              placeholder="Your API password"
+              className={`flex-1 bg-white/5 border-white/10 ${validationError && validationError.includes('password') ? 'border-red-500' : ''}`}
+              placeholder="Your DataForSEO password"
             />
-            <p className="text-xs text-gray-400 mt-1">
-              If you don't see your password, you can request it from the DataForSEO dashboard.
-            </p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
@@ -230,9 +239,8 @@ export const DataForSeoApiSetup: React.FC = () => {
           <div className="bg-white/5 p-3 rounded text-xs text-white/70 border border-white/10">
             <p>Setting up DataForSEO:</p>
             <ul className="list-disc pl-4 mt-1 space-y-1">
-              <li>Create an account at <a href="https://app.dataforseo.com/register" target="_blank" rel="noreferrer" className="text-blue-400 underline">DataForSEO</a></li>
-              <li>Go to API Dashboard to find your credentials</li>
-              <li>Enter the login (email) and password here</li>
+              <li>Create an account at <a href="https://dataforseo.com/" target="_blank" rel="noreferrer" className="text-blue-400 underline">DataForSEO</a></li>
+              <li>Enter your DataForSEO account email and password</li>
               <li>Click "Test Connection" to verify your credentials</li>
               <li>Your credentials are stored locally for security</li>
             </ul>

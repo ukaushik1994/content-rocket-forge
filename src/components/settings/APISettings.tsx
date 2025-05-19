@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ApiKeyInput } from './api/ApiKeyInput';
+import { DataForSeoApiKeyInput } from './api/DataForSeoApiKeyInput';
 import { AvailableProviders } from './api/AvailableProviders';
 import { ApiSettingsHeader } from './api/ApiSettingsHeader';
 import { API_PROVIDERS } from './api/types';
@@ -79,7 +80,11 @@ export function APISettings() {
 
       <div className="space-y-4">
         {filteredProviders.map(provider => (
-          <ApiKeyInput key={provider.id} provider={provider} />
+          provider.id === 'dataforseo' ? (
+            <DataForSeoApiKeyInput key={provider.id} provider={provider} />
+          ) : (
+            <ApiKeyInput key={provider.id} provider={provider} />
+          )
         ))}
       </div>
 

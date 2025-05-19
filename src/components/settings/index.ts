@@ -1,5 +1,6 @@
 
 export * from './api/ApiKeyInput';
+export * from './api/DataForSeoApiKeyInput';
 export * from './api/AvailableProviders';
 export * from './api/ApiSettingsHeader';
 export * from './APISettings';
