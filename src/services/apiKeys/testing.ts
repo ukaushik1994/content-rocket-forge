@@ -4,6 +4,7 @@
  */
 
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
+import { isDataForSeoFormat } from '../serp/adapters/dataforseo/ApiKeyTester';
 
 /**
  * Test an API key for a specific service
@@ -77,7 +78,7 @@ const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
 const testDataForSeoKey = async (apiKey: string): Promise<boolean> => {
   try {
     // For DataForSEO, the apiKey is actually a base64 encoded username:password
-    return apiKey.length > 10 && /^[A-Za-z0-9+/=]+$/.test(apiKey);
+    return isDataForSeoFormat(apiKey);
   } catch (error) {
     console.error('Error testing DataForSEO key:', error);
     return false;

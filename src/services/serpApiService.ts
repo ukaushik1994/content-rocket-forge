@@ -3,7 +3,8 @@ import { SerpAnalysisResult } from '@/types/serp';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 import { 
   analyzeSerpKeyword as analyzeSerpKeywordImpl,
-  searchSerpKeywords as searchSerpKeywordsImpl
+  searchSerpKeywords as searchSerpKeywordsImpl,
+  getActiveProvider
 } from './serp/SerpApiService';
 
 /**
@@ -11,7 +12,7 @@ import {
  */
 export const getPreferredSerpProvider = (): SerpProvider => {
   const storedProvider = localStorage.getItem('preferred_serp_provider');
-  return (storedProvider as SerpProvider) || 'serpapi';
+  return (storedProvider as SerpProvider) || getActiveProvider();
 };
 
 /**
@@ -34,11 +35,17 @@ export const analyzeSerpKeyword = async (
   
   // If no API keys, return null
   if (!serpApiKey && !dataForSeoKey) {
+    console.warn('No API keys found for SERP providers');
     return null;
   }
   
-  // Forward to the implementation
-  return analyzeSerpKeywordImpl(keyword, refresh);
+  try {
+    // Forward to the implementation
+    return await analyzeSerpKeywordImpl(keyword, refresh);
+  } catch (error) {
+    console.error('Error analyzing keyword:', error);
+    return null;
+  }
 };
 
 /**

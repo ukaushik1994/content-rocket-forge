@@ -9,6 +9,7 @@ import { SerpAnalysisResult } from '@/types/serp';
 import { SerpApiError, SerpErrorType } from '../error-handling/ErrorTypes';
 import { UsageTracker } from '../usage-tracking/UsageTracker';
 import { getFromCache, saveToCache } from '../cache/SerpCache';
+import { ErrorHandler } from '../error-handling/ErrorHandler';
 
 // Add interface for SerpApiOptions
 export interface SerpApiOptions {
@@ -87,15 +88,34 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
       provider: activeProvider
     };
     
-    const result = await adapter.analyzeKeyword(options);
-    
-    // Track usage
-    UsageTracker.trackQuery(activeProvider, 'analyze_keyword', keyword);
-    
-    // Cache the result
-    saveToCache(cacheKey, result);
-    
-    return result;
+    try {
+      console.log(`Analyzing keyword "${keyword}" with provider: ${activeProvider}`);
+      const result = await adapter.analyzeKeyword(options);
+      
+      if (!result) {
+        console.warn(`No data returned for keyword "${keyword}" with provider ${activeProvider}`);
+        return defaultResult;
+      }
+      
+      // Track usage
+      UsageTracker.trackQuery(activeProvider, 'analyze_keyword', keyword);
+      
+      // Cache the result
+      saveToCache(cacheKey, result);
+      
+      return result;
+    } catch (error) {
+      console.error(`Error analyzing keyword "${keyword}" with provider ${activeProvider}:`, error);
+      
+      const serpError = error instanceof SerpApiError 
+        ? error 
+        : ErrorHandler.handleProviderError(error, activeProvider);
+      
+      console.error('SERP API Error:', serpError);
+      
+      // Return default result on error
+      return defaultResult;
+    }
   } catch (error) {
     console.error('Error analyzing SERP keyword:', error);
     
@@ -131,12 +151,17 @@ export const searchSerpKeywords = async (keyword: string, refresh: boolean = fal
     limit: 10
   };
   
-  const result = await adapter.searchKeywords(options);
-  
-  // Track usage
-  UsageTracker.trackQuery(provider, 'search_keywords', keyword);
-  
-  return result;
+  try {
+    const result = await adapter.searchKeywords(options);
+    
+    // Track usage
+    UsageTracker.trackQuery(provider, 'search_keywords', keyword);
+    
+    return result;
+  } catch (error) {
+    console.error(`Error searching keywords for "${keyword}":`, error);
+    return [];
+  }
 };
 
 /**
@@ -156,10 +181,15 @@ export const searchRelatedKeywords = async (keyword: string, refresh: boolean = 
     limit: 20
   };
   
-  const result = await adapter.searchRelatedKeywords(options);
-  
-  // Track usage
-  UsageTracker.trackQuery(provider, 'search_related', keyword);
-  
-  return result;
+  try {
+    const result = await adapter.searchRelatedKeywords(options);
+    
+    // Track usage
+    UsageTracker.trackQuery(provider, 'search_related', keyword);
+    
+    return result;
+  } catch (error) {
+    console.error(`Error searching related keywords for "${keyword}":`, error);
+    return [];
+  }
 };

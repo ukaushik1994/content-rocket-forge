@@ -6,14 +6,19 @@ import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysi
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
+import { DataForSeoApiSetup } from '../serp/DataForSeoApiSetup';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 import { getPreferredSerpProvider } from '@/services/serpApiService';
+import { getActiveProvider } from '@/services/serp/SerpApiService';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections, changeSerpProvider } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeyExists, setApiKeyExists] = useState(false);
   const [currentProvider, setCurrentProvider] = useState<SerpProvider>(getPreferredSerpProvider());
+  const [activeTab, setActiveTab] = useState<string>('serpapi');
   
   // Check if API key exists
   useEffect(() => {
@@ -24,6 +29,15 @@ export const SerpAnalysisStep = () => {
       
       if (serpApiKey || dataForSeoKey) {
         setApiKeyExists(true);
+        
+        // Set the current provider to the one with an API key
+        if (serpApiKey) {
+          setCurrentProvider('serpapi');
+          setActiveTab('serpapi');
+        } else if (dataForSeoKey) {
+          setCurrentProvider('dataforseo');
+          setActiveTab('dataforseo');
+        }
         return;
       }
       
@@ -41,7 +55,7 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, currentProvider);
+      await analyzeKeyword(mainKeyword, currentProvider, true);
     }
   };
   
@@ -78,6 +92,20 @@ export const SerpAnalysisStep = () => {
       await changeSerpProvider(provider);
     }
   };
+
+  // Handle when an API key is configured
+  const handleApiConfigured = async () => {
+    setApiKeyExists(true);
+    
+    // Get the active provider
+    const activeProvider = getActiveProvider();
+    setCurrentProvider(activeProvider);
+    
+    // If we have a keyword, analyze it with the new provider
+    if (mainKeyword) {
+      await analyzeKeyword(mainKeyword, activeProvider, true);
+    }
+  };
   
   // If no API key exists, show the setup component
   if (!apiKeyExists && !serpData) {
@@ -90,7 +118,20 @@ export const SerpAnalysisStep = () => {
           </p>
         </div>
         
-        <SerpApiKeySetup />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="serpapi">SERP API</TabsTrigger>
+            <TabsTrigger value="dataforseo">DataForSEO</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="serpapi" className="mt-4">
+            <SerpApiKeySetup onConfigured={handleApiConfigured} />
+          </TabsContent>
+          
+          <TabsContent value="dataforseo" className="mt-4">
+            <DataForSeoApiSetup onConfigured={handleApiConfigured} />
+          </TabsContent>
+        </Tabs>
         
         <div className="text-center mt-4">
           <p className="text-sm text-muted-foreground">
