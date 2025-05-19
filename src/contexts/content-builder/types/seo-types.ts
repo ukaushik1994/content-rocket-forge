@@ -14,4 +14,6 @@ export interface SolutionIntegrationMetrics {
   valuePropositionClarity?: number;
   relevanceScore?: number;
   integrationLevel?: 'poor' | 'basic' | 'good' | 'excellent';
+  overallScore: number;
+  mentionedFeatures: string[];
 }

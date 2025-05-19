@@ -54,7 +54,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
           <div className="space-y-3">
             {/* Headings Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documentStructure.h1.length > 0 && (
+              {documentStructure.h1 && documentStructure.h1.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-purple-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H1 Headings ({documentStructure.h1.length})
@@ -67,7 +67,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {documentStructure.h2.length > 0 && (
+              {documentStructure.h2 && documentStructure.h2.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-blue-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H2 Headings ({documentStructure.h2.length})
@@ -80,7 +80,7 @@ export const DocumentStructureAnalysis = ({ documentStructure }: DocumentStructu
                 </div>
               )}
               
-              {documentStructure.h3.length > 0 && (
+              {documentStructure.h3 && documentStructure.h3.length > 0 && (
                 <div className="bg-card border rounded-md p-3">
                   <div className="text-xs font-semibold mb-2 text-cyan-500 flex items-center">
                     <FileText className="h-3 w-3 mr-1" /> H3 Headings ({documentStructure.h3.length})

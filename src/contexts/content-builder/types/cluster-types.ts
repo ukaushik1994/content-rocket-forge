@@ -3,7 +3,7 @@ export interface Cluster {
   id: string;
   name: string;
   keywords: string[];
-  mainKeyword: string;
+  mainKeyword?: string;
   volume?: number;
   competition?: number;
 }

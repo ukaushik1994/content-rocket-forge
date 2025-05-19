@@ -13,6 +13,8 @@ export const useWritingStep = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState('');
   const [saveNote, setSaveNote] = useState('');
+  const [autoSaveTimestamp, setAutoSaveTimestamp] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Calculate word count whenever content changes
   useEffect(() => {
@@ -54,6 +56,7 @@ export const useWritingStep = () => {
   
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
+    setHasUnsavedChanges(true);
   };
   
   const handleFocus = () => {
@@ -68,6 +71,34 @@ export const useWritingStep = () => {
     if (state.outlineSections && state.outlineSections.length > 0) {
       await generateContent(state.outlineSections);
     }
+  };
+
+  const setIsGenerating = (isGenerating: boolean) => {
+    // This method would typically update a state in the context
+    // For now we'll just console log
+    console.log("Setting isGenerating to:", isGenerating);
+  };
+
+  const handleToggleOutline = () => {
+    setShowOutline(!showOutline);
+  };
+
+  const handleToggleGenerator = () => {
+    setShowGenerator(!showGenerator);
+  };
+
+  const handleInstructionsChange = (instructions: string) => {
+    // In a real implementation, this would update the state context
+    console.log("Instructions changed:", instructions);
+  };
+
+  const handleAiProviderChange = (provider: string) => {
+    console.log("AI provider changed to:", provider);
+  };
+
+  const handleManualSave = () => {
+    setAutoSaveTimestamp(new Date().toISOString());
+    setHasUnsavedChanges(false);
   };
   
   return {
@@ -96,6 +127,18 @@ export const useWritingStep = () => {
     aiProvider: state.aiProvider,
     additionalInstructions: state.additionalInstructions,
     mainKeyword: state.mainKeyword,
-    secondaryKeywords: state.selectedKeywords || []
+    secondaryKeywords: state.selectedKeywords || [],
+    // Additional properties needed by ContentWritingStep
+    setIsGenerating,
+    outline: state.outline || [],
+    selectedSolution: state.selectedSolution,
+    autoSaveTimestamp,
+    hasUnsavedChanges,
+    wordCountLimit: state.wordCountLimit,
+    handleInstructionsChange,
+    handleToggleOutline,
+    handleToggleGenerator,
+    handleAiProviderChange,
+    handleManualSave
   };
 };

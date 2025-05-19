@@ -23,12 +23,12 @@ export interface DocumentAnalysis {
 }
 
 export interface DocumentStructure {
-  h1: number;
-  h2: number;
-  h3: number;
-  h4: number;
-  h5?: number;
-  h6?: number;
+  h1: string[];
+  h2: string[];
+  h3: string[];
+  h4: string[];
+  h5?: string[];
+  h6?: string[];
   paragraphs?: number;
   images?: number;
   lists?: number;

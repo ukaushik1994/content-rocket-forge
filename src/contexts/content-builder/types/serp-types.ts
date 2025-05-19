@@ -48,6 +48,8 @@ export interface SerpData {
     source: string;
     answer?: string;
   }>;
+  featuredSnippets?: any[];
+  entities?: any[];
 }
 
 export interface SerpSelection {

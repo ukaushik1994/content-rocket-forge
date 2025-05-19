@@ -5,7 +5,7 @@ export interface Solution {
   description: string;
   category: string;
   features: string[];
-  benefits: string[] | string; // Make benefits optional or string for flexibility
+  benefits?: string[] | string; // Make benefits optional
   useCases?: string[];
   websiteUrl?: string;
   logoUrl?: string | null;

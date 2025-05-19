@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -114,10 +115,10 @@ export const ContentWritingStep = () => {
     <div className="space-y-6 h-full flex flex-col">
       <ContentGenerationHeader
         isGenerating={isGenerating}
-        handleGenerateContent={handleGenerateContent}
-        handleToggleOutline={handleToggleOutline}
+        onGenerateContent={handleGenerateContent}
+        onToggleOutline={handleToggleOutline}
         showOutline={showOutline}
-        outlineLength={state.outline.length}
+        outlineLength={Array.isArray(state.outline) ? state.outline.length : 0}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
         autoSaveTimestamp={autoSaveTimestamp}
@@ -188,7 +189,7 @@ export const ContentWritingStep = () => {
         mainKeyword={mainKeyword}
         secondaryKeywords={secondaryKeywords || []}
         content={content}
-        outlineLength={state.outline.length}
+        outlineLength={Array.isArray(state.outline) ? state.outline.length : 0}
       />
     </div>
   );
