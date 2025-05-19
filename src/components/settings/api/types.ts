@@ -9,6 +9,7 @@ export interface ApiProviderConfig {
   required?: boolean;
   serviceKey?: string;
   autoDetectable?: boolean;
+  category?: 'ai' | 'serp' | 'other'; // Adding category property
 }
 
 export interface ApiProviderWithCategory extends ApiProviderConfig {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { 
@@ -207,7 +206,7 @@ export const DataForSeoProvider = ({
   };
 
   // Test credentials
-  const handleTestCredentials = async () => {
+  const handleTestCredentials = async (): Promise<TestResponse> => {
     try {
       setIsTesting(true);
       setError(null);

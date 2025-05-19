@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -152,7 +151,7 @@ export const ProviderTestPanel = ({
             {currentResponse ? (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <Badge variant={currentResponse.success ? "success" : "destructive"} className={currentResponse.success ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
+                  <Badge variant={currentResponse.success ? "outline" : "destructive"} className={currentResponse.success ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
                     {currentResponse.success ? (
                       <Check className="h-3 w-3 mr-1" />
                     ) : (
@@ -217,7 +216,7 @@ export const ProviderTestPanel = ({
                     }}
                   >
                     <div className="flex justify-between items-center">
-                      <Badge variant={response.success ? "success" : "destructive"} className={response.success ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
+                      <Badge variant={response.success ? "outline" : "destructive"} className={response.success ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
                         {response.success ? 'Success' : 'Error'}
                       </Badge>
                       <span className="text-xs text-muted-foreground">

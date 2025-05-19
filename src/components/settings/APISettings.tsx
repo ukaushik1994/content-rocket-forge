@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AvailableProviders } from './api/AvailableProviders';
 import { ApiSettingsHeader } from './api/ApiSettingsHeader';
@@ -264,7 +263,7 @@ export function APISettings() {
         </TabsContent>
       </Tabs>
       
-      <style jsx global>{`
+      <style jsx>{`
         .highlight-animation {
           animation: highlight 1.5s ease;
         }

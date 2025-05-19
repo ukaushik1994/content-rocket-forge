@@ -38,18 +38,20 @@ export const DataForSeoApiKeyInput: React.FC<DataForSeoApiKeyInputProps> = ({ pr
         const encodedCredentials = await getApiKey(provider.serviceKey);
         
         if (encodedCredentials) {
-          const { email: decodedEmail, password: decodedPassword } = decodeDataForSeoCredentials(encodedCredentials);
-          setEmail(decodedEmail);
-          setPassword(decodedPassword);
-          setKeyExists(true);
-          setIsActive(true);
-          
-          // Test the credentials when loading
-          try {
-            const success = await testApiKey(provider.serviceKey, encodedCredentials);
-            setTestSuccessful(success);
-          } catch (testError) {
-            console.error(`Error testing ${provider.name} credentials:`, testError);
+          const credentials = decodeDataForSeoCredentials(encodedCredentials);
+          if (credentials) {
+            setEmail(credentials.login); // Use login instead of email
+            setPassword(credentials.password);
+            setKeyExists(true);
+            setIsActive(true);
+            
+            // Test the credentials when loading
+            try {
+              const success = await testApiKey(provider.serviceKey, encodedCredentials);
+              setTestSuccessful(success);
+            } catch (testError) {
+              console.error(`Error testing ${provider.name} credentials:`, testError);
+            }
           }
         }
       } catch (error: any) {
