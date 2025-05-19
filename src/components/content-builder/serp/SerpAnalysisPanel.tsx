@@ -27,6 +27,11 @@ const SerpProviderBadge = ({ provider }: { provider?: string }) => {
       label = 'DataForSEO';
       bgColor = 'bg-green-900/30 text-green-200 border-green-700/30';
       break;
+    case 'mock':
+      icon = <Database className="h-3.5 w-3.5 mr-1 text-orange-300" />;
+      label = 'Mock Data';
+      bgColor = 'bg-orange-900/30 text-orange-200 border-orange-700/30';
+      break;
     default:
       icon = <Database className="h-3.5 w-3.5 mr-1 text-orange-300" />;
       label = 'No Data';
@@ -80,12 +85,83 @@ export function SerpAnalysisPanel({
     );
   }
   
-  // This is the real content implementation which would show when we do have data
+  // Display the actual SERP data
   return (
-    <Card className="p-4">
-      <p className="text-center text-muted-foreground">
-        Please connect a data provider to see SERP analysis.
-      </p>
+    <Card className="p-4 space-y-6">
+      <div className="flex items-center justify-between border-b pb-3">
+        <div className="flex items-center gap-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-lg font-medium">SERP Analysis: {mainKeyword}</h2>
+        </div>
+        <SerpProviderBadge provider={serpData.provider} />
+      </div>
+      
+      {/* Display key metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {serpData.searchVolume !== undefined && (
+          <div className="bg-card/50 p-4 rounded-lg border">
+            <p className="text-sm text-muted-foreground">Search Volume</p>
+            <p className="text-2xl font-bold">{serpData.searchVolume.toLocaleString()}</p>
+          </div>
+        )}
+        
+        {serpData.keywordDifficulty !== undefined && (
+          <div className="bg-card/50 p-4 rounded-lg border">
+            <p className="text-sm text-muted-foreground">Keyword Difficulty</p>
+            <p className="text-2xl font-bold">{serpData.keywordDifficulty}/100</p>
+          </div>
+        )}
+        
+        {serpData.competitionScore !== undefined && (
+          <div className="bg-card/50 p-4 rounded-lg border">
+            <p className="text-sm text-muted-foreground">Competition</p>
+            <p className="text-2xl font-bold">{serpData.competitionScore.toFixed(2)}</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Display headings */}
+      {serpData.headings && serpData.headings.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-md font-medium">Popular Headings</h3>
+          <div className="space-y-2">
+            {serpData.headings.map((heading, idx) => (
+              <div 
+                key={`heading-${idx}`} 
+                className="bg-card/50 p-3 rounded-lg border flex justify-between items-center"
+                onClick={() => onAddToContent?.(heading.text, 'heading')}
+              >
+                <div>
+                  <p className="font-medium">{heading.text}</p>
+                  {heading.subtext && <p className="text-sm text-muted-foreground">{heading.subtext}</p>}
+                </div>
+                <span className="text-xs font-mono bg-primary/20 text-primary px-2 py-1 rounded">
+                  {heading.level}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Display people also ask questions */}
+      {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-md font-medium">People Also Ask</h3>
+          <div className="space-y-2">
+            {serpData.peopleAlsoAsk.map((item, idx) => (
+              <div 
+                key={`question-${idx}`} 
+                className="bg-card/50 p-3 rounded-lg border cursor-pointer hover:bg-card/70 transition-colors"
+                onClick={() => onAddToContent?.(item.question, 'question')}
+              >
+                <p className="font-medium">{item.question}</p>
+                <p className="text-sm text-muted-foreground mt-1">{item.answer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

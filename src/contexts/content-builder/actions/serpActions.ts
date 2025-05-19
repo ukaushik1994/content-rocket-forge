@@ -3,7 +3,8 @@ import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { SerpProvider } from '../types/serp-types';
 import { OutlineSection } from '../types/outline-types';
 import { toast } from 'sonner';
-import { setPreferredSerpProvider } from '@/services/serpApiService';
+import { setPreferredSerpProvider, analyzeSerpKeyword } from '@/services/serpApiService';
+import { generateMockSerpData } from '@/services/serpMockService';
 
 export const createSerpActions = (
   state: ContentBuilderState,
@@ -38,19 +39,18 @@ export const createSerpActions = (
       };
       
       const apiKey = getProviderApiKey();
+      let serpData = null;
       
-      // If no API key is available, return no data
-      if (!apiKey) {
-        dispatch({
-          type: 'SET_SERP_DATA',
-          payload: null
-        });
-        return;
+      // If we have an API key, try to get real data
+      if (apiKey) {
+        serpData = await analyzeSerpKeyword(keyword, true);
       }
       
-      // In a real implementation, this would make an API call
-      // For now, we'll just return null instead of mock data
-      const serpData = null;
+      // If no data was found (no API key or API call failed), use mock data
+      if (!serpData) {
+        console.log('No SERP API data found, using mock data');
+        serpData = generateMockSerpData(keyword);
+      }
       
       dispatch({
         type: 'SET_SERP_DATA',
@@ -61,9 +61,11 @@ export const createSerpActions = (
       console.error('Error analyzing keyword:', error);
       toast.error(`Failed to analyze keyword: ${error.message}`);
       
+      // Use mock data as fallback on error
+      const mockData = generateMockSerpData(keyword);
       dispatch({
         type: 'SET_SERP_DATA',
-        payload: null
+        payload: mockData
       });
     } finally {
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });

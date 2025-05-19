@@ -18,6 +18,7 @@ export const testDataForSeoApiKey = async (apiKey: string): Promise<boolean> => 
     
     // In a real implementation, we'd make a test API call here
     // For now, we'll simulate a successful response if the format is correct
+    console.log('DataForSEO credentials format validated successfully');
     return true;
   } catch (error) {
     console.error('Error testing DataForSEO key:', error);
