@@ -6,4 +6,7 @@ export interface Step {
   completed: boolean;
   visited: boolean;
   analyzed?: boolean;
+  disabled?: boolean;
+  locked?: boolean;
+  requiresPreviousCompletion?: boolean;
 }

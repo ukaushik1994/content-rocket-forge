@@ -9,6 +9,10 @@ export interface Solution {
   useCases?: string[];
   websiteUrl?: string;
   logoUrl?: string;
+  externalUrl?: string; 
+  resources?: any[];
+  painPoints?: string[];
+  targetAudience?: string[];
   pricing?: {
     model: string;
     startingPrice?: string;

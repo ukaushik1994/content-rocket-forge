@@ -7,6 +7,12 @@ export const useWritingStep = () => {
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [contextData, setContextData] = useState<any>(null);
+  const [showOutline, setShowOutline] = useState(true);
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveTitle, setSaveTitle] = useState('');
+  const [saveNote, setSaveNote] = useState('');
   
   // Calculate word count whenever content changes
   useEffect(() => {
@@ -73,6 +79,23 @@ export const useWritingStep = () => {
     handleFocus,
     handleBlur,
     handleGenerateContent,
-    title: state.contentTitle
+    title: state.contentTitle,
+    state,
+    showOutline,
+    setShowOutline,
+    showGenerator,
+    setShowGenerator,
+    isSaving,
+    setIsSaving,
+    showSaveDialog,
+    setShowSaveDialog,
+    saveTitle,
+    setSaveTitle,
+    saveNote,
+    setSaveNote,
+    aiProvider: state.aiProvider,
+    additionalInstructions: state.additionalInstructions,
+    mainKeyword: state.mainKeyword,
+    secondaryKeywords: state.selectedKeywords || []
   };
 };
