@@ -1,15 +1,17 @@
 
 // Define the AiProvider type for use across components
-export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'other' | string;
+export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'other' | string;
 
 // Define props for the AiProviderSelector component
 export interface AiProviderSelectorProps {
   selectedProvider?: AiProvider;
-  onProviderChange: (provider: AiProvider) => void;
+  onProviderChange?: (provider: AiProvider) => void;
   size?: string;
   variant?: string;
   className?: string;
   providers?: AiProvider[];
+  
+  // Additional props for compatibility with OutlineGenerator
   aiProvider?: AiProvider;
   setAiProvider?: React.Dispatch<React.SetStateAction<AiProvider>>;
   availableProviders?: AiProvider[];
@@ -17,5 +19,8 @@ export interface AiProviderSelectorProps {
 
 // Define props for the ProviderStatusIndicator component
 export interface ProviderStatusIndicatorProps {
-  provider?: AiProvider;
+  selectedProvider?: AiProvider;
+  provider?: AiProvider; // For backward compatibility
+  size?: 'sm' | 'md';
+  showFallbackIndicator?: boolean;
 }

@@ -4,22 +4,27 @@ import { Badge } from '@/components/ui/badge';
 import { getFallbackConfig } from '@/services/aiService/providerFallback';
 import { Zap, Server, Key, Binary } from 'lucide-react';
 import { getUserPreference } from '@/services/userPreferencesService';
-import { AiProvider } from '@/services/aiService/types';
+import { AiProvider } from './types';
 
-interface ProviderStatusIndicatorProps {
+export interface ProviderStatusIndicatorProps {
   selectedProvider: AiProvider;
+  provider?: AiProvider; // For backward compatibility
   size?: 'sm' | 'md';
   showFallbackIndicator?: boolean;
 }
 
 export function ProviderStatusIndicator({ 
   selectedProvider,
+  provider, // Added for backward compatibility
   size = 'md',
   showFallbackIndicator = true 
 }: ProviderStatusIndicatorProps) {
+  // Use provider prop if selectedProvider is not provided (backward compatibility)
+  const providerToUse = selectedProvider || provider;
+  
   const { enabled: fallbackEnabled } = getFallbackConfig();
   const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openai';
-  const isFallbackActive = fallbackEnabled && showFallbackIndicator && selectedProvider !== defaultProvider;
+  const isFallbackActive = fallbackEnabled && showFallbackIndicator && providerToUse !== defaultProvider;
   
   const getProviderIcon = (provider: AiProvider) => {
     switch(provider) {
@@ -51,15 +56,17 @@ export function ProviderStatusIndicator({
     }
   };
   
+  if (!providerToUse) return null;
+  
   return (
     <div className="flex items-center space-x-2">
       <Badge 
         variant="outline" 
-        className={`${getProviderColor(selectedProvider)} ${size === 'sm' ? 'text-xs px-1.5 py-0' : ''}`}
+        className={`${getProviderColor(providerToUse)} ${size === 'sm' ? 'text-xs px-1.5 py-0' : ''}`}
       >
         <span className="flex items-center gap-1">
-          {getProviderIcon(selectedProvider)}
-          <span>{getProviderName(selectedProvider)}</span>
+          {getProviderIcon(providerToUse)}
+          <span>{getProviderName(providerToUse)}</span>
         </span>
       </Badge>
       

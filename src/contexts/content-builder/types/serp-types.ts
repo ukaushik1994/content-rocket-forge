@@ -23,18 +23,30 @@ export interface SerpKeyword {
 
 export interface SerpData {
   query: string;
+  keyword?: string; // Added to match SerpAnalysisResult
   results: SerpItem[];
   relatedQuestions?: SerpQuestion[];
   relatedKeywords?: SerpKeyword[];
   insights?: any;
   timestamp?: string;
   // Add compatibility with SerpAnalysisResult
-  keyword?: string;
+  searchVolume?: number;
+  competitionScore?: number;
+  keywordDifficulty?: number;
   topResults?: Array<{
     title: string;
     link: string;
     snippet: string;
     position: number;
+  }>;
+  relatedSearches?: Array<{
+    query: string;
+    volume?: number;
+  }>;
+  peopleAlsoAsk?: Array<{
+    question: string;
+    source: string;
+    answer?: string;
   }>;
 }
 
@@ -42,7 +54,7 @@ export interface SerpSelection {
   type: string;
   content: string;
   selected: boolean;
-  source?: string;
+  source?: string; // Added for compatibility
 }
 
 export interface SerpAnalysisState {

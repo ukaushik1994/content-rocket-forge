@@ -9,12 +9,17 @@ export interface Cluster {
 }
 
 export interface KeywordGroup {
-  id: string;
-  keywords: string[];
   mainKeyword: string;
+  relatedKeywords: string[];
   volume?: number;
-  difficulty?: number;
   competition?: number;
 }
 
-export type ContentCluster = Cluster;
+export interface ContentCluster {
+  id: string;
+  name: string;
+  keywords: string[];
+  mainKeyword?: string; // Make mainKeyword optional for compatibility
+  volume?: number;
+  competition?: number;
+}

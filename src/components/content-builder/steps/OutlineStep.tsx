@@ -21,7 +21,7 @@ export const OutlineStep = () => {
     }
     
     if (state.outline && state.outline.length > 0) {
-      return state.outline.map(title => ({
+      return state.outline.map((title: string) => ({
         id: uuid(),
         title: title,
         level: 1,
@@ -35,6 +35,7 @@ export const OutlineStep = () => {
   
   const handleUpdateOutline = (updatedOutline: OutlineSection[]) => {
     setOutlineSections(updatedOutline);
+    // Extract titles for the simpler outline array
     setOutline(updatedOutline.map(section => section.title));
   };
   
@@ -49,8 +50,8 @@ export const OutlineStep = () => {
       {/* Content Title */}
       <ContentTitleCard 
         title={state.contentTitle || ''}
-        suggestedTitles={state.suggestedTitles}
-        onTitleChange={(title) => {
+        suggestedTitles={state.suggestedTitles || []}
+        onTitleChange={(title: string) => {
           /* Handle title change */
         }}
       />
@@ -80,17 +81,7 @@ export const OutlineStep = () => {
           />
           
           {/* AI Outline Generator */}
-          <AIOutlineGenerator 
-            isGenerating={generatingOutline}
-            setIsGenerating={setGeneratingOutline}
-            selectedKeywords={state.selectedKeywords}
-            mainKeyword={state.mainKeyword}
-            serpSelections={serpSelections.filter(item => item.selected)}
-            contentType={state.contentType}
-            onOutlineGenerated={(newOutline: OutlineSection[]) => {
-              handleUpdateOutline(newOutline);
-            }}
-          />
+          <AIOutlineGenerator />
         </div>
       </div>
     </div>

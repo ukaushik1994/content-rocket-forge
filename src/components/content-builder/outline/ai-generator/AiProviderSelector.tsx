@@ -16,31 +16,34 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ProviderStatusIndicator } from './ProviderStatusIndicator';
-
-// Export the type here for compatibility
-export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'other' | string;
-
-export interface AiProviderSelectorProps {
-  selectedProvider?: AiProvider;
-  providers?: AiProvider[];
-  onProviderChange: (provider: AiProvider) => void;
-  size?: string;
-  variant?: string;
-  className?: string;
-}
+import { AiProvider, AiProviderSelectorProps } from './types';
 
 export const AiProviderSelector = ({
-  selectedProvider = 'openai',
-  providers = ['openai', 'anthropic', 'gemini'],
+  selectedProvider,
   onProviderChange,
   size = "sm",
   variant = "outline",
-  className
+  className,
+  providers = ['openai', 'anthropic', 'gemini'],
+  
+  // Support for new props pattern
+  aiProvider,
+  setAiProvider,
+  availableProviders
 }: AiProviderSelectorProps) => {
   const [open, setOpen] = React.useState(false);
-
+  
+  // Use the most appropriate provider value (for backward compatibility)
+  const effectiveProvider = selectedProvider || aiProvider || 'openai';
+  const effectiveProviders = availableProviders || providers;
+  
   const handleSelect = (currentValue: string) => {
-    onProviderChange(currentValue as AiProvider);
+    // Call the appropriate handler based on what was provided
+    if (setAiProvider) {
+      setAiProvider(currentValue as AiProvider);
+    } else if (onProviderChange) {
+      onProviderChange(currentValue as AiProvider);
+    }
     setOpen(false);
   };
 
@@ -52,6 +55,8 @@ export const AiProviderSelector = ({
         return 'Claude';
       case 'gemini':
         return 'Gemini';
+      case 'mistral':
+        return 'Mistral';
       case 'other':
         return 'Other Provider';
       default:
@@ -73,8 +78,8 @@ export const AiProviderSelector = ({
           )}
         >
           <div className="flex items-center gap-2">
-            <ProviderStatusIndicator provider={selectedProvider as AiProvider} />
-            <span>{getProviderLabel(selectedProvider)}</span>
+            <ProviderStatusIndicator selectedProvider={effectiveProvider} />
+            <span>{getProviderLabel(effectiveProvider)}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -84,20 +89,20 @@ export const AiProviderSelector = ({
           <CommandInput placeholder="Search AI provider..." />
           <CommandEmpty>No provider found.</CommandEmpty>
           <CommandGroup>
-            {providers.map((provider) => (
+            {effectiveProviders.map((provider) => (
               <CommandItem
                 key={provider}
                 value={provider}
                 onSelect={handleSelect}
               >
                 <div className="flex items-center gap-2">
-                  <ProviderStatusIndicator provider={provider as AiProvider} />
+                  <ProviderStatusIndicator selectedProvider={provider as AiProvider} />
                   <span>{getProviderLabel(provider)}</span>
                 </div>
                 <Check
                   className={cn(
                     "ml-auto h-4 w-4",
-                    selectedProvider === provider ? "opacity-100" : "opacity-0"
+                    effectiveProvider === provider ? "opacity-100" : "opacity-0"
                   )}
                 />
               </CommandItem>
