@@ -25,8 +25,9 @@ import {
   getTotalUsageStats
 } from '@/services/serp/SerpApiService';
 import { Button } from '@/components/ui/button';
-import { Trash, Search, RefreshCw } from 'lucide-react';
+import { Trash, Search, RefreshCw, LayoutDashboard } from 'lucide-react';
 import { StandardApiProvider, DataForSeoProvider } from '@/components/api';
+import { ProviderDashboard } from '@/components/api/ProviderDashboard';
 
 export function APISettings() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
@@ -36,10 +37,11 @@ export function APISettings() {
   const [defaultAiProvider, setDefaultAiProvider] = useState<'openai' | 'anthropic' | 'gemini' | undefined>(
     undefined
   );
-  const [activeTab, setActiveTab] = useState('ai');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [totalSerpQueries, setTotalSerpQueries] = useState(0);
+  const [providerStatuses, setProviderStatuses] = useState<Record<string, 'connected' | 'not-verified' | 'error' | 'required' | 'loading' | 'none'>>({});
   
-  // Load default AI provider from user preferences
+  // Load default AI provider from user preferences and provider statuses
   useEffect(() => {
     const loadPreferences = async () => {
       const savedProvider = await getUserPreference('defaultAiProvider');
@@ -53,6 +55,14 @@ export function APISettings() {
       // Get usage stats
       const serpUsage = getTotalUsageStats();
       setTotalSerpQueries(serpUsage);
+      
+      // Load initial statuses (simulated - would normally come from API)
+      const initialStatuses: Record<string, any> = {};
+      API_PROVIDERS.forEach(provider => {
+        // In a real app, you would fetch the actual status from your API service
+        initialStatuses[provider.id] = provider.required ? 'required' : 'none';
+      });
+      setProviderStatuses(initialStatuses);
     };
     
     loadPreferences();
@@ -88,6 +98,29 @@ export function APISettings() {
     clearSerpCache();
     toast.success('SERP cache cleared successfully');
   };
+  
+  const handleProviderClick = (providerId: string) => {
+    // Find the category of the provider
+    const provider = API_PROVIDERS.find(p => p.id === providerId);
+    if (provider) {
+      setActiveTab(provider.category);
+      // Ensure the provider is in the selected list
+      if (!selectedProviders.includes(providerId)) {
+        setSelectedProviders(prev => [...prev, providerId]);
+      }
+      // Focus on the provider card after a short delay to allow tab change
+      setTimeout(() => {
+        const element = document.getElementById(`provider-${providerId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-animation');
+          setTimeout(() => {
+            element.classList.remove('highlight-animation');
+          }, 1500);
+        }
+      }, 100);
+    }
+  };
 
   const filteredProviders = API_PROVIDERS.filter(provider => 
     (provider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -101,52 +134,49 @@ export function APISettings() {
 
   const renderProvider = (provider: typeof API_PROVIDERS[0]) => {
     if (provider.type === 'credentials') {
-      return <DataForSeoProvider key={provider.id} provider={provider} />;
+      return (
+        <div id={`provider-${provider.id}`} key={provider.id}>
+          <DataForSeoProvider provider={provider} />
+        </div>
+      );
     }
-    return <StandardApiProvider key={provider.id} provider={provider} />;
+    return (
+      <div id={`provider-${provider.id}`} key={provider.id}>
+        <StandardApiProvider provider={provider} />
+      </div>
+    );
   };
 
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
+          <TabsTrigger value="dashboard">
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            Dashboard
+          </TabsTrigger>
           <TabsTrigger value="ai">AI Providers</TabsTrigger>
           <TabsTrigger value="serp">SERP Providers</TabsTrigger>
           <TabsTrigger value="other">Other Services</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="ai" className="space-y-6">
+        <TabsContent value="dashboard" className="space-y-6">
+          <ProviderDashboard 
+            providers={API_PROVIDERS} 
+            statuses={providerStatuses}
+            onProviderClick={handleProviderClick}
+          />
+          
           <DefaultAiProviderSelector 
             defaultAiProvider={defaultAiProvider} 
             onDefaultAiProviderChange={handleDefaultAiProviderChange} 
           />
           
-          <ApiSettingsHeader 
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onDisplayOptionChange={handleDisplayOptionChange}
-            title="AI Providers"
-            description="Configure your AI provider API keys"
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredProviders
-              .filter(p => p.category === 'ai')
-              .map(provider => renderProvider(provider))}
-          </div>
-          
-          <AvailableProviders 
-            providers={availableProviders.filter(p => p.category === 'ai')} 
-            onToggleProvider={handleProviderToggle} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="serp" className="space-y-6">
           <Card className="border border-white/10 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-xl">SERP Provider Settings</CardTitle>
+              <CardTitle className="text-xl">SERP Provider Usage</CardTitle>
               <CardDescription>
-                Configure search engine data providers and usage
+                Manage search engine data usage and caching
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -168,6 +198,37 @@ export function APISettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="ai" className="space-y-6">
+          <ApiSettingsHeader 
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onDisplayOptionChange={handleDisplayOptionChange}
+            title="AI Providers"
+            description="Configure your AI provider API keys"
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredProviders
+              .filter(p => p.category === 'ai')
+              .map(provider => renderProvider(provider))}
+          </div>
+          
+          <AvailableProviders 
+            providers={availableProviders.filter(p => p.category === 'ai')} 
+            onToggleProvider={handleProviderToggle} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="serp" className="space-y-6">
+          <ApiSettingsHeader 
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onDisplayOptionChange={handleDisplayOptionChange}
+            title="SERP Providers"
+            description="Configure search engine data providers"
+          />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredProviders
@@ -202,6 +263,21 @@ export function APISettings() {
           />
         </TabsContent>
       </Tabs>
+      
+      <style jsx global>{`
+        .highlight-animation {
+          animation: highlight 1.5s ease;
+        }
+        
+        @keyframes highlight {
+          0%, 100% {
+            box-shadow: 0 0 0 0 transparent;
+          }
+          50% {
+            box-shadow: 0 0 0 4px rgba(132, 90, 223, 0.6);
+          }
+        }
+      `}</style>
     </div>
   );
 }
