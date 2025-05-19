@@ -7,6 +7,7 @@ import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 import { OutlineTable } from '../outline/OutlineTable';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { OutlineSection } from '@/contexts/content-builder/types';
 
 export const OutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -19,8 +20,8 @@ export const OutlineStep = () => {
     }
   }, [outline, dispatch]);
   
-  const handleSaveOutline = (updatedOutline: string[]) => {
-    dispatch({ type: 'SET_OUTLINE', payload: updatedOutline });
+  const handleSaveOutline = (updatedOutline: OutlineSection[]) => {
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: updatedOutline });
   };
 
   const hasSerpSelections = serpSelections.some(item => item.selected);
