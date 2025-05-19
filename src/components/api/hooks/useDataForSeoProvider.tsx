@@ -197,7 +197,7 @@ export const useDataForSeoProvider = (provider: ApiProviderConfig) => {
   };
 
   // Delete credentials - Accept the key parameter but don't use it
-  const handleDeleteCredentials = async (_key?: string): Promise<boolean> => {
+  const handleDeleteCredentials = async (key?: string): Promise<boolean> => {
     try {
       setIsDeleting(true);
       setError(null);
