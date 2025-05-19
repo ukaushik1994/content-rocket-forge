@@ -1,4 +1,3 @@
-
 /**
  * API key validation and detection utilities
  */
@@ -7,23 +6,9 @@ import { testApiKey } from './testing';
 
 /**
  * Check if a string appears to be DataForSEO credentials in base64 format
- * 
- * @param key - The key to check
- * @returns boolean - Whether the key appears to be in DataForSEO format
+ * This is now imported from testing.ts which gets it from the canonical source
  */
-export const isDataForSeoFormat = (key: string): boolean => {
-  try {
-    // Check if it's a valid base64 string
-    if (!/^[A-Za-z0-9+/=]+$/.test(key)) return false;
-    
-    // Try to decode it and check if it has login:password format
-    const decoded = atob(key);
-    return decoded.includes(':');
-  } catch (e) {
-    // Not base64 encoded
-    return false;
-  }
-};
+// No longer export isDataForSeoFormat here since it's exported from testing.ts
 
 /**
  * Encode DataForSEO credentials (login:password) as base64
@@ -43,25 +28,9 @@ export const encodeDataForSeoCredentials = (login: string, password: string): st
 
 /**
  * Decode DataForSEO credentials from base64
- * 
- * @param encoded - The base64 encoded credentials
- * @returns Object with login and password properties, or null if invalid
+ * This is no longer exported from this file to avoid ambiguity
  */
-export const decodeDataForSeoCredentials = (encoded: string): { login: string; password: string } | null => {
-  try {
-    const decoded = atob(encoded);
-    const [login, password] = decoded.split(':');
-    
-    if (login && password) {
-      return { login, password };
-    }
-    
-    return null;
-  } catch (e) {
-    console.error('Error decoding DataForSEO credentials:', e);
-    return null;
-  }
-};
+// No longer export decodeDataForSeoCredentials here since it's exported from testing.ts
 
 /**
  * Detect the type of API key based on its format
@@ -98,7 +67,7 @@ export const detectApiKeyType = async (apiKey: string): Promise<string | null> =
   }
   
   // Check if it might be DataForSEO credentials
-  if (isDataForSeoFormat(apiKey)) {
+  if (import("@/services/apiKeys/testing").then(module => module.isDataForSeoFormat(apiKey))) {
     return 'dataforseo';
   }
   

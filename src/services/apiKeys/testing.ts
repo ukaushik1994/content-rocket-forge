@@ -4,7 +4,9 @@
  */
 
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
-import { isDataForSeoFormat, decodeDataForSeoCredentials } from '../serp/adapters/dataforseo/ApiKeyTester';
+import { isDataForSeoFormat as originalIsDataForSeoFormat, 
+         decodeDataForSeoCredentials as originalDecodeDataForSeoCredentials,
+         testDataForSeoApiKey } from '../serp/adapters/dataforseo/ApiKeyTester';
 
 /**
  * Test an API key for a specific service
@@ -85,5 +87,6 @@ const testDataForSeoKey = async (apiKey: string): Promise<boolean> => {
   }
 };
 
-// Re-export these functions from the DataForSEO adapter for convenience
-export { isDataForSeoFormat, decodeDataForSeoCredentials } from '../serp/adapters/dataforseo/ApiKeyTester';
+// Re-export these functions from the DataForSEO adapter for consistency across the codebase
+export const isDataForSeoFormat = originalIsDataForSeoFormat;
+export const decodeDataForSeoCredentials = originalDecodeDataForSeoCredentials;
