@@ -1,72 +1,52 @@
 
 import React from 'react';
-import { RefreshCcw, CheckCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, SkipForward } from 'lucide-react';
 
-interface SerpAnalysisHeaderProps {
-  mainKeyword: string;
-  isAnalyzing: boolean;
-  totalSelected: number;
-  handleReanalyze: () => void;
-  handleContinueWithSelections: () => void;
+export interface SerpAnalysisHeaderProps {
+  keyword?: string;
+  totalSelected?: number;
+  onGenerateOutline?: () => void;
+  onSkip?: () => void;
 }
 
 export const SerpAnalysisHeader: React.FC<SerpAnalysisHeaderProps> = ({
-  mainKeyword,
-  isAnalyzing,
-  totalSelected,
-  handleReanalyze,
-  handleContinueWithSelections
+  keyword,
+  totalSelected = 0,
+  onGenerateOutline,
+  onSkip
 }) => {
-  // Check if we're using mock data or real data
-  const isUsingRealData = !!localStorage.getItem('serp_api_key');
-  
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-5 rounded-lg bg-white/5 border border-white/10 backdrop-blur">
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold flex items-center">
-          SERP Analysis: <span className="ml-2 text-neon-purple">{mainKeyword}</span>
-          
-          {/* Data source indicator */}
-          {isUsingRealData ? (
-            <span className="ml-2 text-xs px-2 py-0.5 rounded bg-green-500/20 border border-green-500/30 text-green-400 flex items-center">
-              <CheckCircle className="h-3 w-3 mr-1" /> Real Data
-            </span>
-          ) : (
-            <span className="ml-2 text-xs px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center">
-              <AlertCircle className="h-3 w-3 mr-1" /> Mock Data
-            </span>
-          )}
-        </h2>
-        <p className="text-sm text-white/60">
-          Analyze search results and select content to include in your outline
-        </p>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold">SERP Analysis</h1>
+        {keyword && (
+          <p className="text-muted-foreground flex items-center mt-1">
+            Analyzing: <span className="font-medium text-foreground ml-2">{keyword}</span>
+          </p>
+        )}
       </div>
       
-      <div className="flex items-center gap-2 self-end md:self-auto">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleReanalyze}
-          disabled={isAnalyzing}
-          className="border border-white/10"
-        >
-          <RefreshCcw className={`h-4 w-4 mr-1 ${isAnalyzing ? 'animate-spin' : ''}`} />
-          {isAnalyzing ? 'Analyzing...' : 'Analyze Again'}
-        </Button>
+      <div className="flex items-center gap-3">
+        {totalSelected > 0 && (
+          <Badge variant="outline" className="h-6 px-2">
+            {totalSelected} item{totalSelected !== 1 ? 's' : ''} selected
+          </Badge>
+        )}
         
         <Button
+          variant="default"
           size="sm"
-          onClick={handleContinueWithSelections}
+          className="gap-1"
+          onClick={onGenerateOutline}
           disabled={totalSelected === 0}
-          className={`${
-            totalSelected > 0 
-              ? 'bg-gradient-to-r from-neon-purple to-neon-blue' 
-              : 'bg-white/10'
-          }`}
         >
-          Continue With {totalSelected} {totalSelected === 1 ? 'Item' : 'Items'}
-          <ChevronRight className="h-4 w-4 ml-1" />
+          Generate Outline <ArrowRight className="h-4 w-4" />
+        </Button>
+        
+        <Button variant="secondary" size="sm" className="gap-1" onClick={onSkip}>
+          Skip <SkipForward className="h-4 w-4" />
         </Button>
       </div>
     </div>

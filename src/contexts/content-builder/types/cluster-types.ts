@@ -1,25 +1,19 @@
 
-export interface Cluster {
-  id: string;
-  name: string;
-  keywords: string[];
-  mainKeyword?: string;
-  volume?: number;
-  competition?: number;
-}
+import { ContentCluster } from './content-types';
 
+// Define the KeywordGroup for clusters and keyword organization
 export interface KeywordGroup {
+  id: string;
+  name: string;
+  keywords: string[];
+}
+
+// Define Cluster with extra data like search volume and competition
+export interface Cluster extends KeywordGroup {
   mainKeyword: string;
-  relatedKeywords: string[];
   volume?: number;
   competition?: number;
 }
 
-export interface ContentCluster {
-  id: string;
-  name: string;
-  keywords: string[];
-  mainKeyword?: string; // Make mainKeyword optional for compatibility
-  volume?: number;
-  competition?: number;
-}
+// Re-export ContentCluster to avoid duplication
+export { ContentCluster };

@@ -50,6 +50,8 @@ export interface SerpData {
   }>;
   featuredSnippets?: any[];
   entities?: any[];
+  headings?: any[];
+  contentGaps?: any[];
 }
 
 export interface SerpSelection {

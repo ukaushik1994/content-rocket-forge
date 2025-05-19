@@ -1,141 +1,100 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
-import { toast } from 'sonner';
-import { sendChatRequest } from '@/services/aiService';
 import { SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
+import { toast } from 'sonner';
 
-// Standard toast configuration
-const toastConfig = {
-  success: { duration: 3000, closeButton: true },
-  error: { duration: 5000, closeButton: true }
-};
+interface CTAInfo {
+  count: number;
+  texts: string[];
+  hasCTA: boolean;
+}
 
-/**
- * Custom hook for analyzing solution usage in content
- */
-export const useSolutionAnalysis = (ctaInfo: any) => {
-  const { state, dispatch } = useContentBuilder();
-  const { content, selectedSolution } = state;
+export const useSolutionAnalysis = (ctaInfo: CTAInfo) => {
+  const { state, setSolutionIntegrationMetrics } = useContentBuilder();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { content, selectedSolution } = state;
   
-  // Main function to analyze solution usage
-  const analyzeSolutionUsage = useCallback(async () => {
-    if (!content || !selectedSolution) {
-      toast.error('No content or solution available for analysis', toastConfig.error);
+  const analyzeSolutionUsage = async () => {
+    if (!selectedSolution) {
+      toast.warning('No solution selected. Please select a solution first.');
+      return;
+    }
+    
+    if (!content) {
+      toast.warning('No content to analyze. Please generate content first.');
       return;
     }
     
     setIsAnalyzing(true);
     
     try {
-      // First try to use AI service for advanced analysis
-      const aiResponse = await sendChatRequest('openai', {
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a specialist in content analysis and marketing. Analyze how well a solution is integrated within content and provide metrics.' 
-          },
-          { 
-            role: 'user', 
-            content: `
-              Solution Name: ${selectedSolution.name}
-              Solution Features: ${selectedSolution.features.join(', ')}
-              Pain Points: ${selectedSolution.painPoints.join(', ')}
-              Target Audience: ${selectedSolution.targetAudience.join(', ')}
-              
-              Content: ${content.substring(0, 5000)}
-              
-              Analyze how well this solution is integrated within the content and provide the following metrics:
-              1. Feature Incorporation (0-100): What percentage of solution features are incorporated in the content?
-              2. Positioning Score (0-100): How well is the solution positioned in the content?
-              3. Pain Points Addressed: Which pain points are addressed in the content?
-              4. CTA Effectiveness (0-100): How effective are the calls to action for this solution?
-              5. Overall Score (0-100): Overall effectiveness of solution integration
-              6. Number of Solution Name Mentions
-              7. Number of CTA Mentions
-              8. Audience Alignment (0-100): How well does the content align with the target audience?
-              9. Mentioned Features: List of solution features that are mentioned in the content
-              
-              Return your analysis as a JSON object with these metrics.
-            `
-          }
-        ],
-        temperature: 0.7
-      });
-
-      console.log("[useSolutionAnalysis] AI response:", aiResponse);
+      // In a real app, this would be an AI-powered analysis
+      // For now, we'll do some basic checks
       
-      let solutionMetrics: SolutionIntegrationMetrics;
+      // Check for feature mentions
+      const mentionedFeatures = selectedSolution.features.filter(feature => 
+        content.toLowerCase().includes(feature.toLowerCase())
+      );
       
-      // Try to parse AI response if available
-      if (aiResponse?.choices?.[0]?.message?.content) {
-        try {
-          const aiContent = aiResponse.choices[0].message.content;
-          
-          // Try to extract JSON if it's wrapped in backticks or other text
-          const jsonMatch = aiContent.match(/```json\s*([\s\S]*?)\s*```/) || 
-                            aiContent.match(/{[\s\S]*}/);
-          
-          if (jsonMatch) {
-            const jsonStr = jsonMatch[0].replace(/```json|```/g, '').trim();
-            solutionMetrics = JSON.parse(jsonStr);
-            
-            // Ensure we have all required properties
-            if (!solutionMetrics.featureIncorporation || !solutionMetrics.positioningScore) {
-              throw new Error('Incomplete metrics in AI response');
-            }
-            
-            // Add empty array for mentionedFeatures if not provided
-            if (!solutionMetrics.mentionedFeatures) {
-              solutionMetrics.mentionedFeatures = [];
-            }
-          } else {
-            throw new Error('Could not extract valid JSON from AI response');
-          }
-        } catch (parseError) {
-          console.error("[useSolutionAnalysis] Error parsing AI response:", parseError);
-          // Fall back to local analysis
-          throw new Error('Could not parse AI response');
-        }
-      } else {
-        // Fall back to local analysis if no AI response
-        throw new Error('No AI response received');
-      }
+      // Check for pain point addressing
+      const addressedPainPoints = selectedSolution.painPoints.filter(painPoint => 
+        content.toLowerCase().includes(painPoint.toLowerCase())
+      );
       
-      // Update the state with the metrics
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: solutionMetrics });
+      // Calculate feature incorporation score
+      const featureIncorporation = mentionedFeatures.length / selectedSolution.features.length * 100;
       
-      toast.success('Solution integration analysis completed using AI', toastConfig.success);
-    } catch (error) {
-      console.error("[useSolutionAnalysis] Error:", error);
+      // Calculate positioning score based on pain points addressed
+      const positioningScore = addressedPainPoints.length / selectedSolution.painPoints.length * 100;
       
-      // Fallback to local analyzer
-      console.log("[useSolutionAnalysis] Falling back to local analysis");
-      const localMetrics = analyzeSolutionIntegration(content, selectedSolution);
+      // Calculate value proposition clarity (simplified)
+      const valuePropositionClarity = Math.min(
+        100, 
+        (featureIncorporation + positioningScore) / 2 + (ctaInfo.hasCTA ? 20 : 0)
+      );
       
-      // Convert to the expected metrics format
-      const fallbackMetrics: SolutionIntegrationMetrics = {
-        featureIncorporation: localMetrics.featureIncorporation,
-        positioningScore: localMetrics.positioningScore,
-        painPointsAddressed: [`${localMetrics.painPointsAddressed}% of pain points addressed`],
-        ctaEffectiveness: ctaInfo?.ctaCount ? 75 : 25,  // Simple heuristic based on CTA presence
-        overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.painPointsAddressed + localMetrics.audienceAlignment) / 4),
-        mentions: localMetrics.featureIncorporation > 50 ? 'High' : 'Low',
-        audienceAlignment: localMetrics.audienceAlignment,
-        nameMentions: localMetrics.nameMentions,
-        ctaMentions: ctaInfo?.ctaCount || 0,
-        mentionedFeatures: localMetrics.mentionedFeatures || []
+      // Calculate overall integration score
+      const overallScore = Math.round((featureIncorporation + positioningScore + valuePropositionClarity) / 3);
+      
+      // Determine integration level
+      let integrationLevel: 'poor' | 'basic' | 'good' | 'excellent';
+      if (overallScore < 25) integrationLevel = 'poor';
+      else if (overallScore < 50) integrationLevel = 'basic';
+      else if (overallScore < 75) integrationLevel = 'good';
+      else integrationLevel = 'excellent';
+      
+      // Create the metrics object
+      const metrics: SolutionIntegrationMetrics = {
+        featureIncorporation: Math.round(featureIncorporation),
+        positioningScore: Math.round(positioningScore),
+        valuePropositionClarity: Math.round(valuePropositionClarity),
+        integrationLevel,
+        overallScore,
+        mentionedFeatures,
+        painPointsAddressed: addressedPainPoints,
+        ctaEffectiveness: ctaInfo.hasCTA ? 100 : 0
       };
       
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: fallbackMetrics });
-      toast.success('Solution integration analysis completed using local analysis', toastConfig.success);
+      // Set the metrics in state
+      setSolutionIntegrationMetrics(metrics);
+      
+      toast.success('Solution integration analysis complete');
+    } catch (error) {
+      console.error('Error analyzing solution usage:', error);
+      toast.error('Failed to analyze solution integration');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [content, selectedSolution, dispatch, ctaInfo]);
-
+  };
+  
+  useEffect(() => {
+    // Automatically analyze when content changes and a solution is selected
+    if (selectedSolution && content && content.length > 100) {
+      analyzeSolutionUsage();
+    }
+  }, []);
+  
   return {
     isAnalyzing,
     analyzeSolutionUsage

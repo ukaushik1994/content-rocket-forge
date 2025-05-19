@@ -8,7 +8,6 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { TitleGenerationButton } from './writing/TitleGenerationButton';
-import { ChangeEvent } from 'react';
 
 export const ContentWritingStep = () => {
   const {
@@ -110,7 +109,7 @@ export const ContentWritingStep = () => {
               outline={outline}
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
-              handleInstructionsChange={handleInstructionsChange}
+              handleInstructionsChange={(value: string) => handleInstructionsChange(value)}
             />
           </div>
         )}

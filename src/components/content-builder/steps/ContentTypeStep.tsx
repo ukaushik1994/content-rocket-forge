@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,7 +62,7 @@ export const ContentTypeStep = () => {
           features: Array.isArray(solution.features) 
             ? solution.features.map(f => String(f)) 
             : [],
-          benefits: solution.benefits || [], // Add benefits with a fallback
+          benefits: solution.benefits || [], // Add default empty array for benefits
           useCases: Array.isArray(solution.use_cases) 
             ? solution.use_cases.map(u => String(u)) 
             : [],

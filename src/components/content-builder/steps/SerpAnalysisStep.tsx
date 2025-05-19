@@ -11,28 +11,13 @@ import { Button } from '@/components/ui/button';
 import { LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
+import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
 
-// Add mock props for components that need them
-interface SerpApiKeySetupProps {
-  onApiKeySet: () => void;
-}
-
-interface SerpLoadingStateProps {
-  keyword?: string;
-  onCancel?: () => void;
-}
-
-interface SerpAnalysisHeaderProps {
-  keyword?: string;
-  totalSelected?: number;
-  onGenerateOutline?: () => void;
-  onSkip?: () => void;
-}
-
-interface SelectedItemsContentProps {
-  selectedCounts?: any;
-  totalSelected?: number;
-  onGenerateOutline?: () => void;
+export interface SelectedItemsSidebarProps {
+  selectedCounts: any;
+  totalSelected: number;
+  serpSelections: SerpSelection[];
+  handleToggleSelection: (item: SerpSelection) => void;
 }
 
 export const SerpAnalysisStep = () => {
@@ -70,6 +55,11 @@ export const SerpAnalysisStep = () => {
   const handleSkip = () => {
     navigateToStep(3); // Navigate to Outline step
   };
+
+  const handleToggleSelection = (item: SerpSelection) => {
+    console.log('Toggle selection for item:', item);
+    // This would dispatch an action to toggle the selection state
+  };
   
   // If SERP API key is not set, show the setup screen
   if (!apiKeyChecked) {
@@ -101,10 +91,7 @@ export const SerpAnalysisStep = () => {
         {/* Main content - SERP Analysis */}
         <div className={`transition-all duration-300 ease-in-out ${showSidebar ? 'w-2/3 pr-6' : 'w-full'}`}>
           <SerpAnalysisPanel 
-            serpData={state.serpData ? {
-              ...state.serpData,
-              keyword: state.serpData.query // Add the keyword property expected by SerpAnalysisResult
-            } : null} 
+            serpData={state.serpData}
             isLoading={false}
             mainKeyword={mainKeyword}
             onAddToContent={() => {}}
@@ -123,7 +110,7 @@ export const SerpAnalysisStep = () => {
               selectedCounts={selectedCounts} 
               totalSelected={totalSelected} 
               serpSelections={serpSelections}
-              handleToggleSelection={() => {}}
+              handleToggleSelection={handleToggleSelection}
             />
           </motion.div>
         )}

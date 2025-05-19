@@ -6,6 +6,7 @@ export interface SeoImprovement {
   recommendation: string;
   score: number;
   applied: boolean;
+  impact?: 'high' | 'medium' | 'low'; // Add impact field to fix useContentRewriter.ts error
 }
 
 export interface SolutionIntegrationMetrics {
@@ -17,4 +18,5 @@ export interface SolutionIntegrationMetrics {
   overallScore: number;
   mentionedFeatures: string[];
   painPointsAddressed?: string[];
+  ctaEffectiveness?: number; // Add ctaEffectiveness field to fix useSolutionAnalysis.ts error
 }

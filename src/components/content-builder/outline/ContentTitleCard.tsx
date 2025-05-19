@@ -1,86 +1,62 @@
 
-import React, { useState, useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { CheckIcon, RefreshCwIcon } from 'lucide-react';
 
-export function ContentTitleCard() {
-  const { state, dispatch } = useContentBuilder();
-  const { contentTitle } = state;
-  
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(contentTitle || '');
-  
-  useEffect(() => {
-    setEditedTitle(contentTitle || '');
-  }, [contentTitle]);
-  
-  const handleSaveTitle = () => {
-    dispatch({ type: 'SET_CONTENT_TITLE', payload: editedTitle });
-    setIsEditingTitle(false);
-    toast.success("Title updated");
-  };
+interface ContentTitleCardProps {
+  title: string;
+  suggestedTitles: string[];
+  onTitleChange: (title: string) => void;
+}
 
-  if (!contentTitle) return null;
-
+export const ContentTitleCard = ({ title, suggestedTitles, onTitleChange }: ContentTitleCardProps) => {
   return (
-    <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/10 border border-white/10">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-400" />
-            Content Title
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 px-2 hover:bg-white/10"
-            onClick={() => setIsEditingTitle(true)}
-          >
-            <Edit className="h-3.5 w-3.5 mr-1" />
-            <span className="text-xs">Edit</span>
-          </Button>
-        </CardTitle>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle>Content Title</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue font-medium text-lg">
-          {contentTitle}
-        </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          This title will be used in the final content and can be updated here or in the final review.
-        </p>
+      <CardContent className="space-y-4">
+        <Input
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          placeholder="Enter a title for your content..."
+          className="text-base font-medium"
+        />
         
-        <Dialog open={isEditingTitle} onOpenChange={setIsEditingTitle}>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Edit Content Title</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Update your content title to better reflect your topic.
-              </p>
-              <Input 
-                value={editedTitle} 
-                onChange={(e) => setEditedTitle(e.target.value)}
-                placeholder="Enter a descriptive title for your content"
-                className="w-full"
-              />
+        {suggestedTitles && suggestedTitles.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Suggested Titles</h4>
+            <div className="space-y-2">
+              {suggestedTitles.map((suggestedTitle, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-sm">{suggestedTitle}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onTitleChange(suggestedTitle)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
             </div>
-            <DialogFooter>
-              <Button
-                onClick={handleSaveTitle}
-                className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-              >
-                Save Title
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </div>
+        )}
+        
+        {/* Generate more titles button */}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full text-xs h-8 mt-3"
+          disabled={!title}
+        >
+          <RefreshCwIcon className="h-3.5 w-3.5 mr-2" />
+          Generate more title options
+        </Button>
       </CardContent>
     </Card>
   );
-}
+};

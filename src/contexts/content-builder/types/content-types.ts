@@ -32,6 +32,7 @@ export interface SaveContentParams {
   serpSelections?: any[];
   serpData?: any;
   status?: string;
+  notes?: string; // Add notes field to fix useSaveContent.ts errors
 }
 
 export interface ContentGenerationParams {

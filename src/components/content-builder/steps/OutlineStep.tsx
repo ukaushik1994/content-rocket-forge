@@ -22,7 +22,7 @@ export const OutlineStep = () => {
     }
     
     if (state.outline && state.outline.length > 0) {
-      return state.outline.map((title) => ({
+      return state.outline.map((title: string) => ({
         id: uuid(),
         title: title,
         level: 1,
