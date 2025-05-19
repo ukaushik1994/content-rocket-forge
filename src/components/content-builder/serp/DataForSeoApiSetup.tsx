@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Lock, Key } from "lucide-react";
 import { toast } from "sonner";
+import { encodeDataForSeoCredentials, isDataForSeoFormat } from '@/services/apiKeys/testing';
 
 export interface DataForSeoApiSetupProps {
   onConfigured?: () => void;
@@ -23,12 +24,20 @@ export const DataForSeoApiSetup: React.FC<DataForSeoApiSetupProps> = ({ onConfig
     const storedKey = localStorage.getItem('dataforseo_api_key');
     if (storedKey) {
       try {
-        const decoded = JSON.parse(atob(storedKey));
-        setLogin(decoded.login || '');
-        setPassword(decoded.password || '');
-        setIsKeyVerified(true);
+        // Properly decode the credentials
+        import('@/services/apiKeys/testing').then(module => {
+          if (module.isDataForSeoFormat(storedKey)) {
+            const decoded = module.decodeDataForSeoCredentials(storedKey);
+            if (decoded) {
+              setLogin(decoded.login || '');
+              setPassword(decoded.password || '');
+              setIsKeyVerified(true);
+            }
+          }
+        });
       } catch (e) {
         // Invalid key format, ignore
+        console.error('Error decoding stored DataForSEO credentials:', e);
       }
     }
   }, []);
@@ -42,13 +51,27 @@ export const DataForSeoApiSetup: React.FC<DataForSeoApiSetupProps> = ({ onConfig
     setIsSaving(true);
     
     try {
-      // Encode the credentials as base64
-      const credentials = btoa(JSON.stringify({ login, password }));
+      // Encode the credentials properly as JSON
+      const credentials = JSON.stringify({ login, password });
+      const encodedCredentials = btoa(credentials);
       
       // Save to localStorage
-      localStorage.setItem('dataforseo_api_key', credentials);
+      localStorage.setItem('dataforseo_api_key', encodedCredentials);
       
-      toast.success('DataForSEO API credentials saved successfully');
+      // Test the connection
+      try {
+        const module = await import('@/services/serp/adapters/dataforseo/ApiKeyTester');
+        const isValid = await module.testDataForSeoApiKey(encodedCredentials);
+        
+        if (isValid) {
+          toast.success('DataForSEO API credentials verified successfully');
+        } else {
+          toast.warning('DataForSEO credentials saved but could not be verified. Please check your login and password.');
+        }
+      } catch (testError) {
+        console.error('Error testing DataForSEO credentials:', testError);
+      }
+      
       setIsKeyVerified(true);
       
       // Notify parent component if needed
@@ -121,6 +144,16 @@ export const DataForSeoApiSetup: React.FC<DataForSeoApiSetupProps> = ({ onConfig
             </button>
           </div>
         </div>
+        
+        <div className="bg-white/5 p-3 rounded text-xs text-white/70 border border-white/10 mt-4">
+          <p className="font-medium mb-1">DataForSEO Connection Instructions:</p>
+          <ol className="list-decimal pl-4 space-y-1">
+            <li>Enter your DataForSEO account login (email)</li>
+            <li>Enter your DataForSEO account password</li>
+            <li>Click Save to store and test your credentials</li>
+          </ol>
+          <p className="mt-2 italic">Note: You need an active DataForSEO account to use this feature.</p>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         {isKeyVerified ? (
@@ -137,7 +170,7 @@ export const DataForSeoApiSetup: React.FC<DataForSeoApiSetupProps> = ({ onConfig
               onClick={handleSave}
               disabled={isSaving || !login || !password}
             >
-              Update
+              {isSaving ? "Saving..." : "Update"}
             </Button>
           </>
         ) : (

@@ -3,7 +3,7 @@
  * Utility for testing DataForSEO API keys
  */
 
-// Test endpoint that requires minimal resources but validates authentication
+// Test endpoint that provides account information with minimal API usage
 const TEST_ENDPOINT = 'https://api.dataforseo.com/v3/merchant/google/locations';
 
 /**
@@ -26,9 +26,12 @@ export const testDataForSeoApiKey = async (apiKey: string): Promise<boolean> => 
       return false;
     }
     
-    // Create auth header
+    // Create auth header - IMPORTANT: Use the raw login:password format for HTTP Basic Auth
     const { login, password } = credentials;
-    const auth = Buffer.from(`${login}:${password}`).toString('base64');
+    const authStr = `${login}:${password}`;
+    const auth = Buffer.from(authStr).toString('base64');
+    
+    console.log('Testing DataForSEO connection with credentials', { login });
     
     // Make a test API call to verify the credentials
     const response = await fetch(TEST_ENDPOINT, {
@@ -45,6 +48,8 @@ export const testDataForSeoApiKey = async (apiKey: string): Promise<boolean> => 
     if (!isSuccessful) {
       const errorData = await response.json();
       console.error('DataForSEO API test failed:', errorData);
+    } else {
+      console.log('DataForSEO API test successful');
     }
     
     return isSuccessful;

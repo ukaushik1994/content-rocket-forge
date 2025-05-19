@@ -1,3 +1,4 @@
+
 /**
  * API key validation and detection utilities
  */
@@ -11,15 +12,17 @@ import { testApiKey } from './testing';
 // No longer export isDataForSeoFormat here since it's exported from testing.ts
 
 /**
- * Encode DataForSEO credentials (login:password) as base64
+ * Encode DataForSEO credentials as base64 JSON
  * 
  * @param login - The DataForSEO login 
  * @param password - The DataForSEO password
- * @returns string - Base64 encoded credentials
+ * @returns string - Base64 encoded JSON credentials
  */
 export const encodeDataForSeoCredentials = (login: string, password: string): string => {
   try {
-    return btoa(`${login}:${password}`);
+    // Create credentials object and encode as base64
+    const credentials = JSON.stringify({ login, password });
+    return btoa(credentials);
   } catch (e) {
     console.error('Error encoding DataForSEO credentials:', e);
     return '';
@@ -67,8 +70,14 @@ export const detectApiKeyType = async (apiKey: string): Promise<string | null> =
   }
   
   // Check if it might be DataForSEO credentials
-  if (import("@/services/apiKeys/testing").then(module => module.isDataForSeoFormat(apiKey))) {
-    return 'dataforseo';
+  // Use dynamic import to prevent circular dependency
+  try {
+    const { isDataForSeoFormat } = await import('@/services/apiKeys/testing');
+    if (isDataForSeoFormat(apiKey)) {
+      return 'dataforseo';
+    }
+  } catch (e) {
+    console.error('Error importing isDataForSeoFormat:', e);
   }
   
   // Unknown format

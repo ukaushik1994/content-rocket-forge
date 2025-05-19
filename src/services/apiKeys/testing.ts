@@ -4,9 +4,11 @@
  */
 
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
-import { isDataForSeoFormat as originalIsDataForSeoFormat, 
-         decodeDataForSeoCredentials as originalDecodeDataForSeoCredentials,
-         testDataForSeoApiKey } from '../serp/adapters/dataforseo/ApiKeyTester';
+import { 
+  isDataForSeoFormat as originalIsDataForSeoFormat, 
+  decodeDataForSeoCredentials as originalDecodeDataForSeoCredentials,
+  testDataForSeoApiKey 
+} from '../serp/adapters/dataforseo/ApiKeyTester';
 
 /**
  * Test an API key for a specific service
@@ -31,7 +33,7 @@ export const testApiKey = async (service: string, apiKey: string): Promise<boole
       case 'serpapi':
         return await testSerpApiKey(apiKey);
       case 'dataforseo':
-        return await testDataForSeoKey(apiKey);
+        return await testDataForSeoApiKey(apiKey);
       // Add more services as needed
       default:
         // For services without specific tests, return true if key exists
@@ -79,8 +81,8 @@ const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
 // Test DataForSEO key
 const testDataForSeoKey = async (apiKey: string): Promise<boolean> => {
   try {
-    // For DataForSEO, the apiKey is actually a base64 encoded username:password
-    return isDataForSeoFormat(apiKey);
+    // For DataForSEO, directly use the testDataForSeoApiKey function
+    return await testDataForSeoApiKey(apiKey);
   } catch (error) {
     console.error('Error testing DataForSEO key:', error);
     return false;
@@ -90,3 +92,15 @@ const testDataForSeoKey = async (apiKey: string): Promise<boolean> => {
 // Re-export these functions from the DataForSEO adapter for consistency across the codebase
 export const isDataForSeoFormat = originalIsDataForSeoFormat;
 export const decodeDataForSeoCredentials = originalDecodeDataForSeoCredentials;
+
+// Also export the encoding function for consistency
+export const encodeDataForSeoCredentials = (login: string, password: string): string => {
+  try {
+    // Create credentials object and encode as base64
+    const credentials = JSON.stringify({ login, password });
+    return btoa(credentials);
+  } catch (e) {
+    console.error('Error encoding DataForSEO credentials:', e);
+    return '';
+  }
+};

@@ -1,3 +1,4 @@
+
 /**
  * Implementation of DataForSEO API requests
  */
@@ -25,8 +26,12 @@ async function makeDataForSeoRequest(endpoint: string, payload: any, apiKey: str
     
     const { login, password } = credentials;
     
-    // Create authorization header
-    const auth = Buffer.from(`${login}:${password}`).toString('base64');
+    // FIXED: Create authorization header correctly for HTTP Basic Auth
+    // Use the raw login:password format before encoding to base64
+    const authStr = `${login}:${password}`;
+    const auth = Buffer.from(authStr).toString('base64');
+    
+    console.log(`Making DataForSEO request to ${endpoint}`);
     
     // Make API request
     const response = await fetch(`${DATAFORSEO_BASE_URL}${endpoint}`, {
@@ -40,10 +45,12 @@ async function makeDataForSeoRequest(endpoint: string, payload: any, apiKey: str
     
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`DataForSEO API error (${response.status}):`, errorText);
       throw new Error(`DataForSEO API error (${response.status}): ${errorText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('DataForSEO API request failed:', error);
     throw error;
