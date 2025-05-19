@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { ChangeEvent } from 'react';
 
 export const useWritingStep = () => {
-  const { state, setContent, generateContent } = useContentBuilder();
+  const { state, setContent, generateContent, setAdditionalInstructions } = useContentBuilder();
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [contextData, setContextData] = useState<any>(null);
@@ -75,7 +76,6 @@ export const useWritingStep = () => {
 
   const setIsGenerating = (isGenerating: boolean) => {
     // This method would typically update a state in the context
-    // For now we'll just console log
     console.log("Setting isGenerating to:", isGenerating);
   };
 
@@ -87,9 +87,8 @@ export const useWritingStep = () => {
     setShowGenerator(!showGenerator);
   };
 
-  const handleInstructionsChange = (instructions: string) => {
-    // In a real implementation, this would update the state context
-    console.log("Instructions changed:", instructions);
+  const handleInstructionsChange = (value: string) => {
+    setAdditionalInstructions(value);
   };
 
   const handleAiProviderChange = (provider: string) => {

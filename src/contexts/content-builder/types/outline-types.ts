@@ -5,6 +5,7 @@ export interface OutlineSection {
   level: number;
   content?: string;
   expand?: boolean;
+  children?: OutlineSection[];
 }
 
 export interface OutlineGenerationParams {

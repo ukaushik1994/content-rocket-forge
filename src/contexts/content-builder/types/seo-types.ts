@@ -16,4 +16,5 @@ export interface SolutionIntegrationMetrics {
   integrationLevel?: 'poor' | 'basic' | 'good' | 'excellent';
   overallScore: number;
   mentionedFeatures: string[];
+  painPointsAddressed?: string[];
 }

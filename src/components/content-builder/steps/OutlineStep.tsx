@@ -8,6 +8,7 @@ import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 import { v4 as uuid } from 'uuid';
+import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
 
 export const OutlineStep = () => {
   const { state, setOutline, setOutlineSections, navigateToStep } = useContentBuilder();
@@ -21,7 +22,7 @@ export const OutlineStep = () => {
     }
     
     if (state.outline && state.outline.length > 0) {
-      return state.outline.map((title: string) => ({
+      return state.outline.map((title) => ({
         id: uuid(),
         title: title,
         level: 1,

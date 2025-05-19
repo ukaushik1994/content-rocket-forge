@@ -46,7 +46,7 @@ export interface ContentBuilderState {
   isAnalyzing: boolean;
   
   // Outline
-  outline: OutlineSection[];
+  outline: string[];
   outlineSections: OutlineSection[];
   
   // Content
@@ -78,5 +78,10 @@ export interface ContentBuilderState {
   
   // Saved Draft
   savedDraftId: string | null;
+  
+  // Word Count Limit
   wordCountLimit: number | null;
+
+  // AI Provider (needed for useWritingStep)
+  aiProvider?: string;
 }

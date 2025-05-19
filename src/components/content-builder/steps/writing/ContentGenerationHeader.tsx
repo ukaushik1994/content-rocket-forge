@@ -1,104 +1,168 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Sparkles, Eye, EyeOff, Clock, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Sparkles, Check, List, Loader2 } from 'lucide-react';
-import { AiProviderSelector } from '../../outline/ai-generator/AiProviderSelector';
-import type { AiProvider } from '../../outline/ai-generator/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatDistanceToNow } from 'date-fns';
 
-interface ContentGenerationHeaderProps {
-  title: string | null;
-  wordCount: number;
+export interface ContentGenerationHeaderProps {
   isGenerating: boolean;
-  onGenerate: () => void;
-  targetWordCount?: number;
+  onGenerateContent: () => Promise<void>;
+  onToggleOutline: () => void;
+  showOutline: boolean;
+  outlineLength: number;
+  aiProvider?: string;
+  onAiProviderChange?: (provider: string) => void;
+  autoSaveTimestamp?: string | null;
+  hasUnsavedChanges?: boolean;
+  onManualSave?: () => void;
+  wordCountLimit?: number | null;
 }
 
-export const ContentGenerationHeader = ({ 
-  title, 
-  wordCount, 
-  isGenerating, 
-  onGenerate,
-  targetWordCount = 0,
-}: ContentGenerationHeaderProps) => {
-  const [selectedProvider, setSelectedProvider] = useState<AiProvider>('openai');
-  
-  // Calculate progress percentage capped at 100%
-  const progressPercentage = targetWordCount > 0 
-    ? Math.min(Math.round((wordCount / targetWordCount) * 100), 100) 
-    : 0;
-  
-  // Determine status class based on progress
-  const getStatusClass = () => {
-    if (targetWordCount === 0) return "bg-blue-600";
-    if (progressPercentage >= 100) return "bg-green-600";
-    if (progressPercentage >= 80) return "bg-yellow-600";
-    return "bg-blue-600";
+export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
+  isGenerating,
+  onGenerateContent,
+  onToggleOutline,
+  showOutline,
+  outlineLength,
+  aiProvider = 'openai',
+  onAiProviderChange,
+  autoSaveTimestamp,
+  hasUnsavedChanges,
+  onManualSave,
+  wordCountLimit
+}) => {
+  const handleGenerateContent = async () => {
+    await onGenerateContent();
   };
 
-  const handleProviderChange = (provider: AiProvider) => {
-    setSelectedProvider(provider);
+  const renderAiProviderSelector = () => {
+    return (
+      <div className="flex items-center space-x-2">
+        <div className="text-xs text-muted-foreground">AI:</div>
+        <select 
+          className="text-xs bg-background border border-input rounded px-2 py-1"
+          value={aiProvider}
+          onChange={(e) => onAiProviderChange?.(e.target.value)}
+        >
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="gemini">Gemini</option>
+        </select>
+      </div>
+    );
+  };
+
+  const renderAutoSaveStatus = () => {
+    if (!autoSaveTimestamp && !hasUnsavedChanges) return null;
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center space-x-1 text-xs">
+              {hasUnsavedChanges ? (
+                <>
+                  <div className="h-2 w-2 bg-amber-400 rounded-full animate-pulse"></div>
+                  <span className="text-muted-foreground">Unsaved changes</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    Saved {autoSaveTimestamp && formatDistanceToNow(new Date(autoSaveTimestamp), { addSuffix: true })}
+                  </span>
+                </>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {hasUnsavedChanges 
+              ? "You have unsaved changes. Click Save to preserve your work." 
+              : `Last saved: ${autoSaveTimestamp ? new Date(autoSaveTimestamp).toLocaleString() : 'Unknown'}`
+            }
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   return (
-    <div className="bg-card border rounded-md mb-6 px-5 py-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-2">
-          <h2 className="text-xl font-medium line-clamp-1">
-            {title || "Untitled Content"}
-          </h2>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="flex items-center gap-1.5">
-              <Clock className="h-3 w-3" />
-              <span className="font-normal">{wordCount} words</span>
-            </Badge>
+    <Card className="bg-card/50 backdrop-blur-sm border border-border/50">
+      <CardContent className="p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className={`text-xs ${showOutline ? 'bg-muted' : ''}`}
+              onClick={onToggleOutline}
+            >
+              {showOutline ? (
+                <>
+                  <EyeOff className="h-3.5 w-3.5 mr-1" />
+                  Hide Outline
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  Show Outline
+                </>
+              )}
+              {outlineLength > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px]">
+                  {outlineLength}
+                </Badge>
+              )}
+            </Button>
             
-            {targetWordCount > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-16 bg-secondary/30 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${getStatusClass()} rounded-full transition-all duration-500`}
-                    style={{ width: `${progressPercentage}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {progressPercentage}% of {targetWordCount}
-                </span>
+            {renderAiProviderSelector()}
+            
+            {wordCountLimit && (
+              <div className="text-xs text-muted-foreground">
+                Target: ~{wordCountLimit} words
               </div>
             )}
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <AiProviderSelector
-            selectedProvider={selectedProvider}
-            onProviderChange={handleProviderChange}
-            size="sm"
-            variant="outline" 
-            className="h-9"
-          />
           
-          <Button 
-            variant="default"
-            className="h-9 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700" 
-            onClick={onGenerate}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generate
-              </>
+          <div className="flex items-center gap-3">
+            {renderAutoSaveStatus()}
+            
+            {onManualSave && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs"
+                onClick={onManualSave}
+                disabled={!hasUnsavedChanges}
+              >
+                <Save className="h-3.5 w-3.5 mr-1" />
+                Save
+              </Button>
             )}
-          </Button>
+            
+            <Button
+              onClick={handleGenerateContent}
+              disabled={isGenerating}
+              className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+              size="sm"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5 mr-1" />
+                  Generate Content
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

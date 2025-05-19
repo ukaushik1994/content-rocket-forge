@@ -23,7 +23,7 @@ export interface SerpKeyword {
 
 export interface SerpData {
   query: string;
-  keyword?: string; // Added to match SerpAnalysisResult
+  keyword: string; // Make keyword required to match SerpAnalysisResult
   results: SerpItem[];
   relatedQuestions?: SerpQuestion[];
   relatedKeywords?: SerpKeyword[];

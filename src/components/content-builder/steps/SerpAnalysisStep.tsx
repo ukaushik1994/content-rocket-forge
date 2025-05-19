@@ -12,6 +12,29 @@ import { LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 
+// Add mock props for components that need them
+interface SerpApiKeySetupProps {
+  onApiKeySet: () => void;
+}
+
+interface SerpLoadingStateProps {
+  keyword?: string;
+  onCancel?: () => void;
+}
+
+interface SerpAnalysisHeaderProps {
+  keyword?: string;
+  totalSelected?: number;
+  onGenerateOutline?: () => void;
+  onSkip?: () => void;
+}
+
+interface SelectedItemsContentProps {
+  selectedCounts?: any;
+  totalSelected?: number;
+  onGenerateOutline?: () => void;
+}
+
 export const SerpAnalysisStep = () => {
   const { state, analyzeKeyword, generateOutlineFromSelections, navigateToStep } = useContentBuilder();
   const { mainKeyword, isAnalyzing, serpSelections = [] } = state;
@@ -82,6 +105,9 @@ export const SerpAnalysisStep = () => {
               ...state.serpData,
               keyword: state.serpData.query // Add the keyword property expected by SerpAnalysisResult
             } : null} 
+            isLoading={false}
+            mainKeyword={mainKeyword}
+            onAddToContent={() => {}}
           />
         </div>
         
@@ -96,6 +122,8 @@ export const SerpAnalysisStep = () => {
             <SelectedItemsSidebar 
               selectedCounts={selectedCounts} 
               totalSelected={totalSelected} 
+              serpSelections={serpSelections}
+              handleToggleSelection={() => {}}
             />
           </motion.div>
         )}

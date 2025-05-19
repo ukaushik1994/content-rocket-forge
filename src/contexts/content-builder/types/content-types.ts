@@ -31,6 +31,7 @@ export interface SaveContentParams {
   outline?: any[];
   serpSelections?: any[];
   serpData?: any;
+  status?: string;
 }
 
 export interface ContentGenerationParams {

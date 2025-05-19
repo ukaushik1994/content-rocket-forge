@@ -8,6 +8,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { TitleGenerationButton } from './writing/TitleGenerationButton';
+import { ChangeEvent } from 'react';
 
 export const ContentWritingStep = () => {
   const {
@@ -39,7 +40,8 @@ export const ContentWritingStep = () => {
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
-    handleManualSave
+    handleManualSave,
+    handleGenerateContent
   } = useWritingStep();
   
   // Setup leave confirmation
@@ -57,46 +59,6 @@ export const ContentWritingStep = () => {
     window.addEventListener('popstate', handleBeforeNavigate);
     return () => window.removeEventListener('popstate', handleBeforeNavigate);
   }, [hasUnsavedChanges]);
-
-  const handleGenerateContent = async () => {
-    if (!mainKeyword) {
-      toast.error("Please set a main keyword first");
-      return;
-    }
-    
-    if (!state.contentTitle) {
-      toast.error("Please set a title first using the title generator");
-      return;
-    }
-    
-    // Convert outline to a formatted string for the prompt
-    const outlineText = Array.isArray(state.outline) 
-      ? state.outline.map((item, index) => {
-          if (typeof item === 'string') {
-            return `${index + 1}. ${item}`;
-          } else if (item && typeof item === 'object' && 'title' in item) {
-            return `${index + 1}. ${(item as { title: string }).title}`;
-          }
-          return '';
-        }).filter(Boolean).join('\n')
-      : '';
-        
-    // Prepare secondary keywords
-    const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
-    
-    await generateContent(
-      aiProvider,
-      mainKeyword,
-      state.contentTitle,
-      outlineText,
-      secondaryKeywordsStr,
-      selectedSolution,
-      additionalInstructions,
-      wordCountLimit || undefined,
-      setIsGenerating,
-      handleContentChange
-    );
-  };
   
   const handleSaveToDraft = async () => {
     await saveContentToDraft(

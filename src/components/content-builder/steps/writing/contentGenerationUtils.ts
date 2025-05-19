@@ -1,4 +1,3 @@
-
 import { OutlineSection, Solution } from '@/contexts/content-builder/types';
 
 /**
@@ -94,4 +93,31 @@ const generateRandomParagraph = (keyword: string, sectionTitle: string): string 
   
   // Return a random paragraph from the list
   return paragraphs[Math.floor(Math.random() * paragraphs.length)];
+};
+
+export const formatOutlineForPrompt = (outline: any[]): string => {
+  if (!outline || outline.length === 0) {
+    return '';
+  }
+
+  let formattedOutline = '';
+  
+  outline.forEach((section, index) => {
+    if (typeof section === 'string') {
+      formattedOutline += `${index + 1}. ${section}\n`;
+    } else if (typeof section === 'object') {
+      formattedOutline += `${index + 1}. ${section.title}\n`;
+      
+      // Handle child sections if they exist
+      if (section.children && Array.isArray(section.children)) {
+        section.children.forEach((child: any, childIndex: number) => {
+          formattedOutline += `   ${String.fromCharCode(97 + childIndex)}. ${
+            typeof child === 'string' ? child : child.title
+          }\n`;
+        });
+      }
+    }
+  });
+  
+  return formattedOutline;
 };
