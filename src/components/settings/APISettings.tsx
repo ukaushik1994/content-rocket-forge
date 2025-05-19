@@ -13,7 +13,7 @@ import {
   deleteApiKey, 
   getApiKey 
 } from '@/services/apiKeys/storage';
-import { testApiKey } from '@/services/apiKeys/validation';
+import { testApiKey } from '@/services/apiKeys/testing';
 import { 
   Tabs, 
   TabsContent, 

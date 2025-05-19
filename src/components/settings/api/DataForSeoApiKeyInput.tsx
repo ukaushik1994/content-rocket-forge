@@ -17,7 +17,7 @@ import {
 import { ApiProvider } from './types';
 
 interface DataForSeoApiKeyInputProps {
-  provider: ApiProvider;
+  provider: ApiProviderWithCategory;
 }
 
 export const DataForSeoApiKeyInput: React.FC<DataForSeoApiKeyInputProps> = ({ provider }) => {

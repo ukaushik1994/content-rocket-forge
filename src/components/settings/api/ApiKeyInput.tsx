@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { 
@@ -8,7 +7,7 @@ import {
   deleteApiKey,
   detectApiKeyType 
 } from "@/services/apiKeyService";
-import { ApiProvider } from './types';
+import { ApiProviderWithCategory } from './types';
 import { ApiKeyCard } from './ApiKeyCard';
 import { ApiKeyHeader } from './ApiKeyHeader';
 import { ApiKeyStatus } from './ApiKeyStatus';
@@ -17,7 +16,7 @@ import { ApiKeyActions } from './ApiKeyActions';
 import { ApiKeyLoading } from './ApiKeyLoading';
 
 interface ApiKeyInputProps {
-  provider: ApiProvider;
+  provider: ApiProviderWithCategory;
 }
 
 export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {

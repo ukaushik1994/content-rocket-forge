@@ -1,7 +1,14 @@
 
 import { ApiProviderConfig } from '@/components/api-credentials/types';
 
-export const API_PROVIDERS: ApiProviderConfig[] = [
+// Extended version of ApiProviderConfig with category property
+export interface ApiProviderWithCategory extends ApiProviderConfig {
+  category: 'ai' | 'serp' | 'other';
+  serviceKey: string;
+  autoDetectable?: boolean;
+}
+
+export const API_PROVIDERS: ApiProviderWithCategory[] = [
   {
     id: 'openai',
     name: 'OpenAI',
@@ -10,6 +17,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     isPrimary: true,
     category: 'ai',
     type: 'standard',
+    serviceKey: 'openai',
     docsUrl: 'https://platform.openai.com/docs',
     signupUrl: 'https://platform.openai.com/signup'
   },
@@ -20,6 +28,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'ai',
     type: 'standard',
+    serviceKey: 'anthropic',
     docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
     signupUrl: 'https://console.anthropic.com/signup'
   },
@@ -30,6 +39,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'ai',
     type: 'standard',
+    serviceKey: 'gemini',
     docsUrl: 'https://ai.google.dev/docs',
     signupUrl: 'https://makersuite.google.com/app/apikey'
   },
@@ -40,6 +50,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'ai',
     type: 'standard',
+    serviceKey: 'mistral',
     docsUrl: 'https://docs.mistral.ai/',
     signupUrl: 'https://console.mistral.ai/user/sign-up/'
   },
@@ -50,6 +61,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'serp',
     type: 'standard',
+    serviceKey: 'serpapi',
     docsUrl: 'https://serpapi.com/docs',
     signupUrl: 'https://serpapi.com/users/sign_up'
   },
@@ -60,6 +72,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'serp',
     type: 'credentials',
+    serviceKey: 'dataforseo',
     docsUrl: 'https://dataforseo.com/apis',
     signupUrl: 'https://app.dataforseo.com/register'
   },
@@ -70,6 +83,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'other',
     type: 'standard',
+    serviceKey: 'stripe',
     docsUrl: 'https://stripe.com/docs/api',
     signupUrl: 'https://dashboard.stripe.com/register'
   },
@@ -80,6 +94,7 @@ export const API_PROVIDERS: ApiProviderConfig[] = [
     required: false,
     category: 'other',
     type: 'standard',
+    serviceKey: 'sendgrid',
     docsUrl: 'https://docs.sendgrid.com/api-reference',
     signupUrl: 'https://signup.sendgrid.com/'
   }

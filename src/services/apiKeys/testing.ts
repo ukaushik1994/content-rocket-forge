@@ -1,61 +1,95 @@
 
-// Testing API keys
+/**
+ * API key testing utilities
+ */
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { detectApiKeyType as detectApiKeyTypeFromValidation } from "./validation";
+import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
+import { AdapterFactory } from '@/services/serp/adapters/AdapterFactory';
+import { getApiKey } from './storage';
 
 /**
- * Test an API key for a particular service
- * @param service The service to test the API key for
- * @param key The API key to test
- * @returns A promise that resolves to a boolean indicating success
+ * Test an API key for validity
+ * 
+ * @param serviceKey - The service key identifier
+ * @param apiKey - The API key to test
+ * @returns Promise<boolean> - Whether the key is valid
  */
-export async function testApiKey(service: string, key: string): Promise<boolean> {
+export const testApiKey = async (serviceKey: string, apiKey: string): Promise<boolean> => {
   try {
-    if (!key.trim()) {
-      toast.error('API key cannot be empty');
+    // For SERP providers, use the adapter test method
+    if (serviceKey === 'serpapi' || serviceKey === 'dataforseo') {
+      const provider = serviceKey as SerpProvider;
+      const adapter = AdapterFactory.getAdapter(provider);
+      return await adapter.testApiKey(apiKey);
+    }
+    
+    // For other API keys, just validate the format
+    // This is a basic check - in a real app you would do more robust validation
+    if (!apiKey || apiKey.trim() === '') {
       return false;
     }
-
-    // Use the Edge Function to test the API key
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
-      body: JSON.stringify({
-        service,
-        endpoint: 'test',
-        apiKey: key
-      }),
-    });
-
-    if (error) {
-      console.error(`Error testing ${service} API key:`, error);
-      toast.error(`Failed to test ${service} API key: ${error.message}`);
-      return false;
-    }
-
-    if (data?.success) {
-      console.log(`${service} API test successful:`, data);
-      toast.success(data.message || `${service} API connection successful`);
-      return true;
-    } else {
-      console.error(`${service} API test failed:`, data);
-      toast.error(data?.error || `${service} API connection failed`);
-      return false;
-    }
-  } catch (error: any) {
-    console.error(`Error testing ${service} API key:`, error);
-    toast.error(error.message || `${service} API connection failed`);
+    
+    // At minimum, check that it looks like an API key (not empty, reasonable length)
+    return apiKey.length > 8;
+  } catch (error) {
+    console.error(`Error testing API key for ${serviceKey}:`, error);
     return false;
   }
-}
+};
 
 /**
- * Detect the type of API key based on its format
- * Uses the validation module's implementation
- * @param key The API key to detect
- * @returns A promise that resolves to the service name or null
+ * Utility for encoding DataForSEO credentials
  */
-export async function detectApiKeyType(key: string): Promise<string | null> {
-  return detectApiKeyTypeFromValidation(key);
-}
+export const encodeDataForSeoCredentials = (email: string, password: string): string => {
+  return Buffer.from(`${email}:${password}`).toString('base64');
+};
 
+/**
+ * Utility for decoding DataForSEO credentials
+ */
+export const decodeDataForSeoCredentials = (encoded: string): { email: string, password: string } => {
+  try {
+    const decoded = Buffer.from(encoded, 'base64').toString();
+    const [email, password] = decoded.split(':');
+    return { email, password };
+  } catch (error) {
+    console.error('Error decoding DataForSEO credentials:', error);
+    return { email: '', password: '' };
+  }
+};
+
+/**
+ * Check if a string appears to be DataForSEO format
+ */
+export const isDataForSeoFormat = (value: string): boolean => {
+  try {
+    const { email, password } = decodeDataForSeoCredentials(value);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && password.length > 0;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Attempts to detect the type of API key
+ */
+export const detectApiKeyType = async (apiKey: string): Promise<string | null> => {
+  // Check OpenAI key format (usually starts with "sk-")
+  if (apiKey.startsWith('sk-') && apiKey.length > 30) {
+    return 'openai';
+  }
+
+  // Check Anthropic key format
+  if ((apiKey.startsWith('sk-ant-') || apiKey.startsWith('sk-claude-')) && apiKey.length > 30) {
+    return 'anthropic';
+  }
+  
+  // Check DataForSEO format
+  if (isDataForSeoFormat(apiKey)) {
+    return 'dataforseo';
+  }
+  
+  // If none of the above, we can't determine the type
+  return null;
+};

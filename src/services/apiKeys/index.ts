@@ -1,11 +1,12 @@
 
-// Export all API key functionality
+/**
+ * API keys services index
+ */
 
-export * from './types';
+// Re-export everything from sub-modules
+export * from './storage';
+export * from './validation';
+export * from './testing';
 export * from './encryption';
 export * from './crud';
-// Export only the named functions from testing, excluding detectApiKeyType which we'll
-// get from validation to avoid conflicts
-export { testApiKey } from './testing';
-export * from './validation';
-
+export * from './types';
