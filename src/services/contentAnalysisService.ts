@@ -1,5 +1,5 @@
 
-import { analyzeKeywordSerp } from './serpApiService';
+import { analyzeSerpKeyword } from './serpApiService';
 import { callApiProxy } from './apiProxyService';
 import { toast } from 'sonner';
 import { SerpAnalysisResult } from '@/types/serp';
@@ -19,7 +19,7 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
   try {
     // For now, we'll just use the keyword analysis since the actual content analysis is missing
     // This is a placeholder that matches the expected return type
-    const serpAnalysis = await analyzeKeywordSerp(targetKeywords[0] || '');
+    const serpAnalysis = await analyzeSerpKeyword(targetKeywords[0] || '');
     
     // Then get AI analysis for readability and quality score
     const aiAnalysis = await callApiProxy<{
@@ -32,14 +32,14 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
     });
     
     return {
-      seoScore: Math.round((serpAnalysis.competitionScore || 0.5) * 100),
-      keywords: serpAnalysis.keywords || [],
-      recommendations: serpAnalysis.recommendations || [],
+      seoScore: Math.round((serpAnalysis?.competitionScore || 0.5) * 100),
+      keywords: serpAnalysis?.keywords || [],
+      recommendations: serpAnalysis?.recommendations || [],
       readabilityScore: aiAnalysis?.score ? Math.round(aiAnalysis.score * 10) : undefined,
-      competitionScore: serpAnalysis.competitionScore,
+      competitionScore: serpAnalysis?.competitionScore,
       serp: serpAnalysis,
-      searchVolume: serpAnalysis.searchVolume,
-      keywordDifficulty: serpAnalysis.keywordDifficulty
+      searchVolume: serpAnalysis?.searchVolume,
+      keywordDifficulty: serpAnalysis?.keywordDifficulty
     };
   } catch (error) {
     console.error('Content analysis error:', error);
@@ -57,19 +57,19 @@ export async function analyzeKeyword(keyword: string, refresh?: boolean): Promis
     console.log(`Analyzing keyword: ${keyword}`);
     
     // Get comprehensive SERP data for the keyword
-    const serpData = await analyzeKeywordSerp(keyword, refresh);
+    const serpData = await analyzeSerpKeyword(keyword, refresh);
     
     console.log('SERP data received:', serpData);
     
     // Ensure we return all the expected data
     return {
-      seoScore: Math.round((serpData.competitionScore || 0.5) * 100),
-      keywords: serpData.keywords || [],
-      recommendations: serpData.recommendations || [],
-      competitionScore: serpData.competitionScore,
+      seoScore: Math.round((serpData?.competitionScore || 0.5) * 100),
+      keywords: serpData?.keywords || [],
+      recommendations: serpData?.recommendations || [],
+      competitionScore: serpData?.competitionScore,
       serp: serpData,
-      searchVolume: serpData.searchVolume,
-      keywordDifficulty: serpData.keywordDifficulty
+      searchVolume: serpData?.searchVolume,
+      keywordDifficulty: serpData?.keywordDifficulty
     };
   } catch (error) {
     console.error('Keyword analysis error:', error);

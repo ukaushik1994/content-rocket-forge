@@ -70,7 +70,8 @@ export const createSerpActions = (
   
   // Function to change SERP provider
   const changeSerpProvider = async (provider: SerpProvider) => {
-    dispatch({ type: 'SET_PREFERRED_SERP_PROVIDER', payload: provider });
+    // Use a valid action type for setting preferred SERP provider
+    dispatch({ type: 'SET_PREFERRED_PROVIDER', payload: provider });
     
     if (state.mainKeyword) {
       await analyzeKeyword(state.mainKeyword, provider);
@@ -105,7 +106,6 @@ export const createSerpActions = (
           id: `section-${outlineSections.length + 1}`,
           title: heading,
           content: '',
-          type: 'heading',
           subsections: []
         });
       });
@@ -117,7 +117,6 @@ export const createSerpActions = (
             id: `section-${outlineSections.length + 1}`,
             title: question,
             content: '',
-            type: 'question',
             subsections: []
           });
         });
@@ -134,8 +133,7 @@ export const createSerpActions = (
           outlineSections[sectionIndex].subsections!.push({
             id: `subsection-${sectionIndex + 1}-${outlineSections[sectionIndex].subsections!.length + 1}`,
             title: question,
-            content: '',
-            type: 'question'
+            content: ''
           });
         });
       }
@@ -151,7 +149,6 @@ export const createSerpActions = (
           id: `section-${sectionNumber}`,
           title,
           content: '',
-          type: 'generic',
           subsections: []
         });
       }

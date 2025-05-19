@@ -1,6 +1,7 @@
 
 import { SerpAnalysisResult } from '@/types/serp';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
+import { analyzeSerpKeyword as analyzeSerpKeywordImpl, searchSerpKeywords } from './serp/SerpApiService';
 
 /**
  * Get the preferred SERP provider from local storage or return default
@@ -19,7 +20,6 @@ export const setPreferredSerpProvider = (provider: SerpProvider): void => {
 
 /**
  * Analyze a keyword and return SERP data
- * This function now returns null instead of mock data
  */
 export const analyzeSerpKeyword = async (
   keyword: string, 
@@ -34,7 +34,22 @@ export const analyzeSerpKeyword = async (
     return null;
   }
   
-  // In a real implementation, this would actually call the API
-  // For now, we're just returning null to indicate "no data"
-  return null;
+  // Forward to the implementation
+  return analyzeSerpKeywordImpl(keyword, refresh);
 };
+
+/**
+ * Search for keywords
+ */
+export const searchKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
+  return searchSerpKeywords(params.query, params.refresh);
+};
+
+/**
+ * Analyze a keyword and get SERP data for content
+ * This is an alias for analyzeSerpKeyword to maintain backwards compatibility
+ */
+export const analyzeKeywordSerp = analyzeSerpKeyword;
+
+// Re-export the type for backward compatibility
+export type { SerpAnalysisResult };
