@@ -1,24 +1,21 @@
 
 /**
- * API Key Management Service
+ * API key management service
  */
 
-// Import DataForSEO utility functions
-import { 
-  isDataForSeoFormat as isDataForSeoFormatUtil, 
-  decodeDataForSeoCredentials as decodeDataForSeoCredentialsUtil 
-} from './serp/adapters/dataforseo/ApiKeyTester';
+// Export the functions from your testing module
+export { 
+  testApiKey, 
+  isDataForSeoFormat,
+  decodeDataForSeoCredentials
+} from './apiKeys/testing';
 
 /**
- * Get an API key from storage
- */
-export const getApiKey = async (service: string): Promise<string | null> => {
-  // For now, we'll use localStorage
-  return localStorage.getItem(`${service}_api_key`);
-};
-
-/**
- * Save an API key to storage
+ * Save an API key to storage (localStorage for now)
+ * 
+ * @param service - The service identifier
+ * @param apiKey - The API key to save
+ * @returns Promise<boolean> - Whether the save was successful
  */
 export const saveApiKey = async (service: string, apiKey: string): Promise<boolean> => {
   try {
@@ -31,7 +28,25 @@ export const saveApiKey = async (service: string, apiKey: string): Promise<boole
 };
 
 /**
+ * Get an API key from storage
+ * 
+ * @param service - The service identifier
+ * @returns Promise<string | null> - The API key if found, or null
+ */
+export const getApiKey = async (service: string): Promise<string | null> => {
+  try {
+    return localStorage.getItem(`${service}_api_key`);
+  } catch (error) {
+    console.error(`Error getting ${service} API key:`, error);
+    return null;
+  }
+};
+
+/**
  * Delete an API key from storage
+ * 
+ * @param service - The service identifier
+ * @returns Promise<boolean> - Whether the deletion was successful
  */
 export const deleteApiKey = async (service: string): Promise<boolean> => {
   try {
@@ -44,39 +59,19 @@ export const deleteApiKey = async (service: string): Promise<boolean> => {
 };
 
 /**
- * Test if an API key is valid
- */
-export const testApiKey = async (service: string, apiKey: string): Promise<boolean> => {
-  // Import dynamically to avoid circular dependencies
-  const { testApiKey: testApiKeyImpl } = await import('./apiKeys/testing');
-  return testApiKeyImpl(service, apiKey);
-};
-
-/**
- * Check if a string is in DataForSEO format
- */
-export const isDataForSeoFormat = isDataForSeoFormatUtil;
-
-/**
- * Decode DataForSEO credentials
- */
-export const decodeDataForSeoCredentials = decodeDataForSeoCredentialsUtil;
-
-/**
- * Encode DataForSEO credentials
+ * Encode DataForSEO credentials as base64
  */
 export const encodeDataForSeoCredentials = (login: string, password: string): string => {
-  try {
-    const credentials = { login, password };
-    return btoa(JSON.stringify(credentials));
-  } catch (error) {
-    console.error('Error encoding DataForSEO credentials:', error);
-    return '';
-  }
+  const credentials = JSON.stringify({ login, password });
+  return btoa(credentials);
 };
 
-// Add type for DataForSEO credentials
-export interface DataForSeoCredentials {
-  login: string;
-  password: string;
-}
+/**
+ * Check if an API key exists
+ * 
+ * @param service - The service identifier
+ * @returns boolean - Whether the key exists
+ */
+export const apiKeyExists = (service: string): boolean => {
+  return !!localStorage.getItem(`${service}_api_key`);
+};

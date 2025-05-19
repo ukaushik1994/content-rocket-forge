@@ -2,24 +2,53 @@
 /**
  * Utility for testing DataForSEO API keys
  */
+import { decodeDataForSeoCredentials } from "@/services/apiKeyService";
+
+// Test endpoint that requires minimal resources but validates authentication
+const TEST_ENDPOINT = 'https://api.dataforseo.com/v3/merchant/google/locations';
+
+/**
+ * Test if DataForSEO API credentials are valid by making a simple API request
+ */
 export const testDataForSeoApiKey = async (apiKey: string): Promise<boolean> => {
   if (!apiKey) return false;
   
   try {
-    // For DataForSEO, the apiKey is actually a base64 encoded username:password
+    // Check if key has valid format
     if (!isDataForSeoFormat(apiKey)) {
       console.error('Invalid DataForSEO API key format');
       return false;
     }
     
-    // Make a simple API request to test the key
+    // Decode the credentials
     const credentials = decodeDataForSeoCredentials(apiKey);
-    if (!credentials) return false;
+    if (!credentials) {
+      console.error('Could not decode DataForSEO credentials');
+      return false;
+    }
     
-    // In a real implementation, we'd make a test API call here
-    // For now, we'll simulate a successful response if the format is correct
-    console.log('DataForSEO credentials format validated successfully');
-    return true;
+    // Create auth header
+    const { login, password } = credentials;
+    const auth = Buffer.from(`${login}:${password}`).toString('base64');
+    
+    // Make a test API call to verify the credentials
+    const response = await fetch(TEST_ENDPOINT, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`
+      }
+    });
+    
+    // Check if the response is successful
+    const isSuccessful = response.ok;
+    
+    if (!isSuccessful) {
+      const errorData = await response.json();
+      console.error('DataForSEO API test failed:', errorData);
+    }
+    
+    return isSuccessful;
   } catch (error) {
     console.error('Error testing DataForSEO key:', error);
     return false;

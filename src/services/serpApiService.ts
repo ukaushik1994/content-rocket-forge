@@ -12,7 +12,15 @@ import {
  */
 export const getPreferredSerpProvider = (): SerpProvider => {
   const storedProvider = localStorage.getItem('preferred_serp_provider');
-  return (storedProvider as SerpProvider) || getActiveProvider();
+  const activeProvider = getActiveProvider();
+  
+  // If no active provider exists, return the stored preference or 'serpapi' as default
+  if (!activeProvider) {
+    return (storedProvider as SerpProvider) || 'serpapi';
+  }
+  
+  // Return the active provider (the one that has an API key)
+  return activeProvider;
 };
 
 /**
@@ -52,6 +60,16 @@ export const analyzeSerpKeyword = async (
  * Search for keywords - implementation forwarded to SerpApiService
  */
 export const searchKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
+  // Check if we have API keys
+  const serpApiKey = localStorage.getItem('serp_api_key');
+  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
+  
+  // If no API keys, return empty array
+  if (!serpApiKey && !dataForSeoKey) {
+    console.warn('No API keys found for SERP providers');
+    return [];
+  }
+  
   return searchSerpKeywordsImpl(params.query, params.refresh || false);
 };
 

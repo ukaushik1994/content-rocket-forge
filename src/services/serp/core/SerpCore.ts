@@ -22,9 +22,9 @@ export interface SerpApiOptions {
 }
 
 /**
- * Get the active SERP provider or use mock if none available
+ * Get the active SERP provider or return null if no API keys exist
  */
-export const getActiveProvider = (): SerpProvider => {
+export const getActiveProvider = (): SerpProvider | null => {
   // Check if any API key exists
   const serpApiKey = localStorage.getItem('serp_api_key');
   const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
@@ -35,8 +35,8 @@ export const getActiveProvider = (): SerpProvider => {
     return 'dataforseo';
   }
   
-  // Default provider if no API keys exist
-  return 'serpapi';
+  // No API keys exist
+  return null;
 };
 
 /**
@@ -53,14 +53,20 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
     });
   }
   
+  // Check if any provider is available
+  const activeProvider = provider || getActiveProvider();
+  if (!activeProvider) {
+    console.log('No API keys available for any SERP provider');
+    return null;
+  }
+  
   // Check cache first unless refresh is requested
-  const cacheKey = `serp_analysis_${keyword}`;
+  const cacheKey = `serp_analysis_${activeProvider}_${keyword}`;
   if (!refresh && getFromCache(cacheKey)) {
     return getFromCache(cacheKey);
   }
   
   try {
-    const activeProvider = provider || getActiveProvider();
     const adapter = AdapterFactory.getAdapter(activeProvider);
     
     // Get actual result from the adapter
@@ -124,7 +130,13 @@ export const searchSerpKeywords = async (keyword: string, refresh: boolean = fal
     throw new Error('Keyword is required');
   }
   
+  // Check if any provider is available
   const provider = getActiveProvider();
+  if (!provider) {
+    console.log('No API keys available for any SERP provider');
+    return [];
+  }
+  
   const adapter = AdapterFactory.getAdapter(provider);
   
   const options = { 
@@ -154,7 +166,13 @@ export const searchRelatedKeywords = async (keyword: string, refresh: boolean = 
     throw new Error('Keyword is required');
   }
   
+  // Check if any provider is available
   const provider = getActiveProvider();
+  if (!provider) {
+    console.log('No API keys available for any SERP provider');
+    return [];
+  }
+  
   const adapter = AdapterFactory.getAdapter(provider);
   
   const options = { 

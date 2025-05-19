@@ -1,4 +1,7 @@
 
+/**
+ * DataForSEO adapter for fetching SERP data
+ */
 import { BaseAdapter } from '../BaseAdapter';
 import { testDataForSeoApiKey } from './ApiKeyTester';
 import { fetchAnalysis, fetchKeywords, fetchRelatedKeywords } from './ApiRequests';
@@ -55,25 +58,16 @@ export class DataForSeoAdapter extends BaseAdapter {
   /**
    * Implement the abstract methods from BaseAdapter
    */
-  protected async fetchAnalysis(options: any): Promise<any> {
-    return fetchAnalysis({
-      ...options,
-      apiKey: this.apiKey
-    });
+  protected async fetchAnalysis(options: SerpApiOptions & { apiKey: string }): Promise<any> {
+    return fetchAnalysis(options);
   }
 
-  protected async fetchKeywords(options: any): Promise<any[]> {
-    return fetchKeywords({
-      ...options,
-      apiKey: this.apiKey
-    });
+  protected async fetchKeywords(options: SerpApiOptions & { apiKey: string }): Promise<any[]> {
+    return fetchKeywords(options);
   }
 
-  protected async fetchRelatedKeywords(options: any): Promise<any[]> {
-    return fetchRelatedKeywords({
-      ...options,
-      apiKey: this.apiKey
-    });
+  protected async fetchRelatedKeywords(options: SerpApiOptions & { apiKey: string }): Promise<any[]> {
+    return fetchRelatedKeywords(options);
   }
 
   getProviderName(): string {

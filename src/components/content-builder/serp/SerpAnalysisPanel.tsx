@@ -9,6 +9,7 @@ import {
   Database,
   Key
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const SerpProviderBadge = ({ provider }: { provider?: string }) => {
   if (!provider) return null;
@@ -67,6 +68,35 @@ export function SerpAnalysisPanel({
         <div className="text-center">
           <Loader className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
           <p className="text-muted-foreground">Analyzing {mainKeyword}...</p>
+        </div>
+      </Card>
+    );
+  }
+  
+  // Check if API keys exist
+  const serpApiKey = localStorage.getItem('serp_api_key');
+  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
+  
+  if (!serpApiKey && !dataForSeoKey) {
+    return (
+      <Card className="p-8 h-full flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Key className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">API Key Required</h3>
+            <p className="text-sm text-muted-foreground">
+              To view SERP data, you need to configure an API key for either SERP API or DataForSEO.
+            </p>
+          </div>
+          {onRetry && (
+            <Button 
+              variant="outline" 
+              onClick={onRetry} 
+              className="mt-4"
+            >
+              Configure API Keys
+            </Button>
+          )}
         </div>
       </Card>
     );
