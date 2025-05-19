@@ -41,7 +41,7 @@ export function generateMockSerpData(keyword: string): SerpAnalysisResult {
     headings: [
       { text: `Introduction to ${keyword}`, level: 'h1', subtext: 'Getting started with the basics' },
       { text: `Benefits of ${keyword}`, level: 'h2', subtext: 'Why you should learn this' },
-      { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2', subtext: 'Learning from others' errors' },
+      { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2', subtext: 'Learning from others\' errors' },
       { text: `Advanced ${keyword} Techniques`, level: 'h2', subtext: 'Taking your skills to the next level' },
       { text: `${keyword} Tools and Resources`, level: 'h2', subtext: 'Essential tools for success' }
     ],
