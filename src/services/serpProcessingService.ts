@@ -70,6 +70,9 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
       source: gap.source || ''
     })) : [],
     
+    // Include keywords - added this to fix the error
+    keywords: Array.isArray(response.keywords) ? response.keywords : [],
+    
     // Include recommendations if available
     recommendations: Array.isArray(response.recommendations) ? response.recommendations : []
   };
