@@ -4,18 +4,7 @@
  */
 
 import { SerpProvider } from "@/contexts/content-builder/types/serp-types";
-
-export interface ApiProviderConfig {
-  id: string;
-  name: string;
-  description: string;
-  docsUrl?: string;
-  signupUrl?: string;
-  logoUrl?: string;
-  required?: boolean;
-  isPrimary?: boolean;
-  type: 'standard' | 'credentials' | 'oauth';
-}
+import { ApiProviderConfig } from "@/components/settings/api/types";
 
 export interface ApiCredentialProps {
   provider: ApiProviderConfig;

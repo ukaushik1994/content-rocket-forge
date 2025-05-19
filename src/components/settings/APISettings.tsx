@@ -1,19 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { ApiCredentialCard } from '../api-credentials/ApiCredentialCard';
-import { DataForSeoCredentialCard } from '../api-credentials/DataForSeoCredentialCard';
 import { AvailableProviders } from './api/AvailableProviders';
 import { ApiSettingsHeader } from './api/ApiSettingsHeader';
 import { API_PROVIDERS } from './api/types';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { toast } from 'sonner';
-import { 
-  saveApiKey, 
-  deleteApiKey, 
-  getApiKey 
-} from '@/services/apiKeys/storage';
-import { testApiKey } from '@/services/apiKeys/testing';
 import { 
   Tabs, 
   TabsContent, 
@@ -34,6 +26,7 @@ import {
 } from '@/services/serp/SerpApiService';
 import { Button } from '@/components/ui/button';
 import { Trash, Search, RefreshCw } from 'lucide-react';
+import { StandardApiProvider, DataForSeoProvider } from '@/components/api';
 
 export function APISettings() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
@@ -48,17 +41,21 @@ export function APISettings() {
   
   // Load default AI provider from user preferences
   useEffect(() => {
-    const savedProvider = getUserPreference('defaultAiProvider');
-    if (savedProvider) {
-      setDefaultAiProvider(savedProvider);
-    } else {
-      // Default to OpenAI if no preference is set
-      setDefaultAiProvider('openai');
-    }
+    const loadPreferences = async () => {
+      const savedProvider = await getUserPreference('defaultAiProvider');
+      if (savedProvider) {
+        setDefaultAiProvider(savedProvider);
+      } else {
+        // Default to OpenAI if no preference is set
+        setDefaultAiProvider('openai');
+      }
+      
+      // Get usage stats
+      const serpUsage = getTotalUsageStats();
+      setTotalSerpQueries(serpUsage);
+    };
     
-    // Get usage stats
-    const serpUsage = getTotalUsageStats();
-    setTotalSerpQueries(serpUsage);
+    loadPreferences();
   }, []);
   
   const handleProviderToggle = (providerId: string) => {
@@ -101,20 +98,12 @@ export function APISettings() {
   const availableProviders = API_PROVIDERS.filter(p => 
     !p.required && !selectedProviders.includes(p.id)
   );
-  
-  // Handle saving an API key
-  const handleSaveApiKey = async (providerId: string, key: string) => {
-    return await saveApiKey(providerId, key);
-  };
-  
-  // Handle deleting an API key
-  const handleDeleteApiKey = async (providerId: string) => {
-    return await deleteApiKey(providerId);
-  };
-  
-  // Handle testing an API key
-  const handleTestApiKey = async (providerId: string, key: string) => {
-    return await testApiKey(providerId, key);
+
+  const renderProvider = (provider: typeof API_PROVIDERS[0]) => {
+    if (provider.type === 'credentials') {
+      return <DataForSeoProvider key={provider.id} provider={provider} />;
+    }
+    return <StandardApiProvider key={provider.id} provider={provider} />;
   };
 
   return (
@@ -143,15 +132,7 @@ export function APISettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredProviders
               .filter(p => p.category === 'ai')
-              .map(provider => (
-                <ApiCredentialCard 
-                  key={provider.id}
-                  provider={provider}
-                  onSave={(key) => handleSaveApiKey(provider.id, key)}
-                  onTest={(key) => handleTestApiKey(provider.id, key)}
-                  onDelete={() => handleDeleteApiKey(provider.id)}
-                />
-              ))}
+              .map(provider => renderProvider(provider))}
           </div>
           
           <AvailableProviders 
@@ -189,34 +170,15 @@ export function APISettings() {
           </Card>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ApiCredentialCard 
-              provider={{
-                id: 'serpapi',
-                name: 'SERP API',
-                description: 'Provides search engine results data',
-                type: 'standard',
-                docsUrl: 'https://serpapi.com/docs',
-                signupUrl: 'https://serpapi.com/users/sign_up'
-              }}
-              onSave={(key) => handleSaveApiKey('serpapi', key)}
-              onTest={(key) => handleTestApiKey('serpapi', key)}
-              onDelete={() => handleDeleteApiKey('serpapi')}
-            />
-            
-            <DataForSeoCredentialCard 
-              provider={{
-                id: 'dataforseo',
-                name: 'DataForSEO',
-                description: 'Enterprise SEO data platform',
-                type: 'credentials',
-                docsUrl: 'https://dataforseo.com/apis',
-                signupUrl: 'https://app.dataforseo.com/register'
-              }}
-              onSave={(key) => handleSaveApiKey('dataforseo', key)}
-              onTest={(key) => handleTestApiKey('dataforseo', key)}
-              onDelete={() => handleDeleteApiKey('dataforseo')}
-            />
+            {filteredProviders
+              .filter(p => p.category === 'serp')
+              .map(provider => renderProvider(provider))}
           </div>
+          
+          <AvailableProviders 
+            providers={availableProviders.filter(p => p.category === 'serp')} 
+            onToggleProvider={handleProviderToggle} 
+          />
         </TabsContent>
         
         <TabsContent value="other" className="space-y-6">
@@ -231,15 +193,7 @@ export function APISettings() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredProviders
               .filter(p => p.category === 'other')
-              .map(provider => (
-                <ApiCredentialCard 
-                  key={provider.id}
-                  provider={provider}
-                  onSave={(key) => handleSaveApiKey(provider.id, key)}
-                  onTest={(key) => handleTestApiKey(provider.id, key)}
-                  onDelete={() => handleDeleteApiKey(provider.id)}
-                />
-              ))}
+              .map(provider => renderProvider(provider))}
           </div>
           
           <AvailableProviders 

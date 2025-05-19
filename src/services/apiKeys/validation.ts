@@ -73,6 +73,11 @@ export const detectApiKeyType = (key: string): string | null => {
     return 'anthropic';
   }
   
+  // Check Gemini format
+  if (key.length > 30 && /^[A-Za-z0-9_-]{30,}$/.test(key)) {
+    return 'gemini';
+  }
+  
   // Check DataForSEO format (base64 encoded email:password)
   if (isDataForSeoFormat(key)) {
     return 'dataforseo';
@@ -86,4 +91,3 @@ export const detectApiKeyType = (key: string): string | null => {
   // Unknown format
   return null;
 };
-
