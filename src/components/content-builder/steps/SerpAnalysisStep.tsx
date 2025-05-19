@@ -137,8 +137,8 @@ export const SerpAnalysisStep = () => {
             className="w-1/3 border-l pl-6"
           >
             <SelectedItemsSidebar 
-              selectedCounts={selectedCounts} 
-              totalSelected={totalSelected} 
+              selectedCounts={selectedCounts}
+              totalSelected={totalSelected}
               serpSelections={serpSelections}
               handleToggleSelection={handleToggleSelection}
             />
