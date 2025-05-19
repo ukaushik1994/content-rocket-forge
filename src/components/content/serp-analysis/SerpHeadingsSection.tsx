@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult, Heading } from '@/types/serp';
 import { motion } from 'framer-motion';
 
 interface SerpHeadingsSectionProps {

@@ -55,7 +55,7 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, currentProvider, true);
+      await analyzeKeyword(mainKeyword, true);
     }
   };
   
@@ -103,7 +103,7 @@ export const SerpAnalysisStep = () => {
     
     // If we have a keyword, analyze it with the new provider
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, activeProvider, true);
+      await analyzeKeyword(mainKeyword, true);
     }
   };
   

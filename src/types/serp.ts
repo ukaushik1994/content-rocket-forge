@@ -3,6 +3,13 @@
  * SERP data types
  */
 
+export interface Heading {
+  text: string;
+  level: string;
+  subtext?: string;
+  type?: string;
+}
+
 export interface SerpAnalysisResult {
   keyword: string;
   searchVolume?: number;
@@ -13,7 +20,7 @@ export interface SerpAnalysisResult {
   questions?: any[];
   topResults?: any[];
   entities?: any[];
-  headings?: string[];
+  headings?: Heading[];
   contentGaps?: any[];
   keywords?: any[];
   recommendations?: any[];
@@ -25,4 +32,9 @@ export interface SerpAnalysisResult {
 export interface DataForSeoCredentials {
   login: string;
   password: string;
+}
+
+export interface SerpSearchParams {
+  query: string;
+  limit?: number;
 }

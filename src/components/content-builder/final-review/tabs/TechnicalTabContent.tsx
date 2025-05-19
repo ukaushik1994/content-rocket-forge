@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DocumentStructureCard } from '../DocumentStructureCard';
 import { EntitiesAnalysisCard } from '../EntitiesAnalysisCard';
@@ -5,7 +6,7 @@ import { HeadingsAnalysisCard } from '../HeadingsAnalysisCard';
 import { ContentGapsCard } from '../ContentGapsCard';
 import { FeaturedSnippetsCard } from '../FeaturedSnippetsCard';
 import { DocumentStructure } from '@/contexts/content-builder/types';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult, Heading } from '@/types/serp';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle2, FileCode } from 'lucide-react';
 
@@ -30,7 +31,7 @@ export const TechnicalTabContent = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <EntitiesAnalysisCard entities={serpData?.entities} />
-          <HeadingsAnalysisCard headings={serpData?.headings} />
+          <HeadingsAnalysisCard headings={serpData?.headings as Heading[] | undefined} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

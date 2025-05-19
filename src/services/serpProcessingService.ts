@@ -17,6 +17,8 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     searchVolume: response.searchVolume || 0,
     competitionScore: response.competitionScore || 0,
     keywordDifficulty: response.keywordDifficulty || 0,
+    provider: response.provider || 'unknown',
+    timestamp: response.timestamp || new Date().toISOString(),
     
     // Process top results
     topResults: Array.isArray(response.topResults) ? response.topResults.map((result: any, index: number) => ({
@@ -55,7 +57,7 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     })) : [],
     
     headings: Array.isArray(response.headings) ? response.headings.map((heading: any) => ({
-      text: heading.text || '',
+      text: heading.text || heading.toString() || '',
       level: heading.level || 'h2',
       subtext: heading.subtext || '',
       type: heading.type || ''
