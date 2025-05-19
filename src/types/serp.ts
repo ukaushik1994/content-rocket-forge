@@ -3,9 +3,11 @@
  * SERP data types
  */
 
+export type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
 export interface Heading {
   text: string;
-  level: string;
+  level: HeadingLevel;
   subtext?: string;
   type?: string;
 }

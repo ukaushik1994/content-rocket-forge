@@ -31,7 +31,7 @@ export const TechnicalTabContent = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <EntitiesAnalysisCard entities={serpData?.entities} />
-          <HeadingsAnalysisCard headings={serpData?.headings as Heading[] | undefined} />
+          <HeadingsAnalysisCard headings={serpData?.headings} />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

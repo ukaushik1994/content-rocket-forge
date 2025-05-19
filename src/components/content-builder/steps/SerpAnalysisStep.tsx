@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
@@ -55,7 +54,8 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, true);
+      // Pass the current provider instead of true
+      await analyzeKeyword(mainKeyword, currentProvider);
     }
   };
   
@@ -89,6 +89,7 @@ export const SerpAnalysisStep = () => {
     
     // If a provider is changed and we have a keyword, reanalyze with the new provider
     if (provider !== currentProvider && mainKeyword) {
+      // Fix: Pass the provider instead of true
       await changeSerpProvider(provider);
     }
   };
@@ -103,7 +104,7 @@ export const SerpAnalysisStep = () => {
     
     // If we have a keyword, analyze it with the new provider
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, true);
+      await analyzeKeyword(mainKeyword, activeProvider);
     }
   };
   

@@ -1,4 +1,3 @@
-
 import { SerpAnalysisResult } from '@/types/serp';
 
 /**
@@ -13,7 +12,7 @@ export function generateMockSerpData(keyword: string): SerpAnalysisResult {
     provider: 'mock',
     searchVolume: Math.floor(Math.random() * 10000),
     keywordDifficulty: Math.floor(Math.random() * 100),
-    competitionScore: Math.random().toFixed(2),
+    competitionScore: Number(Math.random().toFixed(2)), // Convert to number after formatting
     timestamp: timestamp,
     
     // Mock top results
