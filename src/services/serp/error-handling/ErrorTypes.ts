@@ -19,7 +19,17 @@ export enum SerpErrorType {
   // Miscellaneous
   FETCHING_ERROR = 'FETCHING_ERROR',
   PARSING_ERROR = 'PARSING_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  
+  // Additional error types that were missing
+  INVALID_KEYWORD = 'INVALID_KEYWORD',
+  INVALID_API_KEY = 'INVALID_API_KEY',
+  EXPIRED_API_KEY = 'EXPIRED_API_KEY',
+  MISSING_API_KEY = 'MISSING_API_KEY',
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+  USAGE_QUOTA_EXCEEDED = 'USAGE_QUOTA_EXCEEDED',
+  PROVIDER_ERROR = 'PROVIDER_ERROR',
+  MALFORMED_RESPONSE = 'MALFORMED_RESPONSE'
 }
 
 /**
@@ -32,6 +42,7 @@ export interface SerpApiErrorDetails {
   timestamp: Date;
   recoverable: boolean;
   details?: any;
+  retryAfter?: number;
 }
 
 /**
@@ -43,6 +54,7 @@ export class SerpApiError extends Error {
   timestamp: Date;
   recoverable: boolean;
   details?: any;
+  retryAfter?: number;
   
   constructor(details: SerpApiErrorDetails) {
     super(details.message);
@@ -52,6 +64,7 @@ export class SerpApiError extends Error {
     this.timestamp = details.timestamp;
     this.recoverable = details.recoverable;
     this.details = details.details;
+    this.retryAfter = details.retryAfter;
     
     // Needed for proper error inheritance in TypeScript
     Object.setPrototypeOf(this, SerpApiError.prototype);

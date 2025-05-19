@@ -3,7 +3,7 @@
  * Error handler for SERP API operations
  */
 
-import { SerpApiError, SerpError, SerpErrorType } from './ErrorTypes';
+import { SerpApiError, SerpApiErrorDetails, SerpErrorType } from './ErrorTypes';
 import { toast } from 'sonner';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 
@@ -19,7 +19,7 @@ export class ErrorHandler {
     recoverable: boolean = false,
     retryAfter?: number
   ): SerpApiError {
-    const error: SerpError = {
+    const errorDetails: SerpApiErrorDetails = {
       type,
       message,
       provider,
@@ -29,7 +29,7 @@ export class ErrorHandler {
       retryAfter
     };
     
-    return new SerpApiError(error);
+    return new SerpApiError(errorDetails);
   }
   
   /**
@@ -238,7 +238,7 @@ export class ErrorHandler {
    * Show a toast notification for an error
    */
   private static showErrorNotification(error: SerpApiError): void {
-    const { type, message, provider, recoverable } = error.error;
+    const { type, message, provider, recoverable, retryAfter } = error;
     
     switch (type) {
       case SerpErrorType.INVALID_API_KEY:
@@ -256,7 +256,7 @@ export class ErrorHandler {
         break;
         
       case SerpErrorType.RATE_LIMIT_EXCEEDED:
-        toast.error(`${message}. Try again in ${error.error.retryAfter || 60} seconds.`);
+        toast.error(`${message}. Try again in ${retryAfter || 60} seconds.`);
         break;
         
       case SerpErrorType.USAGE_QUOTA_EXCEEDED:

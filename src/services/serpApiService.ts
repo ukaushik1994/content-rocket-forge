@@ -1,7 +1,10 @@
 
 import { SerpAnalysisResult } from '@/types/serp';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
-import { analyzeSerpKeyword as analyzeSerpKeywordImpl } from './serp/SerpApiService';
+import { 
+  analyzeSerpKeyword as analyzeSerpKeywordImpl,
+  searchSerpKeywords as searchSerpKeywordsImpl
+} from './serp/SerpApiService';
 
 /**
  * Get the preferred SERP provider from local storage or return default
@@ -39,12 +42,10 @@ export const analyzeSerpKeyword = async (
 };
 
 /**
- * Search for keywords - stub implementation
+ * Search for keywords - implementation forwarded to SerpApiService
  */
 export const searchKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
-  console.log('Search keywords called with:', params);
-  // Return empty array for now
-  return [];
+  return searchSerpKeywordsImpl(params.query, params.refresh || false);
 };
 
 /**
