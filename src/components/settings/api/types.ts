@@ -33,6 +33,15 @@ export const API_PROVIDERS: ApiProvider[] = [
     autoDetectable: true
   },
   {
+    id: 'dataforseo',
+    name: 'DataForSEO',
+    description: 'Enterprise-grade SEO data including SERP analysis, keyword research, and content insights.',
+    serviceKey: 'dataforseo',
+    link: 'https://app.dataforseo.com/api-dashboard',
+    icon: null,
+    autoDetectable: true
+  },
+  {
     id: 'anthropic',
     name: 'Anthropic',
     description: 'Use Claude AI for content generation and analysis.',

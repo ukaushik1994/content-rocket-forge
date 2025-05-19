@@ -6,18 +6,23 @@ import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysi
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
+import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
+import { getPreferredSerpProvider } from '@/services/serpApiService';
 
 export const SerpAnalysisStep = () => {
-  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
+  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections, changeSerpProvider } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeyExists, setApiKeyExists] = useState(false);
+  const [currentProvider, setCurrentProvider] = useState<SerpProvider>(getPreferredSerpProvider());
   
   // Check if API key exists
   useEffect(() => {
     const checkApiKey = async () => {
-      // Check localStorage first
-      const localApiKey = localStorage.getItem('serp_api_key');
-      if (localApiKey) {
+      // Check localStorage first for any provider key
+      const serpApiKey = localStorage.getItem('serp_api_key');
+      const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
+      
+      if (serpApiKey || dataForSeoKey) {
         setApiKeyExists(true);
         return;
       }
@@ -36,7 +41,7 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword);
+      await analyzeKeyword(mainKeyword, currentProvider);
     }
   };
   
@@ -62,6 +67,16 @@ export const SerpAnalysisStep = () => {
   // Function to handle adding content from SERP items
   const handleAddToContent = (content: string, type: string) => {
     handleToggleSelection(type, content);
+  };
+  
+  // Handle provider change
+  const handleProviderChange = async (provider: SerpProvider) => {
+    setCurrentProvider(provider);
+    
+    // If a provider is changed and we have a keyword, reanalyze with the new provider
+    if (provider !== currentProvider && mainKeyword) {
+      await changeSerpProvider(provider);
+    }
   };
   
   // If no API key exists, show the setup component
@@ -100,6 +115,8 @@ export const SerpAnalysisStep = () => {
         totalSelected={totalSelected}
         handleReanalyze={handleReanalyze}
         handleContinueWithSelections={handleContinueWithSelections}
+        currentProvider={serpData?.provider || currentProvider}
+        onProviderChange={handleProviderChange}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">

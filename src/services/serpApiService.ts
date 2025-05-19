@@ -1,89 +1,149 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
+import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 
 interface SearchKeywordParams {
   query: string;
   limit?: number;
   refresh?: boolean;
+  provider?: SerpProvider;
 }
 
 export type { SerpAnalysisResult }; // Properly re-export the type with 'export type'
 
+// Get the preferred SERP provider from local storage or return the default
+export const getPreferredSerpProvider = (): SerpProvider => {
+  const savedProvider = localStorage.getItem('preferred_serp_provider');
+  return (savedProvider as SerpProvider) || 'serpapi';
+};
+
+// Save the preferred SERP provider to local storage
+export const setPreferredSerpProvider = (provider: SerpProvider): void => {
+  localStorage.setItem('preferred_serp_provider', provider);
+};
+
+export const getApiKeyForProvider = async (provider: SerpProvider): Promise<string | null> => {
+  // First try local storage
+  const localKey = localStorage.getItem(`${provider}_api_key`);
+  if (localKey) {
+    return localKey;
+  }
+
+  // Then try Supabase
+  try {
+    const { data: apiKeyData } = await supabase
+      .from('api_keys')
+      .select('encrypted_key')
+      .eq('service', provider)
+      .eq('is_active', true)
+      .single();
+
+    return apiKeyData?.encrypted_key || null;
+  } catch (error) {
+    console.error(`Error fetching ${provider} API key:`, error);
+    return null;
+  }
+};
+
 export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
-    const { query, limit = 10, refresh = false } = params;
+    const { query, limit = 10, refresh = false, provider = getPreferredSerpProvider() } = params;
     
-    // Get the SERP API key from user's settings or localStorage
-    const apiKeyFromStorage = localStorage.getItem('serp_api_key');
+    // Get the API key for the specified provider
+    const apiKey = await getApiKeyForProvider(provider);
     
-    // If we have an API key from storage, use that
-    if (apiKeyFromStorage) {
-      // Make the actual API call with the API key
+    if (apiKey) {
       try {
-        const response = await fetch(`https://api.serphouse.com/serp/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
-          headers: {
-            'Authorization': `Bearer ${apiKeyFromStorage}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+        // Handle different providers
+        if (provider === 'serpapi') {
+          return await searchKeywordsWithSerpApi(apiKey, query, limit, refresh);
+        } else if (provider === 'dataforseo') {
+          return await searchKeywordsWithDataForSeo(apiKey, query, limit, refresh);
         }
-        
-        const data = await response.json();
-        return data.results || [];
       } catch (error) {
-        console.error('Error calling SERP API:', error);
-        toast.error('Error fetching keyword data. Please check your API key.');
+        console.error(`Error calling ${provider} API:`, error);
+        toast.error(`Error fetching keyword data. Using mock data instead.`);
         // Fallback to mock data if API call fails
         return getBackupMockResults(query, refresh);
       }
     }
     
-    // Try to get the key from Supabase if not in localStorage
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('encrypted_key')
-      .eq('service', 'serp')
-      .eq('is_active', true)
-      .single();
-
-    if (!apiKeyData?.encrypted_key) {
-      console.warn('No SERP API key found. Using mock data instead.');
-      toast.warning('Using mock data. Add your SERP API key in Settings for real results.');
-      return getBackupMockResults(query, refresh);
-    }
-    
-    // Use Supabase API key
-    // In a real app, you would decrypt the encrypted_key here
-    const apiKey = apiKeyData.encrypted_key;
-    
-    // Make the actual API call
-    try {
-      const response = await fetch(`https://api.serphouse.com/serp/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+    // If no API key found, notify the user and use mock data
+    console.warn('No API key found for SERP provider, using mock data');
+    toast.warning(`No API key found for ${provider}. Add your API key in Settings for real data.`, {
+      duration: 5000,
+      action: {
+        label: "Settings",
+        onClick: () => {
+          window.location.href = "/settings/api";
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
       }
-      
-      const data = await response.json();
-      return data.results || [];
-    } catch (error) {
-      console.error('Error calling SERP API:', error);
-      // Fallback to mock data if API call fails
-      return getBackupMockResults(query, refresh);
-    }
+    });
+    return getBackupMockResults(query, refresh);
+    
   } catch (error) {
     console.error('Error searching keywords:', error);
     return getBackupMockResults(params.query, params.refresh || false);
   }
+};
+
+// Implementation for SERP API
+const searchKeywordsWithSerpApi = async (apiKey: string, query: string, limit: number, refresh: boolean) => {
+  const response = await fetch(`https://api.serphouse.com/serp/search?q=${encodeURIComponent(query)}&limit=${limit}${refresh ? '&refresh=true' : ''}`, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data.results || [];
+};
+
+// Implementation for DataForSEO
+const searchKeywordsWithDataForSeo = async (apiKey: string, query: string, limit: number, refresh: boolean) => {
+  // DataForSEO requires base64 encoded API credentials
+  const credentials = btoa(apiKey); // In production, this should be login:password format
+  
+  const response = await fetch('https://api.dataforseo.com/v3/serp/google/organic/live/advanced', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      keyword: query,
+      location_code: 2840, // US location code (you might want to make this configurable)
+      language_code: 'en',
+      limit: limit,
+      device: 'desktop'
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+  // Transform DataForSEO response to match the expected format
+  if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+    const results = data.tasks[0].result.map((item: any) => ({
+      title: item.title || '',
+      url: item.url || '',
+      position: item.rank_absolute || item.position,
+      snippet: item.description || ''
+    }));
+    
+    return results;
+  }
+  
+  return [];
 };
 
 // Helper function for mock results as a backup
@@ -113,71 +173,41 @@ function getBackupMockResults(query: string, refresh: boolean) {
   return mockResults;
 }
 
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult> => {
+export const analyzeKeywordSerp = async (
+  keyword: string, 
+  refresh?: boolean, 
+  provider: SerpProvider = getPreferredSerpProvider()
+): Promise<SerpAnalysisResult> => {
   try {
-    // First try to get API key from localStorage
-    const apiKeyFromStorage = localStorage.getItem('serp_api_key');
-    let apiKey = apiKeyFromStorage;
-    
-    // If not in localStorage, try to get from Supabase
-    if (!apiKey) {
-      const { data: apiKeyData } = await supabase
-        .from('api_keys')
-        .select('encrypted_key')
-        .eq('service', 'serp')
-        .eq('is_active', true)
-        .single();
-
-      if (apiKeyData?.encrypted_key) {
-        apiKey = apiKeyData.encrypted_key;
-      }
-    }
+    // Get API key for the selected provider
+    const apiKey = await getApiKeyForProvider(provider);
 
     // If we found a key, use it to make the API call
     if (apiKey) {
       try {
-        console.log('Making real SERP API call for keyword:', keyword);
-        const url = `https://api.serphouse.com/serp/analyze?keyword=${encodeURIComponent(keyword)}${refresh ? '&refresh=true' : ''}`;
+        console.log(`Making ${provider} API call for keyword:`, keyword);
         
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+        // Call the appropriate provider's API
+        if (provider === 'serpapi') {
+          return await analyzeKeywordWithSerpApi(apiKey, keyword, refresh);
+        } else if (provider === 'dataforseo') {
+          return await analyzeKeywordWithDataForSeo(apiKey, keyword, refresh);
         }
         
-        const data = await response.json();
+        // If provider not found or not implemented, fall back to mock data
+        console.warn(`Provider ${provider} not implemented, using mock data`);
+        return generateMockSerpData(keyword, refresh);
         
-        // Transform the API response to match our SerpAnalysisResult structure
-        return {
-          keyword,
-          searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
-          keywordDifficulty: data.difficulty || Math.floor(Math.random() * 100),
-          competitionScore: data.competition || Math.random() * 0.8,
-          entities: data.entities || [],
-          peopleAlsoAsk: data.peopleAlsoAsk || [],
-          headings: data.headings || [],
-          contentGaps: data.contentGaps || [],
-          topResults: data.topResults || [],
-          relatedSearches: data.relatedSearches || [],
-          keywords: data.keywords || [],
-          recommendations: data.recommendations || [],
-          isMockData: false
-        };
       } catch (error) {
-        console.error('Error calling SERP API:', error);
-        toast.error('Error analyzing keyword. Using backup data.');
+        console.error(`Error calling ${provider} API:`, error);
+        toast.error(`Error analyzing keyword. Using backup data.`);
         // Fall back to mock data
         return generateMockSerpData(keyword, refresh);
       }
     } else {
       // If no API key found, notify the user and use mock data
-      console.warn('No SERP API key found, using mock data');
-      toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
+      console.warn(`No ${provider} API key found, using mock data`);
+      toast.warning(`No ${provider} API key found. Add your API key in Settings for real data.`, {
         duration: 5000,
         action: {
           label: "Settings",
@@ -192,6 +222,205 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
     console.error('Error analyzing keyword:', error);
     return generateMockSerpData(keyword, refresh);
   }
+};
+
+// Implementation for SERP API
+const analyzeKeywordWithSerpApi = async (apiKey: string, keyword: string, refresh?: boolean): Promise<SerpAnalysisResult> => {
+  const url = `https://api.serphouse.com/serp/analyze?keyword=${encodeURIComponent(keyword)}${refresh ? '&refresh=true' : ''}`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+  // Transform the API response to match our SerpAnalysisResult structure
+  return {
+    keyword,
+    searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
+    keywordDifficulty: data.difficulty || Math.floor(Math.random() * 100),
+    competitionScore: data.competition || Math.random() * 0.8,
+    entities: data.entities || [],
+    peopleAlsoAsk: data.peopleAlsoAsk || [],
+    headings: data.headings || [],
+    contentGaps: data.contentGaps || [],
+    topResults: data.topResults || [],
+    relatedSearches: data.relatedSearches || [],
+    keywords: data.keywords || [],
+    recommendations: data.recommendations || [],
+    provider: 'serpapi',
+    isMockData: false
+  };
+};
+
+// Implementation for DataForSEO
+const analyzeKeywordWithDataForSeo = async (apiKey: string, keyword: string, refresh?: boolean): Promise<SerpAnalysisResult> => {
+  // DataForSEO requires base64 encoded API credentials
+  const credentials = btoa(apiKey); // In production, this should be login:password format
+  
+  // We'll need multiple API calls to gather all the data we need
+  // 1. Get SERP data for organic results
+  const serpResponse = await fetch('https://api.dataforseo.com/v3/serp/google/organic/live/advanced', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      keyword: keyword,
+      location_code: 2840, // US location code
+      language_code: 'en',
+      device: 'desktop',
+      os: 'windows'
+    })
+  });
+  
+  if (!serpResponse.ok) {
+    throw new Error(`DataForSEO SERP API error: ${serpResponse.status}`);
+  }
+  
+  const serpData = await serpResponse.json();
+  
+  // 2. Get keyword data
+  const keywordResponse = await fetch('https://api.dataforseo.com/v3/keywords_data/google/search_volume/live', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      keywords: [keyword],
+      location_code: 2840,
+      language_code: 'en'
+    })
+  });
+  
+  if (!keywordResponse.ok) {
+    throw new Error(`DataForSEO Keyword API error: ${keywordResponse.status}`);
+  }
+  
+  const keywordData = await keywordResponse.json();
+  
+  // 3. Get related keywords
+  const relatedResponse = await fetch('https://api.dataforseo.com/v3/keywords_data/google/related_keywords/live', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      keyword: keyword,
+      location_code: 2840,
+      language_code: 'en'
+    })
+  });
+  
+  if (!relatedResponse.ok) {
+    throw new Error(`DataForSEO Related Keywords API error: ${relatedResponse.status}`);
+  }
+  
+  const relatedData = await relatedResponse.json();
+  
+  // Transform DataForSEO responses to our SerpAnalysisResult format
+  let searchVolume = 0;
+  let keywordDifficulty = 0;
+  let competitionScore = 0;
+  const keywords = [];
+  const relatedSearches = [];
+  const peopleAlsoAsk = [];
+  const entities = [];
+  const topResults = [];
+  const headings = [];
+  const contentGaps = [];
+  
+  // Process keyword data
+  if (keywordData.tasks && keywordData.tasks[0] && keywordData.tasks[0].result) {
+    const keywordResult = keywordData.tasks[0].result[0];
+    if (keywordResult) {
+      searchVolume = keywordResult.search_volume || 0;
+      competitionScore = keywordResult.competition_index ? keywordResult.competition_index / 100 : 0;
+      keywordDifficulty = keywordResult.keyword_difficulty || 0;
+    }
+  }
+  
+  // Process SERP data
+  if (serpData.tasks && serpData.tasks[0] && serpData.tasks[0].result) {
+    const result = serpData.tasks[0].result[0];
+    
+    // Extract top results
+    if (result.items) {
+      result.items.forEach((item: any) => {
+        if (item.type === 'organic') {
+          topResults.push({
+            title: item.title,
+            link: item.url,
+            snippet: item.description,
+            position: item.rank_absolute
+          });
+        } else if (item.type === 'people_also_ask') {
+          item.items.forEach((question: any) => {
+            peopleAlsoAsk.push({
+              question: question.title,
+              source: 'search'
+            });
+          });
+        } else if (item.type === 'related_searches') {
+          item.items.forEach((related: any) => {
+            relatedSearches.push({
+              query: related.query
+            });
+          });
+        }
+      });
+    }
+    
+    // Extract on-page elements from the top results by fetching the content
+    // This would require additional API calls to DataForSEO content analysis
+    // or another service to extract headings, etc.
+  }
+  
+  // Process related keywords data
+  if (relatedData.tasks && relatedData.tasks[0] && relatedData.tasks[0].result) {
+    const relatedResult = relatedData.tasks[0].result;
+    
+    relatedResult.forEach((item: any) => {
+      if (item.keyword) {
+        keywords.push(item.keyword);
+      }
+    });
+  }
+  
+  // Create recommendations based on gathered data
+  const recommendations = [
+    `Target the keyword "${keyword}" which has ${searchVolume} monthly searches`,
+    'Focus on addressing the common questions in your content',
+    'Include related keywords in your content to improve relevance',
+    'Structure your content with clear headings based on related topics'
+  ];
+  
+  return {
+    keyword,
+    searchVolume,
+    keywordDifficulty,
+    competitionScore,
+    entities,
+    peopleAlsoAsk,
+    headings,
+    contentGaps,
+    topResults,
+    relatedSearches,
+    keywords,
+    recommendations,
+    provider: 'dataforseo',
+    isMockData: false
+  };
 };
 
 // Helper function to generate mock SERP data as a fallback
@@ -311,83 +540,104 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       `Compare ${keyword} with alternative approaches`,
       `Include case studies showing successful ${keyword} implementation`
     ],
-    isMockData: true // We're still using mock data, but at least we're transparent about it
+    provider: 'mock',
+    isMockData: true
   };
 }
 
-export const searchRelatedKeywords = async (keyword: string) => {
+export const searchRelatedKeywords = async (
+  keyword: string, 
+  provider: SerpProvider = getPreferredSerpProvider()
+) => {
   try {
-    // Get API key from localStorage or Supabase
-    const apiKeyFromStorage = localStorage.getItem('serp_api_key');
-    let apiKey = apiKeyFromStorage;
+    const apiKey = await getApiKeyForProvider(provider);
     
-    if (!apiKey) {
-      const { data: apiKeyData } = await supabase
-        .from('api_keys')
-        .select('encrypted_key')
-        .eq('service', 'serp')
-        .eq('is_active', true)
-        .single();
-
-      if (apiKeyData?.encrypted_key) {
-        apiKey = apiKeyData.encrypted_key;
-      }
-    }
-
     if (apiKey) {
       try {
-        // Make an actual API call if we have an API key
-        const response = await fetch(`https://api.serphouse.com/serp/related?keyword=${encodeURIComponent(keyword)}`, {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+        // Make API call based on provider
+        if (provider === 'serpapi') {
+          return await searchRelatedKeywordsWithSerpApi(apiKey, keyword);
+        } else if (provider === 'dataforseo') {
+          return await searchRelatedKeywordsWithDataForSeo(apiKey, keyword);
         }
         
-        const data = await response.json();
-        return data.keywords || [];
+        // If provider not implemented, fall back to mock data
+        return getRelatedKeywordsMockData(keyword);
+        
       } catch (error) {
-        console.error('Error fetching related keywords:', error);
-        // Fall back to mock data
-        return [
-          `${keyword} strategy`,
-          `${keyword} tools`,
-          `best ${keyword} practices`,
-          `${keyword} guide`,
-          `${keyword} tutorial`,
-          `${keyword} examples`,
-          `${keyword} techniques`,
-          `${keyword} trends`,
-        ];
+        console.error(`Error fetching related keywords from ${provider}:`, error);
+        return getRelatedKeywordsMockData(keyword);
       }
     }
     
     // Default mock data if no API key is found
-    return [
-      `${keyword} strategy`,
-      `${keyword} tools`,
-      `best ${keyword} practices`,
-      `${keyword} guide`,
-      `${keyword} tutorial`,
-      `${keyword} examples`,
-      `${keyword} techniques`,
-      `${keyword} trends`,
-    ];
+    return getRelatedKeywordsMockData(keyword);
+    
   } catch (error) {
     console.error('Error searching related keywords:', error);
-    return [
-      `${keyword} strategy`,
-      `${keyword} tools`,
-      `best ${keyword} practices`,
-      `${keyword} guide`,
-      `${keyword} tutorial`,
-      `${keyword} examples`,
-      `${keyword} techniques`,
-      `${keyword} trends`,
-    ];
+    return getRelatedKeywordsMockData(keyword);
   }
+};
+
+// Implementation for SERP API
+const searchRelatedKeywordsWithSerpApi = async (apiKey: string, keyword: string) => {
+  const response = await fetch(`https://api.serphouse.com/serp/related?keyword=${encodeURIComponent(keyword)}`, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data.keywords || [];
+};
+
+// Implementation for DataForSEO
+const searchRelatedKeywordsWithDataForSeo = async (apiKey: string, keyword: string) => {
+  // DataForSEO requires base64 encoded API credentials
+  const credentials = btoa(apiKey); // In production, this should be login:password format
+  
+  const response = await fetch('https://api.dataforseo.com/v3/keywords_data/google/related_keywords/live', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      keyword: keyword,
+      location_code: 2840, // US location code
+      language_code: 'en'
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`DataForSEO API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+  // Transform DataForSEO response to match the expected format
+  if (data.tasks && data.tasks[0] && data.tasks[0].result) {
+    return data.tasks[0].result.map((item: any) => item.keyword);
+  }
+  
+  return [];
+};
+
+// Helper function for mock related keywords
+const getRelatedKeywordsMockData = (keyword: string) => {
+  return [
+    `${keyword} strategy`,
+    `${keyword} tools`,
+    `best ${keyword} practices`,
+    `${keyword} guide`,
+    `${keyword} tutorial`,
+    `${keyword} examples`,
+    `${keyword} techniques`,
+    `${keyword} trends`,
+  ];
 };
