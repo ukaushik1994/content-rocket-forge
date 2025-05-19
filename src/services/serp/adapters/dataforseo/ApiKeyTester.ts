@@ -2,7 +2,6 @@
 /**
  * Utility for testing DataForSEO API keys
  */
-import { decodeDataForSeoCredentials } from "@/services/apiKeyService";
 
 // Test endpoint that requires minimal resources but validates authentication
 const TEST_ENDPOINT = 'https://api.dataforseo.com/v3/merchant/google/locations';

@@ -17,6 +17,7 @@ export interface SerpAnalysisResult {
   searchVolume?: number;
   keywordDifficulty?: number;
   competitionScore?: number;
+  cpc?: number;  // Added this missing property
   provider: string;
   relatedSearches?: any[];
   questions?: any[];

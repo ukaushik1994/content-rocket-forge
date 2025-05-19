@@ -1,11 +1,10 @@
-
 /**
  * Implementation of DataForSEO API requests
  */
 
 import { SerpApiOptions } from '../../core/SerpCore';
 import { SerpAnalysisResult } from '@/types/serp';
-import { decodeDataForSeoCredentials } from '@/services/apiKeyService';
+import { decodeDataForSeoCredentials } from '@/services/apiKeys/testing';
 
 // Base URLs for DataForSEO API endpoints
 const DATAFORSEO_BASE_URL = 'https://api.dataforseo.com/v3';
