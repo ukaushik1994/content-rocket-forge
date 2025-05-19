@@ -7,12 +7,14 @@ import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 
 interface SerpProviderApiKeyFormProps {
   onContinueWithMock: () => void;
+  onProviderConfigured?: (provider: SerpProvider) => void;
 }
 
 export const SerpProviderApiKeyForm: React.FC<SerpProviderApiKeyFormProps> = ({
-  onContinueWithMock
+  onContinueWithMock,
+  onProviderConfigured
 }) => {
-  const [activeTab, setActiveTab] = useState<string>('serpapi');
+  const [activeTab, setActiveTab] = useState<SerpProvider>('serpapi');
   const [hasAnyApiKey, setHasAnyApiKey] = useState<boolean>(false);
   
   // Check if any API keys exist
@@ -26,17 +28,29 @@ export const SerpProviderApiKeyForm: React.FC<SerpProviderApiKeyFormProps> = ({
       // Set the active tab to the provider that has an API key
       if (serpApiKey) {
         setActiveTab('serpapi');
+        onProviderConfigured?.('serpapi');
       } else if (dataForSeoApiKey) {
         setActiveTab('dataforseo');
+        onProviderConfigured?.('dataforseo');
       }
     }
-  }, []);
+  }, [onProviderConfigured]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as SerpProvider);
+  };
+
+  // Handle when a provider is successfully configured
+  const handleProviderConfigured = (provider: SerpProvider) => {
+    setHasAnyApiKey(true);
+    onProviderConfigured?.(provider);
+  };
   
   return (
     <div>
       <Tabs 
         value={activeTab} 
-        onValueChange={setActiveTab}
+        onValueChange={handleTabChange}
         className="w-full max-w-2xl mx-auto"
       >
         <TabsList className="grid grid-cols-2 mb-4">
@@ -45,7 +59,7 @@ export const SerpProviderApiKeyForm: React.FC<SerpProviderApiKeyFormProps> = ({
         </TabsList>
         
         <TabsContent value="serpapi">
-          <SerpApiKeySetup />
+          <SerpApiKeySetup onConfigured={() => handleProviderConfigured('serpapi')} />
         </TabsContent>
         
         <TabsContent value="dataforseo">

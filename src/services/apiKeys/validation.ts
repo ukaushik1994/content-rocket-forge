@@ -1,3 +1,4 @@
+
 /**
  * Helper functions to check if an API key matches expected patterns for various AI providers
  */
@@ -31,6 +32,21 @@ export function isMistralKeyFormat(key: string): boolean {
 }
 
 /**
+ * Check if the provided key appears to be a valid DataForSEO credentials format
+ * DataForSEO uses base64 encoded login:password format
+ */
+export function isDataForSeoFormat(key: string): boolean {
+  try {
+    // Try to decode the base64 string
+    const decoded = atob(key);
+    // Check if it has the login:password format
+    return decoded.includes(':');
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Attempts to detect what type of API key this is based on its format
  */
 export function detectApiKeyType(key: string): string | null {
@@ -38,6 +54,7 @@ export function detectApiKeyType(key: string): string | null {
   if (isAnthropicKeyFormat(key)) return 'anthropic';
   if (isGeminiKeyFormat(key)) return 'gemini';
   if (isMistralKeyFormat(key)) return 'mistral';
+  if (isDataForSeoFormat(key)) return 'dataforseo';
   return null;
 }
 
@@ -54,6 +71,8 @@ export function validateProviderKeyFormat(provider: string, key: string): boolea
       return isGeminiKeyFormat(key);
     case 'mistral':
       return isMistralKeyFormat(key);
+    case 'dataforseo':
+      return isDataForSeoFormat(key);
     default:
       return true; // For other providers we don't have format validation
   }
