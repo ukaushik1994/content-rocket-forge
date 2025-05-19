@@ -10,6 +10,7 @@ export const useSaveContent = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingPublished, setIsSavingPublished] = useState(false);
+  const [isSavedToDraft, setIsSavedToDraft] = useState(false);
   
   // These are mock functions, in a real app they would be in the context
   const saveContentToDraft = async (content: SaveContentParams): Promise<boolean> => {
@@ -22,14 +23,14 @@ export const useSaveContent = () => {
     return true;
   };
 
-  const saveToDraft = async (title: string, content: string, notes?: string) => {
+  const handleSaveToDraft = async (title?: string, content?: string, notes?: string) => {
     setIsSavingDraft(true);
     
     try {
       // Prepare the content object
       const contentData: SaveContentParams = {
-        title: title,
-        content: content,
+        title: title || state.contentTitle || '',
+        content: content || state.content || '',
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
         contentType: state.contentType,
@@ -39,8 +40,8 @@ export const useSaveContent = () => {
         outline: state.outline,
         serpSelections: state.serpSelections,
         serpData: state.serpData,
-        status: 'draft', // Add status field
-        notes // Add notes field
+        status: 'draft',
+        notes
       };
       
       // Save to draft (this would call an API in a real implementation)
@@ -48,6 +49,7 @@ export const useSaveContent = () => {
       
       if (success) {
         toast.success('Content saved to drafts');
+        setIsSavedToDraft(true);
         return true;
       } else {
         toast.error('Failed to save content');
@@ -62,25 +64,25 @@ export const useSaveContent = () => {
     }
   };
   
-  const saveAndPublish = async (title: string, content: string, notes?: string) => {
+  const handlePublish = async (title?: string, content?: string, notes?: string) => {
     setIsSavingPublished(true);
     
     try {
       // Check for missing metadata
       if (!state.metaTitle) {
-        setMetaTitle(title); // Use content title as fallback
+        setMetaTitle(title || state.contentTitle || ''); // Use content title as fallback
       }
       
       if (!state.metaDescription) {
         // Generate a simple meta description from the first 150 chars
-        const description = content.substring(0, 150).trim() + '...';
+        const description = (content || state.content || '').substring(0, 150).trim() + '...';
         setMetaDescription(description);
       }
       
       // Prepare the content object
       const contentData: SaveContentParams = {
-        title: title,
-        content: content,
+        title: title || state.contentTitle || '',
+        content: content || state.content || '',
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords,
         contentType: state.contentType,
@@ -90,8 +92,8 @@ export const useSaveContent = () => {
         outline: state.outline,
         serpSelections: state.serpSelections,
         serpData: state.serpData,
-        status: 'published', // Add status field
-        notes // Add notes field
+        status: 'published',
+        notes
       };
       
       // Publish the content (this would call an API in a real implementation)
@@ -117,7 +119,10 @@ export const useSaveContent = () => {
     isSaving,
     isSavingDraft,
     isSavingPublished,
-    saveToDraft,
-    saveAndPublish,
+    isSavedToDraft,
+    saveToDraft: handleSaveToDraft,
+    saveAndPublish: handlePublish,
+    handleSaveToDraft,
+    handlePublish
   };
 };

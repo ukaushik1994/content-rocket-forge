@@ -4,7 +4,7 @@ export interface Solution {
   name: string;
   description: string;
   features: string[];
-  benefits: string[]; // Required field
+  benefits?: string[]; // Make benefits optional to maintain compatibility
   useCases: string[];
   painPoints: string[];
   targetAudience: string[];

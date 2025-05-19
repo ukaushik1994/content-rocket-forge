@@ -15,5 +15,5 @@ export interface Cluster extends KeywordGroup {
   competition?: number;
 }
 
-// Re-export ContentCluster to avoid duplication
-export { ContentCluster };
+// Re-export ContentCluster to avoid duplication, using 'export type' syntax
+export type { ContentCluster };

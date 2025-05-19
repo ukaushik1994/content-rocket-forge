@@ -123,7 +123,7 @@ export const contentBuilderReducer = (
     case 'SET_OUTLINE_SECTIONS':
       return {
         ...state,
-        outlineSections: action.payload
+        outlineSections: action.payload as OutlineSection[]
       };
       
     case 'SET_CONTENT':

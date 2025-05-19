@@ -4,12 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
-import { SelectedCountsType } from './SerpSelectionStats';
+
+// Define SelectedCountsType explicitly
+export interface SelectedCountsType {
+  [key: string]: number;
+}
 
 export interface SelectedItemsContentProps {
   selectedCounts: SelectedCountsType;
   totalSelected: number;
   onGenerateOutline: () => void;
+  serpSelections?: any[]; // Add missing prop
 }
 
 export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
@@ -28,6 +33,7 @@ export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           {Object.entries(selectedCounts).map(([key, count]) => (
+            // Fix comparison with explicit type check
             count > 0 && (
               <div key={key} className="bg-muted/30 px-3 py-2 rounded-md flex justify-between items-center">
                 <span className="text-sm capitalize">{key}</span>

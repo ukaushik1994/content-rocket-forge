@@ -18,15 +18,18 @@ import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 const mockClusters: ContentCluster[] = [{
   id: '1',
   name: 'SEO Optimization',
-  keywords: ['seo strategy', 'keyword research', 'backlink building', 'content optimization']
+  keywords: ['seo strategy', 'keyword research', 'backlink building', 'content optimization'],
+  mainKeyword: 'seo strategy'
 }, {
   id: '2',
   name: 'Content Marketing',
-  keywords: ['blog strategy', 'content planning', 'editorial calendar', 'content distribution']
+  keywords: ['blog strategy', 'content planning', 'editorial calendar', 'content distribution'],
+  mainKeyword: 'content marketing'
 }, {
   id: '3',
   name: 'Social Media',
-  keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
+  keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization'],
+  mainKeyword: 'social media marketing'
 }];
 
 export const KeywordSelectionStep = () => {

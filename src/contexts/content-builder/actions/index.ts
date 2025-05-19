@@ -23,6 +23,16 @@ export const createContentBuilderActions = (
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
 
+  // Add missing actions
+  const additionalActions = {
+    selectCluster: (cluster: any) => dispatch({ type: 'SELECT_CLUSTER', payload: cluster }),
+    setSeoScore: (score: number) => dispatch({ type: 'SET_SEO_SCORE', payload: score }),
+    addSeoImprovement: (improvement: any) => dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement }),
+    skipOptimization: () => dispatch({ type: 'SKIP_OPTIMIZATION_STEP' }),
+    setSolutionIntegrationMetrics: (metrics: any) => 
+      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics })
+  };
+
   // Merge all action groups and return
   return {
     ...keywordActions,
@@ -30,7 +40,7 @@ export const createContentBuilderActions = (
     ...serpActions,
     ...navigationActions,
     ...publishActions,
-    ...seoActions
+    ...seoActions,
+    ...additionalActions
   };
 };
-
