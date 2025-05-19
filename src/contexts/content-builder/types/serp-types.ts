@@ -28,12 +28,21 @@ export interface SerpData {
   relatedKeywords?: SerpKeyword[];
   insights?: any;
   timestamp?: string;
+  // Add compatibility with SerpAnalysisResult
+  keyword?: string;
+  topResults?: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+    position: number;
+  }>;
 }
 
 export interface SerpSelection {
   type: string;
   content: string;
   selected: boolean;
+  source?: string;
 }
 
 export interface SerpAnalysisState {

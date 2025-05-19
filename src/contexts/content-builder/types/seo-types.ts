@@ -23,4 +23,8 @@ export interface SolutionIntegrationMetrics {
   headingStructureScore: number;
   readabilityScore: number;
   overallIntegrationScore: number;
+  featureIncorporation: number;
+  positioningScore: number;
+  mentionedFeatures: string[];
+  overallScore: number;
 }

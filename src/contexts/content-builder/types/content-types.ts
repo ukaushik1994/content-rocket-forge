@@ -3,7 +3,7 @@
  * Content-related type definitions
  */
 
-export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'guide' | 'review' | 'news' | 'other';
+export type ContentType = 'article' | 'blog' | 'landing' | 'product' | 'guide' | 'review' | 'news' | 'other' | 'glossary' | 'landingPage' | 'productDescription';
 export type ContentFormat = 'short-form' | 'long-form' | 'listicle' | 'how-to' | 'comparison' | 'case-study' | 'interview' | 'other';
 export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'persuade' | 'educate' | 'inspire' | 'other';
 

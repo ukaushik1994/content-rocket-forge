@@ -1,126 +1,125 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
-import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
-import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
-import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
+import { SerpAnalysisHeader } from '../serp/SerpAnalysisHeader';
+import { SerpLoadingState } from '../serp/loading-state';
+import { SerpAnalysisPanel } from '../serp/SerpAnalysisPanel';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
+import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
+import { SelectedItemsContent } from './serp-analysis/SelectedItemsContent';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 
 export const SerpAnalysisStep = () => {
-  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
-  const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
-  const [apiKeyExists, setApiKeyExists] = useState(false);
+  const { state, analyzeKeyword, generateOutlineFromSelections, navigateToStep } = useContentBuilder();
+  const { mainKeyword, isAnalyzing, serpSelections = [] } = state;
   
-  // Check if API key exists
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [apiKeyChecked, setApiKeyChecked] = useState(false);
+  
+  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
+  
+  // Handle analyzing the main keyword
   useEffect(() => {
     const checkApiKey = async () => {
-      // Check localStorage first
-      const localApiKey = localStorage.getItem('serp_api_key');
-      if (localApiKey) {
-        setApiKeyExists(true);
-        return;
-      }
+      // In a real implementation, you would check if the API key is set
+      // For demo purposes, we'll just set it to true
+      setApiKeyChecked(true);
       
-      // We could also check Supabase here if necessary
-      // For now, let's assume we're just using localStorage
-      setApiKeyExists(false);
+      if (mainKeyword && !state.serpData) {
+        await analyzeKeyword(mainKeyword);
+      }
     };
     
     checkApiKey();
-  }, []);
+  }, [mainKeyword, analyzeKeyword, state.serpData]);
   
-  // Get selection statistics
-  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
-  
-  // Handle reanalyzing the current keyword
-  const handleReanalyze = async () => {
-    if (mainKeyword) {
-      await analyzeKeyword(mainKeyword);
-    }
+  const handleToggleSidebar = () => {
+    setShowSidebar(!showSidebar);
   };
   
-  // Handle continuing with selected items
-  const handleContinueWithSelections = () => {
-    if (totalSelected === 0) return;
-    
-    // Mark the step as completed
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
-    
-    // Generate outline from selections
+  const handleGenerateOutline = () => {
     generateOutlineFromSelections();
   };
   
-  // Helper function to toggle selection state
-  const handleToggleSelection = (type: string, content: string) => {
-    dispatch({
-      type: 'TOGGLE_SERP_SELECTION',
-      payload: { type, content }
-    });
+  const handleSkip = () => {
+    navigateToStep(3); // Navigate to Outline step
   };
   
-  // Function to handle adding content from SERP items
-  const handleAddToContent = (content: string, type: string) => {
-    handleToggleSelection(type, content);
-  };
+  // If SERP API key is not set, show the setup screen
+  if (!apiKeyChecked) {
+    return <SerpApiKeySetup onApiKeySet={() => setApiKeyChecked(true)} />;
+  }
   
-  // If no API key exists, show the setup component
-  if (!apiKeyExists && !serpData) {
+  // If currently analyzing, show loading state
+  if (isAnalyzing) {
     return (
-      <div className="space-y-6">
-        <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
-          <p className="text-muted-foreground">
-            To see real search data, you need to add your SERP API key
-          </p>
-        </div>
-        
-        <SerpApiKeySetup />
-        
-        <div className="text-center mt-4">
-          <p className="text-sm text-muted-foreground">
-            Don&apos;t want to add an API key now?
-          </p>
-          <button 
-            onClick={handleReanalyze}
-            className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
-          >
-            Continue with mock data
-          </button>
-        </div>
-      </div>
+      <SerpLoadingState 
+        keyword={mainKeyword} 
+        onCancel={() => console.log('Cancel analysis')} 
+      />
     );
   }
   
   return (
-    <div className="space-y-6">
-      <SerpAnalysisHeader
-        mainKeyword={mainKeyword}
-        isAnalyzing={isAnalyzing}
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <SerpAnalysisHeader 
+        keyword={mainKeyword}
         totalSelected={totalSelected}
-        handleReanalyze={handleReanalyze}
-        handleContinueWithSelections={handleContinueWithSelections}
+        onGenerateOutline={handleGenerateOutline}
+        onSkip={handleSkip}
       />
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
-        <div className="lg:col-span-3">
+      {/* Main content area */}
+      <div className="flex-1 flex mt-6">
+        {/* Main content - SERP Analysis */}
+        <div className={`transition-all duration-300 ease-in-out ${showSidebar ? 'w-2/3 pr-6' : 'w-full'}`}>
           <SerpAnalysisPanel 
-            serpData={serpData}
-            isLoading={isAnalyzing}
-            mainKeyword={mainKeyword}
-            onAddToContent={handleAddToContent}
-            onRetry={handleReanalyze}
+            serpData={state.serpData ? {
+              ...state.serpData,
+              keyword: state.serpData.query // Add the keyword property expected by SerpAnalysisResult
+            } : null} 
           />
         </div>
         
-        <div className="lg:col-span-1 relative h-full">
-          <SelectedItemsSidebar 
-            serpSelections={serpSelections}
-            totalSelected={totalSelected}
+        {/* Selections sidebar */}
+        {showSidebar && (
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="w-1/3 border-l pl-6"
+          >
+            <SelectedItemsSidebar 
+              selectedCounts={selectedCounts} 
+              totalSelected={totalSelected} 
+            />
+          </motion.div>
+        )}
+        
+        {/* Mobile sidebar toggle */}
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="fixed bottom-6 right-6 z-10 md:hidden rounded-full shadow-lg"
+          onClick={handleToggleSidebar}
+        >
+          <LayoutGrid size={20} />
+        </Button>
+      </div>
+      
+      {/* Selection content (mobile view) */}
+      <div className="md:hidden mt-6">
+        {!showSidebar && totalSelected > 0 && (
+          <SelectedItemsContent 
             selectedCounts={selectedCounts}
-            handleToggleSelection={handleToggleSelection}
+            totalSelected={totalSelected}
+            onGenerateOutline={handleGenerateOutline}
           />
-        </div>
+        )}
       </div>
     </div>
   );

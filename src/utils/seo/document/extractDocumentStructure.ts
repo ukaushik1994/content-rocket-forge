@@ -30,17 +30,13 @@ export const extractDocumentStructure = (content: string): DocumentStructure => 
   
   // Build headings array
   const headings = [
-    ...h1.map(text => ({ level: 1, text })),
-    ...h2.map(text => ({ level: 2, text })),
-    ...h3.map(text => ({ level: 3, text })),
-    ...h4.map(text => ({ level: 4, text })),
-    ...h5.map(text => ({ level: 5, text })),
-    ...h6.map(text => ({ level: 6, text }))
-  ].sort((a, b) => {
-    const aPos = content.indexOf(`${'#'.repeat(a.level)} ${a.text}`);
-    const bPos = content.indexOf(`${'#'.repeat(b.level)} ${b.text}`);
-    return aPos - bPos;
-  });
+    ...h1.map(text => ({ level: 1, text, position: content.indexOf(`# ${text}`) })),
+    ...h2.map(text => ({ level: 2, text, position: content.indexOf(`## ${text}`) })),
+    ...h3.map(text => ({ level: 3, text, position: content.indexOf(`### ${text}`) })),
+    ...h4.map(text => ({ level: 4, text, position: content.indexOf(`#### ${text}`) })),
+    ...h5.map(text => ({ level: 5, text, position: content.indexOf(`##### ${text}`) })),
+    ...h6.map(text => ({ level: 6, text, position: content.indexOf(`###### ${text}`) }))
+  ].sort((a, b) => a.position - b.position);
   
   // Extract paragraphs
   const paragraphs = [...content.matchAll(paragraphRegex)]

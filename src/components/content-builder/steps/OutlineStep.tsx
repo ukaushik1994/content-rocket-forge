@@ -1,60 +1,98 @@
 
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
-import { ContentTitleCard } from '../outline/ContentTitleCard';
-import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 import { OutlineTable } from '../outline/OutlineTable';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { OutlineSection } from '@/contexts/content-builder/types';
+import { ContentTitleCard } from '../outline/ContentTitleCard';
+import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
+import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
+import { v4 as uuid } from 'uuid';
 
 export const OutlineStep = () => {
-  const { state, dispatch } = useContentBuilder();
-  const { outline, serpSelections } = state;
+  const { state, setOutline, setOutlineSections, navigateToStep } = useContentBuilder();
+  const { serpSelections = [] } = state;
+  const [generatingOutline, setGeneratingOutline] = useState(false);
   
-  useEffect(() => {
-    // Mark as complete if we have an outline with at least 3 sections
-    if (outline.length >= 3) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
+  // Convert string[] outline to OutlineSection[] if it's not already
+  const getOutlineSections = (): OutlineSection[] => {
+    if (state.outlineSections && state.outlineSections.length > 0) {
+      return state.outlineSections;
     }
-  }, [outline, dispatch]);
-  
-  const handleSaveOutline = (updatedOutline: OutlineSection[]) => {
-    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: updatedOutline });
+    
+    if (state.outline && state.outline.length > 0) {
+      return state.outline.map(title => ({
+        id: uuid(),
+        title: title,
+        level: 1,
+      }));
+    }
+    
+    return [];
   };
-
-  const hasSerpSelections = serpSelections.some(item => item.selected);
+  
+  const outlineSections = getOutlineSections();
+  
+  const handleUpdateOutline = (updatedOutline: OutlineSection[]) => {
+    setOutlineSections(updatedOutline);
+    setOutline(updatedOutline.map(section => section.title));
+  };
+  
+  const handleFinishOutline = () => {
+    if (outlineSections.length > 0) {
+      navigateToStep(4); // Navigate to Content Writing step
+    }
+  };
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
-          <h3 className="text-lg font-medium">Content Outline</h3>
-          <p className="text-sm text-muted-foreground">
-            Create and edit your content structure
-          </p>
+      {/* Content Title */}
+      <ContentTitleCard 
+        title={state.contentTitle || ''}
+        suggestedTitles={state.suggestedTitles}
+        onTitleChange={(title) => {
+          /* Handle title change */
+        }}
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main outline editor */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Content Outline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OutlineTable 
+                outline={outlineSections}
+                onChange={handleUpdateOutline}
+                onFinish={handleFinishOutline}
+              />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Selected SERP items */}
+          <SelectedSerpItemsCard 
+            serpSelections={serpSelections.filter(item => item.selected)} 
+          />
+          
+          {/* AI Outline Generator */}
+          <AIOutlineGenerator 
+            isGenerating={generatingOutline}
+            setIsGenerating={setGeneratingOutline}
+            selectedKeywords={state.selectedKeywords}
+            mainKeyword={state.mainKeyword}
+            serpSelections={serpSelections.filter(item => item.selected)}
+            contentType={state.contentType}
+            onOutlineGenerated={(newOutline: OutlineSection[]) => {
+              handleUpdateOutline(newOutline);
+            }}
+          />
         </div>
       </div>
-
-      {/* Content title with edit option */}
-      <ContentTitleCard />
-
-      {/* Selected Items Summary */}
-      <SelectedSerpItemsCard />
-
-      {/* AI Outline Generator */}
-      <AIOutlineGenerator />
-
-      {/* Outline Table */}
-      <Card>
-        <CardContent className="pt-6">
-          <OutlineTable 
-            outline={outline} 
-            onSave={handleSaveOutline} 
-          />
-        </CardContent>
-      </Card>
     </div>
   );
-}
+};
