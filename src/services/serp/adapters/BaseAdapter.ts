@@ -6,6 +6,11 @@ import { SerpApiAdapter } from './types';
  * Base adapter class for SERP API integrations
  */
 export abstract class BaseAdapter implements SerpApiAdapter {
+  provider = '';
+  async testApiKey(apiKey: string): Promise<boolean> {
+    return true;
+  }
+
   /**
    * Analyze a keyword and return SERP data
    */
@@ -15,7 +20,7 @@ export abstract class BaseAdapter implements SerpApiAdapter {
     } catch (error) {
       console.error('Error in base adapter analyze keyword:', error);
       throw new SerpApiError({
-        type: SerpErrorType.ADAPTER_ERROR,
+        type: SerpErrorType.FETCHING_ERROR,
         message: error instanceof Error ? error.message : 'Unknown adapter error',
         provider: this.getProviderName(),
         timestamp: new Date(),
@@ -34,7 +39,7 @@ export abstract class BaseAdapter implements SerpApiAdapter {
     } catch (error) {
       console.error('Error in base adapter search keywords:', error);
       throw new SerpApiError({
-        type: SerpErrorType.ADAPTER_ERROR,
+        type: SerpErrorType.FETCHING_ERROR,
         message: error instanceof Error ? error.message : 'Unknown adapter error',
         provider: this.getProviderName(),
         timestamp: new Date(),
@@ -53,7 +58,7 @@ export abstract class BaseAdapter implements SerpApiAdapter {
     } catch (error) {
       console.error('Error in base adapter search related keywords:', error);
       throw new SerpApiError({
-        type: SerpErrorType.ADAPTER_ERROR,
+        type: SerpErrorType.FETCHING_ERROR,
         message: error instanceof Error ? error.message : 'Unknown adapter error',
         provider: this.getProviderName(),
         timestamp: new Date(),

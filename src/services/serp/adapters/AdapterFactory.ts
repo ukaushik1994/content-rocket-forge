@@ -1,47 +1,52 @@
 
+import { SerpApiAdapter } from './SerpApiAdapter';
+import { DataForSeoAdapter } from './DataForSeoAdapter';
+import { SerpApiAdapter as AdapterInterface } from './types';
+import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
+
 /**
- * Factory for creating SERP API adapters
+ * Factory for creating SERP API adapters based on provider
  */
-
-import { SerpApiAdapter } from "./types";
-import { SerpProvider } from "@/contexts/content-builder/types/serp-types";
-import { SerpApiAdapter as SerpApiAdapterImpl } from "./SerpApiAdapter";
-import { DataForSeoAdapter } from "./DataForSeoAdapter";
-
 export class AdapterFactory {
-  private static adapters: Map<SerpProvider, SerpApiAdapter> = new Map();
-  
+  // Cache for adapters to avoid repeated instantiation
+  private static adapters: Record<string, AdapterInterface> = {};
+
   /**
-   * Get adapter for the specified provider
+   * Get an adapter for the specified provider
    */
-  static getAdapter(provider: SerpProvider): SerpApiAdapter {
-    // Check if we already have an instance
-    if (this.adapters.has(provider)) {
-      return this.adapters.get(provider)!;
+  static getAdapter(provider: SerpProvider): AdapterInterface {
+    // Return cached adapter if available
+    if (this.adapters[provider]) {
+      return this.adapters[provider];
     }
-    
-    // Create a new instance
-    let adapter: SerpApiAdapter;
-    
+
+    // Create new adapter based on provider
+    let adapter: AdapterInterface;
+
     switch (provider) {
       case 'serpapi':
-        adapter = new SerpApiAdapterImpl();
+        adapter = new SerpApiAdapter();
         break;
       case 'dataforseo':
         adapter = new DataForSeoAdapter();
         break;
-      case 'mock':
-        // Just use SerpApi adapter for now, it has fallback to mock data
-        adapter = new SerpApiAdapterImpl();
-        break;
       default:
-        // Default to SerpApi
-        adapter = new SerpApiAdapterImpl();
+        adapter = new SerpApiAdapter();
     }
-    
-    // Cache the instance
-    this.adapters.set(provider, adapter);
-    
+
+    // Cache the adapter
+    this.adapters[provider] = adapter;
+
     return adapter;
+  }
+
+  /**
+   * Get all available adapters
+   */
+  static getAllAdapters(): AdapterInterface[] {
+    return [
+      this.getAdapter('serpapi'),
+      this.getAdapter('dataforseo')
+    ];
   }
 }

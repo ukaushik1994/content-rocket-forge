@@ -1,52 +1,59 @@
 
 /**
- * Error types for SERP API operations
+ * Types of errors that can occur in SERP API service
  */
-
 export enum SerpErrorType {
-  // Connection Errors
+  // API errors
+  AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR',
+  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
+  SERVER_ERROR = 'SERVER_ERROR',
+  
+  // Request/response errors
+  INVALID_REQUEST = 'INVALID_REQUEST',
+  INVALID_RESPONSE = 'INVALID_RESPONSE',
+  
+  // General errors
   NETWORK_ERROR = 'NETWORK_ERROR',
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
   
-  // Authentication Errors
-  INVALID_API_KEY = 'INVALID_API_KEY',
-  MISSING_API_KEY = 'MISSING_API_KEY',
-  EXPIRED_API_KEY = 'EXPIRED_API_KEY',
-  
-  // Usage Errors
-  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
-  USAGE_QUOTA_EXCEEDED = 'USAGE_QUOTA_EXCEEDED',
-  
-  // Request Errors
-  INVALID_REQUEST = 'INVALID_REQUEST',
-  INVALID_KEYWORD = 'INVALID_KEYWORD',
-  UNSUPPORTED_LOCATION = 'UNSUPPORTED_LOCATION',
-  
-  // Response Errors
-  EMPTY_RESPONSE = 'EMPTY_RESPONSE',
-  MALFORMED_RESPONSE = 'MALFORMED_RESPONSE',
-  
-  // General Errors
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
-  PROVIDER_ERROR = 'PROVIDER_ERROR'
+  // Miscellaneous
+  FETCHING_ERROR = 'FETCHING_ERROR',
+  PARSING_ERROR = 'PARSING_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
 }
 
-export interface SerpError {
+/**
+ * Interface for SERP API error details
+ */
+export interface SerpApiErrorDetails {
   type: SerpErrorType;
   message: string;
   provider: string;
-  details?: any;
   timestamp: Date;
   recoverable: boolean;
-  retryAfter?: number; // in seconds
+  details?: any;
 }
 
+/**
+ * Custom error class for SERP API errors
+ */
 export class SerpApiError extends Error {
-  error: SerpError;
+  type: SerpErrorType;
+  provider: string;
+  timestamp: Date;
+  recoverable: boolean;
+  details?: any;
   
-  constructor(error: SerpError) {
-    super(error.message);
+  constructor(details: SerpApiErrorDetails) {
+    super(details.message);
     this.name = 'SerpApiError';
-    this.error = error;
+    this.type = details.type;
+    this.provider = details.provider;
+    this.timestamp = details.timestamp;
+    this.recoverable = details.recoverable;
+    this.details = details.details;
+    
+    // Needed for proper error inheritance in TypeScript
+    Object.setPrototypeOf(this, SerpApiError.prototype);
   }
 }

@@ -1,7 +1,9 @@
+
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { SerpProvider } from '../types/serp-types';
 import { OutlineSection } from '../types/outline-types';
 import { toast } from 'sonner';
+import { setPreferredSerpProvider } from '@/services/serpApiService';
 
 export const createSerpActions = (
   state: ContentBuilderState,
@@ -70,8 +72,14 @@ export const createSerpActions = (
   
   // Function to change SERP provider
   const changeSerpProvider = async (provider: SerpProvider) => {
-    // Use a valid action type for setting preferred SERP provider
-    dispatch({ type: 'SET_PREFERRED_PROVIDER', payload: provider });
+    // Set the provider preference in localStorage
+    setPreferredSerpProvider(provider);
+    
+    // Update the state with the new preferred provider
+    dispatch({ 
+      type: 'SET_PREFERRED_PROVIDER' as any, 
+      payload: provider 
+    });
     
     if (state.mainKeyword) {
       await analyzeKeyword(state.mainKeyword, provider);
@@ -106,7 +114,8 @@ export const createSerpActions = (
           id: `section-${outlineSections.length + 1}`,
           title: heading,
           content: '',
-          subsections: []
+          subsections: [],
+          level: 1
         });
       });
       
@@ -117,7 +126,8 @@ export const createSerpActions = (
             id: `section-${outlineSections.length + 1}`,
             title: question,
             content: '',
-            subsections: []
+            subsections: [],
+            level: 1
           });
         });
       } else {
@@ -133,7 +143,8 @@ export const createSerpActions = (
           outlineSections[sectionIndex].subsections!.push({
             id: `subsection-${sectionIndex + 1}-${outlineSections[sectionIndex].subsections!.length + 1}`,
             title: question,
-            content: ''
+            content: '',
+            level: 2
           });
         });
       }
@@ -149,7 +160,8 @@ export const createSerpActions = (
           id: `section-${sectionNumber}`,
           title,
           content: '',
-          subsections: []
+          subsections: [],
+          level: 1
         });
       }
       
