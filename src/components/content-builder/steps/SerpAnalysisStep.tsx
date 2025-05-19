@@ -1,188 +1,126 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { SerpAnalysisHeader } from '../serp/SerpAnalysisHeader';
-import { SerpLoadingState } from '../serp/loading-state';
-import { SerpAnalysisPanel } from '../serp/SerpAnalysisPanel';
-import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
-import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
-import { SelectedItemsContent } from './serp-analysis/SelectedItemsContent';
-import { Button } from '@/components/ui/button';
-import { LayoutGrid } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
+import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
-import { SerpSelection } from '@/contexts/content-builder/types';
-import { SelectedCountsType } from './serp-analysis/types';
-
-export interface SelectedItemsSidebarProps {
-  selectedCounts: SelectedCountsType;
-  totalSelected: number;
-  serpSelections: SerpSelection[];
-  handleToggleSelection: (type: string, content: string) => void;
-}
+import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
+import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
 
 export const SerpAnalysisStep = () => {
-  const { state, analyzeKeyword, generateOutlineFromSelections, navigateToStep, dispatch } = useContentBuilder();
-  const { mainKeyword, isAnalyzing, serpSelections = [] } = state;
+  const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
+  const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
+  const [apiKeyExists, setApiKeyExists] = useState(false);
   
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [apiKeyChecked, setApiKeyChecked] = useState(false);
-  
-  // Initialize selectedCounts with default values
-  const defaultSelectedCounts: SelectedCountsType = {
-    keyword: 0,
-    question: 0,
-    snippet: 0,
-    competitor: 0,
-    entity: 0,
-    heading: 0,
-    contentGap: 0,
-    topRank: 0
-  };
-  
-  // Get the selection stats
-  const stats = SerpSelectionStats({ serpSelections });
-  const { selectedCounts = defaultSelectedCounts, totalSelected = 0 } = stats || { 
-    selectedCounts: defaultSelectedCounts, 
-    totalSelected: 0 
-  };
-  
-  // Handle analyzing the main keyword
+  // Check if API key exists
   useEffect(() => {
     const checkApiKey = async () => {
-      // In a real implementation, you would check if the API key is set
-      // For demo purposes, we'll just set it to true
-      setApiKeyChecked(true);
-      
-      if (mainKeyword && !state.serpData) {
-        await analyzeKeyword(mainKeyword);
+      // Check localStorage first
+      const localApiKey = localStorage.getItem('serp_api_key');
+      if (localApiKey) {
+        setApiKeyExists(true);
+        return;
       }
+      
+      // We could also check Supabase here if necessary
+      // For now, let's assume we're just using localStorage
+      setApiKeyExists(false);
     };
     
     checkApiKey();
-  }, [mainKeyword, analyzeKeyword, state.serpData]);
+  }, []);
   
-  const handleToggleSidebar = () => {
-    setShowSidebar(!showSidebar);
+  // Get selection statistics
+  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
+  
+  // Handle reanalyzing the current keyword
+  const handleReanalyze = async () => {
+    if (mainKeyword) {
+      await analyzeKeyword(mainKeyword);
+    }
   };
   
-  const handleGenerateOutline = () => {
+  // Handle continuing with selected items
+  const handleContinueWithSelections = () => {
+    if (totalSelected === 0) return;
+    
+    // Mark the step as completed
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
+    
+    // Generate outline from selections
     generateOutlineFromSelections();
   };
   
-  const handleSkip = () => {
-    navigateToStep(3); // Navigate to Outline step
-  };
-
   // Helper function to toggle selection state
   const handleToggleSelection = (type: string, content: string) => {
-    console.log('Toggle selection for type:', type, 'content:', content);
-    // This would dispatch an action to toggle the selection state
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
       payload: { type, content }
     });
   };
   
-  // Adapter function to match expected types
-  const handleItemToggle = (item: SerpSelection) => {
-    if (item && typeof item.type === 'string' && typeof item.content === 'string') {
-      handleToggleSelection(item.type, item.content);
-    }
+  // Function to handle adding content from SERP items
+  const handleAddToContent = (content: string, type: string) => {
+    handleToggleSelection(type, content);
   };
   
-  // If SERP API key is not set, show the setup screen
-  if (!apiKeyChecked) {
-    return <SerpApiKeySetup onApiKeySet={() => setApiKeyChecked(true)} />;
-  }
-  
-  // If currently analyzing, show loading state
-  if (isAnalyzing) {
+  // If no API key exists, show the setup component
+  if (!apiKeyExists && !serpData) {
     return (
-      <SerpLoadingState 
-        keyword={mainKeyword || ""} 
-        onCancel={() => console.log('Cancel analysis')} 
-      />
+      <div className="space-y-6">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
+          <p className="text-muted-foreground">
+            To see real search data, you need to add your SERP API key
+          </p>
+        </div>
+        
+        <SerpApiKeySetup />
+        
+        <div className="text-center mt-4">
+          <p className="text-sm text-muted-foreground">
+            Don&apos;t want to add an API key now?
+          </p>
+          <button 
+            onClick={handleReanalyze}
+            className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
+          >
+            Continue with mock data
+          </button>
+        </div>
+      </div>
     );
   }
   
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <SerpAnalysisHeader 
-        keyword={mainKeyword}
+    <div className="space-y-6">
+      <SerpAnalysisHeader
+        mainKeyword={mainKeyword}
+        isAnalyzing={isAnalyzing}
         totalSelected={totalSelected}
-        onGenerateOutline={handleGenerateOutline}
-        onSkip={handleSkip}
+        handleReanalyze={handleReanalyze}
+        handleContinueWithSelections={handleContinueWithSelections}
       />
       
-      {/* Main content area */}
-      <div className="flex-1 flex mt-6">
-        {/* Main content - SERP Analysis */}
-        <div className={`transition-all duration-300 ease-in-out ${showSidebar ? 'w-2/3 pr-6' : 'w-full'}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
+        <div className="lg:col-span-3">
           <SerpAnalysisPanel 
-            serpData={state.serpData}
-            isLoading={false}
+            serpData={serpData}
+            isLoading={isAnalyzing}
             mainKeyword={mainKeyword}
-            onAddToContent={() => {}}
+            onAddToContent={handleAddToContent}
+            onRetry={handleReanalyze}
           />
         </div>
         
-        {/* Selections sidebar */}
-        {showSidebar && (
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-1/3 border-l pl-6"
-          >
-            <SelectedItemsSidebar 
-              selectedCounts={{
-                keyword: selectedCounts.keyword,
-                question: selectedCounts.question,
-                snippet: selectedCounts.snippet,
-                competitor: selectedCounts.competitor,
-                entity: selectedCounts.entity,
-                heading: selectedCounts.heading,
-                contentGap: selectedCounts.contentGap,
-                topRank: selectedCounts.topRank
-              }}
-              totalSelected={totalSelected}
-              serpSelections={serpSelections}
-              handleToggleSelection={handleToggleSelection}
-            />
-          </motion.div>
-        )}
-        
-        {/* Mobile sidebar toggle */}
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="fixed bottom-6 right-6 z-10 md:hidden rounded-full shadow-lg"
-          onClick={handleToggleSidebar}
-        >
-          <LayoutGrid size={20} />
-        </Button>
-      </div>
-      
-      {/* Selection content (mobile view) */}
-      <div className="md:hidden mt-6">
-        {!showSidebar && totalSelected > 0 && (
-          <SelectedItemsContent 
-            selectedCounts={{
-              keyword: selectedCounts.keyword,
-              question: selectedCounts.question,
-              snippet: selectedCounts.snippet,
-              competitor: selectedCounts.competitor,
-              entity: selectedCounts.entity,
-              heading: selectedCounts.heading,
-              contentGap: selectedCounts.contentGap,
-              topRank: selectedCounts.topRank
-            }}
+        <div className="lg:col-span-1 relative h-full">
+          <SelectedItemsSidebar 
+            serpSelections={serpSelections}
             totalSelected={totalSelected}
-            onGenerateOutline={handleGenerateOutline}
+            selectedCounts={selectedCounts}
+            handleToggleSelection={handleToggleSelection}
           />
-        )}
+        </div>
       </div>
     </div>
   );

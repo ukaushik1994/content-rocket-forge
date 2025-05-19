@@ -1,39 +1,25 @@
 
-import { 
-  ContentType, 
-  ContentFormat, 
-  ContentIntent
-} from './content-types';
-import { 
-  OutlineSection 
-} from './outline-types';
-import { 
-  SerpData, 
-  SerpSelection 
-} from './serp-types';
-import { 
-  SeoImprovement,
-  SolutionIntegrationMetrics
-} from './seo-types';
-import { 
-  ContentCluster 
-} from './cluster-types';
-import {
-  Solution
-} from './solution-types';
-import {
-  DocumentStructure
-} from './document-types';
+/**
+ * Action-related type definitions
+ */
 
+import { ContentType, ContentFormat, ContentIntent } from './content-types';
+import { Solution, SolutionIntegrationMetrics } from './solution-types';
+import { SeoImprovement } from './seo-types';
+import { ContentCluster } from './cluster-types';
+import { OutlineSection } from './outline-types';
+import { DocumentStructure } from './document-types';
+
+// Content Builder Actions
 export type ContentBuilderAction =
   | { type: 'SET_CURRENT_STEP'; payload: number }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
   | { type: 'MARK_STEP_VISITED'; payload: number }
   | { type: 'MARK_STEP_ANALYZED'; payload: number }
-  | { type: 'SKIP_OPTIMIZATION_STEP'; payload?: undefined }
+  | { type: 'SKIP_OPTIMIZATION_STEP' }
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
-  | { type: 'SET_SERP_DATA'; payload: SerpData | null }
+  | { type: 'SET_SERP_DATA'; payload: any }
   | { type: 'SET_IS_ANALYZING'; payload: boolean }
   | { type: 'TOGGLE_SERP_SELECTION'; payload: { type: string; content: string } }
   | { type: 'SET_OUTLINE'; payload: string[] | OutlineSection[] }
@@ -44,19 +30,18 @@ export type ContentBuilderAction =
   | { type: 'ADD_KEYWORD'; payload: string }
   | { type: 'REMOVE_KEYWORD'; payload: string }
   | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
-  | { type: 'SET_CONTENT_TITLE'; payload: string | null }
+  | { type: 'SET_CONTENT_TITLE'; payload: string }
   | { type: 'SET_SUGGESTED_TITLES'; payload: string[] }
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'ADD_SEO_IMPROVEMENT'; payload: SeoImprovement }
+  | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
   | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
   | { type: 'SET_CONTENT_INTENT'; payload: ContentIntent }
   | { type: 'SELECT_SOLUTION'; payload: Solution | null }
-  | { type: 'SET_META_TITLE'; payload: string | null }
-  | { type: 'SET_META_DESCRIPTION'; payload: string | null }
-  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure | null }
-  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics | null }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  | { type: 'SET_WORD_COUNT_LIMIT'; payload: number | null }
-  | { type: 'SET_SAVED_DRAFT_ID'; payload: string | null };
+  | { type: 'SET_META_TITLE'; payload: string }
+  | { type: 'SET_META_DESCRIPTION'; payload: string }
+  | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
+  | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };

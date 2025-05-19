@@ -25,27 +25,7 @@ export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
   const [improvements, setImprovements] = useState<any[]>([]);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   
-  // Create dummy implementations of the missing methods to fix the type errors
-  const runAnalysis = useCallback((
-    setIsAnalyzing: React.Dispatch<React.SetStateAction<boolean>>,
-    setKeywordUsage: React.Dispatch<React.SetStateAction<KeywordUsage[]>>,
-    setRecommendations: React.Dispatch<React.SetStateAction<string[]>>,
-    setScores: React.Dispatch<React.SetStateAction<SeoAnalysisScores>>,
-    setImprovements: React.Dispatch<React.SetStateAction<any[]>>,
-    setAnalysisError: React.Dispatch<React.SetStateAction<string | null>>
-  ) => {
-    // Implementation would go here
-    console.log("Running analysis...");
-  }, []);
-
-  const abortAnalysis = useCallback(() => {
-    console.log("Aborting analysis...");
-    setIsAnalyzing(false);
-  }, []);
-
-  const cleanup = useCallback(() => {
-    console.log("Cleaning up analysis...");
-  }, []);
+  const { runAnalysis, abortAnalysis, cleanup } = useAnalysisOperation();
   
   // Cleanup on unmount
   useEffect(() => {

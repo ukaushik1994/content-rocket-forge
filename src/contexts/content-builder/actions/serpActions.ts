@@ -18,46 +18,13 @@ export const createSerpActions = (
       // Make API call to analyze keyword
       const serpData = await analyzeKeywordSerp(keyword);
       
-      // Convert SerpAnalysisResult to SerpData if necessary
-      const formattedSerpData = serpData ? {
-        query: keyword,
-        keyword: keyword,
-        results: serpData.topResults?.map(result => ({
-          id: uuid(),
-          title: result.title,
-          url: result.link,
-          snippet: result.snippet,
-          position: result.position
-        })) || [],
-        relatedQuestions: serpData.peopleAlsoAsk?.map(q => ({
-          id: uuid(),
-          question: q.question,
-          answer: q.answer
-        })),
-        relatedKeywords: serpData.relatedSearches?.map(k => ({
-          id: uuid(),
-          keyword: k.query,
-          volume: k.volume
-        })),
-        // Use optional chaining for insights which might not exist
-        insights: serpData.recommendations || [],
-        timestamp: new Date().toISOString(),
-        searchVolume: serpData.searchVolume,
-        competitionScore: serpData.competitionScore,
-        keywordDifficulty: serpData.keywordDifficulty,
-        featuredSnippets: serpData.featuredSnippets,
-        entities: serpData.entities,
-        headings: serpData.headings,
-        contentGaps: serpData.contentGaps
-      } : null;
+      // Update SERP data in state - will be null if no data is found
+      dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
-      // Update SERP data in state
-      dispatch({ type: 'SET_SERP_DATA', payload: formattedSerpData });
-      
-      if (!formattedSerpData) {
+      if (!serpData) {
         toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
       } else {
-        console.log("SERP data successfully retrieved:", formattedSerpData);
+        console.log("SERP data successfully retrieved:", serpData);
         toast.success("Search data analysis completed successfully.");
       }
     } catch (error) {

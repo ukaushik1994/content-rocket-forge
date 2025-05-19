@@ -1,9 +1,17 @@
 
 import { SerpSelection } from '@/contexts/content-builder/types';
-import { SelectedCountsType } from './types';
 
 interface SerpSelectionStatsResult {
-  selectedCounts: SelectedCountsType;
+  selectedCounts: {
+    keyword: number;
+    question: number;
+    snippet: number;
+    competitor: number;
+    entity: number;
+    heading: number;
+    contentGap: number;
+    topRank: number;
+  };
   totalSelected: number;
 }
 
@@ -11,7 +19,7 @@ export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSel
   const selectedItems = serpSelections.filter(item => item.selected);
   const totalSelected = selectedItems.length;
 
-  const selectedCounts: SelectedCountsType = {
+  const selectedCounts = {
     keyword: selectedItems.filter(item => item.type === 'keyword').length,
     question: selectedItems.filter(item => item.type === 'question').length,
     snippet: selectedItems.filter(item => item.type === 'snippet').length,

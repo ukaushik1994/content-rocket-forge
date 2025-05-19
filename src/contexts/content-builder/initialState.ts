@@ -4,7 +4,6 @@ import { ContentBuilderState } from './types';
 export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
-  completedSteps: [],
   steps: [
     { id: 0, name: 'Keyword Selection', description: 'Choose your target keywords', completed: false, visited: true },
     { id: 1, name: 'Content Type', description: 'Select content type and format', completed: false, visited: false },
@@ -35,11 +34,6 @@ export const initialState: ContentBuilderState = {
   serpData: null,
   serpSelections: [],
   isAnalyzing: false,
-  serpAnalysisState: {
-    isAnalyzing: false,
-    isComplete: false,
-    error: null
-  },
   
   // Outline
   outline: [],
@@ -61,7 +55,6 @@ export const initialState: ContentBuilderState = {
   // Meta Information
   metaTitle: null,
   metaDescription: null,
-  slugOverride: null,
   
   // Document Structure
   documentStructure: null,
@@ -70,10 +63,5 @@ export const initialState: ContentBuilderState = {
   solutionIntegrationMetrics: null,
   
   // Additional Instructions
-  additionalInstructions: '',
-  
-  // Added missing properties
-  savedDraftId: null,
-  wordCountLimit: null,
-  aiProvider: 'openai' // Default AI provider
+  additionalInstructions: ''
 };

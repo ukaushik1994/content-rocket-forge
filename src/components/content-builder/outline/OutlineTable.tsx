@@ -13,32 +13,25 @@ import { Input } from '@/components/ui/input';
 import { Edit2, Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { OutlineSection } from '@/contexts/content-builder/types';
-import { v4 as uuid } from 'uuid';
 
 interface OutlineTableProps {
-  outline: OutlineSection[];
-  onChange: (updatedOutline: OutlineSection[]) => void;
-  onFinish: () => void;
+  outline: string[];
+  onSave: (updatedOutline: string[]) => void;
 }
 
-export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onChange, onFinish }) => {
-  const [editableOutline, setEditableOutline] = useState<OutlineSection[]>(outline);
+export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) => {
+  const [editableOutline, setEditableOutline] = useState<string[]>(outline);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleEdit = (index: number, value: string) => {
     const newOutline = [...editableOutline];
-    newOutline[index] = { ...newOutline[index], title: value };
+    newOutline[index] = value;
     setEditableOutline(newOutline);
   };
 
   const handleAddSection = () => {
-    const newSection = {
-      id: uuid(),
-      title: 'New Section',
-      level: 1
-    };
-    setEditableOutline([...editableOutline, newSection]);
+    setEditableOutline([...editableOutline, 'New Section']);
     setEditingIndex(editableOutline.length);
   };
 
@@ -53,12 +46,12 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onChange, o
 
   const handleSaveOutline = () => {
     // Validate that no empty sections exist
-    if (editableOutline.some(section => section.title.trim() === '')) {
+    if (editableOutline.some(section => section.trim() === '')) {
       toast.error("Section titles cannot be empty");
       return;
     }
 
-    onChange(editableOutline);
+    onSave(editableOutline);
     setIsEditing(false);
     setEditingIndex(null);
     toast.success("Outline saved successfully");
@@ -110,12 +103,12 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onChange, o
           <TableBody>
             {editableOutline.length > 0 ? (
               editableOutline.map((section, index) => (
-                <TableRow key={section.id || index}>
+                <TableRow key={index}>
                   <TableCell className="text-center font-medium">{index + 1}</TableCell>
                   <TableCell>
                     {isEditing && editingIndex === index ? (
                       <Input
-                        value={section.title}
+                        value={section}
                         onChange={(e) => handleEdit(index, e.target.value)}
                         autoFocus
                         onBlur={() => setEditingIndex(null)}
@@ -128,7 +121,7 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onChange, o
                         className={isEditing ? "cursor-pointer hover:bg-muted px-2 py-1 rounded" : ""}
                         onClick={() => isEditing && setEditingIndex(index)}
                       >
-                        {section.title}
+                        {section}
                       </div>
                     )}
                   </TableCell>

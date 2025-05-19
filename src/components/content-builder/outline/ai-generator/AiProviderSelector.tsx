@@ -1,115 +1,64 @@
 
 import React from 'react';
-import { Check, ChevronsUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { ProviderStatusIndicator } from './ProviderStatusIndicator';
-import { AiProvider, AiProviderSelectorProps } from './types';
+import { AiProvider } from '@/services/aiService/types';
 
-export const AiProviderSelector = ({
-  selectedProvider,
-  onProviderChange,
-  size = "sm",
-  variant = "outline",
-  className,
-  providers = ['openai', 'anthropic', 'gemini'],
-  
-  // Support for new props pattern
-  aiProvider,
+interface AiProviderSelectorProps {
+  aiProvider: AiProvider;
+  setAiProvider: (provider: AiProvider) => void;
+  availableProviders?: AiProvider[];
+}
+
+export function AiProviderSelector({ 
+  aiProvider, 
   setAiProvider,
-  availableProviders
-}: AiProviderSelectorProps) => {
-  const [open, setOpen] = React.useState(false);
-  
-  // Use the most appropriate provider value (for backward compatibility)
-  const effectiveProvider = selectedProvider || aiProvider || 'openai';
-  const effectiveProviders = availableProviders || providers;
-  
-  const handleSelect = (currentValue: string) => {
-    // Call the appropriate handler based on what was provided
-    if (setAiProvider) {
-      setAiProvider(currentValue as AiProvider);
-    } else if (onProviderChange) {
-      onProviderChange(currentValue as AiProvider);
-    }
-    setOpen(false);
-  };
-
-  const getProviderLabel = (provider: string): string => {
-    switch (provider) {
-      case 'openai':
-        return 'OpenAI';
-      case 'anthropic':
-        return 'Claude';
-      case 'gemini':
-        return 'Gemini';
-      case 'mistral':
-        return 'Mistral';
-      case 'other':
-        return 'Other Provider';
-      default:
-        return provider.charAt(0).toUpperCase() + provider.slice(1);
+  availableProviders = ['openai', 'anthropic', 'gemini', 'mistral']
+}: AiProviderSelectorProps) {
+  // Get display names for providers
+  const getProviderDisplayName = (provider: string): string => {
+    switch(provider) {
+      case 'openai': return 'OpenAI';
+      case 'anthropic': return 'Claude';
+      case 'gemini': return 'Gemini';
+      case 'mistral': return 'Mistral';
+      default: return provider;
     }
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={variant as any}
-          size={size as any}
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "flex items-center justify-between",
-            className
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <ProviderStatusIndicator selectedProvider={effectiveProvider} />
-            <span>{getProviderLabel(effectiveProvider)}</span>
-          </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="p-0 w-[200px]">
-        <Command>
-          <CommandInput placeholder="Search AI provider..." />
-          <CommandEmpty>No provider found.</CommandEmpty>
-          <CommandGroup>
-            {effectiveProviders.map((provider) => (
-              <CommandItem
-                key={provider}
-                value={provider}
-                onSelect={handleSelect}
-              >
-                <div className="flex items-center gap-2">
-                  <ProviderStatusIndicator selectedProvider={provider as AiProvider} />
-                  <span>{getProviderLabel(provider)}</span>
-                </div>
-                <Check
-                  className={cn(
-                    "ml-auto h-4 w-4",
-                    effectiveProvider === provider ? "opacity-100" : "opacity-0"
-                  )}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-white/70">Using:</span>
+        <ProviderStatusIndicator selectedProvider={aiProvider} />
+      </div>
+      
+      <div className="flex items-center gap-1">
+        {availableProviders.length > 0 ? (
+          availableProviders.map((provider) => (
+            <button
+              key={provider}
+              className={`px-3 py-1 text-xs rounded-full ${
+                aiProvider === provider 
+                  ? 'bg-neon-purple text-white' 
+                  : 'bg-white/10 hover:bg-white/20'
+              }`}
+              onClick={() => setAiProvider(provider as AiProvider)}
+            >
+              {getProviderDisplayName(provider)}
+            </button>
+          ))
+        ) : (
+          ['openai', 'anthropic', 'gemini', 'mistral'].map((provider) => (
+            <button
+              key={provider}
+              className="px-3 py-1 text-xs rounded-full bg-white/5 text-white/40 cursor-not-allowed"
+              disabled
+            >
+              {getProviderDisplayName(provider)}
+            </button>
+          ))
+        )}
+      </div>
+    </div>
   );
-};
+}

@@ -61,7 +61,6 @@ export const ContentTypeStep = () => {
           features: Array.isArray(solution.features) 
             ? solution.features.map(f => String(f)) 
             : [],
-          benefits: [], // Add empty benefits array by default
           useCases: Array.isArray(solution.use_cases) 
             ? solution.use_cases.map(u => String(u)) 
             : [],
@@ -97,7 +96,6 @@ export const ContentTypeStep = () => {
         name: 'Demo Solution',
         description: 'Demo solution for content creation',
         features: ["Feature 1", "Feature 2", "Feature 3"],
-        benefits: ["Benefit 1", "Benefit 2"], // Add benefits array
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"],

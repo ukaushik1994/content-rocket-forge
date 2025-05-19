@@ -1,18 +1,9 @@
 
-import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
+import { SerpSelection } from '@/contexts/content-builder/types';
 import { SelectedCountsType } from './types';
 
-export interface SerpSelectionStatsProps {
-  serpSelections: SerpSelection[];
-}
-
-export interface SerpSelectionStatsResult {
-  selectedCounts: SelectedCountsType;
-  totalSelected: number;
-}
-
-export const SerpSelectionStats = ({ serpSelections = [] }: SerpSelectionStatsProps): SerpSelectionStatsResult => {
-  // Count selected items by type
+export const SerpSelectionStats = ({ serpSelections }: { serpSelections: SerpSelection[] }) => {
+  // Initialize counts
   const selectedCounts: SelectedCountsType = {
     keyword: 0,
     question: 0,
@@ -24,16 +15,50 @@ export const SerpSelectionStats = ({ serpSelections = [] }: SerpSelectionStatsPr
     topRank: 0
   };
   
-  let totalSelected = 0;
-  
+  // Count selected items by type
   serpSelections.forEach(item => {
     if (item.selected) {
-      selectedCounts[item.type] = (selectedCounts[item.type] || 0) + 1;
-      totalSelected++;
+      // Map the actual types used in the SERP components to our counter structure
+      switch (item.type) {
+        case 'keyword':
+        case 'relatedSearch':
+          selectedCounts.keyword++;
+          break;
+        case 'question':
+        case 'peopleAlsoAsk':
+          selectedCounts.question++;
+          break;
+        case 'snippet':
+        case 'featuredSnippet':
+          selectedCounts.snippet++;
+          break;
+        case 'competitor':
+          selectedCounts.competitor++;
+          break;
+        case 'entity':
+          selectedCounts.entity++;
+          break;
+        case 'heading':
+          selectedCounts.heading++;
+          break;
+        case 'contentGap':
+          selectedCounts.contentGap++;
+          break;
+        case 'topRank':
+          selectedCounts.topRank++;
+          break;
+        default:
+          // For other types, no counting
+          break;
+      }
     }
   });
   
-  return { selectedCounts, totalSelected };
+  // Calculate total selected items
+  const totalSelected = Object.values(selectedCounts).reduce((sum, count) => sum + count, 0);
+  
+  return {
+    selectedCounts,
+    totalSelected
+  };
 };
-
-export default SerpSelectionStats;

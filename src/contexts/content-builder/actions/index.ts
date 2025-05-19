@@ -6,7 +6,6 @@ import { createSerpActions } from './serpActions';
 import { createNavigationActions } from './navigationActions';
 import { createPublishActions } from './publishActions';
 import { createSeoActions } from './seoActions';
-import { Solution } from '../types/solution-types';
 
 /**
  * Creates and combines all content builder actions
@@ -14,7 +13,7 @@ import { Solution } from '../types/solution-types';
 export const createContentBuilderActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
-): Omit<ContentBuilderContextType, "state" | "dispatch"> => {
+): Omit<ContentBuilderContextType, 'state' | 'dispatch'> => {
   
   // Create feature-specific action groups
   const keywordActions = createKeywordActions(state, dispatch);
@@ -24,18 +23,6 @@ export const createContentBuilderActions = (
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
 
-  // Add missing actions
-  const additionalActions = {
-    selectCluster: (cluster: any) => dispatch({ type: 'SELECT_CLUSTER', payload: cluster }),
-    setSeoScore: (score: number) => dispatch({ type: 'SET_SEO_SCORE', payload: score }),
-    addSeoImprovement: (improvement: any) => dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: improvement }),
-    skipOptimization: () => dispatch({ type: 'SKIP_OPTIMIZATION_STEP' }),
-    setSolutionIntegrationMetrics: (metrics: any) => 
-      dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: metrics }),
-    selectSolution: (solution: Solution | null) => 
-      dispatch({ type: 'SELECT_SOLUTION', payload: solution })
-  };
-
   // Merge all action groups and return
   return {
     ...keywordActions,
@@ -43,7 +30,7 @@ export const createContentBuilderActions = (
     ...serpActions,
     ...navigationActions,
     ...publishActions,
-    ...seoActions,
-    ...additionalActions
+    ...seoActions
   };
 };
+

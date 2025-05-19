@@ -1,11 +1,16 @@
 
-import React, { ChangeEvent } from 'react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Solution, OutlineSection } from '@/contexts/content-builder/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ContentSidebarProps {
-  outline: any[];
-  selectedSolution: any;
+  outline: OutlineSection[];
+  selectedSolution: Solution | null;
   additionalInstructions: string;
-  handleInstructionsChange: (value: string) => void;
+  handleInstructionsChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 export const ContentSidebar: React.FC<ContentSidebarProps> = ({
@@ -14,60 +19,94 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
   additionalInstructions,
   handleInstructionsChange
 }) => {
-  const handleTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    handleInstructionsChange(e.target.value);
-  };
-
   return (
-    <div className="h-full flex flex-col space-y-4">
-      {/* Outline Display */}
-      <div className="bg-card p-4 rounded-lg border shadow-sm space-y-2 flex-1">
-        <h3 className="font-medium text-sm flex items-center justify-between">
-          <span>Content Outline</span>
-          <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{outline.length} sections</span>
-        </h3>
-        
-        <ul className="space-y-2 text-sm mt-2">
-          {outline.map((item, index) => (
-            <li key={index} className="border-l-2 border-primary/40 pl-3 py-1">
-              {typeof item === 'string' ? item : item.title}
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="flex flex-col gap-4 h-full">
+      {/* Outline Card */}
+      <Card className="flex-1 flex flex-col border">
+        <CardHeader className="px-4 py-3 border-b">
+          <CardTitle className="text-sm font-medium">Content Outline</CardTitle>
+        </CardHeader>
+        <ScrollArea className="flex-1">
+          <CardContent className="p-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Section</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {outline.length > 0 ? (
+                  outline.map((section, index) => (
+                    <TableRow key={section.id || index}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell>{typeof section === 'string' ? section : section.title}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">
+                      No outline sections yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </ScrollArea>
+      </Card>
       
-      {/* Additional Instructions */}
-      <div className="bg-card p-4 rounded-lg border shadow-sm space-y-2">
-        <h3 className="font-medium text-sm">Additional Instructions</h3>
-        <textarea 
-          className="w-full h-32 bg-background border rounded-md p-3 text-sm resize-none"
-          placeholder="Add any specific instructions for the content..."
-          value={additionalInstructions}
-          onChange={handleTextAreaChange}
-        />
-      </div>
-      
-      {/* Selected Solution Info */}
+      {/* Solution Info Card */}
       {selectedSolution && (
-        <div className="bg-card p-4 rounded-lg border shadow-sm space-y-2">
-          <h3 className="font-medium text-sm">Selected Solution</h3>
-          <div className="text-sm">
-            <p className="font-medium">{selectedSolution.name}</p>
-            <p className="text-xs text-muted-foreground mt-1">{selectedSolution.description}</p>
+        <Card className="border">
+          <CardHeader className="px-4 py-3 border-b">
+            <CardTitle className="text-sm font-medium">Solution Reference</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-medium mb-2">{selectedSolution.name}</h3>
+              <p className="text-xs text-muted-foreground">{selectedSolution.description}</p>
+            </div>
             
-            {selectedSolution.features && selectedSolution.features.length > 0 && (
-              <div className="mt-2">
-                <p className="text-xs font-medium">Key Features:</p>
-                <ul className="list-disc pl-4 text-xs text-muted-foreground">
-                  {selectedSolution.features.slice(0, 3).map((feature: string, idx: number) => (
-                    <li key={idx}>{feature}</li>
+            {selectedSolution.features.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium mb-1">Features</h4>
+                <ul className="text-xs list-disc pl-4 space-y-1">
+                  {selectedSolution.features.slice(0, 3).map((feature, index) => (
+                    <li key={index}>{feature}</li>
                   ))}
                 </ul>
               </div>
             )}
-          </div>
-        </div>
+            
+            {selectedSolution.useCases.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium mb-1">Use Cases</h4>
+                <ul className="text-xs list-disc pl-4 space-y-1">
+                  {selectedSolution.useCases.slice(0, 2).map((useCase, index) => (
+                    <li key={index}>{useCase}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
+      
+      {/* Additional Instructions Card */}
+      <Card className="border">
+        <CardHeader className="px-4 py-3 border-b">
+          <CardTitle className="text-sm font-medium">Additional Instructions</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <Textarea
+            placeholder="Add any specific instructions for content generation..."
+            className="resize-none h-24"
+            value={additionalInstructions}
+            onChange={handleInstructionsChange}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };

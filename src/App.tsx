@@ -19,46 +19,41 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { useState } from 'react';
 
-// The issue is with QueryClient initialization - fix by moving it inside the component
-const App = () => {
-  // Create a new QueryClient instance inside the component to avoid React context issues
-  const [queryClient] = useState(() => new QueryClient());
+const queryClient = new QueryClient();
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <ContentProvider>
-            <FeedbackProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/auth" element={<Auth />} />
-                  
-                  {/* Protected routes */}
-                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
-                  <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
-                  <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
-                  <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
-                  <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-                  
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <FloatingFeedbackButton />
-              </BrowserRouter>
-            </FeedbackProvider>
-          </ContentProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <ContentProvider>
+          <FeedbackProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Protected routes */}
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
+                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
+                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
+                <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <FloatingFeedbackButton />
+            </BrowserRouter>
+          </FeedbackProvider>
+        </ContentProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

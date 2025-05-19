@@ -3,54 +3,32 @@
  * Content-related type definitions
  */
 
-export type ContentType = 
-  | 'article' 
-  | 'blog'
-  | 'landing'
-  | 'product'
-  | 'guide'
-  | 'review'
-  | 'news'
-  | 'other'
-  | 'glossary' 
-  | 'landingPage'
-  | 'productDescription';
+// Content Type Options
+export type ContentType = 'article' | 'blog' | 'landingPage' | 'productDescription' | 'glossary';
 
-export type ContentFormat = 'short-form' | 'long-form' | 'listicle' | 'how-to' | 'comparison' | 'case-study' | 'interview' | 'other';
-export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'persuade' | 'educate' | 'inspire' | 'other';
+// Content Format Options
+export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'list';
 
+// Content Intent Options
+export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';
+
+// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
   mainKeyword: string;
-  secondaryKeywords?: string[];
-  contentType?: ContentType;
+  secondaryKeywords: string[];
+  contentType: ContentType;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  status: 'draft' | 'published' | 'archived';
+  notes: string;
+  // Optional fields
   seoScore?: number;
-  metaTitle?: string;
-  metaDescription?: string;
-  outline?: any[];
+  outlineJson?: string;
+  
+  // Adding missing properties
+  outline?: string[];
   serpSelections?: any[];
   serpData?: any;
-  status?: string; // Add status field
-  notes?: string; // Add notes field
-}
-
-export interface ContentGenerationParams {
-  outline: any[];
-  keywords: string[];
-  mainKeyword: string;
-  contentType: ContentType;
-  contentFormat: ContentFormat;
-  wordCount?: number;
-  title?: string;
-  additionalInstructions?: string;
-}
-
-export interface ContentCluster {
-  id: string;
-  name: string;
-  keywords: string[];
-  mainKeyword: string;
-  volume?: number;
-  competition?: number;
 }

@@ -1,27 +1,36 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PencilLine, Eye, Save, Clock, Sparkles } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
+import { 
+  Sparkles, 
+  ListTodo, 
+  CheckSquare,  
+  Save,
+  Bot, 
+  UserRound, 
+} from 'lucide-react';
+import { AiProvider } from '@/services/aiService/types';
+import { formatDistanceToNow } from 'date-fns';
 
-export interface ContentGenerationHeaderProps {
+interface ContentGenerationHeaderProps {
   isGenerating: boolean;
-  onGenerateContent: () => Promise<void>;
-  onToggleOutline: () => void;
+  handleGenerateContent: () => void;
+  handleToggleOutline: () => void;
   showOutline: boolean;
   outlineLength: number;
-  aiProvider: string;
-  onAiProviderChange: (provider: string) => void;
-  autoSaveTimestamp: string | null;
-  hasUnsavedChanges: boolean;
-  onManualSave: () => void;
-  wordCountLimit: number | null;
+  aiProvider: AiProvider;
+  onAiProviderChange: (provider: AiProvider) => void;
+  autoSaveTimestamp?: string | null;
+  hasUnsavedChanges?: boolean;
+  onManualSave?: () => void;
+  wordCountLimit?: number;
 }
 
 export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
   isGenerating,
-  onGenerateContent,
-  onToggleOutline,
+  handleGenerateContent,
+  handleToggleOutline,
   showOutline,
   outlineLength,
   aiProvider,
@@ -31,87 +40,85 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   onManualSave,
   wordCountLimit
 }) => {
-  const formatTimestamp = (timestamp: string) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return `${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  };
-
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row justify-between gap-3">
+      <div className="flex flex-wrap gap-2 items-center">
         <Button
-          variant={showOutline ? "default" : "outline"}
-          size="sm"
-          onClick={onToggleOutline}
-          className="gap-1.5"
-        >
-          {showOutline ? (
-            <>
-              <Eye className="h-4 w-4" />
-              Outline ({outlineLength})
-            </>
-          ) : (
-            <>
-              <Eye className="h-4 w-4" />
-              Show Outline
-            </>
-          )}
-        </Button>
-        
-        <Select value={aiProvider} onValueChange={onAiProviderChange}>
-          <SelectTrigger className="w-[140px] h-9 text-xs">
-            <SelectValue placeholder="AI Provider" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="openai">OpenAI</SelectItem>
-            <SelectItem value="anthropic">Anthropic</SelectItem>
-            <SelectItem value="google">Google AI</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="flex items-center gap-3">
-        {(autoSaveTimestamp || hasUnsavedChanges) && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            {hasUnsavedChanges 
-              ? <span>Unsaved changes</span> 
-              : <span>Saved at {formatTimestamp(autoSaveTimestamp!)}</span>
-            }
-          </div>
-        )}
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          disabled={!hasUnsavedChanges}
-          onClick={onManualSave}
-        >
-          <Save className="h-4 w-4" />
-          Save
-        </Button>
-        
-        <Button
-          variant="default"
-          size="sm"
-          className="gap-1.5"
+          onClick={handleGenerateContent}
           disabled={isGenerating || outlineLength === 0}
-          onClick={onGenerateContent}
+          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white"
         >
           {isGenerating ? (
-            <>
-              <Sparkles className="h-4 w-4 animate-pulse" />
-              Generating...
-            </>
+            <><Sparkles className="mr-2 h-4 w-4 animate-pulse" /> Generating...</>
           ) : (
-            <>
-              <PencilLine className="h-4 w-4" />
-              Write Content
-            </>
+            <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
           )}
         </Button>
+        
+        <div className="flex gap-1 ml-2">
+          <Toggle
+            variant="outline"
+            pressed={showOutline}
+            onPressedChange={handleToggleOutline}
+            aria-label="Toggle outline"
+            className="bg-slate-900/30 data-[state=on]:bg-slate-800/70 border border-white/10 hover:bg-slate-800/50"
+          >
+            <ListTodo className="h-4 w-4" />
+          </Toggle>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        {/* Auto-save indicator */}
+        <div className="text-xs text-white/50 flex items-center gap-1">
+          {hasUnsavedChanges ? (
+            <>
+              <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
+              Unsaved changes
+            </>
+          ) : autoSaveTimestamp ? (
+            <>
+              <CheckSquare className="h-3 w-3 text-green-400" />
+              Saved {formatDistanceToNow(new Date(autoSaveTimestamp), { addSuffix: true })}
+            </>
+          ) : null}
+        </div>
+        
+        {/* Manual save button */}
+        {onManualSave && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onManualSave}
+            disabled={!hasUnsavedChanges}
+            className="text-xs bg-white/5 border-white/10 hover:bg-white/10"
+          >
+            <Save className="h-3 w-3 mr-1" />
+            Save
+          </Button>
+        )}
+        
+        {/* AI Provider selector */}
+        <div className="flex items-center gap-1 border border-white/10 p-1 rounded-md bg-slate-900/30">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`text-xs px-2 ${aiProvider === 'openai' ? 'bg-white/10' : ''}`}
+            onClick={() => onAiProviderChange('openai')}
+          >
+            <Bot className="h-3 w-3 mr-1" />
+            GPT
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`text-xs px-2 ${aiProvider === 'anthropic' ? 'bg-white/10' : ''}`}
+            onClick={() => onAiProviderChange('anthropic')}
+          >
+            <UserRound className="h-3 w-3 mr-1" />
+            Claude
+          </Button>
+        </div>
       </div>
     </div>
   );

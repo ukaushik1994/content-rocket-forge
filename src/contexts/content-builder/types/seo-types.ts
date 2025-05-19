@@ -1,22 +1,12 @@
 
+/**
+ * SEO related type definitions
+ */
+
 export interface SeoImprovement {
   id: string;
   type: string;
-  description: string;
   recommendation: string;
-  score: number;
+  impact: 'high' | 'medium' | 'low';
   applied: boolean;
-  impact?: 'high' | 'medium' | 'low'; // Add impact field
-}
-
-export interface SolutionIntegrationMetrics {
-  featureIncorporation: number;
-  positioningScore: number;
-  valuePropositionClarity?: number;
-  relevanceScore?: number;
-  integrationLevel?: 'poor' | 'basic' | 'good' | 'excellent';
-  overallScore: number;
-  mentionedFeatures: string[];
-  painPointsAddressed?: string[];
-  ctaEffectiveness?: number; // Add ctaEffectiveness field
 }

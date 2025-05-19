@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -17,18 +18,15 @@ import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 const mockClusters: ContentCluster[] = [{
   id: '1',
   name: 'SEO Optimization',
-  keywords: ['seo strategy', 'keyword research', 'backlink building', 'content optimization'],
-  mainKeyword: 'seo strategy'
+  keywords: ['seo strategy', 'keyword research', 'backlink building', 'content optimization']
 }, {
   id: '2',
   name: 'Content Marketing',
-  keywords: ['blog strategy', 'content planning', 'editorial calendar', 'content distribution'],
-  mainKeyword: 'content marketing'
+  keywords: ['blog strategy', 'content planning', 'editorial calendar', 'content distribution']
 }, {
   id: '3',
   name: 'Social Media',
-  keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization'],
-  mainKeyword: 'social media marketing'
+  keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
 }];
 
 export const KeywordSelectionStep = () => {
@@ -238,16 +236,7 @@ export const KeywordSelectionStep = () => {
                   <SelectedItemsSidebar 
                     serpSelections={serpSelections}
                     totalSelected={totalSelected}
-                    selectedCounts={{
-                      keyword: selectedCounts.keyword || 0,
-                      question: selectedCounts.question || 0,
-                      snippet: selectedCounts.snippet || 0,
-                      competitor: selectedCounts.competitor || 0,
-                      entity: selectedCounts.entity || 0,
-                      heading: selectedCounts.heading || 0,
-                      contentGap: selectedCounts.contentGap || 0,
-                      topRank: selectedCounts.topRank || 0
-                    }}
+                    selectedCounts={selectedCounts}
                     handleToggleSelection={handleToggleSelection}
                   />
                 </div>

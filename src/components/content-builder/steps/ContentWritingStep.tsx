@@ -8,7 +8,6 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { TitleGenerationButton } from './writing/TitleGenerationButton';
-import { OutlineSection } from '@/contexts/content-builder/types/outline-types';
 
 export const ContentWritingStep = () => {
   const {
@@ -40,26 +39,59 @@ export const ContentWritingStep = () => {
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
-    handleManualSave,
-    handleGenerateContent
+    handleManualSave
   } = useWritingStep();
   
-  // Convert outline to the format expected
-  const processedOutline = Array.isArray(outline) 
-    ? outline
-    : [];
+  // Setup leave confirmation
+  useEffect(() => {
+    const handleBeforeNavigate = (e: PopStateEvent) => {
+      if (hasUnsavedChanges) {
+        const confirmMessage = "You have unsaved changes. Are you sure you want to leave?";
+        if (!window.confirm(confirmMessage)) {
+          e.preventDefault();
+          history.pushState(null, '', window.location.pathname);
+        }
+      }
+    };
     
-  const outlineItems = processedOutline.map(item => {
-    if (typeof item === 'string') {
-      return { title: item };
-    } else if (item && typeof item === 'object') {
-      return { title: (item as any).title || '' };
-    } else {
-      return { title: '' };
+    window.addEventListener('popstate', handleBeforeNavigate);
+    return () => window.removeEventListener('popstate', handleBeforeNavigate);
+  }, [hasUnsavedChanges]);
+
+  const handleGenerateContent = async () => {
+    if (!mainKeyword) {
+      toast.error("Please set a main keyword first");
+      return;
     }
-  });
-  
-  // Rest of component...
+    
+    // Convert outline to a formatted string for the prompt
+    const outlineText = Array.isArray(state.outline) 
+      ? state.outline.map((item, index) => {
+          if (typeof item === 'string') {
+            return `${index + 1}. ${item}`;
+          } else if (item && typeof item === 'object' && 'title' in item) {
+            return `${index + 1}. ${(item as { title: string }).title}`;
+          }
+          return '';
+        }).filter(Boolean).join('\n')
+      : '';
+        
+    // Prepare secondary keywords
+    const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
+    
+    await generateContent(
+      aiProvider,
+      mainKeyword,
+      state.contentTitle,
+      outlineText,
+      secondaryKeywordsStr,
+      selectedSolution,
+      additionalInstructions,
+      wordCountLimit,
+      setIsGenerating,
+      handleContentChange
+    );
+  };
   
   const handleSaveToDraft = async () => {
     await saveContentToDraft(
@@ -68,7 +100,7 @@ export const ContentWritingStep = () => {
       mainKeyword,
       secondaryKeywords || [],
       saveNote,
-      Array.isArray(outline) ? outline.map(item => typeof item === 'string' ? item : (item as any).title || '') : [],
+      Array.isArray(outline) ? outline.map(item => typeof item === 'string' ? item : item.title) : [],
       setIsSaving,
       setShowSaveDialog
     );
@@ -78,10 +110,10 @@ export const ContentWritingStep = () => {
     <div className="space-y-6 h-full flex flex-col">
       <ContentGenerationHeader
         isGenerating={isGenerating}
-        onGenerateContent={handleGenerateContent}
-        onToggleOutline={handleToggleOutline}
+        handleGenerateContent={handleGenerateContent}
+        handleToggleOutline={handleToggleOutline}
         showOutline={showOutline}
-        outlineLength={Array.isArray(state.outline) ? state.outline.length : 0}
+        outlineLength={state.outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
         autoSaveTimestamp={autoSaveTimestamp}
@@ -98,7 +130,7 @@ export const ContentWritingStep = () => {
               {state.contentTitle}
             </span>
           ) : (
-            <span className="text-muted-foreground text-base">No title set - please generate a title first</span>
+            <span className="text-muted-foreground text-base">No title set</span>
           )}
         </h2>
         <TitleGenerationButton />
@@ -108,7 +140,7 @@ export const ContentWritingStep = () => {
         {showOutline && (
           <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
-              outline={processedOutline}
+              outline={outline}
               selectedSolution={selectedSolution}
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}
@@ -152,7 +184,7 @@ export const ContentWritingStep = () => {
         mainKeyword={mainKeyword}
         secondaryKeywords={secondaryKeywords || []}
         content={content}
-        outlineLength={Array.isArray(state.outline) ? state.outline.length : 0}
+        outlineLength={state.outline.length}
       />
     </div>
   );

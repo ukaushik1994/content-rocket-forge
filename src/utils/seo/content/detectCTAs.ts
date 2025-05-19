@@ -1,56 +1,45 @@
 
-import { CTAInfo } from './types';
+/**
+ * Utility for detecting Call-to-Action elements in content
+ */
 
 /**
- * Detects call-to-action phrases in the content
- * @param content The content to analyze
- * @returns Object with CTA detection results
+ * Detect Call-to-Action elements in content
  */
-export const detectCTAs = (content: string): CTAInfo => {
-  // Common CTA phrases to check for
-  const ctaPhrases = [
+export const detectCTAs = (content: string): { hasCTA: boolean; ctaText: string[] } => {
+  const ctaMarkers = [
+    'click here',
     'sign up',
-    'get started',
-    'try it free',
-    'learn more',
-    'contact us',
+    'register',
     'subscribe',
     'download',
+    'learn more',
+    'get started',
+    'try now',
+    'contact us',
     'buy now',
-    'register',
-    'start your free trial',
-    'book a demo',
-    'get in touch',
-    'request a quote',
-    'click here'
+    'order now'
   ];
   
   const foundCTAs: string[] = [];
-  let foundText = '';
   
-  // Check for each CTA phrase in the content
-  ctaPhrases.forEach(phrase => {
-    // Case insensitive search
-    const regex = new RegExp(`\\b${phrase}\\b`, 'gi');
-    const matches = content.match(regex);
-    
-    if (matches && matches.length > 0) {
-      foundCTAs.push(phrase);
-      
-      // Extract surrounding context (sentence)
-      const sentenceRegex = new RegExp(`[^.!?]*\\b${phrase}\\b[^.!?]*[.!?]`, 'gi');
-      const contextMatches = content.match(sentenceRegex);
-      
-      if (contextMatches && contextMatches.length > 0) {
-        foundText = [...new Set(contextMatches)].join(' ');
+  // Check each sentence for CTA markers
+  const sentences = content.split(/[.!?]+/);
+  for (const sentence of sentences) {
+    const lowerSentence = sentence.toLowerCase();
+    for (const marker of ctaMarkers) {
+      if (lowerSentence.includes(marker)) {
+        foundCTAs.push(sentence.trim());
+        break;
       }
     }
-  });
+  }
+  
+  // Remove duplicates
+  const uniqueCTAs = [...new Set(foundCTAs)];
   
   return {
-    hasCTA: foundCTAs.length > 0,
-    ctaText: foundCTAs,
-    count: foundCTAs.length,
-    texts: foundText ? [foundText] : []
+    hasCTA: uniqueCTAs.length > 0,
+    ctaText: uniqueCTAs
   };
 };

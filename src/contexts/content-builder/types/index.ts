@@ -14,6 +14,3 @@ export * from './state-types';
 export * from './action-types';
 export * from './context-types';
 export * from './cluster-types';
-
-// Export the Step type explicitly to avoid ambiguity
-export type { Step } from './step-types';

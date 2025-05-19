@@ -22,8 +22,8 @@ export const useTitleSuggestions = () => {
   
   // Generate title suggestions
   const generateTitleSuggestionsAsync = useCallback(async () => {
-    if (!mainKeyword) {
-      toast.error('Main keyword is required for generating titles', toastConfig.error);
+    if (!content || !mainKeyword) {
+      toast.error('Content or main keyword not available for generating titles', toastConfig.error);
       return;
     }
     
@@ -31,12 +31,7 @@ export const useTitleSuggestions = () => {
     
     try {
       // Call the generateTitleSuggestions function from documentAnalysis
-      // If content is available, use it for context-aware titles, otherwise use just keywords
-      const suggestions = await generateTitleSuggestions(
-        content || mainKeyword,
-        mainKeyword, 
-        selectedKeywords
-      );
+      const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
       
       // Shuffle the suggestions to ensure different ordering each time
       const shuffledSuggestions = [...suggestions].sort(() => Math.random() - 0.5);
@@ -68,10 +63,6 @@ export const useTitleSuggestions = () => {
     
     dispatch({ type: 'SET_META_TITLE', payload: title });
     dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
-    
-    // Store title in localStorage as a backup
-    localStorage.setItem('content_builder_title', title);
-    
     toast.success('Title applied successfully', toastConfig.success);
     console.log("[useTitleSuggestions] Applied title:", title);
   }, [dispatch]);
