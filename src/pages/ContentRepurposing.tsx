@@ -37,14 +37,14 @@ const ContentRepurposing = () => {
   
   // Function to save all generated content
   const handleSaveAllContent = async (): Promise<boolean> => {
-    if (!content || Object.keys(generatedContents).length === 0) {
+    if (!content || Object.keys(generatedContents || {}).length === 0) {
       toast.error('No content to save');
       return false;
     }
     
     setIsSavingAll(true);
     try {
-      const formatIds = Object.keys(generatedContents);
+      const formatIds = Object.keys(generatedContents || {});
       let allSuccess = true;
       let savedCount = 0;
       
@@ -95,7 +95,7 @@ const ContentRepurposing = () => {
         deleteRepurposedContent={deleteRepurposedContent}
         handleFormatChange={handleFormatChange}
         isDeleting={isDeleting}
-        generatedFormats={generatedFormats}
+        generatedFormats={generatedFormats || []} // Add fallback empty array
       />
     );
   }
@@ -104,7 +104,7 @@ const ContentRepurposing = () => {
     <ContentRepurposingView
       content={content}
       selectedFormats={selectedFormats}
-      generatedContents={generatedContents}
+      generatedContents={generatedContents || {}} // Add fallback empty object
       isGenerating={isGenerating}
       activeFormat={activeFormat}
       isDeleting={isDeleting}

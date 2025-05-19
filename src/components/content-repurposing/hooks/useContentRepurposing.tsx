@@ -47,10 +47,10 @@ export const useContentRepurposing = () => {
     return deleteRepurposedContent(content.id, formatId);
   };
   
-  // Update this function to pass generated formats
+  // Update this function to safely pass generated formats
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
     // Get all formats that have been generated for this content
-    const availableFormats = Object.keys(generatedContents);
+    const availableFormats = Object.keys(generatedContents || {});
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
   };
   

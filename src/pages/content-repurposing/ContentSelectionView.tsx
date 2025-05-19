@@ -33,7 +33,7 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
   deleteRepurposedContent,
   handleFormatChange,
   isDeleting,
-  generatedFormats,
+  generatedFormats = [], // Add default empty array
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-black">
