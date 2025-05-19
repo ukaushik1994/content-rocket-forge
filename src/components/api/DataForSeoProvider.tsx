@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { 
@@ -307,8 +306,8 @@ export const DataForSeoProvider = ({
     }
   };
 
-  // Delete credentials
-  const handleDeleteCredentials = async (key: string): Promise<boolean> => {
+  // Delete credentials - make it consistent by accepting any key parameter but not using it
+  const handleDeleteCredentials = async (_key?: string): Promise<boolean> => {
     try {
       setIsDeleting(true);
       setError(null);
