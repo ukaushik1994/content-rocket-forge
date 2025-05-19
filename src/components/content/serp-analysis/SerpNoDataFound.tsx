@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SerpNoDataFoundProps {
@@ -18,14 +18,14 @@ export function SerpNoDataFound({ mainKeyword, onRetry }: SerpNoDataFoundProps) 
     >
       <div className="flex flex-col items-center justify-center">
         <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
-          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <Database className="h-8 w-8 text-amber-500" />
         </div>
         <h3 className="text-xl font-semibold mb-2">
-          No Data Found
+          Can't Find Data
         </h3>
         <p className="text-muted-foreground max-w-md mx-auto mb-6">
           We couldn't retrieve analysis data for <span className="font-medium text-amber-500">"{mainKeyword}"</span>. 
-          This could be due to a temporary API issue or connectivity problem.
+          Please connect a valid data provider API key.
         </p>
         <Button 
           variant="outline" 

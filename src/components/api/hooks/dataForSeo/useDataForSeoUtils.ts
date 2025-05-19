@@ -14,7 +14,14 @@ export const useDataForSeoUtils = (state: ReturnType<typeof import('./useDataFor
     return 'none';
   };
 
+  // Function to check if we should use real data or return null
+  const shouldUseRealData = () => {
+    const { keyExists, testSuccessful } = state;
+    return keyExists && testSuccessful;
+  };
+
   return {
-    getStatus
+    getStatus,
+    shouldUseRealData
   };
 };

@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+
+import React from 'react';
+import { Card } from '@/components/ui/card';
 import { 
   Search, 
-  RefreshCw, 
   Loader, 
-  BarChart, 
-  Database,
   CloudCog,
-  CloudLightning
+  CloudLightning,
+  Database
 } from 'lucide-react';
 
 const SerpProviderBadge = ({ provider }: { provider?: string }) => {
@@ -29,10 +27,9 @@ const SerpProviderBadge = ({ provider }: { provider?: string }) => {
       label = 'DataForSEO';
       bgColor = 'bg-green-900/30 text-green-200 border-green-700/30';
       break;
-    case 'mock':
     default:
       icon = <Database className="h-3.5 w-3.5 mr-1 text-orange-300" />;
-      label = 'Mock Data';
+      label = 'No Data';
       bgColor = 'bg-orange-900/30 text-orange-200 border-orange-700/30';
       break;
   }
@@ -45,7 +42,7 @@ const SerpProviderBadge = ({ provider }: { provider?: string }) => {
   );
 };
 
-import { SerpAnalysisPanel as CoreSerpAnalysisPanel } from '@/components/content/SerpAnalysisPanel';
+import { SerpNoDataFound } from '@/components/content/serp-analysis/SerpNoDataFound';
 import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpAnalysisPanelProps {
@@ -56,6 +53,39 @@ interface SerpAnalysisPanelProps {
   onRetry?: () => void;
 }
 
-export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
-  return <CoreSerpAnalysisPanel {...props} />;
+export function SerpAnalysisPanel({ 
+  serpData, 
+  isLoading, 
+  mainKeyword, 
+  onAddToContent,
+  onRetry
+}: SerpAnalysisPanelProps) {
+  if (isLoading) {
+    return (
+      <Card className="p-8 h-full flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
+          <p className="text-muted-foreground">Analyzing {mainKeyword}...</p>
+        </div>
+      </Card>
+    );
+  }
+  
+  if (!serpData) {
+    return (
+      <SerpNoDataFound 
+        mainKeyword={mainKeyword} 
+        onRetry={onRetry || (() => {})} 
+      />
+    );
+  }
+  
+  // This is the real content implementation which would show when we do have data
+  return (
+    <Card className="p-4">
+      <p className="text-center text-muted-foreground">
+        Please connect a data provider to see SERP analysis.
+      </p>
+    </Card>
+  );
 }

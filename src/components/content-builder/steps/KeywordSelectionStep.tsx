@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -71,6 +70,7 @@ export const KeywordSelectionStep = () => {
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
   
+  // Update the handleKeywordSearch function
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
 
