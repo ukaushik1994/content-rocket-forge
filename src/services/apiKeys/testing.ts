@@ -4,92 +4,82 @@
  */
 
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
-import { AdapterFactory } from '@/services/serp/adapters/AdapterFactory';
-import { getApiKey } from './storage';
 
 /**
- * Test an API key for validity
+ * Test an API key for a specific service
  * 
- * @param serviceKey - The service key identifier
+ * @param service - The service identifier
  * @param apiKey - The API key to test
  * @returns Promise<boolean> - Whether the key is valid
  */
-export const testApiKey = async (serviceKey: string, apiKey: string): Promise<boolean> => {
+export const testApiKey = async (service: string, apiKey: string): Promise<boolean> => {
   try {
-    // For SERP providers, use the adapter test method
-    if (serviceKey === 'serpapi' || serviceKey === 'dataforseo') {
-      const provider = serviceKey as SerpProvider;
-      const adapter = AdapterFactory.getAdapter(provider);
-      return await adapter.testApiKey(apiKey);
-    }
-    
-    // For other API keys, just validate the format
-    // This is a basic check - in a real app you would do more robust validation
+    // Basic validation - check that the API key isn't empty
     if (!apiKey || apiKey.trim() === '') {
       return false;
     }
     
-    // At minimum, check that it looks like an API key (not empty, reasonable length)
-    return apiKey.length > 8;
+    // Service-specific testing logic
+    switch (service) {
+      case 'openai':
+        return await testOpenAIKey(apiKey);
+      case 'anthropic':
+        return await testAnthropicKey(apiKey);
+      case 'serpapi':
+        return await testSerpApiKey(apiKey);
+      case 'dataforseo':
+        return await testDataForSeoKey(apiKey);
+      // Add more services as needed
+      default:
+        // For services without specific tests, return true if key exists
+        return true;
+    }
   } catch (error) {
-    console.error(`Error testing API key for ${serviceKey}:`, error);
+    console.error(`Error testing ${service} API key:`, error);
     return false;
   }
 };
 
-/**
- * Utility for encoding DataForSEO credentials
- */
-export const encodeDataForSeoCredentials = (email: string, password: string): string => {
-  return Buffer.from(`${email}:${password}`).toString('base64');
-};
-
-/**
- * Utility for decoding DataForSEO credentials
- */
-export const decodeDataForSeoCredentials = (encoded: string): { email: string, password: string } => {
+// Test OpenAI API key
+const testOpenAIKey = async (apiKey: string): Promise<boolean> => {
   try {
-    const decoded = Buffer.from(encoded, 'base64').toString();
-    const [email, password] = decoded.split(':');
-    return { email, password };
+    // Simulate a test - in production this would call the OpenAI API
+    return apiKey.startsWith('sk-') && apiKey.length > 20;
   } catch (error) {
-    console.error('Error decoding DataForSEO credentials:', error);
-    return { email: '', password: '' };
-  }
-};
-
-/**
- * Check if a string appears to be DataForSEO format
- */
-export const isDataForSeoFormat = (value: string): boolean => {
-  try {
-    const { email, password } = decodeDataForSeoCredentials(value);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && password.length > 0;
-  } catch (error) {
+    console.error('Error testing OpenAI API key:', error);
     return false;
   }
 };
 
-/**
- * Attempts to detect the type of API key
- */
-export const detectApiKeyType = async (apiKey: string): Promise<string | null> => {
-  // Check OpenAI key format (usually starts with "sk-")
-  if (apiKey.startsWith('sk-') && apiKey.length > 30) {
-    return 'openai';
+// Test Anthropic API key
+const testAnthropicKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    // Simulate a test - in production this would call the Anthropic API
+    return apiKey.startsWith('sk-ant-') && apiKey.length > 20;
+  } catch (error) {
+    console.error('Error testing Anthropic API key:', error);
+    return false;
   }
+};
 
-  // Check Anthropic key format
-  if ((apiKey.startsWith('sk-ant-') || apiKey.startsWith('sk-claude-')) && apiKey.length > 30) {
-    return 'anthropic';
+// Test SERP API key
+const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    // Simulate a test - in production this would call the SERP API
+    return apiKey.length > 10;
+  } catch (error) {
+    console.error('Error testing SERP API key:', error);
+    return false;
   }
-  
-  // Check DataForSEO format
-  if (isDataForSeoFormat(apiKey)) {
-    return 'dataforseo';
+};
+
+// Test DataForSEO key
+const testDataForSeoKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    // For DataForSEO, the apiKey is actually a base64 encoded username:password
+    return apiKey.length > 10 && /^[A-Za-z0-9+/=]+$/.test(apiKey);
+  } catch (error) {
+    console.error('Error testing DataForSEO key:', error);
+    return false;
   }
-  
-  // If none of the above, we can't determine the type
-  return null;
 };

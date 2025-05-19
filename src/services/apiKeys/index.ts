@@ -3,10 +3,18 @@
  * API keys services index
  */
 
-// Re-export everything from sub-modules
-export * from './storage';
+// Export individual modules
 export * from './validation';
 export * from './testing';
 export * from './encryption';
-export * from './crud';
 export * from './types';
+
+// Re-export storage methods with explicit names to avoid conflicts
+export { 
+  saveApiKey,
+  getApiKey,
+  deleteApiKey
+} from './storage';
+
+// Export other items from storage that aren't conflicting
+export * from './crud';

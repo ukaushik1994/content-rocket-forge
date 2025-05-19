@@ -14,7 +14,7 @@ import {
   encodeDataForSeoCredentials,
   decodeDataForSeoCredentials
 } from "@/services/apiKeyService";
-import { ApiProvider } from './types';
+import { ApiProviderWithCategory } from './types';
 
 interface DataForSeoApiKeyInputProps {
   provider: ApiProviderWithCategory;
