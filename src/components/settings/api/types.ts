@@ -1,101 +1,98 @@
 
-import { ApiProviderConfig } from '@/components/api-credentials/types';
+export interface ApiProviderConfig {
+  id: string;
+  name: string;
+  description: string;
+  type?: 'standard' | 'oauth' | 'credentials';
+  docsUrl?: string;
+  signupUrl?: string;
+  required?: boolean;
+  serviceKey?: string;
+}
 
-// Extended version of ApiProviderConfig with category property
 export interface ApiProviderWithCategory extends ApiProviderConfig {
   category: 'ai' | 'serp' | 'other';
-  serviceKey: string;
-  autoDetectable?: boolean;
 }
 
 export const API_PROVIDERS: ApiProviderWithCategory[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'GPT-4, GPT-3.5, and other AI models',
+    description: 'GPT-4, GPT-3.5 Turbo, and more',
     required: true,
-    isPrimary: true,
-    category: 'ai',
     type: 'standard',
+    docsUrl: 'https://platform.openai.com/docs/api-reference',
+    signupUrl: 'https://platform.openai.com/signup',
     serviceKey: 'openai',
-    docsUrl: 'https://platform.openai.com/docs',
-    signupUrl: 'https://platform.openai.com/signup'
+    category: 'ai'
   },
   {
     id: 'anthropic',
     name: 'Anthropic',
-    description: 'Claude AI models',
-    required: false,
-    category: 'ai',
+    description: 'Claude and Claude Instant models',
     type: 'standard',
-    serviceKey: 'anthropic',
     docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
-    signupUrl: 'https://console.anthropic.com/signup'
+    signupUrl: 'https://console.anthropic.com/signup',
+    serviceKey: 'anthropic',
+    category: 'ai'
   },
   {
     id: 'gemini',
     name: 'Google Gemini',
-    description: 'Google\'s AI models',
-    required: false,
-    category: 'ai',
+    description: 'Google AI models and services',
     type: 'standard',
-    serviceKey: 'gemini',
     docsUrl: 'https://ai.google.dev/docs',
-    signupUrl: 'https://makersuite.google.com/app/apikey'
-  },
-  {
-    id: 'mistral',
-    name: 'Mistral',
-    description: 'Mistral AI models',
-    required: false,
-    category: 'ai',
-    type: 'standard',
-    serviceKey: 'mistral',
-    docsUrl: 'https://docs.mistral.ai/',
-    signupUrl: 'https://console.mistral.ai/user/sign-up/'
+    signupUrl: 'https://makersuite.google.com/app/apikey',
+    serviceKey: 'gemini',
+    category: 'ai'
   },
   {
     id: 'serpapi',
     name: 'SERP API',
     description: 'Search engine results data',
-    required: false,
-    category: 'serp',
     type: 'standard',
-    serviceKey: 'serpapi',
     docsUrl: 'https://serpapi.com/docs',
-    signupUrl: 'https://serpapi.com/users/sign_up'
+    signupUrl: 'https://serpapi.com/users/sign_up',
+    serviceKey: 'serpapi',
+    category: 'serp'
   },
   {
     id: 'dataforseo',
     name: 'DataForSEO',
     description: 'Enterprise SEO data platform',
-    required: false,
-    category: 'serp',
     type: 'credentials',
-    serviceKey: 'dataforseo',
     docsUrl: 'https://dataforseo.com/apis',
-    signupUrl: 'https://app.dataforseo.com/register'
+    signupUrl: 'https://app.dataforseo.com/register',
+    serviceKey: 'dataforseo',
+    category: 'serp'
   },
   {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Payment processing',
-    required: false,
-    category: 'other',
+    id: 'ahrefs',
+    name: 'Ahrefs',
+    description: 'SEO toolset for backlinks and site audits',
     type: 'standard',
-    serviceKey: 'stripe',
-    docsUrl: 'https://stripe.com/docs/api',
-    signupUrl: 'https://dashboard.stripe.com/register'
+    docsUrl: 'https://ahrefs.com/api/documentation',
+    signupUrl: 'https://ahrefs.com/api/pricing',
+    serviceKey: 'ahrefs',
+    category: 'other'
   },
   {
-    id: 'sendgrid',
-    name: 'SendGrid',
-    description: 'Email delivery service',
-    required: false,
-    category: 'other',
+    id: 'semrush',
+    name: 'SEMrush',
+    description: 'Competitive research and keyword analysis',
     type: 'standard',
-    serviceKey: 'sendgrid',
-    docsUrl: 'https://docs.sendgrid.com/api-reference',
-    signupUrl: 'https://signup.sendgrid.com/'
+    docsUrl: 'https://developer.semrush.com/api/',
+    signupUrl: 'https://www.semrush.com/apis/',
+    serviceKey: 'semrush',
+    category: 'other'
+  },
+  {
+    id: 'google_analytics',
+    name: 'Google Analytics',
+    description: 'Website traffic and user behavior analytics',
+    type: 'oauth',
+    docsUrl: 'https://developers.google.com/analytics/devguides/reporting/core/v4',
+    serviceKey: 'google_analytics',
+    category: 'other'
   }
 ];

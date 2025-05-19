@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { 
   saveApiKey, 
   getApiKey, 
   testApiKey, 
-  deleteApiKey,
-  detectApiKeyType 
+  deleteApiKey
 } from "@/services/apiKeyService";
 import { ApiProviderWithCategory } from './types';
 import { ApiKeyCard } from './ApiKeyCard';
@@ -14,6 +14,34 @@ import { ApiKeyStatus } from './ApiKeyStatus';
 import { ApiKeyForm } from './ApiKeyForm';
 import { ApiKeyActions } from './ApiKeyActions';
 import { ApiKeyLoading } from './ApiKeyLoading';
+
+// Function to detect API key type based on format
+const detectApiKeyType = (key: string): string | null => {
+  if (!key) return null;
+  
+  // Check OpenAI format
+  if (key.startsWith('sk-') && key.length > 20) {
+    return 'openai';
+  }
+  
+  // Check Anthropic format
+  if (key.startsWith('sk-ant-') && key.length > 20) {
+    return 'anthropic';
+  }
+  
+  // Check if it might be a base64 encoded string (DataForSEO)
+  try {
+    const decoded = atob(key);
+    if (decoded.includes(':')) {
+      return 'dataforseo';
+    }
+  } catch (e) {
+    // Not base64 encoded, continue checking other formats
+  }
+  
+  // Unknown format
+  return null;
+};
 
 interface ApiKeyInputProps {
   provider: ApiProviderWithCategory;

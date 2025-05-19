@@ -3,3 +3,11 @@
 
 export * from './apiKeys';
 
+// Export the DataForSEO and key detection functions explicitly
+export { 
+  encodeDataForSeoCredentials,
+  decodeDataForSeoCredentials,
+  isDataForSeoFormat,
+  detectApiKeyType
+} from './apiKeys/validation';
+

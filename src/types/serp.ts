@@ -13,17 +13,20 @@ export interface SerpAnalysisResult {
   searchVolume: number;
   keywordDifficulty: number;
   competitionScore: number;
+  provider?: string;
   entities: any[];
-  peopleAlsoAsk: any[];
+  questions?: any[];
+  peopleAlsoAsk?: any[];  // This field is used by DataForSEO
   headings: any[];
   contentGaps: any[];
   topResults: any[];
-  relatedSearches: any[];
+  relatedSearches: any[];  // This field is used by DataForSEO
   keywords: string[];
   recommendations: string[];
-  featuredSnippets?: any[]; // Added the missing property
+  snippets?: any[];
+  relatedKeywords?: string[];  // Add this field for compatibility
+  timestamp?: string;
   isMockData?: boolean;
-  provider?: string;
 }
 
 export interface DataForSeoCredentials {

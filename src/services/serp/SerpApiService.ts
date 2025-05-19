@@ -86,6 +86,8 @@ interface SerpApiOptions {
   refresh?: boolean;
   provider?: SerpProvider;
   limit?: number;
+  location?: string;
+  language?: string;
 }
 
 /**
@@ -119,12 +121,14 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
       keywordDifficulty: 0,
       competitionScore: 0,
       provider: activeProvider,
-      relatedKeywords: [],
+      relatedSearches: [],
       questions: [],
       topResults: [],
       entities: [],
       headings: [],
-      snippets: [],
+      contentGaps: [],
+      keywords: [],
+      recommendations: [],
       timestamp: new Date().toISOString(),
     };
     

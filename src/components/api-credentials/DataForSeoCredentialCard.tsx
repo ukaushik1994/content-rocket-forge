@@ -13,8 +13,27 @@ import { ApiCredentialProps } from './types';
 import { ApiCredentialActions } from './ApiCredentialActions';
 import { getApiKey, deleteApiKey } from "@/services/apiKeys/storage";
 import { testApiKey } from '@/services/apiKeys/testing';
-import { encodeDataForSeoCredentials, decodeDataForSeoCredentials } from '@/services/apiKeys/validation';
 import { AlertCircle, Check } from "lucide-react";
+
+// Function to encode DataForSEO credentials
+const encodeDataForSeoCredentials = (email: string, password: string): string => {
+  // DataForSEO requires credentials in format "email:password" encoded in base64
+  return btoa(`${email}:${password}`);
+};
+
+// Function to decode DataForSEO credentials
+const decodeDataForSeoCredentials = (encodedCredentials: string): { email: string, password: string } => {
+  try {
+    // Decode base64 string to "email:password" format
+    const decodedString = atob(encodedCredentials);
+    const [email, password] = decodedString.split(':');
+    
+    return { email, password };
+  } catch (error) {
+    console.error('Error decoding DataForSEO credentials:', error);
+    return { email: '', password: '' };
+  }
+};
 
 export const DataForSeoCredentialCard: React.FC<ApiCredentialProps> = ({
   provider,

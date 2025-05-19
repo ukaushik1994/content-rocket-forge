@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import {
   getApiKey, 
   testApiKey, 
   deleteApiKey,
-  isDataForSeoFormat,
   encodeDataForSeoCredentials,
   decodeDataForSeoCredentials
 } from "@/services/apiKeyService";

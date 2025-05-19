@@ -1,4 +1,3 @@
-
 /**
  * DataForSEO adapter implementation
  */
@@ -6,7 +5,7 @@
 import { BaseAdapter } from "./BaseAdapter";
 import { SerpApiOptions } from "./types";
 import { SerpAnalysisResult } from "@/types/serp";
-import { decodeDataForSeoCredentials } from "@/services/apiKeys/validation";
+import { decodeDataForSeoCredentials } from '@/services/apiKeys/validation';
 
 export class DataForSeoAdapter extends BaseAdapter {
   constructor() {
