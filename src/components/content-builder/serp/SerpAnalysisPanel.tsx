@@ -6,7 +6,8 @@ import {
   Loader, 
   CloudCog,
   CloudLightning,
-  Database
+  Database,
+  Key
 } from 'lucide-react';
 
 const SerpProviderBadge = ({ provider }: { provider?: string }) => {
@@ -26,11 +27,6 @@ const SerpProviderBadge = ({ provider }: { provider?: string }) => {
       icon = <CloudCog className="h-3.5 w-3.5 mr-1 text-green-300" />;
       label = 'DataForSEO';
       bgColor = 'bg-green-900/30 text-green-200 border-green-700/30';
-      break;
-    case 'mock':
-      icon = <Database className="h-3.5 w-3.5 mr-1 text-orange-300" />;
-      label = 'Mock Data';
-      bgColor = 'bg-orange-900/30 text-orange-200 border-orange-700/30';
       break;
     default:
       icon = <Database className="h-3.5 w-3.5 mr-1 text-orange-300" />;

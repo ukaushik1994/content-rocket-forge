@@ -1,10 +1,8 @@
-
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { SerpProvider } from '../types/serp-types';
 import { OutlineSection } from '../types/outline-types';
 import { toast } from 'sonner';
 import { setPreferredSerpProvider, analyzeSerpKeyword } from '@/services/serpApiService';
-import { generateMockSerpData } from '@/services/serpMockService';
 
 export const createSerpActions = (
   state: ContentBuilderState,
@@ -39,17 +37,21 @@ export const createSerpActions = (
       };
       
       const apiKey = getProviderApiKey();
-      let serpData = null;
       
-      // If we have an API key, try to get real data
-      if (apiKey) {
-        serpData = await analyzeSerpKeyword(keyword, true);
+      // If no API key exists, show error message
+      if (!apiKey) {
+        toast.error(`No API key found for ${selectedProvider}. Please configure your API keys in settings.`);
+        dispatch({ type: 'SET_IS_ANALYZING', payload: false });
+        return;
       }
       
-      // If no data was found (no API key or API call failed), use mock data
+      // Get SERP data - no longer using mock data as fallback
+      const serpData = await analyzeSerpKeyword(keyword);
+      
       if (!serpData) {
-        console.log('No SERP API data found, using mock data');
-        serpData = generateMockSerpData(keyword);
+        toast.error(`Failed to get data from ${selectedProvider}. Please check your API key.`);
+        dispatch({ type: 'SET_IS_ANALYZING', payload: false });
+        return;
       }
       
       dispatch({
@@ -60,13 +62,7 @@ export const createSerpActions = (
     } catch (error: any) {
       console.error('Error analyzing keyword:', error);
       toast.error(`Failed to analyze keyword: ${error.message}`);
-      
-      // Use mock data as fallback on error
-      const mockData = generateMockSerpData(keyword);
-      dispatch({
-        type: 'SET_SERP_DATA',
-        payload: mockData
-      });
+      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     } finally {
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }

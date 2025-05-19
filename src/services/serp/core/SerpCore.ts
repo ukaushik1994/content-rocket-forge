@@ -35,14 +35,14 @@ export const getActiveProvider = (): SerpProvider => {
     return 'dataforseo';
   }
   
-  // Fallback to mock provider
-  return 'mock';
+  // Default provider if no API keys exist
+  return 'serpapi';
 };
 
 /**
  * Analyze keyword using the active SERP provider
  */
-export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = false, provider?: SerpProvider): Promise<SerpAnalysisResult> => {
+export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = false, provider?: SerpProvider): Promise<SerpAnalysisResult | null> => {
   if (!keyword) {
     throw new SerpApiError({
       type: SerpErrorType.INVALID_KEYWORD,
@@ -63,24 +63,6 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
     const activeProvider = provider || getActiveProvider();
     const adapter = AdapterFactory.getAdapter(activeProvider);
     
-    // Create the default result in case of errors
-    const defaultResult: SerpAnalysisResult = {
-      keyword,
-      searchVolume: 0,
-      keywordDifficulty: 0,
-      competitionScore: 0,
-      provider: activeProvider,
-      relatedSearches: [],
-      questions: [],
-      topResults: [],
-      entities: [],
-      headings: [],
-      contentGaps: [],
-      keywords: [],
-      recommendations: [],
-      timestamp: new Date().toISOString(),
-    };
-    
     // Get actual result from the adapter
     const options: SerpApiOptions = { 
       keyword, 
@@ -94,7 +76,7 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
       
       if (!result) {
         console.warn(`No data returned for keyword "${keyword}" with provider ${activeProvider}`);
-        return defaultResult;
+        return null;
       }
       
       // Track usage
@@ -113,8 +95,8 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
       
       console.error('SERP API Error:', serpError);
       
-      // Return default result on error
-      return defaultResult;
+      // Return null on error
+      return null;
     }
   } catch (error) {
     console.error('Error analyzing SERP keyword:', error);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
@@ -54,7 +55,7 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      // Pass the current provider instead of true
+      // Pass the current provider
       await analyzeKeyword(mainKeyword, currentProvider);
     }
   };
@@ -89,7 +90,6 @@ export const SerpAnalysisStep = () => {
     
     // If a provider is changed and we have a keyword, reanalyze with the new provider
     if (provider !== currentProvider && mainKeyword) {
-      // Fix: Pass the provider instead of true
       await changeSerpProvider(provider);
     }
   };
@@ -109,13 +109,13 @@ export const SerpAnalysisStep = () => {
   };
   
   // If no API key exists, show the setup component
-  if (!apiKeyExists && !serpData) {
+  if (!apiKeyExists) {
     return (
       <div className="space-y-6">
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
           <p className="text-muted-foreground">
-            To see real search data, you need to add your SERP API key
+            To see search data, you need to add your SERP API key
           </p>
         </div>
         
@@ -133,18 +133,6 @@ export const SerpAnalysisStep = () => {
             <DataForSeoApiSetup onConfigured={handleApiConfigured} />
           </TabsContent>
         </Tabs>
-        
-        <div className="text-center mt-4">
-          <p className="text-sm text-muted-foreground">
-            Don&apos;t want to add an API key now?
-          </p>
-          <button 
-            onClick={handleReanalyze}
-            className="text-sm text-neon-purple hover:text-neon-blue underline mt-1"
-          >
-            Continue with mock data
-          </button>
-        </div>
       </div>
     );
   }
