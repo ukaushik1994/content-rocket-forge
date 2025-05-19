@@ -41,7 +41,8 @@ export const OutlineStep = () => {
   
   const handleUpdateOutline = (updatedOutline: OutlineSection[]) => {
     setOutlineSections(updatedOutline);
-    // Extract titles for the simpler outline array
+    // Extract titles for the simpler outline array 
+    // We need to convert OutlineSection[] to string[] here
     const titleArray = updatedOutline.map(section => section.title);
     setOutline(titleArray);
   };

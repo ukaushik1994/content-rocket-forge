@@ -28,9 +28,24 @@ export const SerpAnalysisStep = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [apiKeyChecked, setApiKeyChecked] = useState(false);
   
+  // Initialize selectedCounts with default values
+  const defaultSelectedCounts: SelectedCountsType = {
+    keyword: 0,
+    question: 0,
+    snippet: 0,
+    competitor: 0,
+    entity: 0,
+    heading: 0,
+    contentGap: 0,
+    topRank: 0
+  };
+  
   // Get the selection stats
   const stats = SerpSelectionStats({ serpSelections });
-  const { selectedCounts, totalSelected } = stats || { selectedCounts: { keyword: 0, question: 0, snippet: 0, competitor: 0, entity: 0, heading: 0, contentGap: 0, topRank: 0 }, totalSelected: 0 };
+  const { selectedCounts = defaultSelectedCounts, totalSelected = 0 } = stats || { 
+    selectedCounts: defaultSelectedCounts, 
+    totalSelected: 0 
+  };
   
   // Handle analyzing the main keyword
   useEffect(() => {
@@ -85,7 +100,7 @@ export const SerpAnalysisStep = () => {
   if (isAnalyzing) {
     return (
       <SerpLoadingState 
-        keyword={mainKeyword} 
+        keyword={mainKeyword || ""} 
         onCancel={() => console.log('Cancel analysis')} 
       />
     );

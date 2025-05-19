@@ -37,3 +37,6 @@ export interface SelectedItemsContentProps {
   setSelectedTab?: Dispatch<SetStateAction<string>>;
   handleToggleSelection?: (type: string, content: string) => void;
 }
+
+// Re-export the SerpSelection type for components that need it
+export type { SerpSelection } from '@/contexts/content-builder/types';

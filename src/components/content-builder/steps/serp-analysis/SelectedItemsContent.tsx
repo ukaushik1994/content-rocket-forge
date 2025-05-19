@@ -4,18 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
-import { SelectedCountsType, SerpSelection } from './types';
-import { Dispatch, SetStateAction } from 'react';
-
-export interface SelectedItemsContentProps {
-  selectedCounts: SelectedCountsType;
-  totalSelected: number;
-  onGenerateOutline?: () => void;
-  serpSelections?: SerpSelection[];
-  selectedTab?: string;
-  setSelectedTab?: Dispatch<SetStateAction<string>>;
-  handleToggleSelection?: (type: string, content: string) => void;
-}
+import { SelectedCountsType, SelectedItemsContentProps } from './types';
+import { SerpSelection } from '@/contexts/content-builder/types';
 
 export const SelectedItemsContent: React.FC<SelectedItemsContentProps> = ({
   selectedCounts,
