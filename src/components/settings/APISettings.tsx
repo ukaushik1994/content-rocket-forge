@@ -263,7 +263,8 @@ export function APISettings() {
         </TabsContent>
       </Tabs>
       
-      <style jsx>{`
+      <style>
+        {`
         .highlight-animation {
           animation: highlight 1.5s ease;
         }
@@ -276,7 +277,8 @@ export function APISettings() {
             box-shadow: 0 0 0 4px rgba(132, 90, 223, 0.6);
           }
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 }

@@ -307,7 +307,7 @@ export const DataForSeoProvider = ({
   };
 
   // Delete credentials
-  const handleDeleteCredentials = async () => {
+  const handleDeleteCredentials = async (): Promise<boolean> => {
     try {
       setIsDeleting(true);
       setError(null);
