@@ -25,6 +25,7 @@ export interface SerpAnalysisResult {
   recommendations: string[];
   snippets?: any[];
   relatedKeywords?: string[];  // Add this field for compatibility
+  featuredSnippets?: any[];    // Add this field for compatibility with components
   timestamp?: string;
   isMockData?: boolean;
 }

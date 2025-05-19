@@ -3,11 +3,12 @@ export interface ApiProviderConfig {
   id: string;
   name: string;
   description: string;
-  type?: 'standard' | 'oauth' | 'credentials';
+  type: 'standard' | 'oauth' | 'credentials';
   docsUrl?: string;
   signupUrl?: string;
   required?: boolean;
   serviceKey?: string;
+  autoDetectable?: boolean;
 }
 
 export interface ApiProviderWithCategory extends ApiProviderConfig {
@@ -24,7 +25,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://platform.openai.com/docs/api-reference',
     signupUrl: 'https://platform.openai.com/signup',
     serviceKey: 'openai',
-    category: 'ai'
+    category: 'ai',
+    autoDetectable: true
   },
   {
     id: 'anthropic',
@@ -34,7 +36,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
     signupUrl: 'https://console.anthropic.com/signup',
     serviceKey: 'anthropic',
-    category: 'ai'
+    category: 'ai',
+    autoDetectable: true
   },
   {
     id: 'gemini',
@@ -44,7 +47,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://ai.google.dev/docs',
     signupUrl: 'https://makersuite.google.com/app/apikey',
     serviceKey: 'gemini',
-    category: 'ai'
+    category: 'ai',
+    autoDetectable: true
   },
   {
     id: 'serpapi',
@@ -54,7 +58,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://serpapi.com/docs',
     signupUrl: 'https://serpapi.com/users/sign_up',
     serviceKey: 'serpapi',
-    category: 'serp'
+    category: 'serp',
+    autoDetectable: true
   },
   {
     id: 'dataforseo',
@@ -64,7 +69,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://dataforseo.com/apis',
     signupUrl: 'https://app.dataforseo.com/register',
     serviceKey: 'dataforseo',
-    category: 'serp'
+    category: 'serp',
+    autoDetectable: false
   },
   {
     id: 'ahrefs',
@@ -74,7 +80,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://ahrefs.com/api/documentation',
     signupUrl: 'https://ahrefs.com/api/pricing',
     serviceKey: 'ahrefs',
-    category: 'other'
+    category: 'other',
+    autoDetectable: false
   },
   {
     id: 'semrush',
@@ -84,7 +91,8 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     docsUrl: 'https://developer.semrush.com/api/',
     signupUrl: 'https://www.semrush.com/apis/',
     serviceKey: 'semrush',
-    category: 'other'
+    category: 'other',
+    autoDetectable: false
   },
   {
     id: 'google_analytics',
@@ -93,6 +101,7 @@ export const API_PROVIDERS: ApiProviderWithCategory[] = [
     type: 'oauth',
     docsUrl: 'https://developers.google.com/analytics/devguides/reporting/core/v4',
     serviceKey: 'google_analytics',
-    category: 'other'
+    category: 'other',
+    autoDetectable: false
   }
 ];
