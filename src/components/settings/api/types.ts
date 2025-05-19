@@ -1,80 +1,86 @@
 
-import { ReactNode } from 'react';
+import { ApiProviderConfig } from '@/components/api-credentials/types';
 
-export type ApiProvider = {
-  id: string;
-  name: string;
-  description: string;
-  serviceKey: string;
-  link: string;
-  icon: ReactNode;
-  required?: boolean;
-  autoDetectable?: boolean;
-};
-
-export const API_PROVIDERS: ApiProvider[] = [
+export const API_PROVIDERS: ApiProviderConfig[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'Power AI-assisted content generation, writing assistance, and keyword suggestions.',
-    serviceKey: 'openai',
-    link: 'https://platform.openai.com/api-keys',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
-  },
-  {
-    id: 'serp',
-    name: 'SERP API',
-    description: 'Access competitor content analysis, keyword data, and search volume metrics.',
-    serviceKey: 'serp',
-    link: 'https://serpapi.com/dashboard',
+    description: 'GPT-4, GPT-3.5, and other AI models',
     required: true,
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
-  },
-  {
-    id: 'dataforseo',
-    name: 'DataForSEO',
-    description: 'Enterprise-grade SEO data including SERP analysis, keyword research, and content insights.',
-    serviceKey: 'dataforseo',
-    link: 'https://app.dataforseo.com/api-dashboard',
-    icon: null,
-    autoDetectable: true
+    isPrimary: true,
+    category: 'ai',
+    type: 'standard',
+    docsUrl: 'https://platform.openai.com/docs',
+    signupUrl: 'https://platform.openai.com/signup'
   },
   {
     id: 'anthropic',
     name: 'Anthropic',
-    description: 'Use Claude AI for content generation and analysis.',
-    serviceKey: 'anthropic',
-    link: 'https://console.anthropic.com/settings/keys',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    description: 'Claude AI models',
+    required: false,
+    category: 'ai',
+    type: 'standard',
+    docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
+    signupUrl: 'https://console.anthropic.com/signup'
   },
   {
     id: 'gemini',
     name: 'Google Gemini',
-    description: 'Leverage Google\'s AI for enhanced content creation.',
-    serviceKey: 'gemini',
-    link: 'https://aistudio.google.com/app/apikey',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    description: 'Google\'s AI models',
+    required: false,
+    category: 'ai',
+    type: 'standard',
+    docsUrl: 'https://ai.google.dev/docs',
+    signupUrl: 'https://makersuite.google.com/app/apikey'
   },
   {
     id: 'mistral',
-    name: 'Mistral AI',
-    description: 'Utilize Mistral\'s powerful language models for content creation and analysis.',
-    serviceKey: 'mistral',
-    link: 'https://console.mistral.ai/api-keys/',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    name: 'Mistral',
+    description: 'Mistral AI models',
+    required: false,
+    category: 'ai',
+    type: 'standard',
+    docsUrl: 'https://docs.mistral.ai/',
+    signupUrl: 'https://console.mistral.ai/user/sign-up/'
   },
   {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    description: 'Use your local LLM models for content generation with full privacy and control.',
-    serviceKey: 'lmstudio',
-    link: 'https://lmstudio.ai/',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    id: 'serpapi',
+    name: 'SERP API',
+    description: 'Search engine results data',
+    required: false,
+    category: 'serp',
+    type: 'standard',
+    docsUrl: 'https://serpapi.com/docs',
+    signupUrl: 'https://serpapi.com/users/sign_up'
+  },
+  {
+    id: 'dataforseo',
+    name: 'DataForSEO',
+    description: 'Enterprise SEO data platform',
+    required: false,
+    category: 'serp',
+    type: 'credentials',
+    docsUrl: 'https://dataforseo.com/apis',
+    signupUrl: 'https://app.dataforseo.com/register'
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    description: 'Payment processing',
+    required: false,
+    category: 'other',
+    type: 'standard',
+    docsUrl: 'https://stripe.com/docs/api',
+    signupUrl: 'https://dashboard.stripe.com/register'
+  },
+  {
+    id: 'sendgrid',
+    name: 'SendGrid',
+    description: 'Email delivery service',
+    required: false,
+    category: 'other',
+    type: 'standard',
+    docsUrl: 'https://docs.sendgrid.com/api-reference',
+    signupUrl: 'https://signup.sendgrid.com/'
   }
 ];
