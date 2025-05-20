@@ -14,13 +14,18 @@ export const getPreferredSerpProvider = (): SerpProvider => {
   const storedProvider = localStorage.getItem('preferred_serp_provider');
   const activeProvider = getActiveProvider();
   
-  // If no active provider exists, return the stored preference or 'serpapi' as default
-  if (!activeProvider) {
-    return (storedProvider as SerpProvider) || 'serpapi';
+  // If stored preference exists and has a valid API key, use it
+  if (storedProvider) {
+    const provider = storedProvider as SerpProvider;
+    
+    // Check if the preferred provider has an API key
+    if (provider === 'mock') return provider;
+    if (provider === 'serpapi' && localStorage.getItem('serp_api_key')) return provider;
+    if (provider === 'dataforseo' && localStorage.getItem('dataforseo_api_key')) return provider;
   }
   
-  // Return the active provider (the one that has an API key)
-  return activeProvider;
+  // Return the active provider (the one that has an API key) or default to mock
+  return activeProvider || 'mock';
 };
 
 /**
@@ -28,6 +33,7 @@ export const getPreferredSerpProvider = (): SerpProvider => {
  */
 export const setPreferredSerpProvider = (provider: SerpProvider): void => {
   localStorage.setItem('preferred_serp_provider', provider);
+  console.log(`SERP provider set to ${provider}`);
 };
 
 /**

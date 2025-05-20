@@ -1,4 +1,3 @@
-
 /**
  * Core SERP API service functionality
  */
@@ -25,14 +24,27 @@ export interface SerpApiOptions {
  * Get the active SERP provider or return null if no API keys exist
  */
 export const getActiveProvider = (): SerpProvider | null => {
+  // Check for stored preference first
+  const storedPreference = localStorage.getItem('preferred_serp_provider') as SerpProvider;
+  
   // Check if any API key exists
   const serpApiKey = localStorage.getItem('serp_api_key');
   const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
   
+  // If preference exists and its API key exists, use that
+  if (storedPreference) {
+    if (storedPreference === 'mock') return 'mock';
+    if (storedPreference === 'serpapi' && serpApiKey) return 'serpapi';
+    if (storedPreference === 'dataforseo' && dataForSeoKey) return 'dataforseo';
+  }
+  
+  // Otherwise use first available API key
   if (serpApiKey) {
     return 'serpapi';
   } else if (dataForSeoKey) {
     return 'dataforseo';
+  } else if (storedPreference === 'mock') {
+    return 'mock';
   }
   
   // No API keys exist
@@ -54,10 +66,19 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
   }
   
   // Check if any provider is available
-  const activeProvider = provider || getActiveProvider();
+  const requestedProvider = provider;
+  let activeProvider = requestedProvider || getActiveProvider();
+  
   if (!activeProvider) {
     console.log('No API keys available for any SERP provider');
     return null;
+  }
+  
+  // If requested provider doesn't have an API key, fall back to another
+  if (requestedProvider === 'serpapi' && !localStorage.getItem('serp_api_key')) {
+    activeProvider = localStorage.getItem('dataforseo_api_key') ? 'dataforseo' : 'mock';
+  } else if (requestedProvider === 'dataforseo' && !localStorage.getItem('dataforseo_api_key')) {
+    activeProvider = localStorage.getItem('serp_api_key') ? 'serpapi' : 'mock';
   }
   
   // Check cache first unless refresh is requested

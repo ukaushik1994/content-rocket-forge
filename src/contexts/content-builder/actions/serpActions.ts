@@ -31,6 +31,8 @@ export const createSerpActions = (
             return localStorage.getItem('serp_api_key');
           case 'dataforseo':
             return localStorage.getItem('dataforseo_api_key');
+          case 'mock':
+            return 'mock'; // Mock provider doesn't need an API key
           default:
             return null;
         }
@@ -38,17 +40,17 @@ export const createSerpActions = (
       
       const apiKey = getProviderApiKey();
       
-      // If no API key exists, show error message
-      if (!apiKey) {
+      // If no API key exists and not using mock, show error message
+      if (!apiKey && selectedProvider !== 'mock') {
         toast.error(`No API key found for ${selectedProvider}. Please configure your API keys in settings.`);
         dispatch({ type: 'SET_IS_ANALYZING', payload: false });
         return;
       }
       
-      // Get SERP data - no longer using mock data as fallback
-      const serpData = await analyzeSerpKeyword(keyword);
+      // Get SERP data
+      const serpData = await analyzeSerpKeyword(keyword, false, selectedProvider);
       
-      if (!serpData) {
+      if (!serpData && selectedProvider !== 'mock') {
         toast.error(`Failed to get data from ${selectedProvider}. Please check your API key.`);
         dispatch({ type: 'SET_IS_ANALYZING', payload: false });
         return;
@@ -59,10 +61,15 @@ export const createSerpActions = (
         payload: serpData
       });
       
+      // Set the provider in state to track which one was used
+      dispatch({
+        type: 'SET_PREFERRED_PROVIDER',
+        payload: selectedProvider
+      });
+      
     } catch (error: any) {
       console.error('Error analyzing keyword:', error);
       toast.error(`Failed to analyze keyword: ${error.message}`);
-      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     } finally {
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
@@ -75,10 +82,11 @@ export const createSerpActions = (
     
     // Update the state with the new preferred provider
     dispatch({ 
-      type: 'SET_PREFERRED_PROVIDER' as any, 
+      type: 'SET_PREFERRED_PROVIDER', 
       payload: provider 
     });
     
+    // If we have a current keyword, re-analyze with the new provider
     if (state.mainKeyword) {
       await analyzeKeyword(state.mainKeyword, provider);
     }

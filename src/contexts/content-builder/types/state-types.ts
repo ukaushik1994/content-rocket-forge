@@ -39,7 +39,7 @@ export interface ContentBuilderState {
   serpData: any;
   serpSelections: SerpSelection[];
   isAnalyzing: boolean;
-  preferredSerpProvider?: SerpProvider;
+  preferredSerpProvider: SerpProvider;
   
   // Outline
   outline: string[];
