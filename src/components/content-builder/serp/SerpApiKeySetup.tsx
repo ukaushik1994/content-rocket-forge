@@ -1,182 +1,108 @@
 
-import React, { useState, useEffect } from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, Key } from 'lucide-react';
-import { toast } from 'sonner';
-import { SerpApiAdapter } from '@/services/serp/adapters/SerpApiAdapter';
-import { setPreferredSerpProvider, clearCachedApiKeyCheck } from '@/services/serpApiService';
+import React, { useState } from 'react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { Key, Save, Check } from "lucide-react";
 
-interface SerpApiKeySetupProps {
-  onConfigured?: () => void;
-}
-
-export function SerpApiKeySetup({ onConfigured }: SerpApiKeySetupProps) {
+export const SerpApiKeySetup: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isValidated, setIsValidated] = useState(false);
-  const [existingKey, setExistingKey] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  // Check for existing API key on mount
-  useEffect(() => {
-    const storedKey = localStorage.getItem('serp_api_key');
-    
-    if (storedKey) {
-      setExistingKey(storedKey);
-      setIsValidated(true);
-      console.log('Found existing SERP API key');
-      
-      // If onConfigured callback is provided, call it
-      if (onConfigured) {
-        onConfigured();
-      }
-    }
-  }, [onConfigured]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setApiKey(e.target.value);
-    setIsValidated(false);
-  };
-
-  const handleSaveApiKey = async () => {
+  const handleSaveApiKey = () => {
     if (!apiKey.trim()) {
-      toast.error('Please enter a valid API key');
+      toast.error("Please enter a valid API key");
       return;
     }
 
+    setIsSaving(true);
+
     try {
-      setIsLoading(true);
+      // Store the API key in localStorage (in a real app, you might want to encrypt this)
+      localStorage.setItem('serp_api_key', apiKey.trim());
       
-      // Test the API key
-      const adapter = new SerpApiAdapter();
-      const isValid = await adapter.testApiKey(apiKey);
+      setIsSuccess(true);
+      toast.success("SERP API key saved successfully!");
       
-      if (isValid) {
-        // Save API key to local storage
-        localStorage.setItem('serp_api_key', apiKey);
-        
-        // Set as preferred provider
-        setPreferredSerpProvider('serpapi');
-        
-        // Update state
-        setExistingKey(apiKey);
-        setIsValidated(true);
-        setApiKey('');
-        
-        // Clear the cached API key check to force re-checking
-        clearCachedApiKeyCheck();
-        
-        toast.success('SERP API key saved successfully');
-        
-        // If onConfigured callback is provided, call it
-        if (onConfigured) {
-          onConfigured();
-        }
-      } else {
-        toast.error('Invalid API key. Please check and try again.');
-      }
+      // Reset the form after success
+      setTimeout(() => {
+        setIsSuccess(false);
+        // Reload the page to reflect the changes
+        window.location.reload();
+      }, 2000);
     } catch (error) {
-      console.error('Error validating API key:', error);
-      toast.error('Failed to validate API key');
+      console.error('Error saving API key:', error);
+      toast.error("Failed to save API key");
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const handleRemoveApiKey = () => {
-    // Remove API key from local storage
-    localStorage.removeItem('serp_api_key');
-    
-    // Update state
-    setExistingKey(null);
-    setIsValidated(false);
-    
-    // Clear the cached API key check
-    clearCachedApiKeyCheck();
-    
-    toast.info('SERP API key removed');
-  };
-
   return (
-    <Card className="border-blue-500/20">
-      <CardContent className="pt-6">
+    <Card className="border border-white/10 shadow-lg">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl flex items-center">
+          <Key className="h-5 w-5 mr-2 text-neon-purple" />
+          SERP API Key Setup
+        </CardTitle>
+        <CardDescription>
+          Enter your SERP API key to get real search data instead of mock data
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-500/20 p-2 rounded-full">
-              <Key className="h-5 w-5 text-blue-500" />
+          <div className="space-y-2">
+            <label htmlFor="api-key" className="text-sm text-white/70">
+              API Key
+            </label>
+            <div className="flex gap-2">
+              <Input
+                id="api-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="flex-1 bg-white/5 border-white/10"
+                placeholder="Enter your SERP API key"
+              />
+              <Button
+                onClick={handleSaveApiKey}
+                disabled={isSaving || !apiKey.trim() || isSuccess}
+                className={isSuccess ? "bg-green-600" : ""}
+              >
+                {isSaving ? (
+                  <span className="flex items-center">
+                    <Save className="h-4 w-4 mr-2 animate-pulse" />
+                    Saving...
+                  </span>
+                ) : isSuccess ? (
+                  <span className="flex items-center">
+                    <Check className="h-4 w-4 mr-2" />
+                    Saved!
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save API Key
+                  </span>
+                )}
+              </Button>
             </div>
-            <div>
-              <h3 className="font-medium">SERP API Key</h3>
-              <p className="text-sm text-muted-foreground">
-                {existingKey ? 'Your API key is configured' : 'Enter your SERP API key to enable keyword research'}
-              </p>
-            </div>
+            <p className="text-xs text-white/50 mt-1">
+              Your API key will be stored locally on your device.
+            </p>
           </div>
-
-          {existingKey ? (
-            <div>
-              <div className="flex items-center gap-2 bg-green-500/10 text-green-500 p-3 rounded-md mb-4">
-                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                <span className="text-sm font-medium">API key validated and ready to use</span>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRemoveApiKey}
-                >
-                  Remove API Key
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="serpapi-key">API Key</Label>
-                <Input
-                  id="serpapi-key"
-                  type="password"
-                  placeholder="Enter your SERP API key"
-                  value={apiKey}
-                  onChange={handleInputChange}
-                  className="font-mono"
-                />
-              </div>
-              
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-start gap-2 text-amber-500/80 text-xs">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  <p>
-                    You need a valid SERP API key to use the keyword research features. 
-                    <a 
-                      href="https://serpapi.com/users/sign_up"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 ml-1 hover:underline"
-                    >
-                      Get a key here
-                    </a>
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button 
-                  variant="default"
-                  onClick={handleSaveApiKey}
-                  disabled={isLoading || !apiKey.trim()}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isLoading ? 'Validating...' : 'Save API Key'}
-                </Button>
-              </div>
-            </div>
-          )}
+          <div className="bg-white/5 p-3 rounded text-xs text-white/70 border border-white/10">
+            <p>Don&apos;t have a SERP API key?</p>
+            <ul className="list-disc pl-4 mt-1 space-y-1">
+              <li>Sign up at a SERP API provider</li>
+              <li>Go to your account settings and generate an API key</li>
+              <li>Copy the API key and paste it here</li>
+            </ul>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
-}
+};

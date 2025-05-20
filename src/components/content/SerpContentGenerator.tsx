@@ -6,7 +6,7 @@ import { ContentTemplatesGrid } from './templates/ContentTemplatesGrid';
 import { ContentStrategyTips } from './templates/ContentStrategyTips';
 import { EmptyState } from './templates/EmptyState';
 import { RefreshButton } from '@/components/ui/refresh-button';
-import { analyzeSerpKeyword } from '@/services/serp/SerpApiService';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 
 interface SerpContentGeneratorProps {
@@ -51,7 +51,7 @@ export function SerpContentGenerator({
 
     try {
       // Fetch new SERP data with refresh flag set to true
-      const newSerpData = await analyzeSerpKeyword(mainKeyword, true);
+      const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
       
       if (newSerpData) {
         // Create updated data by merging the new section data with existing data

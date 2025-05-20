@@ -1,85 +1,60 @@
-
 /**
- * API key validation and detection utilities
+ * Helper functions to check if an API key matches expected patterns for various AI providers
  */
 
-import { testApiKey } from './testing';
+/**
+ * Check if the provided key appears to be a valid OpenAI API key format
+ */
+export function isOpenAIKeyFormat(key: string): boolean {
+  return /^sk-[a-zA-Z0-9]{32,}$/.test(key);
+}
 
 /**
- * Check if a string appears to be DataForSEO credentials in base64 format
- * This is now imported from testing.ts which gets it from the canonical source
+ * Check if the provided key appears to be a valid Anthropic API key format
  */
-// No longer export isDataForSeoFormat here since it's exported from testing.ts
+export function isAnthropicKeyFormat(key: string): boolean {
+  return /^sk-ant-[a-zA-Z0-9]{32,}$/.test(key);
+}
 
 /**
- * Encode DataForSEO credentials as base64 JSON
- * 
- * @param login - The DataForSEO login 
- * @param password - The DataForSEO password
- * @returns string - Base64 encoded JSON credentials
+ * Check if the provided key appears to be a valid Gemini API key format
  */
-export const encodeDataForSeoCredentials = (login: string, password: string): string => {
-  try {
-    // Create credentials object and encode as base64
-    const credentials = JSON.stringify({ login, password });
-    return btoa(credentials);
-  } catch (e) {
-    console.error('Error encoding DataForSEO credentials:', e);
-    return '';
-  }
-};
+export function isGeminiKeyFormat(key: string): boolean {
+  return /^AIzaSy[a-zA-Z0-9-_]{32,}$/.test(key);
+}
 
 /**
- * Decode DataForSEO credentials from base64
- * This is no longer exported from this file to avoid ambiguity
+ * Check if the provided key appears to be a valid Mistral API key format
  */
-// No longer export decodeDataForSeoCredentials here since it's exported from testing.ts
+export function isMistralKeyFormat(key: string): boolean {
+  return /^[a-zA-Z0-9]{32,}$/.test(key);
+}
 
 /**
- * Detect the type of API key based on its format
- * 
- * @param apiKey - The API key to detect 
- * @returns string | null - The detected service key or null if unknown
+ * Attempts to detect what type of API key this is based on its format
  */
-export const detectApiKeyType = async (apiKey: string): Promise<string | null> => {
-  if (!apiKey) return null;
-  
-  // Check specific formats
-  if (apiKey.startsWith('sk-') && apiKey.length > 20) {
-    // Could be OpenAI or Anthropic
-    if (apiKey.startsWith('sk-ant-')) {
-      return 'anthropic';
-    }
-    // Try to validate with OpenAI
-    try {
-      const isValid = await testApiKey('openai', apiKey);
-      if (isValid) return 'openai';
-    } catch (e) {
-      // Not an OpenAI key, continue
-    }
-  }
-  
-  // Check if it's a Google API key format
-  if (/^AIza[0-9A-Za-z-_]{35}$/.test(apiKey)) {
-    return 'gemini';
-  }
-  
-  // Check if it's a SERP API key
-  if (apiKey.length === 64 && /^[0-9a-f]{64}$/.test(apiKey)) {
-    return 'serpapi';
-  }
-  
-  // Check if it might be DataForSEO credentials
-  // Use dynamic import to prevent circular dependency
-  try {
-    const { isDataForSeoFormat } = await import('@/services/apiKeys/testing');
-    if (isDataForSeoFormat(apiKey)) {
-      return 'dataforseo';
-    }
-  } catch (e) {
-    console.error('Error importing isDataForSeoFormat:', e);
-  }
-  
-  // Unknown format
+export function detectApiKeyType(key: string): string | null {
+  if (isOpenAIKeyFormat(key)) return 'openai';
+  if (isAnthropicKeyFormat(key)) return 'anthropic';
+  if (isGeminiKeyFormat(key)) return 'gemini';
+  if (isMistralKeyFormat(key)) return 'mistral';
   return null;
-};
+}
+
+/**
+ * Validate that a key for a specific provider appears to be in the correct format
+ */
+export function validateProviderKeyFormat(provider: string, key: string): boolean {
+  switch (provider) {
+    case 'openai':
+      return isOpenAIKeyFormat(key);
+    case 'anthropic':
+      return isAnthropicKeyFormat(key);
+    case 'gemini':
+      return isGeminiKeyFormat(key);
+    case 'mistral':
+      return isMistralKeyFormat(key);
+    default:
+      return true; // For other providers we don't have format validation
+  }
+}

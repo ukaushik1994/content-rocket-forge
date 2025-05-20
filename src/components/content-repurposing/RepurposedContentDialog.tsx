@@ -43,19 +43,16 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   const format = getFormatByIdOrDefault(content.formatId);
   const formatName = format.name;
 
-  // Get all available formats
+  // Get all available formats (no longer limiting to 5)
   const availableFormats = contentFormats;
 
   // Filter to only show formats that have been generated or match the current format
   const relatedFormats = availableFormats
-    .filter(f => {
-      // Ensure both content.formatId and elements in generatedFormats are defined
-      return generatedFormats.includes(f.id) || (content.formatId && f.id === content.formatId);
-    })
+    .filter(f => generatedFormats.includes(f.id) || f.id === content.formatId)
     .map(f => ({
       id: f.id,
       name: f.name,
-      isActive: content.formatId ? f.id === content.formatId : false
+      isActive: f.id === content.formatId
     }));
 
   const handleDelete = async () => {
@@ -68,23 +65,20 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   };
 
   const handleFormatButtonClick = (formatId: string) => {
-    if (onFormatChange && content.contentId) {
+    if (onFormatChange && content.contentId && formatId !== content.formatId) {
       onFormatChange(content.contentId, formatId);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={open => !open && onClose()}>
-      <DialogContent 
-        hideCloseButton={true}
-        className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg`}
-      >
+      <DialogContent className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg`}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-black/50">
           <div className="flex flex-col">
             <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent`}>
               {formatName}
             </h2>
-            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title || 'Untitled'}</p>
+            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title}</p>
           </div>
           <button 
             onClick={onClose}
@@ -119,7 +113,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
           </motion.div>
         )}
         
-        <ContentPreview content={content.content || ''} formatId={content.formatId} />
+        <ContentPreview content={content.content} />
         
         <motion.div 
           initial={{ opacity: 0, y: 10 }} 
@@ -127,8 +121,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
           transition={{ delay: 0.1 }}
         >
           <DialogActionButtons 
-            onCopy={() => onCopy(content.content || '')} 
-            onDownload={() => onDownload(content.content || '', formatName)} 
+            onCopy={() => onCopy(content.content)} 
+            onDownload={() => onDownload(content.content, formatName)} 
             onDelete={onDelete ? handleDelete : undefined} 
             isDeleting={isDeleting} 
             isSaving={isSaving} 

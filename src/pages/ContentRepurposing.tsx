@@ -1,20 +1,13 @@
 
-import React from 'react';
-import Navbar from '@/components/layout/Navbar';
-import ContentSelection from '@/components/content-repurposing/ContentSelection';
-import { ContentFormatSelection } from '@/components/content-repurposing/ContentFormatSelection';
-import { GeneratedContentDisplay } from '@/components/content-repurposing/GeneratedContentDisplay';
-import RepurposedContentDialog from '@/components/content-repurposing/RepurposedContentDialog';
-import { Helmet } from 'react-helmet-async';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { ContentSelectionView, ContentRepurposingView } from './content-repurposing';
-import { useContentRepurposing } from '@/components/content-repurposing/hooks/useContentRepurposing';
+import { useContentRepurposing } from '@/components/content-repurposing/hooks';
 import { ContentItemType } from '@/contexts/content/types';
 
-/**
- * Content Repurposing Page
- * This page acts as a container for the repurposing views
- */
 const ContentRepurposing = () => {
+  const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
+  
   const {
     content,
     contentItems,
@@ -27,7 +20,8 @@ const ContentRepurposing = () => {
     generatedFormats,
     isDeleting,
     isSaving,
-    savedContentFormats,
+    setSelectedFormats,
+    setActiveFormat,
     handleContentSelection,
     handleGenerateContent,
     handleOpenRepurposedContentWithFormats,
@@ -38,86 +32,94 @@ const ContentRepurposing = () => {
     saveAsNewContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
-    resetContent
+    resetContent,
   } = useContentRepurposing();
   
-  // Wrapper around handleContentSelection to adapt to ContentSelectionView's expected prop type
-  const onSelectContent = (content: ContentItemType) => {
-    handleContentSelection(content.id);
+  // Function to save all generated content
+  const handleSaveAllContent = async (): Promise<boolean> => {
+    if (!content || Object.keys(generatedContents || {}).length === 0) {
+      toast.error('No content to save');
+      return false;
+    }
+    
+    setIsSavingAll(true);
+    try {
+      const formatIds = Object.keys(generatedContents || {});
+      let allSuccess = true;
+      let savedCount = 0;
+      
+      // Save each format one by one
+      for (const formatId of formatIds) {
+        try {
+          const success = await saveAsNewContent(formatId, generatedContents[formatId]);
+          if (success) {
+            savedCount++;
+          } else {
+            allSuccess = false;
+          }
+        } catch (err) {
+          console.error(`Error saving format ${formatId}:`, err);
+          allSuccess = false;
+        }
+      }
+      
+      if (savedCount > 0) {
+        toast.success(`Successfully saved ${savedCount} content format${savedCount > 1 ? 's' : ''}`);
+        return true;
+      } else {
+        toast.error('Failed to save any content formats');
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('Error saving all content:', error);
+      toast.error('Error saving all content formats');
+      return false;
+    } finally {
+      setIsSavingAll(false);
+    }
   };
 
-  // Wrapper around handleFormatChange to adapt to ContentRepurposingView's expected prop type  
-  const onChangeFormat = (format: string) => {
-    // The handleFormatChange function expects two arguments (contentId and formatId)
-    // Since we're in the repurposing view with an active content, we can pass the current content ID
-    handleFormatChange(content?.id || '', format);
+  // If no content is selected yet, show the content selection view
+  if (!content) {
+    return (
+      <ContentSelectionView
+        contentItems={contentItems}
+        onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
+        onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
+        repurposedDialogOpen={repurposedDialogOpen}
+        onCloseRepurposedDialog={handleCloseRepurposedDialog}
+        selectedRepurposedContent={selectedRepurposedContent}
+        copyToClipboard={copyToClipboard}
+        downloadAsText={downloadAsText}
+        deleteRepurposedContent={deleteRepurposedContent}
+        handleFormatChange={handleFormatChange}
+        isDeleting={isDeleting}
+        generatedFormats={generatedFormats || []} // Add fallback empty array
+      />
+    );
   }
-  
-  // Determine which view to show based on whether content is selected
-  const viewState = content ? 'repurposing' : 'selection';
-  
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Helmet>
-        <title>Content Repurposing | SEO Platform</title>
-      </Helmet>
-      
-      <Navbar />
-      
-      <main className="flex-1 container py-8">
-        {viewState === 'selection' ? (
-          <ContentSelectionView 
-            contentItems={contentItems}
-            onSelectContent={onSelectContent}
-            onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
-            repurposedDialogOpen={repurposedDialogOpen}
-            onCloseRepurposedDialog={handleCloseRepurposedDialog}
-            selectedRepurposedContent={selectedRepurposedContent}
-            copyToClipboard={copyToClipboard}
-            downloadAsText={downloadAsText}
-            deleteRepurposedContent={deleteRepurposedContent}
-            handleFormatChange={handleFormatChange}
-            isDeleting={isDeleting}
-            generatedFormats={generatedFormats}
-          />
-        ) : (
-          <ContentRepurposingView 
-            content={content}
-            selectedFormats={selectedFormats}
-            generatedContents={generatedContents}
-            isGenerating={isGenerating}
-            activeFormat={activeFormat}
-            isDeleting={isDeleting}
-            isSaving={isSaving}
-            isSavingAll={false}
-            savedContentFormats={savedContentFormats}
-            setSelectedFormats={handleGenerateContent}
-            setActiveFormat={onChangeFormat}
-            handleGenerateContent={handleGenerateContent}
-            copyToClipboard={copyToClipboard}
-            downloadAsText={downloadAsText}
-            saveAsNewContent={saveAsNewContent}
-            handleSaveAllContent={async () => false}
-            handleDeleteActiveFormat={handleDeleteActiveFormat}
-            resetContent={resetContent}
-          />
-        )}
-      </main>
-      
-      {repurposedDialogOpen && selectedRepurposedContent && (
-        <RepurposedContentDialog
-          open={repurposedDialogOpen}
-          onClose={handleCloseRepurposedDialog}
-          content={selectedRepurposedContent}
-          onCopy={copyToClipboard}
-          onDownload={downloadAsText}
-          onDelete={deleteRepurposedContent}
-          onFormatChange={handleFormatChange}
-          isDeleting={isDeleting}
-          generatedFormats={generatedFormats}
-        />
-      )}
-    </div>
+    <ContentRepurposingView
+      content={content}
+      selectedFormats={selectedFormats}
+      generatedContents={generatedContents || {}} // Add fallback empty object
+      isGenerating={isGenerating}
+      activeFormat={activeFormat}
+      isDeleting={isDeleting}
+      isSaving={isSaving}
+      isSavingAll={isSavingAll}
+      setSelectedFormats={setSelectedFormats}
+      setActiveFormat={setActiveFormat}
+      handleGenerateContent={handleGenerateContent}
+      copyToClipboard={copyToClipboard}
+      downloadAsText={downloadAsText}
+      saveAsNewContent={saveAsNewContent}
+      handleSaveAllContent={handleSaveAllContent}
+      handleDeleteActiveFormat={handleDeleteActiveFormat}
+      resetContent={resetContent}
+    />
   );
 };
 

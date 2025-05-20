@@ -15,12 +15,9 @@ export const useContentRepurposing = () => {
     generatedContents,
     isGenerating,
     activeFormat,
-    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
-    markAsSaved,
-    saveAllFormats,
   } = useContentGeneration(content);
   
   const {
@@ -46,48 +43,34 @@ export const useContentRepurposing = () => {
   
   // Handle deleting from the generated content view (when content is already selected)
   const handleDeleteActiveFormat = async (formatId: string): Promise<boolean> => {
-    if (!content || !formatId) return false;
+    if (!content) return false;
     return deleteRepurposedContent(content.id, formatId);
   };
   
   // Update this function to safely pass generated formats
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
-    if (!contentId || !formatId) {
-      console.error("Invalid content or format ID");
-      return;
-    }
-    
     // Get all formats that have been generated for this content
-    const availableFormats = generatedContents ? Object.keys(generatedContents) : [];
+    const availableFormats = Object.keys(generatedContents || {});
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
   };
   
   // Wrapper for format change handler
   const handleFormatChange = (contentId: string, formatId: string) => {
-    if (!contentId || !formatId) {
-      console.error("Invalid content or format ID for format change");
-      return;
-    }
     formatChangeHandler(contentId, formatId);
   };
   
-  // Ensure we always return properly defined values
-  const safeGeneratedContents = generatedContents || {};
-  const safeActiveFormat = activeFormat || null;
-  
   return {
     content,
-    contentItems: contentItems || [],
-    selectedFormats: selectedFormats || [],
-    generatedContents: safeGeneratedContents,
+    contentItems,
+    selectedFormats,
+    generatedContents,
     isGenerating,
-    activeFormat: safeActiveFormat,
+    activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
-    generatedFormats: generatedFormats || [],
+    generatedFormats,
     isDeleting,
     isSaving,
-    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -102,8 +85,6 @@ export const useContentRepurposing = () => {
     deleteRepurposedContent,
     handleDeleteActiveFormat,
     resetContent,
-    markAsSaved,
-    saveAllFormats,
   };
 };
 

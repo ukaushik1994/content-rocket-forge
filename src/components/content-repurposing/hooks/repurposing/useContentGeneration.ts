@@ -4,15 +4,6 @@ import { toast } from 'sonner';
 import { ContentItemType } from '@/contexts/content/types';
 import { generateContentByFormatType } from '@/services/contentTemplateService';
 import { contentFormats, getFormatByIdOrDefault } from '../../formats';
-import { supabase } from '@/integrations/supabase/client';
-
-// Define the metadata interface for proper typing
-interface RepurposedContentMetadata {
-  repurposedContentMap?: Record<string, string>;
-  repurposedFormats?: string[];
-  lastUpdated?: string;
-  [key: string]: any; // For other potential metadata properties
-}
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -20,109 +11,35 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   const [savedContentFormats, setSavedContentFormats] = useState<string[]>([]);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   
-  // Load saved content from both database and localStorage on initial render
+  // Load saved content from localStorage on initial render
   useEffect(() => {
     if (content?.id) {
-      // First check localStorage for immediate data display
-      const localStorageLoad = async () => {
-        const savedLocalData = localStorage.getItem(`repurposed_content_${content.id}`);
-        
-        if (savedLocalData) {
-          try {
-            const parsedLocalData = JSON.parse(savedLocalData);
-            
-            // Ensure all data is valid before setting state
-            const parsedContents = parsedLocalData.contents || {};
-            const parsedFormats = Array.isArray(parsedLocalData.formats) ? parsedLocalData.formats : [];
-            const parsedSavedFormats = Array.isArray(parsedLocalData.savedFormats) ? parsedLocalData.savedFormats : [];
-            
-            setGeneratedContents(parsedContents);
-            setSelectedFormats(parsedFormats);
-            setSavedContentFormats(parsedSavedFormats);
-            
-            if (parsedLocalData.activeFormat && typeof parsedLocalData.activeFormat === 'string') {
-              setActiveFormat(parsedLocalData.activeFormat);
-            } else if (Object.keys(parsedContents).length > 0) {
-              setActiveFormat(Object.keys(parsedContents)[0]);
-            }
-          } catch (error) {
-            console.error('Error parsing saved local content:', error);
-          }
-        }
-      };
-      
-      // Then try to load from database for persistent storage
-      const databaseLoad = async () => {
+      const savedData = localStorage.getItem(`repurposed_content_${content.id}`);
+      if (savedData) {
         try {
-          // Fetch the content item to get the repurposed content from metadata
-          const { data: contentItem, error } = await supabase
-            .from('content_items')
-            .select('metadata')
-            .eq('id', content.id)
-            .single();
+          const parsedData = JSON.parse(savedData);
+          setGeneratedContents(parsedData.contents || {});
+          setSelectedFormats(parsedData.formats || []);
+          setSavedContentFormats(parsedData.savedFormats || []);
           
-          if (error) {
-            console.error('Error loading repurposed content from database:', error);
-            return;
+          if (parsedData.activeFormat) {
+            setActiveFormat(parsedData.activeFormat);
+          } else if (Object.keys(parsedData.contents || {}).length > 0) {
+            setActiveFormat(Object.keys(parsedData.contents)[0]);
           }
           
-          // Cast the metadata to our typed interface and check if it exists
-          const metadata = contentItem?.metadata as RepurposedContentMetadata | null;
-          
-          if (metadata && typeof metadata === 'object' && metadata.repurposedContentMap) {
-            const dbContents = metadata.repurposedContentMap || {};
-            const dbFormats = metadata.repurposedFormats || [];
-            
-            // Merge with local data, giving priority to database content
-            setGeneratedContents(prevContents => ({
-              ...prevContents,
-              ...dbContents
-            }));
-            
-            // Update formats list from database
-            if (dbFormats.length > 0) {
-              setSavedContentFormats(dbFormats);
-              
-              // Make sure all saved formats are also in selected formats
-              setSelectedFormats(prevFormats => {
-                const uniqueFormats = new Set([...prevFormats, ...dbFormats]);
-                return Array.from(uniqueFormats);
-              });
-            }
-            
-            // Also update localStorage to keep in sync
-            const combinedData = {
-              contents: { ...generatedContents, ...dbContents },
-              formats: Array.from(new Set([...selectedFormats, ...(dbFormats || [])])),
-              savedFormats: dbFormats,
-              activeFormat: activeFormat || (Object.keys(dbContents).length > 0 ? Object.keys(dbContents)[0] : null),
-              timestamp: new Date().toISOString(),
-              contentId: content.id
-            };
-            
-            try {
-              localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(combinedData));
-            } catch (error) {
-              console.error('Error updating localStorage with database content:', error);
-            }
-          }
+          toast.info("Loaded previously generated content formats");
         } catch (error) {
-          console.error('Error in database load operation:', error);
-        } finally {
-          setIsInitialized(true);
+          console.error('Error parsing saved content:', error);
         }
-      };
-      
-      // Run both loading operations
-      localStorageLoad().then(databaseLoad);
+      }
     }
   }, [content?.id]);
   
   // Save generated content to localStorage whenever it changes
   useEffect(() => {
-    if (content?.id && Object.keys(generatedContents).length > 0 && isInitialized) {
+    if (content?.id && Object.keys(generatedContents).length > 0) {
       const dataToSave = {
         contents: generatedContents,
         formats: selectedFormats,
@@ -132,16 +49,12 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         contentId: content.id
       };
       
-      try {
-        localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(dataToSave));
-      } catch (error) {
-        console.error('Error saving to localStorage:', error);
-      }
+      localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(dataToSave));
     }
-  }, [generatedContents, selectedFormats, activeFormat, savedContentFormats, content?.id, isInitialized]);
+  }, [generatedContents, selectedFormats, activeFormat, savedContentFormats, content?.id]);
   
   const handleGenerateContent = async (contentTypeIds: string[]) => {
-    if (!Array.isArray(contentTypeIds) || contentTypeIds.length === 0) {
+    if (contentTypeIds.length === 0) {
       toast.error('Please select at least one content format');
       return;
     }
@@ -159,31 +72,22 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       
       // Generate content for each selected format using templates
       for (const formatId of contentTypeIds) {
-        if (!formatId) continue;
-        
         const formatInfo = getFormatByIdOrDefault(formatId);
         
         try {
           toast.info(`Generating ${formatInfo.name} content...`);
           
-          const contentText = content.content && typeof content.content === 'string' 
-            ? content.content.substring(0, 1500) 
-            : '';
-            
-          const keyword = content.metadata?.mainKeyword || 
-            (Array.isArray(content.keywords) && content.keywords.length > 0 ? content.keywords[0] : '');
-          
           // Use our template service to generate content
           const generatedContent = await generateContentByFormatType(
             formatId,
-            content.title || 'Untitled Content',
+            content.title,
             {
-              content: contentText,
-              keyword: keyword
+              content: content.content?.substring(0, 1500) || '',
+              keyword: content.keywords ? content.keywords[0] : ''
             }
           );
           
-          if (generatedContent && typeof generatedContent === 'string') {
+          if (generatedContent) {
             newGeneratedContents[formatId] = generatedContent;
           } else {
             toast.error(`Failed to generate ${formatInfo.name} content`);
@@ -197,9 +101,19 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       setGeneratedContents(newGeneratedContents);
       
       if (Object.keys(newGeneratedContents).length > 0) {
-        const firstFormatKey = Object.keys(newGeneratedContents)[0];
-        setActiveFormat(firstFormatKey);
+        setActiveFormat(Object.keys(newGeneratedContents)[0]);
         toast.success(`Generated content for ${Object.keys(newGeneratedContents).length} format(s)`);
+        
+        // Auto-save to localStorage
+        const saveData = {
+          contents: newGeneratedContents,
+          formats: contentTypeIds,
+          savedFormats: savedContentFormats,
+          activeFormat: Object.keys(newGeneratedContents)[0],
+          timestamp: new Date().toISOString(),
+          contentId: content.id
+        };
+        localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(saveData));
       } else {
         toast.error('Failed to generate any content');
       }
@@ -212,27 +126,31 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   };
   
   const markAsSaved = (formatId: string) => {
-    if (!formatId) return;
-    
     if (!savedContentFormats.includes(formatId)) {
       const updatedSavedFormats = [...savedContentFormats, formatId];
       setSavedContentFormats(updatedSavedFormats);
     }
   };
   
-  /**
-   * Mark all formats as saved in the UI state and return the format IDs
-   * @returns Array of format IDs that were marked as saved
-   */
-  const saveAllFormats = (): string[] => {
+  const saveAllFormats = () => {
     const allFormatIds = Object.keys(generatedContents);
+    setSavedContentFormats(allFormatIds);
     
-    // Only update state if there are new formats to save
-    const newFormatsToSave = allFormatIds.filter(id => !savedContentFormats.includes(id));
-    if (newFormatsToSave.length > 0) {
-      setSavedContentFormats(allFormatIds);
+    // Update localStorage
+    if (content?.id) {
+      const currentData = localStorage.getItem(`repurposed_content_${content.id}`);
+      if (currentData) {
+        try {
+          const parsedData = JSON.parse(currentData);
+          parsedData.savedFormats = allFormatIds;
+          localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(parsedData));
+        } catch (error) {
+          console.error('Error updating saved formats in localStorage:', error);
+        }
+      }
     }
     
+    toast.success(`Saved all ${allFormatIds.length} content formats`);
     return allFormatIds;
   };
   

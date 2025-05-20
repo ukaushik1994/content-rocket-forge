@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Info } from 'lucide-react';
-import { ApiProviderWithCategory } from './types';
+import { ApiProvider } from './types';
 
 interface ApiKeyFormProps {
-  provider: ApiProviderWithCategory;
+  provider: ApiProvider;
   apiKey: string;
   setApiKey: (key: string) => void;
   keyExists: boolean;
@@ -27,7 +27,7 @@ export const ApiKeyForm = ({
       <Label htmlFor={`${provider.serviceKey}-api-key`} className="flex justify-between">
         <span>API Key</span>
         <a 
-          href={provider.docsUrl} 
+          href={provider.link} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"

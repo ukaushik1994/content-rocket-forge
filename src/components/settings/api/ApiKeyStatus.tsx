@@ -2,10 +2,10 @@
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Check, AlertCircle } from 'lucide-react';
-import { ApiProviderWithCategory } from './types';
+import { ApiProvider } from './types';
 
 interface ApiKeyStatusProps {
-  provider: ApiProviderWithCategory;
+  provider: ApiProvider;
   keyExists: boolean;
   testSuccessful: boolean;
 }

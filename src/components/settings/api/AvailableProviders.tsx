@@ -3,10 +3,10 @@ import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Zap, Server, Database, Key } from 'lucide-react';
-import { ApiProviderWithCategory } from './types';
+import { ApiProvider } from './types';
 
 interface AvailableProvidersProps {
-  providers: ApiProviderWithCategory[];
+  providers: ApiProvider[];
   onToggleProvider: (providerId: string) => void;
 }
 
@@ -17,13 +17,10 @@ export const AvailableProviders = ({ providers, onToggleProvider }: AvailablePro
       case 'openai':
         return <Zap className="h-5 w-5" />;
       case 'serp':
-      case 'serpapi':
-      case 'dataforseo':
         return <Database className="h-5 w-5" />;
       case 'anthropic':
         return <Server className="h-5 w-5" />;
       case 'gemini':
-      case 'mistral':
         return <Key className="h-5 w-5" />;
       default:
         return <Key className="h-5 w-5" />;

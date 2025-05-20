@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Switch } from "@/components/ui/switch";
-import { ApiProviderWithCategory } from './types';
+import { ApiProvider } from './types';
 import { Zap, Server, Database, Key } from 'lucide-react';
 import { toast } from "sonner";
 
 interface ApiKeyHeaderProps {
-  provider: ApiProviderWithCategory;
+  provider: ApiProvider;
   keyExists: boolean;
   testSuccessful: boolean;
   isActive: boolean;
@@ -26,13 +26,10 @@ export const ApiKeyHeader = ({
       case 'openai':
         return <Zap className="h-5 w-5" />;
       case 'serp':
-      case 'serpapi':
-      case 'dataforseo':
         return <Database className="h-5 w-5" />;
       case 'anthropic':
         return <Server className="h-5 w-5" />;
       case 'gemini':
-      case 'mistral':
         return <Key className="h-5 w-5" />;
       default:
         return <Key className="h-5 w-5" />;

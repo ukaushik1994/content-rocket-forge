@@ -1,19 +1,12 @@
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Save, Trash2, Loader2, SaveAll, Share2 } from 'lucide-react';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
+import { Copy, Download, Save, Trash2, Loader2, SaveAll } from 'lucide-react';
 
 interface ActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
   onSave: () => void;
-  onShare?: () => void;
   onSaveAll?: () => Promise<boolean>;
   onDelete?: () => Promise<boolean>;
   isDeleting?: boolean;
@@ -26,7 +19,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   onCopy,
   onDownload,
   onSave,
-  onShare,
   onSaveAll,
   onDelete,
   isDeleting = false,
@@ -35,144 +27,89 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   hasMultipleFormats = false
 }) => {
   return (
-    <div className="flex justify-end flex-wrap gap-2 pt-3 border-t border-white/10 bg-gradient-to-r from-transparent via-white/5 to-transparent">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onCopy}
-              className="glass-button"
-            >
-              <Copy className="h-4 w-4 mr-1" />
-              Copy
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p>Copy content to clipboard</p>
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onDownload}
-              className="glass-button"
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p>Download as text file</p>
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onSave}
-              disabled={isSaving}
-              className="glass-button"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-1" />
-                  Save
-                </>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p>Save content to your library</p>
-          </TooltipContent>
-        </Tooltip>
+    <div className="flex justify-end gap-2 mt-4 border-t border-white/10 pt-4">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onCopy}
+        className="bg-transparent hover:bg-white/5 border-white/10"
+      >
+        <Copy className="h-4 w-4 mr-1" />
+        Copy
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onDownload}
+        className="bg-transparent hover:bg-white/5 border-white/10"
+      >
+        <Download className="h-4 w-4 mr-1" />
+        Download
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={onSave}
+        disabled={isSaving}
+        className="bg-transparent hover:bg-white/5 border-white/10"
+      >
+        {isSaving ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            Saving...
+          </>
+        ) : (
+          <>
+            <Save className="h-4 w-4 mr-1" />
+            Save
+          </>
+        )}
+      </Button>
 
-        {hasMultipleFormats && onSaveAll && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={async () => {
-                  if (onSaveAll) await onSaveAll();
-                }}
-                disabled={isSavingAll}
-                className="glass-button"
-              >
-                {isSavingAll ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    Saving All...
-                  </>
-                ) : (
-                  <>
-                    <SaveAll className="h-4 w-4 mr-1" />
-                    Save All
-                  </>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Save all generated formats at once</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        
-        {onShare && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onShare}
-                className="glass-button"
-              >
-                <Share2 className="h-4 w-4 mr-1" />
-                Share
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Share this content</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        
-        {onDelete && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={async () => {
-                  if (onDelete) await onDelete();
-                }}
-                disabled={isDeleting}
-                className="glass-button-danger"
-              >
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Delete this content</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </TooltipProvider>
+      {hasMultipleFormats && onSaveAll && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={async () => {
+            if (onSaveAll) await onSaveAll();
+          }}
+          disabled={isSavingAll}
+          className="bg-transparent hover:bg-white/5 border-white/10"
+          title="Save all generated content formats"
+        >
+          {isSavingAll ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              Saving All...
+            </>
+          ) : (
+            <>
+              <SaveAll className="h-4 w-4 mr-1" />
+              Save All
+            </>
+          )}
+        </Button>
+      )}
+      
+      {onDelete && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={async () => {
+            if (onDelete) await onDelete();
+          }}
+          disabled={isDeleting}
+          className="bg-transparent hover:bg-white/5 hover:text-red-400 border-white/10"
+        >
+          {isDeleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </Button>
+      )}
     </div>
   );
 });

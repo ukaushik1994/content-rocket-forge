@@ -2,10 +2,10 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, X, Loader2, Zap } from 'lucide-react';
-import { ApiProviderWithCategory } from './types';
+import { ApiProvider } from './types';
 
 interface ApiKeyActionsProps {
-  provider: ApiProviderWithCategory;
+  provider: ApiProvider;
   apiKey: string;
   keyExists: boolean;
   testSuccessful: boolean;

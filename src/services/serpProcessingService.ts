@@ -17,8 +17,6 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     searchVolume: response.searchVolume || 0,
     competitionScore: response.competitionScore || 0,
     keywordDifficulty: response.keywordDifficulty || 0,
-    provider: response.provider || 'unknown',
-    timestamp: response.timestamp || new Date().toISOString(),
     
     // Process top results
     topResults: Array.isArray(response.topResults) ? response.topResults.map((result: any, index: number) => ({
@@ -57,7 +55,7 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
     })) : [],
     
     headings: Array.isArray(response.headings) ? response.headings.map((heading: any) => ({
-      text: heading.text || heading.toString() || '',
+      text: heading.text || '',
       level: heading.level || 'h2',
       subtext: heading.subtext || '',
       type: heading.type || ''
@@ -71,9 +69,6 @@ export function processSerpResponse(response: any): SerpAnalysisResult {
       opportunity: gap.opportunity || '',
       source: gap.source || ''
     })) : [],
-    
-    // Include keywords - added this to fix the error
-    keywords: Array.isArray(response.keywords) ? response.keywords : [],
     
     // Include recommendations if available
     recommendations: Array.isArray(response.recommendations) ? response.recommendations : []

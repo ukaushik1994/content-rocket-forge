@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Card } from "@/components/ui/card";
-import { ApiProviderWithCategory } from './types';
+import { ApiProvider } from './types';
 
 interface ApiKeyCardProps {
   children: React.ReactNode;
-  provider: ApiProviderWithCategory;
+  provider: ApiProvider;
   keyExists: boolean;
   testSuccessful: boolean;
 }

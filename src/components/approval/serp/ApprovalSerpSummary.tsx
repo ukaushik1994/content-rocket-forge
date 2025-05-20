@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw, Key } from 'lucide-react';
+import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -41,26 +41,10 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
     setIsRefreshingSection(true);
     
     try {
-      // Check if API key exists first
-      const serpApiKey = localStorage.getItem('serp_api_key');
-      const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
-      
-      if (!serpApiKey && !dataForSeoKey) {
-        toast.error('No API keys configured. Please add an API key in settings.');
-        setIsRefreshingSection(false);
-        return;
-      }
-      
       // Fetch new SERP data with refresh flag set to true
       const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
       
-      if (!newSerpData) {
-        toast.error('Failed to refresh data. Please check your API key.');
-        setIsRefreshingSection(false);
-        return;
-      }
-      
-      if (localSerpData) {
+      if (newSerpData && localSerpData) {
         // Create updated data by merging the new section data with existing data
         const updatedData = { ...localSerpData } as SerpAnalysisResult;
         
@@ -86,9 +70,6 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
         
         // Update the local state
         setLocalSerpData(updatedData);
-      } else {
-        setLocalSerpData(newSerpData);
-        toast.success('SERP data loaded successfully');
       }
     } catch (error) {
       console.error(`Error refreshing ${activeTab}:`, error);
@@ -116,9 +97,8 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
     return (
       <div className={`p-4 bg-white/5 border border-white/10 rounded-lg ${className}`}>
         <div className="flex flex-col items-center justify-center py-6">
-          <Key className="h-8 w-8 text-white/30 mb-2" />
-          <p className="text-white/50">API key required for SERP data</p>
-          <p className="text-xs text-white/30 mt-2">Configure API keys in settings</p>
+          <Search className="h-8 w-8 text-white/30 mb-2" />
+          <p className="text-white/50">No SERP data available</p>
         </div>
       </div>
     );
@@ -216,4 +196,4 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
       </Tabs>
     </Card>
   );
-}
+};

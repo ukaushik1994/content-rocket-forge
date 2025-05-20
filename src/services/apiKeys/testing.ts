@@ -1,106 +1,61 @@
 
-/**
- * API key testing utilities
- */
+// Testing API keys
 
-import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
-import { 
-  isDataForSeoFormat as originalIsDataForSeoFormat, 
-  decodeDataForSeoCredentials as originalDecodeDataForSeoCredentials,
-  testDataForSeoApiKey 
-} from '../serp/adapters/dataforseo/ApiKeyTester';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { detectApiKeyType as detectApiKeyTypeFromValidation } from "./validation";
 
 /**
- * Test an API key for a specific service
- * 
- * @param service - The service identifier
- * @param apiKey - The API key to test
- * @returns Promise<boolean> - Whether the key is valid
+ * Test an API key for a particular service
+ * @param service The service to test the API key for
+ * @param key The API key to test
+ * @returns A promise that resolves to a boolean indicating success
  */
-export const testApiKey = async (service: string, apiKey: string): Promise<boolean> => {
+export async function testApiKey(service: string, key: string): Promise<boolean> {
   try {
-    // Basic validation - check that the API key isn't empty
-    if (!apiKey || apiKey.trim() === '') {
+    if (!key.trim()) {
+      toast.error('API key cannot be empty');
       return false;
     }
-    
-    // Service-specific testing logic
-    switch (service) {
-      case 'openai':
-        return await testOpenAIKey(apiKey);
-      case 'anthropic':
-        return await testAnthropicKey(apiKey);
-      case 'serpapi':
-        return await testSerpApiKey(apiKey);
-      case 'dataforseo':
-        return await testDataForSeoApiKey(apiKey);
-      // Add more services as needed
-      default:
-        // For services without specific tests, return true if key exists
-        return true;
+
+    // Use the Edge Function to test the API key
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        service,
+        endpoint: 'test',
+        apiKey: key
+      }),
+    });
+
+    if (error) {
+      console.error(`Error testing ${service} API key:`, error);
+      toast.error(`Failed to test ${service} API key: ${error.message}`);
+      return false;
     }
-  } catch (error) {
+
+    if (data?.success) {
+      console.log(`${service} API test successful:`, data);
+      toast.success(data.message || `${service} API connection successful`);
+      return true;
+    } else {
+      console.error(`${service} API test failed:`, data);
+      toast.error(data?.error || `${service} API connection failed`);
+      return false;
+    }
+  } catch (error: any) {
     console.error(`Error testing ${service} API key:`, error);
+    toast.error(error.message || `${service} API connection failed`);
     return false;
   }
-};
+}
 
-// Test OpenAI API key
-const testOpenAIKey = async (apiKey: string): Promise<boolean> => {
-  try {
-    // Simulate a test - in production this would call the OpenAI API
-    return apiKey.startsWith('sk-') && apiKey.length > 20;
-  } catch (error) {
-    console.error('Error testing OpenAI API key:', error);
-    return false;
-  }
-};
+/**
+ * Detect the type of API key based on its format
+ * Uses the validation module's implementation
+ * @param key The API key to detect
+ * @returns A promise that resolves to the service name or null
+ */
+export async function detectApiKeyType(key: string): Promise<string | null> {
+  return detectApiKeyTypeFromValidation(key);
+}
 
-// Test Anthropic API key
-const testAnthropicKey = async (apiKey: string): Promise<boolean> => {
-  try {
-    // Simulate a test - in production this would call the Anthropic API
-    return apiKey.startsWith('sk-ant-') && apiKey.length > 20;
-  } catch (error) {
-    console.error('Error testing Anthropic API key:', error);
-    return false;
-  }
-};
-
-// Test SERP API key
-const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
-  try {
-    // Simulate a test - in production this would call the SERP API
-    return apiKey.length > 10;
-  } catch (error) {
-    console.error('Error testing SERP API key:', error);
-    return false;
-  }
-};
-
-// Test DataForSEO key
-const testDataForSeoKey = async (apiKey: string): Promise<boolean> => {
-  try {
-    // For DataForSEO, directly use the testDataForSeoApiKey function
-    return await testDataForSeoApiKey(apiKey);
-  } catch (error) {
-    console.error('Error testing DataForSEO key:', error);
-    return false;
-  }
-};
-
-// Re-export these functions from the DataForSEO adapter for consistency across the codebase
-export const isDataForSeoFormat = originalIsDataForSeoFormat;
-export const decodeDataForSeoCredentials = originalDecodeDataForSeoCredentials;
-
-// Also export the encoding function for consistency
-export const encodeDataForSeoCredentials = (login: string, password: string): string => {
-  try {
-    // Create credentials object and encode as base64
-    const credentials = JSON.stringify({ login, password });
-    return btoa(credentials);
-  } catch (e) {
-    console.error('Error encoding DataForSEO credentials:', e);
-    return '';
-  }
-};

@@ -19,7 +19,6 @@ interface ContentRepurposingViewProps {
   isDeleting: boolean;
   isSaving: boolean;
   isSavingAll: boolean;
-  savedContentFormats?: string[];
   setSelectedFormats: (formats: string[]) => void;
   setActiveFormat: (format: string) => void;
   handleGenerateContent: (formats: string[]) => void;
@@ -40,7 +39,6 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   isDeleting,
   isSaving,
   isSavingAll,
-  savedContentFormats,
   setSelectedFormats,
   setActiveFormat,
   handleGenerateContent,
@@ -51,23 +49,6 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   handleDeleteActiveFormat,
   resetContent,
 }) => {
-  // Page transition variants
-  const pageVariants = {
-    initial: { opacity: 0 },
-    animate: { opacity: 1, transition: { duration: 0.5 } },
-    exit: { opacity: 0, transition: { duration: 0.3 } }
-  };
-
-  // Component animation variants
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (custom: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: { delay: custom * 0.1, duration: 0.4 }
-    })
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
@@ -77,25 +58,18 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
       <Navbar />
       
       <motion.main 
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        variants={pageVariants}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
         className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
       >
         {/* Header with back button */}
-        <motion.div 
-          custom={0}
-          variants={itemVariants}
-          initial="hidden"
-          animate="visible"
-          className="flex items-center justify-between mb-8"
-        >
+        <div className="flex items-center justify-between mb-8">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => resetContent()} 
-            className="hover:bg-white/5 transition-colors"
+            className="hover:bg-white/5"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Back to Content List</span>
@@ -106,17 +80,11 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
           </h1>
           
           <div className="w-10"></div> {/* For balance */}
-        </motion.div>
+        </div>
 
         {/* Selection of content formats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div 
-            custom={1}
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            className="md:col-span-1 space-y-6"
-          >
+          <div className="md:col-span-1 space-y-6">
             <ContentDetails content={content} />
             <ContentFormatSelection
               selectedFormats={selectedFormats}
@@ -124,15 +92,9 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               onGenerateContent={handleGenerateContent}
               isGenerating={isGenerating}
             />
-          </motion.div>
+          </div>
 
-          <motion.div 
-            custom={2}
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            className="md:col-span-2"
-          >
+          <div className="md:col-span-2">
             <GeneratedContentDisplay
               generatedContents={generatedContents}
               activeFormat={activeFormat}
@@ -145,9 +107,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               isDeleting={isDeleting}
               isSaving={isSaving}
               isSavingAll={isSavingAll}
-              savedContentFormats={savedContentFormats}
             />
-          </motion.div>
+          </div>
         </div>
       </motion.main>
     </div>

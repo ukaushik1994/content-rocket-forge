@@ -1,43 +1,58 @@
 
-/**
- * SERP data types
- */
-
-export type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-
-export interface Heading {
-  text: string;
-  level: HeadingLevel;
-  subtext?: string;
-  type?: string;
+export interface SerpSearchParams {
+  query: string;
+  country?: string;
+  num?: number;
 }
 
 export interface SerpAnalysisResult {
   keyword: string;
   searchVolume?: number;
-  keywordDifficulty?: number;
   competitionScore?: number;
-  cpc?: number;  // Added this missing property
-  provider: string;
-  relatedSearches?: any[];
-  questions?: any[];
-  topResults?: any[];
-  entities?: any[];
-  headings?: Heading[];
-  contentGaps?: any[];
-  keywords?: any[];
-  recommendations?: any[];
-  timestamp: string;
-  peopleAlsoAsk?: any[];
-  featuredSnippets?: any[];
-}
-
-export interface DataForSeoCredentials {
-  login: string;
-  password: string;
-}
-
-export interface SerpSearchParams {
-  query: string;
-  limit?: number;
+  keywordDifficulty?: number;
+  topResults?: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+    position: number;
+  }>;
+  relatedSearches?: Array<{
+    query: string;
+    volume?: number;
+  }>;
+  peopleAlsoAsk?: Array<{
+    question: string;
+    source: string;
+    answer?: string;
+  }>;
+  featuredSnippets?: Array<{
+    content: string;
+    source: string;
+    type?: string;
+  }>;
+  keywords?: string[];
+  recommendations?: string[];
+  isMockData?: boolean; // Track if the data is mocked
+  
+  // Enhanced fields for SERP analysis with updated types
+  entities?: Array<{
+    name: string;
+    type?: string;
+    importance?: number;
+    description?: string; // Added this missing field
+  }>;
+  headings?: Array<{
+    text: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+    subtext?: string;
+    type?: string; // Added this missing field
+  }>;
+  contentGaps?: Array<{
+    topic: string;
+    description: string;
+    recommendation?: string;
+    content?: string; // Added missing field
+    opportunity?: string; // Added missing field
+    source?: string; // Added missing field
+  }>;
 }

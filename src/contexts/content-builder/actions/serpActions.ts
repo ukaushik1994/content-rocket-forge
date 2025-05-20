@@ -1,138 +1,142 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types/index';
-import { SerpProvider } from '../types/serp-types';
-import { analyzeSerpKeyword } from '@/services/serpApiService';
+import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
+import { v4 as uuid } from 'uuid';
 
 export const createSerpActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  /**
-   * Analyze a keyword using SERP API
-   */
-  const analyzeKeyword = async (keyword: string, provider?: SerpProvider) => {
+  const analyzeKeyword = async (keyword: string) => {
     if (!keyword) return;
-
+    
+    // Start loading
+    dispatch({ type: 'SET_IS_ANALYZING', payload: true });
+    
     try {
-      // Set analyzing state to true
-      dispatch({ 
-        type: 'SET_IS_ANALYZING', 
-        payload: true 
-      });
+      // Make API call to analyze keyword
+      const serpData = await analyzeKeywordSerp(keyword);
       
-      console.log(`Analyzing keyword: ${keyword}`);
+      // Update SERP data in state - will be null if no data is found
+      dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
-      // Call the SERP API service
-      const result = await analyzeSerpKeyword(keyword);
-      
-      // If no result, show error and return
-      if (!result) {
-        dispatch({ 
-          type: 'SET_IS_ANALYZING', 
-          payload: false 
-        });
-        
-        toast.error('No data found for this keyword');
-        return;
+      if (!serpData) {
+        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
+      } else {
+        console.log("SERP data successfully retrieved:", serpData);
+        toast.success("Search data analysis completed successfully.");
       }
-      
-      console.log('SERP data received:', result);
-      
-      // Update SERP data in state
-      dispatch({
-        type: 'SET_SERP_DATA',
-        payload: result
-      });
-      
-      // Mark SERP analysis step as analyzed
-      dispatch({
-        type: 'MARK_STEP_VISITED',
-        payload: 2
-      });
-      
-      // Also mark as completed if we have selections
-      if (state.serpSelections && Object.values(state.serpSelections).some(group => 
-        Object.values(group).some(Boolean))
-      ) {
-        dispatch({
-          type: 'MARK_STEP_COMPLETED',
-          payload: 2
-        });
-      }
-      
-      // Set analyzing state to false
-      dispatch({ 
-        type: 'SET_IS_ANALYZING', 
-        payload: false 
-      });
-      
-      toast.success(`Analysis complete for "${keyword}"`);
     } catch (error) {
       console.error('Error analyzing keyword:', error);
-      
-      dispatch({ 
-        type: 'SET_IS_ANALYZING', 
-        payload: false 
-      });
-      
-      toast.error('Failed to analyze keyword');
+      // Set serpData to null to display the NoDataFound component
+      dispatch({ type: 'SET_SERP_DATA', payload: null });
+      // Handle error
+      toast.error("Failed to analyze keyword. Please check your API key and try again.");
+    } finally {
+      // End loading
+      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
   };
   
-  /**
-   * Add content from SERP data to document
-   */
   const addContentFromSerp = (content: string, type: string) => {
-    // Use a valid action type from the available ContentBuilderAction types
-    // since UPDATE_DOCUMENT is not in the type definition
-    dispatch({
-      type: 'SET_CONTENT', // Using SET_CONTENT instead of UPDATE_DOCUMENT
-      payload: content
+    dispatch({ 
+      type: 'TOGGLE_SERP_SELECTION', 
+      payload: { type, content } 
     });
   };
   
-  /**
-   * Generate outline from SERP selections
-   */
   const generateOutlineFromSelections = () => {
-    const { serpSelections } = state;
-    if (!serpSelections) return;
+    if (!state.serpSelections.some(item => item.selected)) {
+      toast.error("Please select at least one item to generate an outline");
+      return;
+    }
     
-    // Get all selected items
-    const selectedItems: { type: string; content: string }[] = [];
+    // Create a more structured outline from selected items
+    const selectedItems = state.serpSelections.filter(item => item.selected);
     
-    Object.entries(serpSelections).forEach(([type, items]) => {
-      Object.entries(items).forEach(([content, isSelected]) => {
-        if (isSelected) {
-          selectedItems.push({ type, content });
+    // Group items by type
+    const headings = selectedItems.filter(item => item.type === 'heading').map(item => item.content);
+    const questions = selectedItems.filter(item => item.type === 'question').map(item => item.content);
+    const contentGaps = selectedItems.filter(item => item.type === 'contentGap').map(item => item.content);
+    const entities = selectedItems.filter(item => item.type === 'entity').map(item => item.content);
+    
+    // Create outline sections based on selected items
+    let outlineSections = [];
+    
+    // Start with introduction
+    outlineSections.push("Introduction");
+    
+    // Add headings as main structure if available
+    if (headings.length > 0) {
+      outlineSections = [...outlineSections, ...headings];
+    }
+    
+    // Add content gaps as unique sections
+    if (contentGaps.length > 0) {
+      contentGaps.forEach(gap => {
+        if (!outlineSections.includes(gap)) {
+          outlineSections.push(gap);
         }
       });
-    });
+    }
     
-    console.log('Selected items for outline:', selectedItems);
+    // Add questions as sections or a FAQ section
+    if (questions.length > 0) {
+      if (questions.length <= 2) {
+        // If only 1-2 questions, add them directly
+        questions.forEach(question => {
+          if (!outlineSections.includes(question)) {
+            outlineSections.push(question);
+          }
+        });
+      } else {
+        // If more than 2 questions, create a FAQ section
+        outlineSections.push("Frequently Asked Questions");
+      }
+    }
     
-    // Update state to navigate to outline step
+    // Add entities if they're not already included
+    if (entities.length > 0) {
+      // Check if we need a separate section for entities or if they're already covered
+      const entitySectionNeeded = entities.some(entity => 
+        !outlineSections.some(section => 
+          section.toLowerCase().includes(entity.toLowerCase())
+        )
+      );
+      
+      if (entitySectionNeeded) {
+        outlineSections.push("Key Concepts and Definitions");
+      }
+    }
+    
+    // Always add conclusion
+    if (!outlineSections.includes("Conclusion")) {
+      outlineSections.push("Conclusion");
+    }
+    
+    // Set the outline in state
+    dispatch({ type: 'SET_OUTLINE', payload: outlineSections });
+    
+    // Create an array of outline sections with IDs for the new table format
+    const outlineSectionsWithIds = outlineSections.map(title => ({
+      id: uuid(),
+      title,
+      level: 1,
+    }));
+    
+    // Set the structured outline sections in state
+    dispatch({ type: 'SET_OUTLINE_SECTIONS', payload: outlineSectionsWithIds });
+    
+    // Navigate to the outline step
     dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
+    
+    toast.success(`Generated outline with ${outlineSections.length} sections based on your selected items`);
   };
   
-  /**
-   * Change SERP provider
-   */
-  const changeSerpProvider = async (provider: SerpProvider) => {
-    // Save the preferred provider
-    localStorage.setItem('preferred_serp_provider', provider);
-    
-    // If we have a main keyword, reanalyze with the new provider
-    if (state.mainKeyword) {
-      await analyzeKeyword(state.mainKeyword, provider);
-    }
-  };
-
   return {
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
-    changeSerpProvider
   };
 };

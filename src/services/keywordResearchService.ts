@@ -1,6 +1,6 @@
 
 import { callApiProxy } from './apiProxyService';
-import { analyzeSerpKeyword, searchKeywords } from './serpApiService';
+import { analyzeKeywordSerp, searchKeywords } from './serpApiService';
 import { SerpSearchParams } from '@/types/serp';
 
 export interface KeywordSuggestion {
@@ -30,17 +30,17 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
     // Get SERP data for the keyword
     const serpResults = await searchKeywords({
       query: keyword,
-      limit: 10
+      limit: 10  // Use limit instead of num to match the SearchKeywordParams interface
     });
     
-    console.log('SERP results received:', serpResults?.length || 0);
+    console.log('SERP results received:', serpResults.length);
     
     // Get detailed keyword analysis
-    const keywordAnalysis = await analyzeSerpKeyword(keyword);
+    const keywordAnalysis = await analyzeKeywordSerp(keyword);
     console.log('Keyword analysis received');
     
     // Map keyword data to our format
-    const relatedKeywords = keywordAnalysis?.keywords?.map(kw => ({
+    const relatedKeywords = keywordAnalysis.keywords?.map(kw => ({
       keyword: kw,
       searchVolume: Math.floor(Math.random() * 5000) + 1000, // Use random for now until API provides this
       difficulty: Math.floor(Math.random() * 100),
@@ -50,10 +50,10 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
     })) || [];
     
     // Extract questions from people also ask data
-    const questions = keywordAnalysis?.peopleAlsoAsk?.map((item: any) => item.question) || [];
+    const questions = keywordAnalysis.peopleAlsoAsk?.map(item => item.question) || [];
     
     // Extract competitor keywords from related searches
-    const competitorKeywords = keywordAnalysis?.relatedSearches?.map((item: any) => item.query) || [];
+    const competitorKeywords = keywordAnalysis.relatedSearches?.map(item => item.query) || [];
     
     // Create trend data (still using mock data for visualization)
     const trendData = [

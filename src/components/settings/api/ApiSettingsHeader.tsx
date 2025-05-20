@@ -9,23 +9,19 @@ interface ApiSettingsHeaderProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onDisplayOptionChange: (value: string) => void;
-  title?: string;
-  description?: string;
 }
 
 export const ApiSettingsHeader = ({ 
   searchQuery, 
   onSearchChange, 
-  onDisplayOptionChange,
-  title = "API Integration",
-  description = "Connect third-party APIs to enhance content generation and analysis capabilities."
+  onDisplayOptionChange 
 }: ApiSettingsHeaderProps) => {
   return (
     <>
       <div>
-        <h2 className="text-2xl font-bold mb-2">{title}</h2>
+        <h2 className="text-2xl font-bold mb-2">API Integration</h2>
         <p className="text-muted-foreground">
-          {description}
+          Connect third-party APIs to enhance content generation and analysis capabilities.
         </p>
       </div>
 

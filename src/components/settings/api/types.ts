@@ -1,108 +1,71 @@
 
-export interface ApiProviderConfig {
+import { ReactNode } from 'react';
+
+export type ApiProvider = {
   id: string;
   name: string;
   description: string;
-  type: 'standard' | 'oauth' | 'credentials';
-  docsUrl?: string;
-  signupUrl?: string;
+  serviceKey: string;
+  link: string;
+  icon: ReactNode;
   required?: boolean;
-  serviceKey?: string;
   autoDetectable?: boolean;
-  category?: 'ai' | 'serp' | 'other'; // Adding category property
-}
+};
 
-export interface ApiProviderWithCategory extends ApiProviderConfig {
-  category: 'ai' | 'serp' | 'other';
-}
-
-export const API_PROVIDERS: ApiProviderWithCategory[] = [
+export const API_PROVIDERS: ApiProvider[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'GPT-4, GPT-3.5 Turbo, and more',
-    required: true,
-    type: 'standard',
-    docsUrl: 'https://platform.openai.com/docs/api-reference',
-    signupUrl: 'https://platform.openai.com/signup',
+    description: 'Power AI-assisted content generation, writing assistance, and keyword suggestions.',
     serviceKey: 'openai',
-    category: 'ai',
+    link: 'https://platform.openai.com/api-keys',
+    icon: null, // We'll add icons in the component
+    autoDetectable: true
+  },
+  {
+    id: 'serp',
+    name: 'SERP API',
+    description: 'Access competitor content analysis, keyword data, and search volume metrics.',
+    serviceKey: 'serp',
+    link: 'https://serpapi.com/dashboard',
+    required: true,
+    icon: null, // We'll add icons in the component
     autoDetectable: true
   },
   {
     id: 'anthropic',
     name: 'Anthropic',
-    description: 'Claude and Claude Instant models',
-    type: 'standard',
-    docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
-    signupUrl: 'https://console.anthropic.com/signup',
+    description: 'Use Claude AI for content generation and analysis.',
     serviceKey: 'anthropic',
-    category: 'ai',
+    link: 'https://console.anthropic.com/settings/keys',
+    icon: null, // We'll add icons in the component
     autoDetectable: true
   },
   {
     id: 'gemini',
     name: 'Google Gemini',
-    description: 'Google AI models and services',
-    type: 'standard',
-    docsUrl: 'https://ai.google.dev/docs',
-    signupUrl: 'https://makersuite.google.com/app/apikey',
+    description: 'Leverage Google\'s AI for enhanced content creation.',
     serviceKey: 'gemini',
-    category: 'ai',
+    link: 'https://aistudio.google.com/app/apikey',
+    icon: null, // We'll add icons in the component
     autoDetectable: true
   },
   {
-    id: 'serpapi',
-    name: 'SERP API',
-    description: 'Search engine results data',
-    type: 'standard',
-    docsUrl: 'https://serpapi.com/docs',
-    signupUrl: 'https://serpapi.com/users/sign_up',
-    serviceKey: 'serpapi',
-    category: 'serp',
+    id: 'mistral',
+    name: 'Mistral AI',
+    description: 'Utilize Mistral\'s powerful language models for content creation and analysis.',
+    serviceKey: 'mistral',
+    link: 'https://console.mistral.ai/api-keys/',
+    icon: null, // We'll add icons in the component
     autoDetectable: true
   },
   {
-    id: 'dataforseo',
-    name: 'DataForSEO',
-    description: 'Enterprise SEO data platform',
-    type: 'credentials',
-    docsUrl: 'https://dataforseo.com/apis',
-    signupUrl: 'https://app.dataforseo.com/register',
-    serviceKey: 'dataforseo',
-    category: 'serp',
-    autoDetectable: false
-  },
-  {
-    id: 'ahrefs',
-    name: 'Ahrefs',
-    description: 'SEO toolset for backlinks and site audits',
-    type: 'standard',
-    docsUrl: 'https://ahrefs.com/api/documentation',
-    signupUrl: 'https://ahrefs.com/api/pricing',
-    serviceKey: 'ahrefs',
-    category: 'other',
-    autoDetectable: false
-  },
-  {
-    id: 'semrush',
-    name: 'SEMrush',
-    description: 'Competitive research and keyword analysis',
-    type: 'standard',
-    docsUrl: 'https://developer.semrush.com/api/',
-    signupUrl: 'https://www.semrush.com/apis/',
-    serviceKey: 'semrush',
-    category: 'other',
-    autoDetectable: false
-  },
-  {
-    id: 'google_analytics',
-    name: 'Google Analytics',
-    description: 'Website traffic and user behavior analytics',
-    type: 'oauth',
-    docsUrl: 'https://developers.google.com/analytics/devguides/reporting/core/v4',
-    serviceKey: 'google_analytics',
-    category: 'other',
-    autoDetectable: false
+    id: 'lmstudio',
+    name: 'LM Studio',
+    description: 'Use your local LLM models for content generation with full privacy and control.',
+    serviceKey: 'lmstudio',
+    link: 'https://lmstudio.ai/',
+    icon: null, // We'll add icons in the component
+    autoDetectable: true
   }
 ];

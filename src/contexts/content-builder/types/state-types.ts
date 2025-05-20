@@ -4,7 +4,7 @@
  */
 
 import { ContentBuilderStep } from './step-types';
-import { SerpSelection, SerpProvider } from './serp-types';
+import { SerpSelection } from './serp-types';
 import { ContentType, ContentFormat, ContentIntent } from './content-types';
 import { Solution, SolutionIntegrationMetrics } from './solution-types';
 import { OutlineSection } from './outline-types';
@@ -39,7 +39,6 @@ export interface ContentBuilderState {
   serpData: any;
   serpSelections: SerpSelection[];
   isAnalyzing: boolean;
-  preferredSerpProvider?: SerpProvider;
   
   // Outline
   outline: string[];

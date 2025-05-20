@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DocumentStructureCard } from '../DocumentStructureCard';
 import { EntitiesAnalysisCard } from '../EntitiesAnalysisCard';
@@ -6,7 +5,7 @@ import { HeadingsAnalysisCard } from '../HeadingsAnalysisCard';
 import { ContentGapsCard } from '../ContentGapsCard';
 import { FeaturedSnippetsCard } from '../FeaturedSnippetsCard';
 import { DocumentStructure } from '@/contexts/content-builder/types';
-import { SerpAnalysisResult, Heading } from '@/types/serp';
+import { SerpAnalysisResult } from '@/types/serp';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle2, FileCode } from 'lucide-react';
 
