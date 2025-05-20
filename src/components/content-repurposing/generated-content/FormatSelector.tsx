@@ -1,7 +1,7 @@
 
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { getFormatByIdOrDefault } from '../formats';
+import { getFormatByIdOrDefault, getFormatIconComponent } from '../formats';
 import FormatButton from './FormatButton';
 import { ChevronDown } from 'lucide-react';
 import { 
