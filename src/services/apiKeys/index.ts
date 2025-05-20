@@ -25,4 +25,8 @@ export {
 
 // Export from testing using explicit imports
 // Note: We're choosing to use the implementation from testing.ts as the canonical one
-export { isDataForSeoFormat, decodeDataForSeoCredentials } from './testing';
+export { 
+  isDataForSeoFormat, 
+  decodeDataForSeoCredentials, 
+  encodeDataForSeoCredentials 
+} from './testing';

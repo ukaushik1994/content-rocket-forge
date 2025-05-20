@@ -6,7 +6,7 @@ import { useSerpApiProvider } from '../api/hooks/useSerpApiProvider';
 import { useOpenAiProvider } from '../api/hooks/useOpenAiProvider';
 import { useAnthropicProvider } from '../api/hooks/useAnthropicProvider';
 import { useGeminiProvider } from '../api/hooks/useGeminiProvider';
-import { ApiCredential, ApiProviderConfig } from '@/components/settings/api/types';
+import { ApiCredential, ApiProviderConfig, ApiKeyStatus } from '@/components/settings/api/types';
 
 // Define available API providers
 const API_PROVIDERS: ApiProviderConfig[] = [
@@ -18,7 +18,8 @@ const API_PROVIDERS: ApiProviderConfig[] = [
     category: 'ai',
     docsUrl: 'https://platform.openai.com/docs/introduction',
     signupUrl: 'https://platform.openai.com/signup',
-    isDefault: true
+    isDefault: true,
+    autoDetectable: true
   },
   {
     id: 'anthropic',
@@ -27,7 +28,8 @@ const API_PROVIDERS: ApiProviderConfig[] = [
     serviceKey: 'anthropic',
     category: 'ai',
     docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
-    signupUrl: 'https://console.anthropic.com/login'
+    signupUrl: 'https://console.anthropic.com/login',
+    autoDetectable: true
   },
   {
     id: 'gemini',
@@ -36,7 +38,8 @@ const API_PROVIDERS: ApiProviderConfig[] = [
     serviceKey: 'gemini',
     category: 'ai',
     docsUrl: 'https://ai.google.dev/docs',
-    signupUrl: 'https://makersuite.google.com/app/apikey'
+    signupUrl: 'https://makersuite.google.com/app/apikey',
+    autoDetectable: true
   },
   {
     id: 'serpapi',
@@ -45,7 +48,8 @@ const API_PROVIDERS: ApiProviderConfig[] = [
     serviceKey: 'serp',
     category: 'serp',
     docsUrl: 'https://serpapi.com/docs',
-    signupUrl: 'https://serpapi.com/users/sign_up'
+    signupUrl: 'https://serpapi.com/users/sign_up',
+    autoDetectable: false
   },
   {
     id: 'dataforseo',
@@ -54,7 +58,8 @@ const API_PROVIDERS: ApiProviderConfig[] = [
     serviceKey: 'dataforseo',
     category: 'serp',
     docsUrl: 'https://docs.dataforseo.com/v3/',
-    signupUrl: 'https://app.dataforseo.com/register'
+    signupUrl: 'https://app.dataforseo.com/register',
+    autoDetectable: false
   }
 ];
 
@@ -126,7 +131,7 @@ export const ApiCredentialsProvider: React.FC<ApiCredentialsProviderProps> = ({ 
           credentials.push({
             provider: id,
             name: config.name,
-            status: provider.status,
+            status: provider.status as ApiKeyStatus,
             isValid: provider.status === 'connected'
           });
         }

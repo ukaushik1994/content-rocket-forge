@@ -89,3 +89,21 @@ export const decodeDataForSeoCredentials = (key: string): { login: string; passw
     return null;
   }
 };
+
+/**
+ * Encode DataForSEO credentials as base64 JSON
+ * 
+ * @param login - The DataForSEO login 
+ * @param password - The DataForSEO password
+ * @returns string - Base64 encoded JSON credentials
+ */
+export const encodeDataForSeoCredentials = (login: string, password: string): string => {
+  try {
+    // Create credentials object and encode as base64
+    const credentials = JSON.stringify({ login, password });
+    return btoa(credentials);
+  } catch (e) {
+    console.error('Error encoding DataForSEO credentials:', e);
+    return '';
+  }
+};

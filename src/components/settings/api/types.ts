@@ -15,6 +15,7 @@ export interface ApiProviderConfig {
   signupUrl?: string;
   required?: boolean;
   isDefault?: boolean;
+  autoDetectable?: boolean;
 }
 
 export interface ApiProviderWithCategory extends ApiProviderConfig {

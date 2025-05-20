@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Lock, Key } from "lucide-react";
 import { toast } from "sonner";
-import { encodeDataForSeoCredentials, isDataForSeoFormat } from '@/services/apiKeys/testing';
+import { isDataForSeoFormat, encodeDataForSeoCredentials } from '@/services/apiKeys/testing';
 
 export interface DataForSeoApiSetupProps {
   onConfigured?: () => void;
