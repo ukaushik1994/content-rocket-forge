@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import ContentSelection from '@/components/content-repurposing/ContentSelection';
 import { ContentItemType } from '@/contexts/content/types';
+import { GeneratedContentFormat } from '@/components/content-repurposing/hooks/repurposing/types';
 
 interface ContentSelectionViewProps {
   contentItems: ContentItemType[];
@@ -12,7 +13,7 @@ interface ContentSelectionViewProps {
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
   repurposedDialogOpen: boolean;
   onCloseRepurposedDialog: () => void;
-  selectedRepurposedContent: any;
+  selectedRepurposedContent: GeneratedContentFormat | null;
   copyToClipboard: (text: string) => void;
   downloadAsText: (text: string, formatName: string) => void;
   deleteRepurposedContent: (contentId: string, formatId: string) => Promise<boolean>;

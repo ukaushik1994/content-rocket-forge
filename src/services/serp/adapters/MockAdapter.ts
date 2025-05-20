@@ -2,7 +2,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { SerpApiOptions } from '../core/SerpCore';
 import { SerpAnalysisResult } from '@/types/serp';
-import { generateMockSerpData, getMockKeywordResults } from '../mockData';
 
 /**
  * Mock adapter for SERP data
@@ -31,8 +30,18 @@ export class MockAdapter extends BaseAdapter {
     // Simple delay to simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Use the existing mock data generator
-    return generateMockSerpData(keyword);
+    return {
+      provider: 'mock',
+      keyword,
+      searchVolume: Math.floor(Math.random() * 10000) + 1000,
+      keywords: this.generateMockKeywords(keyword, 10),
+      peopleAlsoAsk: this.generateMockQuestions(keyword, 5),
+      headings: this.generateMockHeadings(keyword, 8),
+      relatedSearches: this.generateMockRelatedSearches(keyword, 6),
+      entities: this.generateMockEntities(keyword, 4),
+      topResults: this.generateMockResults(keyword, 10),
+      featuredSnippets: this.generateMockFeaturedSnippets(keyword, 2),
+    };
   }
 
   /**
@@ -44,8 +53,7 @@ export class MockAdapter extends BaseAdapter {
     // Simple delay to simulate API call
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Use the existing mock keyword results generator
-    return getMockKeywordResults(keyword).slice(0, limit);
+    return this.generateMockKeywords(keyword, limit);
   }
 
   /**
@@ -57,13 +65,140 @@ export class MockAdapter extends BaseAdapter {
     // Simple delay to simulate API call
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Use the existing mock keyword results and modify slightly for related keywords
-    return getMockKeywordResults(keyword)
-      .map(item => ({
-        ...item, 
-        keyword: item.keyword.includes(keyword) ? item.keyword : `${keyword} ${item.keyword}`
-      }))
-      .slice(0, limit);
+    return this.generateMockRelatedSearches(keyword, limit);
+  }
+
+  /**
+   * Generate mock keywords
+   */
+  private generateMockKeywords(keyword: string, count: number): any[] {
+    const prefixes = ['best', 'top', 'how to', 'what is', 'why', 'when to'];
+    const suffixes = ['guide', 'tutorial', 'tips', 'examples', 'solutions', 'benefits'];
+    
+    return Array.from({ length: count }, (_, i) => {
+      const prefix = i % 2 === 0 ? prefixes[i % prefixes.length] + ' ' : '';
+      const suffix = i % 3 === 0 ? ' ' + suffixes[i % suffixes.length] : '';
+      const volume = Math.floor(Math.random() * 5000) + 500;
+      
+      return {
+        keyword: `${prefix}${keyword}${suffix}`,
+        searchVolume: volume,
+        difficulty: Math.floor(Math.random() * 100),
+        cpc: (Math.random() * 5).toFixed(2)
+      };
+    });
+  }
+
+  /**
+   * Generate mock questions
+   */
+  private generateMockQuestions(keyword: string, count: number): string[] {
+    const questions = [
+      `What is ${keyword}?`,
+      `How does ${keyword} work?`,
+      `Why is ${keyword} important?`,
+      `When should you use ${keyword}?`,
+      `Where can I learn about ${keyword}?`,
+      `How to optimize ${keyword}?`,
+      `What are the benefits of ${keyword}?`,
+      `What are the disadvantages of ${keyword}?`,
+      `How much does ${keyword} cost?`,
+      `Is ${keyword} worth it?`
+    ];
+    
+    return questions.slice(0, count);
+  }
+
+  /**
+   * Generate mock headings
+   */
+  private generateMockHeadings(keyword: string, count: number): string[] {
+    const headings = [
+      `Introduction to ${keyword}`,
+      `What is ${keyword}?`,
+      `Benefits of ${keyword}`,
+      `How to Use ${keyword}`,
+      `${keyword} Best Practices`,
+      `${keyword} Case Studies`,
+      `Common Mistakes to Avoid with ${keyword}`,
+      `Future of ${keyword}`,
+      `${keyword} Tools and Resources`,
+      `${keyword} Alternatives`,
+      `${keyword} Pricing and Cost`,
+      `Frequently Asked Questions about ${keyword}`
+    ];
+    
+    return headings.slice(0, count);
+  }
+
+  /**
+   * Generate mock related searches
+   */
+  private generateMockRelatedSearches(keyword: string, count: number): any[] {
+    const related = [
+      `${keyword} tutorial`,
+      `${keyword} examples`,
+      `${keyword} alternatives`,
+      `${keyword} vs competition`,
+      `how to learn ${keyword}`,
+      `best ${keyword} tools`,
+      `${keyword} for beginners`,
+      `advanced ${keyword} techniques`,
+      `${keyword} certification`,
+      `${keyword} jobs`,
+      `${keyword} salary`,
+      `${keyword} course`
+    ];
+    
+    return related.slice(0, count).map(query => ({
+      query,
+      searchVolume: Math.floor(Math.random() * 3000) + 300
+    }));
+  }
+
+  /**
+   * Generate mock entities
+   */
+  private generateMockEntities(keyword: string, count: number): string[] {
+    // Create mock entities based on the keyword
+    const entities = [
+      `${keyword} Platform`,
+      `${keyword} Framework`,
+      `${keyword} Tool`,
+      `${keyword} Community`,
+      `${keyword} Institute`,
+      `${keyword} Conference`,
+      `${keyword} Expert`,
+      `${keyword} Foundation`
+    ];
+    
+    return entities.slice(0, count);
+  }
+
+  /**
+   * Generate mock top results
+   */
+  private generateMockResults(keyword: string, count: number): any[] {
+    return Array.from({ length: count }, (_, i) => ({
+      title: `${i+1}. Complete Guide to ${keyword} in ${new Date().getFullYear()}`,
+      url: `https://example${i}.com/${keyword.toLowerCase().replace(/\s+/g, '-')}`,
+      description: `Learn everything you need to know about ${keyword} including best practices, expert tips, and common mistakes to avoid.`,
+      position: i + 1
+    }));
+  }
+
+  /**
+   * Generate mock featured snippets
+   */
+  private generateMockFeaturedSnippets(keyword: string, count: number): any[] {
+    const snippetTypes = ['paragraph', 'list', 'table'];
+    
+    return Array.from({ length: count }, (_, i) => ({
+      type: snippetTypes[i % snippetTypes.length],
+      title: `Quick Answer: ${keyword} Explained`,
+      content: `${keyword} is a powerful technique used by professionals to improve performance and get better results. It works by systematically analyzing data and implementing strategic improvements.`,
+      sourceUrl: `https://snippet${i}.com/${keyword.toLowerCase().replace(/\s+/g, '-')}`
+    }));
   }
 
   /**

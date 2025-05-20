@@ -84,8 +84,9 @@ export const createSerpActions = (
    * Add content from SERP data to document
    */
   const addContentFromSerp = (content: string, type: string) => {
+    // We need to use a valid action type here
     dispatch({
-      type: 'ADD_CONTENT',
+      type: 'UPDATE_DOCUMENT',
       payload: { content, source: 'serp', type }
     });
   };

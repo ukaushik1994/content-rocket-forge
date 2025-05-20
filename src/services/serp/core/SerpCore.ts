@@ -33,10 +33,20 @@ export const getActiveProvider = (): SerpProvider | null => {
     return 'serpapi';
   } else if (dataForSeoKey) {
     return 'dataforseo';
+  } else if (localStorage.getItem('use_mock_serp') === 'true') {
+    // If mock mode is enabled, return mock as provider
+    return 'mock';
   }
   
   // No API keys exist
   return null;
+};
+
+/**
+ * Check if any provider is available (including mock data)
+ */
+export const isAnyProviderAvailable = (): boolean => {
+  return getActiveProvider() !== null;
 };
 
 /**
