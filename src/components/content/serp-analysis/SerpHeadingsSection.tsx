@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
+import { Heading, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpHeadingsSectionProps {
   serpData: SerpAnalysisResult;
@@ -11,53 +11,57 @@ interface SerpHeadingsSectionProps {
   onAddToContent?: (content: string, type: string) => void;
 }
 
-export const SerpHeadingsSection: React.FC<SerpHeadingsSectionProps> = ({ 
-  serpData, 
-  expanded, 
-  onAddToContent = () => {} 
-}) => {
+export function SerpHeadingsSection({ serpData, expanded, onAddToContent = () => {} }: SerpHeadingsSectionProps) {
   if (!expanded || !serpData?.headings?.length) return null;
   
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-2 py-4"
     >
-      <div className="grid grid-cols-1 gap-3">
-        {serpData.headings.map((heading, index) => (
-          <div 
-            key={index} 
-            className={`p-3 bg-teal-900/20 border border-teal-500/20 rounded-lg flex items-start justify-between gap-2`}
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="px-1.5 py-0.5 rounded bg-teal-900/50 text-[10px] uppercase font-bold tracking-wider text-teal-300">
-                  {heading.level}
-                </div>
-                <h4 className={`text-sm font-medium text-teal-300`}>
-                  {heading.text}
-                </h4>
+      {serpData.headings.map((heading, index) => (
+        <motion.div key={`heading-${index}`} variants={item}>
+          <div className="bg-teal-900/10 border border-teal-500/20 hover:border-teal-500/40 rounded-md p-3 flex justify-between group">
+            <div className="flex items-start gap-2">
+              <div className="bg-teal-500/20 px-2 rounded mt-0.5 text-xs font-mono">
+                {heading.level}
               </div>
-              {heading.subtext && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {heading.subtext}
-                </p>
-              )}
+              <div>
+                <p className="font-medium text-sm">{heading.text}</p>
+                {heading.subtext && (
+                  <p className="text-xs text-muted-foreground mt-1">{heading.subtext}</p>
+                )}
+              </div>
             </div>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-auto p-1 text-teal-400 hover:text-teal-300 hover:bg-teal-950/50"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-teal-400 hover:text-teal-300 hover:bg-teal-900/20"
               onClick={() => onAddToContent(heading.text, 'heading')}
             >
-              <PlusCircle className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
-        ))}
-      </div>
+        </motion.div>
+      ))}
     </motion.div>
   );
-};
+}

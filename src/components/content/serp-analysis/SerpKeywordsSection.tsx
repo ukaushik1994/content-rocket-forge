@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
+import { Tag, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpKeywordsSectionProps {
   serpData: SerpAnalysisResult;
@@ -11,41 +11,63 @@ interface SerpKeywordsSectionProps {
   onAddToContent?: (content: string, type: string) => void;
 }
 
-export const SerpKeywordsSection: React.FC<SerpKeywordsSectionProps> = ({ 
-  serpData, 
-  expanded, 
-  onAddToContent = () => {} 
-}) => {
-  if (!expanded) return null;
-  
-  // Combine all keyword sources and remove duplicates
-  const keywords = Array.from(new Set([
+export function SerpKeywordsSection({ serpData, expanded, onAddToContent = () => {} }: SerpKeywordsSectionProps) {
+  if (!expanded || !serpData) return null;
+
+  // Get keywords from both sources
+  const keywords = [
     ...(serpData.keywords || []),
     ...(serpData.relatedSearches?.map(item => item.query) || [])
-  ])).filter(Boolean);
+  ];
+
+  // Remove duplicates
+  const uniqueKeywords = [...new Set(keywords)];
   
-  if (!keywords.length) return null;
-  
+  if (uniqueKeywords.length === 0) {
+    return (
+      <div className="py-4 text-center text-muted-foreground">
+        No keyword data available
+      </div>
+    );
+  }
+
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="flex flex-wrap gap-2 py-4"
     >
-      <div className="flex flex-wrap gap-2">
-        {keywords.map((keyword, index) => (
-          <Badge 
-            key={index}
-            variant="outline" 
-            className="py-1.5 pl-3 pr-2 bg-blue-950/30 border-blue-500/20 hover:bg-blue-900/30 cursor-pointer group flex items-center gap-1"
+      {uniqueKeywords.map((keyword, index) => (
+        <motion.div key={`keyword-${index}`} variants={item}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-blue-900/20 border-blue-500/30 hover:bg-blue-900/30 hover:border-blue-500/50 group"
             onClick={() => onAddToContent(keyword, 'keyword')}
           >
-            {keyword}
-            <PlusCircle className="h-3 w-3 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </Badge>
-        ))}
-      </div>
+            <Tag className="h-3 w-3 mr-2 text-blue-400 group-hover:text-blue-300" />
+            <span className="text-sm">{keyword}</span>
+            <Plus className="h-3 w-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </Button>
+        </motion.div>
+      ))}
     </motion.div>
   );
-};
+}

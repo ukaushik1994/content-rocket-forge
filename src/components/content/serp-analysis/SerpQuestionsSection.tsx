@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
+import { HelpCircle, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpQuestionsSectionProps {
   serpData: SerpAnalysisResult;
@@ -11,50 +12,57 @@ interface SerpQuestionsSectionProps {
   onAddToContent?: (content: string, type: string) => void;
 }
 
-export const SerpQuestionsSection: React.FC<SerpQuestionsSectionProps> = ({ 
-  serpData, 
-  expanded, 
-  onAddToContent = () => {} 
-}) => {
+export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () => {} }: SerpQuestionsSectionProps) {
   if (!expanded || !serpData?.peopleAlsoAsk?.length) return null;
   
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-3 py-4"
     >
-      <div className="grid grid-cols-1 gap-4">
-        {serpData.peopleAlsoAsk.map((item, index) => (
-          <div key={index} className="p-4 bg-amber-900/20 border border-amber-500/20 rounded-lg">
-            <div className="flex items-start justify-between gap-2">
-              <h4 className="text-sm font-medium text-amber-300">{item.question}</h4>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-auto p-1 text-amber-400 hover:text-amber-300 hover:bg-amber-950/50"
-                onClick={() => onAddToContent(item.question, 'question')}
+      {serpData.peopleAlsoAsk.map((question, index) => (
+        <motion.div key={`question-${index}`} variants={item}>
+          <Card className="bg-amber-900/10 border-amber-500/20 hover:border-amber-500/40 transition-all">
+            <CardContent className="p-4 flex justify-between items-start">
+              <div className="flex items-start gap-3">
+                <HelpCircle className="h-5 w-5 text-amber-400 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">{question.question}</p>
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <span>Source: {question.source || 'Search data'}</span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                onClick={() => onAddToContent(question.question, 'question')}
               >
-                <PlusCircle className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
               </Button>
-            </div>
-            
-            {item.answer && (
-              <div className="mt-2 text-xs text-muted-foreground bg-white/5 p-2 rounded">
-                {item.answer}
-              </div>
-            )}
-            
-            {item.source && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                Source: {item.source}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
     </motion.div>
   );
-};
+}

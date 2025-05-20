@@ -1,17 +1,12 @@
 
-export * from './SerpActionButton';
-export * from './SerpCompetitorsSection';
-export * from './SerpContentGapsSection';
+// Export all SERP analysis components
+export * from './SerpSectionHeader';
 export * from './SerpEmptyState';
 export * from './SerpNoDataFound';
-export * from './SerpEntitiesSection';
-export * from './SerpFeature';
-export * from './SerpFeedbackButton';
-export * from './SerpHeadingsSection';
-export * from './SerpInteractiveCard';
-export * from './SerpKeywordsSection';
-export * from './SerpMetricsCard';
 export * from './SerpMetricsSection';
-export * from './SerpOverviewSection';
+export * from './SerpKeywordsSection';
 export * from './SerpQuestionsSection';
-export * from './SerpSectionHeader';
+export * from './SerpCompetitorsSection';
+export * from './SerpEntitiesSection';
+export * from './SerpHeadingsSection';
+export * from './SerpContentGapsSection';

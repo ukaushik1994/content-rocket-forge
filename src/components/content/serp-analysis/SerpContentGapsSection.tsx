@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
+import { FileSearch, Plus, ArrowUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpContentGapsSectionProps {
   serpData: SerpAnalysisResult;
@@ -11,48 +11,62 @@ interface SerpContentGapsSectionProps {
   onAddToContent?: (content: string, type: string) => void;
 }
 
-export const SerpContentGapsSection: React.FC<SerpContentGapsSectionProps> = ({ 
-  serpData, 
-  expanded, 
-  onAddToContent = () => {} 
-}) => {
+export function SerpContentGapsSection({ serpData, expanded, onAddToContent = () => {} }: SerpContentGapsSectionProps) {
   if (!expanded || !serpData?.contentGaps?.length) return null;
   
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-3 py-4"
     >
-      <div className="grid grid-cols-1 gap-4">
-        {serpData.contentGaps.map((gap, index) => (
-          <div key={index} className="p-4 bg-rose-900/20 border border-rose-500/20 rounded-lg">
-            <div className="flex items-start justify-between gap-2">
-              <h4 className="text-sm font-medium text-rose-300">{gap.topic}</h4>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-auto p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50"
+      {serpData.contentGaps.map((gap, index) => (
+        <motion.div key={`gap-${index}`} variants={item}>
+          <div className="bg-rose-900/10 border border-rose-500/20 hover:border-rose-500/40 rounded-md p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ArrowUp className="h-4 w-4 text-rose-400" />
+                <h4 className="font-medium">{gap.topic}</h4>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-rose-400 hover:text-rose-300 hover:bg-rose-900/20"
                 onClick={() => onAddToContent(gap.topic, 'contentGap')}
               >
-                <PlusCircle className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
             
-            <p className="mt-2 text-xs text-muted-foreground">
-              {gap.description}
-            </p>
+            {gap.description && (
+              <p className="text-sm text-muted-foreground">{gap.description}</p>
+            )}
             
             {gap.recommendation && (
-              <div className="mt-2 text-xs bg-white/5 p-2 rounded">
-                <span className="text-rose-300 font-medium">Recommendation:</span> {gap.recommendation}
+              <div className="bg-rose-900/20 border border-rose-500/10 rounded p-2 mt-2">
+                <p className="text-xs text-rose-200">Recommendation: {gap.recommendation}</p>
               </div>
             )}
           </div>
-        ))}
-      </div>
+        </motion.div>
+      ))}
     </motion.div>
   );
-};
+}

@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Globe, ExternalLink } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
 import { motion } from 'framer-motion';
+import { FileText, Link as LinkIcon, ExternalLink, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface SerpCompetitorsSectionProps {
   serpData: SerpAnalysisResult;
@@ -11,57 +11,75 @@ interface SerpCompetitorsSectionProps {
   onAddToContent?: (content: string, type: string) => void;
 }
 
-export const SerpCompetitorsSection: React.FC<SerpCompetitorsSectionProps> = ({ 
-  serpData, 
-  expanded, 
-  onAddToContent = () => {} 
-}) => {
+export function SerpCompetitorsSection({ serpData, expanded, onAddToContent = () => {} }: SerpCompetitorsSectionProps) {
   if (!expanded || !serpData?.topResults?.length) return null;
   
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-3 py-4"
     >
-      <div className="grid grid-cols-1 gap-4">
-        {serpData.topResults.map((result, index) => (
-          <div key={index} className="p-4 bg-green-900/20 border border-green-500/20 rounded-lg">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex items-center justify-center h-5 w-5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                  {result.position}
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-green-300">{result.title}</h4>
-                  <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <Globe className="h-3 w-3" />
-                    <span className="truncate max-w-[300px]">{result.link}</span>
-                  </div>
-                </div>
-              </div>
+      {serpData.topResults.map((result, index) => (
+        <motion.div key={`competitor-${index}`} variants={item}>
+          <div className="bg-green-900/10 border border-green-500/20 hover:border-green-500/40 rounded-md p-4 space-y-2">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="h-auto p-1 text-green-400 hover:text-green-300 hover:bg-green-950/50"
-                  onClick={() => onAddToContent(result.title, 'topRank')}
-                >
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
+                <div className="bg-green-500/20 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">
+                  {result.position || index + 1}
+                </div>
+                <h4 className="font-medium text-sm line-clamp-1">{result.title}</h4>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                onClick={() => onAddToContent(`${result.title} - ${result.link}`, 'topRank')}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
             
             {result.snippet && (
-              <div className="mt-3 text-xs text-muted-foreground bg-white/5 p-2 rounded">
+              <p className="text-xs text-muted-foreground line-clamp-2">
                 {result.snippet}
+              </p>
+            )}
+            
+            {result.link && (
+              <div className="flex items-center text-xs text-muted-foreground">
+                <LinkIcon className="h-3 w-3 mr-1" />
+                <span className="truncate">{result.link}</span>
+                <a 
+                  href={result.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="ml-1 text-green-400 hover:text-green-300"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
             )}
           </div>
-        ))}
-      </div>
+        </motion.div>
+      ))}
     </motion.div>
   );
-};
+}

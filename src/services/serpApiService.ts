@@ -115,6 +115,8 @@ function getBackupMockResults(query: string, refresh: boolean) {
 
 export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult> => {
   try {
+    console.log('Analyzing keyword with SERP API:', keyword, refresh ? '(refresh requested)' : '');
+    
     // First try to get API key from localStorage
     const apiKeyFromStorage = localStorage.getItem('serp_api_key');
     let apiKey = apiKeyFromStorage;
@@ -147,13 +149,15 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
         });
         
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          const errorText = await response.text();
+          console.error('SERP API error:', response.status, errorText);
+          throw new Error(`API error: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
         
         // Transform the API response to match our SerpAnalysisResult structure
-        return {
+        const result: SerpAnalysisResult = {
           keyword,
           searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
           keywordDifficulty: data.difficulty || Math.floor(Math.random() * 100),
@@ -168,6 +172,9 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
           recommendations: data.recommendations || [],
           isMockData: false
         };
+        
+        console.log('SERP API returned real data:', result);
+        return result;
       } catch (error) {
         console.error('Error calling SERP API:', error);
         toast.error('Error analyzing keyword. Using backup data.');
@@ -194,7 +201,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
   }
 };
 
-// Helper function to generate mock SERP data as a fallback
+// Helper function to generate mock SERP data as a fallback - update this to match our types
 function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
   console.log('Generating mock SERP data for:', keyword);
   
@@ -245,10 +252,26 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       ] : [])
     ],
     contentGaps: [
-      { topic: `${keyword} for beginners`, description: 'Beginner guide', recommendation: 'Create a 101 guide' },
-      { topic: `Advanced ${keyword} techniques`, description: 'For experts', recommendation: 'Share advanced tips' },
-      { topic: `${keyword} ROI measurement`, description: 'Measuring success', recommendation: 'Create calculator' },
-      { topic: `${keyword} vs competitors`, description: 'Comparison', recommendation: 'Create comparison chart' }
+      { 
+        topic: `${keyword} for beginners`, 
+        description: 'Beginner guide', 
+        recommendation: 'Create a 101 guide' 
+      },
+      { 
+        topic: `Advanced ${keyword} techniques`, 
+        description: 'For experts', 
+        recommendation: 'Share advanced tips' 
+      },
+      { 
+        topic: `${keyword} ROI measurement`, 
+        description: 'Measuring success', 
+        recommendation: 'Create calculator' 
+      },
+      { 
+        topic: `${keyword} vs competitors`, 
+        description: 'Comparison', 
+        recommendation: 'Create comparison chart' 
+      }
     ],
     topResults: [
       {
