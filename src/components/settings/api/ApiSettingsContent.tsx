@@ -1,74 +1,140 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApiCredentials } from '@/components/api-credentials/ApiCredentialsProvider';
-import { DataForSeoCredentialCard } from '@/components/api-credentials/DataForSeoCredentialCard';
+import { ApiProviderCard } from '@/components/settings/api/ApiProviderCard';
+import { ProviderDashboard } from '@/components/api/ProviderDashboard';
+import { DataForSeoProvider } from '@/components/api/DataForSeoProvider';
+import { ApiProviderConfig } from './types';
 
 /**
  * Content component for the API Settings page
  */
 export const ApiSettingsContent: React.FC = () => {
   // Use our API credentials context to access data
-  const { apiCredentials, isLoading, error, refreshCredentials } = useApiCredentials();
+  const { 
+    apiCredentials, 
+    providers, 
+    isLoading, 
+    error, 
+    refreshCredentials, 
+    getProviderStatus 
+  } = useApiCredentials();
   
-  // Available API providers that we want to display
-  const apiProviders = [
-    {
-      id: 'dataforseo',
-      name: 'DataForSEO',
-      description: 'API for SEO data, SERP analysis, and keyword research',
-      serviceKey: 'dataforseo',
-      docsUrl: 'https://docs.dataforseo.com/v3/',
-      signupUrl: 'https://app.dataforseo.com/register',
-      type: 'credentials' as 'credentials', // Type assertion to ensure it's the literal type
-      apiKeyRequired: false,
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+
+  // Group providers by category
+  const serpProviders = providers.filter(p => p.category === 'serp');
+  const aiProviders = providers.filter(p => p.category === 'ai');
+  const otherProviders = providers.filter(p => p.category === 'other');
+  
+  // Create a map of provider statuses
+  const providerStatuses = providers.reduce((acc, provider) => {
+    const credential = apiCredentials.find(c => c.provider === provider.id);
+    acc[provider.id] = credential?.status || 'none';
+    return acc;
+  }, {} as Record<string, any>);
+
+  // Handle provider selection
+  const handleProviderSelect = (providerId: string) => {
+    setSelectedProvider(providerId);
+    setActiveTab('providers');
+  };
+
+  // Render provider based on ID
+  const renderProvider = (providerId: string) => {
+    const provider = providers.find(p => p.id === providerId);
+    if (!provider) return null;
+
+    if (provider.id === 'dataforseo') {
+      return <DataForSeoProvider provider={provider} />;
     }
-  ];
+
+    // Generic provider display
+    return <ApiProviderCard provider={provider} />;
+  };
   
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>API Credentials</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <div className="h-10 w-10 animate-spin rounded-full border-t-2 border-primary"></div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="providers">Providers</TabsTrigger>
+          <TabsTrigger value="settings">General Settings</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard" className="space-y-6">
+          <ProviderDashboard 
+            providers={providers} 
+            statuses={providerStatuses}
+            onProviderClick={handleProviderSelect}
+          />
+          
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium">AI Providers</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {aiProviders.map(provider => (
+                <ApiProviderCard 
+                  key={provider.id} 
+                  provider={provider} 
+                  onClick={() => handleProviderSelect(provider.id)}
+                />
+              ))}
             </div>
-          ) : error ? (
-            <div className="bg-red-500/20 text-red-400 p-4 rounded-md">
-              <p>{error}</p>
+            
+            <h3 className="text-lg font-medium mt-8">SERP Providers</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {serpProviders.map(provider => (
+                <ApiProviderCard 
+                  key={provider.id} 
+                  provider={provider} 
+                  onClick={() => handleProviderSelect(provider.id)}
+                />
+              ))}
             </div>
-          ) : apiCredentials.length === 0 ? (
-            <div className="bg-amber-500/10 text-amber-400 p-4 rounded-md">
-              <p>No API credentials have been set up yet.</p>
-              <p className="text-sm mt-2">Add your API keys below to enable additional features.</p>
-            </div>
+            
+            {otherProviders.length > 0 && (
+              <>
+                <h3 className="text-lg font-medium mt-8">Other Providers</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {otherProviders.map(provider => (
+                    <ApiProviderCard 
+                      key={provider.id} 
+                      provider={provider} 
+                      onClick={() => handleProviderSelect(provider.id)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="providers">
+          {selectedProvider ? (
+            renderProvider(selectedProvider)
           ) : (
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground mb-4">
-                You have {apiCredentials.length} API key{apiCredentials.length !== 1 && 's'} configured.
-              </p>
-              <button 
-                className="text-blue-400 hover:text-blue-300 text-sm"
-                onClick={() => refreshCredentials()}
-              >
-                Refresh Credentials
-              </button>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Select a provider from the dashboard to configure it</p>
             </div>
           )}
-          
-          <div className="space-y-6 mt-6">
-            {apiProviders.map((provider) => (
-              <DataForSeoCredentialCard 
-                key={provider.id} 
-                provider={provider} 
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>API Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                General settings for API providers will appear here.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

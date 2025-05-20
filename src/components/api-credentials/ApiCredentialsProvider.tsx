@@ -1,89 +1,181 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useRealtimeApiKeys } from '@/hooks/useRealtimeApiKeys';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { useDataForSeoProvider } from '../api/hooks/useDataForSeoProvider';
+import { useSerpApiProvider } from '../api/hooks/useSerpApiProvider';
+import { useOpenAiProvider } from '../api/hooks/useOpenAiProvider';
+import { useAnthropicProvider } from '../api/hooks/useAnthropicProvider';
+import { useGeminiProvider } from '../api/hooks/useGeminiProvider';
+import { ApiCredential, ApiProviderConfig } from '@/components/settings/api/types';
 
-interface ApiCredential {
-  id: string;
-  service: string;
-  is_active: boolean;
-  updated_at: string;
-}
+// Define available API providers
+const API_PROVIDERS: ApiProviderConfig[] = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    description: 'AI model provider for ChatGPT and other AI models',
+    serviceKey: 'openai',
+    category: 'ai',
+    docsUrl: 'https://platform.openai.com/docs/introduction',
+    signupUrl: 'https://platform.openai.com/signup',
+    isDefault: true
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    description: 'Provider of Claude AI models',
+    serviceKey: 'anthropic',
+    category: 'ai',
+    docsUrl: 'https://docs.anthropic.com/claude/reference/getting-started-with-the-api',
+    signupUrl: 'https://console.anthropic.com/login'
+  },
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    description: 'Google\'s AI model suite',
+    serviceKey: 'gemini',
+    category: 'ai',
+    docsUrl: 'https://ai.google.dev/docs',
+    signupUrl: 'https://makersuite.google.com/app/apikey'
+  },
+  {
+    id: 'serpapi',
+    name: 'SERP API',
+    description: 'Search engine results data provider',
+    serviceKey: 'serp',
+    category: 'serp',
+    docsUrl: 'https://serpapi.com/docs',
+    signupUrl: 'https://serpapi.com/users/sign_up'
+  },
+  {
+    id: 'dataforseo',
+    name: 'DataForSEO',
+    description: 'SEO data and analytics provider',
+    serviceKey: 'dataforseo',
+    category: 'serp',
+    docsUrl: 'https://docs.dataforseo.com/v3/',
+    signupUrl: 'https://app.dataforseo.com/register'
+  }
+];
 
+// Context type definitions
 interface ApiCredentialsContextType {
   apiCredentials: ApiCredential[];
+  providers: ApiProviderConfig[];
   isLoading: boolean;
   error: string | null;
   refreshCredentials: () => Promise<void>;
+  getProviderById: (id: string) => ApiProviderConfig | undefined;
+  getProviderStatus: (id: string) => ApiCredential | undefined;
 }
 
+// Create context
 const ApiCredentialsContext = createContext<ApiCredentialsContextType | undefined>(undefined);
 
-export function ApiCredentialsProvider({ children }: { children: ReactNode }) {
+export const useApiCredentials = () => {
+  const context = useContext(ApiCredentialsContext);
+  if (!context) {
+    throw new Error('useApiCredentials must be used within an ApiCredentialsProvider');
+  }
+  return context;
+};
+
+interface ApiCredentialsProviderProps {
+  children: React.ReactNode;
+}
+
+export const ApiCredentialsProvider: React.FC<ApiCredentialsProviderProps> = ({ children }) => {
   const [apiCredentials, setApiCredentials] = useState<ApiCredential[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Use our realtime hook
-  const { isListening } = useRealtimeApiKeys();
 
-  // Function to fetch API credentials
-  const fetchApiCredentials = async () => {
+  // Initialize provider hooks
+  const dataForSeo = useDataForSeoProvider(API_PROVIDERS.find(p => p.id === 'dataforseo')!);
+  const serpApi = useSerpApiProvider(API_PROVIDERS.find(p => p.id === 'serpapi')!);
+  const openAi = useOpenAiProvider(API_PROVIDERS.find(p => p.id === 'openai')!);
+  const anthropic = useAnthropicProvider(API_PROVIDERS.find(p => p.id === 'anthropic')!);
+  const gemini = useGeminiProvider(API_PROVIDERS.find(p => p.id === 'gemini')!);
+
+  // Load all credentials on mount
+  useEffect(() => {
+    loadCredentials();
+  }, []);
+
+  const loadCredentials = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
-        .from('api_keys')
-        .select('id, service, is_active, updated_at')
-        .order('service');
-      
-      if (error) {
-        throw error;
-      }
-      
-      setApiCredentials(data || []);
+      const credentials: ApiCredential[] = [];
+
+      // Check each provider and add credentials if they exist
+      const providers = [
+        { provider: dataForSeo, id: 'dataforseo' },
+        { provider: serpApi, id: 'serpapi' },
+        { provider: openAi, id: 'openai' },
+        { provider: anthropic, id: 'anthropic' },
+        { provider: gemini, id: 'gemini' }
+      ];
+
+      // Map providers to credentials
+      providers.forEach(({ provider, id }) => {
+        const config = API_PROVIDERS.find(p => p.id === id);
+        if (!config) return;
+        
+        if (provider.status !== 'none') {
+          credentials.push({
+            provider: id,
+            name: config.name,
+            status: provider.status,
+            isValid: provider.status === 'connected'
+          });
+        }
+      });
+
+      setApiCredentials(credentials);
     } catch (err: any) {
-      console.error('Error fetching API credentials:', err);
+      console.error('Error loading API credentials:', err);
       setError(err.message || 'Failed to load API credentials');
-      setApiCredentials([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initial fetch
-  useEffect(() => {
-    fetchApiCredentials();
-  }, []);
-
-  // Refetch when realtime updates occur
-  // The actual updates are handled by the useRealtimeApiKeys hook
-  // This triggers a refresh when we know changes have happened
-  useEffect(() => {
-    if (isListening) {
-      console.log('Realtime API key listening is active');
+  const refreshCredentials = async () => {
+    try {
+      setIsLoading(true);
+      await loadCredentials();
+      toast.success('API credentials refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh API credentials');
+    } finally {
+      setIsLoading(false);
     }
-  }, [isListening]);
+  };
 
-  const contextValue = {
-    apiCredentials,
-    isLoading,
-    error,
-    refreshCredentials: fetchApiCredentials
+  // Helper to get provider config by ID
+  const getProviderById = (id: string) => {
+    return API_PROVIDERS.find(provider => provider.id === id);
+  };
+
+  // Helper to get provider status
+  const getProviderStatus = (id: string) => {
+    return apiCredentials.find(cred => cred.provider === id);
   };
 
   return (
-    <ApiCredentialsContext.Provider value={contextValue}>
+    <ApiCredentialsContext.Provider
+      value={{
+        apiCredentials,
+        providers: API_PROVIDERS,
+        isLoading,
+        error,
+        refreshCredentials,
+        getProviderById,
+        getProviderStatus
+      }}
+    >
       {children}
     </ApiCredentialsContext.Provider>
   );
-}
-
-export const useApiCredentials = () => {
-  const context = useContext(ApiCredentialsContext);
-  if (context === undefined) {
-    throw new Error('useApiCredentials must be used within an ApiCredentialsProvider');
-  }
-  return context;
 };
