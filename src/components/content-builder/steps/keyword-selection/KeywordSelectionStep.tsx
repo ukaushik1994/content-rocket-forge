@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { InitialStateView } from './InitialStateView';
 import { KeywordSelectionContent } from './KeywordSelectionContent';
+import { toast } from 'sonner';
 
 export const KeywordSelectionStep: React.FC = () => {
   const { state, dispatch, analyzeKeyword } = useContentBuilder();
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [relatedKeywords, setRelatedKeywords] = useState<string[]>([]);
   const [isLoadingKeywordData, setIsLoadingKeywordData] = useState<boolean>(false);
+  const [selectedKeyword, setSelectedKeyword] = useState<string>('');
   
   // Get relevant data from content builder state
   const { mainKeyword, isAnalyzing } = state;
@@ -23,25 +25,25 @@ export const KeywordSelectionStep: React.FC = () => {
     
     // Auto-select the first suggestion if available
     if (suggestions.length > 0) {
-      dispatch({ type: 'SET_SELECTED_KEYWORD', payload: suggestions[0] });
+      setSelectedKeyword(suggestions[0]);
     } else {
       // If no suggestions, use the main keyword
-      dispatch({ type: 'SET_SELECTED_KEYWORD', payload: keyword });
+      setSelectedKeyword(keyword);
     }
     
-    // Generate some mock related keywords based on the selected keyword
+    // Generate some related keywords based on the selected keyword
     generateRelatedKeywords(keyword);
   };
   
   // Handle keyword selection
   const handleKeywordSelect = (keyword: string) => {
-    dispatch({ type: 'SET_SELECTED_KEYWORD', payload: keyword });
+    setSelectedKeyword(keyword);
     
     // Generate related keywords based on the selected keyword
     generateRelatedKeywords(keyword);
   };
   
-  // Generate mock related keywords
+  // Generate related keywords
   const generateRelatedKeywords = (keyword: string) => {
     setIsLoadingKeywordData(true);
     
@@ -65,16 +67,26 @@ export const KeywordSelectionStep: React.FC = () => {
   
   // Handle continuing to the next step
   const handleContinue = async () => {
-    if (!state.selectedKeyword) return;
+    if (!selectedKeyword) return;
+    
+    // Add the selected keyword to the selected keywords array
+    if (!state.selectedKeywords.includes(selectedKeyword)) {
+      dispatch({ type: 'ADD_KEYWORD', payload: selectedKeyword });
+    }
     
     // Mark the step as completed
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
     
-    // Analyze the selected keyword
-    await analyzeKeyword(state.selectedKeyword);
-    
-    // Advance to the next step
-    dispatch({ type: 'SET_ACTIVE_STEP', payload: 2 });
+    try {
+      // Analyze the selected keyword
+      await analyzeKeyword(selectedKeyword);
+      
+      // Advance to the next step
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 2 });
+    } catch (error) {
+      console.error('Error analyzing keyword:', error);
+      toast.error('Failed to analyze keyword. Please try again.');
+    }
   };
   
   // Determine which view to show
@@ -88,7 +100,7 @@ export const KeywordSelectionStep: React.FC = () => {
         <KeywordSelectionContent
           mainKeyword={mainKeyword}
           keywordSuggestions={keywordSuggestions}
-          selectedKeyword={state.selectedKeyword || ''}
+          selectedKeyword={selectedKeyword}
           relatedKeywords={relatedKeywords}
           isLoadingKeywordData={isLoadingKeywordData}
           isAnalyzing={isAnalyzing}

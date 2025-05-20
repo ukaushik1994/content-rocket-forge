@@ -22,12 +22,13 @@ export interface ContentBuilderContextType {
   setMainKeyword: (keyword: string) => void;
   addKeyword: (keyword: string) => void;
   removeKeyword: (keyword: string) => void;
+  setSelectedKeyword: (keyword: string) => void; // Added this action
   
   // SERP Actions
   analyzeKeyword: (keyword: string, provider?: SerpProvider) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
-  changeSerpProvider: (provider: SerpProvider) => Promise<void>; // Added the missing method
+  changeSerpProvider: (provider: SerpProvider) => Promise<void>;
   
   // Content Actions
   setContentTitle: (title: string) => void;
