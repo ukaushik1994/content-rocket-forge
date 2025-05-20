@@ -12,7 +12,7 @@ import {
   fetchSavedFormats as fetchFormats,
   saveContent,
   deleteRepurposedContent as deleteContent
-} from './utils/database-operations';
+} from './utils/database';
 
 export const useContentActions = (content: ContentItemType | null): ContentActionHookReturn => {
   const { contentItems, updateContentItem } = useContent();

@@ -1,8 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '@/contexts/content/types';
-import { RepurposedContentData } from '../types/action-types';
+import { RepurposedContentData } from '../../types/action-types';
 import { toast } from 'sonner';
 import { getFormatByIdOrDefault } from '@/components/content-repurposing/formats';
+import { ensureContentItemFormat } from './utils';
 
 /**
  * Finds a specific repurposed content record
@@ -70,50 +72,6 @@ export const findRepurposedContent = async (
   } catch (error) {
     console.error('Error in findRepurposedContent:', error);
     return null;
-  }
-};
-
-/**
- * Fetches formats that have been saved for a specific content
- */
-export const fetchSavedFormats = async (contentId: string): Promise<string[]> => {
-  if (!contentId) return [];
-  
-  try {
-    // First check in Supabase
-    const { data, error } = await supabase
-      .from('repurposed_contents')
-      .select('format_code')
-      .eq('content_id', contentId)
-      .eq('status', 'saved');
-      
-    if (error) {
-      console.error('Error fetching saved formats:', error);
-      return [];
-    }
-    
-    if (data && data.length > 0) {
-      return data.map(item => item.format_code);
-    }
-    
-    // Also check local storage (legacy approach)
-    const savedLocalData = localStorage.getItem(`repurposed_content_${contentId}`);
-    
-    if (savedLocalData) {
-      try {
-        const parsedData = JSON.parse(savedLocalData);
-        if (Array.isArray(parsedData.savedFormats)) {
-          return parsedData.savedFormats;
-        }
-      } catch (e) {
-        console.error('Error parsing saved formats from localStorage:', e);
-      }
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Error in fetchSavedFormats:', error);
-    return [];
   }
 };
 
@@ -299,13 +257,4 @@ export const deleteRepurposedContent = async (
     toast.error('Error deleting content');
     return false;
   }
-};
-
-// Helper function to ensure returned content matches ContentItemType interface
-const ensureContentItemFormat = (item: any): ContentItemType => {
-  // Make sure we have all required fields, including keywords
-  return {
-    ...item,
-    keywords: item.keywords || [],
-  };
 };
