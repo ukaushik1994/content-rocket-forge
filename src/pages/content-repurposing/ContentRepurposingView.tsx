@@ -19,6 +19,7 @@ interface ContentRepurposingViewProps {
   isDeleting: boolean;
   isSaving: boolean;
   isSavingAll: boolean;
+  savedContentFormats?: string[];
   setSelectedFormats: (formats: string[]) => void;
   setActiveFormat: (format: string) => void;
   handleGenerateContent: (formats: string[]) => void;
@@ -39,6 +40,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   isDeleting,
   isSaving,
   isSavingAll,
+  savedContentFormats,
   setSelectedFormats,
   setActiveFormat,
   handleGenerateContent,
@@ -143,6 +145,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               isDeleting={isDeleting}
               isSaving={isSaving}
               isSavingAll={isSavingAll}
+              savedContentFormats={savedContentFormats}
             />
           </motion.div>
         </div>

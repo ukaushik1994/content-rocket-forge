@@ -15,9 +15,12 @@ export const useContentRepurposing = () => {
     generatedContents,
     isGenerating,
     activeFormat,
+    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
+    markAsSaved,
+    saveAllFormats,
   } = useContentGeneration(content);
   
   const {
@@ -84,6 +87,7 @@ export const useContentRepurposing = () => {
     generatedFormats: generatedFormats || [],
     isDeleting,
     isSaving,
+    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -98,6 +102,8 @@ export const useContentRepurposing = () => {
     deleteRepurposedContent,
     handleDeleteActiveFormat,
     resetContent,
+    markAsSaved,
+    saveAllFormats,
   };
 };
 

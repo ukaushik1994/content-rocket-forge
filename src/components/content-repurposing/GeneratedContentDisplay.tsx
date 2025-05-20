@@ -12,6 +12,7 @@ import NoContentDisplay from './generated-content/NoContentDisplay';
 import SelectFormatDisplay from './generated-content/SelectFormatDisplay';
 import ContentStats from './generated-content/ContentStats';
 import PreviewModeToggle from './generated-content/PreviewModeToggle';
+import { SaveStatusBar } from './SaveStatusBar';
 
 interface GeneratedContentDisplayProps {
   generatedContents: Record<string, string>;
@@ -19,12 +20,13 @@ interface GeneratedContentDisplayProps {
   setActiveFormat: React.Dispatch<React.SetStateAction<string | null>>;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
-  onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
+  onSaveAsNewContent: (formatId: string, generatedContent: string) => Promise<boolean>;
   onSaveAllContent?: () => Promise<boolean>;
   onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
   isDeleting?: boolean;
   isSaving?: boolean;
   isSavingAll?: boolean;
+  savedContentFormats?: string[];
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = memo(({
@@ -38,7 +40,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   onDeleteRepurposedContent,
   isDeleting = false,
   isSaving = false,
-  isSavingAll = false
+  isSavingAll = false,
+  savedContentFormats = []
 }) => {
   const [previewMode, setPreviewMode] = useState<boolean>(true);
   const generatedFormats = Object.keys(generatedContents);
@@ -77,7 +80,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
           </div>
 
           {/* Content area with improved spacing */}
-          <div className="flex-1 overflow-hidden p-4">
+          <div className="flex-1 overflow-hidden p-4 flex flex-col">
             {!hasGeneratedContent ? (
               <NoContentDisplay />
             ) : activeFormat ? (
@@ -131,6 +134,16 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
                   isSaving={isSaving}
                   isSavingAll={isSavingAll}
                 />
+                
+                {/* Show save status bar if we have save formats tracking */}
+                {hasGeneratedContent && savedContentFormats && onSaveAllContent && (
+                  <SaveStatusBar 
+                    activeFormat={activeFormat}
+                    savedFormats={savedContentFormats}
+                    totalFormats={generatedFormats.length}
+                    onSaveAll={onSaveAllContent}
+                  />
+                )}
               </div>
             ) : (
               <SelectFormatDisplay />

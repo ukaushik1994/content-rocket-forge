@@ -220,11 +220,19 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   };
   
-  const saveAllFormats = () => {
+  /**
+   * Mark all formats as saved in the UI state and return the format IDs
+   * @returns Array of format IDs that were marked as saved
+   */
+  const saveAllFormats = (): string[] => {
     const allFormatIds = Object.keys(generatedContents);
-    setSavedContentFormats(allFormatIds);
     
-    toast.success(`Saved all ${allFormatIds.length} content formats`);
+    // Only update state if there are new formats to save
+    const newFormatsToSave = allFormatIds.filter(id => !savedContentFormats.includes(id));
+    if (newFormatsToSave.length > 0) {
+      setSavedContentFormats(allFormatIds);
+    }
+    
     return allFormatIds;
   };
   
