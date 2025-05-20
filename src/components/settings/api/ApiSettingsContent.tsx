@@ -20,6 +20,7 @@ export const ApiSettingsContent: React.FC = () => {
       serviceKey: 'dataforseo',
       docsUrl: 'https://docs.dataforseo.com/v3/',
       signupUrl: 'https://app.dataforseo.com/register',
+      type: 'credentials', // Added the missing 'type' property
       apiKeyRequired: false,
     }
   ];
