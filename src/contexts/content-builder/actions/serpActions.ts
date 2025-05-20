@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { SerpProvider } from '../types/serp-types';
 import { OutlineSection } from '../types/outline-types';
@@ -26,33 +25,20 @@ export const createSerpActions = (
       const selectedProvider = provider || state.preferredSerpProvider || 'serpapi';
       
       // Get the API key for the selected provider
-      const getProviderApiKey = () => {
-        switch (selectedProvider) {
-          case 'serpapi':
-            return localStorage.getItem('serp_api_key');
-          case 'dataforseo':
-            return localStorage.getItem('dataforseo_api_key');
-          case 'mock':
-            return 'mock'; // Mock provider doesn't need an API key
-          default:
-            return null;
-        }
-      };
-      
-      const apiKey = getProviderApiKey();
+      const apiKey = localStorage.getItem('serp_api_key');
       
       // If no API key exists and not using mock, show error message
       if (!apiKey && selectedProvider !== 'mock') {
-        toast.error(`No API key found for ${selectedProvider}. Please configure your API keys in settings.`);
+        toast.error(`No API key found for SERP API. Please configure your API key in settings.`);
         dispatch({ type: 'SET_IS_ANALYZING', payload: false });
         return;
       }
       
-      // Get SERP data - fix the number of arguments
+      // Get SERP data
       const serpData = await analyzeSerpKeyword(keyword, false);
       
       if (!serpData && selectedProvider !== 'mock') {
-        toast.error(`Failed to get data from ${selectedProvider}. Please check your API key.`);
+        toast.error(`Failed to get data from SERP API. Please check your API key.`);
         dispatch({ type: 'SET_IS_ANALYZING', payload: false });
         return;
       }

@@ -5,8 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApiCredentials } from '@/components/api-credentials/ApiCredentialsProvider';
 import { ApiProviderCard } from '@/components/settings/api/ApiProviderCard';
 import { ProviderDashboard } from '@/components/api/ProviderDashboard';
-import { DataForSeoProvider } from '@/components/api/DataForSeoProvider';
-import { ApiProviderConfig } from './types';
 
 /**
  * Content component for the API Settings page
@@ -47,10 +45,6 @@ export const ApiSettingsContent: React.FC = () => {
   const renderProvider = (providerId: string) => {
     const provider = providers.find(p => p.id === providerId);
     if (!provider) return null;
-
-    if (provider.id === 'dataforseo') {
-      return <DataForSeoProvider provider={provider} />;
-    }
 
     // Generic provider display
     return <ApiProviderCard provider={provider} />;

@@ -25,3 +25,6 @@ export { UsageTracker } from './usage-tracking/UsageTracker';
 
 // Re-export cache utilities if needed externally
 export { getFromCache, saveToCache } from './cache/SerpCache';
+
+// Export SerpAnalysisResult type for external use
+export type { SerpAnalysisResult } from '@/types/serp';

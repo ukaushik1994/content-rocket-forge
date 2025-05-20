@@ -6,11 +6,9 @@ import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysi
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
-import { DataForSeoApiSetup } from '../serp/DataForSeoApiSetup';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 import { getPreferredSerpProvider } from '@/services/serpApiService';
 import { getActiveProvider } from '@/services/serp/SerpApiService';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 
 export const SerpAnalysisStep = () => {
@@ -18,31 +16,20 @@ export const SerpAnalysisStep = () => {
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeyExists, setApiKeyExists] = useState(false);
   const [currentProvider, setCurrentProvider] = useState<SerpProvider>(getPreferredSerpProvider());
-  const [activeTab, setActiveTab] = useState<string>('serpapi');
   
   // Check if API key exists
   useEffect(() => {
     const checkApiKey = async () => {
-      // Check localStorage first for any provider key
+      // Check localStorage for serpapi key
       const serpApiKey = localStorage.getItem('serp_api_key');
-      const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
       
-      if (serpApiKey || dataForSeoKey) {
+      if (serpApiKey) {
         setApiKeyExists(true);
-        
-        // Set the current provider to the one with an API key
-        if (serpApiKey) {
-          setCurrentProvider('serpapi');
-          setActiveTab('serpapi');
-        } else if (dataForSeoKey) {
-          setCurrentProvider('dataforseo');
-          setActiveTab('dataforseo');
-        }
+        setCurrentProvider('serpapi');
         return;
       }
       
-      // We could also check Supabase here if necessary
-      // For now, let's assume we're just using localStorage
+      // No API key found
       setApiKeyExists(false);
     };
     
@@ -100,11 +87,11 @@ export const SerpAnalysisStep = () => {
     
     // Get the active provider
     const activeProvider = getActiveProvider();
-    setCurrentProvider(activeProvider);
+    setCurrentProvider(activeProvider || 'serpapi');
     
     // If we have a keyword, analyze it with the new provider
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, activeProvider);
+      await analyzeKeyword(mainKeyword, activeProvider || 'serpapi');
     }
   };
   
@@ -119,20 +106,7 @@ export const SerpAnalysisStep = () => {
           </p>
         </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="serpapi">SERP API</TabsTrigger>
-            <TabsTrigger value="dataforseo">DataForSEO</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="serpapi" className="mt-4">
-            <SerpApiKeySetup onConfigured={handleApiConfigured} />
-          </TabsContent>
-          
-          <TabsContent value="dataforseo" className="mt-4">
-            <DataForSeoApiSetup onConfigured={handleApiConfigured} />
-          </TabsContent>
-        </Tabs>
+        <SerpApiKeySetup onConfigured={handleApiConfigured} />
       </div>
     );
   }

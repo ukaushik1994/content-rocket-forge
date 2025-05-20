@@ -11,7 +11,7 @@ export interface SerpSelection {
   metadata?: any;
 }
 
-export type SerpProvider = 'serpapi' | 'dataforseo' | 'mock';
+export type SerpProvider = 'serpapi' | 'mock';
 
 export interface SerpProviderConfig {
   id: SerpProvider;
@@ -28,12 +28,6 @@ export const SERP_PROVIDERS: SerpProviderConfig[] = [
     description: 'Provides search engine results data',
     requiresKey: true,
     isPrimary: true
-  },
-  {
-    id: 'dataforseo',
-    name: 'DataForSEO',
-    description: 'Enterprise SEO data platform',
-    requiresKey: true
   },
   {
     id: 'mock',

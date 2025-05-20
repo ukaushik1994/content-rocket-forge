@@ -1,219 +1,217 @@
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, HelpCircle, FileText, Tag, Heading, FileSearch, RefreshCw, Key } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React, { useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { SerpAnalysisResult } from '@/types/serp';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { toast } from 'sonner';
-import {
-  SerpSectionHeader,
-  SerpKeywordsSection,
-  SerpQuestionsSection,
-  SerpEntitiesSection,
-  SerpHeadingsSection
-} from '@/components/content/serp-analysis';
+import { RefreshCw, Search, Info } from 'lucide-react';
+import { useApproval } from '../context/ApprovalContext';
+import { analyzeSerpKeyword } from '@/services/serpApiService';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ApprovalSerpSummaryProps {
-  serpData: SerpAnalysisResult | null;
-  isLoading: boolean;
-  mainKeyword: string;
-  onAddToContent?: (content: string, type: string) => void;
   className?: string;
 }
 
-export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({
-  serpData,
-  isLoading,
-  mainKeyword,
-  onAddToContent = () => {},
-  className = ''
-}) => {
-  const [activeTab, setActiveTab] = useState('keywords');
-  const [localSerpData, setLocalSerpData] = useState<SerpAnalysisResult | null>(serpData);
-  const [isRefreshingSection, setIsRefreshingSection] = useState(false);
-
-  const refreshCurrentSection = async () => {
-    if (!mainKeyword || isRefreshingSection) return;
+export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ className }) => {
+  const { 
+    keywords, 
+    selectedKeyword, 
+    setSelectedKeyword, 
+    serpAnalysisData,
+    analyzeSerpData,
+    isAnalyzing
+  } = useApproval();
+  
+  // Analyze the first keyword if we have one and no analysis yet
+  useEffect(() => {
+    const analyzeFirstKeyword = async () => {
+      if (keywords.length > 0 && !serpAnalysisData[keywords[0]] && !isAnalyzing) {
+        analyzeSerpData(keywords[0]);
+        setSelectedKeyword(keywords[0]);
+      }
+    };
     
-    setIsRefreshingSection(true);
+    analyzeFirstKeyword();
+  }, [keywords, serpAnalysisData, isAnalyzing]);
+  
+  // Get the currently selected SERP data
+  const selectedSerpData = selectedKeyword ? serpAnalysisData[selectedKeyword] : null;
+  
+  // Handle selecting a keyword
+  const handleSelectKeyword = (keyword: string) => {
+    setSelectedKeyword(keyword);
     
-    try {
-      // Check if API key exists first
-      const serpApiKey = localStorage.getItem('serp_api_key');
-      const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
-      
-      if (!serpApiKey && !dataForSeoKey) {
-        toast.error('No API keys configured. Please add an API key in settings.');
-        setIsRefreshingSection(false);
-        return;
-      }
-      
-      // Fetch new SERP data with refresh flag set to true
-      const newSerpData = await analyzeKeywordSerp(mainKeyword, true);
-      
-      if (!newSerpData) {
-        toast.error('Failed to refresh data. Please check your API key.');
-        setIsRefreshingSection(false);
-        return;
-      }
-      
-      if (localSerpData) {
-        // Create updated data by merging the new section data with existing data
-        const updatedData = { ...localSerpData } as SerpAnalysisResult;
-        
-        switch(activeTab) {
-          case 'keywords':
-            updatedData.keywords = newSerpData.keywords;
-            updatedData.relatedSearches = newSerpData.relatedSearches;
-            toast.success('Keywords refreshed successfully');
-            break;
-          case 'questions':
-            updatedData.peopleAlsoAsk = newSerpData.peopleAlsoAsk;
-            toast.success('Questions refreshed successfully');
-            break;
-          case 'entities':
-            updatedData.entities = newSerpData.entities;
-            toast.success('Entities refreshed successfully');
-            break;
-          case 'headings':
-            updatedData.headings = newSerpData.headings;
-            toast.success('Headings refreshed successfully');
-            break;
-        }
-        
-        // Update the local state
-        setLocalSerpData(updatedData);
-      } else {
-        setLocalSerpData(newSerpData);
-        toast.success('SERP data loaded successfully');
-      }
-    } catch (error) {
-      console.error(`Error refreshing ${activeTab}:`, error);
-      toast.error(`Failed to refresh ${activeTab}`);
-    } finally {
-      setIsRefreshingSection(false);
+    // If we don't have SERP data for this keyword yet, analyze it
+    if (!serpAnalysisData[keyword] && !isAnalyzing) {
+      analyzeSerpData(keyword);
+    }
+  };
+  
+  // Handle refreshing SERP data
+  const handleRefreshSerpData = () => {
+    if (selectedKeyword) {
+      analyzeSerpData(selectedKeyword);
     }
   };
 
-  // Use localSerpData if available, otherwise use the prop
-  const displayData = localSerpData || serpData;
-
-  if (isLoading) {
-    return (
-      <div className={`p-4 bg-white/5 border border-white/10 rounded-lg ${className}`}>
-        <div className="h-20 w-full flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neon-purple"></div>
-          <p className="ml-3 text-white/70">Loading SERP data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!displayData) {
-    return (
-      <div className={`p-4 bg-white/5 border border-white/10 rounded-lg ${className}`}>
-        <div className="flex flex-col items-center justify-center py-6">
-          <Key className="h-8 w-8 text-white/30 mb-2" />
-          <p className="text-white/50">API key required for SERP data</p>
-          <p className="text-xs text-white/30 mt-2">Configure API keys in settings</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <Card className={`border-white/10 bg-black/20 backdrop-blur-lg overflow-hidden ${className}`}>
-      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-neon-purple" />
-            <h3 className="text-sm font-medium">
-              SERP Analysis: <span className="text-neon-purple">{mainKeyword}</span>
-            </h3>
+    <Card className={cn("h-full", className)}>
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          <span>SERP Analysis</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6"
+                  onClick={handleRefreshSerpData}
+                  disabled={isAnalyzing || !selectedKeyword}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh SERP data</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-3">
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((keyword) => (
+              <Badge 
+                key={keyword}
+                variant={selectedKeyword === keyword ? "default" : "outline"}
+                className={cn(
+                  "cursor-pointer",
+                  selectedKeyword === keyword ? "bg-blue-600" : "hover:bg-blue-100 hover:text-blue-800",
+                  !serpAnalysisData[keyword] && "opacity-50"
+                )}
+                onClick={() => handleSelectKeyword(keyword)}
+              >
+                {keyword}
+                {(!serpAnalysisData[keyword] && selectedKeyword === keyword && isAnalyzing) && (
+                  <RefreshCw className="h-3 w-3 ml-1.5 animate-spin" />
+                )}
+              </Badge>
+            ))}
+            {keywords.length === 0 && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Info className="h-3 w-3" />
+                No keywords added yet
+              </div>
+            )}
           </div>
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={refreshCurrentSection}
-            disabled={isRefreshingSection}
-            className="h-7 px-2 text-xs text-white/70 hover:text-white"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshingSection ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          {isAnalyzing && selectedKeyword && (
+            <div className="text-xs text-muted-foreground animate-pulse">
+              Analyzing {selectedKeyword}...
+            </div>
+          )}
+          
+          <ScrollArea className="h-[240px] pr-3">
+            {selectedKeyword && selectedSerpData ? (
+              <div className="space-y-4">
+                {/* Search Volume */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-medium opacity-60">Search Volume</div>
+                  <div className="text-sm font-semibold">
+                    {selectedSerpData.searchVolume?.toLocaleString() || 'N/A'}
+                  </div>
+                </div>
+                
+                {/* Top Results */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-medium opacity-60">Top Results</div>
+                  <div className="space-y-2">
+                    {selectedSerpData.topResults?.slice(0, 3).map((result: any, idx: number) => (
+                      <div key={idx} className="text-xs border-l-2 border-blue-500 pl-2">
+                        <div className="font-medium truncate">{result.title}</div>
+                        <div className="text-muted-foreground truncate">{result.domain}</div>
+                      </div>
+                    ))}
+                    {(!selectedSerpData.topResults || selectedSerpData.topResults.length === 0) && (
+                      <div className="text-xs text-muted-foreground">No top results available</div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Related Searches */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-medium opacity-60">Related Searches</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedSerpData.relatedSearches?.slice(0, 5).map((search: any, idx: number) => (
+                      <Badge key={idx} variant="outline" className="text-[10px] bg-slate-100 text-slate-800">
+                        {search.query || search}
+                      </Badge>
+                    ))}
+                    {(!selectedSerpData.relatedSearches || selectedSerpData.relatedSearches.length === 0) && (
+                      <div className="text-xs text-muted-foreground">No related searches available</div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* People Also Ask */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-medium opacity-60">People Also Ask</div>
+                  <div className="space-y-2">
+                    {selectedSerpData.peopleAlsoAsk?.slice(0, 3).map((item: any, idx: number) => (
+                      <div key={idx} className="text-xs">
+                        <div className="font-medium">{item.question}</div>
+                      </div>
+                    ))}
+                    {(!selectedSerpData.peopleAlsoAsk || selectedSerpData.peopleAlsoAsk.length === 0) && (
+                      <div className="text-xs text-muted-foreground">No questions available</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                {selectedKeyword ? (
+                  isAnalyzing ? (
+                    <div className="space-y-3">
+                      <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500" />
+                      <p className="text-sm text-muted-foreground">Analyzing keyword...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Search className="h-5 w-5 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No SERP data for this keyword</p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => analyzeSerpData(selectedKeyword)}
+                        disabled={isAnalyzing}
+                      >
+                        Analyze Now
+                      </Button>
+                    </div>
+                  )
+                ) : (
+                  <div className="space-y-3">
+                    <Search className="h-5 w-5 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      {keywords.length > 0 ? 'Select a keyword to view SERP data' : 'Add keywords to analyze SERP data'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </ScrollArea>
         </div>
-      </div>
-
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0 grid grid-cols-4">
-          <TabsTrigger
-            value="keywords"
-            className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
-            onClick={() => setActiveTab('keywords')}
-          >
-            <Tag className="h-4 w-4 mr-2" /> Keywords
-          </TabsTrigger>
-          <TabsTrigger
-            value="questions"
-            className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
-            onClick={() => setActiveTab('questions')}
-          >
-            <HelpCircle className="h-4 w-4 mr-2" /> Questions
-          </TabsTrigger>
-          <TabsTrigger
-            value="entities"
-            className="rounded-none border-r border-white/10 data-[state=active]:bg-white/5"
-            onClick={() => setActiveTab('entities')}
-          >
-            <FileSearch className="h-4 w-4 mr-2" /> Entities
-          </TabsTrigger>
-          <TabsTrigger
-            value="headings"
-            className="rounded-none data-[state=active]:bg-white/5"
-            onClick={() => setActiveTab('headings')}
-          >
-            <Heading className="h-4 w-4 mr-2" /> Headings
-          </TabsTrigger>
-        </TabsList>
-        
-        <CardContent className="pt-2 max-h-[400px] overflow-y-auto">
-          <TabsContent value="keywords" className="mt-0 py-2">
-            <SerpKeywordsSection
-              serpData={displayData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
-          </TabsContent>
-          
-          <TabsContent value="questions" className="mt-0 py-2">
-            <SerpQuestionsSection
-              serpData={displayData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
-          </TabsContent>
-          
-          <TabsContent value="entities" className="mt-0 py-2">
-            <SerpEntitiesSection
-              serpData={displayData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
-          </TabsContent>
-          
-          <TabsContent value="headings" className="mt-0 py-2">
-            <SerpHeadingsSection
-              serpData={displayData}
-              expanded={true}
-              onAddToContent={onAddToContent}
-            />
-          </TabsContent>
-        </CardContent>
-      </Tabs>
+      </CardContent>
     </Card>
   );
-}
+};

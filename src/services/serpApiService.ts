@@ -1,5 +1,5 @@
 
-import { SerpAnalysisResult } from '@/types/serp';
+import type { SerpAnalysisResult } from '@/types/serp';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 import { 
   analyzeSerpKeyword as analyzeSerpKeywordImpl,
@@ -21,7 +21,6 @@ export const getPreferredSerpProvider = (): SerpProvider => {
     // Check if the preferred provider has an API key
     if (provider === 'mock') return provider;
     if (provider === 'serpapi' && localStorage.getItem('serp_api_key')) return provider;
-    if (provider === 'dataforseo' && localStorage.getItem('dataforseo_api_key')) return provider;
   }
   
   // Return the active provider (the one that has an API key) or default to mock
@@ -38,6 +37,7 @@ export const setPreferredSerpProvider = (provider: SerpProvider): void => {
 
 /**
  * Analyze a keyword and return SERP data
+ * This is the main function to use for getting SERP data
  */
 export const analyzeSerpKeyword = async (
   keyword: string, 
@@ -45,11 +45,10 @@ export const analyzeSerpKeyword = async (
 ): Promise<SerpAnalysisResult | null> => {
   // Check if we have API keys
   const serpApiKey = localStorage.getItem('serp_api_key');
-  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
   
-  // If no API keys, return null
-  if (!serpApiKey && !dataForSeoKey) {
-    console.warn('No API keys found for SERP providers');
+  // If no API key, return null
+  if (!serpApiKey) {
+    console.warn('No API key found for SERP provider');
     return null;
   }
   
@@ -65,25 +64,24 @@ export const analyzeSerpKeyword = async (
 /**
  * Search for keywords - implementation forwarded to SerpApiService
  */
-export const searchKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
+export const searchSerpKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
   // Check if we have API keys
   const serpApiKey = localStorage.getItem('serp_api_key');
-  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
   
-  // If no API keys, return empty array
-  if (!serpApiKey && !dataForSeoKey) {
-    console.warn('No API keys found for SERP providers');
+  // If no API key, return empty array
+  if (!serpApiKey) {
+    console.warn('No API key found for SERP provider');
     return [];
   }
   
   return searchSerpKeywordsImpl(params.query, params.refresh || false);
 };
 
-/**
- * Analyze a keyword and get SERP data for content
- * This is an alias for analyzeSerpKeyword to maintain backwards compatibility
- */
-export const analyzeKeywordSerp = analyzeSerpKeyword;
+// Export these types and functions for backward compatibility
+export { 
+  type SerpAnalysisResult 
+};
 
-// Re-export the type for backward compatibility
-export type { SerpAnalysisResult };
+// Export functions with legacy names
+export const analyzeKeywordSerp = analyzeSerpKeyword;
+export const searchKeywords = searchSerpKeywords;

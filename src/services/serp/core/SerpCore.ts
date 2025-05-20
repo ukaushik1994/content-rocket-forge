@@ -21,7 +21,7 @@ export interface SerpApiOptions {
 }
 
 /**
- * Get the active SERP provider or return null if no API keys exist
+ * Get the active SERP provider or return null if no API key exists
  */
 export const getActiveProvider = (): SerpProvider | null => {
   // Check for stored preference first
@@ -29,32 +29,32 @@ export const getActiveProvider = (): SerpProvider | null => {
   
   // Check if any API key exists
   const serpApiKey = localStorage.getItem('serp_api_key');
-  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
   
   // If preference exists and its API key exists, use that
   if (storedPreference) {
     if (storedPreference === 'mock') return 'mock';
     if (storedPreference === 'serpapi' && serpApiKey) return 'serpapi';
-    if (storedPreference === 'dataforseo' && dataForSeoKey) return 'dataforseo';
   }
   
-  // Otherwise use first available API key
+  // Otherwise use available API key
   if (serpApiKey) {
     return 'serpapi';
-  } else if (dataForSeoKey) {
-    return 'dataforseo';
   } else if (storedPreference === 'mock') {
     return 'mock';
   }
   
-  // No API keys exist
+  // No API key exists
   return null;
 };
 
 /**
  * Analyze keyword using the active SERP provider
  */
-export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = false, provider?: SerpProvider): Promise<SerpAnalysisResult | null> => {
+export const analyzeSerpKeyword = async (
+  keyword: string, 
+  refresh: boolean = false, 
+  provider?: SerpProvider
+): Promise<SerpAnalysisResult | null> => {
   if (!keyword) {
     throw new SerpApiError({
       type: SerpErrorType.INVALID_KEYWORD,
@@ -74,11 +74,9 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
     return null;
   }
   
-  // If requested provider doesn't have an API key, fall back to another
+  // If requested provider doesn't have an API key, fall back to mock
   if (requestedProvider === 'serpapi' && !localStorage.getItem('serp_api_key')) {
-    activeProvider = localStorage.getItem('dataforseo_api_key') ? 'dataforseo' : 'mock';
-  } else if (requestedProvider === 'dataforseo' && !localStorage.getItem('dataforseo_api_key')) {
-    activeProvider = localStorage.getItem('serp_api_key') ? 'serpapi' : 'mock';
+    activeProvider = 'mock';
   }
   
   // Check cache first unless refresh is requested
