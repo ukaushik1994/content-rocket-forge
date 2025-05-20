@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
@@ -6,26 +7,52 @@ import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
 import { SerpAnalysisResult } from '@/types/serp';
+import { getApiKey } from '@/services/apiKeyService';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeyExists, setApiKeyExists] = useState(false);
   const [showApiSetup, setShowApiSetup] = useState(false);
+  const [apiKeySource, setApiKeySource] = useState<'settings' | 'local' | 'none'>('none');
   
   // Check if API key exists and if we should show API setup
   useEffect(() => {
     const checkApiKey = async () => {
-      // Check localStorage first
-      const localApiKey = localStorage.getItem('serp_api_key');
-      if (localApiKey) {
-        setApiKeyExists(true);
-        return;
+      try {
+        // Check settings API key first (preferred)
+        const settingsApiKey = await getApiKey('serp');
+        if (settingsApiKey) {
+          setApiKeyExists(true);
+          setApiKeySource('settings');
+          // Store in localStorage for consistent access
+          localStorage.setItem('serp_api_key', settingsApiKey);
+          return;
+        }
+        
+        // Check localStorage next
+        const localApiKey = localStorage.getItem('serp_api_key');
+        if (localApiKey) {
+          setApiKeyExists(true);
+          setApiKeySource('local');
+          return;
+        }
+        
+        // No API key found
+        setApiKeyExists(false);
+        setApiKeySource('none');
+      } catch (error) {
+        console.error('Error checking API key:', error);
+        // Check localStorage as fallback if settings check fails
+        const localApiKey = localStorage.getItem('serp_api_key');
+        if (localApiKey) {
+          setApiKeyExists(true);
+          setApiKeySource('local');
+          return;
+        }
+        setApiKeyExists(false);
+        setApiKeySource('none');
       }
-      
-      // We could also check Supabase here if necessary
-      // For now, let's assume we're just using localStorage
-      setApiKeyExists(false);
     };
     
     const urlParams = new URLSearchParams(window.location.search);
@@ -43,7 +70,7 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword);
+      await analyzeKeyword(mainKeyword, true);
     }
   };
   
@@ -85,7 +112,11 @@ export const SerpAnalysisStep = () => {
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
           <p className="text-muted-foreground">
-            To see real search data, you need to add your SERP API key
+            {apiKeySource === 'settings' 
+              ? 'Using API key from settings'
+              : apiKeySource === 'local' 
+                ? 'Using locally stored API key'
+                : 'To see real search data, you need to add your SERP API key'}
           </p>
         </div>
         

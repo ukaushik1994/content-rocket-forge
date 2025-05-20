@@ -34,3 +34,4 @@ port = 54327
 [functions]
 [functions.serp-api]
 verify_jwt = false
+

@@ -16,6 +16,7 @@ import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SaveStep } from './steps/save';
 import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { toast } from "sonner";
+import { getApiKey } from '@/services/apiKeyService';
 
 export const ContentBuilder = () => {
   const { state, navigateToStep } = useContentBuilder();
@@ -39,6 +40,28 @@ export const ContentBuilder = () => {
   const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
   const currentStepId = steps[activeStep] ? steps[activeStep].id : -1;
   const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || state.activeStep === 0);
+  
+  // Check for SERP API key in settings
+  useEffect(() => {
+    const checkSerpApiKey = async () => {
+      try {
+        // Try to get the SERP API key from the API key service
+        const serpApiKey = await getApiKey('serp');
+        
+        if (serpApiKey) {
+          // Store the key in localStorage for use by serpApiService
+          localStorage.setItem('serp_api_key', serpApiKey);
+          console.log('SERP API key loaded from settings');
+        } else {
+          console.log('No SERP API key found in settings');
+        }
+      } catch (error) {
+        console.error('Error checking for SERP API key:', error);
+      }
+    };
+    
+    checkSerpApiKey();
+  }, []);
   
   // Handle next step navigation
   const handleNextStep = () => {
@@ -105,25 +128,43 @@ export const ContentBuilder = () => {
   useEffect(() => {
     // If on SERP analysis step or moving to it, check for API key
     if (steps[activeStep]?.id === 2 || currentStepId === 2) {
-      // You could check if API key exists in localStorage or user settings
-      const serpApiKeyExists = localStorage.getItem('serp_api_key');
-      
-      if (!serpApiKeyExists) {
-        toast.warning(
-          "No SERP API key found. Please add your API key in Settings to see real data.",
-          {
-            duration: 5000,
-            action: {
-              label: "Go to Settings",
-              onClick: () => {
-                window.location.href = "/settings/api";
-              }
+      // First check settings through the service, then fall back to localStorage
+      const checkApiKey = async () => {
+        try {
+          const settingsApiKey = await getApiKey('serp');
+          const localApiKey = localStorage.getItem('serp_api_key');
+          
+          // If we have either key, we're good
+          if (settingsApiKey || localApiKey) {
+            // If we found a key in settings but not in localStorage, store it
+            if (settingsApiKey && !localApiKey) {
+              localStorage.setItem('serp_api_key', settingsApiKey);
             }
+            
+            console.log('SERP API key found, can proceed with analysis');
+          } else {
+            // No API key found, show warning
+            toast.warning(
+              "No SERP API key found. Please add your API key in Settings to see real data.",
+              {
+                duration: 5000,
+                action: {
+                  label: "Go to Settings",
+                  onClick: () => {
+                    window.location.href = "/settings/api";
+                  }
+                }
+              }
+            );
           }
-        );
-      }
+        } catch (error) {
+          console.error('Error checking for SERP API key:', error);
+        }
+      };
+      
+      checkApiKey();
     }
-  }, [activeStep, currentStepId]);
+  }, [activeStep, currentStepId, steps]);
   
   // Render the current step component
   const renderStepContent = () => {
@@ -234,4 +275,3 @@ export const ContentBuilder = () => {
     </div>
   );
 };
-

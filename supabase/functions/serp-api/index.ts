@@ -1,170 +1,181 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// Follow Supabase Edge Function patterns for handling SERP API requests
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
-// CORS headers for browser access
+// Define CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Create a Supabase client for administrative tasks like accessing secrets
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-)
+// Create Supabase client using Deno runtime environment variables
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// SERP API endpoint base
-const SERP_API_BASE = 'https://api.serphouse.com/serp'
+// Get the SERP API key from Supabase secrets
+const SERP_API_KEY = Deno.env.get('SERP_API_KEY') || '';
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('CORS preflight request')
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
-    })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     // Parse request body
-    const body = await req.json()
-    const { endpoint, params, apiKey: clientApiKey } = body
-
-    console.log(`Processing SERP API request for endpoint: ${endpoint}`)
-
-    // Get API key from request or from Supabase secrets
-    let apiKey = clientApiKey
+    const { endpoint, params, apiKey } = await req.json();
     
-    if (!apiKey) {
-      console.log('No client API key found, checking Supabase secret')
-      const { data: secretData, error: secretError } = await supabaseAdmin.functions.fetchSecrets()
-      
-      if (secretError) {
-        console.error('Error fetching secrets:', secretError)
-        throw new Error('Failed to retrieve API key from Supabase secrets')
-      }
-      
-      apiKey = secretData?.SERP_API_KEY
-      
-      if (!apiKey) {
-        console.error('No SERP API key found in secrets')
-        throw new Error('SERP API key not configured')
-      }
+    // Use the API key from Supabase secrets or the one provided in the request
+    const keyToUse = SERP_API_KEY || apiKey;
+    
+    if (!keyToUse) {
+      return new Response(
+        JSON.stringify({ error: 'No API key available' }),
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
+      );
     }
 
-    // Handle different types of SERP API endpoints
-    let url: string
-    let options: RequestInit = {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    }
+    // Log the request for debugging
+    console.log(`SERP API request to endpoint: ${endpoint}`, params);
 
-    // Construct the appropriate URL based on the requested endpoint
+    // Define base URL for SERP API
+    const baseUrl = 'https://api.serphouse.com/serp';
+    
+    // Build appropriate URL and params based on endpoint
+    let url, queryParams;
+    
     switch (endpoint) {
-      case 'test':
-        // For test endpoint, just try a simple request to verify the key
-        console.log('Testing SERP API key')
-        url = `${SERP_API_BASE}/test`
-        break
+      case 'analyze':
+        url = `${baseUrl}/analyze`;
+        queryParams = new URLSearchParams({
+          keyword: params.keyword || '',
+          ...(params.refresh ? { refresh: 'true' } : {})
+        });
+        break;
         
       case 'search':
-        // Build query string from params
-        const searchParams = new URLSearchParams()
-        if (params) {
-          Object.entries(params).forEach(([key, value]) => {
-            searchParams.append(key, String(value))
-          })
-        }
-        url = `${SERP_API_BASE}/search?${searchParams.toString()}`
-        break
-        
-      case 'analyze':
-        // Build query string from params
-        const analyzeParams = new URLSearchParams()
-        if (params) {
-          Object.entries(params).forEach(([key, value]) => {
-            analyzeParams.append(key, String(value))
-          })
-        }
-        url = `${SERP_API_BASE}/analyze?${analyzeParams.toString()}`
-        break
+        url = `${baseUrl}/search`;
+        queryParams = new URLSearchParams({
+          q: params.q || '',
+          limit: params.limit?.toString() || '10'
+        });
+        break;
         
       case 'related':
-        // Build query string from params
-        const relatedParams = new URLSearchParams()
-        if (params) {
-          Object.entries(params).forEach(([key, value]) => {
-            relatedParams.append(key, String(value))
-          })
-        }
-        url = `${SERP_API_BASE}/related?${relatedParams.toString()}`
-        break
+        url = `${baseUrl}/related`;
+        queryParams = new URLSearchParams({
+          keyword: params.keyword || ''
+        });
+        break;
+        
+      case 'test':
+        // Just test if the API key works with a minimal request
+        url = `${baseUrl}/analyze`;
+        queryParams = new URLSearchParams({
+          keyword: 'test query',
+          limit: '1'
+        });
+        break;
         
       default:
-        throw new Error(`Unsupported endpoint: ${endpoint}`)
+        return new Response(
+          JSON.stringify({ error: `Unknown endpoint: ${endpoint}` }),
+          { 
+            status: 400, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
+        );
     }
 
-    console.log(`Making request to: ${url}`)
-    
-    // Make the actual request to the SERP API
-    const response = await fetch(url, options)
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`SERP API error (${response.status}):`, errorText)
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: `SERP API Error (${response.status}): ${errorText}`
-        }),
-        {
-          status: response.status,
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-    }
-    
-    // Process the successful response
-    const data = await response.json()
-    console.log('SERP API request successful')
-    
-    // Add a success flag for easy client-side checking
-    const enhancedData = {
-      ...data,
-      success: true
-    }
-    
-    return new Response(
-      JSON.stringify(enhancedData),
-      {
-        status: 200,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-  } catch (error) {
-    console.error('Error processing SERP API request:', error.message)
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: `Error: ${error.message}`
-      }),
-      {
-        status: 500,
+    // Make the actual API call
+    try {
+      const response = await fetch(`${url}?${queryParams.toString()}`, {
         headers: {
-          ...corsHeaders,
+          'Authorization': `Bearer ${keyToUse}`,
           'Content-Type': 'application/json'
         }
+      });
+      
+      // Get response data
+      const data = await response.json();
+      
+      // Check if the response was successful
+      if (!response.ok) {
+        console.error('SERP API error:', response.status, data);
+        return new Response(
+          JSON.stringify({ 
+            error: 'SERP API error', 
+            status: response.status,
+            message: data.message || 'Unknown error'
+          }),
+          { 
+            status: response.status, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
+        );
       }
-    )
+      
+      // If this was a test request, return simplified success response
+      if (endpoint === 'test') {
+        return new Response(
+          JSON.stringify({ success: true, message: 'API key works correctly' }),
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
+        );
+      }
+      
+      // Return the API response
+      return new Response(
+        JSON.stringify(data),
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
+      );
+    } catch (error) {
+      console.error('Error calling SERP API:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to call SERP API', message: error.message }),
+        { 
+          status: 500, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Error processing request:', error);
+    return new Response(
+      JSON.stringify({ error: 'Invalid request', message: error.message }),
+      { 
+        status: 400, 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders 
+        } 
+      }
+    );
   }
-})
+});

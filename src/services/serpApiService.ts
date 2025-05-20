@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
+import { getApiKey } from './apiKeyService';
 
 interface SearchKeywordParams {
   query: string;
@@ -18,13 +18,25 @@ const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 export type { SerpAnalysisResult };
 
 /**
- * Get API key from localStorage or Supabase
+ * Get API key from settings, localStorage, or Supabase
  * Returns the key if found, null otherwise
  */
 async function getSerpApiKey(): Promise<string | null> {
-  // First check localStorage
+  try {
+    // First try to get from API key service (settings)
+    const settingsApiKey = await getApiKey('serp');
+    if (settingsApiKey) {
+      console.log('Using SERP API key from settings');
+      return settingsApiKey;
+    }
+  } catch (error) {
+    console.warn('Error getting SERP API key from settings:', error);
+  }
+  
+  // Then check localStorage
   const localApiKey = localStorage.getItem(SERP_LOCAL_STORAGE_KEY);
   if (localApiKey) {
+    console.log('Using SERP API key from localStorage');
     return localApiKey;
   }
   
@@ -43,6 +55,7 @@ async function getSerpApiKey(): Promise<string | null> {
     }
     
     if (apiKeyData?.encrypted_key) {
+      console.log('Using SERP API key from Supabase');
       return apiKeyData.encrypted_key;
     }
   } catch (error) {
@@ -67,48 +80,27 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
       try {
         console.log('Making SERP API call for keyword search:', query);
         
-        // Try to use the proxy function first to avoid CORS issues
-        try {
-          const proxyResponse = await fetch('/api/proxy/serp-api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              endpoint: 'search',
-              params: { q: query, limit },
-              apiKey
-            }),
-          });
-          
-          if (proxyResponse.ok) {
-            const data = await proxyResponse.json();
-            return data.results || [];
-          } else {
-            const errorText = await proxyResponse.text();
-            console.error('SERP API proxy error:', proxyResponse.status, errorText);
-            throw new Error(`API proxy error: ${proxyResponse.status}`);
-          }
-        } catch (proxyError) {
-          console.warn('SERP API proxy error, falling back to direct call:', proxyError);
-        }
-        
-        // Direct API call if proxy fails
-        const response = await fetch(`${SERP_API_ENDPOINT}/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+        // Always use the proxy function to avoid CORS issues and for consistent behavior
+        const proxyResponse = await fetch('/api/proxy/serp-api', {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            endpoint: 'search',
+            params: { q: query, limit },
+            apiKey
+          }),
         });
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('SERP API error:', response.status, errorText);
-          throw new Error(`API error: ${response.status} - ${errorText}`);
+        if (proxyResponse.ok) {
+          const data = await proxyResponse.json();
+          return data.results || [];
+        } else {
+          const errorText = await proxyResponse.text();
+          console.error('SERP API proxy error:', proxyResponse.status, errorText);
+          throw new Error(`API proxy error: ${proxyResponse.status}`);
         }
-        
-        const data = await response.json();
-        return data.results || [];
       } catch (error) {
         console.error('Error calling SERP API for keyword search:', error);
         toast.error('Error fetching keyword data. Falling back to mock data.');
@@ -118,7 +110,15 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     }
     
     console.warn('No SERP API key found. Using mock data instead.');
-    toast.warning('Using mock data for keyword search. Add your SERP API key in Settings for real results.');
+    toast.warning('Using mock data for keyword search. Add your SERP API key in Settings for real results.', {
+      duration: 5000,
+      action: {
+        label: "Go to Settings",
+        onClick: () => {
+          window.location.href = "/settings/api";
+        }
+      }
+    });
     return getBackupMockResults(query, refresh);
   } catch (error) {
     console.error('Error searching keywords:', error);
@@ -226,7 +226,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
       }
     }
     
-    // Get API key
+    // Get API key - prioritize the one from settings
     const apiKey = await getSerpApiKey();
 
     // If we found a key, use it to make the API call
@@ -234,59 +234,33 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
       try {
         console.log('Making real SERP API call for keyword:', keyword);
         
-        // First attempt to use our proxy function to avoid CORS issues
-        try {
-          const proxyResponse = await fetch('/api/proxy/serp-api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              endpoint: 'analyze',
-              params: { keyword, refresh: !!refresh },
-              apiKey
-            }),
-          });
-          
-          if (proxyResponse.ok) {
-            const data = await proxyResponse.json();
-            if (data) {
-              // Cache the successful result
-              cacheSerpData(keyword, data);
-              console.log('SERP API returned real data via proxy:', data);
-              return data;
-            } else {
-              throw new Error('Empty response from SERP API proxy');
-            }
-          } else {
-            const errorText = await proxyResponse.text();
-            console.error('SERP API proxy error:', proxyResponse.status, errorText);
-            throw new Error(`API proxy error: ${proxyResponse.status}`);
-          }
-        } catch (proxyError) {
-          console.warn('SERP API proxy error, falling back to direct call:', proxyError);
-        }
-        
-        // If proxy fails, try direct API call
-        const url = `${SERP_API_ENDPOINT}/analyze?keyword=${encodeURIComponent(keyword)}${refresh ? '&refresh=true' : ''}`;
-        
-        const response = await fetch(url, {
+        // Always use our Edge Function proxy for consistency
+        const proxyResponse = await fetch('/api/functions/serp-api', {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            endpoint: 'analyze',
+            params: { keyword, refresh: !!refresh },
+            apiKey
+          }),
         });
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('SERP API error:', response.status, errorText);
-          throw new Error(`API error: ${response.status} - ${errorText}`);
+        if (!proxyResponse.ok) {
+          const errorText = await proxyResponse.text();
+          console.error('SERP API proxy error:', proxyResponse.status, errorText);
+          throw new Error(`API proxy error: ${proxyResponse.status} - ${errorText}`);
         }
         
-        const data = await response.json();
+        const data = await proxyResponse.json();
+        if (!data) {
+          throw new Error('Empty response from SERP API proxy');
+        }
         
         // Cache the successful result
         cacheSerpData(keyword, data);
+        console.log('SERP API returned real data via proxy:', data);
         
         // Transform the API response to match our SerpAnalysisResult structure
         const result: SerpAnalysisResult = {
@@ -305,7 +279,6 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
           isMockData: false
         };
         
-        console.log('SERP API returned real data:', result);
         return result;
       } catch (error) {
         console.error('Error calling SERP API:', error);
@@ -321,7 +294,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
         action: {
           label: "Add Key",
           onClick: () => {
-            window.location.href = "/content-builder?step=2&showApiSetup=true";
+            window.location.href = "/settings/api";
           }
         }
       });
@@ -478,6 +451,7 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
   };
 }
 
+// Add exports for related keyword search
 export const searchRelatedKeywords = async (keyword: string) => {
   try {
     // Get API key
