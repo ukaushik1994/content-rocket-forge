@@ -48,26 +48,6 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
         return <Database className="h-4 w-4 mr-2 text-gray-400" />;
     }
   };
-  
-  // Filter providers to only show those with API keys configured
-  const availableProviders = React.useMemo(() => {
-    const providers = SERP_PROVIDERS.filter(provider => {
-      // Always include the mock provider as it doesn't need an API key
-      if (provider.id === 'mock') return true;
-      
-      // For other providers, check if API key exists
-      switch(provider.id) {
-        case 'serpapi':
-          return localStorage.getItem('serp_api_key') !== null;
-        case 'dataforseo':
-          return localStorage.getItem('dataforseo_api_key') !== null;
-        default:
-          return false;
-      }
-    });
-    
-    return providers.length > 0 ? providers : SERP_PROVIDERS;
-  }, []);
 
   return (
     <div className={className}>
@@ -76,7 +56,7 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
           <SelectValue placeholder="Select provider" />
         </SelectTrigger>
         <SelectContent>
-          {availableProviders.map((provider) => (
+          {SERP_PROVIDERS.map((provider) => (
             <SelectItem key={provider.id} value={provider.id} className="flex items-center">
               <div className="flex items-center">
                 {getProviderIcon(provider.id)}

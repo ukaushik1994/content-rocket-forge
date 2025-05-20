@@ -6,7 +6,6 @@ import { useApiCredentials } from '@/components/api-credentials/ApiCredentialsPr
 import { ApiProviderCard } from '@/components/settings/api/ApiProviderCard';
 import { ProviderDashboard } from '@/components/api/ProviderDashboard';
 import { DataForSeoProvider } from '@/components/api/DataForSeoProvider';
-import { SerpProvidersPanel } from '@/components/settings/api/SerpProvidersPanel';
 import { ApiProviderConfig } from './types';
 
 /**
@@ -63,7 +62,6 @@ export const ApiSettingsContent: React.FC = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="providers">Providers</TabsTrigger>
-          <TabsTrigger value="serp">SERP Providers</TabsTrigger>
           <TabsTrigger value="settings">General Settings</TabsTrigger>
         </TabsList>
         
@@ -122,10 +120,6 @@ export const ApiSettingsContent: React.FC = () => {
               <p className="text-muted-foreground">Select a provider from the dashboard to configure it</p>
             </div>
           )}
-        </TabsContent>
-        
-        <TabsContent value="serp">
-          <SerpProvidersPanel />
         </TabsContent>
         
         <TabsContent value="settings">
