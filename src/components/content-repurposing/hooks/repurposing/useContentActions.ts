@@ -3,10 +3,7 @@ import { useState } from 'react';
 import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentActionHookReturn } from './types/action-types';
-import { 
-  copyToClipboard, 
-  downloadAsText 
-} from './utils/content-action-utils';
+import { copyToClipboard, downloadAsText } from './utils/content-action-utils';
 import {
   findRepurposedContent as findContent,
   fetchSavedFormats as fetchFormats,
