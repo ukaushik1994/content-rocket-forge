@@ -1,100 +1,136 @@
 
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
-import { SerpAnalysisResult } from '@/types/serp';
-import { analyzeSerpKeyword, setPreferredSerpProvider, hasValidSerpApiKey } from '@/services/serpApiService';
+import { SerpProvider } from '../types/serp-types';
+import { analyzeSerpKeyword } from '@/services/serpApiService';
 import { toast } from 'sonner';
-import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 
-/**
- * Creates actions related to SERP features
- */
 export const createSerpActions = (
-  state: ContentBuilderState,
+  state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
   /**
-   * Analyze a keyword with SERP API and update state with results
+   * Analyze a keyword using SERP API
    */
-  const analyzeKeyword = async (keyword: string, provider?: SerpProvider): Promise<boolean> => {
-    if (!keyword) {
-      toast.error("Please enter a keyword to analyze");
-      return false;
-    }
-    
+  const analyzeKeyword = async (keyword: string, provider?: SerpProvider) => {
+    if (!keyword) return;
+
     try {
-      // Start loading state
-      dispatch({ type: 'SET_ANALYZING', payload: true });
+      // Set analyzing state to true
+      dispatch({ 
+        type: 'SET_IS_ANALYZING', 
+        payload: true 
+      });
       
-      // Check if we have a valid API key
-      if (provider !== 'mock' && !hasValidSerpApiKey()) {
-        console.warn('No valid SERP API key found');
-        toast.warning('Please configure a SERP API key to analyze keywords');
-        dispatch({ type: 'SET_ANALYZING', payload: false });
-        return false;
+      console.log(`Analyzing keyword: ${keyword}`);
+      
+      // Call the SERP API service
+      const result = await analyzeSerpKeyword(keyword);
+      
+      // If no result, show error and return
+      if (!result) {
+        dispatch({ 
+          type: 'SET_IS_ANALYZING', 
+          payload: false 
+        });
+        
+        toast.error('No data found for this keyword');
+        return;
       }
       
-      // If provider is specified, set it as the preferred provider
-      if (provider) {
-        setPreferredSerpProvider(provider);
+      console.log('SERP data received:', result);
+      
+      // Update SERP data in state
+      dispatch({
+        type: 'SET_SERP_DATA',
+        payload: result
+      });
+      
+      // Mark SERP analysis step as analyzed
+      dispatch({
+        type: 'MARK_STEP_VISITED',
+        payload: 2
+      });
+      
+      // Also mark as completed if we have selections
+      if (state.serpSelections && Object.values(state.serpSelections).some(group => 
+        Object.values(group).some(Boolean))
+      ) {
+        dispatch({
+          type: 'MARK_STEP_COMPLETED',
+          payload: 2
+        });
       }
       
-      // Get SERP analysis data
-      const serpData = await analyzeSerpKeyword(keyword, true);
+      // Set analyzing state to false
+      dispatch({ 
+        type: 'SET_IS_ANALYZING', 
+        payload: false 
+      });
       
-      // Update state with results
-      if (serpData) {
-        dispatch({ type: 'SET_SERP_DATA', payload: serpData });
-        console.log('SERP data loaded:', serpData);
-        
-        // Auto-select the main keyword if it's not already selected
-        if (!state.selectedKeywords.includes(keyword)) {
-          dispatch({ type: 'ADD_KEYWORD', payload: keyword });
-        }
-        
-        // Mark the step as started
-        dispatch({ type: 'MARK_STEP_STARTED', payload: 2 });
-        
-        return true;
-      } else {
-        console.warn('No SERP data returned for keyword:', keyword);
-        toast.error('Could not retrieve keyword data. Please try a different keyword or check your API key.');
-        return false;
-      }
+      toast.success(`Analysis complete for "${keyword}"`);
     } catch (error) {
       console.error('Error analyzing keyword:', error);
+      
+      dispatch({ 
+        type: 'SET_IS_ANALYZING', 
+        payload: false 
+      });
+      
       toast.error('Failed to analyze keyword');
-      return false;
-    } finally {
-      // Stop loading state
-      dispatch({ type: 'SET_ANALYZING', payload: false });
     }
   };
   
   /**
-   * Change the SERP provider and reanalyze the current keyword
+   * Add content from SERP data to document
    */
-  const changeSerpProvider = async (provider: SerpProvider): Promise<boolean> => {
-    // Set the preferred provider
-    setPreferredSerpProvider(provider);
+  const addContentFromSerp = (content: string, type: string) => {
+    dispatch({
+      type: 'ADD_CONTENT',
+      payload: { content, source: 'serp', type }
+    });
+  };
+  
+  /**
+   * Generate outline from SERP selections
+   */
+  const generateOutlineFromSelections = () => {
+    const { serpSelections } = state;
+    if (!serpSelections) return;
     
-    // If we have a main keyword, reanalyze it with the new provider
+    // Get all selected items
+    const selectedItems: { type: string; content: string }[] = [];
+    
+    Object.entries(serpSelections).forEach(([type, items]) => {
+      Object.entries(items).forEach(([content, isSelected]) => {
+        if (isSelected) {
+          selectedItems.push({ type, content });
+        }
+      });
+    });
+    
+    console.log('Selected items for outline:', selectedItems);
+    
+    // Update state to navigate to outline step
+    dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
+  };
+  
+  /**
+   * Change SERP provider
+   */
+  const changeSerpProvider = async (provider: SerpProvider) => {
+    // Save the preferred provider
+    localStorage.setItem('preferred_serp_provider', provider);
+    
+    // If we have a main keyword, reanalyze with the new provider
     if (state.mainKeyword) {
-      return await analyzeKeyword(state.mainKeyword, provider);
+      await analyzeKeyword(state.mainKeyword, provider);
     }
-    
-    return true;
-  };
-  
-  /**
-   * Add content from SERP to the content
-   */
-  const addContentFromSerp = (content: string): void => {
-    dispatch({ type: 'ADD_TO_CONTENT', payload: content });
   };
 
   return {
     analyzeKeyword,
     addContentFromSerp,
+    generateOutlineFromSelections,
     changeSerpProvider
   };
 };

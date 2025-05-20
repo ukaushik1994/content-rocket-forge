@@ -66,6 +66,21 @@ export class MockAdapter extends BaseAdapter {
       .slice(0, limit);
   }
 
+  /**
+   * Implementation of required BaseAdapter methods
+   */
+  async fetchAnalysis(keyword: string): Promise<SerpAnalysisResult> {
+    return this.analyzeKeyword({ keyword });
+  }
+
+  async fetchKeywords(keyword: string, limit?: number): Promise<any[]> {
+    return this.searchKeywords({ keyword, limit });
+  }
+
+  async fetchRelatedKeywords(keyword: string, limit?: number): Promise<any[]> {
+    return this.searchRelatedKeywords({ keyword, limit });
+  }
+
   getProviderName(): string {
     return 'Mock Data';
   }

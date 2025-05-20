@@ -1,174 +1,122 @@
 
-import React, { useState } from 'react';
-import { toast } from 'sonner';
+import React from 'react';
+import Navbar from '@/components/layout/Navbar';
+import { ContentSelection } from '@/components/content-repurposing/ContentSelection';
+import { ContentFormatSelection } from '@/components/content-repurposing/ContentFormatSelection';
+import { GeneratedContentDisplay } from '@/components/content-repurposing/GeneratedContentDisplay';
+import { RepurposedContentDialog } from '@/components/content-repurposing/RepurposedContentDialog';
+import { Helmet } from 'react-helmet-async';
 import { ContentSelectionView, ContentRepurposingView } from './content-repurposing';
-import { useContentRepurposing } from '@/components/content-repurposing/hooks';
-import { ContentItemType } from '@/contexts/content/types';
-import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Content Repurposing Page
+ * This page is now deprecated and redirects to the new implementation.
+ * We keep this for backward compatibility.
+ */
 const ContentRepurposing = () => {
-  const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
+  const [viewState, setViewState] = React.useState<'selection' | 'repurposing'>('selection');
+  const [selectedContentId, setSelectedContentId] = React.useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogContentId, setDialogContentId] = React.useState<string | null>(null);
   
-  const {
-    content,
-    contentItems,
-    selectedFormats,
-    generatedContents,
-    isGenerating,
-    activeFormat,
-    repurposedDialogOpen,
-    selectedRepurposedContent,
-    generatedFormats,
-    isDeleting,
-    isSaving,
-    setSelectedFormats,
-    setActiveFormat,
-    handleContentSelection,
-    handleGenerateContent,
-    handleOpenRepurposedContentWithFormats,
-    handleCloseRepurposedDialog,
-    handleFormatChange,
-    copyToClipboard,
-    downloadAsText,
-    saveAsNewContent,
-    deleteRepurposedContent,
-    handleDeleteActiveFormat,
-    resetContent,
-    saveAllFormats, // Add this to access the function
-  } = useContentRepurposing();
-  
-  // Function to save all generated content in a single transaction
-  const handleSaveAllContent = async (): Promise<boolean> => {
-    if (!content || !generatedContents || Object.keys(generatedContents).length === 0) {
-      toast.error('No content to save');
-      return false;
-    }
-    
-    setIsSavingAll(true);
+  // Load user preferences from local storage
+  React.useEffect(() => {
     try {
-      // Get all format IDs and mark them as saved in UI state
-      const formatIds = saveAllFormats();
-      
-      if (formatIds.length === 0) {
-        toast.info('All formats are already saved');
-        setIsSavingAll(false);
-        return true;
-      }
-      
-      // Prepare the metadata update with all formats
-      const contentMap: Record<string, string> = {};
-      formatIds.forEach(formatId => {
-        const formatContent = generatedContents[formatId];
-        if (formatContent && typeof formatContent === 'string') {
-          contentMap[formatId] = formatContent;
+      const storedPrefs = localStorage.getItem('repurposing_preferences');
+      if (storedPrefs) {
+        const prefs = JSON.parse(storedPrefs);
+        
+        // If we have a previously selected content, restore it
+        if (prefs.selectedContentId) {
+          setSelectedContentId(prefs.selectedContentId);
+          setViewState('repurposing');
         }
-      });
-      
-      // Get the current metadata first
-      const { data: currentContent, error: fetchError } = await supabase
-        .from('content_items')
-        .select('metadata')
-        .eq('id', content.id)
-        .single();
-      
-      if (fetchError) {
-        console.error('Error fetching current content metadata:', fetchError);
-        toast.error('Error saving content formats');
-        setIsSavingAll(false);
-        return false;
       }
-      
-      // Merge with existing metadata
-      const currentMetadata = currentContent?.metadata || {};
-      const updatedMetadata = {
-        ...currentMetadata,
-        repurposedContentMap: {
-          ...(currentMetadata.repurposedContentMap || {}),
-          ...contentMap
-        },
-        repurposedFormats: Array.from(new Set([
-          ...(currentMetadata.repurposedFormats || []),
-          ...formatIds
-        ])),
-        lastUpdated: new Date().toISOString()
+    } catch (error) {
+      console.error('Failed to load repurposing preferences:', error);
+    }
+  }, []);
+  
+  // Save user preferences to local storage
+  const savePreferences = (contentId: string) => {
+    try {
+      const prefsToSave = {
+        selectedContentId: contentId,
+        lastUsed: new Date().toISOString()
       };
       
-      // Update the database in a single operation
-      const { error: updateError } = await supabase
-        .from('content_items')
-        .update({
-          metadata: updatedMetadata
-        })
-        .eq('id', content.id);
-      
-      if (updateError) {
-        console.error('Error updating content metadata:', updateError);
-        toast.error('Error saving content formats');
-        setIsSavingAll(false);
-        return false;
-      }
-      
-      toast.success(`Successfully saved ${formatIds.length} content format${formatIds.length > 1 ? 's' : ''}`);
-      return true;
+      localStorage.setItem('repurposing_preferences', JSON.stringify(prefsToSave));
     } catch (error) {
-      console.error('Error saving all content:', error);
-      toast.error('Error saving all content formats');
-      return false;
-    } finally {
-      setIsSavingAll(false);
+      console.error('Failed to save repurposing preferences:', error);
     }
   };
+  
+  // Handle content selection
+  const handleContentSelect = (contentId: string) => {
+    setSelectedContentId(contentId);
+    savePreferences(contentId);
+    setViewState('repurposing');
+  };
+  
+  // Handle going back to content selection
+  const handleBackToSelection = () => {
+    setViewState('selection');
+  };
+  
+  // Handle opening content dialog
+  const handleOpenDialog = (contentId: string) => {
+    setDialogContentId(contentId);
+    setDialogOpen(true);
+  };
 
-  // If no content is selected yet, show the content selection view
-  if (!content) {
-    return (
-      <ContentSelectionView
-        contentItems={contentItems || []}
-        onSelectContent={(selectedContent: ContentItemType) => {
-          if (selectedContent && selectedContent.id) {
-            handleContentSelection(selectedContent.id);
-          }
-        }}
-        onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
-        repurposedDialogOpen={repurposedDialogOpen}
-        onCloseRepurposedDialog={handleCloseRepurposedDialog}
-        selectedRepurposedContent={selectedRepurposedContent}
-        copyToClipboard={(text: string) => {
-          if (text) copyToClipboard(text);
-        }}
-        downloadAsText={(text: string, formatName: string) => {
-          if (text && formatName) downloadAsText(text, formatName);
-        }}
-        deleteRepurposedContent={deleteRepurposedContent}
-        handleFormatChange={handleFormatChange}
-        isDeleting={isDeleting}
-        generatedFormats={generatedFormats || []}
-      />
-    );
-  }
+  // Get repurposed content from local storage
+  const getRepurposedContent = (contentId: string) => {
+    try {
+      const storedData = localStorage.getItem(`repurposed_content_${contentId}`);
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        return {
+          repurposedContentMap: parsedData.repurposedContentMap || {},
+          repurposedFormats: parsedData.repurposedFormats || []
+        };
+      }
+    } catch (error) {
+      console.error('Failed to load repurposed content:', error);
+    }
+    
+    return {
+      repurposedContentMap: {},
+      repurposedFormats: []
+    };
+  };
 
   return (
-    <ContentRepurposingView
-      content={content}
-      selectedFormats={selectedFormats || []}
-      generatedContents={generatedContents || {}}
-      isGenerating={isGenerating}
-      activeFormat={activeFormat}
-      isDeleting={isDeleting}
-      isSaving={isSaving}
-      isSavingAll={isSavingAll}
-      setSelectedFormats={setSelectedFormats}
-      setActiveFormat={(format: string) => {
-        if (format) setActiveFormat(format);
-      }}
-      handleGenerateContent={handleGenerateContent}
-      copyToClipboard={copyToClipboard}
-      downloadAsText={downloadAsText}
-      saveAsNewContent={saveAsNewContent}
-      handleSaveAllContent={handleSaveAllContent}
-      handleDeleteActiveFormat={handleDeleteActiveFormat}
-      resetContent={resetContent}
-    />
+    <div className="min-h-screen flex flex-col bg-background">
+      <Helmet>
+        <title>Content Repurposing | SEO Platform</title>
+      </Helmet>
+      
+      <Navbar />
+      
+      <main className="flex-1 container py-8">
+        {viewState === 'selection' ? (
+          <ContentSelectionView onContentSelect={handleContentSelect} />
+        ) : (
+          <ContentRepurposingView 
+            contentId={selectedContentId || ''} 
+            onBackToSelection={handleBackToSelection}
+          />
+        )}
+      </main>
+      
+      {dialogOpen && dialogContentId && (
+        <RepurposedContentDialog
+          contentId={dialogContentId}
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+        />
+      )}
+    </div>
   );
 };
 
