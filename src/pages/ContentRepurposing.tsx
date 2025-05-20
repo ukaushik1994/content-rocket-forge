@@ -37,25 +37,28 @@ const ContentRepurposing = () => {
   
   // Function to save all generated content
   const handleSaveAllContent = async (): Promise<boolean> => {
-    if (!content || Object.keys(generatedContents || {}).length === 0) {
+    if (!content || !generatedContents || Object.keys(generatedContents).length === 0) {
       toast.error('No content to save');
       return false;
     }
     
     setIsSavingAll(true);
     try {
-      const formatIds = Object.keys(generatedContents || {});
+      const formatIds = Object.keys(generatedContents);
       let allSuccess = true;
       let savedCount = 0;
       
       // Save each format one by one
       for (const formatId of formatIds) {
         try {
-          const success = await saveAsNewContent(formatId, generatedContents[formatId]);
-          if (success) {
-            savedCount++;
-          } else {
-            allSuccess = false;
+          const formatContent = generatedContents[formatId];
+          if (formatContent) {
+            const success = await saveAsNewContent(formatId, formatContent);
+            if (success) {
+              savedCount++;
+            } else {
+              allSuccess = false;
+            }
           }
         } catch (err) {
           console.error(`Error saving format ${formatId}:`, err);
@@ -84,7 +87,7 @@ const ContentRepurposing = () => {
   if (!content) {
     return (
       <ContentSelectionView
-        contentItems={contentItems}
+        contentItems={contentItems || []}
         onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
         onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
         repurposedDialogOpen={repurposedDialogOpen}
@@ -95,7 +98,7 @@ const ContentRepurposing = () => {
         deleteRepurposedContent={deleteRepurposedContent}
         handleFormatChange={handleFormatChange}
         isDeleting={isDeleting}
-        generatedFormats={generatedFormats || []} // Add fallback empty array
+        generatedFormats={generatedFormats || []}
       />
     );
   }
@@ -103,8 +106,8 @@ const ContentRepurposing = () => {
   return (
     <ContentRepurposingView
       content={content}
-      selectedFormats={selectedFormats}
-      generatedContents={generatedContents || {}} // Add fallback empty object
+      selectedFormats={selectedFormats || []}
+      generatedContents={generatedContents || {}}
       isGenerating={isGenerating}
       activeFormat={activeFormat}
       isDeleting={isDeleting}

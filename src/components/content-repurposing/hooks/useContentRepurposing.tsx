@@ -50,7 +50,7 @@ export const useContentRepurposing = () => {
   // Update this function to safely pass generated formats
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
     // Get all formats that have been generated for this content
-    const availableFormats = Object.keys(generatedContents || {});
+    const availableFormats = generatedContents ? Object.keys(generatedContents) : [];
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
   };
   
@@ -61,14 +61,14 @@ export const useContentRepurposing = () => {
   
   return {
     content,
-    contentItems,
-    selectedFormats,
-    generatedContents,
+    contentItems: contentItems || [],
+    selectedFormats: selectedFormats || [],
+    generatedContents: generatedContents || {},
     isGenerating,
     activeFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
-    generatedFormats,
+    generatedFormats: generatedFormats || [],
     isDeleting,
     isSaving,
     setSelectedFormats,

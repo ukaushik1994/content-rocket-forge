@@ -8,9 +8,18 @@ interface ContentViewerProps {
 }
 
 const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId }) => {
+  // Safety check - ensure content is defined before rendering
+  if (!content) {
+    return (
+      <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4 text-muted-foreground">
+        No content available for this format.
+      </div>
+    );
+  }
+  
   // Function to format special content types
   const formatContent = (content: string, formatId: string) => {
-    if (formatId === 'meme') {
+    if (formatId === 'meme' && content) {
       try {
         // Extract meme components if in the expected format
         const imageMatch = content.match(/Image description: (.*?)(?:\n|$)/);
@@ -51,7 +60,7 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId })
       }
     }
     
-    if (formatId === 'carousel') {
+    if (formatId === 'carousel' && content) {
       try {
         // Extract carousel slides if they follow the pattern "Slide X: content"
         const slides = content.split('\n\n').filter(line => line.trim().startsWith('Slide'));
