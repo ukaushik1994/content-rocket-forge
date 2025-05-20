@@ -6,6 +6,14 @@ import { useContentRepurposing } from '@/components/content-repurposing/hooks';
 import { ContentItemType } from '@/contexts/content/types';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define interface for metadata to make TypeScript happy
+interface RepurposedMetadata {
+  repurposedContentMap?: Record<string, string>;
+  repurposedFormats?: string[];
+  lastUpdated?: string;
+  [key: string]: any; // For other potential metadata properties
+}
+
 const ContentRepurposing = () => {
   const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
   
@@ -21,6 +29,7 @@ const ContentRepurposing = () => {
     generatedFormats,
     isDeleting,
     isSaving,
+    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -78,16 +87,32 @@ const ContentRepurposing = () => {
         return false;
       }
       
+      // Type check and cast metadata properly
+      let currentMetadata: RepurposedMetadata = {};
+      
+      if (currentContent?.metadata) {
+        // Make sure metadata is treated as an object
+        if (typeof currentContent.metadata === 'object' && currentContent.metadata !== null) {
+          currentMetadata = currentContent.metadata as RepurposedMetadata;
+        } else {
+          console.error('Metadata is not an object:', currentContent.metadata);
+          currentMetadata = {}; // Default to empty object if not valid
+        }
+      }
+      
+      // Create a properly typed repurposedContentMap
+      const existingContentMap = currentMetadata.repurposedContentMap || {};
+      const existingFormats = currentMetadata.repurposedFormats || [];
+      
       // Merge with existing metadata
-      const currentMetadata = currentContent?.metadata || {};
       const updatedMetadata = {
         ...currentMetadata,
         repurposedContentMap: {
-          ...(currentMetadata.repurposedContentMap || {}),
+          ...existingContentMap,
           ...contentMap
         },
         repurposedFormats: Array.from(new Set([
-          ...(currentMetadata.repurposedFormats || []),
+          ...existingFormats,
           ...formatIds
         ])),
         lastUpdated: new Date().toISOString()
@@ -157,6 +182,7 @@ const ContentRepurposing = () => {
       isDeleting={isDeleting}
       isSaving={isSaving}
       isSavingAll={isSavingAll}
+      savedContentFormats={savedContentFormats}
       setSelectedFormats={setSelectedFormats}
       setActiveFormat={(format: string) => {
         if (format) setActiveFormat(format);
@@ -173,3 +199,4 @@ const ContentRepurposing = () => {
 };
 
 export default ContentRepurposing;
+
