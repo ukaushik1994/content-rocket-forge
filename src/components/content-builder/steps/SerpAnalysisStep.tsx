@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
@@ -70,13 +69,9 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      // Check if analyzeKeyword accepts a refresh parameter
-      if (analyzeKeyword.length > 1) {
-        await analyzeKeyword(mainKeyword, true);
-      } else {
-        // Fallback to single parameter if the function only accepts one
-        await analyzeKeyword(mainKeyword);
-      }
+      // Just call analyzeKeyword with only the mainKeyword parameter
+      // This fixes the TypeScript error by not trying to pass a second parameter
+      await analyzeKeyword(mainKeyword);
     }
   };
   
