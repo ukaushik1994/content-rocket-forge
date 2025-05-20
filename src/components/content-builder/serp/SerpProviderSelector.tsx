@@ -3,7 +3,6 @@ import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Database, 
-  CloudCog, 
   CloudLightning
 } from 'lucide-react';
 import { 
@@ -30,16 +29,9 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
   useEffect(() => {
     const checkApiKeys = () => {
       const serpApiKey = localStorage.getItem('serp_api_key');
-      const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
       
-      // If there's no API key for the selected provider but there's one for another,
-      // switch to the available one
-      if (selectedProvider === 'serpapi' && !serpApiKey && dataForSeoKey) {
-        handleProviderChange('dataforseo');
-      } else if (selectedProvider === 'dataforseo' && !dataForSeoKey && serpApiKey) {
-        handleProviderChange('serpapi');
-      } else if (!serpApiKey && !dataForSeoKey && selectedProvider !== 'mock') {
-        // If no API keys available, default to mock
+      // If there's no API key for the selected provider, switch to mock
+      if (selectedProvider === 'serpapi' && !serpApiKey) {
         handleProviderChange('mock');
       }
     };
@@ -61,8 +53,6 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
     switch (providerId) {
       case 'serpapi':
         return <CloudLightning className="h-4 w-4 mr-2 text-blue-400" />;
-      case 'dataforseo':
-        return <CloudCog className="h-4 w-4 mr-2 text-green-400" />;
       case 'mock':
         return <Database className="h-4 w-4 mr-2 text-orange-400" />;
       default:
@@ -74,7 +64,6 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
   const isProviderAvailable = (providerId: string): boolean => {
     if (providerId === 'mock') return true;
     if (providerId === 'serpapi') return !!localStorage.getItem('serp_api_key');
-    if (providerId === 'dataforseo') return !!localStorage.getItem('dataforseo_api_key');
     return false;
   };
 

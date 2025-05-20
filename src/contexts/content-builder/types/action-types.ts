@@ -51,4 +51,4 @@ export type ContentBuilderAction =
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics | null }
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
   | { type: 'ADD_SEARCHED_KEYWORD'; payload: string }
-  | { type: 'SET_PREFERRED_PROVIDER'; payload: SerpProvider }
+  | { type: 'SET_PREFERRED_PROVIDER'; payload: SerpProvider };
