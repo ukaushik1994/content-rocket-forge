@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
-import { useContentDialog } from './repurposing/useContentDialog';
 import { useContentActions } from './repurposing/useContentActions';
+import { useRepurposedDialog } from './repurposing/useRepurposedDialog';
+import { ContentRepurposingHookReturn } from './repurposing/types/hook-types';
 
-export const useContentRepurposing = () => {
+export const useContentRepurposing = (): ContentRepurposingHookReturn => {
   // Compose hooks for different functionality
   const { content, handleContentSelection, resetContent } = useContentSelection();
   
@@ -35,47 +36,20 @@ export const useContentRepurposing = () => {
     deleteRepurposedContent,
   } = useContentActions(content);
   
-  // contentDialog hook depends on findRepurposedContent
+  // Use our new dialog hook that depends on findRepurposedContent
   const {
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats,
-    handleOpenRepurposedContent,
+    handleOpenRepurposedContentWithFormats,
     handleCloseRepurposedDialog,
-    handleFormatChange: formatChangeHandler,
-  } = useContentDialog(findRepurposedContent);
+    handleFormatChange,
+  } = useRepurposedDialog(findRepurposedContent);
   
   // Handle deleting from the generated content view (when content is already selected)
   const handleDeleteActiveFormat = async (formatId: string): Promise<boolean> => {
     if (!content || !formatId) return false;
     return deleteRepurposedContent(content.id, formatId);
-  };
-  
-  // Update this function to safely pass generated formats
-  const handleOpenRepurposedContentWithFormats = async (contentId: string, formatId: string) => {
-    if (!contentId || !formatId) {
-      console.error("Invalid content or format ID");
-      return;
-    }
-    
-    try {
-      // First get all formats that have been generated for this content from the database
-      const savedFormats = await fetchSavedFormats(contentId);
-      
-      // Then open the dialog with the requested format
-      handleOpenRepurposedContent(contentId, formatId, savedFormats);
-    } catch (error) {
-      console.error("Error opening repurposed content:", error);
-    }
-  };
-  
-  // Wrapper for format change handler
-  const handleFormatChange = (contentId: string, formatId: string) => {
-    if (!contentId || !formatId) {
-      console.error("Invalid content or format ID for format change");
-      return;
-    }
-    formatChangeHandler(contentId, formatId);
   };
   
   // Ensure we always return properly defined values
