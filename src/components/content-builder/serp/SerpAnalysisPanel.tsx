@@ -4,6 +4,8 @@ import { SerpAnalysisPanel as CoreSerpAnalysisPanel } from '@/components/content
 import { SerpAnalysisResult } from '@/types/serp';
 import { toast } from 'sonner';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { Badge } from '@/components/ui/badge';
+import { Info } from 'lucide-react';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -23,6 +25,7 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
   } = props;
   
   const [isLocalLoading, setIsLocalLoading] = React.useState(false);
+  const [dataSource, setDataSource] = React.useState<'real' | 'mock' | 'loading' | null>(null);
   const isLoading = externalLoading || isLocalLoading;
 
   // If we have a mainKeyword but no serpData, try to fetch it automatically
@@ -30,39 +33,63 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
     const fetchSerpData = async () => {
       if (mainKeyword && !serpData && !isLoading) {
         setIsLocalLoading(true);
+        setDataSource('loading');
         try {
           console.log("Automatically fetching SERP data for:", mainKeyword);
           const data = await analyzeKeywordSerp(mainKeyword);
           if (data) {
             onSerpDataChange(data);
+            
             if (data.isMockData) {
+              setDataSource('mock');
               toast.warning("Using mock data. Add your SERP API key for real results.", {
                 duration: 5000,
                 action: {
                   label: "Add Key",
                   onClick: () => {
-                    const settingsUrl = window.location.pathname.includes('/content-builder')
-                      ? '/content-builder?step=2&showApiSetup=true'
-                      : '/settings/api';
-                    window.location.href = settingsUrl;
+                    window.location.href = "/content-builder?step=2&showApiSetup=true";
                   }
                 }
               });
             } else {
+              setDataSource('real');
               toast.success("Retrieved real SERP data successfully!");
             }
           }
         } catch (error) {
           console.error("Error auto-fetching SERP data:", error);
+          setDataSource(null);
         } finally {
           setIsLocalLoading(false);
         }
+      } else if (serpData) {
+        // Update data source indicator based on serpData
+        setDataSource(serpData.isMockData ? 'mock' : 'real');
       }
     };
     
     fetchSerpData();
   }, [mainKeyword, serpData, isLoading, onSerpDataChange]);
   
-  // Pass all props to the core component
-  return <CoreSerpAnalysisPanel {...props} isLoading={isLoading} />;
+  // Pass all props to the core component with optional data source indicator
+  return (
+    <div className="relative">
+      {dataSource && !isLoading && (
+        <div className="absolute top-4 right-4 z-10">
+          <Badge 
+            variant={dataSource === 'real' ? 'default' : 'secondary'}
+            className={`flex items-center gap-1 ${
+              dataSource === 'real' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-yellow-600 hover:bg-yellow-700'
+            }`}
+          >
+            <Info className="h-3 w-3" />
+            {dataSource === 'real' ? 'Real Data' : 'Mock Data'}
+          </Badge>
+        </div>
+      )}
+      <CoreSerpAnalysisPanel {...props} isLoading={isLoading} />
+    </div>
+  );
 }

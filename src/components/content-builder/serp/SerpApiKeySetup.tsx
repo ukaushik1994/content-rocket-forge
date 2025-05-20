@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Key, Save, Check, RefreshCw } from "lucide-react";
+import { Key, Save, Check, RefreshCw, AlertTriangle } from "lucide-react";
+import { isSerpApiKeyFormat } from '@/services/apiKeys/validation';
 
 export const SerpApiKeySetup: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
@@ -12,6 +13,8 @@ export const SerpApiKeySetup: React.FC = () => {
   const [isTesting, setIsTesting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [existingKey, setExistingKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{success: boolean, message: string} | null>(null);
 
   // Check for existing API key on component mount
   useEffect(() => {
@@ -25,6 +28,67 @@ export const SerpApiKeySetup: React.FC = () => {
     }
   }, []);
 
+  const testApiKey = async (key: string) => {
+    setIsTesting(true);
+    setError(null);
+    setTestResult(null);
+    
+    try {
+      // First validate the format
+      if (!key || !isSerpApiKeyFormat(key)) {
+        setTestResult({
+          success: false,
+          message: 'API key format appears invalid. It should be at least 16 alphanumeric characters.'
+        });
+        return false;
+      }
+      
+      // Try to test the key with a minimal API call
+      const response = await fetch('/api/proxy/serp-api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          endpoint: 'test',
+          apiKey: key
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setTestResult({
+            success: true,
+            message: 'API key tested successfully!'
+          });
+          return true;
+        } else {
+          setTestResult({
+            success: false,
+            message: data.message || 'API key test failed without specific error message'
+          });
+          return false;
+        }
+      } else {
+        const errorText = await response.text();
+        setTestResult({
+          success: false,
+          message: `API test failed with status: ${response.status}. ${errorText || ''}`
+        });
+        return false;
+      }
+    } catch (error: any) {
+      setTestResult({
+        success: false,
+        message: `API test failed: ${error.message || 'Unknown error'}`
+      });
+      return false;
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   const handleSaveApiKey = async () => {
     if (!apiKey.trim()) {
       toast.error("Please enter a valid API key");
@@ -32,53 +96,44 @@ export const SerpApiKeySetup: React.FC = () => {
     }
 
     setIsSaving(true);
+    setError(null);
 
     try {
       // Test the key first
-      setIsTesting(true);
+      const isValid = await testApiKey(apiKey);
       
-      try {
-        // Simple test request to see if the key works
-        const response = await fetch(`https://api.serphouse.com/serp/test`, {
-          headers: {
-            'Authorization': `Bearer ${apiKey.trim()}`,
-            'Content-Type': 'application/json'
-          }
-        });
+      if (isValid) {
+        // Store the API key in localStorage
+        localStorage.setItem('serp_api_key', apiKey.trim());
         
-        if (!response.ok) {
-          throw new Error(`API key test failed: ${response.status}`);
-        }
+        setIsSuccess(true);
+        toast.success("SERP API key saved and verified successfully!");
         
-        // Test succeeded
-        console.log("SERP API key test succeeded");
-      } catch (testError) {
-        console.warn("SERP API key test failed:", testError);
-        // We'll still save the key, but warn the user
-        toast.warning("API key accepted, but test request failed. It might not work with the API.");
-      } finally {
-        setIsTesting(false);
+        // Set the masked key
+        const maskedKey = apiKey.substring(0, 4) + '••••••••••••' + 
+          (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
+        setExistingKey(maskedKey);
+        
+        // Reset the form after success
+        setTimeout(() => {
+          // Reload the page to reflect the changes
+          window.location.reload();
+        }, 1500);
+      } else {
+        // Key didn't pass the test, but we'll save it anyway with a warning
+        localStorage.setItem('serp_api_key', apiKey.trim());
+        toast.warning("API key saved but could not be verified. It might not work properly.");
+        
+        // Set the masked key
+        const maskedKey = apiKey.substring(0, 4) + '••••••••••••' + 
+          (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
+        setExistingKey(maskedKey);
+        setIsSuccess(true);
       }
-      
-      // Store the API key in localStorage
-      localStorage.setItem('serp_api_key', apiKey.trim());
-      
-      setIsSuccess(true);
-      toast.success("SERP API key saved successfully!");
-      
-      // Set the masked key
-      const maskedKey = apiKey.substring(0, 4) + '••••••••••••' + 
-        (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
-      setExistingKey(maskedKey);
-      
-      // Reset the form after success
-      setTimeout(() => {
-        // Reload the page to reflect the changes
-        window.location.reload();
-      }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving API key:', error);
-      toast.error("Failed to save API key");
+      setError(error.message || "Failed to save API key");
+      toast.error("Failed to save API key. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -90,12 +145,25 @@ export const SerpApiKeySetup: React.FC = () => {
       setExistingKey(null);
       setIsSuccess(false);
       setApiKey('');
+      setError(null);
+      setTestResult(null);
       toast.success("API key removed successfully");
     }
   };
 
   const handleRefreshPage = () => {
     window.location.reload();
+  };
+
+  const handleTestKey = async () => {
+    // Test either the existing key or the one in the input field
+    const keyToTest = existingKey ? localStorage.getItem('serp_api_key') || '' : apiKey;
+    if (!keyToTest) {
+      toast.error("No API key to test");
+      return;
+    }
+    
+    await testApiKey(keyToTest);
   };
 
   return (
@@ -110,6 +178,28 @@ export const SerpApiKeySetup: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-md mb-4">
+            <p className="text-sm font-medium text-red-300 flex items-center">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {error}
+            </p>
+          </div>
+        )}
+        
+        {testResult && (
+          <div className={`p-4 ${testResult.success ? 'bg-green-900/20 border border-green-500/30' : 'bg-yellow-900/20 border border-yellow-500/30'} rounded-md mb-4`}>
+            <p className={`text-sm font-medium ${testResult.success ? 'text-green-300' : 'text-yellow-300'} flex items-center`}>
+              {testResult.success ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 mr-2" />
+              )}
+              {testResult.message}
+            </p>
+          </div>
+        )}
+        
         {existingKey ? (
           <div className="space-y-4">
             <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-md">
@@ -119,7 +209,7 @@ export const SerpApiKeySetup: React.FC = () => {
               </p>
               <p className="text-xs text-white/70 mt-1">Current key: {existingKey}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="destructive"
                 size="sm"
@@ -127,6 +217,15 @@ export const SerpApiKeySetup: React.FC = () => {
                 className="text-xs"
               >
                 Remove Key
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestKey}
+                disabled={isTesting}
+                className="text-xs flex items-center gap-1"
+              >
+                {isTesting ? 'Testing...' : 'Test Key'}
               </Button>
               <Button
                 variant="outline"
@@ -150,7 +249,11 @@ export const SerpApiKeySetup: React.FC = () => {
                   id="api-key"
                   type="password"
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    setError(null);
+                    setTestResult(null);
+                  }}
                   className="flex-1 bg-white/5 border-white/10"
                   placeholder="Enter your SERP API key"
                 />
@@ -175,6 +278,17 @@ export const SerpApiKeySetup: React.FC = () => {
                       Save API Key
                     </span>
                   )}
+                </Button>
+              </div>
+              <div className="flex justify-end mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => testApiKey(apiKey)}
+                  disabled={isTesting || !apiKey.trim()}
+                  className="h-7 text-xs"
+                >
+                  {isTesting ? 'Testing...' : 'Test before saving'}
                 </Button>
               </div>
               <p className="text-xs text-white/50 mt-1">
