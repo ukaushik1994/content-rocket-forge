@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
 import { getFormatByIdOrDefault } from '../../formats';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useContentActions = (content: ContentItemType | null) => {
   const { contentItems, addContentItem, updateContentItem, deleteContentItem } = useContent();
@@ -11,29 +12,66 @@ export const useContentActions = (content: ContentItemType | null) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Utility function to find content by original content ID and format
-  const findRepurposedContent = (originalContentId: string, formatId: string): string | null => {
-    // Find the content item
-    const originalContent = contentItems.find(item => item.id === originalContentId);
+  const findRepurposedContent = (originalContentId: string, formatId: string): any | null => {
+    if (!originalContentId || !formatId) {
+      return null;
+    }
     
-    // Check if it has repurposed content for this format
-    if (originalContent?.metadata?.repurposedContentMap?.[formatId]) {
-      return originalContent.metadata.repurposedContentMap[formatId];
+    try {
+      // First check in the context's contentItems
+      const originalContent = contentItems.find(item => item.id === originalContentId);
+      
+      // If found in context, use that data
+      if (originalContent?.metadata?.repurposedContentMap?.[formatId]) {
+        return {
+          contentId: originalContentId,
+          formatId,
+          title: originalContent.title || 'Untitled',
+          content: originalContent.metadata.repurposedContentMap[formatId]
+        };
+      }
+      
+      // Fallback to localStorage data
+      const savedData = localStorage.getItem(`repurposed_content_${originalContentId}`);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (parsedData.contents && parsedData.contents[formatId]) {
+          return {
+            contentId: originalContentId,
+            formatId,
+            title: originalContent?.title || 'Untitled',
+            content: parsedData.contents[formatId]
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error finding repurposed content:', error);
     }
     
     return null;
   };
   
   const copyToClipboard = (content: string) => {
+    if (!content) {
+      toast.error('No content to copy');
+      return;
+    }
+    
     navigator.clipboard.writeText(content);
     toast.success('Copied to clipboard');
   };
   
   const downloadAsText = (content: string, formatName: string) => {
+    if (!content || !formatName) {
+      toast.error('No content to download');
+      return;
+    }
+    
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `content_${formatName.toLowerCase().replace(' ', '_')}.txt`;
+    a.download = `content_${formatName.toLowerCase().replace(/\s+/g, '_')}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -42,7 +80,10 @@ export const useContentActions = (content: ContentItemType | null) => {
   };
   
   const saveAsNewContent = async (formatId: string, generatedContent: string): Promise<boolean> => {
-    if (!content) return false;
+    if (!content || !formatId || !generatedContent) {
+      toast.error('Missing required data to save content');
+      return false;
+    }
     
     try {
       setIsSaving(true);
@@ -65,13 +106,30 @@ export const useContentActions = (content: ContentItemType | null) => {
       repurposedContentMap[formatId] = generatedContent;
       
       // Update the content with the new metadata
+      const updatedMetadata = {
+        ...currentMetadata,
+        repurposedFormats,
+        repurposedContentMap,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // Update in context through updateContentItem
       await updateContentItem(content.id, {
-        metadata: {
-          ...currentMetadata,
-          repurposedFormats,
-          repurposedContentMap
-        }
+        metadata: updatedMetadata
       });
+      
+      // Also directly update in database to ensure persistence
+      const { error } = await supabase
+        .from('content_items')
+        .update({
+          metadata: updatedMetadata
+        })
+        .eq('id', content.id);
+      
+      if (error) {
+        console.error('Error updating content in database:', error);
+        toast.error('Error saving to database, but local changes were saved');
+      }
       
       toast.success(`${formatName} content saved successfully`);
       return true;
@@ -85,7 +143,10 @@ export const useContentActions = (content: ContentItemType | null) => {
   };
   
   const deleteRepurposedContent = async (contentId: string, formatId: string): Promise<boolean> => {
-    if (!contentId || !formatId) return false;
+    if (!contentId || !formatId) {
+      toast.error('Missing required data to delete content');
+      return false;
+    }
     
     setIsDeleting(true);
     
@@ -106,14 +167,60 @@ export const useContentActions = (content: ContentItemType | null) => {
       const updatedContentMap = { ...repurposedContentMap };
       delete updatedContentMap[formatId];
       
-      // Update the content with the new metadata
+      const updatedMetadata = {
+        ...currentMetadata,
+        repurposedFormats: updatedFormats,
+        repurposedContentMap: updatedContentMap,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // Update the content with the new metadata using context
       await updateContentItem(contentId, {
-        metadata: {
-          ...currentMetadata,
-          repurposedFormats: updatedFormats,
-          repurposedContentMap: updatedContentMap
-        }
+        metadata: updatedMetadata
       });
+      
+      // Also directly update in database to ensure persistence
+      const { error } = await supabase
+        .from('content_items')
+        .update({
+          metadata: updatedMetadata
+        })
+        .eq('id', contentId);
+      
+      if (error) {
+        console.error('Error updating content in database:', error);
+        toast.error('Error deleting from database, but local changes were applied');
+      }
+      
+      // Also update localStorage
+      try {
+        const savedData = localStorage.getItem(`repurposed_content_${contentId}`);
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          
+          if (parsedData.contents) {
+            delete parsedData.contents[formatId];
+          }
+          
+          if (parsedData.savedFormats) {
+            parsedData.savedFormats = parsedData.savedFormats.filter((f: string) => f !== formatId);
+          }
+          
+          if (parsedData.formats) {
+            parsedData.formats = parsedData.formats.filter((f: string) => f !== formatId);
+          }
+          
+          if (parsedData.activeFormat === formatId) {
+            parsedData.activeFormat = Object.keys(parsedData.contents || {}).length > 0
+              ? Object.keys(parsedData.contents)[0]
+              : null;
+          }
+          
+          localStorage.setItem(`repurposed_content_${contentId}`, JSON.stringify(parsedData));
+        }
+      } catch (localStorageError) {
+        console.error('Error updating localStorage:', localStorageError);
+      }
       
       toast.success('Content deleted successfully');
       return true;

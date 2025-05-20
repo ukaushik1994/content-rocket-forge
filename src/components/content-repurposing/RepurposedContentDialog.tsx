@@ -39,11 +39,11 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   
   if (!content) return null;
 
-  // Find the format information - Add null check for formatId
+  // Find the format information
   const format = getFormatByIdOrDefault(content.formatId);
   const formatName = format.name;
 
-  // Get all available formats (no longer limiting to 5)
+  // Get all available formats
   const availableFormats = contentFormats;
 
   // Filter to only show formats that have been generated or match the current format
@@ -75,7 +75,10 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
 
   return (
     <Dialog open={open} onOpenChange={open => !open && onClose()}>
-      <DialogContent className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg`}>
+      <DialogContent 
+        hideCloseButton={true}
+        className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[85vh] overflow-hidden flex flex-col bg-gradient-to-b from-black/95 to-black/90 border border-white/20 shadow-xl shadow-indigo-500/10 p-0 rounded-xl backdrop-blur-lg`}
+      >
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-black/50">
           <div className="flex flex-col">
             <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent`}>
@@ -116,7 +119,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
           </motion.div>
         )}
         
-        <ContentPreview content={content.content || ''} />
+        <ContentPreview content={content.content || ''} formatId={content.formatId} />
         
         <motion.div 
           initial={{ opacity: 0, y: 10 }} 

@@ -3,16 +3,174 @@ import React, { memo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getFormatByIdOrDefault } from '../formats';
 
 interface ContentPreviewProps {
   content: string;
+  formatId?: string;
 }
 
-const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content }) => {
+const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content, formatId }) => {
   const isMobile = useIsMobile();
   
   // Add safe content rendering - ensure content is never undefined
   const safeContent = content || '';
+  const format = formatId ? getFormatByIdOrDefault(formatId) : null;
+  
+  // Format-specific styling
+  const getFormatSpecificStyle = () => {
+    if (!formatId) return {};
+    
+    switch (formatId) {
+      case 'social-twitter':
+        return 'bg-black/30 font-sans text-white';
+      case 'social-linkedin':
+        return 'bg-[#0077b5]/10 font-sans text-white/95';
+      case 'social-facebook':
+        return 'bg-[#1877f2]/10 font-sans text-white/95';
+      case 'email':
+        return 'bg-white/10 font-serif text-white/95';
+      case 'infographic':
+        return 'bg-gradient-to-br from-indigo-900/30 to-purple-900/30 font-sans text-white/95';
+      case 'script':
+        return 'bg-black/40 font-mono text-white/90';
+      case 'blog':
+        return 'bg-slate-800/40 font-serif text-white/95';
+      case 'glossary':
+        return 'bg-emerald-900/20 font-sans text-white/90';
+      case 'carousel':
+        return 'bg-indigo-900/30 font-sans text-white/95';
+      case 'meme':
+        return 'bg-black/50 font-sans text-white';
+      default:
+        return 'bg-black/30 font-sans text-white/90';
+    }
+  };
+  
+  // Render content based on format type
+  const renderFormattedContent = () => {
+    if (!safeContent) {
+      return <p className="text-white/50 italic">No content available</p>;
+    }
+    
+    // Format-specific rendering
+    if (formatId === 'meme') {
+      try {
+        const imageMatch = safeContent.match(/Image description: (.*?)(?:\n|$)/);
+        const topTextMatch = safeContent.match(/Top text: (.*?)(?:\n|$)/);
+        const bottomTextMatch = safeContent.match(/Bottom text: (.*?)(?:\n|$)/);
+        
+        if (imageMatch && (topTextMatch || bottomTextMatch)) {
+          return (
+            <div className="flex flex-col space-y-4 p-2">
+              <div className="bg-black/80 p-4 rounded-lg overflow-hidden">
+                {topTextMatch && (
+                  <p className="text-center text-white font-bold uppercase text-lg mb-2">
+                    {topTextMatch[1].trim()}
+                  </p>
+                )}
+                <div className="border border-dashed border-gray-500 h-40 flex items-center justify-center">
+                  <p className="text-gray-400 text-sm px-4 text-center">[{imageMatch[1].trim()}]</p>
+                </div>
+                {bottomTextMatch && (
+                  <p className="text-center text-white font-bold uppercase text-lg mt-2">
+                    {bottomTextMatch[1].trim()}
+                  </p>
+                )}
+              </div>
+              <pre className="text-xs text-white/70 bg-black/30 p-3 rounded-md">
+                {safeContent}
+              </pre>
+            </div>
+          );
+        }
+      } catch (e) {
+        console.error("Error parsing meme format:", e);
+      }
+    } else if (formatId === 'carousel') {
+      try {
+        const slides = safeContent.split('\n\n')
+          .filter(line => line.trim().startsWith('Slide'))
+          .map(slide => {
+            const [title, ...content] = slide.split(':');
+            return { title, content: content.join(':').trim() };
+          });
+          
+        if (slides.length >= 2) {
+          return (
+            <div className="flex flex-col space-y-3">
+              {slides.map((slide, i) => (
+                <div key={i} className="bg-white/5 rounded-md p-3 border border-white/10">
+                  <h4 className="text-purple-300 font-medium mb-1">{slide.title}:</h4>
+                  <p className="text-white/80 text-sm">{slide.content}</p>
+                </div>
+              ))}
+            </div>
+          );
+        }
+      } catch (e) {
+        console.error("Error parsing carousel format:", e);
+      }
+    } else if (formatId === 'social-twitter' || formatId === 'social-linkedin' || formatId === 'social-facebook') {
+      return (
+        <div className={`rounded-xl p-4 ${formatId === 'social-twitter' ? 'border border-gray-800' : 'border border-white/10'}`}>
+          <div className="flex items-center mb-3">
+            <div className="w-10 h-10 rounded-full bg-white/10"></div>
+            <div className="ml-3">
+              <p className="font-bold text-white">User Name</p>
+              <p className="text-xs text-white/60">@username</p>
+            </div>
+          </div>
+          <div className="text-sm whitespace-pre-wrap">{safeContent}</div>
+        </div>
+      );
+    } else if (formatId === 'email') {
+      const subjectMatch = safeContent.match(/Subject: (.*?)(?:\n|$)/);
+      const subject = subjectMatch ? subjectMatch[1] : 'No Subject';
+      const bodyContent = safeContent.replace(/Subject: .*?\n/, '');
+      
+      return (
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+          <div className="border-b border-white/10 pb-3 mb-3">
+            <p className="text-sm text-white/60">Subject:</p>
+            <p className="font-medium text-white">{subject}</p>
+          </div>
+          <div className="whitespace-pre-wrap text-sm text-white/90">{bodyContent}</div>
+        </div>
+      );
+    } else if (formatId === 'glossary') {
+      try {
+        const terms = safeContent.split('\n\n')
+          .filter(line => line.includes(':'))
+          .map(term => {
+            const [name, ...definition] = term.split(':');
+            return { term: name.trim(), definition: definition.join(':').trim() };
+          });
+          
+        if (terms.length > 0) {
+          return (
+            <div className="flex flex-col space-y-4">
+              {terms.map((item, i) => (
+                <div key={i} className="bg-white/5 rounded-md p-3 border-l-2 border-green-500">
+                  <h4 className="text-green-300 font-medium">{item.term}:</h4>
+                  <p className="text-white/80 text-sm mt-1">{item.definition}</p>
+                </div>
+              ))}
+            </div>
+          );
+        }
+      } catch (e) {
+        console.error("Error parsing glossary format:", e);
+      }
+    }
+    
+    // Default rendering for other formats
+    return (
+      <pre className={`whitespace-pre-wrap text-xs sm:text-sm p-3 sm:p-4 rounded-lg border border-white/10 overflow-x-auto ${getFormatSpecificStyle()}`}>
+        {safeContent}
+      </pre>
+    );
+  };
   
   return (
     <motion.div 
@@ -23,9 +181,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content }) => {
     >
       <ScrollArea className={`${isMobile ? 'h-[200px]' : 'h-[calc(min(50vh,400px))]'} w-full pr-2`}>
         <div className="rounded-md text-white/90">
-          <pre className="whitespace-pre-wrap text-xs sm:text-sm font-mono bg-black/20 p-3 sm:p-4 rounded-lg border border-white/5 overflow-x-auto">
-            {safeContent}
-          </pre>
+          {renderFormattedContent()}
         </div>
       </ScrollArea>
     </motion.div>
