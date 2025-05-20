@@ -1,157 +1,146 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '@/contexts/content/types';
-import { contentFormats, getFormatByIdOrDefault } from '@/components/content-repurposing/formats';
+import { toast } from 'sonner';
 
 /**
- * Loads repurposed content from localStorage (transitional approach)
+ * Load content from local storage (transitional approach)
  */
 export const loadFromLocalStorage = (contentId: string) => {
-  const savedLocalData = localStorage.getItem(`repurposed_content_${contentId}`);
-  
-  if (savedLocalData) {
-    try {
-      const parsedLocalData = JSON.parse(savedLocalData);
-      
-      return {
-        contents: parsedLocalData.contents || {},
-        formats: Array.isArray(parsedLocalData.formats) ? parsedLocalData.formats : [],
-        savedFormats: Array.isArray(parsedLocalData.savedFormats) ? parsedLocalData.savedFormats : [],
-        activeFormat: parsedLocalData.activeFormat && typeof parsedLocalData.activeFormat === 'string' 
-          ? parsedLocalData.activeFormat 
-          : null
-      };
-    } catch (error) {
-      console.error('Error parsing saved local content:', error);
+  try {
+    const savedData = localStorage.getItem(`repurposed_content_${contentId}`);
+    if (savedData) {
+      return JSON.parse(savedData);
     }
+  } catch (error) {
+    console.error('Error loading from localStorage:', error);
   }
-  
   return null;
 };
 
 /**
- * Saves repurposed content to localStorage (transitional approach)
+ * Save content to local storage (transitional approach)
  */
 export const saveToLocalStorage = (
-  contentId: string, 
-  generatedContents: Record<string, string>, 
-  selectedFormats: string[], 
-  savedContentFormats: string[], 
-  activeFormat: string | null
+  contentId: string,
+  contents: Record<string, string>,
+  formats: string[],
+  savedFormats: string[] = [],
+  activeFormat: string | null = null
 ) => {
-  if (!contentId) return;
-  
-  const dataToSave = {
-    contents: generatedContents,
-    formats: selectedFormats,
-    savedFormats: savedContentFormats,
-    activeFormat: activeFormat,
-    timestamp: new Date().toISOString(),
-    contentId: contentId
-  };
-  
   try {
-    localStorage.setItem(`repurposed_content_${contentId}`, JSON.stringify(dataToSave));
+    localStorage.setItem(
+      `repurposed_content_${contentId}`,
+      JSON.stringify({
+        contents,
+        formats,
+        savedFormats,
+        activeFormat
+      })
+    );
   } catch (error) {
     console.error('Error saving to localStorage:', error);
   }
 };
 
 /**
- * Loads repurposed content from Supabase database
+ * Load content from database
  */
 export const loadFromDatabase = async (contentId: string) => {
+  if (!contentId) return null;
+  
   try {
-    const { data: repurposedContents, error } = await supabase
+    // Query repurposed contents table
+    const { data, error } = await supabase
       .from('repurposed_contents')
       .select('*')
       .eq('content_id', contentId);
-    
+      
     if (error) {
-      console.error('Error loading repurposed content from database:', error);
+      console.error('Error loading content from database:', error);
       return null;
     }
     
-    if (repurposedContents && repurposedContents.length > 0) {
-      const dbContents: Record<string, string> = {};
-      const dbFormats: string[] = [];
-      const dbSavedFormats: string[] = [];
+    if (data && data.length > 0) {
+      // Process the data into expected format
+      const contents: Record<string, string> = {};
+      const formats: string[] = [];
+      const savedFormats: string[] = [];
       
-      repurposedContents.forEach(item => {
-        dbContents[item.format_code] = item.content;
-        
-        if (!dbFormats.includes(item.format_code)) {
-          dbFormats.push(item.format_code);
+      // Process each item
+      data.forEach(item => {
+        contents[item.format_code] = item.content;
+        if (!formats.includes(item.format_code)) {
+          formats.push(item.format_code);
         }
-        
-        if (item.status === 'saved' && !dbSavedFormats.includes(item.format_code)) {
-          dbSavedFormats.push(item.format_code);
+        if (item.status === 'saved' && !savedFormats.includes(item.format_code)) {
+          savedFormats.push(item.format_code);
         }
       });
       
       return {
-        contents: dbContents,
-        formats: dbFormats,
-        savedFormats: dbSavedFormats
+        contents,
+        formats,
+        savedFormats
       };
     }
+    
+    return null;
   } catch (error) {
-    console.error('Error in database load operation:', error);
+    console.error('Error in loadFromDatabase:', error);
+    return null;
   }
-  
-  return null;
 };
 
 /**
- * Stores generated content to the database
+ * Store content in the database
  */
 export const storeContentInDatabase = async (
-  contentId: string,
-  formatId: string,
+  contentId: string, 
+  formatId: string, 
   generatedContent: string,
-  contentTitle: string,
+  title: string,
   userId: string,
   status: 'draft' | 'saved' = 'draft'
-) => {
+): Promise<boolean> => {
   if (!contentId || !formatId || !generatedContent) return false;
   
-  const formatInfo = getFormatByIdOrDefault(formatId);
-  
   try {
+    // Insert or update content in database
     const { error } = await supabase
       .from('repurposed_contents')
       .upsert({
         content_id: contentId,
         format_code: formatId,
         content: generatedContent,
-        title: `${contentTitle} - ${formatInfo.name}`,
-        status: status,
-        user_id: userId
+        title,
+        user_id: userId,
+        status
       }, {
         onConflict: 'content_id,format_code',
         ignoreDuplicates: false
       });
       
     if (error) {
-      console.error('Error storing generated content in database:', error);
+      console.error('Error storing content in database:', error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Error storing content:', error);
+    console.error('Error in storeContentInDatabase:', error);
     return false;
   }
 };
 
 /**
- * Updates the format status in the database
+ * Update format status in the database
  */
 export const updateFormatStatus = async (
   contentId: string,
   formatId: string,
   status: 'draft' | 'saved' = 'saved'
-) => {
+): Promise<boolean> => {
   if (!contentId || !formatId) return false;
   
   try {
@@ -174,7 +163,7 @@ export const updateFormatStatus = async (
 };
 
 /**
- * Fetches available content formats from the database
+ * Fetch available formats from database
  */
 export const fetchFormatsFromDatabase = async () => {
   try {
@@ -185,12 +174,12 @@ export const fetchFormatsFromDatabase = async () => {
       
     if (error) {
       console.error('Error fetching available formats:', error);
-      return contentFormats; // Fall back to the hardcoded formats
+      return [];
     }
     
-    return data || contentFormats;
+    return data || [];
   } catch (error) {
-    console.error('Error in fetchAvailableFormats:', error);
-    return contentFormats; // Fall back to the hardcoded formats
+    console.error('Error in fetchFormatsFromDatabase:', error);
+    return [];
   }
 };
