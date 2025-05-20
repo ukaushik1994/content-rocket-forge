@@ -19,14 +19,20 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       if (savedData) {
         try {
           const parsedData = JSON.parse(savedData);
-          setGeneratedContents(parsedData.contents || {});
-          setSelectedFormats(parsedData.formats || []);
-          setSavedContentFormats(parsedData.savedFormats || []);
           
-          if (parsedData.activeFormat) {
+          // Ensure all data is valid before setting state
+          const parsedContents = parsedData.contents || {};
+          const parsedFormats = Array.isArray(parsedData.formats) ? parsedData.formats : [];
+          const parsedSavedFormats = Array.isArray(parsedData.savedFormats) ? parsedData.savedFormats : [];
+          
+          setGeneratedContents(parsedContents);
+          setSelectedFormats(parsedFormats);
+          setSavedContentFormats(parsedSavedFormats);
+          
+          if (parsedData.activeFormat && typeof parsedData.activeFormat === 'string') {
             setActiveFormat(parsedData.activeFormat);
-          } else if (Object.keys(parsedData.contents || {}).length > 0) {
-            setActiveFormat(Object.keys(parsedData.contents)[0]);
+          } else if (Object.keys(parsedContents).length > 0) {
+            setActiveFormat(Object.keys(parsedContents)[0]);
           }
           
           toast.info("Loaded previously generated content formats");
@@ -49,12 +55,16 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         contentId: content.id
       };
       
-      localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(dataToSave));
+      try {
+        localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(dataToSave));
+      } catch (error) {
+        console.error('Error saving to localStorage:', error);
+      }
     }
   }, [generatedContents, selectedFormats, activeFormat, savedContentFormats, content?.id]);
   
   const handleGenerateContent = async (contentTypeIds: string[]) => {
-    if (contentTypeIds.length === 0) {
+    if (!Array.isArray(contentTypeIds) || contentTypeIds.length === 0) {
       toast.error('Please select at least one content format');
       return;
     }
@@ -72,22 +82,32 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       
       // Generate content for each selected format using templates
       for (const formatId of contentTypeIds) {
+        if (!formatId) continue;
+        
         const formatInfo = getFormatByIdOrDefault(formatId);
         
         try {
           toast.info(`Generating ${formatInfo.name} content...`);
           
+          const contentText = content.content && typeof content.content === 'string' 
+            ? content.content.substring(0, 1500) 
+            : '';
+            
+          const keyword = content.keywords && Array.isArray(content.keywords) && content.keywords.length > 0
+            ? content.keywords[0]
+            : '';
+          
           // Use our template service to generate content
           const generatedContent = await generateContentByFormatType(
             formatId,
-            content.title,
+            content.title || 'Untitled Content',
             {
-              content: content.content?.substring(0, 1500) || '',
-              keyword: content.keywords ? content.keywords[0] : ''
+              content: contentText,
+              keyword: keyword
             }
           );
           
-          if (generatedContent) {
+          if (generatedContent && typeof generatedContent === 'string') {
             newGeneratedContents[formatId] = generatedContent;
           } else {
             toast.error(`Failed to generate ${formatInfo.name} content`);
@@ -105,15 +125,22 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         toast.success(`Generated content for ${Object.keys(newGeneratedContents).length} format(s)`);
         
         // Auto-save to localStorage
-        const saveData = {
-          contents: newGeneratedContents,
-          formats: contentTypeIds,
-          savedFormats: savedContentFormats,
-          activeFormat: Object.keys(newGeneratedContents)[0],
-          timestamp: new Date().toISOString(),
-          contentId: content.id
-        };
-        localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(saveData));
+        if (content.id) {
+          const saveData = {
+            contents: newGeneratedContents,
+            formats: contentTypeIds,
+            savedFormats: savedContentFormats,
+            activeFormat: Object.keys(newGeneratedContents)[0],
+            timestamp: new Date().toISOString(),
+            contentId: content.id
+          };
+          
+          try {
+            localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(saveData));
+          } catch (error) {
+            console.error('Error saving to localStorage:', error);
+          }
+        }
       } else {
         toast.error('Failed to generate any content');
       }
@@ -126,6 +153,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   };
   
   const markAsSaved = (formatId: string) => {
+    if (!formatId) return;
+    
     if (!savedContentFormats.includes(formatId)) {
       const updatedSavedFormats = [...savedContentFormats, formatId];
       setSavedContentFormats(updatedSavedFormats);

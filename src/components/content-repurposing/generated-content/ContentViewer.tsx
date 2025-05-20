@@ -19,6 +19,15 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId })
   
   // Function to format special content types
   const formatContent = (content: string, formatId: string) => {
+    // Additional safety check inside the function
+    if (!content || typeof content !== 'string') {
+      return (
+        <pre className="whitespace-pre-wrap font-mono text-sm text-muted-foreground">
+          Content unavailable
+        </pre>
+      );
+    }
+    
     if (formatId === 'meme' && content) {
       try {
         // Extract meme components if in the expected format

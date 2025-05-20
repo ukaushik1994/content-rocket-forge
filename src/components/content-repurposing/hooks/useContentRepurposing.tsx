@@ -43,12 +43,17 @@ export const useContentRepurposing = () => {
   
   // Handle deleting from the generated content view (when content is already selected)
   const handleDeleteActiveFormat = async (formatId: string): Promise<boolean> => {
-    if (!content) return false;
+    if (!content || !formatId) return false;
     return deleteRepurposedContent(content.id, formatId);
   };
   
   // Update this function to safely pass generated formats
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
+    if (!contentId || !formatId) {
+      console.error("Invalid content or format ID");
+      return;
+    }
+    
     // Get all formats that have been generated for this content
     const availableFormats = generatedContents ? Object.keys(generatedContents) : [];
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
@@ -56,16 +61,24 @@ export const useContentRepurposing = () => {
   
   // Wrapper for format change handler
   const handleFormatChange = (contentId: string, formatId: string) => {
+    if (!contentId || !formatId) {
+      console.error("Invalid content or format ID for format change");
+      return;
+    }
     formatChangeHandler(contentId, formatId);
   };
+  
+  // Ensure we always return properly defined values
+  const safeGeneratedContents = generatedContents || {};
+  const safeActiveFormat = activeFormat || null;
   
   return {
     content,
     contentItems: contentItems || [],
     selectedFormats: selectedFormats || [],
-    generatedContents: generatedContents || {},
+    generatedContents: safeGeneratedContents,
     isGenerating,
-    activeFormat,
+    activeFormat: safeActiveFormat,
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats: generatedFormats || [],

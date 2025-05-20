@@ -52,7 +52,7 @@ const ContentRepurposing = () => {
       for (const formatId of formatIds) {
         try {
           const formatContent = generatedContents[formatId];
-          if (formatContent) {
+          if (formatContent && typeof formatContent === 'string') {
             const success = await saveAsNewContent(formatId, formatContent);
             if (success) {
               savedCount++;
@@ -88,13 +88,21 @@ const ContentRepurposing = () => {
     return (
       <ContentSelectionView
         contentItems={contentItems || []}
-        onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
+        onSelectContent={(selectedContent: ContentItemType) => {
+          if (selectedContent && selectedContent.id) {
+            handleContentSelection(selectedContent.id);
+          }
+        }}
         onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
         repurposedDialogOpen={repurposedDialogOpen}
         onCloseRepurposedDialog={handleCloseRepurposedDialog}
         selectedRepurposedContent={selectedRepurposedContent}
-        copyToClipboard={copyToClipboard}
-        downloadAsText={downloadAsText}
+        copyToClipboard={(text: string) => {
+          if (text) copyToClipboard(text);
+        }}
+        downloadAsText={(text: string, formatName: string) => {
+          if (text && formatName) downloadAsText(text, formatName);
+        }}
         deleteRepurposedContent={deleteRepurposedContent}
         handleFormatChange={handleFormatChange}
         isDeleting={isDeleting}
@@ -114,7 +122,9 @@ const ContentRepurposing = () => {
       isSaving={isSaving}
       isSavingAll={isSavingAll}
       setSelectedFormats={setSelectedFormats}
-      setActiveFormat={setActiveFormat}
+      setActiveFormat={(format: string) => {
+        if (format) setActiveFormat(format);
+      }}
       handleGenerateContent={handleGenerateContent}
       copyToClipboard={copyToClipboard}
       downloadAsText={downloadAsText}
