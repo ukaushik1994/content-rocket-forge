@@ -1,46 +1,56 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
-import { LightbulbIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 
 interface InitialStateViewProps {
   onSearch: (keyword: string, suggestions: string[]) => void;
 }
 
 export const InitialStateView: React.FC<InitialStateViewProps> = ({ onSearch }) => {
+  // List of example keywords
+  const exampleKeywords = [
+    'content marketing',
+    'seo optimization',
+    'digital strategy',
+    'social media',
+    'brand awareness',
+    'conversion rate'
+  ];
+
+  const handleExampleClick = (keyword: string) => {
+    onSearch(keyword, []);
+  };
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Keyword Research</CardTitle>
-          <CardDescription>
-            Start by searching for your main keyword to research related terms
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <KeywordSearch
-            onSearch={onSearch}
-            placeholder="Enter your main keyword (e.g. content marketing)"
-            buttonText="Research"
-          />
-          
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800">
-            <div className="flex gap-3">
-              <LightbulbIcon className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="space-y-2">
-                <h3 className="font-medium text-sm">Keyword Research Tips</h3>
-                <ul className="text-sm space-y-1 list-disc pl-4">
-                  <li>Start with a broad keyword related to your topic</li>
-                  <li>Select both short and long-tail keywords</li>
-                  <li>Include question-based keywords for better content</li>
-                  <li>Choose 3-5 related keywords for your content</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="text-center space-y-6 py-6">
+      <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+        <Search className="h-8 w-8 text-primary" />
+      </div>
+      
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Start with a keyword</h3>
+        <p className="text-sm text-muted-foreground">
+          Enter your main keyword to begin analyzing search results
+        </p>
+      </div>
+      
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground">Try one of these examples:</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {exampleKeywords.map((keyword) => (
+            <Button
+              key={keyword}
+              variant="outline"
+              size="sm"
+              onClick={() => handleExampleClick(keyword)}
+              className="text-xs"
+            >
+              {keyword}
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

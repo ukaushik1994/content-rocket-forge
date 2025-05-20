@@ -112,3 +112,90 @@ export const generateMetaTags = async (content: string, keywords: string[]): Pro
     };
   }
 };
+
+/**
+ * Improve content with AI assistance
+ */
+export const improveContentWithAI = async (contentData: any): Promise<string> => {
+  try {
+    // Mock implementation
+    console.log('Improving content with AI:', contentData);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    
+    // Get the content text
+    const content = typeof contentData === 'string' 
+      ? contentData 
+      : contentData?.content || '';
+    
+    if (!content) {
+      return '';
+    }
+    
+    // Simple mock improvement - add some phrases and formatting
+    const improved = content
+      .replace(/\b(\w+)\b/g, (match) => {
+        // Randomly enhance some words with adjectives
+        if (Math.random() > 0.95 && match.length > 4) {
+          const adjectives = ['effective', 'powerful', 'essential', 'valuable', 'crucial'];
+          const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+          return `${randomAdjective} ${match}`;
+        }
+        return match;
+      })
+      .replace(/\.\s+/g, '.\n\n') // Add paragraph breaks
+      .replace(/[!?]\s+/g, '$&\n'); // Add line breaks after exclamations and questions
+    
+    return improved;
+  } catch (error) {
+    console.error('Error improving content:', error);
+    toast.error('Failed to improve content');
+    
+    // Return original content on failure
+    return typeof contentData === 'string' ? contentData : contentData?.content || '';
+  }
+};
+
+/**
+ * Generate title suggestions based on content
+ */
+export const generateTitleSuggestions = async (contentData: any): Promise<string[]> => {
+  try {
+    // Mock implementation
+    console.log('Generating title suggestions for:', contentData);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Extract relevant information
+    const content = typeof contentData === 'string' 
+      ? contentData 
+      : contentData?.content || '';
+    const title = contentData?.title || '';
+    const keywords = contentData?.keywords || [];
+    
+    if (!content) {
+      return [title || 'Untitled Document'];
+    }
+    
+    // Generate some mock title variations
+    const suggestions = [
+      title || 'Untitled Document', // Include original title if available
+      keywords.length > 0 ? `Ultimate Guide to ${keywords[0]}` : 'Ultimate Guide',
+      keywords.length > 0 ? `The Complete ${keywords[0]} Handbook` : 'The Complete Handbook',
+      keywords.length > 0 ? `How to Master ${keywords[0]} in ${new Date().getFullYear()}` : `Essential Guide for ${new Date().getFullYear()}`,
+      keywords.length > 0 ? `Top ${Math.floor(Math.random() * 10) + 5} ${keywords[0]} Tips & Tricks` : 'Top Tips & Tricks',
+      keywords.length > 1 ? `${keywords[0]} vs ${keywords[1]}: The Definitive Comparison` : 'The Definitive Comparison'
+    ];
+    
+    return suggestions.filter(Boolean);
+  } catch (error) {
+    console.error('Error generating title suggestions:', error);
+    toast.error('Failed to generate title suggestions');
+    return ['Title Suggestion 1', 'Title Suggestion 2'];
+  }
+};
+
+// Alias for compatibility with existing code
+export const generateMetadata = generateMetaTags;

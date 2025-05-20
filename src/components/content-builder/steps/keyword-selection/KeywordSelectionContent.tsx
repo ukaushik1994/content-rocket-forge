@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, RefreshCw } from 'lucide-react';
-import { InitialStateView } from './InitialStateView';
+import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
 import { SelectedKeywords } from './SelectedKeywords';
+import { InitialStateView } from './InitialStateView';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { SerpAnalysisResult } from '@/types/serp';
 
-interface KeywordSelectionContentProps {
+export interface KeywordSelectionContentProps {
   mainKeyword: string;
   selectedKeywords: string[];
   suggestions: string[];
@@ -18,7 +18,8 @@ interface KeywordSelectionContentProps {
   onSearch: (keyword: string, suggestions: string[]) => void;
   onAddKeyword: (keyword: string) => void;
   onRemoveKeyword: (keyword: string) => void;
-  onAddToContent: () => void;
+  onToggleSelection?: (type: string, content: string) => void;
+  onAddToContent: (content: string, type: string) => void;
   onReanalyze: () => void;
 }
 
@@ -32,93 +33,92 @@ export const KeywordSelectionContent: React.FC<KeywordSelectionContentProps> = (
   onSearch,
   onAddKeyword,
   onRemoveKeyword,
+  onToggleSelection,
   onAddToContent,
   onReanalyze
 }) => {
-  if (!hasSearched && suggestions.length === 0) {
-    return <InitialStateView onSearch={onSearch} />;
-  }
+  // Render suggestions if available
+  const renderSuggestions = () => {
+    if (!suggestions || suggestions.length === 0) {
+      return null;
+    }
 
+    return (
+      <div className="mt-6">
+        <h3 className="text-sm font-medium mb-3">Related Keywords</h3>
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((suggestion) => (
+            <Button
+              key={suggestion}
+              variant="outline"
+              size="sm"
+              onClick={() => onAddKeyword(suggestion)}
+              className="text-xs"
+              disabled={selectedKeywords.includes(suggestion)}
+            >
+              {suggestion}
+              {selectedKeywords.includes(suggestion) && " ✓"}
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render the main content
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Keyword Research</CardTitle>
-          <CardDescription>
-            Search for your main keyword and select related keywords to include in your content
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <KeywordSearch
-            onSearch={onSearch}
-            defaultKeyword={mainKeyword}
-            placeholder="Search for a keyword"
-            buttonText="Research"
-          />
-
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Select Keywords</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-medium">Selected Keywords</h3>
-              <Button 
-                size="sm" 
-                onClick={onAddToContent}
-                disabled={selectedKeywords.length === 0}
-                className="h-8"
-              >
-                Continue with Selected
-              </Button>
-            </div>
-            
-            <SelectedKeywords 
-              keywords={selectedKeywords}
-              onRemoveKeyword={onRemoveKeyword}
+            <label className="text-sm font-medium">Main Keyword</label>
+            <KeywordSearch
+              onSearch={onSearch}
+              defaultKeyword={mainKeyword}
+              placeholder="Enter your main keyword"
+              buttonText="Search"
             />
           </div>
-
-          {hasSearched && suggestions.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium">Suggested Keywords</h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onReanalyze}
-                  disabled={isAnalyzing || !mainKeyword}
-                  className="h-8"
-                >
+          
+          {hasSearched ? (
+            <>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Selected Keywords</h3>
                   {isAnalyzing ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin" />
+                    <Button variant="ghost" size="sm" disabled className="text-xs">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                       Analyzing...
-                    </>
+                    </Button>
                   ) : (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 mr-2" />
-                      Refresh
-                    </>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={onReanalyze}
+                      className="text-xs"
+                      disabled={!mainKeyword}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Refresh Analysis
+                    </Button>
                   )}
-                </Button>
+                </div>
+                <SelectedKeywords 
+                  keywords={selectedKeywords}
+                  onRemoveKeyword={onRemoveKeyword}
+                />
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {suggestions.map((keyword) => (
-                  <Button
-                    key={keyword}
-                    size="sm"
-                    variant="outline"
-                    className="flex items-center gap-1 h-8"
-                    onClick={() => onAddKeyword(keyword)}
-                    disabled={selectedKeywords.includes(keyword)}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {keyword}
-                  </Button>
-                ))}
-              </div>
-            </div>
+              {renderSuggestions()}
+            </>
+          ) : (
+            <InitialStateView onSearch={onSearch} />
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

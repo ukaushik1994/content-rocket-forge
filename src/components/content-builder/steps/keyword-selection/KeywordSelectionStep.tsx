@@ -27,6 +27,7 @@ export const KeywordSelectionStep = () => {
       onSearch={handleKeywordSearch}
       onAddKeyword={handleAddKeyword}
       onRemoveKeyword={handleRemoveKeyword}
+      onToggleSelection={handleToggleSelection}
       onAddToContent={handleAddToContent}
       onReanalyze={handleReanalyze}
     />

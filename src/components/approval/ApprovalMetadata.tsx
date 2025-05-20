@@ -1,26 +1,37 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useApproval } from './context/ApprovalContext';
+import { ContentItemType } from '@/contexts/content/types';
 
 interface ApprovalMetadataProps {
+  content?: ContentItemType;
   metaTitle?: string;
   metaDescription?: string;
   onUpdate?: (metadata: { metaTitle: string; metaDescription: string }) => void;
 }
 
 export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({
+  content,
   metaTitle: initialMetaTitle = '',
   metaDescription: initialMetaDescription = '',
   onUpdate
 }) => {
-  const [metaTitle, setMetaTitle] = useState(initialMetaTitle);
-  const [metaDescription, setMetaDescription] = useState(initialMetaDescription);
+  const [metaTitle, setMetaTitle] = useState(content?.metaTitle || initialMetaTitle);
+  const [metaDescription, setMetaDescription] = useState(content?.metaDescription || initialMetaDescription);
   const [isSaving, setIsSaving] = useState(false);
   const { generateSeoAnalysis } = useApproval();
+
+  // Update state when content changes
+  useEffect(() => {
+    if (content) {
+      setMetaTitle(content.metaTitle || '');
+      setMetaDescription(content.metaDescription || '');
+    }
+  }, [content]);
 
   const handleSave = () => {
     setIsSaving(true);

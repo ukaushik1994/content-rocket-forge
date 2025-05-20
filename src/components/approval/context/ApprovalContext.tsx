@@ -7,7 +7,7 @@ import {
   generateSeoReport, 
   improveContentWithAI, 
   generateTitleSuggestions,
-  generateMetadata 
+  generateMetaTags 
 } from '@/services/aiProcessingService';
 
 export interface ApprovalContextValue {
@@ -190,6 +190,27 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
     }
   };
   
+  // Generate title suggestions
+  const handleGenerateTitleSuggestions = async (contentData: any) => {
+    try {
+      const suggestions = await generateTitleSuggestions(contentData);
+      return suggestions;
+    } catch (error: any) {
+      toast.error(`Failed to generate title suggestions: ${error.message}`);
+      return [];
+    }
+  };
+  
+  // Generate metadata
+  const handleGenerateMetadata = async (content: string, keywords: string[]) => {
+    try {
+      return await generateMetaTags(content, keywords);
+    } catch (error: any) {
+      toast.error(`Failed to generate metadata: ${error.message}`);
+      return { metaTitle: '', metaDescription: '' };
+    }
+  };
+  
   // Find interlinking opportunities
   const findInterLinkingOpportunities = (contentData: any) => {
     // In a real implementation, this would analyze the content and find opportunities
@@ -220,8 +241,8 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
     fetchSerpData,
     improveContentWithAI: handleImproveContentWithAI,
     isImproving,
-    generateTitleSuggestions,
-    generateMetadata,
+    generateTitleSuggestions: handleGenerateTitleSuggestions,
+    generateMetadata: handleGenerateMetadata,
     findInterLinkingOpportunities
   };
   
