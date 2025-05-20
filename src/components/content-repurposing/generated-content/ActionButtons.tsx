@@ -35,7 +35,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   hasMultipleFormats = false
 }) => {
   return (
-    <div className="flex justify-end flex-wrap gap-2 mt-4 pt-4 border-t border-white/10">
+    <div className="flex justify-end flex-wrap gap-2 pt-3 border-t border-white/10 bg-gradient-to-r from-transparent via-white/5 to-transparent">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -43,7 +43,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
               variant="outline" 
               size="sm" 
               onClick={onCopy}
-              className="bg-transparent hover:bg-white/10 border-white/10 transition-all duration-200"
+              className="glass-button"
             >
               <Copy className="h-4 w-4 mr-1" />
               Copy
@@ -60,7 +60,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
               variant="outline" 
               size="sm" 
               onClick={onDownload}
-              className="bg-transparent hover:bg-white/10 border-white/10 transition-all duration-200"
+              className="glass-button"
             >
               <Download className="h-4 w-4 mr-1" />
               Download
@@ -78,7 +78,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
               size="sm" 
               onClick={onSave}
               disabled={isSaving}
-              className="bg-transparent hover:bg-white/10 border-white/10 transition-all duration-200"
+              className="glass-button"
             >
               {isSaving ? (
                 <>
@@ -108,7 +108,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
                   if (onSaveAll) await onSaveAll();
                 }}
                 disabled={isSavingAll}
-                className="bg-transparent hover:bg-white/10 border-white/10 transition-all duration-200"
+                className="glass-button"
               >
                 {isSavingAll ? (
                   <>
@@ -136,7 +136,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
                 variant="outline" 
                 size="sm" 
                 onClick={onShare}
-                className="bg-transparent hover:bg-white/10 border-white/10 transition-all duration-200"
+                className="glass-button"
               >
                 <Share2 className="h-4 w-4 mr-1" />
                 Share
@@ -158,7 +158,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
                   if (onDelete) await onDelete();
                 }}
                 disabled={isDeleting}
-                className="bg-transparent hover:bg-white/10 hover:text-red-400 border-white/10 transition-all duration-200"
+                className="glass-button-danger"
               >
                 {isDeleting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -37,7 +37,7 @@ export const FormatButton: React.FC<FormatButtonProps> = memo(({
             onClick={onClick}
             className={className || (isActive 
               ? "bg-gradient-to-r from-neon-purple to-neon-blue border-none shadow-[0_0_10px_rgba(155,135,245,0.4)]" 
-              : "bg-transparent hover:bg-white/5 border-white/10"
+              : "glass-button"
             )}
           >
             <IconComponent className="h-4 w-4 mr-1" />

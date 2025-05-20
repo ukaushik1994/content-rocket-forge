@@ -18,7 +18,7 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({
   // Safety check - ensure content is defined before rendering
   if (!content) {
     return (
-      <div className="flex-1 overflow-auto rounded-md p-4 mb-4 text-muted-foreground bg-black/30 backdrop-blur-sm border border-white/5">
+      <div className="flex-1 overflow-auto rounded-lg p-4 mb-4 text-muted-foreground bg-black/30 backdrop-blur-sm border border-white/5">
         No content available for this format.
       </div>
     );
@@ -37,7 +37,7 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({
       initial="initial"
       animate="animate"
       exit="exit"
-      className="flex-1 overflow-auto rounded-md p-4 mb-4 glass-panel neon-border"
+      className="flex-1 overflow-auto rounded-lg p-2 mb-4 backdrop-blur-md bg-black/20 border border-white/10 shadow-[0_0_10px_rgba(0,0,0,0.2)]"
     >
       {previewMode ? (
         <ContentPreview content={content} formatId={formatId} />

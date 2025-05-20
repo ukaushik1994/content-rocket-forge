@@ -57,73 +57,79 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
       variants={containerVariants}
       className="h-full"
     >
-      <Card className="h-full border border-white/10 bg-black/40 backdrop-blur-lg shadow-xl">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between bg-gradient-to-r from-black/50 to-black/20 rounded-t-lg border-b border-white/5">
-          <div>
-            <CardTitle className="text-lg text-gradient">Generated Content</CardTitle>
-            <CardDescription className="text-white/60">
-              {hasGeneratedContent
-                ? `${generatedFormats.length} format${generatedFormats.length !== 1 ? 's' : ''} generated`
-                : 'Select formats and generate content'}
-            </CardDescription>
+      <div className="h-full relative overflow-hidden rounded-xl glass-panel neon-border shadow-neon">
+        <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/5 to-neon-blue/5 z-0"></div>
+        
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Header with glass effect */}
+          <div className="p-4 pb-2 flex flex-row items-center justify-between bg-gradient-to-r from-black/60 to-black/40 border-b border-white/10">
+            <div>
+              <h2 className="text-lg font-bold text-gradient">Generated Content</h2>
+              <p className="text-sm text-white/60">
+                {hasGeneratedContent
+                  ? `${generatedFormats.length} format${generatedFormats.length !== 1 ? 's' : ''} generated`
+                  : 'Select formats and generate content'}
+              </p>
+            </div>
+
+            {hasGeneratedContent && (
+              <div className="flex items-center gap-4">
+                <PreviewModeToggle 
+                  isPreviewMode={previewMode} 
+                  onToggle={() => setPreviewMode(!previewMode)}
+                />
+                <FormatSelector 
+                  generatedFormats={generatedFormats}
+                  activeFormat={activeFormat}
+                  setActiveFormat={setActiveFormat}
+                />
+              </div>
+            )}
           </div>
 
-          {hasGeneratedContent && (
-            <div className="flex items-center gap-4">
-              <PreviewModeToggle 
-                isPreviewMode={previewMode} 
-                onToggle={() => setPreviewMode(!previewMode)}
-              />
-              <FormatSelector 
-                generatedFormats={generatedFormats}
-                activeFormat={activeFormat}
-                setActiveFormat={setActiveFormat}
-              />
-            </div>
-          )}
-        </CardHeader>
-
-        <CardContent className="p-4 h-[500px] flex flex-col">
-          {!hasGeneratedContent ? (
-            <NoContentDisplay />
-          ) : activeFormat ? (
-            <div className="flex flex-col h-full">
-              {generatedContents[activeFormat] && (
-                <ContentStats 
+          {/* Content area with improved spacing */}
+          <div className="flex-1 overflow-hidden p-4">
+            {!hasGeneratedContent ? (
+              <NoContentDisplay />
+            ) : activeFormat ? (
+              <div className="flex flex-col h-full">
+                {generatedContents[activeFormat] && (
+                  <ContentStats 
+                    content={generatedContents[activeFormat]} 
+                    formatId={activeFormat} 
+                  />
+                )}
+                <ContentViewer 
                   content={generatedContents[activeFormat]} 
-                  formatId={activeFormat} 
+                  formatId={activeFormat}
+                  previewMode={previewMode}
                 />
-              )}
-              <ContentViewer 
-                content={generatedContents[activeFormat]} 
-                formatId={activeFormat}
-                previewMode={previewMode}
-              />
-              <ActionButtons 
-                onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}
-                onDownload={() => {
-                  const format = getFormatByIdOrDefault(activeFormat);
-                  onDownloadAsText(
-                    generatedContents[activeFormat],
-                    format.name
-                  );
-                }}
-                onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
-                onSaveAll={hasMultipleFormats && onSaveAllContent ? onSaveAllContent : undefined}
-                onDelete={onDeleteRepurposedContent && activeFormat ? 
-                  () => onDeleteRepurposedContent(activeFormat) : undefined
-                }
-                hasMultipleFormats={hasMultipleFormats}
-                isDeleting={isDeleting}
-                isSaving={isSaving}
-                isSavingAll={isSavingAll}
-              />
-            </div>
-          ) : (
-            <SelectFormatDisplay />
-          )}
-        </CardContent>
-      </Card>
+                <ActionButtons 
+                  onCopy={() => onCopyToClipboard(generatedContents[activeFormat])}
+                  onDownload={() => {
+                    const format = getFormatByIdOrDefault(activeFormat);
+                    onDownloadAsText(
+                      generatedContents[activeFormat],
+                      format.name
+                    );
+                  }}
+                  onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
+                  onSaveAll={hasMultipleFormats && onSaveAllContent ? onSaveAllContent : undefined}
+                  onDelete={onDeleteRepurposedContent && activeFormat ? 
+                    () => onDeleteRepurposedContent(activeFormat) : undefined
+                  }
+                  hasMultipleFormats={hasMultipleFormats}
+                  isDeleting={isDeleting}
+                  isSaving={isSaving}
+                  isSavingAll={isSavingAll}
+                />
+              </div>
+            ) : (
+              <SelectFormatDisplay />
+            )}
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 });
