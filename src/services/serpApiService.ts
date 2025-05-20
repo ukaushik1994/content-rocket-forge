@@ -59,7 +59,6 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     }
     
     // Use Supabase API key
-    // In a real app, you would decrypt the encrypted_key here
     const apiKey = apiKeyData.encrypted_key;
     
     // Make the actual API call
@@ -142,10 +141,54 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
       }
     }
 
+    // Cache key for efficient repeat lookups
+    const cacheKey = `serp_data_${keyword}`;
+    const cachedData = !refresh && localStorage.getItem(cacheKey);
+    
+    if (cachedData && !refresh) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        console.log('Using cached SERP data for:', keyword);
+        return parsedData;
+      } catch (err) {
+        console.warn('Error parsing cached SERP data:', err);
+        localStorage.removeItem(cacheKey);
+      }
+    }
+
     // If we found a key, use it to make the API call
     if (apiKey) {
       try {
         console.log('Making real SERP API call for keyword:', keyword);
+        
+        // First attempt to use our proxy function to avoid CORS issues
+        try {
+          const proxyResponse = await fetch('/api/proxy/serp-api', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              keyword,
+              refresh: !!refresh,
+              apiKey
+            }),
+          });
+          
+          if (proxyResponse.ok) {
+            const data = await proxyResponse.json();
+            if (data) {
+              // Cache the successful result
+              localStorage.setItem(cacheKey, JSON.stringify(data));
+              console.log('SERP API returned real data via proxy:', data);
+              return data;
+            }
+          }
+        } catch (proxyError) {
+          console.warn('SERP API proxy error, falling back to direct call:', proxyError);
+        }
+        
+        // If proxy fails, try direct API call
         const url = `https://api.serphouse.com/serp/analyze?keyword=${encodeURIComponent(keyword)}${refresh ? '&refresh=true' : ''}`;
         
         const response = await fetch(url, {
@@ -162,6 +205,9 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
         }
         
         const data = await response.json();
+        
+        // Cache the successful result
+        localStorage.setItem(cacheKey, JSON.stringify(data));
         
         // Transform the API response to match our SerpAnalysisResult structure
         const result: SerpAnalysisResult = {
@@ -221,16 +267,17 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
     competitionScore: Math.random() * 0.8,
     keywordDifficulty: Math.floor(Math.random() * 100),
+    isMockData: true, // Explicitly mark this as mock data
     entities: [
-      { name: `${keyword} platform`, type: 'platform' },
-      { name: `${keyword} strategy`, type: 'strategy' },
-      { name: `${keyword} tools`, type: 'tools' },
-      { name: `${keyword} metrics`, type: 'metrics' },
+      { name: `${keyword} platform`, type: 'platform', description: `A platform focused on ${keyword}` },
+      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword}` },
+      { name: `${keyword} tools`, type: 'tools', description: `Tools used for ${keyword} implementation` },
+      { name: `${keyword} metrics`, type: 'metrics', description: `Measurements related to ${keyword} performance` },
       // Add new entities if refreshing
       ...(refresh ? [
-        { name: `${keyword} analytics`, type: 'analytics' },
-        { name: `${keyword} framework`, type: 'framework' },
-        { name: `${keyword} automation`, type: 'automation' }
+        { name: `${keyword} analytics`, type: 'analytics', description: `Analytic methods for ${keyword}` },
+        { name: `${keyword} framework`, type: 'framework', description: `Structural frameworks for ${keyword}` },
+        { name: `${keyword} automation`, type: 'automation', description: `Automation techniques for ${keyword}` }
       ] : [])
     ],
     peopleAlsoAsk: [
@@ -262,22 +309,30 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       { 
         topic: `${keyword} for beginners`, 
         description: 'Beginner guide', 
-        recommendation: 'Create a 101 guide' 
+        recommendation: 'Create a 101 guide',
+        content: `A comprehensive ${keyword} guide for beginners`,
+        source: 'Content analysis'
       },
       { 
         topic: `Advanced ${keyword} techniques`, 
         description: 'For experts', 
-        recommendation: 'Share advanced tips' 
+        recommendation: 'Share advanced tips',
+        content: `Expert-level ${keyword} strategies and implementations`,
+        source: 'Content analysis' 
       },
       { 
         topic: `${keyword} ROI measurement`, 
         description: 'Measuring success', 
-        recommendation: 'Create calculator' 
+        recommendation: 'Create calculator',
+        content: `How to measure ROI from your ${keyword} initiatives`,
+        source: 'Content analysis'
       },
       { 
         topic: `${keyword} vs competitors`, 
         description: 'Comparison', 
-        recommendation: 'Create comparison chart' 
+        recommendation: 'Create comparison chart',
+        content: `Comparing ${keyword} with alternative approaches`,
+        source: 'Content analysis'
       }
     ],
     topResults: [
@@ -340,8 +395,7 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       `Add visual examples of ${keyword} in action`,
       `Compare ${keyword} with alternative approaches`,
       `Include case studies showing successful ${keyword} implementation`
-    ],
-    isMockData: true // We're marking mock data as such for transparency
+    ]
   };
 }
 
@@ -364,6 +418,21 @@ export const searchRelatedKeywords = async (keyword: string) => {
       }
     }
 
+    // Cache key for efficient repeat lookups
+    const cacheKey = `related_keywords_${keyword}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        console.log('Using cached related keywords for:', keyword);
+        return parsedData;
+      } catch (err) {
+        console.warn('Error parsing cached related keywords:', err);
+        localStorage.removeItem(cacheKey);
+      }
+    }
+
     if (apiKey) {
       try {
         // Make an actual API call if we have an API key
@@ -379,45 +448,37 @@ export const searchRelatedKeywords = async (keyword: string) => {
         }
         
         const data = await response.json();
+        
+        // Cache the successful result
+        localStorage.setItem(cacheKey, JSON.stringify(data.keywords || []));
+        
         return data.keywords || [];
       } catch (error) {
         console.error('Error fetching related keywords:', error);
         // Fall back to mock data
-        return [
-          `${keyword} strategy`,
-          `${keyword} tools`,
-          `best ${keyword} practices`,
-          `${keyword} guide`,
-          `${keyword} tutorial`,
-          `${keyword} examples`,
-          `${keyword} techniques`,
-          `${keyword} trends`,
-        ];
+        const mockData = getMockRelatedKeywords(keyword);
+        return mockData;
       }
     }
     
     // Default mock data if no API key is found
-    return [
-      `${keyword} strategy`,
-      `${keyword} tools`,
-      `best ${keyword} practices`,
-      `${keyword} guide`,
-      `${keyword} tutorial`,
-      `${keyword} examples`,
-      `${keyword} techniques`,
-      `${keyword} trends`,
-    ];
+    const mockData = getMockRelatedKeywords(keyword);
+    return mockData;
   } catch (error) {
     console.error('Error searching related keywords:', error);
-    return [
-      `${keyword} strategy`,
-      `${keyword} tools`,
-      `best ${keyword} practices`,
-      `${keyword} guide`,
-      `${keyword} tutorial`,
-      `${keyword} examples`,
-      `${keyword} techniques`,
-      `${keyword} trends`,
-    ];
+    return getMockRelatedKeywords(keyword);
   }
 };
+
+function getMockRelatedKeywords(keyword: string) {
+  return [
+    `${keyword} strategy`,
+    `${keyword} tools`,
+    `best ${keyword} practices`,
+    `${keyword} guide`,
+    `${keyword} tutorial`,
+    `${keyword} examples`,
+    `${keyword} techniques`,
+    `${keyword} trends`,
+  ];
+}

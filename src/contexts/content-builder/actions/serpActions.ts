@@ -8,7 +8,7 @@ export const createSerpActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  const analyzeKeyword = async (keyword: string) => {
+  const analyzeKeyword = async (keyword: string, forceRefresh: boolean = false) => {
     if (!keyword) return;
     
     // Start loading
@@ -16,7 +16,7 @@ export const createSerpActions = (
     
     try {
       // Make API call to analyze keyword
-      const serpData = await analyzeKeywordSerp(keyword);
+      const serpData = await analyzeKeywordSerp(keyword, forceRefresh);
       
       // Update SERP data in state - will be null if no data is found
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
@@ -25,7 +25,12 @@ export const createSerpActions = (
         toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
       } else {
         console.log("SERP data successfully retrieved:", serpData);
-        toast.success("Search data analysis completed successfully.");
+        
+        if (serpData.isMockData) {
+          toast.warning("Using mock search data. Add your SERP API key for real results.");
+        } else {
+          toast.success("Search data analysis completed successfully with real data.");
+        }
       }
     } catch (error) {
       console.error('Error analyzing keyword:', error);

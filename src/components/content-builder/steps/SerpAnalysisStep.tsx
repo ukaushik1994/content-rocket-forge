@@ -12,8 +12,9 @@ export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeyExists, setApiKeyExists] = useState(false);
+  const [showApiSetup, setShowApiSetup] = useState(false);
   
-  // Check if API key exists
+  // Check if API key exists and if we should show API setup
   useEffect(() => {
     const checkApiKey = async () => {
       // Check localStorage first
@@ -27,6 +28,12 @@ export const SerpAnalysisStep = () => {
       // For now, let's assume we're just using localStorage
       setApiKeyExists(false);
     };
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const showApiSetupParam = urlParams.get('showApiSetup');
+    if (showApiSetupParam === 'true') {
+      setShowApiSetup(true);
+    }
     
     checkApiKey();
   }, []);
@@ -72,8 +79,8 @@ export const SerpAnalysisStep = () => {
     }
   };
   
-  // If no API key exists, show the setup component
-  if (!apiKeyExists && !serpData) {
+  // If API setup is explicitly requested or no API key exists and no data is available
+  if ((showApiSetup || (!apiKeyExists && !serpData)) && !isAnalyzing) {
     return (
       <div className="space-y-6">
         <div className="text-center mb-6">
