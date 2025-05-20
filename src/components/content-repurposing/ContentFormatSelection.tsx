@@ -1,73 +1,73 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
-import { contentFormats, getFormatIconComponent } from './formats';
+import { contentFormats } from './formats';
+import { Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface ContentFormatSelectionProps {
   selectedFormats: string[];
-  setSelectedFormats: React.Dispatch<React.SetStateAction<string[]>>;
-  onGenerateContent: (formatIds: string[]) => void;
+  onFormatChange: (formats: string[]) => void;
+  onGenerateContent: (formats: string[]) => void;
   isGenerating: boolean;
 }
 
-export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
+const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
   selectedFormats,
-  setSelectedFormats,
+  onFormatChange,
   onGenerateContent,
   isGenerating
 }) => {
+  const handleFormatToggle = (formatId: string) => {
+    if (selectedFormats.includes(formatId)) {
+      onFormatChange(selectedFormats.filter(id => id !== formatId));
+    } else {
+      onFormatChange([...selectedFormats, formatId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedFormats.length === contentFormats.length) {
+      onFormatChange([]);
+    } else {
+      onFormatChange(contentFormats.map(format => format.id));
+    }
+  };
+
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Content Formats</CardTitle>
-        <CardDescription>Select formats to transform your content</CardDescription>
+      <CardHeader>
+        <CardTitle className="text-lg">Select Content Formats</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          {contentFormats.map((format) => {
-            const IconComponent = getFormatIconComponent(format.id);
-            
-            return (
-              <div
-                key={format.id}
-                className={`flex items-center p-2 rounded-md cursor-pointer ${
-                  selectedFormats.includes(format.id)
-                    ? 'bg-primary/20 border border-primary/50'
-                    : 'hover:bg-accent/10 border border-transparent'
-                }`}
-                onClick={() => {
-                  if (selectedFormats.includes(format.id)) {
-                    setSelectedFormats(selectedFormats.filter(f => f !== format.id));
-                  } else {
-                    setSelectedFormats([...selectedFormats, format.id]);
-                  }
-                }}
-              >
-                <div
-                  className={`w-4 h-4 rounded mr-2 flex items-center justify-center ${
-                    selectedFormats.includes(format.id)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'border border-muted-foreground'
-                  }`}
-                >
-                  {selectedFormats.includes(format.id) && <Check className="h-3 w-3" />}
-                </div>
-                <div className="flex-1">
-                  <span className="text-sm font-medium flex items-center gap-1">
-                    {format.name}
-                    <IconComponent className="h-4 w-4" />
-                  </span>
-                  <p className="text-xs text-muted-foreground">{format.description}</p>
-                </div>
-              </div>
-            );
-          })}
+        <div className="mb-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleSelectAll}
+          >
+            {selectedFormats.length === contentFormats.length ? 'Deselect All' : 'Select All'}
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {contentFormats.map((format) => (
+            <div key={format.id} className="flex items-center space-x-2">
+              <Checkbox 
+                id={format.id}
+                checked={selectedFormats.includes(format.id)}
+                onCheckedChange={() => handleFormatToggle(format.id)}
+              />
+              <Label htmlFor={format.id} className="cursor-pointer">
+                {format.name}
+              </Label>
+            </div>
+          ))}
         </div>
       </CardContent>
       <CardFooter>
-        <Button
+        <Button 
           className="w-full"
           disabled={selectedFormats.length === 0 || isGenerating}
           onClick={() => onGenerateContent(selectedFormats)}
@@ -75,10 +75,10 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
+              Generating {selectedFormats.length} format{selectedFormats.length !== 1 ? 's' : ''}...
             </>
           ) : (
-            `Generate ${selectedFormats.length} Format${selectedFormats.length !== 1 ? 's' : ''}`
+            <>Generate {selectedFormats.length} Format{selectedFormats.length !== 1 ? 's' : ''}</>
           )}
         </Button>
       </CardFooter>
