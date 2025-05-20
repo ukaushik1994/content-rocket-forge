@@ -8,6 +8,7 @@ import RepurposedContentDialog from '@/components/content-repurposing/Repurposed
 import { Helmet } from 'react-helmet-async';
 import { ContentSelectionView, ContentRepurposingView } from './content-repurposing';
 import { useContentRepurposing } from '@/components/content-repurposing/hooks/useContentRepurposing';
+import { ContentItemType } from '@/contexts/content/types';
 
 /**
  * Content Repurposing Page
@@ -40,6 +41,16 @@ const ContentRepurposing = () => {
     resetContent
   } = useContentRepurposing();
   
+  // Wrapper around handleContentSelection to adapt to ContentSelectionView's expected prop type
+  const onSelectContent = (content: ContentItemType) => {
+    handleContentSelection(content.id);
+  };
+
+  // Wrapper around handleFormatChange to adapt to ContentRepurposingView's expected prop type  
+  const onChangeFormat = (format: string) => {
+    handleFormatChange(format);
+  }
+  
   // Determine which view to show based on whether content is selected
   const viewState = content ? 'repurposing' : 'selection';
   
@@ -55,7 +66,7 @@ const ContentRepurposing = () => {
         {viewState === 'selection' ? (
           <ContentSelectionView 
             contentItems={contentItems}
-            onSelectContent={handleContentSelection}
+            onSelectContent={onSelectContent}
             onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
             repurposedDialogOpen={repurposedDialogOpen}
             onCloseRepurposedDialog={handleCloseRepurposedDialog}
@@ -79,7 +90,7 @@ const ContentRepurposing = () => {
             isSavingAll={false}
             savedContentFormats={savedContentFormats}
             setSelectedFormats={handleGenerateContent}
-            setActiveFormat={handleFormatChange}
+            setActiveFormat={onChangeFormat}
             handleGenerateContent={handleGenerateContent}
             copyToClipboard={copyToClipboard}
             downloadAsText={downloadAsText}
