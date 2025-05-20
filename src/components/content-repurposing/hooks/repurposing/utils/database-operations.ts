@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '@/contexts/content/types';
 import { RepurposedContentData } from '../types/action-types';
@@ -161,7 +160,7 @@ export const saveContent = async (
     // Also update the content item metadata for backward compatibility
     const { data: contentData, error: contentError } = await supabase
       .from('content_items')
-      .select('metadata')
+      .select('*')
       .eq('id', contentId)
       .single();
       
@@ -202,7 +201,8 @@ export const saveContent = async (
         console.error('Error updating content metadata:', updateError);
       } else if (updateData) {
         // Update local content item state if needed
-        updateContentItem(updateData);
+        const contentItem = ensureContentItemFormat(updateData);
+        updateContentItem(contentItem);
       }
     }
     
@@ -287,7 +287,8 @@ export const deleteRepurposedContent = async (
         console.error('Error updating content metadata after deletion:', updateError);
       } else if (updateData) {
         // Update local content item state if needed
-        updateContentItem(updateData);
+        const updatedContentItem = ensureContentItemFormat(updateData);
+        updateContentItem(updatedContentItem);
       }
     }
     
@@ -298,4 +299,13 @@ export const deleteRepurposedContent = async (
     toast.error('Error deleting content');
     return false;
   }
+};
+
+// Helper function to ensure returned content matches ContentItemType interface
+const ensureContentItemFormat = (item: any): ContentItemType => {
+  // Make sure we have all required fields, including keywords
+  return {
+    ...item,
+    keywords: item.keywords || [],
+  };
 };

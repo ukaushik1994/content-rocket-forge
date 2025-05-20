@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
@@ -17,6 +18,11 @@ export const useContentActions = (content: ContentItemType | null): ContentActio
   const { contentItems, updateContentItem } = useContent();
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // Create a wrapper function to match the expected signature
+  const handleContentUpdate = (content: ContentItemType) => {
+    updateContentItem(content.id, content);
+  };
   
   // Find repurposed content wrapper
   const findRepurposedContent = async (originalContentId: string, formatId: string) => {
@@ -40,7 +46,7 @@ export const useContentActions = (content: ContentItemType | null): ContentActio
         generatedContent, 
         content.title, 
         content.user_id, 
-        updateContentItem
+        handleContentUpdate
       );
     } finally {
       setIsSaving(false);
@@ -53,7 +59,7 @@ export const useContentActions = (content: ContentItemType | null): ContentActio
     
     try {
       setIsDeleting(true);
-      return await deleteContent(contentId, formatId, contentItems, updateContentItem);
+      return await deleteContent(contentId, formatId, contentItems, handleContentUpdate);
     } finally {
       setIsDeleting(false);
     }
