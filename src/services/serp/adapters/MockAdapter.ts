@@ -1,7 +1,7 @@
 
 import { BaseAdapter } from './BaseAdapter';
 import { SerpApiOptions } from '../core/SerpCore';
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult, Heading } from '@/types/serp';
 
 /**
  * Mock adapter for SERP data
@@ -41,6 +41,7 @@ export class MockAdapter extends BaseAdapter {
       entities: this.generateMockEntities(keyword, 4),
       topResults: this.generateMockResults(keyword, 10),
       featuredSnippets: this.generateMockFeaturedSnippets(keyword, 2),
+      timestamp: new Date().toISOString()
     };
   }
 
@@ -110,10 +111,10 @@ export class MockAdapter extends BaseAdapter {
   }
 
   /**
-   * Generate mock headings
+   * Generate mock headings - Updated to return Heading[] instead of string[]
    */
-  private generateMockHeadings(keyword: string, count: number): string[] {
-    const headings = [
+  private generateMockHeadings(keyword: string, count: number): Heading[] {
+    const headingsText = [
       `Introduction to ${keyword}`,
       `What is ${keyword}?`,
       `Benefits of ${keyword}`,
@@ -128,7 +129,11 @@ export class MockAdapter extends BaseAdapter {
       `Frequently Asked Questions about ${keyword}`
     ];
     
-    return headings.slice(0, count);
+    // Convert string[] to Heading[] with appropriate level and text
+    return headingsText.slice(0, count).map((text, index) => ({
+      text,
+      level: index === 0 ? "h1" : (index < 3 ? "h2" : "h3")
+    }));
   }
 
   /**

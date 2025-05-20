@@ -78,7 +78,7 @@ const ContentRepurposing = () => {
             isSaving={isSaving}
             isSavingAll={false}
             savedContentFormats={savedContentFormats}
-            setSelectedFormats={selectedFormats => handleGenerateContent(selectedFormats)}
+            setSelectedFormats={handleGenerateContent}
             setActiveFormat={handleFormatChange}
             handleGenerateContent={handleGenerateContent}
             copyToClipboard={copyToClipboard}
