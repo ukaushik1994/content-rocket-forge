@@ -38,19 +38,19 @@ export const createNavigationActions = (
     // Skip SERP Analysis (step with id 2) when navigating between steps
     if (state.activeStep === 0 && step > state.activeStep) {
       // If going from keyword selection to content type, move forward normally
-      dispatch({ type: 'SET_CURRENT_STEP', payload: step });
+      dispatch({ type: 'SET_ACTIVE_STEP', payload: step });
       return;
     }
     
     if (targetStep.id === 2) {
       // If trying to navigate to SERP Analysis (id 2), skip to next valid step
       const nextValidStep = step + 1 < state.steps.length ? step + 1 : state.activeStep;
-      dispatch({ type: 'SET_CURRENT_STEP', payload: nextValidStep });
+      dispatch({ type: 'SET_ACTIVE_STEP', payload: nextValidStep });
       return;
     }
     
     // Normal navigation
-    dispatch({ type: 'SET_CURRENT_STEP', payload: step });
+    dispatch({ type: 'SET_ACTIVE_STEP', payload: step });
   };
   
   return {

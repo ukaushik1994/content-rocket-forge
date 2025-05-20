@@ -1,3 +1,4 @@
+
 import { 
   ContentBuilderStep,
   SerpProvider,
@@ -16,6 +17,9 @@ import {
 export type ContentBuilderAction =
   | { type: 'SET_ACTIVE_STEP'; payload: number }
   | { type: 'MARK_STEP_COMPLETED'; payload: number }
+  | { type: 'MARK_STEP_VISITED'; payload: number }
+  | { type: 'MARK_STEP_ANALYZED'; payload: number }
+  | { type: 'SET_CURRENT_STEP'; payload: number }
   | { type: 'SET_MAIN_KEYWORD'; payload: string }
   | { type: 'ADD_KEYWORD'; payload: string }
   | { type: 'REMOVE_KEYWORD'; payload: string }
@@ -23,6 +27,7 @@ export type ContentBuilderAction =
   | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
   | { type: 'SET_CONTENT_INTENT'; payload: ContentIntent }
   | { type: 'SET_SELECTED_SOLUTION'; payload: Solution | null }
+  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
   | { type: 'SET_CONTENT_TITLE'; payload: string }
   | { type: 'SET_SUGGESTED_TITLES'; payload: string[] }
   | { type: 'SET_SERP_DATA'; payload: any }
@@ -35,8 +40,11 @@ export type ContentBuilderAction =
   | { type: 'SET_IS_SAVING'; payload: boolean }
   | { type: 'SET_SEO_SCORE'; payload: number }
   | { type: 'SET_SEO_IMPROVEMENTS'; payload: SeoImprovement[] }
+  | { type: 'ADD_SEO_IMPROVEMENT'; payload: SeoImprovement }
+  | { type: 'APPLY_SEO_IMPROVEMENT'; payload: string }
   | { type: 'SET_OPTIMIZATION_SKIPPED'; payload: boolean }
-  | { type: 'SET_SELECTED_CLUSTER'; payload: ContentCluster | null }
+  | { type: 'SKIP_OPTIMIZATION_STEP'; payload?: boolean }
+  | { type: 'SELECT_CLUSTER'; payload: ContentCluster | null }
   | { type: 'SET_META_TITLE'; payload: string | null }
   | { type: 'SET_META_DESCRIPTION'; payload: string | null }
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure | null }

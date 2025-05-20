@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { SerpProvider } from '../types/serp-types';
 import { OutlineSection } from '../types/outline-types';
@@ -47,8 +48,8 @@ export const createSerpActions = (
         return;
       }
       
-      // Get SERP data
-      const serpData = await analyzeSerpKeyword(keyword, false, selectedProvider);
+      // Get SERP data - fix the number of arguments
+      const serpData = await analyzeSerpKeyword(keyword, false);
       
       if (!serpData && selectedProvider !== 'mock') {
         toast.error(`Failed to get data from ${selectedProvider}. Please check your API key.`);

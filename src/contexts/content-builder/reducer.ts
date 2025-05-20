@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 import { OutlineSection } from './types/outline-types';
 
@@ -6,6 +7,15 @@ export const contentBuilderReducer = (
   action: ContentBuilderAction
 ): ContentBuilderState => {
   switch (action.type) {
+    case 'SET_ACTIVE_STEP':
+      return {
+        ...state,
+        activeStep: action.payload,
+        steps: state.steps.map((step, index) => 
+          index === action.payload ? { ...step, visited: true } : step
+        )
+      };
+      
     case 'SET_CURRENT_STEP':
       return {
         ...state,
@@ -109,15 +119,9 @@ export const contentBuilderReducer = (
     }
       
     case 'SET_OUTLINE':
-      // Convert OutlineSection[] to string[] if needed
-      const outlineValue = Array.isArray(action.payload) && action.payload.length > 0 && 
-        typeof action.payload[0] !== 'string' 
-          ? (action.payload as OutlineSection[]).map(section => section.title) 
-          : action.payload;
-          
       return {
         ...state,
-        outline: outlineValue as string[]
+        outline: action.payload
       };
       
     case 'SET_OUTLINE_SECTIONS':
@@ -217,6 +221,7 @@ export const contentBuilderReducer = (
         contentIntent: action.payload
       };
       
+    case 'SET_SELECTED_SOLUTION':
     case 'SELECT_SOLUTION':
       return {
         ...state,
@@ -257,6 +262,12 @@ export const contentBuilderReducer = (
       return {
         ...state,
         preferredSerpProvider: action.payload
+      };
+      
+    case 'SET_OPTIMIZATION_SKIPPED':
+      return {
+        ...state,
+        optimizationSkipped: action.payload
       };
       
     default:
