@@ -7,6 +7,7 @@ import { ApiProviderCard } from '@/components/settings/api/ApiProviderCard';
 import { ProviderDashboard } from '@/components/api/ProviderDashboard';
 import { DataForSeoProvider } from '@/components/api/DataForSeoProvider';
 import { ApiProviderConfig } from './types';
+import { SerpApiSettingsContainer } from './SerpApiSettingsContainer';
 
 /**
  * Content component for the API Settings page
@@ -62,6 +63,7 @@ export const ApiSettingsContent: React.FC = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="providers">Providers</TabsTrigger>
+          <TabsTrigger value="serp">SERP APIs</TabsTrigger>
           <TabsTrigger value="settings">General Settings</TabsTrigger>
         </TabsList>
         
@@ -120,6 +122,17 @@ export const ApiSettingsContent: React.FC = () => {
               <p className="text-muted-foreground">Select a provider from the dashboard to configure it</p>
             </div>
           )}
+        </TabsContent>
+        
+        <TabsContent value="serp">
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium mb-4">SERP API Settings</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Configure and manage your SERP API connections. Only one provider can be active at a time.
+            </p>
+            
+            <SerpApiSettingsContainer />
+          </div>
         </TabsContent>
         
         <TabsContent value="settings">

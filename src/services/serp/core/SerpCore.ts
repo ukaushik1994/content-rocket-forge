@@ -10,6 +10,7 @@ import { SerpApiError, SerpErrorType } from '../error-handling/ErrorTypes';
 import { UsageTracker } from '../usage-tracking/UsageTracker';
 import { getFromCache, saveToCache } from '../cache/SerpCache';
 import { ErrorHandler } from '../error-handling/ErrorHandler';
+import { isProviderActive } from '../providers/ProviderManager';
 
 // Add interface for SerpApiOptions
 export interface SerpApiOptions {
@@ -25,7 +26,13 @@ export interface SerpApiOptions {
  * Get the active SERP provider or return null if no API keys exist
  */
 export const getActiveProvider = (): SerpProvider | null => {
-  // Check if any API key exists
+  // Check for active provider first
+  const activeProvider = localStorage.getItem('active_serp_provider');
+  if (activeProvider && (['serpapi', 'dataforseo', 'mock'] as SerpProvider[]).includes(activeProvider as SerpProvider)) {
+    return activeProvider as SerpProvider;
+  }
+  
+  // If no active provider set, check if any API key exists
   const serpApiKey = localStorage.getItem('serp_api_key');
   const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
   
@@ -58,6 +65,17 @@ export const analyzeSerpKeyword = async (keyword: string, refresh: boolean = fal
   if (!activeProvider) {
     console.log('No API keys available for any SERP provider');
     return null;
+  }
+  
+  // Check if the specified provider is active
+  if (provider && !isProviderActive(provider)) {
+    console.log(`Provider ${provider} is not active. Using the active provider instead.`);
+    // Use the active provider instead
+    const fallbackProvider = getActiveProvider();
+    if (!fallbackProvider) {
+      console.log('No active SERP provider found');
+      return null;
+    }
   }
   
   // Check cache first unless refresh is requested

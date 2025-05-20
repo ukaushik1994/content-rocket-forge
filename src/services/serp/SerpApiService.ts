@@ -25,3 +25,12 @@ export { UsageTracker } from './usage-tracking/UsageTracker';
 
 // Re-export cache utilities if needed externally
 export { getFromCache, saveToCache } from './cache/SerpCache';
+
+// Export provider management functions
+export {
+  activateProvider,
+  deactivateProvider,
+  isProviderActive,
+  getSerpProviderStatus
+} from './providers/ProviderManager';
+
