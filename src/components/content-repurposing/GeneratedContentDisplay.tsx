@@ -62,29 +62,18 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
         
         <div className="relative z-10 flex flex-col h-full">
           {/* Header with glass effect */}
-          <div className="p-4 pb-2 flex flex-row items-center justify-between bg-gradient-to-r from-black/60 to-black/40 border-b border-white/10">
-            <div>
+          <div className="p-4 pb-2 bg-gradient-to-r from-black/60 to-black/40 border-b border-white/10">
+            <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gradient">Generated Content</h2>
-              <p className="text-sm text-white/60">
-                {hasGeneratedContent
-                  ? `${generatedFormats.length} format${generatedFormats.length !== 1 ? 's' : ''} generated`
-                  : 'Select formats and generate content'}
-              </p>
+              
+              {hasGeneratedContent && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-white/60">
+                    {`${generatedFormats.length} format${generatedFormats.length !== 1 ? 's' : ''} generated`}
+                  </span>
+                </div>
+              )}
             </div>
-
-            {hasGeneratedContent && (
-              <div className="flex items-center gap-4">
-                <PreviewModeToggle 
-                  isPreviewMode={previewMode} 
-                  onToggle={() => setPreviewMode(!previewMode)}
-                />
-                <FormatSelector 
-                  generatedFormats={generatedFormats}
-                  activeFormat={activeFormat}
-                  setActiveFormat={setActiveFormat}
-                />
-              </div>
-            )}
           </div>
 
           {/* Content area with improved spacing */}
@@ -93,6 +82,25 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
               <NoContentDisplay />
             ) : activeFormat ? (
               <div className="flex flex-col h-full">
+                {/* Moved controls to the top of content area */}
+                <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <PreviewModeToggle 
+                      isPreviewMode={previewMode} 
+                      onToggle={() => setPreviewMode(!previewMode)}
+                    />
+                    <span className="text-sm text-white/70">
+                      {previewMode ? 'Preview' : 'Code'} View
+                    </span>
+                  </div>
+                  
+                  <FormatSelector 
+                    generatedFormats={generatedFormats}
+                    activeFormat={activeFormat}
+                    setActiveFormat={setActiveFormat}
+                  />
+                </div>
+                
                 {generatedContents[activeFormat] && (
                   <ContentStats 
                     content={generatedContents[activeFormat]} 

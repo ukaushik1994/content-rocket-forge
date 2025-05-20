@@ -23,7 +23,7 @@ const PreviewModeToggle: React.FC<PreviewModeToggleProps> = ({ isPreviewMode, on
             variant="outline"
             size="icon"
             onClick={onToggle}
-            className="h-8 w-8 bg-transparent hover:bg-white/5 border-white/10"
+            className="h-8 w-8 rounded-md bg-transparent hover:bg-white/5 border-white/10"
           >
             {isPreviewMode ? (
               <Eye className="h-4 w-4 text-white/80" />
