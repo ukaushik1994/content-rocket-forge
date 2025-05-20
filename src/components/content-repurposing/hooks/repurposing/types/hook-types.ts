@@ -45,4 +45,7 @@ export interface ContentRepurposingHookReturn {
   findRepurposedContent: (contentId: string, formatId: string) => Promise<any | null>;
   markAsSaved: (formatId: string) => Promise<boolean>;
   saveAllFormats: () => Promise<string[]>;
+  
+  // Added the missing property
+  deleteRepurposedContent: (contentId: string, formatId: string) => Promise<boolean>;
 }

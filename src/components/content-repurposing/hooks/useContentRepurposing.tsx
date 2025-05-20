@@ -80,7 +80,7 @@ export const useContentRepurposing = (): ContentRepurposingHookReturn => {
     downloadAsText,
     saveAsNewContent,
     findRepurposedContent,
-    deleteRepurposedContent,
+    deleteRepurposedContent, // Make sure this is included in the return object
     handleDeleteActiveFormat,
     resetContent,
     markAsSaved,
