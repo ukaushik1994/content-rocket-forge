@@ -31,19 +31,20 @@ const ContentList: React.FC<ContentListProps> = memo(({
               item={item} 
               onSelect={() => onSelectContent(item)}
               isMobile={isMobile}
-            >
-              {itemFormats.length > 0 && (
-                <div className="mt-3 flex items-center">
-                  <div className="text-xs text-gray-400 mr-2">Repurposed as:</div>
-                  <FormatsList 
-                    item={item} 
-                    onOpenRepurposedContent={onOpenRepurposedContent} 
-                    isMobile={isMobile}
-                    formatCodes={itemFormats}
-                  />
-                </div>
-              )}
-            </ContentItem>
+              formatsComponent={
+                itemFormats.length > 0 ? (
+                  <div className="mt-3 flex items-center">
+                    <div className="text-xs text-gray-400 mr-2">Repurposed as:</div>
+                    <FormatsList 
+                      item={item} 
+                      onOpenRepurposedContent={onOpenRepurposedContent} 
+                      isMobile={isMobile}
+                      formatCodes={itemFormats}
+                    />
+                  </div>
+                ) : null
+              }
+            />
           </div>
         );
       })}

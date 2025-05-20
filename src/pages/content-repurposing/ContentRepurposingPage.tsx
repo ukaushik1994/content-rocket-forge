@@ -42,7 +42,7 @@ const ContentRepurposingPage = () => {
     
     try {
       // Get all format IDs and mark them as saved in UI state
-      const formatIds = saveAllFormats();
+      const formatIds = await saveAllFormats();
       
       if (formatIds.length === 0) {
         toast.info('All formats are already saved');
@@ -70,7 +70,7 @@ const ContentRepurposingPage = () => {
         selectedRepurposedContent={selectedRepurposedContent}
         copyToClipboard={copyToClipboard}
         downloadAsText={downloadAsText}
-        deleteRepurposedContent={isDeleting}
+        deleteRepurposedContent={handleDeleteActiveFormat}
         handleFormatChange={handleFormatChange}
         isDeleting={isDeleting}
         generatedFormats={generatedFormats || []}
