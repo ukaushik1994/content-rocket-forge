@@ -48,7 +48,9 @@ const ContentRepurposing = () => {
 
   // Wrapper around handleFormatChange to adapt to ContentRepurposingView's expected prop type  
   const onChangeFormat = (format: string) => {
-    handleFormatChange(format);
+    // The handleFormatChange function expects two arguments (contentId and formatId)
+    // Since we're in the repurposing view with an active content, we can pass the current content ID
+    handleFormatChange(content?.id || '', format);
   }
   
   // Determine which view to show based on whether content is selected
