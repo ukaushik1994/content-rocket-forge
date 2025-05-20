@@ -3,6 +3,7 @@ import React from 'react';
 import { useContentRepurposing } from '@/components/content-repurposing/hooks';
 import { ContentSelectionView, ContentRepurposingView } from './views';
 import { toast } from 'sonner';
+import { ContentItemType } from '@/contexts/content/types';
 
 const ContentRepurposingPage = () => {
   const {

@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getFormatByIdOrDefault } from './formats';
-import { FormatSelector } from './generated-content/FormatSelector';
+import FormatSelector from './generated-content/FormatSelector';
 import ContentViewer from './generated-content/ContentViewer';
 import ContentStats from './generated-content/ContentStats';
 import { Copy, Download, Save, Trash } from 'lucide-react';
-import { PreviewModeToggle } from './generated-content/PreviewModeToggle';
-import { NoContentDisplay } from './generated-content/NoContentDisplay';
-import { SelectFormatDisplay } from './generated-content/SelectFormatDisplay';
+import PreviewModeToggle from './generated-content/PreviewModeToggle';
+import NoContentDisplay from './generated-content/NoContentDisplay';
+import SelectFormatDisplay from './generated-content/SelectFormatDisplay';
 
 interface GeneratedContentDisplayProps {
   generatedContents: Record<string, string>;
@@ -84,13 +84,13 @@ const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({
         <CardTitle className="text-lg">Generated Content</CardTitle>
         <div className="flex space-x-2">
           <PreviewModeToggle 
-            previewMode={previewMode} 
+            isPreviewMode={previewMode} 
             onToggle={() => setPreviewMode(!previewMode)} 
           />
           <FormatSelector 
-            formats={Object.keys(generatedContents)} 
+            generatedFormats={Object.keys(generatedContents)} 
             activeFormat={activeFormat}
-            onSelect={onFormatChange}
+            setActiveFormat={onFormatChange}
           />
         </div>
       </CardHeader>

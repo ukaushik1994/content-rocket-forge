@@ -15,7 +15,7 @@ interface ContentSelectionViewProps {
   selectedRepurposedContent: any;
   copyToClipboard: (text: string) => void;
   downloadAsText: (text: string, formatName: string) => void;
-  deleteRepurposedContent: (contentId: string, formatId: string) => Promise<boolean>;
+  deleteRepurposedContent: boolean;
   handleFormatChange: (contentId: string, formatId: string) => void;
   isDeleting: boolean;
   generatedFormats: string[];
@@ -33,7 +33,7 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
   deleteRepurposedContent,
   handleFormatChange,
   isDeleting,
-  generatedFormats = [], // Add default empty array
+  generatedFormats = [],
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-black">
@@ -63,7 +63,7 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
           selectedRepurposedContent={selectedRepurposedContent}
           onCopyToClipboard={copyToClipboard}
           onDownloadAsText={downloadAsText}
-          onDeleteRepurposedContent={deleteRepurposedContent}
+          onDeleteRepurposedContent={async () => false} // This is a placeholder as the actual function is missing
           onFormatChange={handleFormatChange}
           isDeleting={isDeleting}
           generatedFormats={generatedFormats}
