@@ -1,9 +1,18 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { ContentItemType } from '@/contexts/content/types';
 import { generateContentByFormatType } from '@/services/contentTemplateService';
 import { contentFormats, getFormatByIdOrDefault } from '../../formats';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define the metadata interface for proper typing
+interface RepurposedContentMetadata {
+  repurposedContentMap?: Record<string, string>;
+  repurposedFormats?: string[];
+  lastUpdated?: string;
+  [key: string]: any; // For other potential metadata properties
+}
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -59,9 +68,12 @@ export const useContentGeneration = (content: ContentItemType | null) => {
             return;
           }
           
-          if (contentItem?.metadata?.repurposedContentMap) {
-            const dbContents = contentItem.metadata.repurposedContentMap || {};
-            const dbFormats = contentItem.metadata.repurposedFormats || [];
+          // Cast the metadata to our typed interface and check if it exists
+          const metadata = contentItem?.metadata as RepurposedContentMetadata | null;
+          
+          if (metadata && typeof metadata === 'object' && metadata.repurposedContentMap) {
+            const dbContents = metadata.repurposedContentMap || {};
+            const dbFormats = metadata.repurposedFormats || [];
             
             // Merge with local data, giving priority to database content
             setGeneratedContents(prevContents => ({
@@ -83,7 +95,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
             // Also update localStorage to keep in sync
             const combinedData = {
               contents: { ...generatedContents, ...dbContents },
-              formats: Array.from(new Set([...selectedFormats, ...dbFormats])),
+              formats: Array.from(new Set([...selectedFormats, ...(dbFormats || [])])),
               savedFormats: dbFormats,
               activeFormat: activeFormat || (Object.keys(dbContents).length > 0 ? Object.keys(dbContents)[0] : null),
               timestamp: new Date().toISOString(),

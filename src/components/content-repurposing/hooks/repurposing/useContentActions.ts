@@ -6,6 +6,14 @@ import { ContentItemType } from '@/contexts/content/types';
 import { getFormatByIdOrDefault } from '../../formats';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the metadata interface for proper typing
+interface RepurposedContentMetadata {
+  repurposedContentMap?: Record<string, string>;
+  repurposedFormats?: string[];
+  lastUpdated?: string;
+  [key: string]: any; // For other potential metadata properties
+}
+
 export const useContentActions = (content: ContentItemType | null) => {
   const { contentItems, addContentItem, updateContentItem, deleteContentItem } = useContent();
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -21,13 +29,16 @@ export const useContentActions = (content: ContentItemType | null) => {
       // First check in the context's contentItems
       const originalContent = contentItems.find(item => item.id === originalContentId);
       
+      // Cast the metadata to our type interface
+      const metadata = originalContent?.metadata as RepurposedContentMetadata | undefined;
+      
       // If found in context, use that data
-      if (originalContent?.metadata?.repurposedContentMap?.[formatId]) {
+      if (metadata && metadata.repurposedContentMap && metadata.repurposedContentMap[formatId]) {
         return {
           contentId: originalContentId,
           formatId,
           title: originalContent.title || 'Untitled',
-          content: originalContent.metadata.repurposedContentMap[formatId]
+          content: metadata.repurposedContentMap[formatId]
         };
       }
       
@@ -91,11 +102,15 @@ export const useContentActions = (content: ContentItemType | null) => {
       const formatName = formatInfo.name;
       
       // Get the current metadata or initialize an empty object
-      const currentMetadata = content.metadata || {};
+      const currentMetadata = content.metadata ? 
+        (typeof content.metadata === 'object' ? content.metadata : {}) : {};
+      
+      // Cast to our typed interface
+      const typedMetadata = currentMetadata as RepurposedContentMetadata;
       
       // Get or initialize repurposed formats array and content map
-      const repurposedFormats = currentMetadata.repurposedFormats || [];
-      const repurposedContentMap = currentMetadata.repurposedContentMap || {};
+      const repurposedFormats = typedMetadata.repurposedFormats || [];
+      const repurposedContentMap = typedMetadata.repurposedContentMap || {};
       
       // Add the format to the list if not already present
       if (!repurposedFormats.includes(formatId)) {
@@ -158,9 +173,14 @@ export const useContentActions = (content: ContentItemType | null) => {
         return false;
       }
       
-      const currentMetadata = originalContent.metadata || {};
-      const repurposedFormats = currentMetadata.repurposedFormats || [];
-      const repurposedContentMap = currentMetadata.repurposedContentMap || {};
+      // Cast to our typed interface
+      const currentMetadata = originalContent.metadata ? 
+        (typeof originalContent.metadata === 'object' ? originalContent.metadata : {}) : {};
+      
+      const typedMetadata = currentMetadata as RepurposedContentMetadata;
+      
+      const repurposedFormats = typedMetadata.repurposedFormats || [];
+      const repurposedContentMap = typedMetadata.repurposedContentMap || {};
       
       // Remove the format from the list and the content from the map
       const updatedFormats = repurposedFormats.filter(format => format !== formatId);
