@@ -37,7 +37,7 @@ export const createSeoActions = (
   
   const skipOptimizationStep = () => {
     // Mark the step as skipped
-    dispatch({ type: 'SET_OPTIMIZATION_SKIPPED', payload: true });
+    dispatch({ type: 'SKIP_OPTIMIZATION_STEP' });
     
     // Also mark the step as analyzed and completed so we can move forward
     dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });

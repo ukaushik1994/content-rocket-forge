@@ -1,124 +1,73 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
-import { SelectedKeywords } from './SelectedKeywords';
-import { InitialStateView } from './InitialStateView';
-import { Loader2, RefreshCw } from 'lucide-react';
-import { SerpAnalysisResult } from '@/types/serp';
+import { motion } from 'framer-motion';
+import { ContentBuilderState } from '@/contexts/content-builder/types';
+import { SelectedKeywords } from '../../keyword/SelectedKeywords';
+import { SelectedItemsSidebar } from '../serp-analysis/SelectedItemsSidebar';
+import { SerpAnalysisPanel } from '../../serp/SerpAnalysisPanel';
+import { SerpSelectionStats } from '../serp-analysis/SerpSelectionStats';
 
-export interface KeywordSelectionContentProps {
-  mainKeyword: string;
-  selectedKeywords: string[];
-  suggestions: string[];
-  hasSearched: boolean;
-  serpData: SerpAnalysisResult | null;
-  isAnalyzing: boolean;
-  onSearch: (keyword: string, suggestions: string[]) => void;
-  onAddKeyword: (keyword: string) => void;
-  onRemoveKeyword: (keyword: string) => void;
-  onToggleSelection?: (type: string, content: string) => void;
-  onAddToContent: (content: string, type: string) => void;
-  onReanalyze: () => void;
+interface KeywordSelectionContentProps {
+  state: ContentBuilderState;
+  handleRemoveKeyword: (kw: string) => void;
+  handleAddToContent: (content: string, type: string) => void;
+  handleToggleSelection: (type: string, content: string) => void;
 }
 
 export const KeywordSelectionContent: React.FC<KeywordSelectionContentProps> = ({
-  mainKeyword,
-  selectedKeywords,
-  suggestions,
-  hasSearched,
-  serpData,
-  isAnalyzing,
-  onSearch,
-  onAddKeyword,
-  onRemoveKeyword,
-  onToggleSelection,
-  onAddToContent,
-  onReanalyze
+  state,
+  handleRemoveKeyword,
+  handleAddToContent,
+  handleToggleSelection
 }) => {
-  // Render suggestions if available
-  const renderSuggestions = () => {
-    if (!suggestions || suggestions.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="mt-6">
-        <h3 className="text-sm font-medium mb-3">Related Keywords</h3>
-        <div className="flex flex-wrap gap-2">
-          {suggestions.map((suggestion) => (
-            <Button
-              key={suggestion}
-              variant="outline"
-              size="sm"
-              onClick={() => onAddKeyword(suggestion)}
-              className="text-xs"
-              disabled={selectedKeywords.includes(suggestion)}
-            >
-              {suggestion}
-              {selectedKeywords.includes(suggestion) && " ✓"}
-            </Button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Render the main content
+  const {
+    mainKeyword,
+    selectedKeywords,
+    serpData,
+    serpSelections,
+    isAnalyzing
+  } = state;
+  
+  // Get selection statistics for the SERP data
+  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
+  
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Select Keywords</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <label className="text-sm font-medium">Main Keyword</label>
-            <KeywordSearch
-              onSearch={onSearch}
-              defaultKeyword={mainKeyword}
-              placeholder="Enter your main keyword"
-              buttonText="Search"
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      key="results-state"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column - Keyword selections */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Selected Keywords */}
+          <div className="animate-fade-in">
+            <SelectedKeywords 
+              keywords={selectedKeywords} 
+              onRemoveKeyword={handleRemoveKeyword} 
             />
           </div>
           
-          {hasSearched ? (
-            <>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">Selected Keywords</h3>
-                  {isAnalyzing ? (
-                    <Button variant="ghost" size="sm" disabled className="text-xs">
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Analyzing...
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={onReanalyze}
-                      className="text-xs"
-                      disabled={!mainKeyword}
-                    >
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Refresh Analysis
-                    </Button>
-                  )}
-                </div>
-                <SelectedKeywords 
-                  keywords={selectedKeywords}
-                  onRemoveKeyword={onRemoveKeyword}
-                />
-              </div>
-              
-              {renderSuggestions()}
-            </>
-          ) : (
-            <InitialStateView onSearch={onSearch} />
-          )}
+          {/* Selected Items Sidebar */}
+          <SelectedItemsSidebar 
+            serpSelections={serpSelections}
+            totalSelected={totalSelected}
+            selectedCounts={selectedCounts}
+            handleToggleSelection={handleToggleSelection}
+          />
         </div>
-      </CardContent>
-    </Card>
+        
+        {/* Right column - SERP Analysis */}
+        <div className="lg:col-span-2">
+          <SerpAnalysisPanel 
+            serpData={serpData}
+            isLoading={isAnalyzing}
+            mainKeyword={mainKeyword}
+            onAddToContent={handleAddToContent}
+          />
+        </div>
+      </div>
+    </motion.div>
   );
 };

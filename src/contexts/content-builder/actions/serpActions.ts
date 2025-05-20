@@ -25,20 +25,31 @@ export const createSerpActions = (
       const selectedProvider = provider || state.preferredSerpProvider || 'serpapi';
       
       // Get the API key for the selected provider
-      const apiKey = localStorage.getItem('serp_api_key');
+      const getProviderApiKey = () => {
+        switch (selectedProvider) {
+          case 'serpapi':
+            return localStorage.getItem('serp_api_key');
+          case 'dataforseo':
+            return localStorage.getItem('dataforseo_api_key');
+          default:
+            return null;
+        }
+      };
       
-      // If no API key exists and not using mock, show error message
-      if (!apiKey && selectedProvider !== 'mock') {
-        toast.error(`No API key found for SERP API. Please configure your API key in settings.`);
+      const apiKey = getProviderApiKey();
+      
+      // If no API key exists, show error message
+      if (!apiKey) {
+        toast.error(`No API key found for ${selectedProvider}. Please configure your API keys in settings.`);
         dispatch({ type: 'SET_IS_ANALYZING', payload: false });
         return;
       }
       
-      // Get SERP data
-      const serpData = await analyzeSerpKeyword(keyword, false);
+      // Get SERP data - no longer using mock data as fallback
+      const serpData = await analyzeSerpKeyword(keyword);
       
-      if (!serpData && selectedProvider !== 'mock') {
-        toast.error(`Failed to get data from SERP API. Please check your API key.`);
+      if (!serpData) {
+        toast.error(`Failed to get data from ${selectedProvider}. Please check your API key.`);
         dispatch({ type: 'SET_IS_ANALYZING', payload: false });
         return;
       }
@@ -48,15 +59,10 @@ export const createSerpActions = (
         payload: serpData
       });
       
-      // Set the provider in state to track which one was used
-      dispatch({
-        type: 'SET_PREFERRED_PROVIDER',
-        payload: selectedProvider
-      });
-      
     } catch (error: any) {
       console.error('Error analyzing keyword:', error);
       toast.error(`Failed to analyze keyword: ${error.message}`);
+      dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     } finally {
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
@@ -69,11 +75,10 @@ export const createSerpActions = (
     
     // Update the state with the new preferred provider
     dispatch({ 
-      type: 'SET_PREFERRED_PROVIDER', 
+      type: 'SET_PREFERRED_PROVIDER' as any, 
       payload: provider 
     });
     
-    // If we have a current keyword, re-analyze with the new provider
     if (state.mainKeyword) {
       await analyzeKeyword(state.mainKeyword, provider);
     }

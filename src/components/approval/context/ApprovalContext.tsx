@@ -1,251 +1,124 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { ContentItemType } from '@/contexts/content/types';
+import { analyzeKeywordSerp, SerpAnalysisResult } from '@/services/serpApiService';
 import { toast } from 'sonner';
-import { analyzeSerpKeyword } from '@/services/serpApiService';
-import type { SerpAnalysisResult } from '@/types/serp';
-import { 
-  generateSeoReport, 
-  improveContentWithAI, 
-  generateTitleSuggestions,
-  generateMetaTags 
-} from '@/services/aiProcessingService';
 
-export interface ApprovalContextValue {
-  // Content state
-  content: string;
-  setContent: (content: string) => void;
-  
-  // Keywords
-  keywords: string[];
-  addKeyword: (keyword: string) => void;
-  removeKeyword: (keyword: string) => void;
-  
-  // SERP analysis data
-  serpAnalysisData: Record<string, SerpAnalysisResult | null>;
-  analyzeSerpData: (keyword: string) => Promise<void>;
-  
-  // SEO analysis
-  seoScore: number;
-  setSeoScore: (score: number) => void;
-  seoReport: string;
-  generateSeoAnalysis: () => Promise<void>;
-  
-  // Loading states
-  isAnalyzing: boolean;
-  isGeneratingReport: boolean;
-  
-  // Selection state
-  selectedKeyword: string | null;
-  setSelectedKeyword: (keyword: string | null) => void;
-  
-  // New properties and methods
+interface ApprovalContextType {
+  improveContentWithAI: (content: ContentItemType) => Promise<string | null>;
+  isImproving: boolean;
   serpData: SerpAnalysisResult | null;
   isFetchingSerp: boolean;
   fetchSerpData: (keyword: string) => Promise<void>;
-  improveContentWithAI: (content: any) => Promise<string>;
-  isImproving: boolean;
-  generateTitleSuggestions: (content: any) => Promise<string[]>;
-  generateMetadata: (content: string, keywords: string[]) => Promise<{ metaTitle: string, metaDescription: string }>;
-  findInterLinkingOpportunities: (content: any) => void;
+  findInterLinkingOpportunities: (content: ContentItemType) => void;
+  generateTitleSuggestions: (content: ContentItemType) => Promise<string[]>;
+  generateMetadata: (content: ContentItemType) => Promise<{title: string, description: string}>;
 }
 
-const ApprovalContext = createContext<ApprovalContextValue | null>(null);
+const ApprovalContext = createContext<ApprovalContextType>({
+  improveContentWithAI: async () => null,
+  isImproving: false,
+  serpData: null,
+  isFetchingSerp: false,
+  fetchSerpData: async () => {},
+  findInterLinkingOpportunities: () => {},
+  generateTitleSuggestions: async () => [],
+  generateMetadata: async () => ({title: '', description: ''}),
+});
 
-interface ApprovalProviderProps {
-  children: React.ReactNode;
-  initialContent?: string;
-  initialKeywords?: string[];
-}
-
-export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
-  children,
-  initialContent = '',
-  initialKeywords = []
-}) => {
-  // Content state
-  const [content, setContent] = useState<string>(initialContent);
-  
-  // Keywords state
-  const [keywords, setKeywords] = useState<string[]>(initialKeywords);
-  
-  // SERP analysis state
-  const [serpAnalysisData, setSerpAnalysisData] = useState<Record<string, SerpAnalysisResult | null>>({});
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const [isImproving, setIsImproving] = useState(false);
   const [serpData, setSerpData] = useState<SerpAnalysisResult | null>(null);
-  const [isFetchingSerp, setIsFetchingSerp] = useState<boolean>(false);
-  
-  // AI processing states
-  const [isImproving, setIsImproving] = useState<boolean>(false);
-  
-  // SEO analysis state
-  const [seoScore, setSeoScore] = useState<number>(0);
-  const [seoReport, setSeoReport] = useState<string>('');
-  const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
-  
-  // Selection state
-  const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
-  
-  // Add a keyword
-  const addKeyword = (keyword: string) => {
-    if (!keyword.trim() || keywords.includes(keyword.trim())) return;
-    setKeywords([...keywords, keyword.trim()]);
-  };
-  
-  // Remove a keyword
-  const removeKeyword = (keyword: string) => {
-    setKeywords(keywords.filter(k => k !== keyword));
-    
-    // If the removed keyword was selected, clear the selection
-    if (selectedKeyword === keyword) {
-      setSelectedKeyword(null);
-    }
-  };
-  
-  // Analyze SERP data for a keyword
-  const analyzeSerpData = async (keyword: string) => {
-    if (!keyword.trim()) return;
-    
-    // Don't re-analyze if we already have data
-    if (serpAnalysisData[keyword] && !isAnalyzing) return;
-    
-    setIsAnalyzing(true);
+  const [isFetchingSerp, setIsFetchingSerp] = useState(false);
+
+  const improveContentWithAI = async (content: ContentItemType): Promise<string | null> => {
+    setIsImproving(true);
     
     try {
-      const data = await analyzeSerpKeyword(keyword);
+      // This would connect to an AI service in a real app
+      // For now we'll just simulate an improvement
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Update the SERP data for this keyword
-      setSerpAnalysisData({
-        ...serpAnalysisData,
-        [keyword]: data
-      });
+      // Here we'd send the content to an AI service and get improved content back
+      const improvedContent = content.content || '';
       
-    } catch (error: any) {
-      console.error('Error analyzing keyword:', error);
-      toast.error(`Failed to analyze keyword: ${error.message}`);
-    } finally {
-      setIsAnalyzing(false);
+      setIsImproving(false);
+      return improvedContent;
+    } catch (error) {
+      console.error('Error improving content with AI:', error);
+      setIsImproving(false);
+      return null;
     }
   };
-  
-  // Fetch SERP data for keyword
+
   const fetchSerpData = async (keyword: string) => {
-    if (!keyword || isFetchingSerp) return;
+    if (!keyword) return;
     
     setIsFetchingSerp(true);
     
     try {
-      const data = await analyzeSerpKeyword(keyword);
+      const data = await analyzeKeywordSerp(keyword);
       setSerpData(data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching SERP data:', error);
-      toast.error(`Failed to fetch SERP data: ${error.message}`);
-      setSerpData(null);
+      toast.error('Failed to fetch SERP data');
     } finally {
       setIsFetchingSerp(false);
     }
   };
-  
-  // Generate SEO analysis for the content
-  const generateSeoAnalysis = async () => {
-    if (!content || keywords.length === 0) {
-      toast.error('Content and at least one keyword are required for SEO analysis');
-      return;
-    }
-    
-    setIsGeneratingReport(true);
-    
+
+  const findInterLinkingOpportunities = useCallback((content: ContentItemType) => {
+    // This would analyze the content and find other content to link to
+    console.log('Finding interlinking opportunities for:', content.title);
+    // Implementation would be added in a real app
+  }, []);
+
+  const generateTitleSuggestions = async (content: ContentItemType): Promise<string[]> => {
     try {
-      // Generate the SEO report
-      const report = await generateSeoReport(content, keywords);
+      // This would connect to an AI service in a real app
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Extract the score from the report
-      const scoreMatch = report.match(/Score:\s*(\d+)/i);
-      const extractedScore = scoreMatch ? parseInt(scoreMatch[1], 10) : 0;
+      const keyword = content.metadata?.mainKeyword || '';
       
-      // Set the report and score
-      setSeoReport(report);
-      setSeoScore(extractedScore);
-      
-    } catch (error: any) {
-      console.error('Error generating SEO report:', error);
-      toast.error(`Failed to generate SEO report: ${error.message}`);
-    } finally {
-      setIsGeneratingReport(false);
-    }
-  };
-  
-  // Improve content using AI
-  const handleImproveContentWithAI = async (contentData: any) => {
-    if (!contentData) return '';
-    
-    setIsImproving(true);
-    try {
-      const improved = await improveContentWithAI(contentData);
-      return improved;
-    } catch (error: any) {
-      toast.error(`Failed to improve content: ${error.message}`);
-      return contentData.content || '';
-    } finally {
-      setIsImproving(false);
-    }
-  };
-  
-  // Generate title suggestions
-  const handleGenerateTitleSuggestions = async (contentData: any) => {
-    try {
-      const suggestions = await generateTitleSuggestions(contentData);
-      return suggestions;
-    } catch (error: any) {
-      toast.error(`Failed to generate title suggestions: ${error.message}`);
+      return [
+        `The Ultimate Guide to ${keyword}`,
+        `How to Master ${keyword} in 2025`,
+        `${keyword}: A Comprehensive Analysis`,
+        `Top 10 Strategies for ${keyword} Success`,
+        `Everything You Need to Know About ${keyword}`
+      ];
+    } catch (error) {
+      console.error('Error generating title suggestions:', error);
       return [];
     }
   };
-  
-  // Generate metadata
-  const handleGenerateMetadata = async (content: string, keywords: string[]) => {
+
+  const generateMetadata = async (content: ContentItemType) => {
     try {
-      return await generateMetaTags(content, keywords);
-    } catch (error: any) {
-      toast.error(`Failed to generate metadata: ${error.message}`);
-      return { metaTitle: '', metaDescription: '' };
+      // This would connect to an AI service in a real app
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      return {
+        title: `${content.title} - SEO Optimized Title`,
+        description: `Learn all about ${content.metadata?.mainKeyword || 'this topic'} with our comprehensive guide. Covers key aspects and strategies.`
+      };
+    } catch (error) {
+      console.error('Error generating metadata:', error);
+      return {title: '', description: ''};
     }
   };
-  
-  // Find interlinking opportunities
-  const findInterLinkingOpportunities = (contentData: any) => {
-    // In a real implementation, this would analyze the content and find opportunities
-    // for interlinking with other content items
-    console.log('Finding interlinking opportunities for:', contentData?.title);
-    // This would be implemented with actual logic in a production environment
-  };
-  
-  const value: ApprovalContextValue = {
-    content,
-    setContent,
-    keywords,
-    addKeyword,
-    removeKeyword,
-    serpAnalysisData,
-    analyzeSerpData,
-    seoScore,
-    setSeoScore,
-    seoReport,
-    generateSeoAnalysis,
-    isAnalyzing,
-    isGeneratingReport,
-    selectedKeyword,
-    setSelectedKeyword,
-    // New properties
+
+  const value = {
+    improveContentWithAI,
+    isImproving,
     serpData,
     isFetchingSerp,
     fetchSerpData,
-    improveContentWithAI: handleImproveContentWithAI,
-    isImproving,
-    generateTitleSuggestions: handleGenerateTitleSuggestions,
-    generateMetadata: handleGenerateMetadata,
-    findInterLinkingOpportunities
+    findInterLinkingOpportunities,
+    generateTitleSuggestions,
+    generateMetadata,
   };
-  
+
   return (
     <ApprovalContext.Provider value={value}>
       {children}
@@ -253,10 +126,4 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
   );
 };
 
-export const useApproval = () => {
-  const context = useContext(ApprovalContext);
-  if (!context) {
-    throw new Error('useApproval must be used within an ApprovalProvider');
-  }
-  return context;
-};
+export const useApproval = () => useContext(ApprovalContext);

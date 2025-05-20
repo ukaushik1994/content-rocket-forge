@@ -1,56 +1,25 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-interface InitialStateViewProps {
-  onSearch: (keyword: string, suggestions: string[]) => void;
-}
-
-export const InitialStateView: React.FC<InitialStateViewProps> = ({ onSearch }) => {
-  // List of example keywords
-  const exampleKeywords = [
-    'content marketing',
-    'seo optimization',
-    'digital strategy',
-    'social media',
-    'brand awareness',
-    'conversion rate'
-  ];
-
-  const handleExampleClick = (keyword: string) => {
-    onSearch(keyword, []);
-  };
-
+export const InitialStateView = () => {
   return (
-    <div className="text-center space-y-6 py-6">
-      <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-        <Search className="h-8 w-8 text-primary" />
+    <motion.div 
+      className="flex flex-col items-center justify-center py-16 text-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      key="initial-state"
+    >
+      <div className="rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-6 mb-4">
+        <Sparkles className="h-8 w-8 text-neon-purple" />
       </div>
-      
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Start with a keyword</h3>
-        <p className="text-sm text-muted-foreground">
-          Enter your main keyword to begin analyzing search results
-        </p>
-      </div>
-      
-      <div className="space-y-3">
-        <p className="text-xs text-muted-foreground">Try one of these examples:</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {exampleKeywords.map((keyword) => (
-            <Button
-              key={keyword}
-              variant="outline"
-              size="sm"
-              onClick={() => handleExampleClick(keyword)}
-              className="text-xs"
-            >
-              {keyword}
-            </Button>
-          ))}
-        </div>
-      </div>
-    </div>
+      <h3 className="text-xl font-medium mb-2">Search to analyze your keyword</h3>
+      <p className="text-sm text-muted-foreground max-w-md">
+        Enter your main keyword above to see search insights, 
+        related keywords, and content suggestions from top-ranking pages
+      </p>
+    </motion.div>
   );
 };

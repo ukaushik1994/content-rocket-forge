@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -115,7 +114,7 @@ export const ContentTypeStep = () => {
   };
   
   const handleSelectSolution = (solution: Solution) => {
-    dispatch({ type: 'SET_SELECTED_SOLUTION', payload: solution });
+    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
     toast.success(`Selected solution: ${solution.name}`);
   };
 

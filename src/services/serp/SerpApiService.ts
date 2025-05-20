@@ -4,23 +4,12 @@
  * This file re-exports functionality from the smaller modules
  */
 
-// Export core functionality from SerpCore
-import { 
-  analyzeSerpKeyword,
-  searchSerpKeywords,
-  searchRelatedKeywords,
-  getActiveProvider,
-  setPreferredSerpProvider,
-  type SerpApiOptions
-} from './core/SerpCore';
-
-// Export these functions and types directly
+// Export core functionality
 export { 
   analyzeSerpKeyword,
   searchSerpKeywords,
   searchRelatedKeywords,
   getActiveProvider,
-  setPreferredSerpProvider,
   type SerpApiOptions
 } from './core/SerpCore';
 
@@ -36,10 +25,3 @@ export { UsageTracker } from './usage-tracking/UsageTracker';
 
 // Re-export cache utilities if needed externally
 export { getFromCache, saveToCache } from './cache/SerpCache';
-
-// Export SerpAnalysisResult type for external use
-export type { SerpAnalysisResult } from '@/types/serp';
-
-// Legacy aliases for backward compatibility
-export const analyzeKeywordSerp = analyzeSerpKeyword;
-export const searchKeywords = searchSerpKeywords;

@@ -1,8 +1,9 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Database, 
+  CloudCog, 
   CloudLightning
 } from 'lucide-react';
 import { 
@@ -24,20 +25,6 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
   const [selectedProvider, setSelectedProvider] = React.useState<SerpProvider>(
     getPreferredSerpProvider()
   );
-  
-  // Effect to check available providers based on API keys
-  useEffect(() => {
-    const checkApiKeys = () => {
-      const serpApiKey = localStorage.getItem('serp_api_key');
-      
-      // If there's no API key for the selected provider, switch to mock
-      if (selectedProvider === 'serpapi' && !serpApiKey) {
-        handleProviderChange('mock');
-      } 
-    };
-    
-    checkApiKeys();
-  }, [selectedProvider]);
 
   const handleProviderChange = (value: string) => {
     const provider = value as SerpProvider;
@@ -53,18 +40,13 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
     switch (providerId) {
       case 'serpapi':
         return <CloudLightning className="h-4 w-4 mr-2 text-blue-400" />;
+      case 'dataforseo':
+        return <CloudCog className="h-4 w-4 mr-2 text-green-400" />;
       case 'mock':
         return <Database className="h-4 w-4 mr-2 text-orange-400" />;
       default:
         return <Database className="h-4 w-4 mr-2 text-gray-400" />;
     }
-  };
-
-  // Check if a provider is available (has API key or is mock)
-  const isProviderAvailable = (providerId: string): boolean => {
-    if (providerId === 'mock') return true;
-    if (providerId === 'serpapi') return !!localStorage.getItem('serp_api_key');
-    return false;
   };
 
   return (
@@ -75,12 +57,7 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
         </SelectTrigger>
         <SelectContent>
           {SERP_PROVIDERS.map((provider) => (
-            <SelectItem 
-              key={provider.id} 
-              value={provider.id} 
-              className="flex items-center"
-              disabled={!isProviderAvailable(provider.id)}
-            >
+            <SelectItem key={provider.id} value={provider.id} className="flex items-center">
               <div className="flex items-center">
                 {getProviderIcon(provider.id)}
                 <Tooltip>
@@ -89,8 +66,8 @@ export const SerpProviderSelector: React.FC<SerpProviderSelectorProps> = ({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">{provider.description}</p>
-                    {provider.requiresKey && !isProviderAvailable(provider.id) && (
-                      <p className="text-xs text-amber-400 mt-1">API key required</p>
+                    {provider.requiresKey && (
+                      <p className="text-xs text-amber-400 mt-1">Requires API key</p>
                     )}
                   </TooltipContent>
                 </Tooltip>

@@ -1,5 +1,5 @@
+
 import { ContentBuilderState } from './types';
-import { getPreferredSerpProvider } from '@/services/serpApiService';
 
 export const initialState: ContentBuilderState = {
   // Navigation
@@ -34,7 +34,6 @@ export const initialState: ContentBuilderState = {
   serpData: null,
   serpSelections: [],
   isAnalyzing: false,
-  preferredSerpProvider: getPreferredSerpProvider(),
   
   // Outline
   outline: [],

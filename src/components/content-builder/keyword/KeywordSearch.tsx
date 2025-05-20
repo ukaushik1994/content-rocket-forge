@@ -1,36 +1,25 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
-import { useInView } from 'react-intersection-observer';
-import { searchSerpKeywords } from '@/services/serpApiService';
+import { Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { searchKeywords } from '@/services/serpApiService';
+import { RefreshButton } from '@/components/ui/refresh-button';
 
-export const KeywordSearch = ({ 
-  onSearch, 
-  defaultKeyword = '', 
-  placeholder = 'Enter your main keyword', 
-  buttonText = 'Search' 
+interface KeywordSearchProps {
+  initialKeyword: string;
+  onKeywordSearch: (keyword: string, suggestions: string[]) => void;
+}
+
+export const KeywordSearch: React.FC<KeywordSearchProps> = ({ 
+  initialKeyword, 
+  onKeywordSearch 
 }) => {
-  const [keyword, setKeyword] = useState(defaultKeyword);
+  const [keyword, setKeyword] = useState(initialKeyword || '');
   const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const { ref, inView } = useInView();
 
-  // Auto-focus the input when it's in view
-  useEffect(() => {
-    if (inView) {
-      const inputElement = document.getElementById('keyword-search-input');
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }
-  }, [inView]);
-
-  // Handle submitting the search
-  const handleSearch = async (e) => {
-    if (e) e.preventDefault();
+  const handleSearch = async () => {
     if (!keyword.trim()) {
       toast.error('Please enter a keyword to search');
       return;
@@ -38,52 +27,124 @@ export const KeywordSearch = ({
 
     setIsSearching(true);
     try {
-      // Get keyword suggestions - pass the query directly instead of as an object
-      const results = await searchSerpKeywords(keyword.trim());
-      
-      // Extract just the keyword strings
-      const suggestions = Array.isArray(results) 
-        ? results.map(item => typeof item === 'string' ? item : item.query || '') 
-        : [];
-
-      // Call the onSearch callback with the keyword and suggestions
-      onSearch(keyword.trim(), suggestions);
-      setHasSearched(true);
+      const results = await searchKeywords({ query: keyword });
+      // Make sure results is an array before accessing .map
+      if (Array.isArray(results)) {
+        // Extract keywords from search results with explicit type casting
+        const extractedKeywords = results.map(result => {
+          const title = result.title ? String(result.title) : '';
+          return title
+            .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')
+            .trim()
+            .split(' ')
+            .slice(0, 3)
+            .join(' ');
+        });
+        
+        // Filter out duplicates and very short keywords
+        const filteredKeywords = [...new Set(extractedKeywords)]
+          .filter(k => k.length > 3)
+          .slice(0, 10);
+        
+        onKeywordSearch(keyword, filteredKeywords);
+        toast.success('Keyword search complete');
+      } else {
+        // Handle case where results is not an array
+        onKeywordSearch(keyword, []);
+        toast.warning('No keyword suggestions found');
+      }
     } catch (error) {
       console.error('Error searching keywords:', error);
-      toast.error(error.message || 'Failed to search keywords');
-      // Still call onSearch with empty suggestions
-      onSearch(keyword.trim(), []);
+      toast.error('Failed to search keywords');
+      
+      // Still provide the main keyword if search fails
+      onKeywordSearch(keyword, []);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
+  const handleRefresh = async () => {
+    if (!keyword.trim()) {
+      toast.error('Please enter a keyword to refresh suggestions');
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const results = await searchKeywords({ query: keyword, refresh: true });
+      
+      if (Array.isArray(results)) {
+        // Extract different keywords for variety
+        const extractedKeywords = results.map(result => {
+          const title = result.title ? String(result.title) : '';
+          // Use a slightly different extraction strategy for refreshed results
+          return title
+            .replace(/Best|Top|Guide to|How to|Why|What is|[0-9]+/gi, '')
+            .trim()
+            .split(' ')
+            .slice(0, 4) // Get more words for variety
+            .join(' ');
+        });
+        
+        // Filter and shuffle the results for variety
+        const filteredKeywords = [...new Set(extractedKeywords)]
+          .filter(k => k.length > 3)
+          .sort(() => Math.random() - 0.5) // Shuffle
+          .slice(0, 10);
+        
+        onKeywordSearch(keyword, filteredKeywords);
+        toast.success('Refreshed keyword suggestions');
+      } else {
+        toast.warning('No new keyword suggestions found');
+      }
+    } catch (error) {
+      console.error('Error refreshing keywords:', error);
+      toast.error('Failed to refresh keyword suggestions');
     } finally {
       setIsSearching(false);
     }
   };
 
   return (
-    <form onSubmit={handleSearch} className="w-full">
-      <div className="relative" ref={ref}>
-        <div className="flex space-x-2">
-          <div className="relative flex-grow">
-            <Input
-              id="keyword-search-input"
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder={placeholder}
-              className="pr-10 w-full shadow-sm focus-visible:border-purple-500"
-              autoFocus={inView && !hasSearched}
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          </div>
-          <Button
-            type="submit"
-            disabled={isSearching || !keyword.trim()}
-            className="shrink-0"
-          >
-            {isSearching ? 'Searching...' : buttonText}
-          </Button>
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="main-keyword"
+            placeholder="Enter your main keyword..."
+            className="pl-9"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          />
         </div>
+        <Button 
+          onClick={handleSearch}
+          disabled={isSearching || !keyword.trim()}
+          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+        >
+          {isSearching ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Searching...
+            </>
+          ) : (
+            <>
+              <Search className="mr-2 h-4 w-4" />
+              Search
+            </>
+          )}
+        </Button>
+        
+        <RefreshButton 
+          onClick={handleRefresh}
+          isRefreshing={isSearching}
+          disabled={isSearching || !keyword.trim()}
+          title="Refresh keyword suggestions"
+        />
       </div>
-    </form>
+    </div>
   );
 };
