@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Sparkles } from 'lucide-react';
 import { SerpAnalysisResult } from '@/types/serp';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { toast } from 'sonner';
 
 // Import refactored components
 import {
@@ -23,14 +26,16 @@ export interface SerpAnalysisPanelProps {
   mainKeyword: string;
   onAddToContent?: (content: string, type: string) => void;
   onRetry?: () => void;
+  onSerpDataChange?: (data: SerpAnalysisResult | null) => void;
 }
 
 export function SerpAnalysisPanel({ 
-  serpData, 
-  isLoading, 
+  serpData: initialSerpData, 
+  isLoading: initialIsLoading, 
   mainKeyword,
   onAddToContent = () => {},
-  onRetry = () => {}
+  onRetry = () => {},
+  onSerpDataChange = () => {}
 }: SerpAnalysisPanelProps) {
   const [expandedSections, setExpandedSections] = useState<{
     searchMetrics: boolean;
@@ -49,6 +54,52 @@ export function SerpAnalysisPanel({
     headings: false,
     contentGaps: false
   });
+  
+  const [internalSerpData, setInternalSerpData] = useState<SerpAnalysisResult | null>(initialSerpData);
+  const [internalIsLoading, setInternalIsLoading] = useState<boolean>(initialIsLoading);
+  
+  // Effect to sync props with internal state
+  useEffect(() => {
+    setInternalSerpData(initialSerpData);
+    setInternalIsLoading(initialIsLoading);
+  }, [initialSerpData, initialIsLoading]);
+  
+  // Effect to fetch SERP data when the mainKeyword changes
+  useEffect(() => {
+    if (mainKeyword && !internalSerpData && !internalIsLoading) {
+      fetchSerpData();
+    }
+  }, [mainKeyword]);
+  
+  const fetchSerpData = async () => {
+    if (!mainKeyword) return;
+    
+    setInternalIsLoading(true);
+    
+    try {
+      // Call the API to get real SERP data
+      const result = await analyzeKeywordSerp(mainKeyword);
+      setInternalSerpData(result);
+      onSerpDataChange(result);
+      
+      if (result) {
+        console.log("SERP data fetched successfully:", result);
+        if (result.isMockData) {
+          toast.warning("Using mock data. Add your API key in settings for real results.");
+        } else {
+          toast.success("Search analysis completed successfully.");
+        }
+      } else {
+        console.error("No SERP data returned");
+        toast.error("Failed to retrieve search data. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error fetching SERP data:", error);
+      toast.error("Failed to analyze keyword. Please check your API key and try again.");
+    } finally {
+      setInternalIsLoading(false);
+    }
+  };
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -57,7 +108,12 @@ export function SerpAnalysisPanel({
     }));
   };
   
-  if (isLoading) {
+  const handleRetry = () => {
+    fetchSerpData();
+    onRetry();
+  };
+  
+  if (internalIsLoading) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-center py-12 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
@@ -73,12 +129,12 @@ export function SerpAnalysisPanel({
   }
 
   // If serpData is null, show the NoDataFound component
-  if (serpData === null && mainKeyword) {
-    return <SerpNoDataFound mainKeyword={mainKeyword} onRetry={onRetry} />;
+  if (internalSerpData === null && mainKeyword) {
+    return <SerpNoDataFound mainKeyword={mainKeyword} onRetry={handleRetry} />;
   }
 
   // If serpData is undefined or empty object, show the EmptyState
-  if (!serpData) {
+  if (!internalSerpData) {
     return <SerpEmptyState />;
   }
 
@@ -154,7 +210,7 @@ export function SerpAnalysisPanel({
         />
         
         <SerpMetricsSection 
-          serpData={serpData} 
+          serpData={internalSerpData} 
           mainKeyword={mainKeyword} 
           expanded={expandedSections.searchMetrics} 
         />
@@ -168,11 +224,11 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('keywords')}
           variant="blue"
           description="Select keywords to include in your content"
-          count={serpData?.relatedSearches?.length || 0}
+          count={internalSerpData?.relatedSearches?.length || 0}
         />
         
         <SerpKeywordsSection 
-          serpData={serpData}
+          serpData={internalSerpData}
           expanded={expandedSections.keywords}
           onAddToContent={onAddToContent}
         />
@@ -186,11 +242,11 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('questions')}
           variant="amber"
           description="Common questions people search about this topic"
-          count={serpData?.peopleAlsoAsk?.length || 0}
+          count={internalSerpData?.peopleAlsoAsk?.length || 0}
         />
         
         <SerpQuestionsSection 
-          serpData={serpData}
+          serpData={internalSerpData}
           expanded={expandedSections.questions}
           onAddToContent={onAddToContent}
         />
@@ -204,11 +260,11 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('entities')}
           variant="indigo"
           description="Important entities and concepts related to this topic"
-          count={serpData?.entities?.length || 0}
+          count={internalSerpData?.entities?.length || 0}
         />
         
         <SerpEntitiesSection 
-          serpData={serpData}
+          serpData={internalSerpData}
           expanded={expandedSections.entities}
           onAddToContent={onAddToContent}
         />
@@ -222,11 +278,11 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('headings')}
           variant="teal"
           description="Common headings used by top-ranking content"
-          count={serpData?.headings?.length || 0}
+          count={internalSerpData?.headings?.length || 0}
         />
         
         <SerpHeadingsSection 
-          serpData={serpData}
+          serpData={internalSerpData}
           expanded={expandedSections.headings}
           onAddToContent={onAddToContent}
         />
@@ -240,11 +296,11 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('contentGaps')}
           variant="rose"
           description="Topics competitors are missing that you can cover"
-          count={serpData?.contentGaps?.length || 0}
+          count={internalSerpData?.contentGaps?.length || 0}
         />
         
         <SerpContentGapsSection 
-          serpData={serpData}
+          serpData={internalSerpData}
           expanded={expandedSections.contentGaps}
           onAddToContent={onAddToContent}
         />
@@ -258,11 +314,11 @@ export function SerpAnalysisPanel({
           onToggle={() => toggleSection('competitors')}
           variant="green"
           description="Top-ranking content for this keyword"
-          count={serpData?.topResults?.length || 0}
+          count={internalSerpData?.topResults?.length || 0}
         />
         
         <SerpCompetitorsSection 
-          serpData={serpData}
+          serpData={internalSerpData}
           expanded={expandedSections.competitors}
           onAddToContent={onAddToContent}
         />

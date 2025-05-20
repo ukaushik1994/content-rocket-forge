@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     if (apiKeyFromStorage) {
       // Make the actual API call with the API key
       try {
+        console.log('Making SERP API call with stored key for:', query);
         const response = await fetch(`https://api.serphouse.com/serp/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
           headers: {
             'Authorization': `Bearer ${apiKeyFromStorage}`,
@@ -62,6 +64,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     
     // Make the actual API call
     try {
+      console.log('Making SERP API call with Supabase key for:', query);
       const response = await fetch(`https://api.serphouse.com/serp/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -113,7 +116,7 @@ function getBackupMockResults(query: string, refresh: boolean) {
   return mockResults;
 }
 
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult> => {
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
   try {
     console.log('Analyzing keyword with SERP API:', keyword, refresh ? '(refresh requested)' : '');
     
@@ -123,15 +126,19 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
     
     // If not in localStorage, try to get from Supabase
     if (!apiKey) {
-      const { data: apiKeyData } = await supabase
-        .from('api_keys')
-        .select('encrypted_key')
-        .eq('service', 'serp')
-        .eq('is_active', true)
-        .single();
+      try {
+        const { data: apiKeyData } = await supabase
+          .from('api_keys')
+          .select('encrypted_key')
+          .eq('service', 'serp')
+          .eq('is_active', true)
+          .single();
 
-      if (apiKeyData?.encrypted_key) {
-        apiKey = apiKeyData.encrypted_key;
+        if (apiKeyData?.encrypted_key) {
+          apiKey = apiKeyData.encrypted_key;
+        }
+      } catch (error) {
+        console.warn('Error fetching API key from Supabase:', error);
       }
     }
 
@@ -334,7 +341,7 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       `Compare ${keyword} with alternative approaches`,
       `Include case studies showing successful ${keyword} implementation`
     ],
-    isMockData: true // We're still using mock data, but at least we're transparent about it
+    isMockData: true // We're marking mock data as such for transparency
   };
 }
 

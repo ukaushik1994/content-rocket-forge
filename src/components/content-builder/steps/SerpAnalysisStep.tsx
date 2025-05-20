@@ -6,6 +6,7 @@ import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysi
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
+import { SerpAnalysisResult } from '@/types/serp';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
@@ -64,6 +65,13 @@ export const SerpAnalysisStep = () => {
     handleToggleSelection(type, content);
   };
   
+  // Handle SERP data changes from the panel component
+  const handleSerpDataChange = (data: SerpAnalysisResult | null) => {
+    if (data && !serpData) {
+      dispatch({ type: 'SET_SERP_DATA', payload: data });
+    }
+  };
+  
   // If no API key exists, show the setup component
   if (!apiKeyExists && !serpData) {
     return (
@@ -110,6 +118,7 @@ export const SerpAnalysisStep = () => {
             mainKeyword={mainKeyword}
             onAddToContent={handleAddToContent}
             onRetry={handleReanalyze}
+            onSerpDataChange={handleSerpDataChange}
           />
         </div>
         
