@@ -1,214 +1,149 @@
-/**
- * Core SERP API service functionality
- */
-import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
-import { SerpApiAdapter } from '../adapters/types';
-import { AdapterFactory } from '../adapters/AdapterFactory';
-import { SerpAnalysisResult } from '@/types/serp';
-import { SerpApiError, SerpErrorType } from '../error-handling/ErrorTypes';
-import { UsageTracker } from '../usage-tracking/UsageTracker';
-import { getFromCache, saveToCache } from '../cache/SerpCache';
-import { ErrorHandler } from '../error-handling/ErrorHandler';
 
-// Add interface for SerpApiOptions
+/**
+ * SERP API Core Functionality
+ */
+import { toast } from 'sonner';
+import { AdapterFactory } from '../adapters/AdapterFactory';
+import { saveToCache, getFromCache } from '../cache/SerpCache';
+import { UsageTracker } from '../usage-tracking/UsageTracker';
+import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
+import type { SerpAnalysisResult } from '@/types/serp';
+
 export interface SerpApiOptions {
-  keyword: string;
-  refresh?: boolean;
   provider?: SerpProvider;
-  limit?: number;
-  location?: string;
-  language?: string;
+  cache?: boolean;
+  refresh?: boolean;
 }
 
-/**
- * Get the active SERP provider or return null if no API key exists
- */
-export const getActiveProvider = (): SerpProvider | null => {
-  // Check for stored preference first
-  const storedPreference = localStorage.getItem('preferred_serp_provider') as SerpProvider;
-  
-  // Check if any API key exists
+// Get the currently active provider
+export const getActiveProvider = (): SerpProvider => {
   const serpApiKey = localStorage.getItem('serp_api_key');
   
-  // If preference exists and its API key exists, use that
-  if (storedPreference) {
-    if (storedPreference === 'mock') return 'mock';
-    if (storedPreference === 'serpapi' && serpApiKey) return 'serpapi';
-  }
-  
-  // Otherwise use available API key
   if (serpApiKey) {
     return 'serpapi';
-  } else if (storedPreference === 'mock') {
-    return 'mock';
   }
   
-  // No API key exists
-  return null;
+  return 'mock';
 };
 
-/**
- * Analyze keyword using the active SERP provider
- */
+// Analyze a keyword and get SERP data
 export const analyzeSerpKeyword = async (
-  keyword: string, 
-  refresh: boolean = false, 
-  provider?: SerpProvider
+  keyword: string,
+  refresh: boolean = false
 ): Promise<SerpAnalysisResult | null> => {
-  if (!keyword) {
-    throw new SerpApiError({
-      type: SerpErrorType.INVALID_KEYWORD,
-      message: 'Keyword is required',
-      provider: 'unknown',
-      timestamp: new Date(),
-      recoverable: true
-    });
-  }
-  
-  // Check if any provider is available
-  const requestedProvider = provider;
-  let activeProvider = requestedProvider || getActiveProvider();
-  
-  if (!activeProvider) {
-    console.log('No API keys available for any SERP provider');
+  if (!keyword.trim()) {
+    console.warn('Empty keyword provided to analyzeSerpKeyword');
     return null;
   }
-  
-  // If requested provider doesn't have an API key, fall back to mock
-  if (requestedProvider === 'serpapi' && !localStorage.getItem('serp_api_key')) {
-    activeProvider = 'mock';
-  }
-  
-  // Check cache first unless refresh is requested
-  const cacheKey = `serp_analysis_${activeProvider}_${keyword}`;
-  if (!refresh && getFromCache(cacheKey)) {
-    return getFromCache(cacheKey);
+
+  // Check cache if refresh is not requested
+  if (!refresh) {
+    const cachedResult = getFromCache(keyword);
+    if (cachedResult) {
+      return cachedResult;
+    }
   }
   
   try {
-    const adapter = AdapterFactory.getAdapter(activeProvider);
-    
-    // Get actual result from the adapter
-    const options: SerpApiOptions = { 
-      keyword, 
-      refresh,
-      provider: activeProvider
-    };
-    
-    try {
-      console.log(`Analyzing keyword "${keyword}" with provider: ${activeProvider}`);
-      const result = await adapter.analyzeKeyword(options);
-      
-      if (!result) {
-        console.warn(`No data returned for keyword "${keyword}" with provider ${activeProvider}`);
-        return null;
-      }
-      
-      // Track usage
-      UsageTracker.trackQuery(activeProvider, 'analyze_keyword', keyword);
-      
-      // Cache the result
-      saveToCache(cacheKey, result);
-      
-      return result;
-    } catch (error) {
-      console.error(`Error analyzing keyword "${keyword}" with provider ${activeProvider}:`, error);
-      
-      const serpError = error instanceof SerpApiError 
-        ? error 
-        : ErrorHandler.handleProviderError(error, activeProvider);
-      
-      console.error('SERP API Error:', serpError);
-      
-      // Return null on error
-      return null;
-    }
+    // Get the correct adapter
+    const provider = getActiveProvider();
+    const adapter = AdapterFactory.getAdapter(provider);
+
+    // Track usage
+    UsageTracker.trackRequest(provider, 'analyze_keyword');
+
+    // Get data from API
+    const result = await adapter.analyzeKeyword(keyword);
+
+    // Save to cache
+    saveToCache(keyword, result);
+
+    return result;
   } catch (error) {
-    console.error('Error analyzing SERP keyword:', error);
-    
-    if (error instanceof SerpApiError) {
-      throw error;
-    }
-    
-    throw new SerpApiError({
-      type: SerpErrorType.UNKNOWN_ERROR,
-      message: error instanceof Error ? error.message : 'Unknown error analyzing keyword',
-      provider: 'unknown',
-      timestamp: new Date(),
-      recoverable: false,
-      details: error
-    });
+    console.error('Error analyzing keyword:', error);
+    toast.error('Failed to analyze keyword. Please check your API key and try again.');
+    return null;
   }
 };
 
-/**
- * Search for keywords using the active SERP provider
- */
-export const searchSerpKeywords = async (keyword: string, refresh: boolean = false) => {
-  if (!keyword) {
-    throw new Error('Keyword is required');
-  }
-  
-  // Check if any provider is available
-  const provider = getActiveProvider();
-  if (!provider) {
-    console.log('No API keys available for any SERP provider');
+// Search for keywords related to a query
+export const searchSerpKeywords = async (
+  query: string,
+  refresh: boolean = false
+): Promise<string[]> => {
+  if (!query.trim()) {
     return [];
   }
-  
-  const adapter = AdapterFactory.getAdapter(provider);
-  
-  const options = { 
-    keyword, 
-    refresh, 
-    limit: 10
-  };
-  
+
+  // Check cache if refresh is not requested
+  if (!refresh) {
+    const cacheKey = `search_${query}`;
+    const cachedResult = getFromCache(cacheKey);
+    if (cachedResult && Array.isArray(cachedResult)) {
+      return cachedResult;
+    }
+  }
+
   try {
-    const result = await adapter.searchKeywords(options);
-    
+    // Get the correct adapter
+    const provider = getActiveProvider();
+    const adapter = AdapterFactory.getAdapter(provider);
+
     // Track usage
-    UsageTracker.trackQuery(provider, 'search_keywords', keyword);
-    
-    return result;
+    UsageTracker.trackRequest(provider, 'keyword_search');
+
+    // Get data from API
+    const results = await adapter.searchKeywords({ query });
+
+    // Save to cache
+    const cacheKey = `search_${query}`;
+    saveToCache(cacheKey, results);
+
+    return results;
   } catch (error) {
-    console.error(`Error searching keywords for "${keyword}":`, error);
+    console.error('Error searching for keywords:', error);
+    toast.error('Failed to search keywords. Please check your API key and try again.');
     return [];
   }
 };
 
-/**
- * Search for related keywords using the active SERP provider
- */
-export const searchRelatedKeywords = async (keyword: string, refresh: boolean = false) => {
-  if (!keyword) {
-    throw new Error('Keyword is required');
-  }
-  
-  // Check if any provider is available
-  const provider = getActiveProvider();
-  if (!provider) {
-    console.log('No API keys available for any SERP provider');
+// Get related keywords for a seed keyword
+export const searchRelatedKeywords = async (
+  keyword: string,
+  refresh: boolean = false
+): Promise<string[]> => {
+  if (!keyword.trim()) {
     return [];
   }
-  
-  const adapter = AdapterFactory.getAdapter(provider);
-  
-  const options = { 
-    keyword, 
-    refresh, 
-    limit: 20
-  };
-  
+
+  // Check cache if refresh is not requested
+  if (!refresh) {
+    const cacheKey = `related_${keyword}`;
+    const cachedResult = getFromCache(cacheKey);
+    if (cachedResult && Array.isArray(cachedResult)) {
+      return cachedResult;
+    }
+  }
+
   try {
-    const result = await adapter.searchRelatedKeywords(options);
-    
+    // Get the correct adapter
+    const provider = getActiveProvider();
+    const adapter = AdapterFactory.getAdapter(provider);
+
     // Track usage
-    UsageTracker.trackQuery(provider, 'search_related', keyword);
-    
-    return result;
+    UsageTracker.trackRequest(provider, 'related_keywords');
+
+    // Get data from API
+    const results = await adapter.getRelatedKeywords(keyword);
+
+    // Save to cache
+    const cacheKey = `related_${keyword}`;
+    saveToCache(cacheKey, results);
+
+    return results;
   } catch (error) {
-    console.error(`Error searching related keywords for "${keyword}":`, error);
+    console.error('Error getting related keywords:', error);
+    toast.error('Failed to get related keywords. Please check your API key and try again.');
     return [];
   }
 };

@@ -3,7 +3,12 @@ import React, { createContext, useContext, useState } from 'react';
 import { toast } from 'sonner';
 import { analyzeSerpKeyword } from '@/services/serpApiService';
 import type { SerpAnalysisResult } from '@/types/serp';
-import { generateSeoReport } from '@/services/aiProcessingService';
+import { 
+  generateSeoReport, 
+  improveContentWithAI, 
+  generateTitleSuggestions,
+  generateMetadata 
+} from '@/services/aiProcessingService';
 
 export interface ApprovalContextValue {
   // Content state
@@ -32,6 +37,16 @@ export interface ApprovalContextValue {
   // Selection state
   selectedKeyword: string | null;
   setSelectedKeyword: (keyword: string | null) => void;
+  
+  // New properties and methods
+  serpData: SerpAnalysisResult | null;
+  isFetchingSerp: boolean;
+  fetchSerpData: (keyword: string) => Promise<void>;
+  improveContentWithAI: (content: any) => Promise<string>;
+  isImproving: boolean;
+  generateTitleSuggestions: (content: any) => Promise<string[]>;
+  generateMetadata: (content: string, keywords: string[]) => Promise<{ metaTitle: string, metaDescription: string }>;
+  findInterLinkingOpportunities: (content: any) => void;
 }
 
 const ApprovalContext = createContext<ApprovalContextValue | null>(null);
@@ -56,6 +71,11 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
   // SERP analysis state
   const [serpAnalysisData, setSerpAnalysisData] = useState<Record<string, SerpAnalysisResult | null>>({});
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [serpData, setSerpData] = useState<SerpAnalysisResult | null>(null);
+  const [isFetchingSerp, setIsFetchingSerp] = useState<boolean>(false);
+  
+  // AI processing states
+  const [isImproving, setIsImproving] = useState<boolean>(false);
   
   // SEO analysis state
   const [seoScore, setSeoScore] = useState<number>(0);
@@ -107,6 +127,24 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
     }
   };
   
+  // Fetch SERP data for keyword
+  const fetchSerpData = async (keyword: string) => {
+    if (!keyword || isFetchingSerp) return;
+    
+    setIsFetchingSerp(true);
+    
+    try {
+      const data = await analyzeSerpKeyword(keyword);
+      setSerpData(data);
+    } catch (error: any) {
+      console.error('Error fetching SERP data:', error);
+      toast.error(`Failed to fetch SERP data: ${error.message}`);
+      setSerpData(null);
+    } finally {
+      setIsFetchingSerp(false);
+    }
+  };
+  
   // Generate SEO analysis for the content
   const generateSeoAnalysis = async () => {
     if (!content || keywords.length === 0) {
@@ -136,6 +174,30 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
     }
   };
   
+  // Improve content using AI
+  const handleImproveContentWithAI = async (contentData: any) => {
+    if (!contentData) return '';
+    
+    setIsImproving(true);
+    try {
+      const improved = await improveContentWithAI(contentData);
+      return improved;
+    } catch (error: any) {
+      toast.error(`Failed to improve content: ${error.message}`);
+      return contentData.content || '';
+    } finally {
+      setIsImproving(false);
+    }
+  };
+  
+  // Find interlinking opportunities
+  const findInterLinkingOpportunities = (contentData: any) => {
+    // In a real implementation, this would analyze the content and find opportunities
+    // for interlinking with other content items
+    console.log('Finding interlinking opportunities for:', contentData?.title);
+    // This would be implemented with actual logic in a production environment
+  };
+  
   const value: ApprovalContextValue = {
     content,
     setContent,
@@ -151,7 +213,16 @@ export const ApprovalProvider: React.FC<ApprovalProviderProps> = ({
     isAnalyzing,
     isGeneratingReport,
     selectedKeyword,
-    setSelectedKeyword
+    setSelectedKeyword,
+    // New properties
+    serpData,
+    isFetchingSerp,
+    fetchSerpData,
+    improveContentWithAI: handleImproveContentWithAI,
+    isImproving,
+    generateTitleSuggestions,
+    generateMetadata,
+    findInterLinkingOpportunities
   };
   
   return (

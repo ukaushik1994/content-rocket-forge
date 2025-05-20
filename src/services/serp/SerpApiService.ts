@@ -28,3 +28,12 @@ export { getFromCache, saveToCache } from './cache/SerpCache';
 
 // Export SerpAnalysisResult type for external use
 export type { SerpAnalysisResult } from '@/types/serp';
+
+// Legacy aliases for backward compatibility
+export const analyzeKeywordSerp = (keyword: string, refresh?: boolean) => {
+  return analyzeSerpKeyword(keyword, refresh);
+};
+
+export const searchKeywords = (params: { query: string, limit?: number, refresh?: boolean }) => {
+  return searchSerpKeywords(params.query, params.refresh);
+};

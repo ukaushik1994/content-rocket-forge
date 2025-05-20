@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Search, Info } from 'lucide-react';
 import { useApproval } from '../context/ApprovalContext';
-import { analyzeSerpKeyword } from '@/services/serpApiService';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -14,42 +13,60 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { SerpAnalysisResult } from '@/types/serp';
 
 interface ApprovalSerpSummaryProps {
   className?: string;
+  serpData?: SerpAnalysisResult | null;
+  isLoading?: boolean;
+  mainKeyword?: string;
+  onAddToContent?: (content: string, type: string) => void;
 }
 
-export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ className }) => {
+export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ 
+  className,
+  serpData: externalSerpData,
+  isLoading: externalIsLoading,
+  mainKeyword: externalMainKeyword,
+  onAddToContent
+}) => {
   const { 
     keywords, 
     selectedKeyword, 
     setSelectedKeyword, 
     serpAnalysisData,
     analyzeSerpData,
-    isAnalyzing
+    isAnalyzing,
+    serpData: contextSerpData,
+    isFetchingSerp
   } = useApproval();
+  
+  // Use external props if provided, otherwise use context values
+  const activeSerpData = externalSerpData || contextSerpData;
+  const isLoading = externalIsLoading !== undefined ? externalIsLoading : isFetchingSerp;
+  const mainKeyword = externalMainKeyword || (selectedKeyword || (keywords.length > 0 ? keywords[0] : ''));
   
   // Analyze the first keyword if we have one and no analysis yet
   useEffect(() => {
     const analyzeFirstKeyword = async () => {
-      if (keywords.length > 0 && !serpAnalysisData[keywords[0]] && !isAnalyzing) {
+      if (keywords.length > 0 && !serpAnalysisData[keywords[0]] && !isAnalyzing && !externalSerpData) {
         analyzeSerpData(keywords[0]);
         setSelectedKeyword(keywords[0]);
       }
     };
     
     analyzeFirstKeyword();
-  }, [keywords, serpAnalysisData, isAnalyzing]);
+  }, [keywords, serpAnalysisData, isAnalyzing, externalSerpData]);
   
   // Get the currently selected SERP data
-  const selectedSerpData = selectedKeyword ? serpAnalysisData[selectedKeyword] : null;
+  const selectedSerpData = (externalSerpData) || (selectedKeyword ? serpAnalysisData[selectedKeyword] : null);
   
   // Handle selecting a keyword
   const handleSelectKeyword = (keyword: string) => {
     setSelectedKeyword(keyword);
     
     // If we don't have SERP data for this keyword yet, analyze it
-    if (!serpAnalysisData[keyword] && !isAnalyzing) {
+    if (!serpAnalysisData[keyword] && !isAnalyzing && !externalSerpData) {
       analyzeSerpData(keyword);
     }
   };
@@ -58,6 +75,13 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
   const handleRefreshSerpData = () => {
     if (selectedKeyword) {
       analyzeSerpData(selectedKeyword);
+    }
+  };
+
+  // Handle adding content to the editor
+  const handleAddToContent = (content: string, type: string) => {
+    if (onAddToContent) {
+      onAddToContent(content, type);
     }
   };
 
@@ -74,7 +98,7 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
                   size="icon" 
                   className="h-6 w-6"
                   onClick={handleRefreshSerpData}
-                  disabled={isAnalyzing || !selectedKeyword}
+                  disabled={isLoading || !selectedKeyword}
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -106,7 +130,12 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
                 )}
               </Badge>
             ))}
-            {keywords.length === 0 && (
+            {keywords.length === 0 && mainKeyword && (
+              <Badge variant="default" className="bg-blue-600">
+                {mainKeyword}
+              </Badge>
+            )}
+            {keywords.length === 0 && !mainKeyword && (
               <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <Info className="h-3 w-3" />
                 No keywords added yet
@@ -114,14 +143,14 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
             )}
           </div>
           
-          {isAnalyzing && selectedKeyword && (
+          {isLoading && selectedKeyword && (
             <div className="text-xs text-muted-foreground animate-pulse">
               Analyzing {selectedKeyword}...
             </div>
           )}
           
           <ScrollArea className="h-[240px] pr-3">
-            {selectedKeyword && selectedSerpData ? (
+            {selectedSerpData ? (
               <div className="space-y-4">
                 {/* Search Volume */}
                 <div className="space-y-1.5">
@@ -152,7 +181,12 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
                   <div className="text-xs font-medium opacity-60">Related Searches</div>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedSerpData.relatedSearches?.slice(0, 5).map((search: any, idx: number) => (
-                      <Badge key={idx} variant="outline" className="text-[10px] bg-slate-100 text-slate-800">
+                      <Badge 
+                        key={idx} 
+                        variant="outline" 
+                        className="text-[10px] bg-slate-100 text-slate-800 cursor-pointer hover:bg-slate-200"
+                        onClick={() => onAddToContent && handleAddToContent(search.query || search, 'keyword')}
+                      >
                         {search.query || search}
                       </Badge>
                     ))}
@@ -167,7 +201,11 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
                   <div className="text-xs font-medium opacity-60">People Also Ask</div>
                   <div className="space-y-2">
                     {selectedSerpData.peopleAlsoAsk?.slice(0, 3).map((item: any, idx: number) => (
-                      <div key={idx} className="text-xs">
+                      <div 
+                        key={idx} 
+                        className="text-xs cursor-pointer hover:bg-slate-50 p-1 rounded"
+                        onClick={() => onAddToContent && handleAddToContent(item.question, 'question')}
+                      >
                         <div className="font-medium">{item.question}</div>
                       </div>
                     ))}
@@ -179,8 +217,8 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                {selectedKeyword ? (
-                  isAnalyzing ? (
+                {mainKeyword ? (
+                  isLoading ? (
                     <div className="space-y-3">
                       <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500" />
                       <p className="text-sm text-muted-foreground">Analyzing keyword...</p>
@@ -192,8 +230,8 @@ export const ApprovalSerpSummary: React.FC<ApprovalSerpSummaryProps> = ({ classN
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        onClick={() => analyzeSerpData(selectedKeyword)}
-                        disabled={isAnalyzing}
+                        onClick={() => analyzeSerpData(mainKeyword)}
+                        disabled={isLoading}
                       >
                         Analyze Now
                       </Button>
