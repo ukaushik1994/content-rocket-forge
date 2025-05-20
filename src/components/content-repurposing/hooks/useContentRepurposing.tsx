@@ -2,11 +2,10 @@
 import { useState } from 'react';
 import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
+import { useContentDialog } from './repurposing/useContentDialog';
 import { useContentActions } from './repurposing/useContentActions';
-import { useRepurposedDialog } from './repurposing/useRepurposedDialog';
-import { ContentRepurposingHookReturn } from './repurposing/types/hook-types';
 
-export const useContentRepurposing = (): ContentRepurposingHookReturn => {
+export const useContentRepurposing = () => {
   // Compose hooks for different functionality
   const { content, handleContentSelection, resetContent } = useContentSelection();
   
@@ -29,27 +28,47 @@ export const useContentRepurposing = (): ContentRepurposingHookReturn => {
     isDeleting,
     isSaving,
     findRepurposedContent,
-    fetchSavedFormats,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
     deleteRepurposedContent,
   } = useContentActions(content);
   
-  // Use our new dialog hook that depends on findRepurposedContent
+  // contentDialog hook depends on findRepurposedContent
   const {
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats,
-    handleOpenRepurposedContentWithFormats,
+    handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
-    handleFormatChange,
-  } = useRepurposedDialog(findRepurposedContent);
+    handleFormatChange: formatChangeHandler,
+  } = useContentDialog(findRepurposedContent);
   
   // Handle deleting from the generated content view (when content is already selected)
   const handleDeleteActiveFormat = async (formatId: string): Promise<boolean> => {
     if (!content || !formatId) return false;
     return deleteRepurposedContent(content.id, formatId);
+  };
+  
+  // Update this function to safely pass generated formats
+  const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
+    if (!contentId || !formatId) {
+      console.error("Invalid content or format ID");
+      return;
+    }
+    
+    // Get all formats that have been generated for this content
+    const availableFormats = generatedContents ? Object.keys(generatedContents) : [];
+    handleOpenRepurposedContent(contentId, formatId, availableFormats);
+  };
+  
+  // Wrapper for format change handler
+  const handleFormatChange = (contentId: string, formatId: string) => {
+    if (!contentId || !formatId) {
+      console.error("Invalid content or format ID for format change");
+      return;
+    }
+    formatChangeHandler(contentId, formatId);
   };
   
   // Ensure we always return properly defined values
@@ -80,7 +99,7 @@ export const useContentRepurposing = (): ContentRepurposingHookReturn => {
     downloadAsText,
     saveAsNewContent,
     findRepurposedContent,
-    deleteRepurposedContent, // Make sure this is included in the return object
+    deleteRepurposedContent,
     handleDeleteActiveFormat,
     resetContent,
     markAsSaved,

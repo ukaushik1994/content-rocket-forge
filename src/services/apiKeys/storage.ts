@@ -8,6 +8,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { encryptKey, decryptKey } from "./encryption";
+import { SerpProvider } from "@/contexts/content-builder/types/serp-types";
 
 export type StorageMethod = 'localStorage' | 'database';
 
@@ -44,33 +45,36 @@ export async function saveApiKey(
       if (!user) {
         // Fallback to localStorage if not authenticated
         localStorage.setItem(`${service}_api_key`, key);
-        toast.warning("You're not logged in - API key saved to local storage only");
         return true;
       }
       
-      const encrypted_key = encryptKey(key);
-      if (!encrypted_key) {
-        throw new Error('Failed to encrypt API key');
-      }
+      const userId = user.id;
       
-      // Check if this service already has a key for this user
+      // Make sure the key is valid before saving
+      if (key === 'SERP_API_KEY' || key === 'OPENAI_API_KEY') {
+        throw new Error(`It looks like you're trying to save a placeholder value. Please enter a valid API key.`);
+      }
+
       const { data: existingKey, error: fetchError } = await supabase
         .from('api_keys')
         .select('*')
         .eq('service', service)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
-        
-      if (fetchError) {
-        console.error('Error checking for existing API key:', fetchError);
-        throw new Error('Failed to check for existing API key');
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
+
+      const encrypted_key = encryptKey(key);
       
-      let result;
-      
-      // Update or insert the key
+      if (!encrypted_key) {
+        throw new Error(`Failed to encrypt the ${service} API key`);
+      }
+
       if (existingKey) {
-        result = await supabase
+        // Update existing key
+        const { error } = await supabase
           .from('api_keys')
           .update({ 
             encrypted_key, 
@@ -78,20 +82,26 @@ export async function saveApiKey(
             updated_at: new Date().toISOString()
           })
           .eq('id', existingKey.id);
+
+        if (error) {
+          console.error('Error updating API key:', error);
+          throw error;
+        }
       } else {
-        result = await supabase
+        // Insert new key
+        const { error } = await supabase
           .from('api_keys')
           .insert({ 
             service, 
             encrypted_key, 
             is_active: true,
-            user_id: user.id
+            user_id: userId
           });
-      }
-      
-      if (result.error) {
-        console.error('Error saving API key to database:', result.error);
-        throw new Error('Failed to save API key to database');
+
+        if (error) {
+          console.error('Error inserting API key:', error);
+          throw error;
+        }
       }
       
       return true;
@@ -116,48 +126,76 @@ export async function getApiKey(
   method: StorageMethod = 'database'
 ): Promise<string | null> {
   try {
-    // Try to get from localStorage first (for backward compatibility)
-    const localKey = localStorage.getItem(`${service}_api_key`);
-    
-    // If we're explicitly looking for localStorage or not authenticated, return the local key
-    if (method === 'localStorage') {
-      return localKey;
+    // Always check localStorage first for DataForSEO
+    if (service === 'dataforseo') {
+      const localKey = localStorage.getItem(`${service}_api_key`);
+      if (localKey) return localKey;
     }
     
-    // Check if the user is authenticated
+    // Check the preferred method first
+    if (method === 'localStorage') {
+      const localKey = localStorage.getItem(`${service}_api_key`);
+      if (localKey) return localKey;
+      
+      // Fallback to database if not found in localStorage
+      return await getDatabaseApiKey(service);
+    } else {
+      // Try database first
+      const dbKey = await getDatabaseApiKey(service);
+      if (dbKey) return dbKey;
+      
+      // Fallback to localStorage
+      return localStorage.getItem(`${service}_api_key`);
+    }
+  } catch (error) {
+    console.error(`Error fetching ${service} API key:`, error);
+    // Fallback to localStorage if database fetch fails
+    return localStorage.getItem(`${service}_api_key`);
+  }
+}
+
+/**
+ * Helper function to get an API key from the database
+ */
+async function getDatabaseApiKey(service: string): Promise<string | null> {
+  try {
+    // Get the current user ID
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      // Not authenticated, use localStorage
-      return localKey;
+      return null;
     }
     
-    // Try to get from database
+    const userId = user.id;
+
     const { data, error } = await supabase
       .from('api_keys')
       .select('encrypted_key')
       .eq('service', service)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true)
       .maybeSingle();
-      
+
     if (error) {
-      console.error('Error getting API key from database:', error);
-      // Fall back to localStorage in case of error
-      return localKey;
+      console.error(`Error fetching ${service} API key:`, error);
+      return null;
     }
     
-    if (data?.encrypted_key) {
-      const decrypted = decryptKey(data.encrypted_key);
-      return decrypted;
+    if (!data || !data.encrypted_key) {
+      return null;
     }
     
-    // If no key in database, fall back to localStorage
-    return localKey;
+    const decryptedKey = decryptKey(data.encrypted_key);
+    
+    if (!decryptedKey || decryptedKey === 'SERP_API_KEY' || decryptedKey === 'OPENAI_API_KEY') {
+      console.error(`Invalid ${service} API key retrieved from database`);
+      return null;
+    }
+    
+    return decryptedKey;
   } catch (error) {
-    console.error(`Error fetching ${service} API key:`, error);
-    // Attempt to fall back to localStorage in case of error
-    return localStorage.getItem(`${service}_api_key`);
+    console.error(`Error fetching ${service} API key from database:`, error);
+    return null;
   }
 }
 
@@ -172,31 +210,30 @@ export async function deleteApiKey(
   method: StorageMethod = 'database'
 ): Promise<boolean> {
   try {
-    // Always remove from localStorage for cleanup
-    localStorage.removeItem(`${service}_api_key`);
-    
-    if (method === 'localStorage') {
-      return true;
+    if (method === 'localStorage' || service === 'dataforseo') {
+      localStorage.removeItem(`${service}_api_key`);
     }
     
-    // Check if the user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      // Not authenticated, just removed from localStorage
-      return true;
-    }
-    
-    // Delete from database
-    const { error } = await supabase
-      .from('api_keys')
-      .delete()
-      .eq('service', service)
-      .eq('user_id', user.id);
+    if (method === 'database') {
+      // Get the current user ID
+      const { data: { user } } = await supabase.auth.getUser();
       
-    if (error) {
-      console.error('Error deleting API key from database:', error);
-      throw new Error('Failed to delete API key from database');
+      if (!user) {
+        return true; // If not authenticated, we've already removed from localStorage
+      }
+      
+      const userId = user.id;
+
+      const { error } = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('service', service)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error deleting API key from database:', error);
+        throw error;
+      }
     }
     
     return true;
@@ -215,4 +252,13 @@ export async function deleteApiKey(
 export async function hasApiKey(service: string): Promise<boolean> {
   const key = await getApiKey(service);
   return key !== null && key !== '';
+}
+
+/**
+ * Gets the preferred storage method based on authentication state
+ * @returns The preferred storage method
+ */
+export async function getPreferredStorageMethod(): Promise<StorageMethod> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ? 'database' : 'localStorage';
 }

@@ -39,33 +39,6 @@ export type Database = {
         }
         Relationships: []
       }
-      content_formats: {
-        Row: {
-          created_at: string
-          description: string | null
-          format_code: string
-          icon_type: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          format_code: string
-          icon_type?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          format_code?: string
-          icon_type?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       content_items: {
         Row: {
           content: string | null
@@ -240,63 +213,6 @@ export type Database = {
         }
         Relationships: []
       }
-      repurposed_contents: {
-        Row: {
-          content: string
-          content_id: string
-          created_at: string
-          format_code: string
-          id: string
-          metadata: Json | null
-          status: string
-          title: string | null
-          updated_at: string
-          user_id: string
-          version: number
-        }
-        Insert: {
-          content: string
-          content_id: string
-          created_at?: string
-          format_code: string
-          id?: string
-          metadata?: Json | null
-          status?: string
-          title?: string | null
-          updated_at?: string
-          user_id: string
-          version?: number
-        }
-        Update: {
-          content?: string
-          content_id?: string
-          created_at?: string
-          format_code?: string
-          id?: string
-          metadata?: Json | null
-          status?: string
-          title?: string | null
-          updated_at?: string
-          user_id?: string
-          version?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "repurposed_contents_content_id_fkey"
-            columns: ["content_id"]
-            isOneToOne: false
-            referencedRelation: "content_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "repurposed_contents_format_code_fkey"
-            columns: ["format_code"]
-            isOneToOne: false
-            referencedRelation: "content_formats"
-            referencedColumns: ["format_code"]
-          },
-        ]
-      }
       solutions: {
         Row: {
           category: string | null
@@ -358,10 +274,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      migrate_repurposed_content: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

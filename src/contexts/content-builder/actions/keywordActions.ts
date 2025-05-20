@@ -16,15 +16,11 @@ export const createKeywordActions = (
   const removeKeyword = (keyword: string) => {
     dispatch({ type: 'REMOVE_KEYWORD', payload: keyword });
   };
-  
-  const setSelectedKeyword = (keyword: string) => {
-    dispatch({ type: 'SET_SELECTED_KEYWORD', payload: keyword });
-  };
 
   return {
     setMainKeyword,
     addKeyword,
-    removeKeyword,
-    setSelectedKeyword
+    removeKeyword
   };
 };
+

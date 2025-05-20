@@ -8,11 +8,4 @@ export type ApiKeyType = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  user_id: string;
-};
-
-export type ApiKeyLastVerified = {
-  service: string;
-  verified_at: string;
-  is_valid: boolean;
 };

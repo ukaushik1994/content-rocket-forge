@@ -1,6 +1,6 @@
 
 import { callApiProxy } from './apiProxyService';
-import { analyzeSerpKeyword, searchSerpKeywords } from './serp/SerpApiService';
+import { analyzeSerpKeyword, searchKeywords } from './serpApiService';
 import { SerpSearchParams } from '@/types/serp';
 
 export interface KeywordSuggestion {
@@ -27,8 +27,11 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
   try {
     console.log('Starting keyword research for:', keyword);
     
-    // Get SERP data for the keyword - use searchSerpKeywords with string parameter
-    const serpResults = await searchSerpKeywords(keyword, false);
+    // Get SERP data for the keyword
+    const serpResults = await searchKeywords({
+      query: keyword,
+      limit: 10
+    });
     
     console.log('SERP results received:', serpResults?.length || 0);
     

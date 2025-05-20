@@ -1,82 +1,73 @@
 
 import React from 'react';
-import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
-import { KeywordInsightCard } from '@/components/content-builder/keyword/KeywordInsightCard';
-import { KeywordSuggestionList } from '@/components/content-builder/keyword/KeywordSuggestionList';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ContentBuilderState } from '@/contexts/content-builder/types';
+import { SelectedKeywords } from '../../keyword/SelectedKeywords';
+import { SelectedItemsSidebar } from '../serp-analysis/SelectedItemsSidebar';
+import { SerpAnalysisPanel } from '../../serp/SerpAnalysisPanel';
+import { SerpSelectionStats } from '../serp-analysis/SerpSelectionStats';
 
 interface KeywordSelectionContentProps {
-  mainKeyword: string;
-  keywordSuggestions: string[];
-  selectedKeyword: string;
-  relatedKeywords: string[];
-  isLoadingKeywordData: boolean;
-  isAnalyzing: boolean;
-  onKeywordSearch: (keyword: string, suggestions: string[]) => void;
-  onKeywordSelect: (keyword: string) => void;
-  onContinue: () => void;
+  state: ContentBuilderState;
+  handleRemoveKeyword: (kw: string) => void;
+  handleAddToContent: (content: string, type: string) => void;
+  handleToggleSelection: (type: string, content: string) => void;
 }
 
 export const KeywordSelectionContent: React.FC<KeywordSelectionContentProps> = ({
-  mainKeyword,
-  keywordSuggestions,
-  selectedKeyword,
-  relatedKeywords,
-  isLoadingKeywordData,
-  isAnalyzing,
-  onKeywordSearch,
-  onKeywordSelect,
-  onContinue
+  state,
+  handleRemoveKeyword,
+  handleAddToContent,
+  handleToggleSelection
 }) => {
+  const {
+    mainKeyword,
+    selectedKeywords,
+    serpData,
+    serpSelections,
+    isAnalyzing
+  } = state;
+  
+  // Get selection statistics for the SERP data
+  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
+  
   return (
     <motion.div 
+      className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="space-y-6"
+      key="results-state"
     >
-      {/* Keyword search input */}
-      <KeywordSearch 
-        initialKeyword={mainKeyword} 
-        onKeywordSearch={onKeywordSearch} 
-      />
-
-      {/* Keyword suggestions list */}
-      {keywordSuggestions.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Keyword Suggestions</h3>
-          <KeywordSuggestionList 
-            keywords={keywordSuggestions}
-            selectedKeyword={selectedKeyword}
-            onKeywordSelect={onKeywordSelect}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column - Keyword selections */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Selected Keywords */}
+          <div className="animate-fade-in">
+            <SelectedKeywords 
+              keywords={selectedKeywords} 
+              onRemoveKeyword={handleRemoveKeyword} 
+            />
+          </div>
+          
+          {/* Selected Items Sidebar */}
+          <SelectedItemsSidebar 
+            serpSelections={serpSelections}
+            totalSelected={totalSelected}
+            selectedCounts={selectedCounts}
+            handleToggleSelection={handleToggleSelection}
           />
         </div>
-      )}
-
-      {/* Keyword insights */}
-      {selectedKeyword && (
-        <KeywordInsightCard 
-          keyword={selectedKeyword}
-          relatedKeywords={relatedKeywords}
-          isLoading={isLoadingKeywordData}
-        />
-      )}
-
-      {/* Continue button */}
-      {selectedKeyword && (
-        <div className="flex justify-end pt-4">
-          <Button 
-            onClick={onContinue}
-            disabled={isAnalyzing || !selectedKeyword}
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-          >
-            Continue to Analysis
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+        
+        {/* Right column - SERP Analysis */}
+        <div className="lg:col-span-2">
+          <SerpAnalysisPanel 
+            serpData={serpData}
+            isLoading={isAnalyzing}
+            mainKeyword={mainKeyword}
+            onAddToContent={handleAddToContent}
+          />
         </div>
-      )}
+      </div>
     </motion.div>
   );
 };

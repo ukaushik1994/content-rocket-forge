@@ -1,62 +1,25 @@
 
 import React from 'react';
-import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-interface InitialStateViewProps {
-  onKeywordSearch?: (keyword: string, suggestions: string[]) => void;
-}
-
-export const InitialStateView: React.FC<InitialStateViewProps> = ({ 
-  onKeywordSearch 
-}) => {
-  // If no onKeywordSearch is provided, create a dummy function
-  const handleKeywordSearch = onKeywordSearch || (() => {});
-  
+export const InitialStateView = () => {
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Start Your Content Journey</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            Enter a main keyword to begin your content creation process. We'll analyze it and 
-            suggest related keywords to help you build comprehensive content.
-          </p>
-          
-          <KeywordSearch 
-            initialKeyword="" 
-            onKeywordSearch={handleKeywordSearch} 
-          />
-        </CardContent>
-      </Card>
-      
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Expert Tip</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Choose keywords with search volume that matches your site's authority. 
-              New sites should target less competitive keywords first.
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">SEO Strategy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Focus on topics where you can provide unique value or insights that 
-              aren't available elsewhere online.
-            </p>
-          </CardContent>
-        </Card>
+    <motion.div 
+      className="flex flex-col items-center justify-center py-16 text-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      key="initial-state"
+    >
+      <div className="rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-6 mb-4">
+        <Sparkles className="h-8 w-8 text-neon-purple" />
       </div>
-    </div>
+      <h3 className="text-xl font-medium mb-2">Search to analyze your keyword</h3>
+      <p className="text-sm text-muted-foreground max-w-md">
+        Enter your main keyword above to see search insights, 
+        related keywords, and content suggestions from top-ranking pages
+      </p>
+    </motion.div>
   );
 };

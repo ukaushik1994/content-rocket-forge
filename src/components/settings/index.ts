@@ -8,7 +8,7 @@ export * from './api/AvailableProviders';
 export * from './api/DefaultAiProviderSelector';
 
 // Export settings pages
-export { APISettings } from './APISettings';
+export * from './APISettings';
 export * from './ProfileSettings';
 export * from './NotificationSettings';
 export * from './AppearanceSettings';

@@ -1,5 +1,5 @@
 
-import { testApiKey, isDataForSeoFormat } from "@/services/apiKeyService";
+import { isDataForSeoFormat } from "@/services/apiKeyService";
 import { ApiProviderConfig } from '@/components/settings/api/types';
 import { TestResponse } from '../../ProviderTestPanel';
 import { toast } from "sonner";

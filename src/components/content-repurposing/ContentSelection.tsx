@@ -22,7 +22,6 @@ interface ContentSelectionProps {
   isDeleting?: boolean;
   isLoadingFormat?: boolean;
   generatedFormats?: string[];
-  formatsMap?: Record<string, string[]>;
 }
 
 const ContentSelection: React.FC<ContentSelectionProps> = memo(({
@@ -38,8 +37,7 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
   onFormatChange,
   isDeleting = false,
   isLoadingFormat = false,
-  generatedFormats = [],
-  formatsMap = {}
+  generatedFormats = []
 }) => {
   // Add state for search functionality
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -67,7 +65,6 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
           onSelectContent={onSelectContent}
           onOpenRepurposedContent={onOpenRepurposedContent}
           isMobile={isMobile}
-          formatsMap={formatsMap}
         />
       )}
       

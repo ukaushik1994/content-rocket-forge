@@ -117,10 +117,10 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
             animate="visible"
             className="md:col-span-1 space-y-6"
           >
-            <ContentDetails content={content} onReset={resetContent} />
+            <ContentDetails content={content} />
             <ContentFormatSelection
               selectedFormats={selectedFormats}
-              onFormatChange={setSelectedFormats}
+              setSelectedFormats={setSelectedFormats}
               onGenerateContent={handleGenerateContent}
               isGenerating={isGenerating}
             />
@@ -136,14 +136,16 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
             <GeneratedContentDisplay
               generatedContents={generatedContents}
               activeFormat={activeFormat}
-              onFormatChange={setActiveFormat}
-              onCopy={copyToClipboard}
-              onDownload={downloadAsText}
-              onSave={saveAsNewContent}
-              onDelete={handleDeleteActiveFormat}
+              setActiveFormat={setActiveFormat}
+              onCopyToClipboard={copyToClipboard}
+              onDownloadAsText={downloadAsText}
+              onSaveAsNewContent={saveAsNewContent}
+              onSaveAllContent={handleSaveAllContent}
+              onDeleteRepurposedContent={handleDeleteActiveFormat}
               isDeleting={isDeleting}
               isSaving={isSaving}
-              savedFormats={savedContentFormats || []}
+              isSavingAll={isSavingAll}
+              savedContentFormats={savedContentFormats}
             />
           </motion.div>
         </div>

@@ -27,10 +27,13 @@ export const useContentSelection = () => {
     }
   }, [location, getContentItem]);
   
-  const handleContentSelection = (content: ContentItemType) => {
-    setContent(content);
-    // Update the URL without page reload
-    navigate(`/content-repurposing?id=${content.id}`, { replace: true });
+  const handleContentSelection = (contentId: string) => {
+    const selectedContent = getContentItem(contentId);
+    if (selectedContent) {
+      setContent(selectedContent);
+      // Update the URL without page reload
+      navigate(`/content-repurposing?id=${contentId}`, { replace: true });
+    }
   };
   
   // Add a resetContent function to clear the selected content and reset the URL
@@ -42,6 +45,6 @@ export const useContentSelection = () => {
   return {
     content,
     handleContentSelection,
-    resetContent,
+    resetContent, // Export the new resetContent function
   };
 };

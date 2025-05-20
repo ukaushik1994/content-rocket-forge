@@ -22,7 +22,6 @@ export interface ContentBuilderState {
   mainKeyword: string;
   selectedKeywords: string[];
   searchedKeywords: string[];
-  selectedKeyword?: string; // Added this field
   
   // Content Type
   contentType: ContentType;

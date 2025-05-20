@@ -3,12 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FileText, MousePointer } from 'lucide-react';
 
-interface SelectFormatDisplayProps {
-  formats: string[];
-  onSelect: (formatId: string) => void;
-}
-
-const SelectFormatDisplay: React.FC<SelectFormatDisplayProps> = ({ formats, onSelect }) => {
+const SelectFormatDisplay: React.FC = () => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { searchSerpKeywords } from '@/services/serp/SerpApiService';
+import { searchKeywords } from '@/services/serpApiService';
 import { RefreshButton } from '@/components/ui/refresh-button';
 
 interface KeywordSearchProps {
@@ -27,9 +27,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
 
     setIsSearching(true);
     try {
-      // Here we're using searchSerpKeywords which accepts a string parameter
-      const results = await searchSerpKeywords(keyword, false);
-      
+      const results = await searchKeywords({ query: keyword });
       // Make sure results is an array before accessing .map
       if (Array.isArray(results)) {
         // Extract keywords from search results with explicit type casting
@@ -74,8 +72,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
     
     setIsSearching(true);
     try {
-      // Use searchSerpKeywords with refresh flag set to true
-      const results = await searchSerpKeywords(keyword, true);
+      const results = await searchKeywords({ query: keyword, refresh: true });
       
       if (Array.isArray(results)) {
         // Extract different keywords for variety

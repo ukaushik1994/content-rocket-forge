@@ -78,11 +78,7 @@ export const useContentRewriter = () => {
             applied: false
           };
           
-          // Fix: Use SET_SEO_IMPROVEMENTS instead of ADD_SEO_IMPROVEMENT action
-          dispatch({ 
-            type: 'SET_SEO_IMPROVEMENTS', 
-            payload: [...seoImprovements, newImprovement] 
-          });
+          dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovement });
         }
       } catch (error) {
         console.error('Error generating rewritten content:', error);
