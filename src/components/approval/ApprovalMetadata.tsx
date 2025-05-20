@@ -31,8 +31,8 @@ export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) =
     setIsGenerating(true);
     try {
       const metadata = await generateMetadata(content);
-      setMetaTitle(metadata.title);
-      setMetaDescription(metadata.description);
+      setMetaTitle(metadata.metaTitle);
+      setMetaDescription(metadata.metaDescription);
       toast.success('Generated SEO metadata');
     } catch (error) {
       console.error('Error generating metadata:', error);

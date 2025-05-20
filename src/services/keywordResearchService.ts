@@ -28,10 +28,7 @@ export async function researchKeyword(keyword: string): Promise<KeywordResearchR
     console.log('Starting keyword research for:', keyword);
     
     // Get SERP data for the keyword
-    const serpResults = await searchSerpKeywords({
-      query: keyword,
-      limit: 10
-    });
+    const serpResults = await searchSerpKeywords(keyword);
     
     console.log('SERP results received:', serpResults?.length || 0);
     

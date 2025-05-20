@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
-import { useInView } from 'react-intersection-observer';
 import { searchSerpKeywords } from '@/services/serpApiService';
 import { toast } from 'sonner';
 
@@ -23,17 +22,14 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
   const [keyword, setKeyword] = useState<string>(defaultKeyword);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
-  const { ref, inView } = useInView();
-
-  // Auto-focus the input when it's in view
+  
+  // Auto-focus the input when component mounts
   useEffect(() => {
-    if (inView) {
-      const inputElement = document.getElementById('keyword-search-input');
-      if (inputElement) {
-        inputElement.focus();
-      }
+    const inputElement = document.getElementById('keyword-search-input');
+    if (inputElement) {
+      inputElement.focus();
     }
-  }, [inView]);
+  }, []);
 
   // Handle submitting the search
   const handleSearch = async (e?: React.FormEvent) => {
@@ -48,10 +44,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
     
     try {
       // Get keyword suggestions
-      const results = await searchSerpKeywords({
-        query: keyword.trim(),
-        limit: 15
-      });
+      const results = await searchSerpKeywords(keyword.trim());
       
       // Extract just the keyword strings
       const suggestions = Array.isArray(results) 
@@ -74,7 +67,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
 
   return (
     <form onSubmit={handleSearch} className="w-full">
-      <div className="relative" ref={ref}>
+      <div className="relative">
         <div className="flex space-x-2">
           <div className="relative flex-grow">
             <Input
@@ -84,7 +77,7 @@ export const KeywordSearch: React.FC<KeywordSearchProps> = ({
               onChange={(e) => setKeyword(e.target.value)}
               placeholder={placeholder}
               className="pr-10 w-full shadow-sm focus-visible:border-purple-500"
-              autoFocus={inView && !hasSearched}
+              autoFocus={!hasSearched}
             />
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>

@@ -1,73 +1,70 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { ContentBuilderState } from '@/contexts/content-builder/types';
-import { SelectedKeywords } from '../../keyword/SelectedKeywords';
-import { SelectedItemsSidebar } from '../serp-analysis/SelectedItemsSidebar';
-import { SerpAnalysisPanel } from '../../serp/SerpAnalysisPanel';
-import { SerpSelectionStats } from '../serp-analysis/SerpSelectionStats';
+import { Card, CardContent } from '@/components/ui/card';
+import { KeywordSearch } from '@/components/content-builder/keyword/KeywordSearch';
+import { SelectedKeywords } from '@/components/content-builder/keyword/SelectedKeywords';
+import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
+import { InitialStateView } from './InitialStateView';
+import { SerpAnalysisResult } from '@/types/serp';
 
 interface KeywordSelectionContentProps {
-  state: ContentBuilderState;
-  handleRemoveKeyword: (kw: string) => void;
-  handleAddToContent: (content: string, type: string) => void;
-  handleToggleSelection: (type: string, content: string) => void;
+  mainKeyword: string;
+  selectedKeywords: string[];
+  suggestions: string[];
+  hasSearched: boolean;
+  serpData: SerpAnalysisResult | null;
+  isAnalyzing: boolean;
+  onSearch: (keyword: string, suggestions: string[]) => void;
+  onAddKeyword: (keyword: string) => void;
+  onRemoveKeyword: (keyword: string) => void;
+  onAddToContent: (content: string, type: string) => void;
+  onReanalyze: () => void;
 }
 
 export const KeywordSelectionContent: React.FC<KeywordSelectionContentProps> = ({
-  state,
-  handleRemoveKeyword,
-  handleAddToContent,
-  handleToggleSelection
+  mainKeyword,
+  selectedKeywords,
+  suggestions,
+  hasSearched,
+  serpData,
+  isAnalyzing,
+  onSearch,
+  onAddKeyword,
+  onRemoveKeyword,
+  onAddToContent,
+  onReanalyze
 }) => {
-  const {
-    mainKeyword,
-    selectedKeywords,
-    serpData,
-    serpSelections,
-    isAnalyzing
-  } = state;
-  
-  // Get selection statistics for the SERP data
-  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
-  
   return (
-    <motion.div 
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      key="results-state"
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Keyword selections */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Selected Keywords */}
-          <div className="animate-fade-in">
-            <SelectedKeywords 
-              keywords={selectedKeywords} 
-              onRemoveKeyword={handleRemoveKeyword} 
+    <div className="space-y-6">
+      <Card className="bg-card">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <KeywordSearch
+              onSearch={onSearch}
+              defaultKeyword={mainKeyword}
             />
+            
+            {selectedKeywords.length > 0 && (
+              <SelectedKeywords
+                keywords={selectedKeywords}
+                onRemove={onRemoveKeyword}
+              />
+            )}
           </div>
-          
-          {/* Selected Items Sidebar */}
-          <SelectedItemsSidebar 
-            serpSelections={serpSelections}
-            totalSelected={totalSelected}
-            selectedCounts={selectedCounts}
-            handleToggleSelection={handleToggleSelection}
-          />
-        </div>
-        
-        {/* Right column - SERP Analysis */}
-        <div className="lg:col-span-2">
-          <SerpAnalysisPanel 
-            serpData={serpData}
-            isLoading={isAnalyzing}
-            mainKeyword={mainKeyword}
-            onAddToContent={handleAddToContent}
-          />
-        </div>
-      </div>
-    </motion.div>
+        </CardContent>
+      </Card>
+
+      {hasSearched ? (
+        <SerpAnalysisPanel
+          serpData={serpData}
+          isLoading={isAnalyzing}
+          mainKeyword={mainKeyword}
+          onAddToContent={onAddToContent}
+          onRetry={onReanalyze}
+        />
+      ) : (
+        <InitialStateView />
+      )}
+    </div>
   );
 };

@@ -114,20 +114,23 @@ export const generateTitleSuggestions = async (content: any): Promise<string[]> 
 /**
  * Generate metadata for content
  */
-export const generateMetadata = async (content: string, keywords: string[]): Promise<{ metaTitle: string, metaDescription: string }> => {
+export const generateMetadata = async (content: any): Promise<{ metaTitle: string, metaDescription: string }> => {
   try {
+    const keywords = content.keywords || [];
     console.log('Generating metadata for content with keywords:', keywords);
     
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 800));
     
     // Extract first 200 chars for description
-    const description = content.substring(0, 200).replace(/[#*_]/g, '').trim() + '...';
+    const contentText = content.content || '';
+    const description = contentText.substring(0, 200).replace(/[#*_]/g, '').trim() + '...';
     
     // Generate title based on content and keywords
+    const baseTitle = content.title || 'Untitled Content';
     const title = keywords.length > 0 
-      ? `${keywords[0]} - Complete Guide` 
-      : 'Complete Guide';
+      ? `${baseTitle} | ${keywords[0]}` 
+      : baseTitle;
     
     return {
       metaTitle: title,

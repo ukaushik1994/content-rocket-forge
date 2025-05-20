@@ -13,6 +13,10 @@ export interface SerpApiOptions {
   provider?: SerpProvider;
   cache?: boolean;
   refresh?: boolean;
+  keyword?: string;
+  location?: string;
+  language?: string;
+  limit?: number;
 }
 
 // Get the currently active provider
@@ -24,6 +28,11 @@ export const getActiveProvider = (): SerpProvider => {
   }
   
   return 'mock';
+};
+
+// Set preferred SERP provider
+export const setPreferredSerpProvider = (provider: SerpProvider): void => {
+  localStorage.setItem('preferred_serp_provider', provider);
 };
 
 // Analyze a keyword and get SERP data
@@ -50,10 +59,10 @@ export const analyzeSerpKeyword = async (
     const adapter = AdapterFactory.getAdapter(provider);
 
     // Track usage
-    UsageTracker.trackRequest(provider, 'analyze_keyword');
+    UsageTracker.trackQuery(provider, 'analyze_keyword', keyword);
 
     // Get data from API
-    const result = await adapter.analyzeKeyword(keyword);
+    const result = await adapter.analyzeKeyword({ keyword });
 
     // Save to cache
     saveToCache(keyword, result);
@@ -90,10 +99,10 @@ export const searchSerpKeywords = async (
     const adapter = AdapterFactory.getAdapter(provider);
 
     // Track usage
-    UsageTracker.trackRequest(provider, 'keyword_search');
+    UsageTracker.trackQuery(provider, 'keyword_search', query);
 
     // Get data from API
-    const results = await adapter.searchKeywords({ query });
+    const results = await adapter.searchKeywords({ keyword: query });
 
     // Save to cache
     const cacheKey = `search_${query}`;
@@ -131,10 +140,10 @@ export const searchRelatedKeywords = async (
     const adapter = AdapterFactory.getAdapter(provider);
 
     // Track usage
-    UsageTracker.trackRequest(provider, 'related_keywords');
+    UsageTracker.trackQuery(provider, 'related_keywords', keyword);
 
     // Get data from API
-    const results = await adapter.getRelatedKeywords(keyword);
+    const results = await adapter.getRelatedKeywords({ keyword });
 
     // Save to cache
     const cacheKey = `related_${keyword}`;
@@ -147,3 +156,4 @@ export const searchRelatedKeywords = async (
     return [];
   }
 };
+

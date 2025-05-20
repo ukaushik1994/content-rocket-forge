@@ -10,6 +10,7 @@ export {
   searchSerpKeywords,
   searchRelatedKeywords,
   getActiveProvider,
+  setPreferredSerpProvider,
   type SerpApiOptions
 } from './core/SerpCore';
 
@@ -30,10 +31,6 @@ export { getFromCache, saveToCache } from './cache/SerpCache';
 export type { SerpAnalysisResult } from '@/types/serp';
 
 // Legacy aliases for backward compatibility
-export const analyzeKeywordSerp = (keyword: string, refresh?: boolean) => {
-  return analyzeSerpKeyword(keyword, refresh);
-};
+export const analyzeKeywordSerp = analyzeSerpKeyword;
+export const searchKeywords = searchSerpKeywords;
 
-export const searchKeywords = (params: { query: string, limit?: number, refresh?: boolean }) => {
-  return searchSerpKeywords(params.query, params.refresh);
-};

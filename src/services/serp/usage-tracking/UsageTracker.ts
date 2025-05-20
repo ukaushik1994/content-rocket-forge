@@ -1,55 +1,86 @@
 
 /**
- * Usage tracking for SERP API requests
+ * SERP API Usage Tracker
+ * Tracks API usage for reporting and limits
  */
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 
+// Usage statistics storage key
+const USAGE_STATS_KEY = 'serp_usage_stats';
+
+// Usage tracker interface
+interface UsageStats {
+  total: number;
+  providers: {
+    [provider: string]: number;
+  };
+  queries: {
+    [key: string]: number;
+  };
+}
+
+// Get usage stats from storage
+const getUsageStats = (): UsageStats => {
+  try {
+    const stats = localStorage.getItem(USAGE_STATS_KEY);
+    if (stats) {
+      return JSON.parse(stats);
+    }
+  } catch (e) {
+    console.error('Error loading usage stats:', e);
+  }
+  
+  return {
+    total: 0,
+    providers: {},
+    queries: {}
+  };
+};
+
+// Save usage stats to storage
+const saveUsageStats = (stats: UsageStats): void => {
+  try {
+    localStorage.setItem(USAGE_STATS_KEY, JSON.stringify(stats));
+  } catch (e) {
+    console.error('Error saving usage stats:', e);
+  }
+};
+
+// Export the UsageTracker utility
 export const UsageTracker = {
+  // Track a query
   trackQuery: (provider: string, queryType: string, keyword: string) => {
-    // Get existing stats
-    const statsKey = `serp_usage_stats`;
-    const statsJson = localStorage.getItem(statsKey) || '{}';
-    const stats = JSON.parse(statsJson);
+    const stats = getUsageStats();
     
-    // Update stats
-    if (!stats[provider]) {
-      stats[provider] = { count: 0, queries: {} };
+    // Increment total counter
+    stats.total += 1;
+    
+    // Increment provider counter
+    if (!stats.providers[provider]) {
+      stats.providers[provider] = 0;
     }
+    stats.providers[provider] += 1;
     
-    stats[provider].count = (stats[provider].count || 0) + 1;
-    
-    if (!stats[provider].queries[queryType]) {
-      stats[provider].queries[queryType] = [];
+    // Increment query type counter
+    const queryKey = `${provider}:${queryType}:${keyword}`;
+    if (!stats.queries[queryKey]) {
+      stats.queries[queryKey] = 0;
     }
-    
-    // Add query with timestamp
-    stats[provider].queries[queryType].push({
-      keyword,
-      timestamp: new Date().toISOString()
-    });
+    stats.queries[queryKey] += 1;
     
     // Save updated stats
-    localStorage.setItem(statsKey, JSON.stringify(stats));
+    saveUsageStats(stats);
   },
   
+  // Get total queries made
   getTotalQueries: (): number => {
-    const statsKey = `serp_usage_stats`;
-    const statsJson = localStorage.getItem(statsKey) || '{}';
-    const stats = JSON.parse(statsJson);
-    
-    let total = 0;
-    Object.keys(stats).forEach(provider => {
-      total += stats[provider].count || 0;
-    });
-    
-    return total;
+    const stats = getUsageStats();
+    return stats.total;
   },
   
+  // Get queries made with a specific provider
   getProviderQueries: (provider: SerpProvider): number => {
-    const statsKey = `serp_usage_stats`;
-    const statsJson = localStorage.getItem(statsKey) || '{}';
-    const stats = JSON.parse(statsJson);
-    
-    return (stats[provider]?.count || 0);
+    const stats = getUsageStats();
+    return stats.providers[provider] || 0;
   }
 };
