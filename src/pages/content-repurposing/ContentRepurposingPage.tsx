@@ -1,9 +1,7 @@
 
 import React from 'react';
-import { useContentRepurposing } from '@/components/content-repurposing/hooks';
+import { useContentRepurposingPage } from './hooks/useContentRepurposingPage';
 import { ContentSelectionView, ContentRepurposingView } from './views';
-import { toast } from 'sonner';
-import { ContentItemType } from '@/contexts/content/types';
 
 const ContentRepurposingPage = () => {
   const {
@@ -18,6 +16,7 @@ const ContentRepurposingPage = () => {
     generatedFormats,
     isDeleting,
     isSaving,
+    isSavingAll,
     savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
@@ -29,34 +28,10 @@ const ContentRepurposingPage = () => {
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
+    handleSaveAllContent,
     handleDeleteActiveFormat,
-    resetContent,
-    saveAllFormats
-  } = useContentRepurposing();
-  
-  const handleSaveAllContent = async (): Promise<boolean> => {
-    if (!content || !generatedContents || Object.keys(generatedContents).length === 0) {
-      toast.error('No content to save');
-      return false;
-    }
-    
-    try {
-      // Get all format IDs and mark them as saved in UI state
-      const formatIds = await saveAllFormats();
-      
-      if (formatIds.length === 0) {
-        toast.info('All formats are already saved');
-        return true;
-      }
-      
-      toast.success(`Successfully saved ${formatIds.length} content format${formatIds.length > 1 ? 's' : ''}`);
-      return true;
-    } catch (error) {
-      console.error('Error saving all content:', error);
-      toast.error('Error saving all content formats');
-      return false;
-    }
-  };
+    resetContent
+  } = useContentRepurposingPage();
 
   // If no content is selected yet, show the content selection view
   if (!content) {
@@ -87,7 +62,7 @@ const ContentRepurposingPage = () => {
       activeFormat={activeFormat}
       isDeleting={isDeleting}
       isSaving={isSaving}
-      isSavingAll={false}
+      isSavingAll={isSavingAll}
       savedContentFormats={savedContentFormats}
       setSelectedFormats={setSelectedFormats}
       setActiveFormat={setActiveFormat}

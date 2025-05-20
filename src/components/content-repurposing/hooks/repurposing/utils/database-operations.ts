@@ -1,92 +1,87 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '@/contexts/content/types';
+import { RepurposedContentData } from '../types/action-types';
+import { toast } from 'sonner';
 import { getFormatByIdOrDefault } from '@/components/content-repurposing/formats';
-import { RepurposedContentData, RepurposedContentRecord } from '../types/action-types';
 
 /**
- * Finds a repurposed content by original content ID and format
+ * Finds a specific repurposed content record
  */
 export const findRepurposedContent = async (
-  originalContentId: string, 
+  contentId: string,
   formatId: string,
   contentItems: ContentItemType[]
 ): Promise<RepurposedContentData | null> => {
-  if (!originalContentId || !formatId) {
-    return null;
-  }
+  if (!contentId || !formatId) return null;
   
   try {
-    // First check in Supabase for the repurposed content
+    // First attempt to find in Supabase
     const { data, error } = await supabase
       .from('repurposed_contents')
       .select('*')
-      .eq('content_id', originalContentId)
+      .eq('content_id', contentId)
       .eq('format_code', formatId)
-      .single();
-    
+      .order('version', { ascending: false })
+      .limit(1);
+      
     if (error) {
-      console.error('Error fetching repurposed content from DB:', error);
+      console.error('Error finding repurposed content:', error);
+      return null;
+    }
+    
+    if (data && data.length > 0) {
+      return {
+        id: data[0].id,
+        contentId: data[0].content_id,
+        formatId: data[0].format_code,
+        title: data[0].title || '',
+        content: data[0].content,
+        status: data[0].status,
+        version: data[0].version
+      };
+    }
+    
+    // If not found in database, try to find in local content item metadata (legacy approach)
+    const contentItem = contentItems.find(item => item.id === contentId);
+    
+    if (contentItem && contentItem.metadata) {
+      // Handle the case where metadata might be an array
+      const metadata = typeof contentItem.metadata === 'object' && !Array.isArray(contentItem.metadata) 
+        ? contentItem.metadata 
+        : {};
       
-      // Fall back to metadata in the content_items if available
-      const originalContent = contentItems.find(item => item.id === originalContentId);
-      const metadata = originalContent?.metadata as { repurposedContentMap?: Record<string, string> } | undefined;
+      // Safely access repurposedContentMap property
+      const repurposedContentMap = metadata.repurposedContentMap || {};
       
-      if (metadata && metadata.repurposedContentMap && metadata.repurposedContentMap[formatId]) {
+      if (repurposedContentMap && repurposedContentMap[formatId]) {
+        const formatInfo = getFormatByIdOrDefault(formatId);
+        
         return {
-          contentId: originalContentId,
-          formatId,
-          title: originalContent.title || 'Untitled',
-          content: metadata.repurposedContentMap[formatId]
+          contentId: contentId,
+          formatId: formatId,
+          title: `${contentItem.title} - ${formatInfo.name}`,
+          content: repurposedContentMap[formatId],
+          status: 'saved'
         };
       }
-      
-      // As a last resort, check localStorage
-      const savedData = localStorage.getItem(`repurposed_content_${originalContentId}`);
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.contents && parsedData.contents[formatId]) {
-          return {
-            contentId: originalContentId,
-            formatId,
-            title: originalContent?.title || 'Untitled',
-            content: parsedData.contents[formatId]
-          };
-        }
-      }
-    } else if (data) {
-      // Data found in Supabase
-      return mapDbRecordToContentData(data);
     }
+    
+    return null;
   } catch (error) {
-    console.error('Error finding repurposed content:', error);
+    console.error('Error in findRepurposedContent:', error);
+    return null;
   }
-  
-  return null;
 };
 
 /**
- * Maps a database record to a content data object
- */
-export const mapDbRecordToContentData = (record: RepurposedContentRecord): RepurposedContentData => {
-  return {
-    id: record.id,
-    contentId: record.content_id,
-    formatId: record.format_code,
-    title: record.title,
-    content: record.content,
-    status: record.status,
-    version: record.version
-  };
-};
-
-/**
- * Fetches all saved formats for a content
+ * Fetches formats that have been saved for a specific content
  */
 export const fetchSavedFormats = async (contentId: string): Promise<string[]> => {
   if (!contentId) return [];
   
   try {
+    // First check in Supabase
     const { data, error } = await supabase
       .from('repurposed_contents')
       .select('format_code')
@@ -98,7 +93,25 @@ export const fetchSavedFormats = async (contentId: string): Promise<string[]> =>
       return [];
     }
     
-    return data.map(item => item.format_code);
+    if (data && data.length > 0) {
+      return data.map(item => item.format_code);
+    }
+    
+    // Also check local storage (legacy approach)
+    const savedLocalData = localStorage.getItem(`repurposed_content_${contentId}`);
+    
+    if (savedLocalData) {
+      try {
+        const parsedData = JSON.parse(savedLocalData);
+        if (Array.isArray(parsedData.savedFormats)) {
+          return parsedData.savedFormats;
+        }
+      } catch (e) {
+        console.error('Error parsing saved formats from localStorage:', e);
+      }
+    }
+    
+    return [];
   } catch (error) {
     console.error('Error in fetchSavedFormats:', error);
     return [];
@@ -106,7 +119,7 @@ export const fetchSavedFormats = async (contentId: string): Promise<string[]> =>
 };
 
 /**
- * Saves a new content or updates an existing one
+ * Saves content to the database
  */
 export const saveContent = async (
   contentId: string,
@@ -114,247 +127,175 @@ export const saveContent = async (
   generatedContent: string,
   contentTitle: string,
   userId: string,
-  updateContentItem: (id: string, updates: any) => Promise<void>
+  updateContentItem: (content: ContentItemType) => void
 ): Promise<boolean> => {
-  if (!contentId || !formatId || !generatedContent) {
-    toast.error('Missing required data to save content');
+  if (!contentId || !formatId || !generatedContent || !contentTitle) {
+    toast.error('Missing required information to save content');
     return false;
   }
   
   try {
     const formatInfo = getFormatByIdOrDefault(formatId);
-    const formatName = formatInfo.name;
     
-    // Check if this content has already been saved
-    const { data: existingContent, error: checkError } = await supabase
+    // Save to Supabase
+    const { data, error } = await supabase
       .from('repurposed_contents')
-      .select('id, version')
-      .eq('content_id', contentId)
-      .eq('format_code', formatId)
-      .single();
-    
-    let result;
-    
-    if (checkError || !existingContent) {
-      // This format doesn't exist yet, create a new record
-      const { data, error } = await supabase
-        .from('repurposed_contents')
-        .insert({
-          content_id: contentId,
-          format_code: formatId,
-          content: generatedContent,
-          title: `${contentTitle} - ${formatName}`,
-          status: 'saved',
-          user_id: userId
-        })
-        .select()
-        .single();
-        
-      if (error) {
-        throw error;
-      }
+      .upsert({
+        content_id: contentId,
+        format_code: formatId,
+        content: generatedContent,
+        title: `${contentTitle} - ${formatInfo.name}`,
+        user_id: userId,
+        status: 'saved'
+      }, {
+        onConflict: 'content_id,format_code',
+        ignoreDuplicates: false
+      });
       
-      result = data;
-    } else {
-      // Update the existing record with a new version
-      const { data, error } = await supabase
-        .from('repurposed_contents')
-        .update({
-          content: generatedContent,
-          version: (existingContent.version || 1) + 1,
-          updated_at: new Date().toISOString(),
-          status: 'saved'
-        })
-        .eq('id', existingContent.id)
-        .select()
-        .single();
-        
-      if (error) {
-        throw error;
-      }
-      
-      result = data;
+    if (error) {
+      console.error('Error saving content:', error);
+      toast.error(`Error saving ${formatInfo.name} content`);
+      return false;
     }
     
-    await updateLegacyMetadata(contentId, formatId, generatedContent, updateContentItem);
-    
-    toast.success(`${formatName} content saved successfully`);
-    return true;
-  } catch (error) {
-    console.error('Error saving content:', error);
-    toast.error('Failed to save content');
-    return false;
-  }
-};
-
-/**
- * Updates legacy metadata for backward compatibility
- */
-const updateLegacyMetadata = async (
-  contentId: string, 
-  formatId: string, 
-  generatedContent: string, 
-  updateContentItem: (id: string, updates: any) => Promise<void>
-) => {
-  try {
-    // Get the content item
-    const { data: contentItem, error } = await supabase
+    // Also update the content item metadata for backward compatibility
+    const { data: contentData, error: contentError } = await supabase
       .from('content_items')
       .select('metadata')
       .eq('id', contentId)
       .single();
       
-    if (error) {
-      console.warn('Error getting content item for metadata update:', error);
-      return;
+    if (!contentError && contentData) {
+      // Handle the case where metadata might be null or an array
+      const metadata = contentData.metadata && typeof contentData.metadata === 'object' && !Array.isArray(contentData.metadata) 
+        ? contentData.metadata 
+        : {};
+      
+      // Update metadata with new repurposed content
+      const repurposedContentMap = metadata.repurposedContentMap || {};
+      const repurposedFormats = Array.isArray(metadata.repurposedFormats) 
+        ? metadata.repurposedFormats 
+        : [];
+      
+      // Update metadata
+      repurposedContentMap[formatId] = generatedContent;
+      
+      if (!repurposedFormats.includes(formatId)) {
+        repurposedFormats.push(formatId);
+      }
+      
+      const updatedMetadata = {
+        ...metadata,
+        repurposedContentMap,
+        repurposedFormats
+      };
+      
+      // Update content item with new metadata
+      const { data: updateData, error: updateError } = await supabase
+        .from('content_items')
+        .update({ metadata: updatedMetadata })
+        .eq('id', contentId)
+        .select('*')
+        .single();
+        
+      if (updateError) {
+        console.error('Error updating content metadata:', updateError);
+      } else if (updateData) {
+        // Update local content item state if needed
+        updateContentItem(updateData);
+      }
     }
     
-    const currentMetadata = contentItem.metadata ? 
-      (typeof contentItem.metadata === 'object' ? contentItem.metadata : {}) : {};
-    
-    // Get or initialize repurposed formats array and content map
-    const repurposedFormats = currentMetadata.repurposedFormats || [];
-    const repurposedContentMap = currentMetadata.repurposedContentMap || {};
-    
-    // Add the format to the list if not already present
-    if (!repurposedFormats.includes(formatId)) {
-      repurposedFormats.push(formatId);
-    }
-    
-    // Store the actual repurposed content in the map
-    repurposedContentMap[formatId] = generatedContent;
-    
-    // Update the content with the new metadata
-    const updatedMetadata = {
-      ...currentMetadata,
-      repurposedFormats,
-      repurposedContentMap,
-      lastUpdated: new Date().toISOString()
-    };
-    
-    // Update in context through updateContentItem
-    await updateContentItem(contentId, {
-      metadata: updatedMetadata
-    });
-  } catch (metadataError) {
-    console.warn('Error updating legacy metadata:', metadataError);
-    // Continue anyway since the primary storage is now the repurposed_contents table
+    toast.success(`${formatInfo.name} content saved successfully`);
+    return true;
+  } catch (error) {
+    console.error('Error in saveContent:', error);
+    toast.error('Error saving content');
+    return false;
   }
 };
 
 /**
- * Deletes a repurposed content from the database
+ * Deletes repurposed content
  */
 export const deleteRepurposedContent = async (
-  contentId: string, 
+  contentId: string,
   formatId: string,
   contentItems: ContentItemType[],
-  updateContentItem: (id: string, updates: any) => Promise<void>
+  updateContentItem: (content: ContentItemType) => void
 ): Promise<boolean> => {
   if (!contentId || !formatId) {
-    toast.error('Missing required data to delete content');
+    toast.error('Missing required information to delete content');
     return false;
   }
   
   try {
-    // Delete from the repurposed_contents table
+    const formatInfo = getFormatByIdOrDefault(formatId);
+    
+    // Delete from Supabase
     const { error } = await supabase
       .from('repurposed_contents')
       .delete()
       .eq('content_id', contentId)
       .eq('format_code', formatId);
-    
+      
     if (error) {
-      throw error;
+      console.error('Error deleting repurposed content:', error);
+      toast.error(`Error deleting ${formatInfo.name} content`);
+      return false;
     }
     
-    await updateLegacyMetadataOnDelete(contentId, formatId, contentItems, updateContentItem);
-    await updateLocalStorageOnDelete(contentId, formatId);
+    // Also update the content item metadata for backward compatibility
+    const contentItem = contentItems.find(item => item.id === contentId);
     
-    toast.success('Content deleted successfully');
+    if (contentItem && contentItem.metadata) {
+      // Handle the case where metadata might be an array
+      const metadata = typeof contentItem.metadata === 'object' && !Array.isArray(contentItem.metadata) 
+        ? { ...contentItem.metadata }
+        : {};
+      
+      // Update repurposedContentMap by removing the format
+      let repurposedContentMap = metadata.repurposedContentMap || {};
+      let repurposedFormats = Array.isArray(metadata.repurposedFormats) 
+        ? [...metadata.repurposedFormats] 
+        : [];
+      
+      // Remove the format from both collections
+      if (repurposedContentMap && repurposedContentMap[formatId]) {
+        const newMap = { ...repurposedContentMap };
+        delete newMap[formatId];
+        repurposedContentMap = newMap;
+      }
+      
+      repurposedFormats = repurposedFormats.filter(format => format !== formatId);
+      
+      // Update content item with new metadata
+      const updatedMetadata = {
+        ...metadata,
+        repurposedContentMap,
+        repurposedFormats
+      };
+      
+      const { data: updateData, error: updateError } = await supabase
+        .from('content_items')
+        .update({ metadata: updatedMetadata })
+        .eq('id', contentId)
+        .select('*')
+        .single();
+        
+      if (updateError) {
+        console.error('Error updating content metadata after deletion:', updateError);
+      } else if (updateData) {
+        // Update local content item state if needed
+        updateContentItem(updateData);
+      }
+    }
+    
+    toast.success(`${formatInfo.name} content deleted successfully`);
     return true;
   } catch (error) {
-    console.error('Error deleting content:', error);
-    toast.error('Failed to delete content');
+    console.error('Error in deleteRepurposedContent:', error);
+    toast.error('Error deleting content');
     return false;
   }
 };
-
-/**
- * Updates legacy metadata on delete for backward compatibility
- */
-const updateLegacyMetadataOnDelete = async (
-  contentId: string,
-  formatId: string,
-  contentItems: ContentItemType[],
-  updateContentItem: (id: string, updates: any) => Promise<void>
-) => {
-  try {
-    // Get the content item
-    const originalContent = contentItems.find(item => item.id === contentId);
-    if (originalContent) {
-      const currentMetadata = originalContent.metadata ? 
-        (typeof originalContent.metadata === 'object' ? originalContent.metadata : {}) : {};
-      
-      const repurposedFormats = currentMetadata.repurposedFormats || [];
-      const repurposedContentMap = currentMetadata.repurposedContentMap || {};
-      
-      // Remove the format from the list and the content from the map
-      const updatedFormats = repurposedFormats.filter(format => format !== formatId);
-      const updatedContentMap = { ...repurposedContentMap };
-      delete updatedContentMap[formatId];
-      
-      const updatedMetadata = {
-        ...currentMetadata,
-        repurposedFormats: updatedFormats,
-        repurposedContentMap: updatedContentMap,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      // Update the content with the new metadata
-      await updateContentItem(contentId, {
-        metadata: updatedMetadata
-      });
-    }
-  } catch (metadataError) {
-    console.warn('Error updating legacy metadata on delete:', metadataError);
-    // Continue anyway since the primary storage is now the repurposed_contents table
-  }
-};
-
-/**
- * Updates localStorage on delete for backward compatibility
- */
-const updateLocalStorageOnDelete = async (contentId: string, formatId: string) => {
-  try {
-    const savedData = localStorage.getItem(`repurposed_content_${contentId}`);
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      
-      if (parsedData.contents) {
-        delete parsedData.contents[formatId];
-      }
-      
-      if (parsedData.savedFormats) {
-        parsedData.savedFormats = parsedData.savedFormats.filter((f: string) => f !== formatId);
-      }
-      
-      if (parsedData.formats) {
-        parsedData.formats = parsedData.formats.filter((f: string) => f !== formatId);
-      }
-      
-      if (parsedData.activeFormat === formatId) {
-        parsedData.activeFormat = Object.keys(parsedData.contents || {}).length > 0
-          ? Object.keys(parsedData.contents)[0]
-          : null;
-      }
-      
-      localStorage.setItem(`repurposed_content_${contentId}`, JSON.stringify(parsedData));
-    }
-  } catch (localStorageError) {
-    console.warn('Error updating localStorage on delete:', localStorageError);
-    // Continue anyway since localStorage is just a fallback
-  }
-};
-
-import { toast } from 'sonner';
