@@ -8,10 +8,17 @@
 export * from './apiKeys/storage';
 
 // Re-export testing functions
-export * from './apiKeys/testing';
+export {
+  testApiKey,
+  decodeDataForSeoCredentials,
+  encodeDataForSeoCredentials
+} from './apiKeys/testing';
 
-// Re-export validation functions
-export * from './apiKeys/validation';
+// Re-export validation functions, but exclude isDataForSeoFormat which is also in testing
+export {
+  detectApiKeyType,
+  validateApiKeyFormat
+} from './apiKeys/validation';
 
 // Re-export encryption functions
 export * from './apiKeys/encryption';

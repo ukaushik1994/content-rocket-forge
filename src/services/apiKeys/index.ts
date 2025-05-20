@@ -4,9 +4,10 @@
  */
 
 // Export individual modules that don't have conflicts
-export * from './validation';
-export * from './encryption';
 export * from './types';
+
+// Export encryption utilities
+export * from './encryption';
 
 // Re-export storage methods with explicit names to avoid conflicts
 export { 
@@ -18,15 +19,19 @@ export {
 // Export other items from storage that don't conflict
 export * from './crud';
 
-// For testing, explicitly export what we need to prevent ambiguity
+// For validation, explicitly export what we need to prevent ambiguity
 export {
-  testApiKey
-} from './testing';
+  detectApiKeyType,
+  validateApiKeyFormat
+} from './validation';
 
-// Export from testing using explicit imports
-// Note: We're choosing to use the implementation from testing.ts as the canonical one
-export { 
-  isDataForSeoFormat, 
-  decodeDataForSeoCredentials, 
+// For testing, explicitly export what we need
+export {
+  testApiKey,
+  decodeDataForSeoCredentials,
   encodeDataForSeoCredentials 
 } from './testing';
+
+// Note: We're choosing to use the implementation from testing.ts as the canonical one
+// for any duplicate functions (like isDataForSeoFormat)
+export { isDataForSeoFormat } from './testing';
