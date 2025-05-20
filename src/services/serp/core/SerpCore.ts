@@ -143,7 +143,7 @@ export const searchRelatedKeywords = async (
     UsageTracker.trackQuery(provider, 'related_keywords', keyword);
 
     // Get data from API
-    const results = await adapter.getRelatedKeywords({ keyword });
+    const results = await adapter.searchRelatedKeywords({ keyword });
 
     // Save to cache
     const cacheKey = `related_${keyword}`;
@@ -156,4 +156,3 @@ export const searchRelatedKeywords = async (
     return [];
   }
 };
-

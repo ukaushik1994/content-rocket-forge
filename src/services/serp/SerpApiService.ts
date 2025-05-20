@@ -4,7 +4,17 @@
  * This file re-exports functionality from the smaller modules
  */
 
-// Export core functionality
+// Export core functionality from SerpCore
+import { 
+  analyzeSerpKeyword,
+  searchSerpKeywords,
+  searchRelatedKeywords,
+  getActiveProvider,
+  setPreferredSerpProvider,
+  type SerpApiOptions
+} from './core/SerpCore';
+
+// Export these functions and types directly
 export { 
   analyzeSerpKeyword,
   searchSerpKeywords,
@@ -33,4 +43,3 @@ export type { SerpAnalysisResult } from '@/types/serp';
 // Legacy aliases for backward compatibility
 export const analyzeKeywordSerp = analyzeSerpKeyword;
 export const searchKeywords = searchSerpKeywords;
-
