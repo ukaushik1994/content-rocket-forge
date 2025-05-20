@@ -7,6 +7,9 @@ import {
   getActiveProvider
 } from './serp/SerpApiService';
 
+// Variable to cache key existence 
+let cachedApiKeyCheck: boolean | null = null;
+
 /**
  * Get the preferred SERP provider from local storage or return default
  */
@@ -28,6 +31,59 @@ export const getPreferredSerpProvider = (): SerpProvider => {
  */
 export const setPreferredSerpProvider = (provider: SerpProvider): void => {
   localStorage.setItem('preferred_serp_provider', provider);
+  // Clear cached check when changing provider
+  cachedApiKeyCheck = null;
+};
+
+/**
+ * Check if any valid SERP API key exists
+ * This can be from any provider
+ */
+export const hasValidSerpApiKey = (): boolean => {
+  // Return cached result if available to prevent repeated checks
+  if (cachedApiKeyCheck !== null) {
+    return cachedApiKeyCheck;
+  }
+  
+  // Check for SerpApi key
+  const serpApiKey = localStorage.getItem('serp_api_key');
+  if (serpApiKey && serpApiKey.length > 10) {
+    cachedApiKeyCheck = true;
+    return true;
+  }
+  
+  // Check for DataForSEO key
+  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
+  if (dataForSeoKey && dataForSeoKey.length > 10) {
+    cachedApiKeyCheck = true;
+    return true;
+  }
+  
+  cachedApiKeyCheck = false;
+  return false;
+};
+
+/**
+ * Clear the cached API key check
+ * Call this when API keys change
+ */
+export const clearCachedApiKeyCheck = (): void => {
+  cachedApiKeyCheck = null;
+};
+
+/**
+ * Enable mock SERP data when no API keys are available
+ * This is no longer needed as mock data is handled by the adapter
+ */
+export const enableMockSerpData = (enable: boolean = true): void => {
+  localStorage.setItem('use_mock_serp', enable ? 'true' : 'false');
+};
+
+/**
+ * Check if mock SERP data is enabled
+ */
+export const isMockSerpDataEnabled = (): boolean => {
+  return localStorage.getItem('use_mock_serp') === 'true';
 };
 
 /**
@@ -37,15 +93,8 @@ export const analyzeSerpKeyword = async (
   keyword: string, 
   refresh?: boolean
 ): Promise<SerpAnalysisResult | null> => {
-  // Check if we have API keys
-  const serpApiKey = localStorage.getItem('serp_api_key');
-  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
-  
-  // If no API keys, return null
-  if (!serpApiKey && !dataForSeoKey) {
-    console.warn('No API keys found for SERP providers');
-    return null;
-  }
+  // Make sure the code is using the API key if it exists
+  clearCachedApiKeyCheck();
   
   try {
     // Forward to the implementation
@@ -60,15 +109,8 @@ export const analyzeSerpKeyword = async (
  * Search for keywords - implementation forwarded to SerpApiService
  */
 export const searchKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
-  // Check if we have API keys
-  const serpApiKey = localStorage.getItem('serp_api_key');
-  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
-  
-  // If no API keys, return empty array
-  if (!serpApiKey && !dataForSeoKey) {
-    console.warn('No API keys found for SERP providers');
-    return [];
-  }
+  // Make sure the code is using the API key if it exists
+  clearCachedApiKeyCheck();
   
   return searchSerpKeywordsImpl(params.query, params.refresh || false);
 };

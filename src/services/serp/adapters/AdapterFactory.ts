@@ -1,6 +1,7 @@
 
 import { SerpApiAdapter } from './SerpApiAdapter';
 import { DataForSeoAdapter } from './DataForSeoAdapter';
+import { MockAdapter } from './MockAdapter'; 
 import { SerpApiAdapter as AdapterInterface } from './types';
 import { SerpProvider } from '@/contexts/content-builder/types/serp-types';
 
@@ -30,6 +31,9 @@ export class AdapterFactory {
       case 'dataforseo':
         adapter = new DataForSeoAdapter();
         break;
+      case 'mock':
+        adapter = new MockAdapter();
+        break;
       default:
         adapter = new SerpApiAdapter();
     }
@@ -46,7 +50,8 @@ export class AdapterFactory {
   static getAllAdapters(): AdapterInterface[] {
     return [
       this.getAdapter('serpapi'),
-      this.getAdapter('dataforseo')
+      this.getAdapter('dataforseo'),
+      this.getAdapter('mock')
     ];
   }
 }
