@@ -1,3 +1,12 @@
 
-// This file is now a barrel export to maintain backwards compatibility
-export * from './content-builder/ContentBuilderContext';
+// This provides the correct ContentBuilderProvider and useContentBuilder hook
+// to maintain backward compatibility
+import { 
+  ContentBuilderProvider, 
+  useContentBuilder 
+} from './content-builder/ContentBuilderContext';
+
+export { 
+  ContentBuilderProvider, 
+  useContentBuilder 
+};
