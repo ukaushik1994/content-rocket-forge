@@ -9,3 +9,12 @@ export * from './apiKeys/storage';
 
 // Re-export testing functions
 export * from './apiKeys/testing';
+
+// Re-export validation functions
+export * from './apiKeys/validation';
+
+// Re-export encryption functions
+export * from './apiKeys/encryption';
+
+// Re-export types
+export * from './apiKeys/types';

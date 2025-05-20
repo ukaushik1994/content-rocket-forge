@@ -1,85 +1,80 @@
 
 /**
- * API key validation and detection utilities
+ * API key validation utilities
  */
-
-import { testApiKey } from './testing';
 
 /**
- * Check if a string appears to be DataForSEO credentials in base64 format
- * This is now imported from testing.ts which gets it from the canonical source
+ * Detect what type of API key this might be based on its format
+ * @param key - The API key to analyze
+ * @returns A string representing the likely service, or null if unknown
  */
-// No longer export isDataForSeoFormat here since it's exported from testing.ts
-
-/**
- * Encode DataForSEO credentials as base64 JSON
- * 
- * @param login - The DataForSEO login 
- * @param password - The DataForSEO password
- * @returns string - Base64 encoded JSON credentials
- */
-export const encodeDataForSeoCredentials = (login: string, password: string): string => {
+export const detectApiKeyType = (key: string): string | null => {
+  if (!key) return null;
+  
+  // Check OpenAI format
+  if (key.startsWith('sk-') && key.length > 20) {
+    return 'openai';
+  }
+  
+  // Check Anthropic format
+  if (key.startsWith('sk-ant-') && key.length > 20) {
+    return 'anthropic';
+  }
+  
+  // Check if it might be a base64 encoded string (DataForSEO)
   try {
-    // Create credentials object and encode as base64
-    const credentials = JSON.stringify({ login, password });
-    return btoa(credentials);
-  } catch (e) {
-    console.error('Error encoding DataForSEO credentials:', e);
-    return '';
-  }
-};
-
-/**
- * Decode DataForSEO credentials from base64
- * This is no longer exported from this file to avoid ambiguity
- */
-// No longer export decodeDataForSeoCredentials here since it's exported from testing.ts
-
-/**
- * Detect the type of API key based on its format
- * 
- * @param apiKey - The API key to detect 
- * @returns string | null - The detected service key or null if unknown
- */
-export const detectApiKeyType = async (apiKey: string): Promise<string | null> => {
-  if (!apiKey) return null;
-  
-  // Check specific formats
-  if (apiKey.startsWith('sk-') && apiKey.length > 20) {
-    // Could be OpenAI or Anthropic
-    if (apiKey.startsWith('sk-ant-')) {
-      return 'anthropic';
-    }
-    // Try to validate with OpenAI
-    try {
-      const isValid = await testApiKey('openai', apiKey);
-      if (isValid) return 'openai';
-    } catch (e) {
-      // Not an OpenAI key, continue
-    }
-  }
-  
-  // Check if it's a Google API key format
-  if (/^AIza[0-9A-Za-z-_]{35}$/.test(apiKey)) {
-    return 'gemini';
-  }
-  
-  // Check if it's a SERP API key
-  if (apiKey.length === 64 && /^[0-9a-f]{64}$/.test(apiKey)) {
-    return 'serpapi';
-  }
-  
-  // Check if it might be DataForSEO credentials
-  // Use dynamic import to prevent circular dependency
-  try {
-    const { isDataForSeoFormat } = await import('@/services/apiKeys/testing');
-    if (isDataForSeoFormat(apiKey)) {
+    const decoded = atob(key);
+    if (decoded.includes('"login"') && decoded.includes('"password"')) {
       return 'dataforseo';
     }
   } catch (e) {
-    console.error('Error importing isDataForSeoFormat:', e);
+    // Not base64 encoded, continue checking other formats
   }
   
   // Unknown format
   return null;
+};
+
+/**
+ * Validate an API key format (simple validation, not checking if it works)
+ * @param service - The service to validate the key for
+ * @param key - The API key to validate
+ * @returns Boolean indicating if the key format appears valid
+ */
+export const validateApiKeyFormat = (service: string, key: string): boolean => {
+  if (!key || !service) return false;
+  
+  switch (service) {
+    case 'openai':
+      return key.startsWith('sk-') && key.length > 20;
+    case 'anthropic':
+      return key.startsWith('sk-ant-') && key.length > 20;
+    case 'dataforseo':
+      return isDataForSeoFormat(key);
+    case 'serp':
+      return key.length > 10;
+    case 'gemini':
+      return key.length > 10;
+    default:
+      return key.length > 8;
+  }
+};
+
+/**
+ * Check if a key is in the expected DataForSEO format (base64 encoded JSON)
+ */
+export const isDataForSeoFormat = (key: string): boolean => {
+  try {
+    // Basic check - DataForSEO keys are base64 encoded
+    if (!key.match(/^[A-Za-z0-9+/=]+$/)) return false;
+    
+    // Try to decode and parse as JSON
+    const decoded = atob(key);
+    const credentials = JSON.parse(decoded);
+    
+    // Check if it has the expected properties
+    return !!(credentials.login && credentials.password);
+  } catch (e) {
+    return false;
+  }
 };

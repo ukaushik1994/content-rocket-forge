@@ -1,39 +1,32 @@
 
-// Simple encryption utilities for API keys
-// Note: In production, we should use an edge function for storing sensitive keys
+/**
+ * Simple encryption/decryption utilities for API keys
+ * In a real production environment, consider using more secure methods
+ */
 
 /**
- * Simple encryption (not suitable for production, just for demonstration)
- * @param key The API key to encrypt
- * @returns The encrypted key
+ * Basic encryption for API keys - not truly secure but better than plaintext
+ * In production, use a proper encryption library with your own secret key
  */
-export const encryptKey = (key: string): string => {
+export function encryptKey(key: string): string | null {
   try {
-    if (!key || typeof key !== 'string') {
-      console.error('Invalid key provided for encryption');
-      return '';
-    }
-    return btoa(key); // Base64 encode
+    // Simple encoding for demo purposes - in production use a proper encryption method
+    return btoa(key);
   } catch (error) {
-    console.error('Error encrypting key:', error);
-    return '';
+    console.error('Error encrypting API key:', error);
+    return null;
   }
-};
+}
 
 /**
- * Decrypt an encrypted API key
- * @param encryptedKey The encrypted API key
- * @returns The decrypted key
+ * Decrypt an API key previously encrypted with encryptKey
  */
-export const decryptKey = (encryptedKey: string): string => {
+export function decryptKey(encryptedKey: string): string | null {
   try {
-    if (!encryptedKey || typeof encryptedKey !== 'string') {
-      console.error('Invalid encrypted key provided for decryption');
-      return '';
-    }
-    return atob(encryptedKey); // Base64 decode
+    // Simple decoding for demo purposes - in production use a proper decryption method
+    return atob(encryptedKey);
   } catch (error) {
-    console.error('Error decrypting key:', error);
-    return '';
+    console.error('Error decrypting API key:', error);
+    return null;
   }
-};
+}

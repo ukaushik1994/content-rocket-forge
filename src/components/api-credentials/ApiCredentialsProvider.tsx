@@ -7,6 +7,8 @@ import { useOpenAiProvider } from '../api/hooks/useOpenAiProvider';
 import { useAnthropicProvider } from '../api/hooks/useAnthropicProvider';
 import { useGeminiProvider } from '../api/hooks/useGeminiProvider';
 import { ApiCredential, ApiProviderConfig, ApiKeyStatus } from '@/components/settings/api/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeApiKeys } from '@/hooks/useRealtimeApiKeys';
 
 // Define available API providers
 const API_PROVIDERS: ApiProviderConfig[] = [
@@ -72,6 +74,7 @@ interface ApiCredentialsContextType {
   refreshCredentials: () => Promise<void>;
   getProviderById: (id: string) => ApiProviderConfig | undefined;
   getProviderStatus: (id: string) => ApiCredential | undefined;
+  isAuthenticated: boolean;
 }
 
 // Create context
@@ -93,6 +96,39 @@ export const ApiCredentialsProvider: React.FC<ApiCredentialsProviderProps> = ({ 
   const [apiCredentials, setApiCredentials] = useState<ApiCredential[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Initialize Supabase auth state
+  useEffect(() => {
+    const checkAuthState = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+    
+    checkAuthState();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setIsAuthenticated(!!session?.user);
+        
+        // Refresh credentials when auth state changes
+        if (session?.user) {
+          loadCredentials();
+        } else {
+          // Clear credentials if logged out
+          setApiCredentials([]);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Use the realtime API keys hook
+  const { apiKeys, isLoading: isKeysLoading } = useRealtimeApiKeys();
 
   // Initialize provider hooks
   const dataForSeo = useDataForSeoProvider(API_PROVIDERS.find(p => p.id === 'dataforseo')!);
@@ -101,10 +137,10 @@ export const ApiCredentialsProvider: React.FC<ApiCredentialsProviderProps> = ({ 
   const anthropic = useAnthropicProvider(API_PROVIDERS.find(p => p.id === 'anthropic')!);
   const gemini = useGeminiProvider(API_PROVIDERS.find(p => p.id === 'gemini')!);
 
-  // Load all credentials on mount
+  // Load all credentials on mount and when API keys change
   useEffect(() => {
     loadCredentials();
-  }, []);
+  }, [apiKeys]);
 
   const loadCredentials = async () => {
     try {
@@ -173,11 +209,12 @@ export const ApiCredentialsProvider: React.FC<ApiCredentialsProviderProps> = ({ 
       value={{
         apiCredentials,
         providers: API_PROVIDERS,
-        isLoading,
+        isLoading: isLoading || isKeysLoading,
         error,
         refreshCredentials,
         getProviderById,
-        getProviderStatus
+        getProviderStatus,
+        isAuthenticated
       }}
     >
       {children}

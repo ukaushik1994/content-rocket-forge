@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getApiKey, saveApiKey, deleteApiKey } from '@/services/apiKeys/storage';
 import { testApiKey } from '@/services/apiKeys/testing';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseApiCredentialsOptions {
   providerId: string;
@@ -23,6 +24,7 @@ interface ApiCredentialState {
   isDeleting: boolean;
   isValid: boolean;
   error: string | null;
+  isAuthenticated: boolean;
 }
 
 export function useApiCredentials({
@@ -38,8 +40,36 @@ export function useApiCredentials({
     isTesting: false,
     isDeleting: false,
     isValid: false,
-    error: null
+    error: null,
+    isAuthenticated: false
   });
+  
+  // Check authentication state
+  useEffect(() => {
+    const checkAuthState = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: !!user
+      }));
+    };
+    
+    checkAuthState();
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setState(prev => ({
+          ...prev,
+          isAuthenticated: !!session?.user
+        }));
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
   
   useEffect(() => {
     const fetchApiKey = async () => {
@@ -62,7 +92,7 @@ export function useApiCredentials({
     };
     
     fetchApiKey();
-  }, [providerId]);
+  }, [providerId, state.isAuthenticated]);
   
   const saveCredential = async (key: string) => {
     if (!key.trim()) {
