@@ -1,11 +1,12 @@
 
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import { ContentItemType } from '@/contexts/content/types';
 import { GeneratedContentFormat } from '@/components/content-repurposing/hooks/repurposing/types';
 import ContentSelection from '@/components/content-repurposing/ContentSelection';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentSelectionViewProps {
   contentItems: ContentItemType[];
@@ -16,7 +17,7 @@ interface ContentSelectionViewProps {
   selectedRepurposedContent: GeneratedContentFormat | null;
   copyToClipboard: (text: string) => void;
   downloadAsText: (text: string, formatName: string) => void;
-  deleteRepurposedContent: boolean;
+  deleteRepurposedContent: (contentId: string, formatId: string) => Promise<boolean>;
   handleFormatChange: (contentId: string, formatId: string) => void;
   isDeleting: boolean;
   generatedFormats: string[];
@@ -36,6 +37,49 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
   isDeleting,
   generatedFormats = [],
 }) => {
+  const [formatsMap, setFormatsMap] = useState<Record<string, string[]>>({});
+  
+  // Fetch saved formats for each content item
+  useEffect(() => {
+    const fetchFormatsForContent = async () => {
+      if (!contentItems || contentItems.length === 0) return;
+      
+      try {
+        // Get all repurposed content for these content items
+        const contentIds = contentItems.map(item => item.id);
+        
+        const { data, error } = await supabase
+          .from('repurposed_contents')
+          .select('content_id, format_code')
+          .in('content_id', contentIds);
+          
+        if (error) {
+          console.error('Error fetching repurposed content formats:', error);
+          return;
+        }
+        
+        // Group by content_id
+        const formatsMapTemp: Record<string, string[]> = {};
+        
+        data.forEach(item => {
+          if (!formatsMapTemp[item.content_id]) {
+            formatsMapTemp[item.content_id] = [];
+          }
+          
+          if (!formatsMapTemp[item.content_id].includes(item.format_code)) {
+            formatsMapTemp[item.content_id].push(item.format_code);
+          }
+        });
+        
+        setFormatsMap(formatsMapTemp);
+      } catch (error) {
+        console.error('Error in fetchFormatsForContent:', error);
+      }
+    };
+    
+    fetchFormatsForContent();
+  }, [contentItems]);
+  
   return (
     <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
@@ -64,10 +108,11 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
           selectedRepurposedContent={selectedRepurposedContent}
           onCopyToClipboard={copyToClipboard}
           onDownloadAsText={downloadAsText}
-          onDeleteRepurposedContent={async () => false} // This is a placeholder as the actual function is missing
+          onDeleteRepurposedContent={deleteRepurposedContent}
           onFormatChange={handleFormatChange}
           isDeleting={isDeleting}
           generatedFormats={generatedFormats}
+          formatsMap={formatsMap}
         />
       </motion.main>
     </div>

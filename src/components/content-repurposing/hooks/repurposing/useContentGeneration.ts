@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { ContentItemType } from '@/contexts/content/types';
@@ -22,10 +21,10 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [savedContentFormats, setSavedContentFormats] = useState<string[]>([]);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   
-  // Load saved content from both database and localStorage on initial render
+  // Load saved content from the database when content changes
   useEffect(() => {
     if (content?.id) {
-      // First check localStorage for immediate data display
+      // First check localStorage for immediate data display (transitional approach)
       const localStorageLoad = async () => {
         const savedLocalData = localStorage.getItem(`repurposed_content_${content.id}`);
         
@@ -53,27 +52,37 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         }
       };
       
-      // Then try to load from database for persistent storage
+      // Then load from the database for persistent storage
       const databaseLoad = async () => {
         try {
-          // Fetch the content item to get the repurposed content from metadata
-          const { data: contentItem, error } = await supabase
-            .from('content_items')
-            .select('metadata')
-            .eq('id', content.id)
-            .single();
+          // Fetch all repurposed content for this content item
+          const { data: repurposedContents, error } = await supabase
+            .from('repurposed_contents')
+            .select('*')
+            .eq('content_id', content.id);
           
           if (error) {
             console.error('Error loading repurposed content from database:', error);
             return;
           }
           
-          // Cast the metadata to our typed interface and check if it exists
-          const metadata = contentItem?.metadata as RepurposedContentMetadata | null;
-          
-          if (metadata && typeof metadata === 'object' && metadata.repurposedContentMap) {
-            const dbContents = metadata.repurposedContentMap || {};
-            const dbFormats = metadata.repurposedFormats || [];
+          if (repurposedContents && repurposedContents.length > 0) {
+            // Convert to the format used in the state
+            const dbContents: Record<string, string> = {};
+            const dbFormats: string[] = [];
+            const dbSavedFormats: string[] = [];
+            
+            repurposedContents.forEach(item => {
+              dbContents[item.format_code] = item.content;
+              
+              if (!dbFormats.includes(item.format_code)) {
+                dbFormats.push(item.format_code);
+              }
+              
+              if (item.status === 'saved' && !dbSavedFormats.includes(item.format_code)) {
+                dbSavedFormats.push(item.format_code);
+              }
+            });
             
             // Merge with local data, giving priority to database content
             setGeneratedContents(prevContents => ({
@@ -81,28 +90,32 @@ export const useContentGeneration = (content: ContentItemType | null) => {
               ...dbContents
             }));
             
-            // Update formats list from database
+            // Update formats list and saved formats from database
             if (dbFormats.length > 0) {
-              setSavedContentFormats(dbFormats);
-              
-              // Make sure all saved formats are also in selected formats
               setSelectedFormats(prevFormats => {
                 const uniqueFormats = new Set([...prevFormats, ...dbFormats]);
                 return Array.from(uniqueFormats);
               });
+              
+              setSavedContentFormats(dbSavedFormats);
+              
+              // Set an active format if none is selected
+              if (!activeFormat && dbFormats.length > 0) {
+                setActiveFormat(dbFormats[0]);
+              }
             }
             
-            // Also update localStorage to keep in sync
-            const combinedData = {
-              contents: { ...generatedContents, ...dbContents },
-              formats: Array.from(new Set([...selectedFormats, ...(dbFormats || [])])),
-              savedFormats: dbFormats,
-              activeFormat: activeFormat || (Object.keys(dbContents).length > 0 ? Object.keys(dbContents)[0] : null),
-              timestamp: new Date().toISOString(),
-              contentId: content.id
-            };
-            
+            // Also update localStorage to keep in sync (transitional approach)
             try {
+              const combinedData = {
+                contents: { ...generatedContents, ...dbContents },
+                formats: Array.from(new Set([...selectedFormats, ...dbFormats])),
+                savedFormats: dbSavedFormats,
+                activeFormat: activeFormat || (dbFormats.length > 0 ? dbFormats[0] : null),
+                timestamp: new Date().toISOString(),
+                contentId: content.id
+              };
+              
               localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(combinedData));
             } catch (error) {
               console.error('Error updating localStorage with database content:', error);
@@ -120,7 +133,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   }, [content?.id]);
   
-  // Save generated content to localStorage whenever it changes
+  // Save generated content to localStorage (transitional approach)
   useEffect(() => {
     if (content?.id && Object.keys(generatedContents).length > 0 && isInitialized) {
       const dataToSave = {
@@ -185,6 +198,26 @@ export const useContentGeneration = (content: ContentItemType | null) => {
           
           if (generatedContent && typeof generatedContent === 'string') {
             newGeneratedContents[formatId] = generatedContent;
+            
+            // Store the generated content in the database with 'draft' status
+            const { error } = await supabase
+              .from('repurposed_contents')
+              .upsert({
+                content_id: content.id,
+                format_code: formatId,
+                content: generatedContent,
+                title: `${content.title} - ${formatInfo.name}`,
+                status: 'draft',
+                user_id: content.user_id
+              }, {
+                onConflict: 'content_id,format_code',
+                ignoreDuplicates: false
+              });
+              
+            if (error) {
+              console.error('Error storing generated content in database:', error);
+              // Continue anyway since we have the content in memory
+            }
           } else {
             toast.error(`Failed to generate ${formatInfo.name} content`);
           }
@@ -211,29 +244,102 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   };
   
-  const markAsSaved = (formatId: string) => {
-    if (!formatId) return;
+  const markAsSaved = async (formatId: string): Promise<boolean> => {
+    if (!formatId || !content) return false;
     
-    if (!savedContentFormats.includes(formatId)) {
-      const updatedSavedFormats = [...savedContentFormats, formatId];
-      setSavedContentFormats(updatedSavedFormats);
+    try {
+      // Update the format status in the database
+      const { error } = await supabase
+        .from('repurposed_contents')
+        .update({ status: 'saved' })
+        .eq('content_id', content.id)
+        .eq('format_code', formatId);
+        
+      if (error) {
+        console.error('Error marking format as saved:', error);
+        return false;
+      }
+      
+      // Update the local state
+      if (!savedContentFormats.includes(formatId)) {
+        setSavedContentFormats([...savedContentFormats, formatId]);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in markAsSaved:', error);
+      return false;
     }
   };
   
   /**
-   * Mark all formats as saved in the UI state and return the format IDs
-   * @returns Array of format IDs that were marked as saved
+   * Save all generated formats to the database
+   * @returns Array of format IDs that were saved
    */
-  const saveAllFormats = (): string[] => {
-    const allFormatIds = Object.keys(generatedContents);
+  const saveAllFormats = async (): Promise<string[]> => {
+    if (!content) return [];
     
-    // Only update state if there are new formats to save
-    const newFormatsToSave = allFormatIds.filter(id => !savedContentFormats.includes(id));
-    if (newFormatsToSave.length > 0) {
-      setSavedContentFormats(allFormatIds);
+    try {
+      const allFormatIds = Object.keys(generatedContents);
+      
+      // Only update formats that aren't already saved
+      const newFormatsToSave = allFormatIds.filter(id => !savedContentFormats.includes(id));
+      if (newFormatsToSave.length === 0) return [];
+      
+      // Prepare the data for batch upsert
+      const batchData = newFormatsToSave.map(formatId => {
+        const formatInfo = getFormatByIdOrDefault(formatId);
+        return {
+          content_id: content.id,
+          format_code: formatId,
+          content: generatedContents[formatId],
+          title: `${content.title} - ${formatInfo.name}`,
+          status: 'saved',
+          user_id: content.user_id
+        };
+      });
+      
+      // Use upsert to either insert new records or update existing ones
+      const { error } = await supabase
+        .from('repurposed_contents')
+        .upsert(batchData, {
+          onConflict: 'content_id,format_code',
+          ignoreDuplicates: false
+        });
+      
+      if (error) {
+        console.error('Error saving all formats:', error);
+        return [];
+      }
+      
+      // Update the local state
+      setSavedContentFormats([...savedContentFormats, ...newFormatsToSave]);
+      
+      return newFormatsToSave;
+    } catch (error) {
+      console.error('Error in saveAllFormats:', error);
+      return [];
     }
-    
-    return allFormatIds;
+  };
+  
+  // Function to get all available formats from the database
+  const fetchAvailableFormats = async (): Promise<any[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('content_formats')
+        .select('*')
+        .order('name');
+        
+      if (error) {
+        console.error('Error fetching available formats:', error);
+        return contentFormats; // Fall back to the hardcoded formats
+      }
+      
+      return data || contentFormats;
+    } catch (error) {
+      console.error('Error in fetchAvailableFormats:', error);
+      return contentFormats; // Fall back to the hardcoded formats
+    }
   };
   
   return {
@@ -247,5 +353,6 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     handleGenerateContent,
     markAsSaved,
     saveAllFormats,
+    fetchAvailableFormats
   };
 };

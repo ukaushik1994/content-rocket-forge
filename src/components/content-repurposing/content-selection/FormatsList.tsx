@@ -1,7 +1,6 @@
 
 import React, { memo } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { contentFormats } from '@/components/content-repurposing/formats';
 import ContentFormatIcon from './ContentFormatIcon';
 import { ContentItemType } from '@/contexts/content/types';
 import { motion } from 'framer-motion';
@@ -10,24 +9,22 @@ interface FormatsListProps {
   item: ContentItemType;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
   isMobile?: boolean;
+  formatCodes?: string[];
 }
 
 const FormatsList: React.FC<FormatsListProps> = memo(({
   item,
   onOpenRepurposedContent,
-  isMobile = false
+  isMobile = false,
+  formatCodes = []
 }) => {
-  // Check if a content item has been repurposed for a specific format
-  const hasRepurposedFormat = (item: ContentItemType, formatId: string): boolean => {
-    // Check if this content has repurposed formats stored in metadata
-    const repurposedFormats = item.metadata?.repurposedFormats || [];
-    return repurposedFormats.includes(formatId);
-  };
+  // If no format codes are provided, try to get them from the item's metadata
+  // This is for backward compatibility
+  let repurposedFormats = formatCodes;
   
-  // Get only the formats that have been repurposed
-  const repurposedFormats = contentFormats.filter(format => 
-    hasRepurposedFormat(item, format.id)
-  );
+  if (repurposedFormats.length === 0 && item.metadata?.repurposedFormats) {
+    repurposedFormats = item.metadata.repurposedFormats;
+  }
   
   if (repurposedFormats.length === 0) {
     return null;
@@ -40,14 +37,14 @@ const FormatsList: React.FC<FormatsListProps> = memo(({
         animate={{ opacity: 1 }}
         className="flex flex-wrap gap-1 sm:gap-2"
       >
-        {repurposedFormats.map(format => (
+        {repurposedFormats.map(formatId => (
           <ContentFormatIcon 
-            key={format.id}
-            formatId={format.id}
+            key={formatId}
+            formatId={formatId}
             isFormatUsed={true}
             onClick={(e) => {
               e.stopPropagation();
-              onOpenRepurposedContent(item.id, format.id);
+              onOpenRepurposedContent(item.id, formatId);
             }}
             isMobile={isMobile}
           />

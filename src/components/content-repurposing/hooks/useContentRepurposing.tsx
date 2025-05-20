@@ -28,6 +28,7 @@ export const useContentRepurposing = () => {
     isDeleting,
     isSaving,
     findRepurposedContent,
+    fetchSavedFormats,
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
@@ -51,15 +52,21 @@ export const useContentRepurposing = () => {
   };
   
   // Update this function to safely pass generated formats
-  const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
+  const handleOpenRepurposedContentWithFormats = async (contentId: string, formatId: string) => {
     if (!contentId || !formatId) {
       console.error("Invalid content or format ID");
       return;
     }
     
-    // Get all formats that have been generated for this content
-    const availableFormats = generatedContents ? Object.keys(generatedContents) : [];
-    handleOpenRepurposedContent(contentId, formatId, availableFormats);
+    try {
+      // First get all formats that have been generated for this content from the database
+      const savedFormats = await fetchSavedFormats(contentId);
+      
+      // Then open the dialog with the requested format
+      handleOpenRepurposedContent(contentId, formatId, savedFormats);
+    } catch (error) {
+      console.error("Error opening repurposed content:", error);
+    }
   };
   
   // Wrapper for format change handler
