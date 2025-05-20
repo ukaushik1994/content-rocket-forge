@@ -12,13 +12,20 @@ import {
  */
 export const getPreferredSerpProvider = (): SerpProvider => {
   const storedProvider = localStorage.getItem('preferred_serp_provider');
+  const activeProvider = getActiveProvider();
   
+  // If stored preference exists and has a valid API key, use it
   if (storedProvider) {
-    return storedProvider as SerpProvider;
+    const provider = storedProvider as SerpProvider;
+    
+    // Check if the preferred provider has an API key
+    if (provider === 'mock') return provider;
+    if (provider === 'serpapi' && localStorage.getItem('serp_api_key')) return provider;
+    if (provider === 'dataforseo' && localStorage.getItem('dataforseo_api_key')) return provider;
   }
   
-  // Default to SerpAPI if available, otherwise mock
-  return localStorage.getItem('serp_api_key') ? 'serpapi' : 'mock';
+  // Return the active provider (the one that has an API key) or default to mock
+  return activeProvider || 'mock';
 };
 
 /**
@@ -26,6 +33,7 @@ export const getPreferredSerpProvider = (): SerpProvider => {
  */
 export const setPreferredSerpProvider = (provider: SerpProvider): void => {
   localStorage.setItem('preferred_serp_provider', provider);
+  console.log(`SERP provider set to ${provider}`);
 };
 
 /**
@@ -35,15 +43,47 @@ export const analyzeSerpKeyword = async (
   keyword: string, 
   refresh?: boolean
 ): Promise<SerpAnalysisResult | null> => {
-  return analyzeSerpKeywordImpl(keyword, refresh);
+  // Check if we have API keys
+  const serpApiKey = localStorage.getItem('serp_api_key');
+  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
+  
+  // If no API keys, return null
+  if (!serpApiKey && !dataForSeoKey) {
+    console.warn('No API keys found for SERP providers');
+    return null;
+  }
+  
+  try {
+    // Forward to the implementation
+    return await analyzeSerpKeywordImpl(keyword, refresh);
+  } catch (error) {
+    console.error('Error analyzing keyword:', error);
+    return null;
+  }
 };
 
 /**
- * Search for keywords related to a query
+ * Search for keywords - implementation forwarded to SerpApiService
  */
-export const searchSerpKeywords = async (
-  query: string,
-  limit: number = 10
-): Promise<any[]> => {
-  return searchSerpKeywordsImpl(query, limit);
+export const searchKeywords = async (params: { query: string, limit?: number, refresh?: boolean }) => {
+  // Check if we have API keys
+  const serpApiKey = localStorage.getItem('serp_api_key');
+  const dataForSeoKey = localStorage.getItem('dataforseo_api_key');
+  
+  // If no API keys, return empty array
+  if (!serpApiKey && !dataForSeoKey) {
+    console.warn('No API keys found for SERP providers');
+    return [];
+  }
+  
+  return searchSerpKeywordsImpl(params.query, params.refresh || false);
 };
+
+/**
+ * Analyze a keyword and get SERP data for content
+ * This is an alias for analyzeSerpKeyword to maintain backwards compatibility
+ */
+export const analyzeKeywordSerp = analyzeSerpKeyword;
+
+// Re-export the type for backward compatibility
+export type { SerpAnalysisResult };

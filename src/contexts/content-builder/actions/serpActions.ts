@@ -1,3 +1,4 @@
+
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { SerpProvider } from '../types/serp-types';
 import { OutlineSection } from '../types/outline-types';
@@ -29,6 +30,8 @@ export const createSerpActions = (
         switch (selectedProvider) {
           case 'serpapi':
             return localStorage.getItem('serp_api_key');
+          case 'dataforseo':
+            return localStorage.getItem('dataforseo_api_key');
           case 'mock':
             return 'mock'; // Mock provider doesn't need an API key
           default:
@@ -45,7 +48,7 @@ export const createSerpActions = (
         return;
       }
       
-      // Get SERP data with the correct number of arguments
+      // Get SERP data - fix the number of arguments
       const serpData = await analyzeSerpKeyword(keyword, false);
       
       if (!serpData && selectedProvider !== 'mock') {
