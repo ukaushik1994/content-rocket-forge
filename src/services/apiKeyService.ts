@@ -11,7 +11,8 @@ export * from './apiKeys/storage';
 export {
   testApiKey,
   decodeDataForSeoCredentials,
-  encodeDataForSeoCredentials
+  encodeDataForSeoCredentials,
+  isDataForSeoFormat
 } from './apiKeys/testing';
 
 // Re-export validation functions, but exclude isDataForSeoFormat which is also in testing

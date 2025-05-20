@@ -29,9 +29,6 @@ export {
 export {
   testApiKey,
   decodeDataForSeoCredentials,
-  encodeDataForSeoCredentials 
+  encodeDataForSeoCredentials,
+  isDataForSeoFormat
 } from './testing';
-
-// Note: We're choosing to use the implementation from testing.ts as the canonical one
-// for any duplicate functions (like isDataForSeoFormat)
-export { isDataForSeoFormat } from './testing';
