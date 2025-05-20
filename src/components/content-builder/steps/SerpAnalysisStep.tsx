@@ -70,7 +70,13 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      await analyzeKeyword(mainKeyword, true);
+      // Check if analyzeKeyword accepts a refresh parameter
+      if (analyzeKeyword.length > 1) {
+        await analyzeKeyword(mainKeyword, true);
+      } else {
+        // Fallback to single parameter if the function only accepts one
+        await analyzeKeyword(mainKeyword);
+      }
     }
   };
   
