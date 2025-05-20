@@ -11,7 +11,7 @@ interface ContentPreviewProps {
 const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content }) => {
   const isMobile = useIsMobile();
   
-  // Add safe content rendering
+  // Add safe content rendering - ensure content is never undefined
   const safeContent = content || '';
   
   return (

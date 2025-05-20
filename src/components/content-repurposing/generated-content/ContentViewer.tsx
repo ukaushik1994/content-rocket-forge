@@ -28,6 +28,7 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId })
       );
     }
     
+    // Make sure formatId is defined before using it in comparisons
     if (formatId === 'meme' && content) {
       try {
         // Extract meme components if in the expected format
@@ -104,7 +105,7 @@ const ContentViewer: React.FC<ContentViewerProps> = memo(({ content, formatId })
 
   return (
     <div className="flex-1 overflow-auto bg-muted/10 rounded-md p-4 mb-4">
-      {formatContent(content, formatId)}
+      {formatContent(content, formatId || 'unknown')}
     </div>
   );
 });

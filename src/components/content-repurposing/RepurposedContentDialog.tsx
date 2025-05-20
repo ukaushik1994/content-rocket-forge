@@ -39,7 +39,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   
   if (!content) return null;
 
-  // Find the format information
+  // Find the format information - Add null check for formatId
   const format = getFormatByIdOrDefault(content.formatId);
   const formatName = format.name;
 
@@ -48,11 +48,14 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
 
   // Filter to only show formats that have been generated or match the current format
   const relatedFormats = availableFormats
-    .filter(f => generatedFormats.includes(f.id) || f.id === content.formatId)
+    .filter(f => {
+      // Ensure both content.formatId and elements in generatedFormats are defined
+      return generatedFormats.includes(f.id) || (content.formatId && f.id === content.formatId);
+    })
     .map(f => ({
       id: f.id,
       name: f.name,
-      isActive: f.id === content.formatId
+      isActive: content.formatId ? f.id === content.formatId : false
     }));
 
   const handleDelete = async () => {
@@ -65,7 +68,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   };
 
   const handleFormatButtonClick = (formatId: string) => {
-    if (onFormatChange && content.contentId && formatId !== content.formatId) {
+    if (onFormatChange && content.contentId) {
       onFormatChange(content.contentId, formatId);
     }
   };
@@ -78,7 +81,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
             <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent`}>
               {formatName}
             </h2>
-            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title}</p>
+            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title || 'Untitled'}</p>
           </div>
           <button 
             onClick={onClose}
@@ -113,7 +116,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
           </motion.div>
         )}
         
-        <ContentPreview content={content.content} />
+        <ContentPreview content={content.content || ''} />
         
         <motion.div 
           initial={{ opacity: 0, y: 10 }} 
@@ -121,8 +124,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
           transition={{ delay: 0.1 }}
         >
           <DialogActionButtons 
-            onCopy={() => onCopy(content.content)} 
-            onDownload={() => onDownload(content.content, formatName)} 
+            onCopy={() => onCopy(content.content || '')} 
+            onDownload={() => onDownload(content.content || '', formatName)} 
             onDelete={onDelete ? handleDelete : undefined} 
             isDeleting={isDeleting} 
             isSaving={isSaving} 
