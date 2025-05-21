@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
@@ -5,8 +6,10 @@ import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysi
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
+import { SerpApiDiagnostics } from './serp-analysis/SerpApiDiagnostics';
 import { SerpAnalysisResult } from '@/types/serp';
 import { getApiKey } from '@/services/apiKeyService';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
@@ -121,7 +124,20 @@ export const SerpAnalysisStep = () => {
           </p>
         </div>
         
-        <SerpApiKeySetup />
+        <Tabs defaultValue="setup" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="setup">API Key Setup</TabsTrigger>
+            <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="setup">
+            <SerpApiKeySetup />
+          </TabsContent>
+          
+          <TabsContent value="diagnostics">
+            <SerpApiDiagnostics />
+          </TabsContent>
+        </Tabs>
         
         <div className="text-center mt-4">
           <p className="text-sm text-muted-foreground">
@@ -161,12 +177,19 @@ export const SerpAnalysisStep = () => {
         </div>
         
         <div className="lg:col-span-1 relative h-full">
-          <SelectedItemsSidebar 
-            serpSelections={serpSelections}
-            totalSelected={totalSelected}
-            selectedCounts={selectedCounts}
-            handleToggleSelection={handleToggleSelection}
-          />
+          <div className="space-y-4">
+            <SelectedItemsSidebar 
+              serpSelections={serpSelections}
+              totalSelected={totalSelected}
+              selectedCounts={selectedCounts}
+              handleToggleSelection={handleToggleSelection}
+            />
+            
+            {/* Add diagnostics panel for debugging */}
+            {(apiKeySource !== 'settings' || serpData?.isMockData) && (
+              <SerpApiDiagnostics />
+            )}
+          </div>
         </div>
       </div>
     </div>

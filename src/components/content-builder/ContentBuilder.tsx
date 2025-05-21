@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, CheckCircle, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
@@ -24,6 +23,7 @@ export const ContentBuilder = () => {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'found' | 'not-found' | 'error'>('checking');
 
   // Check for unsaved changes
   useEffect(() => {
@@ -41,9 +41,10 @@ export const ContentBuilder = () => {
   const currentStepId = steps[activeStep] ? steps[activeStep].id : -1;
   const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || state.activeStep === 0);
   
-  // Check for SERP API key in settings
+  // Check for SERP API key in settings with better error handling
   useEffect(() => {
     const checkSerpApiKey = async () => {
+      setApiKeyStatus('checking');
       try {
         // Try to get the SERP API key from the API key service
         const serpApiKey = await getApiKey('serp');
@@ -52,11 +53,21 @@ export const ContentBuilder = () => {
           // Store the key in localStorage for use by serpApiService
           localStorage.setItem('serp_api_key', serpApiKey);
           console.log('SERP API key loaded from settings');
+          setApiKeyStatus('found');
         } else {
           console.log('No SERP API key found in settings');
+          
+          // Check localStorage as fallback
+          const localStorageKey = localStorage.getItem('serp_api_key');
+          if (localStorageKey) {
+            setApiKeyStatus('found');
+          } else {
+            setApiKeyStatus('not-found');
+          }
         }
       } catch (error) {
         console.error('Error checking for SERP API key:', error);
+        setApiKeyStatus('error');
       }
     };
     
@@ -124,47 +135,30 @@ export const ContentBuilder = () => {
     console.log("Steps status:", steps.map(s => `${s.id}: ${s.name} - Completed: ${s.completed}, Analyzed: ${s.analyzed}`));
   }, [activeStep, steps]);
 
-  // Check if SERP API key is set up
+  // Display API key status warning when needed
   useEffect(() => {
-    // If on SERP analysis step or moving to it, check for API key
-    if (steps[activeStep]?.id === 2 || currentStepId === 2) {
-      // First check settings through the service, then fall back to localStorage
-      const checkApiKey = async () => {
-        try {
-          const settingsApiKey = await getApiKey('serp');
-          const localApiKey = localStorage.getItem('serp_api_key');
-          
-          // If we have either key, we're good
-          if (settingsApiKey || localApiKey) {
-            // If we found a key in settings but not in localStorage, store it
-            if (settingsApiKey && !localApiKey) {
-              localStorage.setItem('serp_api_key', settingsApiKey);
+    if (apiKeyStatus === 'not-found' && (activeStep === 0 || currentStepId === 2)) {
+      toast.warning(
+        "No SERP API key found. Please add your API key in Settings to see real data.",
+        {
+          duration: 8000,
+          action: {
+            label: "Go to Settings",
+            onClick: () => {
+              window.location.href = "/settings/api";
             }
-            
-            console.log('SERP API key found, can proceed with analysis');
-          } else {
-            // No API key found, show warning
-            toast.warning(
-              "No SERP API key found. Please add your API key in Settings to see real data.",
-              {
-                duration: 5000,
-                action: {
-                  label: "Go to Settings",
-                  onClick: () => {
-                    window.location.href = "/settings/api";
-                  }
-                }
-              }
-            );
           }
-        } catch (error) {
-          console.error('Error checking for SERP API key:', error);
         }
-      };
-      
-      checkApiKey();
+      );
+    } else if (apiKeyStatus === 'error' && (activeStep === 0 || currentStepId === 2)) {
+      toast.error(
+        "Error checking for SERP API key. You'll see mock data instead.",
+        {
+          duration: 8000
+        }
+      );
     }
-  }, [activeStep, currentStepId, steps]);
+  }, [apiKeyStatus, activeStep, currentStepId]);
   
   // Render the current step component
   const renderStepContent = () => {
@@ -226,8 +220,16 @@ export const ContentBuilder = () => {
                 {steps[activeStep].name}
               </h1>
             </div>
-            <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
-              Step {stepInfo.current} of {stepInfo.total}
+            <div className="flex items-center gap-3">
+              {apiKeyStatus === 'not-found' && (
+                <div className="flex items-center gap-1 text-xs text-amber-400 bg-amber-950/30 px-2 py-1 rounded-full border border-amber-800/30">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Using mock data</span>
+                </div>
+              )}
+              <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                Step {stepInfo.current} of {stepInfo.total}
+              </div>
             </div>
           </div>
           <Progress value={progressPercentage} className="h-1.5 bg-white/5" />
