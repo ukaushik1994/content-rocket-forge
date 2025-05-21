@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
@@ -44,7 +45,7 @@ async function getSerpApiKey(): Promise<string | null> {
   try {
     const { data: apiKeyData, error } = await supabase
       .from('api_keys')
-      .select('value') // Changed from 'encrypted_key' to 'value' since we're not handling encryption here
+      .select('encrypted_key') // This is correct - we're selecting the encrypted_key column
       .eq('service', 'serp')
       .eq('is_active', true)
       .single();
@@ -54,9 +55,9 @@ async function getSerpApiKey(): Promise<string | null> {
       return null;
     }
     
-    if (apiKeyData?.value) {
+    if (apiKeyData?.encrypted_key) { // Changed from value to encrypted_key
       console.log('Using SERP API key from Supabase');
-      return apiKeyData.value;
+      return apiKeyData.encrypted_key; // Changed from value to encrypted_key
     }
   } catch (error) {
     console.error('Exception when fetching SERP API key:', error);
