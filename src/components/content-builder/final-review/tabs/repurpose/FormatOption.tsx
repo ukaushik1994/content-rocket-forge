@@ -3,10 +3,10 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CheckIcon } from 'lucide-react';
-import { ContentFormatDefinition } from '@/components/content-repurposing/formats';
+import { ContentFormat } from '@/components/content-repurposing/formats';
 
 interface FormatOptionProps {
-  format: ContentFormatDefinition;
+  format: ContentFormat;
   isSelected: boolean;
   onToggle: () => void;
   templateInfo: string;
