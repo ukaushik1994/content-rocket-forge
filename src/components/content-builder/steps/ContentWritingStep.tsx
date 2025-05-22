@@ -39,7 +39,8 @@ export const ContentWritingStep = () => {
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
-    handleManualSave
+    handleManualSave,
+    handleWordCountChange
   } = useWritingStep();
   
   // Setup leave confirmation
@@ -120,6 +121,7 @@ export const ContentWritingStep = () => {
         hasUnsavedChanges={hasUnsavedChanges}
         onManualSave={handleManualSave}
         wordCountLimit={wordCountLimit}
+        onWordCountChange={handleWordCountChange}
       />
       
       {/* Title Generation Button */}

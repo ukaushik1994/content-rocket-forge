@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
+import { Input } from '@/components/ui/input';
 import { 
   Sparkles, 
   ListTodo, 
@@ -9,6 +10,7 @@ import {
   Save,
   Bot, 
   UserRound, 
+  Hash
 } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,6 +27,7 @@ interface ContentGenerationHeaderProps {
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
   wordCountLimit?: number;
+  onWordCountChange?: (count: number) => void;
 }
 
 export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
@@ -38,8 +41,19 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   autoSaveTimestamp,
   hasUnsavedChanges,
   onManualSave,
-  wordCountLimit
+  wordCountLimit,
+  onWordCountChange
 }) => {
+  const [wordCountInput, setWordCountInput] = useState(wordCountLimit?.toString() || '1500');
+  
+  const handleWordCountSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const count = parseInt(wordCountInput);
+    if (!isNaN(count) && count > 0 && onWordCountChange) {
+      onWordCountChange(count);
+    }
+  };
+
   return (
     <div className="flex flex-col sm:flex-row justify-between gap-3">
       <div className="flex flex-wrap gap-2 items-center">
@@ -66,6 +80,26 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
             <ListTodo className="h-4 w-4" />
           </Toggle>
         </div>
+        
+        <form onSubmit={handleWordCountSubmit} className="flex items-center gap-2 ml-2 bg-slate-900/30 border border-white/10 rounded-md p-1">
+          <Hash className="h-3 w-3 text-white/50 ml-1" />
+          <Input 
+            type="number"
+            value={wordCountInput}
+            onChange={(e) => setWordCountInput(e.target.value)}
+            className="w-20 h-7 text-xs bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-white/20 focus-visible:ring-offset-0 rounded-sm"
+            placeholder="Word count"
+            min="100"
+          />
+          <Button 
+            type="submit" 
+            size="sm" 
+            variant="ghost" 
+            className="h-6 px-2 text-xs"
+          >
+            Set
+          </Button>
+        </form>
       </div>
       
       <div className="flex items-center gap-4">

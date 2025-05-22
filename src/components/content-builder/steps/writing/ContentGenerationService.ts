@@ -37,7 +37,7 @@ export const generateContent = async (
     Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
     Primary Keyword: ${mainKeyword}
     ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
-    ${wordCountLimit ? `Word Count Target: Approximately ${wordCountLimit} words` : ''}
+    ${wordCountLimit ? `Word Count Target: Exactly ${wordCountLimit} words (with a margin of error of +/- 3 words)` : ''}
     
     The content MUST start with the title as an H1 heading. For example:
     # ${contentTitle || `Complete Guide to ${mainKeyword}`}
@@ -52,13 +52,13 @@ export const generateContent = async (
     Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
     Include a compelling introduction and a strong conclusion. 
     Optimize the content for readability and search engines.
-    ${wordCountLimit ? `Stay close to the target of ${wordCountLimit} words.` : ''}
+    ${wordCountLimit ? `It's CRITICAL to hit exactly ${wordCountLimit} words (with a margin of error of +/- 3 words). Please count your words carefully before submitting.` : ''}
     `;
     
     // Call the AI API via our service
     const chatResponse = await sendChatRequest(aiProvider, {
       messages: [
-        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally. Always start with the title as an H1 heading.' },
+        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally. Always start with the title as an H1 heading. If a specific word count is requested, you MUST adhere to it precisely (with a margin of error of +/- 3 words).' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
@@ -75,6 +75,11 @@ export const generateContent = async (
       
       if (!finalContent.trim().startsWith('#')) {
         finalContent = `${titleAsH1}\n\n${finalContent}`;
+      }
+      
+      // Save the word count in localStorage for future reference
+      if (wordCountLimit) {
+        localStorage.setItem('content_builder_word_count', wordCountLimit.toString());
       }
       
       if (setContent) {

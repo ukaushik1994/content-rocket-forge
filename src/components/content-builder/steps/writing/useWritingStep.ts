@@ -28,13 +28,15 @@ export function useWritingStep() {
   const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
   const [autoSaveTimestamp, setAutoSaveTimestamp] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [wordCountLimit, setWordCountLimit] = useState<number | undefined>(undefined);
+  const [wordCountLimit, setWordCountLimit] = useState<number | undefined>(1500);
   
-  // Load word count limit from SERP data
+  // Load saved word count from localStorage
   useEffect(() => {
-    if (serpData) {
+    const savedWordCount = localStorage.getItem('content_builder_word_count');
+    if (savedWordCount) {
+      setWordCountLimit(parseInt(savedWordCount));
+    } else if (serpData) {
       // Calculate word count based on top-ranking content or SERP recommendations
-      // Usually 1200-1500 words is a good default for SEO content
       const suggestedWordCount = serpData.topResults?.length 
         ? Math.max(1200, serpData.topResults.length * 200)
         : 1500;
@@ -144,6 +146,12 @@ export function useWritingStep() {
     setAiProvider(provider);
   };
   
+  const handleWordCountChange = (count: number) => {
+    setWordCountLimit(count);
+    localStorage.setItem('content_builder_word_count', count.toString());
+    toast.success(`Word count set to ${count} words`);
+  };
+  
   const handleManualSave = () => {
     if (content && content.trim().length > 0) {
       localStorage.setItem('content_builder_draft', content);
@@ -196,6 +204,7 @@ export function useWritingStep() {
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
-    handleManualSave
+    handleManualSave,
+    handleWordCountChange
   };
 }
