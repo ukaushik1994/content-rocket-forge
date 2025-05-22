@@ -9,7 +9,12 @@ import { OptimizationSuggestion } from './types';
 
 export function useContentOptimizer(content: string) {
   const { state } = useContentBuilder();
-  const { selectedSolution, mainKeyword, selectedKeywords } = state;
+  const { 
+    selectedSolution, 
+    mainKeyword, 
+    selectedKeywords,
+    serpSelections
+  } = state;
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -22,17 +27,35 @@ export function useContentOptimizer(content: string) {
   const analyzeContent = useCallback(async () => {
     setIsAnalyzing(true);
     try {
+      // Extract selected items from SERP for optimization context
+      const selectedSerpItems = serpSelections.filter(item => item.selected);
+      
+      // Group items by type for better context
+      const headings = selectedSerpItems.filter(item => item.type === 'heading').map(item => item.content);
+      const questions = selectedSerpItems.filter(item => item.type === 'question').map(item => item.content);
+      const contentGaps = selectedSerpItems.filter(item => item.type === 'contentGap').map(item => item.content);
+      const entities = selectedSerpItems.filter(item => item.type === 'entity').map(item => item.content);
+      
       // Generate content quality suggestions
       const contentResult = await sendChatRequest('openai', {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert content analyzer. Analyze the following content and suggest specific improvements.' 
+            content: 'You are an expert content analyzer and SEO specialist. Analyze the following content and suggest specific improvements.' 
           },
           { 
             role: 'user', 
             content: `
-              Analyze this content for quality, readability, and SEO optimization. The main keyword is "${mainKeyword}" and secondary keywords are ${selectedKeywords.join(', ')}.
+              Analyze this content for quality, readability, and SEO optimization. 
+              
+              Main keyword: "${mainKeyword}"
+              Secondary keywords: ${selectedKeywords.join(', ')}
+              
+              Additional SEO context:
+              ${headings.length > 0 ? `Important headings: ${headings.join(', ')}` : ''}
+              ${questions.length > 0 ? `Questions to address: ${questions.join(', ')}` : ''}
+              ${contentGaps.length > 0 ? `Content gaps to fill: ${contentGaps.join(', ')}` : ''}
+              ${entities.length > 0 ? `Key entities to include: ${entities.join(', ')}` : ''}
               
               Content to analyze:
               ${content}
@@ -41,7 +64,7 @@ export function useContentOptimizer(content: string) {
               1. id: a unique string
               2. type: always "content"
               3. title: short title for the suggestion
-              4. description: detailed description of what to improve
+              4. description: detailed description of what to improve, especially focusing on keyword incorporation
               5. priority: "high", "medium", or "low"
               
               Format: { "suggestions": [...] }
@@ -160,7 +183,7 @@ export function useContentOptimizer(content: string) {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [content, mainKeyword, selectedKeywords, selectedSolution]);
+  }, [content, mainKeyword, selectedKeywords, selectedSolution, serpSelections]);
 
   const toggleSuggestion = useCallback((id: string) => {
     setSelectedSuggestions(prev => 
@@ -180,6 +203,16 @@ export function useContentOptimizer(content: string) {
       const allSuggestions = [...contentSuggestions, ...solutionSuggestions];
       const selectedSuggestionDetails = allSuggestions.filter(s => selectedSuggestions.includes(s.id));
       
+      // Extract selected items from SERP for optimization context
+      const selectedSerpItems = serpSelections.filter(item => item.selected);
+      
+      // Group items by type for better context
+      const headings = selectedSerpItems.filter(item => item.type === 'heading').map(item => item.content);
+      const questions = selectedSerpItems.filter(item => item.type === 'question').map(item => item.content);
+      const contentGaps = selectedSerpItems.filter(item => item.type === 'contentGap').map(item => item.content);
+      const entities = selectedSerpItems.filter(item => item.type === 'entity').map(item => item.content);
+      const keywords = selectedSerpItems.filter(item => item.type === 'keyword').map(item => item.content);
+      
       // Create a comprehensive optimization prompt
       const optimizationPrompt = `
         Optimize this content by implementing these specific suggestions:
@@ -189,7 +222,27 @@ export function useContentOptimizer(content: string) {
         `).join('\n')}
         
         Main keyword: ${mainKeyword}
-        Secondary keywords: ${selectedKeywords.join(', ')}
+        Secondary/Related keywords: ${[...selectedKeywords, ...keywords].join(', ')}
+        
+        ${headings.length > 0 ? `
+        Important headings to incorporate:
+        ${headings.map((h, i) => `- ${h}`).join('\n')}
+        ` : ''}
+        
+        ${questions.length > 0 ? `
+        Questions to address in the content:
+        ${questions.map((q, i) => `- ${q}`).join('\n')}
+        ` : ''}
+        
+        ${contentGaps.length > 0 ? `
+        Content gaps to fill:
+        ${contentGaps.map((g, i) => `- ${g}`).join('\n')}
+        ` : ''}
+        
+        ${entities.length > 0 ? `
+        Key entities to incorporate:
+        ${entities.map((e, i) => `- ${e}`).join('\n')}
+        ` : ''}
         
         ${selectedSolution ? `
         Solution to integrate:
@@ -206,8 +259,11 @@ export function useContentOptimizer(content: string) {
         1. Maintain the original structure and headings.
         2. Keep the content factually accurate.
         3. Implement ALL the suggestions listed above.
-        4. Return ONLY the optimized content, not explanations.
-        5. Use proper markdown formatting with headings.
+        4. MUST incorporate ALL the secondary/related keywords in a natural way.
+        5. Address ALL selected questions and content gaps.
+        6. Make the content concrete with specific examples and details.
+        7. Return ONLY the optimized content, not explanations.
+        8. Use proper markdown formatting with headings.
       `;
       
       // Send the optimization request
@@ -215,7 +271,7 @@ export function useContentOptimizer(content: string) {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert content optimizer. Rewrite content based on the specific suggestions provided while maintaining the original structure and factual accuracy.' 
+            content: 'You are an expert content optimizer. Rewrite content based on specific suggestions to create concrete, specific and well-optimized content that incorporates all keywords, questions, and entities provided.' 
           },
           { role: 'user', content: optimizationPrompt }
         ]
@@ -239,7 +295,7 @@ export function useContentOptimizer(content: string) {
     } finally {
       setIsOptimizing(false);
     }
-  }, [content, contentSuggestions, mainKeyword, selectedKeywords, selectedSolution, selectedSuggestions, solutionSuggestions]);
+  }, [content, contentSuggestions, mainKeyword, selectedKeywords, selectedSolution, selectedSuggestions, solutionSuggestions, serpSelections]);
 
   return {
     isAnalyzing,

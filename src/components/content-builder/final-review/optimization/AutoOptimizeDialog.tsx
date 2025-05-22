@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { OptimizationSuggestion } from './types';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 interface AutoOptimizeDialogProps {
   isOpen: boolean;
@@ -28,6 +29,13 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
     selectedSuggestions,
     toggleSuggestion
   } = useContentOptimizer(content);
+
+  const { state } = useContentBuilder();
+  const { mainKeyword, selectedKeywords, serpSelections } = state;
+
+  // Get selected SERP items for display
+  const selectedSerpItems = serpSelections?.filter(item => item.selected) || [];
+  const selectedKeywordItems = selectedSerpItems.filter(item => item.type === 'keyword');
 
   // Initialize analysis when dialog opens
   React.useEffect(() => {
@@ -70,13 +78,35 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
     );
   };
 
+  // Display selected keywords for reference
+  const renderKeywordReference = () => {
+    if (selectedKeywords.length === 0 && selectedKeywordItems.length === 0) return null;
+    
+    return (
+      <div className="mb-4 p-3 border border-dashed rounded-md bg-secondary/10">
+        <h4 className="text-sm font-medium mb-2">Keywords to Incorporate</h4>
+        <div className="flex flex-wrap gap-1.5">
+          {mainKeyword && (
+            <Badge className="bg-blue-600 hover:bg-blue-700">{mainKeyword} (main)</Badge>
+          )}
+          {selectedKeywords.map((keyword, idx) => (
+            <Badge key={`keyword-${idx}`} className="bg-blue-500/70 hover:bg-blue-500">{keyword}</Badge>
+          ))}
+          {selectedKeywordItems.map((item, idx) => (
+            <Badge key={`serp-${idx}`} className="bg-blue-400/60 hover:bg-blue-400">{item.content}</Badge>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>AI Content Optimization</DialogTitle>
           <DialogDescription>
-            Select the suggestions you want to apply to improve your content
+            Select the suggestions to optimize your content and incorporate all your keywords and SERP data
           </DialogDescription>
         </DialogHeader>
         
@@ -87,8 +117,10 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
           </div>
         ) : (
           <>
-            {contentSuggestions.length > 0 || solutionSuggestions.length > 0 ? (
+            {(contentSuggestions.length > 0 || solutionSuggestions.length > 0) ? (
               <div className="space-y-4">
+                {renderKeywordReference()}
+                
                 {contentSuggestions.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Content Quality Suggestions</h3>
