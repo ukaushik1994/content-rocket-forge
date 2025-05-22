@@ -5,12 +5,14 @@ import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
 import { ContentTitleCard } from '../outline/ContentTitleCard';
 import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 import { OutlineTable } from '../outline/OutlineTable';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { TitleGenerationButton } from './writing/TitleGenerationButton';
+import { Button } from '@/components/ui/button';
 
 export const OutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
-  const { outline, serpSelections } = state;
+  const { outline, serpSelections, contentTitle } = state;
   
   useEffect(() => {
     // Mark as complete if we have an outline with at least 3 sections
@@ -36,8 +38,26 @@ export const OutlineStep = () => {
         </div>
       </div>
 
-      {/* Content title with edit option */}
-      <ContentTitleCard />
+      {/* Title Generation Card */}
+      <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/10 border border-white/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center justify-between gap-2">
+            <div>Content Title</div>
+            <TitleGenerationButton />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {contentTitle ? (
+            <p className="bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue font-medium text-lg">
+              {contentTitle}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-base">
+              No title set. Generate one with the button above.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Selected Items Summary */}
       <SelectedSerpItemsCard />

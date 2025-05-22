@@ -7,7 +7,6 @@ import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
-import { TitleGenerationButton } from './writing/TitleGenerationButton';
 
 export const ContentWritingStep = () => {
   const {
@@ -124,7 +123,7 @@ export const ContentWritingStep = () => {
         onWordCountChange={handleWordCountChange}
       />
       
-      {/* Title Generation Button */}
+      {/* Display content title */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-medium">
           {state.contentTitle ? (
@@ -135,7 +134,6 @@ export const ContentWritingStep = () => {
             <span className="text-muted-foreground text-base">No title set</span>
           )}
         </h2>
-        <TitleGenerationButton />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
