@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,9 +11,12 @@ import {
   ShoppingBag, 
   Newspaper, 
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Building2,
+  Palette
 } from 'lucide-react';
 import { ContentType, Solution } from '@/contexts/content-builder/types';
+import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -34,15 +38,62 @@ export const ContentTypeStep = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
+  // Add states for company info and brand guidelines
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [brandGuidelines, setBrandGuidelines] = useState<BrandGuidelines | null>(null);
+  
   useEffect(() => {
     if (contentType && selectedSolution) {
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
     }
   }, [contentType, selectedSolution, dispatch]);
   
+  // Load solutions, company info, and brand guidelines
   useEffect(() => {
     fetchSolutions();
-  }, []);
+    
+    // Load company info from localStorage
+    const storedCompanyInfo = localStorage.getItem('companyInfo');
+    if (storedCompanyInfo) {
+      try {
+        const parsedInfo = JSON.parse(storedCompanyInfo);
+        setCompanyInfo(parsedInfo);
+        
+        // Store company info in context for content generation
+        if (parsedInfo) {
+          dispatch({ 
+            type: 'SET_ADDITIONAL_INSTRUCTIONS', 
+            payload: `Use the following company information: ${parsedInfo.name} - ${parsedInfo.description}. Industry: ${parsedInfo.industry}. Mission: ${parsedInfo.mission}.` 
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing company info:", error);
+      }
+    }
+    
+    // Load brand guidelines from localStorage
+    const storedBrandGuidelines = localStorage.getItem('brandGuidelines');
+    if (storedBrandGuidelines) {
+      try {
+        const parsedGuidelines = JSON.parse(storedBrandGuidelines);
+        setBrandGuidelines(parsedGuidelines);
+        
+        // Update additional instructions if brand guidelines exist
+        if (parsedGuidelines) {
+          dispatch({ 
+            type: 'SET_ADDITIONAL_INSTRUCTIONS', 
+            payload: `Use the following company information: ${companyInfo?.name || ''} - ${companyInfo?.description || ''}. 
+            Follow these brand guidelines - Tone: ${parsedGuidelines.tone.join(', ')}. 
+            Use keywords: ${parsedGuidelines.keywords.join(', ')}. 
+            Do use: ${parsedGuidelines.doUse.join(', ')}. 
+            Don't use: ${parsedGuidelines.dontUse.join(', ')}.` 
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing brand guidelines:", error);
+      }
+    }
+  }, [dispatch]);
 
   const fetchSolutions = async () => {
     setIsLoading(true);
@@ -134,6 +185,49 @@ export const ContentTypeStep = () => {
 
   return (
     <div className="space-y-8">
+      {/* Company & Brand Info Section */}
+      {(companyInfo || brandGuidelines) && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="border border-primary/20 rounded-lg p-4 bg-primary/5"
+        >
+          <div className="flex flex-wrap justify-between items-start gap-4">
+            {companyInfo && (
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-primary flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">{companyInfo.name}</p>
+                  <p className="text-xs text-muted-foreground">{companyInfo.industry}</p>
+                </div>
+              </div>
+            )}
+            
+            {brandGuidelines && (
+              <div className="flex items-center gap-3">
+                <Palette className="h-5 w-5 text-primary flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">Brand Guidelines Applied</p>
+                  <p className="text-xs text-muted-foreground">
+                    Tone: {brandGuidelines.tone.slice(0, 2).join(', ')}
+                    {brandGuidelines.tone.length > 2 ? '...' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleNavigateToSolutions}
+              className="ml-auto text-xs"
+            >
+              Edit Info
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Content Type</h3>
         <p className="text-sm text-muted-foreground">
@@ -273,3 +367,6 @@ export const ContentTypeStep = () => {
     </div>
   );
 };
+
+// Import motion
+import { motion } from 'framer-motion';

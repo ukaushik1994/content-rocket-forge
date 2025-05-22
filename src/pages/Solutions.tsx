@@ -1,4 +1,5 @@
-import React, { Suspense, lazy } from 'react';
+
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +7,9 @@ import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 import { Helmet } from 'react-helmet-async';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { motion } from 'framer-motion';
+import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
+import { CompanySection } from '@/components/solutions/company';
+import { BrandGuidelinesDisplay } from '@/components/solutions/brand';
 
 // Lazy load the SolutionManager for better performance
 const SolutionManager = lazy(() => import('@/components/solutions/manager').then(module => ({
@@ -48,6 +52,43 @@ const ErrorFallback = ({
 const Solutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+
+  // Store company information and brand guidelines
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [brandGuidelines, setBrandGuidelines] = useState<BrandGuidelines | null>(null);
+
+  // Load stored company and brand information from localStorage on mount
+  useEffect(() => {
+    const storedCompanyInfo = localStorage.getItem('companyInfo');
+    if (storedCompanyInfo) {
+      try {
+        setCompanyInfo(JSON.parse(storedCompanyInfo));
+      } catch (e) {
+        console.error('Error parsing company info:', e);
+      }
+    }
+    
+    const storedBrandGuidelines = localStorage.getItem('brandGuidelines');
+    if (storedBrandGuidelines) {
+      try {
+        setBrandGuidelines(JSON.parse(storedBrandGuidelines));
+      } catch (e) {
+        console.error('Error parsing brand guidelines:', e);
+      }
+    }
+  }, []);
+
+  // Handle saving company information
+  const handleSaveCompanyInfo = (info: CompanyInfo) => {
+    setCompanyInfo(info);
+    localStorage.setItem('companyInfo', JSON.stringify(info));
+  };
+
+  // Handle saving brand guidelines
+  const handleSaveBrandGuidelines = (guidelines: BrandGuidelines) => {
+    setBrandGuidelines(guidelines);
+    localStorage.setItem('brandGuidelines', JSON.stringify(guidelines));
+  };
 
   // Animation variants for the page transition
   const pageVariants = {
@@ -94,7 +135,21 @@ const Solutions = () => {
       <Navbar />
       
       <main className="flex-1 container py-8 rounded-3xl">
-        <motion.div variants={itemVariants} className="mb-8">
+        <motion.div variants={itemVariants} className="mb-8 space-y-12">
+          {/* Company Section */}
+          <CompanySection 
+            companyInfo={companyInfo}
+            onSave={handleSaveCompanyInfo}
+          />
+          
+          {/* Brand Guidelines Display */}
+          <BrandGuidelinesDisplay
+            guidelines={brandGuidelines}
+            companyId={companyInfo?.id || ''}
+            onSave={handleSaveBrandGuidelines}
+          />
+          
+          {/* Solutions Manager */}
           <ContentBuilderProvider>
             <ErrorBoundary FallbackComponent={ErrorFallback}>
               <Suspense fallback={<LoadingFallback />}>
