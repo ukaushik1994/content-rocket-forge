@@ -1,7 +1,7 @@
 
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
 import { Helmet } from 'react-helmet-async';
@@ -10,6 +10,8 @@ import { motion } from 'framer-motion';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { CompanySection } from '@/components/solutions/company';
 import { BrandGuidelinesDisplay } from '@/components/solutions/brand';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Lazy load the SolutionManager for better performance
 const SolutionManager = lazy(() => import('@/components/solutions/manager').then(module => ({
@@ -161,11 +163,5 @@ const Solutions = () => {
       </main>
     </motion.div>;
 };
-
-// Import missing components
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 
 export default Solutions;
