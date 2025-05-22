@@ -15,8 +15,10 @@ export const SelectedItemsBadge: React.FC<SelectedItemsBadgeProps> = ({
   handleToggleSelection,
   badgeClassName
 }) => {
-  // Ensure content is treated as a string
-  const content = typeof item.content === 'string' ? item.content : JSON.stringify(item.content);
+  // Ensure content is treated as a string with null/undefined check
+  const content = item.content ? 
+    (typeof item.content === 'string' ? item.content : JSON.stringify(item.content)) 
+    : '';
   
   return (
     <Badge 

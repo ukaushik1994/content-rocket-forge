@@ -42,6 +42,10 @@ export async function detectAiKeyType(key: string): Promise<AiProvider | null> {
  * @returns The friendly name
  */
 export function getProviderFriendlyName(provider: AiProvider): string {
+  if (!provider) {
+    return 'Unknown Provider';
+  }
+  
   switch (provider) {
     case 'openai':
       return 'OpenAI';
@@ -54,6 +58,9 @@ export function getProviderFriendlyName(provider: AiProvider): string {
     case 'lmstudio':
       return 'LM Studio';
     default:
-      return provider.charAt(0).toUpperCase() + provider.slice(1);
+      // Safely handle cases where provider might not be a string
+      return typeof provider === 'string' ? 
+        provider.charAt(0).toUpperCase() + provider.slice(1) : 
+        'Unknown Provider';
   }
 }

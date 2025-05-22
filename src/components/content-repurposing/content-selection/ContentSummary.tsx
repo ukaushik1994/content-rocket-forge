@@ -12,7 +12,7 @@ const ContentSummary: React.FC<ContentSummaryProps> = ({ title, content }) => {
       <h3 className="font-medium text-white">{title}</h3>
       {content && (
         <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-          {content.substring(0, 120)}...
+          {content.length > 120 ? content.substring(0, 120) + '...' : content}
         </p>
       )}
     </div>

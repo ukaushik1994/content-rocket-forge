@@ -11,6 +11,9 @@ interface ContentPreviewProps {
 const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content }) => {
   const isMobile = useIsMobile();
   
+  // Ensure content is always a string
+  const safeContent = content || '';
+  
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -21,7 +24,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = memo(({ content }) => {
       <ScrollArea className={`${isMobile ? 'h-[200px]' : 'h-[calc(min(50vh,400px))]'} w-full pr-2`}>
         <div className="rounded-md text-white/90">
           <pre className="whitespace-pre-wrap text-xs sm:text-sm font-mono bg-black/20 p-3 sm:p-4 rounded-lg border border-white/5 overflow-x-auto">
-            {content}
+            {safeContent}
           </pre>
         </div>
       </ScrollArea>
