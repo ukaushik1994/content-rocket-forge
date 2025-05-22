@@ -1,167 +1,112 @@
 
-import { DocumentStructure, DocumentHeading, DocumentParagraph, DocumentList, DocumentLink, DocumentImage } from '@/contexts/content-builder/types';
+import { DocumentStructure } from '@/contexts/content-builder/types';
 
 /**
- * Extracts document structure from markdown content
+ * Extracts document structure from content
  */
 export const extractDocumentStructure = (content: string): DocumentStructure => {
-  // If content is empty, return a basic structure
-  if (!content) {
-    return {
-      hasSingleH1: false,
-      hasLogicalHierarchy: true,
-      headings: [],
-      h1: [],
-      h2: [],
-      h3: [],
-      h4: [],
-      h5: [],
-      h6: [],
-      paragraphs: [],
-      lists: [],
-      images: [],
-      links: [],
-      metadata: {
-        wordCount: 0,
-        characterCount: 0
-      }
-    };
-  }
+  // Extract headings
+  const h1Regex = /^# (.+)$/gm;
+  const h2Regex = /^## (.+)$/gm;
+  const h3Regex = /^### (.+)$/gm;
+  const h4Regex = /^#### (.+)$/gm;
+  const h5Regex = /^##### (.+)$/gm;
+  const h6Regex = /^###### (.+)$/gm;
   
-  // Extract headings by level
-  const headings: DocumentHeading[] = [];
-  const h1: string[] = [];
-  const h2: string[] = [];
-  const h3: string[] = [];
-  const h4: string[] = [];
-  const h5: string[] = [];
-  const h6: string[] = [];
-  const paragraphs: DocumentParagraph[] = [];
-  const lists: DocumentList[] = [];
-  const images: DocumentImage[] = [];
-  const links: DocumentLink[] = [];
+  // Extract other elements
+  const paragraphRegex = /^(?!#)(.*[a-zA-Z].*)$/gm;
+  const imageRegex = /!\[(.*?)\]\((.*?)\)/g;
+  const listItemRegex = /^[-*+] (.+)$/gm;
+  const numberedListItemRegex = /^\d+\. (.+)$/gm;
+  const linkRegex = /\[(.*?)\]\((.*?)\)/g;
   
-  // Process content line by line
-  const lines = content.split('\n');
+  // Extract headings
+  const h1 = [...content.matchAll(h1Regex)].map(match => match[1]);
+  const h2 = [...content.matchAll(h2Regex)].map(match => match[1]);
+  const h3 = [...content.matchAll(h3Regex)].map(match => match[1]);
+  const h4 = [...content.matchAll(h4Regex)].map(match => match[1]);
+  const h5 = [...content.matchAll(h5Regex)].map(match => match[1]);
+  const h6 = [...content.matchAll(h6Regex)].map(match => match[1]);
   
-  // Process each line
-  lines.forEach(line => {
-    // Extract headings
-    const h1Match = line.match(/^# (.+)/);
-    const h2Match = line.match(/^## (.+)/);
-    const h3Match = line.match(/^### (.+)/);
-    const h4Match = line.match(/^#### (.+)/);
-    const h5Match = line.match(/^##### (.+)/);
-    const h6Match = line.match(/^###### (.+)/);
-    
-    // Extract lists
-    const listItemMatch = line.match(/^[*\-+] (.+)/);
-    const orderedListMatch = line.match(/^\d+\. (.+)/);
-    
-    // Extract images
-    const imageMatch = line.match(/!\[([^\]]*)\]\(([^)]+)\)/);
-    
-    // Extract links (outside of images)
-    const linkMatches = [...line.matchAll(/(?<!!)\[([^\]]+)\]\(([^)]+)\)/g)];
-    
-    if (h1Match) {
-      headings.push({ level: 1, text: h1Match[1] });
-      h1.push(h1Match[1]);
-    }
-    else if (h2Match) {
-      headings.push({ level: 2, text: h2Match[1] });
-      h2.push(h2Match[1]);
-    }
-    else if (h3Match) {
-      headings.push({ level: 3, text: h3Match[1] });
-      h3.push(h3Match[1]);
-    }
-    else if (h4Match) {
-      headings.push({ level: 4, text: h4Match[1] });
-      h4.push(h4Match[1]);
-    }
-    else if (h5Match) {
-      headings.push({ level: 5, text: h5Match[1] });
-      h5.push(h5Match[1]);
-    }
-    else if (h6Match) {
-      headings.push({ level: 6, text: h6Match[1] });
-      h6.push(h6Match[1]);
-    }
-    else if (listItemMatch || orderedListMatch) {
-      const listContent = listItemMatch ? listItemMatch[1] : orderedListMatch![1];
-      // Create proper DocumentList object
-      const listType = listItemMatch ? 'unordered' : 'ordered';
-      
-      // Check if we already have a list of this type
-      const existingList = lists.find(list => list.type === listType);
-      if (existingList) {
-        existingList.items.push(listContent);
-      } else {
-        lists.push({ 
-          type: listType, 
-          items: [listContent] 
-        });
-      }
-    }
-    else if (imageMatch) {
-      images.push({ alt: imageMatch[1], src: imageMatch[2] });
-    }
-    else if (line.trim().length > 0 && !line.startsWith('>')) {
-      // Basic paragraph detection (non-empty line that's not a blockquote)
-      paragraphs.push({ text: line.trim() });
-    }
-    
-    // Process links separately to handle multiple links per line
-    if (linkMatches.length > 0) {
-      linkMatches.forEach(match => {
-        links.push({ 
-          text: match[1], 
-          href: match[2],
-          url: match[2] // Add url property to match the DocumentLink type
-        });
-      });
-    }
+  // Build headings array
+  const headings = [
+    ...h1.map(text => ({ level: 1, text })),
+    ...h2.map(text => ({ level: 2, text })),
+    ...h3.map(text => ({ level: 3, text })),
+    ...h4.map(text => ({ level: 4, text })),
+    ...h5.map(text => ({ level: 5, text })),
+    ...h6.map(text => ({ level: 6, text }))
+  ].sort((a, b) => {
+    const aPos = content.indexOf(`${'#'.repeat(a.level)} ${a.text}`);
+    const bPos = content.indexOf(`${'#'.repeat(b.level)} ${b.text}`);
+    return aPos - bPos;
   });
   
-  // Check for single H1
-  const h1Count = headings.filter(h => h.level === 1).length;
-  const hasSingleH1 = h1Count === 1;
+  // Extract paragraphs
+  const paragraphs = [...content.matchAll(paragraphRegex)]
+    .map(match => match[1])
+    .filter(text => text.trim().length > 0)
+    .map(text => ({ text }));
   
-  // Check heading hierarchy
+  // Extract lists
+  const listItems = [...content.matchAll(listItemRegex)].map(match => match[1]);
+  const numberedListItems = [...content.matchAll(numberedListItemRegex)].map(match => match[1]);
+  
+  // Combine lists
+  const lists = [
+    { type: 'unordered', items: listItems },
+    { type: 'ordered', items: numberedListItems }
+  ].filter(list => list.items.length > 0);
+  
+  // Extract images
+  const images = [...content.matchAll(imageRegex)].map(match => ({
+    alt: match[1],
+    src: match[2]
+  }));
+  
+  // Extract links
+  const links = [...content.matchAll(linkRegex)].map(match => ({
+    text: match[1],
+    href: match[2],
+    url: match[2]
+  }));
+  
+  // Calculate metadata
+  const wordCount = content.split(/\s+/).filter(Boolean).length;
+  const characterCount = content.length;
+  
+  // Check if document has a single H1
+  const hasSingleH1 = h1.length === 1;
+  
+  // Check if document has logical heading hierarchy
   let hasLogicalHierarchy = true;
-  let previousLevel = 0;
+  let currentLevel = 1;
   
   for (const heading of headings) {
-    // A heading can be at most one level deeper than the previous heading
-    if (heading.level > previousLevel + 1) {
+    if (heading.level > currentLevel + 1) {
       hasLogicalHierarchy = false;
       break;
     }
-    previousLevel = heading.level;
+    currentLevel = Math.max(currentLevel, heading.level);
   }
   
-  // Create metadata object
-  const metadata = {
-    wordCount: content.split(/\s+/).filter(Boolean).length,
-    characterCount: content.length
-  };
-  
-  // Create and return the complete document structure
   return {
-    hasSingleH1,
-    hasLogicalHierarchy,
-    headings,
     h1,
     h2,
     h3,
     h4,
     h5,
     h6,
+    hasSingleH1,
+    hasLogicalHierarchy,
+    headings,
     paragraphs,
     lists,
     images,
     links,
-    metadata
+    metadata: {
+      wordCount,
+      characterCount
+    }
   };
 };
