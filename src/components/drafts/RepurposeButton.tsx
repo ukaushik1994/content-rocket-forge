@@ -3,7 +3,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Undo } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface RepurposeButtonProps {
   contentId: string;
@@ -23,7 +22,7 @@ export const RepurposeButton: React.FC<RepurposeButtonProps> = ({ contentId }) =
       onClick={handleRepurpose}
       className="text-primary hover:bg-primary/10"
     >
-      <Undo className="h-4 w-4 mr-1" />
+      <Undo className="h-3.5 w-3.5 mr-1" />
       Repurpose
     </Button>
   );
