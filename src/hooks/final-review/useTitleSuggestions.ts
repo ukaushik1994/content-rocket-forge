@@ -12,10 +12,18 @@ const toastConfig = {
 
 /**
  * Custom hook for generating and managing title suggestions
+ * based on main keyword and SERP selected items
  */
 export const useTitleSuggestions = () => {
   const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, selectedKeywords, metaTitle, contentTitle } = state;
+  const { 
+    content, 
+    mainKeyword, 
+    selectedKeywords, 
+    metaTitle, 
+    contentTitle,
+    serpSelections
+  } = state;
   
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
@@ -30,9 +38,20 @@ export const useTitleSuggestions = () => {
     setIsGeneratingTitles(true);
     
     try {
-      // Call the generateTitleSuggestions function from utils
+      // Extract content from SERP selections to enhance context for title generation
+      const serpSelectedContent = serpSelections
+        .filter(item => item.selected)
+        .map(item => item.content)
+        .join("\n");
+      
+      // Combine SERP selections with existing content for better context
+      const contextContent = serpSelectedContent 
+        ? `${content || ''}\n\n${serpSelectedContent}`
+        : content || "Your content will be about " + mainKeyword;
+      
+      // Call the generateTitleSuggestions function from utils with enhanced context
       const suggestions = await generateTitleSuggestions(
-        content || "Your content will be about " + mainKeyword, 
+        contextContent, 
         mainKeyword, 
         selectedKeywords
       );
@@ -64,7 +83,7 @@ export const useTitleSuggestions = () => {
     } finally {
       setIsGeneratingTitles(false);
     }
-  }, [content, mainKeyword, selectedKeywords, metaTitle, contentTitle, dispatch]);
+  }, [content, mainKeyword, selectedKeywords, metaTitle, contentTitle, dispatch, serpSelections]);
 
   // Apply a specific title from suggestions
   const applyTitle = useCallback((title: string) => {

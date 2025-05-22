@@ -9,74 +9,77 @@
 export const generateTitleSuggestions = async (content: string, mainKeyword: string, selectedKeywords: string[]) => {
   console.log("[documentAnalysis] Generating title suggestions for:", mainKeyword);
   
-  // Analyse first 300 words of content to extract themes
-  const firstWords = content.split(/\s+/).slice(0, 300).join(' ');
+  // Analyze first 500 words of content to extract themes (increased from 300 for better context)
+  const firstWords = content.split(/\s+/).slice(0, 500).join(' ');
   
   // Get the current year for more relevant titles
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   
+  // Make sure the main keyword is prominently included in all title formats
+  const mainKeywordProcessed = mainKeyword.trim();
+  
   // Create different title patterns with more variety
   let titleFormats = [
     // How-to format
-    `How to Master ${mainKeyword}: A Complete Guide for ${currentYear}`,
-    `${Math.floor(Math.random() * 5) + 5} Essential Steps to Excel at ${mainKeyword}`,
-    `The Ultimate Guide to ${mainKeyword} in ${currentYear}`,
+    `How to Master ${mainKeywordProcessed}: A Complete Guide for ${currentYear}`,
+    `${Math.floor(Math.random() * 5) + 5} Essential Steps to Excel at ${mainKeywordProcessed}`,
+    `The Ultimate Guide to ${mainKeywordProcessed} in ${currentYear}`,
     
     // List format
-    `Top ${Math.floor(Math.random() * 10) + 5} ${mainKeyword} Strategies That Actually Work`,
-    `${Math.floor(Math.random() * 7) + 3} Proven ${mainKeyword} Methods for Better Results`,
-    `${Math.floor(Math.random() * 12) + 7} Ways to Improve Your ${mainKeyword} Approach`,
+    `Top ${Math.floor(Math.random() * 10) + 5} ${mainKeywordProcessed} Strategies That Actually Work`,
+    `${Math.floor(Math.random() * 7) + 3} Proven ${mainKeywordProcessed} Methods for Better Results`,
+    `${Math.floor(Math.random() * 12) + 7} Ways to Improve Your ${mainKeywordProcessed} Approach`,
     
     // Question format
-    `Why is ${mainKeyword} Essential for Your ${['Strategy', 'Business', 'Success', 'Growth'][Math.floor(Math.random() * 4)]}?`,
-    `How Can ${mainKeyword} Transform Your ${['Results', 'Performance', 'Business', 'Approach'][Math.floor(Math.random() * 4)]}?`,
-    `What Makes ${mainKeyword} So Important in Today's ${['Market', 'Industry', 'Environment', 'World'][Math.floor(Math.random() * 4)]}?`,
+    `Why is ${mainKeywordProcessed} Essential for Your ${['Strategy', 'Business', 'Success', 'Growth'][Math.floor(Math.random() * 4)]}?`,
+    `How Can ${mainKeywordProcessed} Transform Your ${['Results', 'Performance', 'Business', 'Approach'][Math.floor(Math.random() * 4)]}?`,
+    `What Makes ${mainKeywordProcessed} So Important in Today's ${['Market', 'Industry', 'Environment', 'World'][Math.floor(Math.random() * 4)]}?`,
     
     // Benefit-driven format
-    `Boost Your ${['Results', 'Performance', 'ROI', 'Success'][Math.floor(Math.random() * 4)]} with These ${mainKeyword} Techniques`,
-    `Unlock New ${['Opportunities', 'Possibilities', 'Potentials', 'Growth'][Math.floor(Math.random() * 4)]} with ${mainKeyword}`,
-    `How ${mainKeyword} Can Revolutionize Your ${['Business', 'Strategy', 'Approach', 'Results'][Math.floor(Math.random() * 4)]}`,
+    `Boost Your ${['Results', 'Performance', 'ROI', 'Success'][Math.floor(Math.random() * 4)]} with These ${mainKeywordProcessed} Techniques`,
+    `Unlock New ${['Opportunities', 'Possibilities', 'Potentials', 'Growth'][Math.floor(Math.random() * 4)]} with ${mainKeywordProcessed}`,
+    `How ${mainKeywordProcessed} Can Revolutionize Your ${['Business', 'Strategy', 'Approach', 'Results'][Math.floor(Math.random() * 4)]}`,
     
     // Problem-solving format
-    `Solving Common ${mainKeyword} Problems: Expert ${['Tips', 'Advice', 'Solutions', 'Guidance'][Math.floor(Math.random() * 4)]}`,
-    `Overcome ${mainKeyword} Challenges with These ${['Proven', 'Tested', 'Effective', 'Simple'][Math.floor(Math.random() * 4)]} Methods`,
-    `Troubleshooting Your ${mainKeyword}: A Step-by-Step ${['Guide', 'Approach', 'Manual', 'Handbook'][Math.floor(Math.random() * 4)]}`,
+    `Solving Common ${mainKeywordProcessed} Problems: Expert ${['Tips', 'Advice', 'Solutions', 'Guidance'][Math.floor(Math.random() * 4)]}`,
+    `Overcome ${mainKeywordProcessed} Challenges with These ${['Proven', 'Tested', 'Effective', 'Simple'][Math.floor(Math.random() * 4)]} Methods`,
+    `Troubleshooting Your ${mainKeywordProcessed}: A Step-by-Step ${['Guide', 'Approach', 'Manual', 'Handbook'][Math.floor(Math.random() * 4)]}`,
     
     // Data-driven format
-    `${mainKeyword} Analysis: Key Insights and ${['Implementation', 'Strategy', 'Tactics', 'Application'][Math.floor(Math.random() * 4)]}`,
-    `The Data Behind Successful ${mainKeyword}: What You Need to Know`,
-    `${mainKeyword} Analytics: Understanding the ${['Numbers', 'Metrics', 'Statistics', 'Patterns'][Math.floor(Math.random() * 4)]}`,
+    `${mainKeywordProcessed} Analysis: Key Insights and ${['Implementation', 'Strategy', 'Tactics', 'Application'][Math.floor(Math.random() * 4)]}`,
+    `The Data Behind Successful ${mainKeywordProcessed}: What You Need to Know`,
+    `${mainKeywordProcessed} Analytics: Understanding the ${['Numbers', 'Metrics', 'Statistics', 'Patterns'][Math.floor(Math.random() * 4)]}`,
     
     // Tutorial format
-    `${['Step-by-Step', 'Comprehensive', 'Complete', 'Ultimate'][Math.floor(Math.random() * 4)]} ${mainKeyword} Implementation Guide`,
-    `Learn ${mainKeyword} in ${Math.floor(Math.random() * 10) + 5} ${['Simple', 'Easy', 'Straightforward', 'Quick'][Math.floor(Math.random() * 4)]} Steps`,
-    `Mastering ${mainKeyword}: From ${['Beginner', 'Novice', 'Amateur', 'Rookie'][Math.floor(Math.random() * 4)]} to ${['Expert', 'Pro', 'Master', 'Guru'][Math.floor(Math.random() * 4)]}`,
+    `${['Step-by-Step', 'Comprehensive', 'Complete', 'Ultimate'][Math.floor(Math.random() * 4)]} ${mainKeywordProcessed} Implementation Guide`,
+    `Learn ${mainKeywordProcessed} in ${Math.floor(Math.random() * 10) + 5} ${['Simple', 'Easy', 'Straightforward', 'Quick'][Math.floor(Math.random() * 4)]} Steps`,
+    `Mastering ${mainKeywordProcessed}: From ${['Beginner', 'Novice', 'Amateur', 'Rookie'][Math.floor(Math.random() * 4)]} to ${['Expert', 'Pro', 'Master', 'Guru'][Math.floor(Math.random() * 4)]}`,
     
     // Strategic format
-    `${mainKeyword} Strategy: A Framework for ${['Success', 'Growth', 'Excellence', 'Innovation'][Math.floor(Math.random() * 4)]}`,
-    `Strategic Approach to ${mainKeyword}: What Works in ${currentYear}`,
-    `Building a Winning ${mainKeyword} Strategy for Your ${['Business', 'Organization', 'Team', 'Brand'][Math.floor(Math.random() * 4)]}`,
+    `${mainKeywordProcessed} Strategy: A Framework for ${['Success', 'Growth', 'Excellence', 'Innovation'][Math.floor(Math.random() * 4)]}`,
+    `Strategic Approach to ${mainKeywordProcessed}: What Works in ${currentYear}`,
+    `Building a Winning ${mainKeywordProcessed} Strategy for Your ${['Business', 'Organization', 'Team', 'Brand'][Math.floor(Math.random() * 4)]}`,
     
     // Comprehensive guide
-    `The ${['Ultimate', 'Definitive', 'Complete', 'Comprehensive'][Math.floor(Math.random() * 4)]} ${mainKeyword} Guide for ${currentYear}`,
-    `Everything You Need to Know About ${mainKeyword} in ${currentYear}`,
-    `${mainKeyword} ${['101', 'Essentials', 'Basics', 'Fundamentals'][Math.floor(Math.random() * 4)]}: A Complete ${['Overview', 'Introduction', 'Guide', 'Primer'][Math.floor(Math.random() * 4)]}`,
+    `The ${['Ultimate', 'Definitive', 'Complete', 'Comprehensive'][Math.floor(Math.random() * 4)]} ${mainKeywordProcessed} Guide for ${currentYear}`,
+    `Everything You Need to Know About ${mainKeywordProcessed} in ${currentYear}`,
+    `${mainKeywordProcessed} ${['101', 'Essentials', 'Basics', 'Fundamentals'][Math.floor(Math.random() * 4)]}: A Complete ${['Overview', 'Introduction', 'Guide', 'Primer'][Math.floor(Math.random() * 4)]}`,
     
     // Current year relevance
-    `${mainKeyword}: ${['Best', 'Essential', 'Proven', 'Effective'][Math.floor(Math.random() * 4)]} Practices for ${currentYear}`,
-    `${mainKeyword} Trends to Watch in ${currentYear}-${nextYear}`,
-    `The Future of ${mainKeyword}: Predictions for ${nextYear}`,
+    `${mainKeywordProcessed}: ${['Best', 'Essential', 'Proven', 'Effective'][Math.floor(Math.random() * 4)]} Practices for ${currentYear}`,
+    `${mainKeywordProcessed} Trends to Watch in ${currentYear}-${nextYear}`,
+    `The Future of ${mainKeywordProcessed}: Predictions for ${nextYear}`,
     
     // Insider knowledge
-    `${mainKeyword} ${['Secrets', 'Insights', 'Tactics', 'Strategies'][Math.floor(Math.random() * 4)]} From Industry Experts`,
-    `What ${['Experts', 'Professionals', 'Leaders', 'Insiders'][Math.floor(Math.random() * 4)]} Know About ${mainKeyword} That You Don't`,
-    `Hidden ${['Aspects', 'Elements', 'Factors', 'Components'][Math.floor(Math.random() * 4)]} of Successful ${mainKeyword} Implementation`,
+    `${mainKeywordProcessed} ${['Secrets', 'Insights', 'Tactics', 'Strategies'][Math.floor(Math.random() * 4)]} From Industry Experts`,
+    `What ${['Experts', 'Professionals', 'Leaders', 'Insiders'][Math.floor(Math.random() * 4)]} Know About ${mainKeywordProcessed} That You Don't`,
+    `Hidden ${['Aspects', 'Elements', 'Factors', 'Components'][Math.floor(Math.random() * 4)]} of Successful ${mainKeywordProcessed} Implementation`,
     
     // Comparison and contrast
-    `${mainKeyword} vs. Traditional ${['Methods', 'Approaches', 'Techniques', 'Strategies'][Math.floor(Math.random() * 4)]}: Which is Better?`,
-    `${['Comparing', 'Contrasting', 'Evaluating', 'Analyzing'][Math.floor(Math.random() * 4)]} ${mainKeyword} Approaches: What Really Works?`,
-    `${mainKeyword}: ${['Old', 'Traditional', 'Conventional', 'Classic'][Math.floor(Math.random() * 4)]} vs. ${['New', 'Modern', 'Contemporary', 'Innovative'][Math.floor(Math.random() * 4)]} Methods`
+    `${mainKeywordProcessed} vs. Traditional ${['Methods', 'Approaches', 'Techniques', 'Strategies'][Math.floor(Math.random() * 4)]}: Which is Better?`,
+    `${['Comparing', 'Contrasting', 'Evaluating', 'Analyzing'][Math.floor(Math.random() * 4)]} ${mainKeywordProcessed} Approaches: What Really Works?`,
+    `${mainKeywordProcessed}: ${['Old', 'Traditional', 'Conventional', 'Classic'][Math.floor(Math.random() * 4)]} vs. ${['New', 'Modern', 'Contemporary', 'Innovative'][Math.floor(Math.random() * 4)]} Methods`
   ];
   
   // Add variety with different sentence structures 
@@ -101,7 +104,7 @@ export const generateTitleSuggestions = async (content: string, mainKeyword: str
   for (let i = 0; i < 5; i++) {
     const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-    titleFormats.push(`${randomPrefix} ${mainKeyword}: ${randomSuffix}`);
+    titleFormats.push(`${randomPrefix} ${mainKeywordProcessed}: ${randomSuffix}`);
   }
   
   // Add some content-based titles using the first 100 words
@@ -112,7 +115,7 @@ export const generateTitleSuggestions = async (content: string, mainKeyword: str
       const randomIndex = Math.floor(Math.random() * contentWords.length);
       const significantWord = contentWords[randomIndex];
       if (significantWord && significantWord.length > 4) {
-        titleFormats.push(`${mainKeyword} and ${significantWord}: A Perfect ${['Combination', 'Match', 'Pairing', 'Alliance'][Math.floor(Math.random() * 4)]}`);
+        titleFormats.push(`${mainKeywordProcessed} and ${significantWord}: A Perfect ${['Combination', 'Match', 'Pairing', 'Alliance'][Math.floor(Math.random() * 4)]}`);
       }
     }
   }
@@ -127,14 +130,14 @@ export const generateTitleSuggestions = async (content: string, mainKeyword: str
     const keywordsToUse = shuffledKeywords.slice(0, Math.min(3, shuffledKeywords.length));
     
     keywordsToUse.forEach(secondaryKeyword => {
-      if (secondaryKeyword && secondaryKeyword !== mainKeyword) {
-        enhancedTitles.push(`${mainKeyword} and ${secondaryKeyword}: The ${['Perfect', 'Ideal', 'Ultimate', 'Essential'][Math.floor(Math.random() * 4)]} Combination`);
-        enhancedTitles.push(`How to Optimize for ${mainKeyword} and ${secondaryKeyword} in ${currentYear}`);
-        enhancedTitles.push(`${['Maximize', 'Boost', 'Enhance', 'Improve'][Math.floor(Math.random() * 4)]} Your ${secondaryKeyword} with ${mainKeyword} Strategies`);
+      if (secondaryKeyword && secondaryKeyword !== mainKeywordProcessed) {
+        enhancedTitles.push(`${mainKeywordProcessed} and ${secondaryKeyword}: The ${['Perfect', 'Ideal', 'Ultimate', 'Essential'][Math.floor(Math.random() * 4)]} Combination`);
+        enhancedTitles.push(`How to Optimize for ${mainKeywordProcessed} and ${secondaryKeyword} in ${currentYear}`);
+        enhancedTitles.push(`${['Maximize', 'Boost', 'Enhance', 'Improve'][Math.floor(Math.random() * 4)]} Your ${secondaryKeyword} with ${mainKeywordProcessed} Strategies`);
         
         // Add more creative combinations
-        enhancedTitles.push(`The Relationship Between ${mainKeyword} and ${secondaryKeyword}: ${['Key Insights', 'Important Connections', 'Critical Links', 'Essential Bonds'][Math.floor(Math.random() * 4)]}`);
-        enhancedTitles.push(`${secondaryKeyword}: The Missing Piece in Your ${mainKeyword} Strategy`);
+        enhancedTitles.push(`The Relationship Between ${mainKeywordProcessed} and ${secondaryKeyword}: ${['Key Insights', 'Important Connections', 'Critical Links', 'Essential Bonds'][Math.floor(Math.random() * 4)]}`);
+        enhancedTitles.push(`${secondaryKeyword}: The Missing Piece in Your ${mainKeywordProcessed} Strategy`);
       }
     });
     
@@ -142,18 +145,18 @@ export const generateTitleSuggestions = async (content: string, mainKeyword: str
     if (keywordsToUse.length >= 2) {
       const kw1 = keywordsToUse[0];
       const kw2 = keywordsToUse[1];
-      enhancedTitles.push(`${mainKeyword}: Integrating ${kw1} and ${kw2} for Maximum Results`);
+      enhancedTitles.push(`${mainKeywordProcessed}: Integrating ${kw1} and ${kw2} for Maximum Results`);
       
       if (keywordsToUse.length >= 3) {
         const kw3 = keywordsToUse[2];
-        enhancedTitles.push(`The ${mainKeyword} Trifecta: ${kw1}, ${kw2}, and ${kw3}`);
+        enhancedTitles.push(`The ${mainKeywordProcessed} Trifecta: ${kw1}, ${kw2}, and ${kw3}`);
       }
     }
   }
   
   // Add timestamp to ensure uniqueness
   const timestamp = Date.now().toString().slice(-4);
-  enhancedTitles.push(`${currentYear} ${mainKeyword} Guide: Updated Insights (Edition ${timestamp})`);
+  enhancedTitles.push(`${currentYear} ${mainKeywordProcessed} Guide: Updated Insights (Edition ${timestamp})`);
   
   // Shuffle the final title list to introduce more randomness
   const shuffledTitles = enhancedTitles
