@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import { BrandGuidelines } from '@/contexts/content-builder/types/company-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ExternalLink, Palette } from 'lucide-react';
+import { Edit, ExternalLink, FileText, Palette } from 'lucide-react';
 import { BrandGuidelinesDialog } from './BrandGuidelinesDialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { BrandGuidelinesForm } from './BrandGuidelinesForm';
 
 interface BrandGuidelinesDisplayProps {
   guidelines: BrandGuidelines | null;
@@ -19,9 +21,19 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
   onSave
 }) => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
+  };
+  
+  const handleOpenDetailedForm = () => {
+    setIsSheetOpen(true);
+  };
+  
+  const handleSaveFromSheet = (formData: BrandGuidelines) => {
+    onSave(formData);
+    setIsSheetOpen(false);
   };
   
   if (!guidelines) {
@@ -32,15 +44,28 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
             <Palette className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-semibold">Brand Guidelines</h2>
           </div>
-          <Button 
-            onClick={handleOpenDialog}
-            variant="outline"
-            className="gap-1"
-            disabled={!companyId}
-            title={!companyId ? "Add company information first" : ""}
-          >
-            Add Brand Guidelines
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleOpenDialog}
+              variant="outline"
+              className="gap-1"
+              disabled={!companyId}
+              title={!companyId ? "Add company information first" : ""}
+            >
+              <Palette className="h-4 w-4" />
+              Quick Setup
+            </Button>
+            <Button 
+              onClick={handleOpenDetailedForm}
+              variant="default"
+              className="gap-1"
+              disabled={!companyId}
+              title={!companyId ? "Add company information first" : ""}
+            >
+              <FileText className="h-4 w-4" />
+              Detailed Setup
+            </Button>
+          </div>
         </div>
         
         {!companyId ? (
@@ -59,9 +84,14 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
             <p className="text-sm text-muted-foreground mb-6 max-w-md text-center">
               Define your brand guidelines to help the AI understand your brand's voice, tone, and visual identity.
             </p>
-            <Button onClick={handleOpenDialog}>
-              Define Brand Guidelines
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={handleOpenDialog} variant="outline">
+                Quick Setup
+              </Button>
+              <Button onClick={handleOpenDetailedForm}>
+                Detailed Setup
+              </Button>
+            </div>
           </motion.div>
         )}
         
@@ -72,6 +102,28 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
           companyId={companyId}
           onSave={onSave}
         />
+        
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetContent className="w-[90vw] sm:max-w-2xl overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Detailed Brand Guidelines
+              </SheetTitle>
+              <SheetDescription>
+                Fill in comprehensive details about your brand to help the AI generate more accurate content.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="py-6">
+              <BrandGuidelinesForm
+                companyId={companyId}
+                initialData={guidelines}
+                onSave={handleSaveFromSheet}
+                onCancel={() => setIsSheetOpen(false)}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     );
   }
@@ -83,14 +135,24 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
           <Palette className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-semibold">Brand Guidelines</h2>
         </div>
-        <Button 
-          onClick={handleOpenDialog}
-          variant="outline"
-          className="gap-1"
-        >
-          <Edit className="h-4 w-4" />
-          Edit Guidelines
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleOpenDialog}
+            variant="outline"
+            className="gap-1"
+          >
+            <Edit className="h-4 w-4" />
+            Quick Edit
+          </Button>
+          <Button 
+            onClick={handleOpenDetailedForm}
+            variant="default"
+            className="gap-1"
+          >
+            <FileText className="h-4 w-4" />
+            Detailed Edit
+          </Button>
+        </div>
       </div>
       
       <motion.div
@@ -208,6 +270,28 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
         companyId={companyId}
         onSave={onSave}
       />
+      
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-[90vw] sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Detailed Brand Guidelines
+            </SheetTitle>
+            <SheetDescription>
+              Edit your comprehensive brand guidelines to help the AI generate more accurate content.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-6">
+            <BrandGuidelinesForm
+              companyId={companyId}
+              initialData={guidelines}
+              onSave={handleSaveFromSheet}
+              onCancel={() => setIsSheetOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
