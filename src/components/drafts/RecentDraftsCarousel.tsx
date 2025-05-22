@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Edit, ArrowRight } from 'lucide-react';
+import { Eye, Edit, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -41,12 +41,20 @@ export const RecentDraftsCarousel: React.FC<RecentDraftsCarouselProps> = ({ draf
   };
   
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xl font-semibold">Recent Drafts</h2>
+    <motion.div 
+      className="space-y-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Recent Drafts</h2>
+          <Sparkles className="h-4 w-4 text-neon-purple animate-pulse-glow" />
+        </div>
         <Button 
           variant="link" 
-          className="text-neon-purple flex items-center gap-1" 
+          className="text-neon-purple flex items-center gap-1 hover:text-neon-blue transition-colors" 
           onClick={() => navigate('/content-builder')}
         >
           Create new
@@ -60,26 +68,26 @@ export const RecentDraftsCarousel: React.FC<RecentDraftsCarouselProps> = ({ draf
             {drafts.map((draft) => (
               <CarouselItem key={draft.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
                 <motion.div
-                  whileHover={{ y: -5 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <Card className="h-full bg-card/30 backdrop-blur-sm border-white/10 hover:border-white/20 hover:shadow-lg transition-all overflow-hidden">
+                  <Card className="h-full bg-gradient-to-br from-black/90 to-black/70 backdrop-blur-sm border-white/10 hover:border-neon-purple/30 hover:shadow-lg hover:shadow-neon-purple/10 transition-all overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-purple to-neon-blue" />
                     
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-center">
-                        <Badge variant="outline" className="bg-white/5">
+                        <Badge variant="outline" className="bg-neon-purple/10 text-neon-purple border-neon-purple/30">
                           Draft
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(draft.updated_at)}
                         </span>
                       </div>
-                      <CardTitle className="mt-2 text-lg line-clamp-1">{draft.title}</CardTitle>
+                      <CardTitle className="mt-2 text-lg line-clamp-1 group-hover:text-gradient transition-colors">{draft.title}</CardTitle>
                     </CardHeader>
                     
                     <CardContent className="pb-0">
-                      <div className="line-clamp-2 text-sm opacity-80">
+                      <div className="line-clamp-2 text-sm opacity-80 prose prose-invert prose-sm max-w-none">
                         {draft.content ? (
                           <div dangerouslySetInnerHTML={{ 
                             __html: draft.content?.substring(0, 120) + '...'
@@ -91,8 +99,8 @@ export const RecentDraftsCarousel: React.FC<RecentDraftsCarouselProps> = ({ draf
                     </CardContent>
                     
                     <CardFooter className="pt-4 flex justify-end gap-2 mt-auto">
-                      <Button size="sm" variant="ghost" className="gap-1">
-                        <Eye className="h-4 w-4" />
+                      <Button size="sm" variant="ghost" className="gap-1 text-white/70 hover:text-white group">
+                        <Eye className="h-4 w-4 group-hover:text-neon-blue transition-colors" />
                         View
                       </Button>
                       
@@ -111,10 +119,14 @@ export const RecentDraftsCarousel: React.FC<RecentDraftsCarouselProps> = ({ draf
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-1" />
-          <CarouselNext className="right-1" />
+          <div className="absolute -left-4 top-1/2 -translate-y-1/2 z-10">
+            <CarouselPrevious className="bg-black/80 border border-white/10 hover:bg-black hover:border-white/20" />
+          </div>
+          <div className="absolute -right-4 top-1/2 -translate-y-1/2 z-10">
+            <CarouselNext className="bg-black/80 border border-white/10 hover:bg-black hover:border-white/20" />
+          </div>
         </Carousel>
       </div>
-    </div>
+    </motion.div>
   );
 };

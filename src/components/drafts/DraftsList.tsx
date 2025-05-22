@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RepurposeButton } from './RepurposeButton';
 import { motion } from 'framer-motion';
+import { RefreshButton } from '@/components/ui/refresh-button';
+import { CustomBadge } from '@/components/ui/custom-badge';
 
 interface DraftsListProps {
   onOpenDetailView?: (draft: any) => void;
@@ -20,6 +22,7 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState('all');
   const [refreshCount, setRefreshCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Filter drafts from content items
   const drafts = contentItems.filter(item => item.status === 'draft');
@@ -100,11 +103,15 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   };
 
   const handleRefresh = () => {
+    setIsRefreshing(true);
     const toastId = toast.loading('Refreshing content...');
     refreshContent().then(() => {
       console.log('[DraftsList] Content manually refreshed, found items:', contentItems.length);
       toast.success('Content refreshed successfully', { id: toastId });
       setRefreshCount(prev => prev + 1);
+      setIsRefreshing(false);
+    }).catch(() => {
+      setIsRefreshing(false);
     });
   };
 
@@ -130,23 +137,25 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-30 pt-4 pb-4 bg-black/80 backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-30 pt-4 pb-4 bg-black/90 backdrop-blur-xl rounded-xl mb-6 shadow-lg border border-white/5">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1">
           <TabsList className="grid grid-cols-3 w-full max-w-md bg-black/40 border border-white/10 rounded-lg p-1">
-            <TabsTrigger value="all" className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">All ({contentItems.length})</TabsTrigger>
-            <TabsTrigger value="drafts" className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">Drafts ({drafts.length})</TabsTrigger>
-            <TabsTrigger value="published" className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-white">Published ({publishedItems.length})</TabsTrigger>
+            <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple/30 data-[state=active]:to-neon-blue/30 data-[state=active]:text-white">
+              All ({contentItems.length})
+            </TabsTrigger>
+            <TabsTrigger value="drafts" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple/30 data-[state=active]:to-neon-blue/30 data-[state=active]:text-white">
+              Drafts ({drafts.length})
+            </TabsTrigger>
+            <TabsTrigger value="published" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-neon-purple/30 data-[state=active]:to-neon-blue/30 data-[state=active]:text-white">
+              Published ({publishedItems.length})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <RefreshButton 
+          isRefreshing={isRefreshing}
           onClick={handleRefresh} 
-          className="gap-2 border-white/10 hover:bg-white/5"
-        >
-          <RefreshCcw className="h-4 w-4" />
-          Refresh
-        </Button>
+          className="border-white/10 hover:bg-white/5"
+        />
       </div>
       
       {renderContentItems(displayedItems)}
@@ -157,22 +166,35 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
   function renderContentItems(items: any[]) {
     if (items.length === 0) {
       return (
-        <div className="bg-card/20 backdrop-blur-sm border border-white/10 rounded-lg p-12 text-center">
-          <div className="w-16 h-16 mx-auto bg-black/40 rounded-full flex items-center justify-center mb-4 border border-white/10">
-            <Sparkles className="h-8 w-8 text-neon-purple/70" />
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-card/20 backdrop-blur-sm border border-white/10 rounded-lg p-12 text-center"
+        >
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 rounded-full flex items-center justify-center mb-6 border border-white/10 shadow-lg shadow-neon-purple/10">
+            <Sparkles className="h-10 w-10 text-neon-purple animate-pulse-glow" />
           </div>
-          <p className="text-xl font-medium mb-2">No {selectedTab === 'all' ? 'content items' : selectedTab} found</p>
-          <p className="text-muted-foreground max-w-md mx-auto mb-6">
+          <h3 className="text-2xl font-medium mb-2 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+            No {selectedTab === 'all' ? 'content items' : selectedTab} found
+          </h3>
+          <p className="text-muted-foreground max-w-md mx-auto mb-8 text-lg">
             Create content in the builder to see it here.
           </p>
-          <Button 
-            onClick={() => navigate('/content-builder')}
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Content
-          </Button>
-        </div>
+            <Button 
+              onClick={() => navigate('/content-builder')}
+              size="lg"
+              className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple px-8 py-6 h-auto"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Create New Content
+            </Button>
+          </motion.div>
+        </motion.div>
       );
     }
 
@@ -184,17 +206,32 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: i * 0.05 }}
+            whileHover={{ y: -5 }}
+            className="h-full"
           >
-            <Card className="h-full overflow-hidden border border-white/10 bg-card/20 backdrop-blur-lg hover:shadow-lg hover:shadow-neon-purple/5 transition-all duration-300 group relative">
+            <Card className="h-full overflow-hidden border border-white/10 bg-gradient-to-br from-black/90 to-black/70 backdrop-blur-lg hover:shadow-xl hover:shadow-neon-purple/10 transition-all duration-300 group relative">
               {/* Status indicator */}
-              <div className={`absolute top-0 left-0 w-1 h-full ${item.status === 'draft' ? 'bg-neon-purple' : 'bg-neon-blue'}`} />
+              <div className={`absolute top-0 left-0 w-1 h-full ${
+                item.status === 'draft' 
+                  ? 'bg-gradient-to-b from-neon-purple via-neon-purple/70 to-neon-purple/30' 
+                  : 'bg-gradient-to-b from-neon-blue via-neon-blue/70 to-neon-blue/30'
+              }`} />
               
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg line-clamp-2 group-hover:text-neon-purple transition-colors">{item.title}</CardTitle>
-                  <Badge variant={item.status === 'draft' ? 'outline' : 'default'} className={item.status === 'draft' ? 'border-neon-purple/40 text-neon-purple bg-neon-purple/10' : ''}>
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-gradient transition-colors">
+                    {item.title}
+                  </CardTitle>
+                  <CustomBadge 
+                    className={
+                      item.status === 'draft' 
+                        ? 'border-neon-purple/40 text-neon-purple bg-neon-purple/10' 
+                        : 'border-neon-blue/40 text-neon-blue bg-neon-blue/10'
+                    }
+                    animated
+                  >
                     {item.status === 'draft' ? 'Draft' : 'Published'}
-                  </Badge>
+                  </CustomBadge>
                 </div>
                 <CardDescription className="flex items-center gap-2 text-xs mt-2">
                   <span>Created: {formatDate(item.created_at)}</span>
@@ -202,7 +239,7 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
               </CardHeader>
               
               <CardContent className="pb-2">
-                <div className="line-clamp-3 text-sm opacity-80">
+                <div className="line-clamp-3 text-sm opacity-80 prose prose-invert prose-sm max-w-none">
                   {item.content ? (
                     <div dangerouslySetInnerHTML={{ 
                       __html: item.content?.substring(0, 150) + '...'
@@ -215,11 +252,16 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
                 {/* Display keywords */}
                 {item.keywords && item.keywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-3">
-                    {item.keywords.map((keyword: string, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs bg-white/5 border-white/10">
+                    {item.keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                      <Badge key={idx} variant="secondary" className="text-xs bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
                         {keyword}
                       </Badge>
                     ))}
+                    {item.keywords.length > 3 && (
+                      <Badge variant="secondary" className="text-xs bg-white/5 border-white/10">
+                        +{item.keywords.length - 3}
+                      </Badge>
+                    )}
                   </div>
                 )}
                 
@@ -245,28 +287,28 @@ export function DraftsList({ onOpenDetailView }: DraftsListProps) {
                   size="sm" 
                   variant="ghost"
                   onClick={() => handleView(item.id)}
-                  className="text-white/70 hover:text-white"
+                  className="text-white/70 hover:text-white group"
                 >
-                  <Eye className="h-4 w-4 mr-1" />
+                  <Eye className="h-4 w-4 mr-1 group-hover:text-neon-blue transition-colors" />
                   View
                 </Button>
                 <Button 
                   size="sm" 
                   variant="ghost"
                   onClick={() => handleEdit(item.id)}
-                  className="text-white/70 hover:text-white"
+                  className="text-white/70 hover:text-white group"
                 >
-                  <Edit className="h-4 w-4 mr-1" />
+                  <Edit className="h-4 w-4 mr-1 group-hover:text-neon-purple transition-colors" />
                   Edit
                 </Button>
                 <RepurposeButton contentId={item.id} />
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  className="text-destructive hover:bg-destructive/10"
+                  className="text-white/70 hover:text-destructive group"
                   onClick={() => handleDelete(item.id)}
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="h-4 w-4 mr-1 group-hover:text-destructive transition-colors" />
                   Delete
                 </Button>
               </CardFooter>
