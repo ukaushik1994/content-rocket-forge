@@ -16,8 +16,10 @@ const ContentFormatIcon: React.FC<ContentFormatIconProps> = memo(({
   onClick,
   isMobile = false
 }) => {
-  const IconComponent = getFormatIconComponent(formatId);
-  const format = getFormatByIdOrDefault(formatId);
+  // Ensure we're working with a valid formatId
+  const safeFormatId = formatId || '';
+  const IconComponent = getFormatIconComponent(safeFormatId);
+  const format = getFormatByIdOrDefault(safeFormatId);
   const tooltipText = `${format.name} ${isFormatUsed ? '(Click to view)' : ''}`;
 
   return (

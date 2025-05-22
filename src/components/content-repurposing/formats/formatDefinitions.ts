@@ -56,10 +56,24 @@ export const getFormatIcon = (formatId: string) => {
   return () => React.createElement(IconComponent, { className: "h-4 w-4" });
 };
 
-export const getFormatByIdOrDefault = (formatId: string): ContentFormatDefinition => {
-  return contentFormats.find(format => format.id === formatId) || {
+export const getFormatByIdOrDefault = (formatId: string | undefined): ContentFormatDefinition => {
+  // Handle undefined or null formatId
+  if (!formatId) {
+    return {
+      id: 'unknown',
+      name: 'Unknown Format',
+      description: 'Format information not available'
+    };
+  }
+  
+  // Find the format in our predefined list
+  const foundFormat = contentFormats.find(format => format.id === formatId);
+  
+  // Return the found format or create a default one with safe string operations
+  return foundFormat || {
     id: formatId,
     name: formatId.charAt(0).toUpperCase() + formatId.slice(1),
     description: 'Custom content format'
   };
 };
+

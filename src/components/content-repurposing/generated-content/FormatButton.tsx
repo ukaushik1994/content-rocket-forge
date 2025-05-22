@@ -18,7 +18,9 @@ export const FormatButton: React.FC<FormatButtonProps> = memo(({
   onClick, 
   className 
 }) => {
-  const IconComponent = getFormatIconComponent(formatId);
+  // Ensure we have a valid formatId
+  const safeFormatId = formatId || '';
+  const IconComponent = getFormatIconComponent(safeFormatId);
 
   return (
     <Button

@@ -39,8 +39,9 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
   
   if (!content) return null;
 
-  // Find the format information
-  const format = getFormatByIdOrDefault(content.formatId);
+  // Find the format information - ensure we pass a valid formatId
+  const formatId = content.formatId || '';
+  const format = getFormatByIdOrDefault(formatId);
   const formatName = format.name;
 
   // Get all available formats (no longer limiting to 5)
@@ -78,7 +79,7 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
             <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gradient bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent`}>
               {formatName}
             </h2>
-            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title}</p>
+            <p className="text-xs sm:text-sm text-white/70 truncate max-w-[200px] sm:max-w-full">{content.title || 'Untitled Content'}</p>
           </div>
           <button 
             onClick={onClose}
@@ -121,8 +122,8 @@ const RepurposedContentDialog: React.FC<RepurposedContentDialogProps> = memo(({
           transition={{ delay: 0.1 }}
         >
           <DialogActionButtons 
-            onCopy={() => onCopy(content.content)} 
-            onDownload={() => onDownload(content.content, formatName)} 
+            onCopy={() => onCopy(content.content || '')} 
+            onDownload={() => onDownload(content.content || '', formatName)} 
             onDelete={onDelete ? handleDelete : undefined} 
             isDeleting={isDeleting} 
             isSaving={isSaving} 
