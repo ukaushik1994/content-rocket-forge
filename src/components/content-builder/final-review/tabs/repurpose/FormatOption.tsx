@@ -10,6 +10,7 @@ interface FormatOptionProps {
   isSelected: boolean;
   onToggle: () => void;
   templateInfo: string;
+  isSaved?: boolean; // Added prop to indicate if format is saved
 }
 
 export const FormatOption: React.FC<FormatOptionProps> = ({
@@ -17,6 +18,7 @@ export const FormatOption: React.FC<FormatOptionProps> = ({
   isSelected,
   onToggle,
   templateInfo,
+  isSaved = false, // Default to false
 }) => {
   return (
     <div 
@@ -24,7 +26,7 @@ export const FormatOption: React.FC<FormatOptionProps> = ({
         isSelected 
           ? 'border-primary bg-primary/5' 
           : 'border-border hover:border-primary/50'
-      }`}
+      } ${isSaved ? 'border-green-500/40' : ''}`} // Add green border if saved
       onClick={onToggle}
     >
       <div className="flex items-center justify-between">
@@ -39,6 +41,11 @@ export const FormatOption: React.FC<FormatOptionProps> = ({
             )}
           </div>
           <span className="font-medium">{format.name}</span>
+          {isSaved && (
+            <Badge variant="outline" className="ml-1 bg-green-500/20 text-green-400 border-green-500/40">
+              Saved
+            </Badge>
+          )}
         </div>
         
         <Tooltip>

@@ -54,6 +54,12 @@ const ContentRepurposing = () => {
       // Save each format one by one
       for (const formatId of formatIds) {
         try {
+          // Skip already saved formats
+          if (savedContentFormats.includes(formatId)) {
+            savedCount++;
+            continue;
+          }
+          
           console.log(`Saving format: ${formatId}`);
           const success = await saveAsNewContent(formatId, generatedContents[formatId]);
           if (success) {
