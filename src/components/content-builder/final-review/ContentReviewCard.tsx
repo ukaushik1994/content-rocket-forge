@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Eye, Edit, FileText, Save, Wand } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AutoOptimizeDialog } from './dialogs/AutoOptimizeDialog';
 
 interface ContentReviewCardProps {
   content: string;
@@ -18,7 +17,6 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const { setContent } = useContentBuilder();
-  const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {
@@ -50,10 +48,6 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
       .split('\n\n')
       .map(paragraph => paragraph ? `<p class="mb-3">${paragraph}</p>` : '')
       .join('');
-  };
-
-  const handleOpenOptimizeDialog = () => {
-    setShowOptimizeDialog(true);
   };
 
   return (
@@ -97,7 +91,6 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
               variant="outline" 
               size="sm"
               className="text-xs border-dashed border-muted-foreground/50"
-              onClick={handleOpenOptimizeDialog}
             >
               <Wand className="h-3.5 w-3.5 mr-1" />
               Auto-optimize
@@ -136,13 +129,6 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
           </ScrollArea>
         </TabsContent>
       </Tabs>
-      
-      <AutoOptimizeDialog
-        open={showOptimizeDialog}
-        onOpenChange={setShowOptimizeDialog}
-        content={content}
-        onUpdateContent={setContent}
-      />
     </Card>
   );
 };
