@@ -29,6 +29,8 @@ export const useFinalReview = () => {
   const { isAnalyzing, analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
   const { checkStepCompletion } = useStepCompletion();
   const { documentStructure } = useDocumentAnalysis();
+  
+  // Create the runChecks hook directly here to avoid circular dependencies
   const { isRunningAllChecks, runAllChecks } = useRunChecks();
   
   // Debug logging

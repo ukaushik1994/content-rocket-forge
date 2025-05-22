@@ -7,7 +7,6 @@ import { useMetaGenerator } from './useMetaGenerator';
 import { useSolutionAnalysis } from './useSolutionAnalysis';
 import { useStepCompletion } from './useStepCompletion';
 import { useTitleSuggestions } from './useTitleSuggestions';
-import { useChecklistItems } from '@/components/content-builder/final-review/hooks/useChecklistItems';
 
 // Standard toast configuration
 const toastConfig = {
@@ -30,10 +29,9 @@ export const useRunChecks = () => {
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
   const { analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
   const { checkStepCompletion } = useStepCompletion();
-  const { refreshChecklist } = useChecklistItems();
   
   // Run all checks at once
-  const runAllChecks = async () => {
+  const runAllChecks = async (refreshChecklist?: () => void) => {
     console.log("[useRunChecks] Running all checks");
     setIsRunningAllChecks(true);
     toast.info("Running comprehensive content checks...");
@@ -57,8 +55,10 @@ export const useRunChecks = () => {
         toast.success("Title suggestions generated", { id: "titles-generated" });
       }
       
-      // Refresh the checklist items to reflect the latest changes
-      refreshChecklist();
+      // Refresh the checklist items if the function is provided
+      if (refreshChecklist && typeof refreshChecklist === 'function') {
+        refreshChecklist();
+      }
       
       // Check if all checks pass
       const allPassed = checkStepCompletion();

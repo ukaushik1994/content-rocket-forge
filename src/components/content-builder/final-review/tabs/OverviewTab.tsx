@@ -40,7 +40,7 @@ export const OverviewTab = ({
   isAnalyzing,
   onAnalyze
 }: OverviewTabProps) => {
-  const { isRunningAllChecks } = useRunChecks();
+  const { isRunningAllChecks, runAllChecks } = useRunChecks();
   const { refreshChecklist } = useChecklistItems();
   
   const container = {
@@ -60,8 +60,9 @@ export const OverviewTab = ({
   
   // Handler that combines running all checks and refreshing the checklist
   const handleRunAllChecks = () => {
-    onRunAllChecks();
-    // The checklist will be refreshed by the useRunChecks hook after all checks are complete
+    // Pass refreshChecklist function to runAllChecks
+    runAllChecks(refreshChecklist);
+    onRunAllChecks(); // Call the original onRunAllChecks prop for backward compatibility
   };
   
   return (

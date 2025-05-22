@@ -1,7 +1,7 @@
 
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { useFinalReview } from '@/hooks/useFinalReview';
 import { useState, useCallback, useEffect } from 'react';
+import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis'; 
 
 /**
  * Custom hook to generate and manage the checklist items for the final review
@@ -17,7 +17,8 @@ export const useChecklistItems = () => {
     selectedKeywords
   } = state;
 
-  const { keywordUsage, ctaInfo } = useFinalReview();
+  // Get content analysis data directly instead of via useFinalReview
+  const { keywordUsage, ctaInfo } = useContentAnalysis();
   
   // State to store checklist items
   const [checklistItems, setChecklistItems] = useState<Array<{title: string, passed: boolean}>>([]);
