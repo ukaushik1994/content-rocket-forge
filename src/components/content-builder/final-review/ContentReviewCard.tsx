@@ -17,6 +17,7 @@ interface ContentReviewCardProps {
 export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
+  const [activeTab, setActiveTab] = useState('preview');
   const { setContent } = useContentBuilder();
   const [isAutoOptimizeDialogOpen, setIsAutoOptimizeDialogOpen] = useState(false);
 
@@ -52,10 +53,17 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
       .join('');
   };
 
+  // Handle content update from auto-optimize dialog
   const handleContentUpdate = (newContent: string) => {
     setEditedContent(newContent);
     setContent(newContent);
-    toast.success("Content optimized successfully");
+    
+    // Switch to preview tab to show the optimized content
+    setActiveTab('preview');
+    
+    toast.success("Content optimized successfully", {
+      description: "The content has been updated with the optimized version."
+    });
   };
 
   return (
@@ -67,7 +75,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </CardTitle>
       </CardHeader>
       
-      <Tabs defaultValue="preview" className="flex-1 flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="flex justify-between items-center px-4 py-1 border-b">
           <TabsList className="bg-transparent p-0">
             <TabsTrigger value="preview" className="data-[state=active]:bg-muted/30 data-[state=active]:shadow-none">
@@ -85,7 +93,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
           </TabsList>
           
           <div className="flex items-center gap-2">
-            {isEditing && (
+            {activeTab === 'edit' && (
               <Button
                 size="sm"
                 className="text-xs bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
@@ -110,7 +118,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         <TabsContent value="preview" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
           <ScrollArea className="flex-1 p-5 h-[50vh]">
             <div className="prose prose-slate dark:prose-invert prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none">
-              {content.split('\n\n').map((paragraph, idx) => (
+              {editedContent.split('\n\n').map((paragraph, idx) => (
                 paragraph.startsWith('# ') ? (
                   <h1 key={idx}>{paragraph.substring(2)}</h1>
                 ) : paragraph.startsWith('## ') ? (
@@ -134,7 +142,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         
         <TabsContent value="source" className="flex-1 m-0 p-0 data-[state=active]:flex flex-col">
           <ScrollArea className="flex-1 h-[50vh]">
-            <pre className="p-5 text-xs font-mono whitespace-pre-wrap bg-secondary/10">{content}</pre>
+            <pre className="p-5 text-xs font-mono whitespace-pre-wrap bg-secondary/10">{editedContent}</pre>
           </ScrollArea>
         </TabsContent>
       </Tabs>
@@ -142,7 +150,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
       <AutoOptimizeDialog 
         isOpen={isAutoOptimizeDialogOpen}
         onClose={() => setIsAutoOptimizeDialogOpen(false)}
-        content={content}
+        content={editedContent} // Use editedContent instead of content to ensure we're optimizing the current version
         onContentUpdate={handleContentUpdate}
       />
     </Card>

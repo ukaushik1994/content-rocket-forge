@@ -112,6 +112,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                   <Button 
                     onClick={handleApplySuggestions}
                     disabled={isOptimizing || selectedSuggestions.length === 0}
+                    className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
                   >
                     {isOptimizing ? (
                       <>
