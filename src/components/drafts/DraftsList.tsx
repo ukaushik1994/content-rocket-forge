@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2, RefreshCcw, List, Tag, Undo, Sparkles } from 'lucide-react';
+import { Eye, Edit, Trash2, RefreshCcw, List, Tag, Plus, Undo, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RepurposeButton } from './RepurposeButton';
