@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Pencil, Save } from 'lucide-react';
-import { contentFormats, getFormatByIdOrDefault } from '@/components/content-repurposing/formats';
+// Import both the contentFormats array and the getFormatIconComponent function 
+import { contentFormats, getFormatByIdOrDefault, getFormatIconComponent } from '@/components/content-repurposing/formats';
 import { 
   PromptTemplate, 
   getPromptTemplatesByType,
@@ -87,13 +88,14 @@ export function FormatPromptSettings() {
         {contentFormats.map((format) => {
           const existingTemplates = getPromptTemplatesByType(format.id);
           const hasTemplate = existingTemplates.length > 0;
-          const FormatIcon = getFormatByIdOrDefault(format.id).icon;
+          // Get the icon component using the helper function
+          const IconComponent = getFormatIconComponent(format.id);
           
           return (
             <Card key={format.id} className={`cursor-pointer transition-shadow hover:shadow-md ${hasTemplate ? 'border-primary/50' : ''}`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <FormatIcon className="h-5 w-5" />
+                  <IconComponent className="h-5 w-5" />
                   {format.name}
                   {hasTemplate && (
                     <span className="text-xs bg-primary/20 text-primary py-0.5 px-1.5 rounded-full">
