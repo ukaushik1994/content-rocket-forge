@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,7 @@ import { CompanySection } from '@/components/solutions/company';
 import { BrandGuidelinesDisplay } from '@/components/solutions/brand';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useState } from 'react';
 
 // Lazy load the SolutionManager for better performance
 const SolutionManager = lazy(() => import('@/components/solutions/manager').then(module => ({
@@ -138,6 +139,15 @@ const Solutions = () => {
       
       <main className="flex-1 container py-8 rounded-3xl">
         <motion.div variants={itemVariants} className="mb-8 space-y-12">
+          {/* Solutions Manager */}
+          <ContentBuilderProvider>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <Suspense fallback={<LoadingFallback />}>
+                <SolutionManager searchTerm={searchTerm} />
+              </Suspense>
+            </ErrorBoundary>
+          </ContentBuilderProvider>
+          
           {/* Company Section */}
           <CompanySection 
             companyInfo={companyInfo}
@@ -150,15 +160,6 @@ const Solutions = () => {
             companyId={companyInfo?.id || ''}
             onSave={handleSaveBrandGuidelines}
           />
-          
-          {/* Solutions Manager */}
-          <ContentBuilderProvider>
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <Suspense fallback={<LoadingFallback />}>
-                <SolutionManager searchTerm={searchTerm} />
-              </Suspense>
-            </ErrorBoundary>
-          </ContentBuilderProvider>
         </motion.div>
       </main>
     </motion.div>;
