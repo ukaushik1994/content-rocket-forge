@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
@@ -73,7 +74,8 @@ export function OutlineGenerator() {
         mainKeyword, 
         selectedKeywords, 
         selectedItems, 
-        customInstructions
+        customInstructions,
+        contentTitle
       );
       
       console.info("AI Generation prompt:", outlinePrompt);
@@ -106,23 +108,64 @@ export function OutlineGenerator() {
   const createPrompt = (
     mainKeyword: string,
     selectedKeywords: string[],
-    selectedItems: Array<{type: string, content: string, selected: boolean}>,
-    customInstructions: string
+    selectedItems: Array<{type: string, content: string, selected: boolean, source?: string}>,
+    customInstructions: string,
+    contentTitle?: string
   ) => {
-    // Create a detailed prompt for the AI
-    const selectedItemsText = selectedItems.map(item => 
-      `${item.type.toUpperCase()}: ${item.content}`
-    ).join('\n\n');
+    // Group items by type for better organization in the prompt
+    const itemsByType = {
+      keyword: selectedItems.filter(item => item.type === 'keyword'),
+      question: selectedItems.filter(item => item.type === 'question'),
+      entity: selectedItems.filter(item => item.type === 'entity'),
+      heading: selectedItems.filter(item => item.type === 'heading'),
+      contentGap: selectedItems.filter(item => item.type === 'contentGap'),
+      topRank: selectedItems.filter(item => item.type === 'topRank')
+    };
     
-    const keywordsText = selectedKeywords.join(', ');
+    // Format items by type for the prompt
+    const formatItemsByType = (items: any[], type: string) => {
+      if (items.length === 0) return '';
+      
+      return `
+      ${type.toUpperCase()} (${items.length}):
+      ${items.map(item => `- ${item.content}`).join('\n')}
+      `;
+    };
+    
+    // Create the formatted sections for each content type
+    const keywordsText = formatItemsByType(itemsByType.keyword, 'Keywords');
+    const questionsText = formatItemsByType(itemsByType.question, 'Questions');
+    const entitiesText = formatItemsByType(itemsByType.entity, 'Entities');
+    const headingsText = formatItemsByType(itemsByType.heading, 'Headings from top content');
+    const contentGapsText = formatItemsByType(itemsByType.contentGap, 'Content Gaps');
+    const topRanksText = formatItemsByType(itemsByType.topRank, 'Top Ranking Content');
+    
+    // Combine all selections into a comprehensive prompt
+    const selectedItemsText = `
+    ${keywordsText}
+    ${questionsText}
+    ${entitiesText}
+    ${headingsText}
+    ${contentGapsText}
+    ${topRanksText}
+    `.trim();
+    
+    const secondaryKeywordsText = selectedKeywords.length > 0 ? selectedKeywords.join(', ') : 'None specified';
+    
+    // Create a title-focused prompt if a content title exists
+    const titleFocusedPrompt = contentTitle ? 
+      `Create a well-structured outline for an article with the title: "${contentTitle}".
+      The outline should directly support this title while addressing the main keyword "${mainKeyword}".`
+      : 
+      `Create a detailed content outline for an article about "${mainKeyword}".`;
     
     return `
-    Create a detailed content outline for an article about "${mainKeyword}".
+    ${titleFocusedPrompt}
     
     Primary keyword: ${mainKeyword}
-    Secondary keywords: ${keywordsText}
+    Secondary keywords: ${secondaryKeywordsText}
     
-    I've researched the topic and gathered these key points:
+    I've researched the topic and gathered these key points to include:
     ${selectedItemsText}
     
     ${customInstructions ? `Additional instructions: ${customInstructions}` : ''}
@@ -132,7 +175,11 @@ export function OutlineGenerator() {
     2. Format the outline with clear hierarchy
     3. Focus on covering the topic comprehensively
     4. Ensure all selected keywords are addressed
-    5. Optimize for search intent and reader value
+    5. Structure the outline to directly support the ${contentTitle ? `title: "${contentTitle}"` : `topic: "${mainKeyword}"`}
+    6. Incorporate the selected questions as headings where appropriate
+    7. Address the content gaps identified in the research
+    8. Integrate the entities in a logical flow
+    9. Optimize for search intent and reader value
     
     Return ONLY the outline in this exact format:
     1. [First Section Title]
@@ -150,7 +197,7 @@ export function OutlineGenerator() {
     try {
       const chatResponse = await sendChatRequest(primaryProvider, {
         messages: [
-          { role: 'system', content: 'You are an expert content outline creator.' },
+          { role: 'system', content: 'You are an expert content outline creator who integrates research insights into well-structured outlines that directly address the main topic and support the article title. Your outlines should incorporate user-selected items like keywords, questions, and content gaps.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7
@@ -179,7 +226,7 @@ export function OutlineGenerator() {
           
           const fallbackResponse = await sendChatRequest(fallbackProvider, {
             messages: [
-              { role: 'system', content: 'You are an expert content outline creator.' },
+              { role: 'system', content: 'You are an expert content outline creator who integrates research insights into well-structured outlines that directly address the main topic and support the article title. Your outlines should incorporate user-selected items like keywords, questions, and content gaps.' },
               { role: 'user', content: prompt }
             ],
             temperature: 0.7
