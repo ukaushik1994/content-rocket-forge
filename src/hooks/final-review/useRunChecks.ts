@@ -7,6 +7,7 @@ import { useMetaGenerator } from './useMetaGenerator';
 import { useSolutionAnalysis } from './useSolutionAnalysis';
 import { useStepCompletion } from './useStepCompletion';
 import { useTitleSuggestions } from './useTitleSuggestions';
+import { useDocumentAnalysis } from './useDocumentAnalysis';
 
 // Standard toast configuration
 const toastConfig = {
@@ -19,24 +20,39 @@ const toastConfig = {
  * Custom hook for running all review checks
  */
 export const useRunChecks = () => {
-  const { state } = useContentBuilder();
-  const { metaTitle, metaDescription, selectedSolution } = state;
+  const { state, dispatch } = useContentBuilder();
+  const { 
+    metaTitle, 
+    metaDescription, 
+    selectedSolution, 
+    content,
+    serpSelections,
+    mainKeyword,
+    selectedKeywords
+  } = state;
   
   const [isRunningAllChecks, setIsRunningAllChecks] = useState(false);
   
-  const { ctaInfo } = useContentAnalysis();
+  const { analyzeContent } = useContentAnalysis();
   const { generateTitleSuggestions, titleSuggestions } = useTitleSuggestions();
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
-  const { analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
+  const { analyzeSolutionUsage } = useSolutionAnalysis({});
   const { checkStepCompletion } = useStepCompletion();
+  const { analyzeDocumentStructure } = useDocumentAnalysis();
   
   // Run all checks at once
   const runAllChecks = async () => {
     console.log("[useRunChecks] Running all checks");
     setIsRunningAllChecks(true);
-    toast.info("Running comprehensive content checks...");
+    toast.info("Running comprehensive content checks...", toastConfig.info);
     
     try {
+      // Run document structure analysis
+      await analyzeDocumentStructure(content);
+
+      // Analyze keyword usage
+      await analyzeContent(content, mainKeyword, selectedKeywords);
+      
       // Run meta generation if needed
       if (!metaTitle || !metaDescription) {
         await generateMeta();
@@ -44,7 +60,8 @@ export const useRunChecks = () => {
       }
       
       // Run solution integration analysis if needed
-      if (!state.solutionIntegrationMetrics && selectedSolution) {
+      if (selectedSolution && (!state.solutionIntegrationMetrics || 
+          state.solutionIntegrationMetrics.featureIncorporation === 0)) {
         await analyzeSolutionUsage();
         toast.success("Solution integration analyzed", { id: "solution-analyzed" });
       }
@@ -70,7 +87,7 @@ export const useRunChecks = () => {
       }
     } catch (error) {
       console.error("[useRunChecks] Error running checks:", error);
-      toast.error("Some checks failed to complete. Please try again.");
+      toast.error("Some checks failed to complete. Please try again.", toastConfig.error);
     } finally {
       setIsRunningAllChecks(false);
     }

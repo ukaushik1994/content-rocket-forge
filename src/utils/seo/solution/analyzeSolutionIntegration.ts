@@ -30,25 +30,29 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
   const { name, features, painPoints = [], targetAudience = [] } = selectedSolution;
   const contentLower = content.toLowerCase();
   
-  // Calculate how many solution features are incorporated
-  const featureIncorporation = features.reduce((count, feature) => {
-    if (contentLower.includes(feature.toLowerCase())) {
-      return count + 1;
+  // Calculate how many solution features are incorporated and track which ones
+  const mentionedFeatures: string[] = [];
+  features.forEach(feature => {
+    // Check for different forms of the feature
+    const featureTerms = feature.toLowerCase().split(/\s+/).filter(term => term.length > 3);
+    
+    // If any of the key terms from the feature are found in the content,
+    // consider the feature to be mentioned
+    if (featureTerms.some(term => contentLower.includes(term.toLowerCase()))) {
+      mentionedFeatures.push(feature);
     }
-    return count;
-  }, 0);
+  });
   
-  // Track which features are mentioned
-  const mentionedFeatures = features.filter(feature => 
-    contentLower.includes(feature.toLowerCase())
-  );
-  
-  const featureIncorporationPercentage = features.length > 0 ? 
-    (featureIncorporation / features.length) * 100 : 0;
+  const featureIncorporation = features.length > 0 ? 
+    (mentionedFeatures.length / features.length) * 100 : 0;
   
   // Calculate pain points addressed
   const painPointsAddressed = painPoints.reduce((count, painPoint) => {
-    if (contentLower.includes(painPoint.toLowerCase())) {
+    // Get key terms from the pain point
+    const painPointTerms = painPoint.toLowerCase().split(/\s+/).filter(term => term.length > 3);
+    
+    // Check if any of the key terms are present
+    if (painPointTerms.some(term => contentLower.includes(term.toLowerCase()))) {
       return count + 1;
     }
     return count;
@@ -59,7 +63,11 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
     
   // Calculate audience targeting alignment
   const audienceAlignmentCount = targetAudience.reduce((count, audience) => {
-    if (contentLower.includes(audience.toLowerCase())) {
+    // Get key terms from the target audience
+    const audienceTerms = audience.toLowerCase().split(/\s+/).filter(term => term.length > 3);
+    
+    // Check if any of the key terms are present
+    if (audienceTerms.some(term => contentLower.includes(term.toLowerCase()))) {
       return count + 1;
     }
     return count;
@@ -107,7 +115,7 @@ export const analyzeSolutionIntegration = (content: string, selectedSolution: So
   
   // Calculate overall metrics with caps to ensure values are within 0-100 range
   return {
-    featureIncorporation: Math.min(100, Math.round(featureIncorporationPercentage)),
+    featureIncorporation: Math.min(100, Math.round(featureIncorporation)),
     positioningScore: Math.min(100, positioningScore),
     nameMentions,
     painPointsAddressed: Math.min(100, Math.round(painPointsAddressedPercentage)),

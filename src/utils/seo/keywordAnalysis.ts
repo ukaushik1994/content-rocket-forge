@@ -27,19 +27,30 @@ export const calculateKeywordUsage = (
   return uniqueKeywords.map(keyword => {
     const keywordLower = keyword.toLowerCase();
     
-    // Count occurrences (including partial word matches)
-    const regex = new RegExp(keywordLower, 'gi');
-    const count = (content.toLowerCase().match(regex) || []).length;
+    // For multi-word keywords, we need to check for exact matches
+    let count = 0;
+    
+    if (keywordLower.includes(' ')) {
+      // Multi-word keyword - look for exact matches
+      const regex = new RegExp('\\b' + keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+      const matches = content.toLowerCase().match(regex);
+      count = matches ? matches.length : 0;
+    } else {
+      // Single word keyword - look for word boundary matches
+      const regex = new RegExp('\\b' + keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+      const matches = content.toLowerCase().match(regex);
+      count = matches ? matches.length : 0;
+    }
     
     // Calculate density percentage (rounded to 2 decimal places)
     const densityPercent = wordCount > 0
-      ? ((count / wordCount) * 100).toFixed(2) + '%'
-      : '0.00%';
+      ? ((count / wordCount) * 100).toFixed(2)
+      : '0.00';
     
     return {
       keyword,
       count,
-      density: densityPercent
+      density: densityPercent + '%'
     };
   });
 };
