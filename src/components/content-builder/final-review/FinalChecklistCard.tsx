@@ -3,15 +3,18 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { RefreshButton } from '@/components/ui/refresh-button';
 
 interface FinalChecklistProps {
   checks: {
     title: string;
     passed: boolean;
   }[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export const FinalChecklistCard = ({ checks }: FinalChecklistProps) => {
+export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: FinalChecklistProps) => {
   const passedChecks = checks.filter(check => check.passed).length;
   const progress = Math.round((passedChecks / checks.length) * 100);
   
@@ -32,11 +35,21 @@ export const FinalChecklistCard = ({ checks }: FinalChecklistProps) => {
   
   return (
     <Card className="h-full shadow-xl bg-gradient-to-br from-background to-purple-950/5 border border-purple-500/20">
-      <CardHeader className="pb-2 border-b border-purple-500/10">
+      <CardHeader className="pb-2 border-b border-purple-500/10 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-green-500"></div>
           Content Quality Checklist
         </CardTitle>
+        
+        {onRefresh && (
+          <RefreshButton 
+            isRefreshing={isRefreshing} 
+            onClick={onRefresh}
+            size="icon"
+            variant="outline"
+            className="h-7 w-7 border-purple-500/20"
+          />
+        )}
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="flex items-center justify-between">

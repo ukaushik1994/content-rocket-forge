@@ -5,6 +5,7 @@ import { FinalChecklistCard } from '../FinalChecklistCard';
 import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { motion } from 'framer-motion';
+import { useRunChecks } from '@/hooks/final-review/useRunChecks';
 
 interface OverviewTabProps {
   content: string;
@@ -38,6 +39,8 @@ export const OverviewTab = ({
   isAnalyzing,
   onAnalyze
 }: OverviewTabProps) => {
+  const { isRunningAllChecks } = useRunChecks();
+  
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -68,7 +71,11 @@ export const OverviewTab = ({
       {/* Side panel */}
       <motion.div className="space-y-6">
         <motion.div variants={item}>
-          <FinalChecklistCard checks={checklistItems} />
+          <FinalChecklistCard 
+            checks={checklistItems}
+            onRefresh={onRunAllChecks}
+            isRefreshing={isRunningAllChecks}
+          />
         </motion.div>
         
         <motion.div variants={item}>
