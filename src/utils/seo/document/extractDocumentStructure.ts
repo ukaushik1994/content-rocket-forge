@@ -1,5 +1,5 @@
 
-import { DocumentStructure, DocumentHeading } from '@/contexts/content-builder/types';
+import { DocumentStructure, DocumentHeading, DocumentParagraph, DocumentList, DocumentLink, DocumentImage } from '@/contexts/content-builder/types';
 
 /**
  * Extracts document structure from markdown content
@@ -36,10 +36,10 @@ export const extractDocumentStructure = (content: string): DocumentStructure => 
   const h4: string[] = [];
   const h5: string[] = [];
   const h6: string[] = [];
-  const paragraphs: string[] = [];
-  const lists: string[] = [];
-  const images: { alt: string; src: string }[] = [];
-  const links: { text: string; href: string }[] = [];
+  const paragraphs: DocumentParagraph[] = [];
+  const lists: DocumentList[] = [];
+  const images: DocumentImage[] = [];
+  const links: DocumentLink[] = [];
   
   // Process content line by line
   const lines = content.split('\n');
@@ -90,20 +90,36 @@ export const extractDocumentStructure = (content: string): DocumentStructure => 
     }
     else if (listItemMatch || orderedListMatch) {
       const listContent = listItemMatch ? listItemMatch[1] : orderedListMatch![1];
-      lists.push(listContent);
+      // Create proper DocumentList object
+      const listType = listItemMatch ? 'unordered' : 'ordered';
+      
+      // Check if we already have a list of this type
+      const existingList = lists.find(list => list.type === listType);
+      if (existingList) {
+        existingList.items.push(listContent);
+      } else {
+        lists.push({ 
+          type: listType, 
+          items: [listContent] 
+        });
+      }
     }
     else if (imageMatch) {
       images.push({ alt: imageMatch[1], src: imageMatch[2] });
     }
     else if (line.trim().length > 0 && !line.startsWith('>')) {
       // Basic paragraph detection (non-empty line that's not a blockquote)
-      paragraphs.push(line.trim());
+      paragraphs.push({ text: line.trim() });
     }
     
     // Process links separately to handle multiple links per line
     if (linkMatches.length > 0) {
       linkMatches.forEach(match => {
-        links.push({ text: match[1], href: match[2] });
+        links.push({ 
+          text: match[1], 
+          href: match[2],
+          url: match[2] // Add url property to match the DocumentLink type
+        });
       });
     }
   });
