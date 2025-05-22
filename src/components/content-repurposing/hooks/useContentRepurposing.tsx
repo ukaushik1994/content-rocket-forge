@@ -15,9 +15,12 @@ export const useContentRepurposing = () => {
     generatedContents,
     isGenerating,
     activeFormat,
+    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
+    markAsSaved,
+    saveAllFormats,
   } = useContentGeneration(content);
   
   const {
@@ -50,13 +53,15 @@ export const useContentRepurposing = () => {
   // Update this function to safely pass generated formats
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
     // Get all formats that have been generated for this content
-    const availableFormats = Object.keys(generatedContents || {});
+    const availableFormats = Object.keys(generatedContents || {}).filter(id => !!id); // Filter out empty IDs
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
   };
   
   // Wrapper for format change handler
   const handleFormatChange = (contentId: string, formatId: string) => {
-    formatChangeHandler(contentId, formatId);
+    if (contentId && formatId) {
+      formatChangeHandler(contentId, formatId);
+    }
   };
   
   return {
@@ -71,6 +76,7 @@ export const useContentRepurposing = () => {
     generatedFormats,
     isDeleting,
     isSaving,
+    savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -85,6 +91,8 @@ export const useContentRepurposing = () => {
     deleteRepurposedContent,
     handleDeleteActiveFormat,
     resetContent,
+    markAsSaved,
+    saveAllFormats,
   };
 };
 

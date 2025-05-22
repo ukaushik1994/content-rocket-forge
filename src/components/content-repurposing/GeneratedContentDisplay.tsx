@@ -22,6 +22,7 @@ interface GeneratedContentDisplayProps {
   isDeleting?: boolean;
   isSaving?: boolean;
   isSavingAll?: boolean;
+  savedContentFormats?: string[];
 }
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = memo(({
@@ -35,11 +36,13 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   onDeleteRepurposedContent,
   isDeleting = false,
   isSaving = false,
-  isSavingAll = false
+  isSavingAll = false,
+  savedContentFormats = []
 }) => {
-  const generatedFormats = Object.keys(generatedContents);
+  const generatedFormats = Object.keys(generatedContents).filter(id => !!id); // Filter out empty IDs
   const hasGeneratedContent = generatedFormats.length > 0;
   const hasMultipleFormats = generatedFormats.length > 1;
+  const isCurrentFormatSaved = activeFormat ? savedContentFormats.includes(activeFormat) : false;
   
   return (
     <Card className="h-full">
@@ -58,6 +61,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
             generatedFormats={generatedFormats}
             activeFormat={activeFormat}
             setActiveFormat={setActiveFormat}
+            savedFormats={savedContentFormats}
           />
         )}
       </CardHeader>
@@ -87,8 +91,9 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
               }
               hasMultipleFormats={hasMultipleFormats}
               isDeleting={isDeleting}
-              isSaving={isSaving}
+              isSaving={isSaving && !isCurrentFormatSaved}
               isSavingAll={isSavingAll}
+              isFormatSaved={isCurrentFormatSaved}
             />
           </div>
         ) : (

@@ -1,7 +1,7 @@
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Save, Trash2, Loader2, SaveAll } from 'lucide-react';
+import { Copy, Download, Save, Trash2, Loader2, SaveAll, Check } from 'lucide-react';
 
 interface ActionButtonsProps {
   onCopy: () => void;
@@ -13,6 +13,7 @@ interface ActionButtonsProps {
   isSaving?: boolean;
   isSavingAll?: boolean;
   hasMultipleFormats?: boolean;
+  isFormatSaved?: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = memo(({
@@ -24,7 +25,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   isDeleting = false,
   isSaving = false,
   isSavingAll = false,
-  hasMultipleFormats = false
+  hasMultipleFormats = false,
+  isFormatSaved = false
 }) => {
   return (
     <div className="flex justify-end gap-2 mt-4 border-t border-white/10 pt-4">
@@ -52,13 +54,21 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
         variant="outline" 
         size="sm" 
         onClick={onSave}
-        disabled={isSaving}
-        className="bg-transparent hover:bg-white/5 border-white/10"
+        disabled={isSaving || isFormatSaved}
+        className={isFormatSaved ? 
+          "bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/40" : 
+          "bg-transparent hover:bg-white/5 border-white/10"
+        }
       >
         {isSaving ? (
           <>
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
             Saving...
+          </>
+        ) : isFormatSaved ? (
+          <>
+            <Check className="h-4 w-4 mr-1" />
+            Saved
           </>
         ) : (
           <>

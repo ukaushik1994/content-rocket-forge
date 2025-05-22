@@ -37,6 +37,19 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   }, [content?.id]);
   
+  // Load saved formats from content metadata if available
+  useEffect(() => {
+    if (content?.metadata?.repurposedFormats) {
+      // Merge with any existing saved formats from localStorage
+      const metadataFormats = content.metadata.repurposedFormats as string[];
+      setSavedContentFormats(prevSaved => {
+        // Create a new array with unique formats from both sources
+        const uniqueSaved = Array.from(new Set([...prevSaved, ...metadataFormats]));
+        return uniqueSaved;
+      });
+    }
+  }, [content?.metadata?.repurposedFormats]);
+  
   // Save generated content to localStorage whenever it changes
   useEffect(() => {
     if (content?.id && Object.keys(generatedContents).length > 0) {
@@ -72,6 +85,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       
       // Generate content for each selected format using templates
       for (const formatId of contentTypeIds) {
+        if (!formatId) continue; // Skip undefined or empty formatIds
+        
         const formatInfo = getFormatByIdOrDefault(formatId);
         
         try {
@@ -126,14 +141,30 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   };
   
   const markAsSaved = (formatId: string) => {
+    if (!formatId) return; // Skip if formatId is undefined or empty
+    
     if (!savedContentFormats.includes(formatId)) {
       const updatedSavedFormats = [...savedContentFormats, formatId];
       setSavedContentFormats(updatedSavedFormats);
+      
+      // Update localStorage
+      if (content?.id) {
+        const currentData = localStorage.getItem(`repurposed_content_${content.id}`);
+        if (currentData) {
+          try {
+            const parsedData = JSON.parse(currentData);
+            parsedData.savedFormats = updatedSavedFormats;
+            localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(parsedData));
+          } catch (error) {
+            console.error('Error updating localStorage:', error);
+          }
+        }
+      }
     }
   };
   
   const saveAllFormats = () => {
-    const allFormatIds = Object.keys(generatedContents);
+    const allFormatIds = Object.keys(generatedContents).filter(id => !!id); // Filter out empty or undefined ids
     setSavedContentFormats(allFormatIds);
     
     // Update localStorage
@@ -150,7 +181,6 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       }
     }
     
-    toast.success(`Saved all ${allFormatIds.length} content formats`);
     return allFormatIds;
   };
   

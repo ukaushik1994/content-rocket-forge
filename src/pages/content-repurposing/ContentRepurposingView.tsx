@@ -8,6 +8,7 @@ import Navbar from '@/components/layout/Navbar';
 import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
+import { SaveStatusBar } from '@/components/content-repurposing/SaveStatusBar';
 import { ContentItemType } from '@/contexts/content/types';
 
 interface ContentRepurposingViewProps {
@@ -19,6 +20,7 @@ interface ContentRepurposingViewProps {
   isDeleting: boolean;
   isSaving: boolean;
   isSavingAll: boolean;
+  savedContentFormats: string[];
   setSelectedFormats: (formats: string[]) => void;
   setActiveFormat: (format: string) => void;
   handleGenerateContent: (formats: string[]) => void;
@@ -39,6 +41,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   isDeleting,
   isSaving,
   isSavingAll,
+  savedContentFormats,
   setSelectedFormats,
   setActiveFormat,
   handleGenerateContent,
@@ -49,6 +52,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   handleDeleteActiveFormat,
   resetContent,
 }) => {
+  const totalFormatsCount = Object.keys(generatedContents).filter(key => !!key).length;
+
   return (
     <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
@@ -94,7 +99,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 flex flex-col">
             <GeneratedContentDisplay
               generatedContents={generatedContents}
               activeFormat={activeFormat}
@@ -107,7 +112,18 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               isDeleting={isDeleting}
               isSaving={isSaving}
               isSavingAll={isSavingAll}
+              savedContentFormats={savedContentFormats}
             />
+
+            {totalFormatsCount > 0 && (
+              <SaveStatusBar
+                activeFormat={activeFormat}
+                savedFormats={savedContentFormats}
+                totalFormats={totalFormatsCount}
+                onSaveAll={handleSaveAllContent}
+                isSavingAll={isSavingAll}
+              />
+            )}
           </div>
         </div>
       </motion.main>

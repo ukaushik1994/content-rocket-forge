@@ -12,6 +12,8 @@ export const useContentActions = (content: ContentItemType | null) => {
   
   // Utility function to find content by original content ID and format
   const findRepurposedContent = (originalContentId: string, formatId: string): string | null => {
+    if (!originalContentId || !formatId) return null;
+    
     // Find the content item
     const originalContent = contentItems.find(item => item.id === originalContentId);
     
@@ -24,11 +26,15 @@ export const useContentActions = (content: ContentItemType | null) => {
   };
   
   const copyToClipboard = (content: string) => {
+    if (!content) return;
+    
     navigator.clipboard.writeText(content);
     toast.success('Copied to clipboard');
   };
   
   const downloadAsText = (content: string, formatName: string) => {
+    if (!content) return;
+    
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -42,7 +48,7 @@ export const useContentActions = (content: ContentItemType | null) => {
   };
   
   const saveAsNewContent = async (formatId: string, generatedContent: string): Promise<boolean> => {
-    if (!content) return false;
+    if (!content || !formatId || !generatedContent) return false;
     
     try {
       setIsSaving(true);
@@ -69,7 +75,8 @@ export const useContentActions = (content: ContentItemType | null) => {
         metadata: {
           ...currentMetadata,
           repurposedFormats,
-          repurposedContentMap
+          repurposedContentMap,
+          lastUpdated: new Date().toISOString()
         }
       });
       
@@ -77,7 +84,7 @@ export const useContentActions = (content: ContentItemType | null) => {
       return true;
     } catch (error) {
       console.error('Error saving content:', error);
-      toast.error('Failed to save content');
+      toast.error(`Failed to save ${formatId} content`);
       return false;
     } finally {
       setIsSaving(false);
@@ -111,7 +118,8 @@ export const useContentActions = (content: ContentItemType | null) => {
         metadata: {
           ...currentMetadata,
           repurposedFormats: updatedFormats,
-          repurposedContentMap: updatedContentMap
+          repurposedContentMap: updatedContentMap,
+          lastUpdated: new Date().toISOString()
         }
       });
       

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Save, Check, AlertCircle } from 'lucide-react';
+import { Save, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SaveStatusBarProps {
@@ -10,13 +10,15 @@ interface SaveStatusBarProps {
   savedFormats: string[];
   totalFormats: number;
   onSaveAll: () => void;
+  isSavingAll?: boolean;
 }
 
 export const SaveStatusBar: React.FC<SaveStatusBarProps> = ({
   activeFormat,
   savedFormats,
   totalFormats,
-  onSaveAll
+  onSaveAll,
+  isSavingAll = false
 }) => {
   const isCurrentFormatSaved = activeFormat ? savedFormats.includes(activeFormat) : false;
   const allSaved = totalFormats > 0 && savedFormats.length === totalFormats;
@@ -51,9 +53,14 @@ export const SaveStatusBar: React.FC<SaveStatusBarProps> = ({
             : "bg-white/5 hover:bg-white/10 border-white/10"
         )}
         onClick={onSaveAll}
-        disabled={totalFormats === 0}
+        disabled={totalFormats === 0 || isSavingAll}
       >
-        {allSaved ? (
+        {isSavingAll ? (
+          <>
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+            Saving All...
+          </>
+        ) : allSaved ? (
           <>
             <Check className="mr-1 h-3 w-3" />
             All Saved
