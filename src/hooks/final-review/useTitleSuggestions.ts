@@ -22,32 +22,41 @@ export const useTitleSuggestions = () => {
   
   // Generate title suggestions
   const generateTitleSuggestionsAsync = useCallback(async () => {
-    if (!content || !mainKeyword) {
-      toast.error('Content or main keyword not available for generating titles', toastConfig.error);
+    if (!mainKeyword) {
+      toast.error('Main keyword not available for generating titles', toastConfig.error);
       return;
     }
     
     setIsGeneratingTitles(true);
     
     try {
-      // Call the generateTitleSuggestions function from documentAnalysis
-      const suggestions = await generateTitleSuggestions(content, mainKeyword, selectedKeywords);
+      // Call the generateTitleSuggestions function from utils
+      const suggestions = await generateTitleSuggestions(
+        content || "Your content will be about " + mainKeyword, 
+        mainKeyword, 
+        selectedKeywords
+      );
       
       // Shuffle the suggestions to ensure different ordering each time
       const shuffledSuggestions = [...suggestions].sort(() => Math.random() - 0.5);
       
       setTitleSuggestions(shuffledSuggestions);
       console.log("[useTitleSuggestions] Generated title suggestions:", shuffledSuggestions);
-      toast.success('Generated title suggestions', toastConfig.success);
       
-      // Only set a title automatically if there's no existing title
-      if (shuffledSuggestions.length > 0 && !metaTitle && !contentTitle) {
-        // Use a random title from the first five suggestions instead of always the first one
-        const randomIndex = Math.floor(Math.random() * Math.min(5, shuffledSuggestions.length));
-        const initialTitle = shuffledSuggestions[randomIndex];
-        console.log("[useTitleSuggestions] Setting initial title:", initialTitle);
-        dispatch({ type: 'SET_META_TITLE', payload: initialTitle });
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: initialTitle });
+      if (shuffledSuggestions.length > 0) {
+        toast.success('Generated title suggestions', toastConfig.success);
+        
+        // Only set a title automatically if there's no existing title
+        if (!metaTitle && !contentTitle && shuffledSuggestions.length > 0) {
+          // Use a random title from the first five suggestions
+          const randomIndex = Math.floor(Math.random() * Math.min(5, shuffledSuggestions.length));
+          const initialTitle = shuffledSuggestions[randomIndex];
+          console.log("[useTitleSuggestions] Setting initial title:", initialTitle);
+          dispatch({ type: 'SET_META_TITLE', payload: initialTitle });
+          dispatch({ type: 'SET_CONTENT_TITLE', payload: initialTitle });
+        }
+      } else {
+        toast.error('No title suggestions could be generated', toastConfig.error);
       }
     } catch (error) {
       console.error('Error generating title suggestions:', error);
