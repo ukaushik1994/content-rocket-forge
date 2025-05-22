@@ -60,10 +60,11 @@ export const FinalChecklistCard = ({ checks, onRefresh, isRefreshing = false }: 
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          key={`checklist-container-${passedChecks}`} // Added key to force re-render when checks change
         >
           {checks.map((check, index) => (
             <motion.div 
-              key={index} 
+              key={`${index}-${check.passed}`} // Added check.passed to force re-render when passed state changes
               className={`flex items-start gap-3 p-3 rounded-md transition-all ${
                 check.passed 
                   ? 'bg-green-500/10 border border-green-500/30' 

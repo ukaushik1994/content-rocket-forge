@@ -6,6 +6,7 @@ import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { motion } from 'framer-motion';
 import { useRunChecks } from '@/hooks/final-review/useRunChecks';
+import { useChecklistItems } from '../hooks/useChecklistItems';
 
 interface OverviewTabProps {
   content: string;
@@ -40,6 +41,7 @@ export const OverviewTab = ({
   onAnalyze
 }: OverviewTabProps) => {
   const { isRunningAllChecks } = useRunChecks();
+  const { refreshChecklist } = useChecklistItems();
   
   const container = {
     hidden: { opacity: 0 },
@@ -54,6 +56,12 @@ export const OverviewTab = ({
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
+  };
+  
+  // Handler that combines running all checks and refreshing the checklist
+  const handleRunAllChecks = () => {
+    onRunAllChecks();
+    // The checklist will be refreshed by the useRunChecks hook after all checks are complete
   };
   
   return (
@@ -73,7 +81,6 @@ export const OverviewTab = ({
         <motion.div variants={item}>
           <FinalChecklistCard 
             checks={checklistItems}
-            onRefresh={onRunAllChecks}
             isRefreshing={isRunningAllChecks}
           />
         </motion.div>

@@ -7,6 +7,7 @@ import { useMetaGenerator } from './useMetaGenerator';
 import { useSolutionAnalysis } from './useSolutionAnalysis';
 import { useStepCompletion } from './useStepCompletion';
 import { useTitleSuggestions } from './useTitleSuggestions';
+import { useChecklistItems } from '@/components/content-builder/final-review/hooks/useChecklistItems';
 
 // Standard toast configuration
 const toastConfig = {
@@ -29,6 +30,7 @@ export const useRunChecks = () => {
   const { generateMeta } = useMetaGenerator(generateTitleSuggestions);
   const { analyzeSolutionUsage } = useSolutionAnalysis(ctaInfo);
   const { checkStepCompletion } = useStepCompletion();
+  const { refreshChecklist } = useChecklistItems();
   
   // Run all checks at once
   const runAllChecks = async () => {
@@ -54,6 +56,9 @@ export const useRunChecks = () => {
         await generateTitleSuggestions();
         toast.success("Title suggestions generated", { id: "titles-generated" });
       }
+      
+      // Refresh the checklist items to reflect the latest changes
+      refreshChecklist();
       
       // Check if all checks pass
       const allPassed = checkStepCompletion();
