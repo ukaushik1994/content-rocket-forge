@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Check, Loader2 } from 'lucide-react';
 import { contentFormats, getFormatIconComponent } from './formats';
+import { getPromptTemplatesByType } from '@/services/userPreferencesService';
 
 interface ContentFormatSelectionProps {
   selectedFormats: string[];
@@ -28,6 +29,7 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
         <div className="space-y-2">
           {contentFormats.map((format) => {
             const IconComponent = getFormatIconComponent(format.id);
+            const hasCustomTemplate = getPromptTemplatesByType(format.id).length > 0;
             
             return (
               <div
@@ -58,6 +60,11 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
                   <span className="text-sm font-medium flex items-center gap-1">
                     {format.name}
                     <IconComponent className="h-4 w-4" />
+                    {hasCustomTemplate && (
+                      <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 py-0.5 px-1.5 rounded-full">
+                        Custom
+                      </span>
+                    )}
                   </span>
                   <p className="text-xs text-muted-foreground">{format.description}</p>
                 </div>

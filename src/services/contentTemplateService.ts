@@ -35,8 +35,11 @@ export async function generateContentByFormatType(
   
   if (!templates || templates.length === 0) {
     // No custom template found, use format-specific default prompts
+    console.log(`No custom template found for ${formatType}, using default prompt`);
     return generateWithDefaultPrompt(formatType, topic, additionalContext);
   }
+  
+  console.log(`Found custom template for ${formatType}:`, templates[0].name);
   
   // Use the first template
   return generateWithTemplate(templates[0], topic, additionalContext);
@@ -179,7 +182,7 @@ async function generateWithTemplate(
     // Replace any additional context placeholders
     if (additionalContext) {
       Object.entries(additionalContext).forEach(([key, value]) => {
-        promptText = promptText.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+        promptText = promptText.replace(new RegExp(`\\{${key}\\}`, 'g'), value || '');
       });
     }
     
@@ -195,6 +198,8 @@ async function generateWithTemplate(
     if (structureInfo) {
       promptText += structureInfo;
     }
+    
+    console.log(`Generating content using custom template: ${template.name}`);
     
     // Make the API call
     const response = await sendChatRequest('openai', {

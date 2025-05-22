@@ -11,7 +11,7 @@ import { AdvancedSettings } from '@/components/settings';
 import { BillingSettings } from '@/components/settings';
 import { ExportSettings } from '@/components/settings';
 import { AppearanceSettings } from '@/components/settings';
-import { PromptTemplatesSettings } from '@/components/settings';
+import { FormatPromptSettings } from '@/components/settings';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
@@ -47,7 +47,7 @@ export default function Settings() {
       case "appearance":
         return <AppearanceSettings />;
       case "promptTemplates":
-        return <PromptTemplatesSettings />;
+        return <FormatPromptSettings />;
       case "billing":
         return <BillingSettings />;
       case "export":

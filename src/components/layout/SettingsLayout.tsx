@@ -71,7 +71,7 @@ export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLay
                 className="justify-start gap-2"
               >
                 <FileText className="h-4 w-4" />
-                Prompt Templates
+                Format Prompts
               </TabsTrigger>
               <TabsTrigger
                 value="billing"
