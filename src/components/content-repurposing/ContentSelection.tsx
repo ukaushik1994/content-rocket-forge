@@ -1,5 +1,5 @@
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentSelectionHeader from './content-selection/ContentSelectionHeader';
 import ContentList from './content-selection/ContentList';
@@ -43,21 +43,34 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const isMobile = useIsMobile();
   
+  // Deduplicate content items before filtering
+  const uniqueContentItems = useMemo(() => {
+    const uniqueMap = new Map<string, ContentItemType>();
+    contentItems.forEach(item => {
+      if (item && item.id) {
+        uniqueMap.set(item.id, item);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [contentItems]);
+  
   // Filter content items based on search query
-  const filteredItems = contentItems.filter(item => 
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredItems = useMemo(() => {
+    return uniqueContentItems.filter(item => 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [uniqueContentItems, searchQuery]);
   
   return (
     <div>
       <ContentSelectionHeader 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        totalItems={contentItems.length}
+        totalItems={uniqueContentItems.length}
       />
       
-      {contentItems.length === 0 ? (
+      {uniqueContentItems.length === 0 ? (
         <EmptyContentState />
       ) : (
         <ContentList

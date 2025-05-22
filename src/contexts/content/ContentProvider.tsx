@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
@@ -12,6 +13,15 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
+  // Helper function to deduplicate content items
+  const deduplicateItems = (items: ContentItemType[]): ContentItemType[] => {
+    const uniqueMap = new Map<string, ContentItemType>();
+    items.forEach(item => {
+      uniqueMap.set(item.id, item);
+    });
+    return Array.from(uniqueMap.values());
+  };
 
   // Fetch content items function
   const fetchContentItems = useCallback(async () => {
@@ -38,9 +48,10 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // Process the content items with keywords
+      // Process the content items with keywords and ensure no duplicates
       const processedItems = await processContentItems(contentData);
-      setContentItems(processedItems);
+      const uniqueItems = deduplicateItems(processedItems);
+      setContentItems(uniqueItems);
     } catch (error: any) {
       console.error('Error fetching content items:', error);
       toast.error('Failed to load content items');
@@ -69,7 +80,15 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
               if (newItem.user_id === user.id) {
                 // For newly inserted items, we need to fetch any keywords that might be associated
                 fetchItemKeywords(newItem).then(itemWithKeywords => {
-                  setContentItems(prev => [itemWithKeywords, ...prev]);
+                  setContentItems(prev => {
+                    // Check if we already have this item to prevent duplicates
+                    const exists = prev.some(item => item.id === itemWithKeywords.id);
+                    if (exists) {
+                      console.log('Skipping duplicate insert for item:', itemWithKeywords.id);
+                      return prev;
+                    }
+                    return [itemWithKeywords, ...prev];
+                  });
                 });
               }
             } else if (payload.eventType === 'UPDATE') {
@@ -77,9 +96,17 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
               if (updatedItem.user_id === user.id) {
                 // For updated items, we need to fetch any keywords that might be updated
                 fetchItemKeywords(updatedItem).then(itemWithKeywords => {
-                  setContentItems(prev => prev.map(item => 
-                    item.id === itemWithKeywords.id ? itemWithKeywords : item
-                  ));
+                  setContentItems(prev => {
+                    // Only update the specific item, ensuring no duplicates
+                    const updated = prev.map(item => 
+                      item.id === itemWithKeywords.id ? itemWithKeywords : item
+                    );
+                    // If it wasn't found, it's a new item
+                    if (!updated.some(item => item.id === itemWithKeywords.id)) {
+                      return [itemWithKeywords, ...prev];
+                    }
+                    return updated;
+                  });
                 });
               }
             } else if (payload.eventType === 'DELETE') {
@@ -105,7 +132,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ContentContext.Provider 
       value={{ 
-        contentItems, 
+        contentItems: deduplicateItems(contentItems), // Always return deduplicated content
         loading,
         ...actions,
         refreshContent: fetchContentItems

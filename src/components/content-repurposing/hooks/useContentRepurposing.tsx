@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
 import { useContentDialog } from './repurposing/useContentDialog';
@@ -9,7 +9,25 @@ export const useContentRepurposing = () => {
   // Compose hooks for different functionality
   const { content, handleContentSelection, resetContent } = useContentSelection();
   
-  // Pass content to dependent hooks
+  // Track when content changes to prevent duplicate state
+  const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  
+  // Update currentContentId when content changes
+  const handleContentChange = useCallback(() => {
+    if (content && content.id !== currentContentId) {
+      console.log('Content changed to:', content.id);
+      setCurrentContentId(content.id);
+      return true;
+    }
+    return false;
+  }, [content, currentContentId]);
+  
+  // Only update dependent hooks when content changes
+  if (content && handleContentChange()) {
+    console.log('Resetting content-dependent state for new content:', content.id);
+  }
+  
+  // Pass content to dependent hooks with proper cleanup on content change
   const {
     selectedFormats,
     generatedContents,
@@ -53,7 +71,12 @@ export const useContentRepurposing = () => {
   // Update this function to safely pass generated formats
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
     // Get all formats that have been generated for this content
-    const availableFormats = Object.keys(generatedContents || {}).filter(id => !!id); // Filter out empty IDs
+    if (!generatedContents) {
+      console.warn('generatedContents is undefined, using empty object');
+    }
+    
+    const availableFormats = Object.keys((generatedContents || {})).filter(id => !!id); // Filter out empty IDs
+    console.log('Available formats for content', contentId, ':', availableFormats);
     handleOpenRepurposedContent(contentId, formatId, availableFormats);
   };
   

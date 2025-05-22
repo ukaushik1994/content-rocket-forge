@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import ContentItem from './ContentItem';
 import { motion } from 'framer-motion';
@@ -17,6 +17,23 @@ const ContentList: React.FC<ContentListProps> = memo(({
   onOpenRepurposedContent,
   isMobile = false
 }) => {
+  // Deduplicate content items by ID
+  const uniqueContentItems = useMemo(() => {
+    const uniqueItemsMap = new Map<string, ContentItemType>();
+    contentItems.forEach(item => {
+      if (item && item.id) {
+        uniqueItemsMap.set(item.id, item);
+      }
+    });
+    
+    const uniqueItems = Array.from(uniqueItemsMap.values());
+    if (uniqueItems.length !== contentItems.length) {
+      console.log(`Removed ${contentItems.length - uniqueItems.length} duplicate items`);
+    }
+    
+    return uniqueItems;
+  }, [contentItems]);
+  
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -34,7 +51,7 @@ const ContentList: React.FC<ContentListProps> = memo(({
       initial="hidden"
       animate="show"
     >
-      {contentItems.map(item => (
+      {uniqueContentItems.map(item => (
         <ContentItem 
           key={item.id}
           item={item}
