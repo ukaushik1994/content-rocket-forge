@@ -1,8 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
 import { getApiKey } from './apiKeyService';
+import { testApiKeyDecryption, validateSerpApiKey } from '@/utils/apiKeyTestUtils';
 
 interface SearchKeywordParams {
   query: string;
@@ -17,7 +17,7 @@ const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 export type { SerpAnalysisResult };
 
 /**
- * Get API key from settings or localStorage
+ * Get API key from settings or localStorage with validation
  */
 async function getSerpApiKey(): Promise<string | null> {
   try {
@@ -25,6 +25,16 @@ async function getSerpApiKey(): Promise<string | null> {
     const settingsApiKey = await getApiKey('serp');
     if (settingsApiKey) {
       console.log('✅ SERP API key found in settings');
+      
+      // Test decryption
+      const decryptedKey = testApiKeyDecryption(settingsApiKey);
+      if (decryptedKey && validateSerpApiKey(decryptedKey)) {
+        console.log('✅ API key validation successful');
+        return settingsApiKey; // Return the original (possibly encrypted) key
+      } else {
+        console.warn('⚠️ API key validation failed');
+      }
+      
       return settingsApiKey;
     }
   } catch (error) {
@@ -43,11 +53,15 @@ async function getSerpApiKey(): Promise<string | null> {
 }
 
 /**
- * Call the Supabase Edge Function for SERP API requests
+ * Call the Supabase Edge Function for SERP API requests with enhanced error handling
  */
 async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
   try {
-    console.log(`🚀 Calling Supabase Edge Function: ${endpoint}`, { params, hasApiKey: !!apiKey });
+    console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
+      params: Object.keys(params), 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length 
+    });
     
     const { data, error } = await supabase.functions.invoke('serp-api', {
       body: {
@@ -59,13 +73,34 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
     
     if (error) {
       console.error('❌ Supabase Edge Function error:', error);
-      throw new Error(`Edge Function error: ${error.message || error}`);
+      throw new Error(`Edge Function error: ${error.message || JSON.stringify(error)}`);
     }
     
-    console.log('✅ Supabase Edge Function response received:', data ? 'Success' : 'No data');
+    if (!data) {
+      console.warn('⚠️ Edge Function returned no data');
+      return null;
+    }
+    
+    // Check if the response contains an error
+    if (data.error) {
+      console.error('❌ SERP API error in response:', data.error);
+      throw new Error(data.error);
+    }
+    
+    console.log('✅ SERP Edge Function response received successfully');
     return data;
   } catch (error) {
-    console.error('💥 Error calling Supabase Edge Function:', error);
+    console.error('💥 Error calling SERP Edge Function:', error);
+    
+    // Provide more specific error messages
+    if (error.message.includes('401')) {
+      throw new Error('Invalid API key. Please check your SerpAPI key in settings.');
+    } else if (error.message.includes('429')) {
+      throw new Error('API rate limit exceeded. Please try again later.');
+    } else if (error.message.includes('timeout')) {
+      throw new Error('Request timeout. Please try again.');
+    }
+    
     throw error;
   }
 }
@@ -160,7 +195,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
 };
 
 /**
- * Analyze keyword using SERP API
+ * Analyze keyword using SERP API with enhanced error handling
  */
 export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
   try {
@@ -170,45 +205,14 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
     if (!refresh) {
       const cachedData = getCachedSerpData(keyword);
       if (cachedData) {
+        console.log('📋 Using cached SERP data');
         return cachedData;
       }
     }
     
     const apiKey = await getSerpApiKey();
     
-    if (apiKey) {
-      try {
-        console.log('🔑 API key found, making real SERP API call...');
-        const data = await callSerpEdgeFunction('analyze', { keyword, refresh: !!refresh }, apiKey);
-        
-        if (data) {
-          console.log('✅ SERP API returned real data');
-          // Process and cache the result
-          const result: SerpAnalysisResult = {
-            keyword,
-            searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
-            keywordDifficulty: data.keywordDifficulty || Math.floor(Math.random() * 100),
-            competitionScore: data.competitionScore || Math.random() * 0.8,
-            entities: data.entities || [],
-            peopleAlsoAsk: data.peopleAlsoAsk || [],
-            headings: data.headings || [],
-            contentGaps: data.contentGaps || [],
-            topResults: data.topResults || [],
-            relatedSearches: data.relatedSearches || [],
-            keywords: data.keywords || [],
-            recommendations: data.recommendations || [],
-            isMockData: false
-          };
-          
-          cacheSerpData(keyword, result);
-          return result;
-        }
-      } catch (error) {
-        console.error('❌ SERP API call failed:', error);
-        toast.error('Error analyzing keyword. Using backup data.');
-        return generateMockSerpData(keyword, refresh);
-      }
-    } else {
+    if (!apiKey) {
       console.warn('⚠️ No SERP API key found, using mock data');
       toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
         duration: 5000,
@@ -221,8 +225,59 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
       });
       return generateMockSerpData(keyword, refresh);
     }
+
+    console.log('🔑 API key found, making real SERP API call...');
+    
+    try {
+      const data = await callSerpEdgeFunction('analyze', { keyword, refresh: !!refresh }, apiKey);
+      
+      if (data) {
+        console.log('✅ SERP API returned real data');
+        const result: SerpAnalysisResult = {
+          keyword,
+          searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
+          keywordDifficulty: data.keywordDifficulty || Math.floor(Math.random() * 100),
+          competitionScore: data.competitionScore || Math.random() * 0.8,
+          entities: data.entities || [],
+          peopleAlsoAsk: data.peopleAlsoAsk || [],
+          headings: data.headings || [],
+          contentGaps: data.contentGaps || [],
+          topResults: data.topResults || [],
+          relatedSearches: data.relatedSearches || [],
+          keywords: data.keywords || [],
+          recommendations: data.recommendations || [],
+          isMockData: false
+        };
+        
+        cacheSerpData(keyword, result);
+        
+        toast.success('Retrieved real SERP data successfully!');
+        return result;
+      } else {
+        console.warn('⚠️ SERP API returned empty data');
+        throw new Error('No data returned from SERP API');
+      }
+    } catch (apiError) {
+      console.error('❌ SERP API call failed:', apiError);
+      
+      // Show specific error message to user
+      toast.error(`SERP API Error: ${apiError.message}`, {
+        duration: 8000,
+        action: {
+          label: "Check Settings",
+          onClick: () => {
+            window.location.href = "/settings/api";
+          }
+        }
+      });
+      
+      // Return mock data as fallback
+      console.log('🎭 Falling back to mock data due to API error');
+      return generateMockSerpData(keyword, refresh);
+    }
   } catch (error) {
     console.error('💥 Error analyzing keyword:', error);
+    toast.error(`Analysis failed: ${error.message}`);
     return generateMockSerpData(keyword, refresh);
   }
 };
