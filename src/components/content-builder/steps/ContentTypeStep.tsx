@@ -14,7 +14,8 @@ import {
   Building2,
   Palette,
   Edit3,
-  CheckCircle2
+  CheckCircle2,
+  Link
 } from 'lucide-react';
 import { ContentType, Solution } from '@/contexts/content-builder/types';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
@@ -195,14 +196,39 @@ export const ContentTypeStep = () => {
           className="glass-panel rounded-xl overflow-hidden"
         >
           <div className="bg-gradient-to-r from-neon-purple/20 via-neon-blue/20 to-neon-purple/20 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gradient flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
-                Brand Configuration Active
-              </h3>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                {/* Company Logo/Avatar */}
+                <Avatar className="h-16 w-16 rounded-xl border border-white/20">
+                  {companyInfo?.logoUrl ? (
+                    <AvatarImage 
+                      src={companyInfo.logoUrl} 
+                      alt={companyInfo.name}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 text-white font-bold text-lg">
+                      {companyInfo ? getInitials(companyInfo.name) : <Building2 className="h-8 w-8" />}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
+                    <h3 className="text-xl font-semibold text-gradient">
+                      {companyInfo?.name || 'Brand Configuration'} Active
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-white/70">
+                    <Link className="h-4 w-4" />
+                    <span>Company & Brand settings linked</span>
+                  </div>
+                </div>
+              </div>
+              
               <Button 
                 variant="outline" 
-                size="sm" 
                 onClick={handleNavigateToSolutions}
                 className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
               >
@@ -217,19 +243,29 @@ export const ContentTypeStep = () => {
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0">
-                        <Avatar className="h-12 w-12 rounded-lg border border-white/20">
-                          <AvatarFallback className="rounded-lg bg-primary/20 text-primary font-bold text-lg">
-                            {getInitials(companyInfo.name)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-white" />
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="h-4 w-4 text-primary flex-shrink-0" />
-                          <h4 className="font-semibold text-white truncate">{companyInfo.name}</h4>
-                        </div>
+                        <h4 className="font-semibold text-white mb-1">{companyInfo.name}</h4>
                         <p className="text-sm text-primary/80 mb-2">{companyInfo.industry}</p>
                         <p className="text-xs text-white/70 line-clamp-2">{companyInfo.description}</p>
+                        {companyInfo.values.length > 0 && (
+                          <div className="mt-3">
+                            <span className="text-xs font-medium text-primary">Values:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {companyInfo.values.slice(0, 2).map((value, idx) => (
+                                <span key={idx} className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                  {value}
+                                </span>
+                              ))}
+                              {companyInfo.values.length > 2 && (
+                                <span className="text-xs text-white/60">+{companyInfo.values.length - 2} more</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -241,8 +277,8 @@ export const ContentTypeStep = () => {
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0">
-                        <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
-                          <Palette className="h-6 w-6 text-white" />
+                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
+                          <Palette className="h-5 w-5 text-white" />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -279,6 +315,38 @@ export const ContentTypeStep = () => {
                 </Card>
               )}
             </div>
+
+            {/* Brand Colors Preview */}
+            {brandGuidelines && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-white/90">Brand Colors:</span>
+                  <div className="flex gap-2">
+                    {brandGuidelines.primaryColor && (
+                      <div 
+                        className="w-6 h-6 rounded-full border border-white/20"
+                        style={{ backgroundColor: brandGuidelines.primaryColor }}
+                        title={`Primary: ${brandGuidelines.primaryColor}`}
+                      />
+                    )}
+                    {brandGuidelines.secondaryColor && (
+                      <div 
+                        className="w-6 h-6 rounded-full border border-white/20"
+                        style={{ backgroundColor: brandGuidelines.secondaryColor }}
+                        title={`Secondary: ${brandGuidelines.secondaryColor}`}
+                      />
+                    )}
+                    {brandGuidelines.accentColor && (
+                      <div 
+                        className="w-6 h-6 rounded-full border border-white/20"
+                        style={{ backgroundColor: brandGuidelines.accentColor }}
+                        title={`Accent: ${brandGuidelines.accentColor}`}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
