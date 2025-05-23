@@ -52,7 +52,7 @@ export function SerpSectionHeader({
           <span className={`text-base font-medium`}>{title}</span>
           {count !== undefined && count > 0 && (
             <span className={`text-xs font-medium ${bgVariantColors[variant]} px-2 py-0.5 rounded-full`}>
-              {count} FAQ{count !== 1 ? 's' : ''}
+              {count}
             </span>
           )}
         </div>
