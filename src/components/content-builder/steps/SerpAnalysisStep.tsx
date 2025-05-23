@@ -16,42 +16,29 @@ export const SerpAnalysisStep = () => {
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
   const [apiKeyExists, setApiKeyExists] = useState(false);
   const [showApiSetup, setShowApiSetup] = useState(false);
-  const [apiKeySource, setApiKeySource] = useState<'settings' | 'local' | 'none'>('none');
+  const [apiKeySource, setApiKeySource] = useState<'settings' | 'none'>('none');
   
-  // Check if API key exists and if we should show API setup
+  // Check if API key exists using the unified service
   useEffect(() => {
     const checkApiKey = async () => {
       try {
-        // Check settings API key first (preferred)
+        console.log('🔑 Checking for SERP API key...');
+        
+        // Check unified API key service
         const settingsApiKey = await getApiKey('serp');
         if (settingsApiKey) {
+          console.log('✅ SERP API key found in settings');
           setApiKeyExists(true);
           setApiKeySource('settings');
-          // Store in localStorage for consistent access
-          localStorage.setItem('serp_api_key', settingsApiKey);
-          return;
-        }
-        
-        // Check localStorage next
-        const localApiKey = localStorage.getItem('serp_api_key');
-        if (localApiKey) {
-          setApiKeyExists(true);
-          setApiKeySource('local');
           return;
         }
         
         // No API key found
+        console.log('❌ No SERP API key found');
         setApiKeyExists(false);
         setApiKeySource('none');
       } catch (error) {
         console.error('Error checking API key:', error);
-        // Check localStorage as fallback if settings check fails
-        const localApiKey = localStorage.getItem('serp_api_key');
-        if (localApiKey) {
-          setApiKeyExists(true);
-          setApiKeySource('local');
-          return;
-        }
         setApiKeyExists(false);
         setApiKeySource('none');
       }
@@ -72,8 +59,6 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      // Just call analyzeKeyword with only the mainKeyword parameter
-      // This fixes the TypeScript error by not trying to pass a second parameter
       await analyzeKeyword(mainKeyword);
     }
   };
@@ -118,9 +103,7 @@ export const SerpAnalysisStep = () => {
           <p className="text-muted-foreground">
             {apiKeySource === 'settings' 
               ? 'Using API key from settings'
-              : apiKeySource === 'local' 
-                ? 'Using locally stored API key'
-                : 'To see real search data, you need to add your SERP API key'}
+              : 'To see real search data, you need to add your SERP API key'}
           </p>
         </div>
         
@@ -185,8 +168,8 @@ export const SerpAnalysisStep = () => {
               handleToggleSelection={handleToggleSelection}
             />
             
-            {/* Add diagnostics panel for debugging */}
-            {(apiKeySource !== 'settings' || serpData?.isMockData) && (
+            {/* Add diagnostics panel for debugging when using mock data */}
+            {(!apiKeyExists || serpData?.isMockData) && (
               <SerpApiDiagnostics />
             )}
           </div>

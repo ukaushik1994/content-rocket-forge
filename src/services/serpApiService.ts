@@ -2,7 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
 import { getApiKey } from './apiKeyService';
-import { testApiKeyDecryption, validateSerpApiKey } from '@/utils/apiKeyTestUtils';
 
 interface SearchKeywordParams {
   query: string;
@@ -17,39 +16,24 @@ const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 export type { SerpAnalysisResult };
 
 /**
- * Get API key from settings or localStorage with validation
+ * Get API key from the unified settings service
  */
 async function getSerpApiKey(): Promise<string | null> {
   try {
-    console.log('🔑 Attempting to get SERP API key from settings...');
-    const settingsApiKey = await getApiKey('serp');
-    if (settingsApiKey) {
-      console.log('✅ SERP API key found in settings');
-      
-      // Test decryption
-      const decryptedKey = testApiKeyDecryption(settingsApiKey);
-      if (decryptedKey && validateSerpApiKey(decryptedKey)) {
-        console.log('✅ API key validation successful');
-        return settingsApiKey; // Return the original (possibly encrypted) key
-      } else {
-        console.warn('⚠️ API key validation failed');
-      }
-      
-      return settingsApiKey;
+    console.log('🔑 Getting SERP API key from unified service...');
+    const apiKey = await getApiKey('serp');
+    
+    if (apiKey) {
+      console.log('✅ SERP API key found');
+      return apiKey;
+    } else {
+      console.log('❌ No SERP API key found');
+      return null;
     }
   } catch (error) {
-    console.warn('⚠️ Error getting SERP API key from settings:', error);
+    console.error('❌ Error getting SERP API key:', error);
+    return null;
   }
-  
-  // Fallback to localStorage
-  const localApiKey = localStorage.getItem('serp_api_key');
-  if (localApiKey) {
-    console.log('✅ SERP API key found in localStorage');
-    return localApiKey;
-  }
-  
-  console.log('❌ No SERP API key found');
-  return null;
 }
 
 /**
@@ -94,7 +78,7 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
     
     // Provide more specific error messages
     if (error.message.includes('401')) {
-      throw new Error('Invalid API key. Please check your SerpAPI key in settings.');
+      throw new Error('Invalid API key. Please check your SERP API key in settings.');
     } else if (error.message.includes('429')) {
       throw new Error('API rate limit exceeded. Please try again later.');
     } else if (error.message.includes('timeout')) {

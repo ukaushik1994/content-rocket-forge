@@ -32,17 +32,27 @@ export const validateSerpApiKey = (apiKey: string): boolean => {
 
 export const testSerpApiConnection = async (apiKey: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    const testUrl = `https://serpapi.com/search?engine=google&q=test&api_key=${apiKey}&num=1`;
+    // Use the unified Supabase edge function for testing
+    const { supabase } = await import('@/integrations/supabase/client');
     
-    const response = await fetch(testUrl);
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: {
+        endpoint: 'search',
+        params: { q: 'test', limit: 1 },
+        apiKey
+      }
+    });
     
-    if (response.ok) {
+    if (error) {
+      return { success: false, error: `Connection test failed: ${error.message}` };
+    }
+    
+    if (data && !data.error) {
       return { success: true };
     } else {
-      const errorText = await response.text();
-      return { success: false, error: `API test failed: ${response.status} - ${errorText}` };
+      return { success: false, error: `API test failed: ${data?.error || 'Unknown error'}` };
     }
-  } catch (error) {
+  } catch (error: any) {
     return { success: false, error: `Connection test failed: ${error.message}` };
   }
 };
