@@ -37,24 +37,30 @@ const FormatsList: React.FC<FormatsListProps> = memo(({
   return (
     <TooltipProvider delayDuration={isMobile ? 100 : 300}>
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-wrap gap-1 sm:gap-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
       >
-        {repurposedFormats.map(format => {
+        {repurposedFormats.map((format, index) => {
           const isSaved = savedContentFormats.includes(format.id);
           return (
-            <ContentFormatIcon 
+            <motion.div
               key={format.id}
-              formatId={format.id}
-              isFormatUsed={true}
-              isSaved={isSaved}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenRepurposedContent(item.id, format.id);
-              }}
-              isMobile={isMobile}
-            />
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <ContentFormatIcon 
+                formatId={format.id}
+                isFormatUsed={true}
+                isSaved={isSaved}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenRepurposedContent(item.id, format.id);
+                }}
+                isMobile={isMobile}
+              />
+            </motion.div>
           );
         })}
       </motion.div>
