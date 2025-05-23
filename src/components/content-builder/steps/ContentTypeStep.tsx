@@ -57,7 +57,6 @@ export const ContentTypeStep = () => {
     }
   }, [contentType, selectedSolution, dispatch]);
   
-  // Load solutions, company info, and brand guidelines
   useEffect(() => {
     fetchSolutions();
     
@@ -440,39 +439,6 @@ export const ContentTypeStep = () => {
           </div>
         </motion.div>
       )}
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Content Type</h3>
-        <p className="text-sm text-muted-foreground">
-          Select the type of content you want to create or use the solution dropdowns above.
-        </p>
-        
-        <RadioGroup 
-          value={contentType || ''} 
-          onValueChange={handleSelectContentType}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          {contentTypes.map((type) => (
-            <div key={type.value} className="relative">
-              <RadioGroupItem
-                value={type.value}
-                id={`content-type-${type.value}`}
-                className="sr-only peer"
-              />
-              <Label
-                htmlFor={`content-type-${type.value}`}
-                className={`flex flex-col items-center justify-center h-32 p-4 rounded-lg border-2 cursor-pointer
-                transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-muted/50
-                ${contentType === type.value ? 'border-primary bg-primary/5' : 'border-muted'}`}
-              >
-                <type.icon className="h-8 w-8 mb-2" />
-                <div className="font-medium text-center">{type.label}</div>
-                <div className="text-xs text-center text-muted-foreground mt-1">{type.description}</div>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
     </div>
   );
 };
