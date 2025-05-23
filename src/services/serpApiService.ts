@@ -77,11 +77,11 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
     console.error('💥 Error calling SERP Edge Function:', error);
     
     // Provide more specific error messages
-    if (error.message.includes('401')) {
+    if (error.message && error.message.includes('401')) {
       throw new Error('Invalid API key. Please check your SERP API key in settings.');
-    } else if (error.message.includes('429')) {
+    } else if (error.message && error.message.includes('429')) {
       throw new Error('API rate limit exceeded. Please try again later.');
-    } else if (error.message.includes('timeout')) {
+    } else if (error.message && error.message.includes('timeout')) {
       throw new Error('Request timeout. Please try again.');
     }
     

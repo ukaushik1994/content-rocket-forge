@@ -44,15 +44,19 @@ export const testSerpApiConnection = async (apiKey: string): Promise<{ success: 
     });
     
     if (error) {
+      console.error('Edge function error:', error);
       return { success: false, error: `Connection test failed: ${error.message}` };
     }
     
     if (data && !data.error) {
+      console.log('Test connection successful:', data);
       return { success: true };
     } else {
+      console.error('API test failed:', data?.error);
       return { success: false, error: `API test failed: ${data?.error || 'Unknown error'}` };
     }
   } catch (error: any) {
+    console.error('Connection test exception:', error);
     return { success: false, error: `Connection test failed: ${error.message}` };
   }
 };

@@ -17,11 +17,13 @@ export const SerpAnalysisStep = () => {
   const [apiKeyExists, setApiKeyExists] = useState(false);
   const [showApiSetup, setShowApiSetup] = useState(false);
   const [apiKeySource, setApiKeySource] = useState<'settings' | 'none'>('none');
+  const [isCheckingKey, setIsCheckingKey] = useState(true);
   
   // Check if API key exists using the unified service
   useEffect(() => {
     const checkApiKey = async () => {
       try {
+        setIsCheckingKey(true);
         console.log('🔑 Checking for SERP API key...');
         
         // Check unified API key service
@@ -41,6 +43,8 @@ export const SerpAnalysisStep = () => {
         console.error('Error checking API key:', error);
         setApiKeyExists(false);
         setApiKeySource('none');
+      } finally {
+        setIsCheckingKey(false);
       }
     };
     
@@ -93,6 +97,15 @@ export const SerpAnalysisStep = () => {
       dispatch({ type: 'SET_SERP_DATA', payload: data });
     }
   };
+  
+  // If API setup is explicitly requested or no API key exists and no data is available
+  if (isCheckingKey) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
   
   // If API setup is explicitly requested or no API key exists and no data is available
   if ((showApiSetup || (!apiKeyExists && !serpData)) && !isAnalyzing) {

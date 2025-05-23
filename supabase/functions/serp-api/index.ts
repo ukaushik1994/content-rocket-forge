@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
@@ -17,6 +16,15 @@ serve(async (req) => {
   }
 
   try {
+    // For testing the API key - sent from the SerpApiDiagnostics component
+    if (req.url.includes('test')) {
+      console.log('📝 Test endpoint called');
+      return new Response(
+        JSON.stringify({ success: true, message: 'SERP API endpoint is working' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { endpoint, params, apiKey } = await req.json();
     console.log('📥 Request received:', { endpoint, hasParams: !!params, hasApiKey: !!apiKey });
 

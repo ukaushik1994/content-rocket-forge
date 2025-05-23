@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Key, Save, Check, RefreshCw, AlertTriangle } from "lucide-react";
-import { saveApiKey, getApiKey, testApiKey } from '@/services/apiKeyService';
+import { saveApiKey, getApiKey, testApiKey, deleteApiKey } from '@/services/apiKeyService';
 
 export const SerpApiKeySetup: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
@@ -123,7 +123,6 @@ export const SerpApiKeySetup: React.FC = () => {
   const handleRemoveKey = async () => {
     if (confirm("Are you sure you want to remove your API key?")) {
       try {
-        const { deleteApiKey } = await import('@/services/apiKeyService');
         const success = await deleteApiKey('serp');
         
         if (success) {

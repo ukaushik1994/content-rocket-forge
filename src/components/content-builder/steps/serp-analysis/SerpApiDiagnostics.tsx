@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { getApiKey, testApiKey } from '@/services/apiKeyService';
 
 type ApiStatus = 'checking' | 'success' | 'error' | 'warning' | 'not-found';
 
@@ -26,71 +27,73 @@ export const SerpApiDiagnostics = () => {
       setApiKeyStatus('checking');
       setMessage('Checking for SERP API key...');
       
-      const localKey = localStorage.getItem('serp_api_key');
-      if (localKey) {
-        setApiKeyStatus('success');
-        setMessage('Found SERP API key in localStorage');
-      } else {
-        // Check if we have a key in settings
-        try {
-          const response = await fetch('/api/keys/serp');
-          if (response.ok) {
+      // Check if we have a key in settings using unified API key service
+      try {
+        const storedKey = await getApiKey('serp');
+        if (storedKey) {
+          setApiKeyStatus('success');
+          setMessage('Found SERP API key in settings');
+          
+          // Test the key if it exists
+          const success = await testApiKey('serp', storedKey);
+          if (success) {
             setApiKeyStatus('success');
-            setMessage('Found SERP API key in settings');
+            setMessage('SERP API key tested successfully');
           } else {
-            setApiKeyStatus('not-found');
-            setMessage('No SERP API key found. You will see mock data.');
+            setApiKeyStatus('warning');
+            setMessage('SERP API key found but test failed');
           }
-        } catch (error) {
-          setApiKeyStatus('error');
-          setMessage('Error checking for API key in settings');
+        } else {
+          setApiKeyStatus('not-found');
+          setMessage('No SERP API key found. You will see mock data.');
         }
+      } catch (error) {
+        setApiKeyStatus('error');
+        setMessage('Error checking for API key in settings');
       }
       
       // Check proxy endpoint
       setProxyStatus('checking');
       setMessage('Checking proxy endpoint...');
       try {
-        const proxyResponse = await fetch('/api/proxy/serp-api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: 'test' })
+        // Use supabase functions to test the endpoint
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase.functions.invoke('serp-api', {
+          body: { 
+            endpoint: 'test',
+            params: { test: true } 
+          }
         });
         
-        if (proxyResponse.ok) {
-          const data = await proxyResponse.json();
-          if (data && data.success) {
-            setProxyStatus('success');
-            setMessage('SERP API proxy endpoint is working');
-          } else {
-            setProxyStatus('warning');
-            setMessage('SERP API proxy endpoint responded but returned an error');
-          }
-        } else {
+        if (error) {
           setProxyStatus('error');
-          setMessage('SERP API proxy endpoint not working');
+          setMessage('SERP API proxy endpoint error: ' + error.message);
+          console.error('SERP API proxy endpoint error:', error);
+        } else if (data && data.success) {
+          setProxyStatus('success');
+          setMessage('SERP API proxy endpoint is working');
+        } else {
+          setProxyStatus('warning');
+          setMessage('SERP API proxy endpoint responded but returned an error or no data');
+          console.warn('SERP API proxy endpoint response:', data);
         }
       } catch (error) {
         setProxyStatus('error');
-        setMessage('Error checking SERP API proxy endpoint');
+        setMessage('Error checking SERP API proxy endpoint: ' + (error.message || 'Unknown error'));
+        console.error('Error checking SERP API proxy endpoint:', error);
       }
       
-      // Check direct API access (lightweight test)
+      // Check direct API access (based on API key availability)
       setDirectStatus('checking');
-      setMessage('Checking direct API access...');
-      try {
-        // Note: This isn't a real API call, just checking if the format looks good
-        const key = localStorage.getItem('serp_api_key');
-        if (key && key.length > 10) {
-          setDirectStatus('warning');
-          setMessage('API key format looks acceptable. Will attempt direct calls if proxy fails.');
-        } else {
-          setDirectStatus('warning');
-          setMessage('API key may not be in correct format for direct calls');
-        }
-      } catch (error) {
+      setMessage('Checking direct API access capabilities...');
+      
+      const apiKey = await getApiKey('serp');
+      if (apiKey) {
+        setDirectStatus('warning');
+        setMessage('API key found. Direct API access capabilities available as fallback.');
+      } else {
         setDirectStatus('error');
-        setMessage('Error checking direct API access capabilities');
+        setMessage('No API key found for direct API access capabilities.');
       }
       
     } catch (error: any) {
