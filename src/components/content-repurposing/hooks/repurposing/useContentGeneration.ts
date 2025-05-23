@@ -1,160 +1,148 @@
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState, useCallback, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
+import { contentFormats } from '../../formats';
 import { generateContentByFormatType } from '@/services/contentTemplateService';
+import { sendChatRequest } from '@/services/aiService';
 import { repurposedContentService } from '@/services/repurposedContentService';
-import { useAuth } from '@/contexts/AuthContext';
-import { contentFormats, getFormatByIdOrDefault } from '../../formats';
+import { useAuth } from '@/contexts/auth';
+import { toast } from 'sonner';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const { user } = useAuth();
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   const [savedContentFormats, setSavedContentFormats] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
-  
-  // Load saved content from localStorage on initial render
-  useEffect(() => {
-    if (content?.id) {
-      const savedData = localStorage.getItem(`repurposed_content_${content.id}`);
-      if (savedData) {
-        try {
-          const parsedData = JSON.parse(savedData);
-          setGeneratedContents(parsedData.contents || {});
-          setSelectedFormats(parsedData.formats || []);
-          
-          if (parsedData.activeFormat) {
-            setActiveFormat(parsedData.activeFormat);
-          } else if (Object.keys(parsedData.contents || {}).length > 0) {
-            setActiveFormat(Object.keys(parsedData.contents)[0]);
-          }
-        } catch (error) {
-          console.error('Error parsing saved content:', error);
-        }
-      }
-      
-      // Load saved formats from database
-      loadSavedFormats();
-    }
-  }, [content?.id]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingAll, setIsSavingAll] = useState(false);
 
-  const loadSavedFormats = async () => {
-    if (!content?.id) return;
-    
-    try {
-      const savedContent = await repurposedContentService.getAllRepurposedContent(content.id);
-      const savedFormatCodes = savedContent.map(item => item.format_code);
-      setSavedContentFormats(savedFormatCodes);
-    } catch (error) {
-      console.error('Error loading saved formats:', error);
-    }
-  };
-  
-  // Save generated content to localStorage whenever it changes
+  // Auto-select first format when generated contents change
   useEffect(() => {
-    if (content?.id && Object.keys(generatedContents).length > 0) {
-      const dataToSave = {
-        contents: generatedContents,
-        formats: selectedFormats,
-        activeFormat: activeFormat,
-        timestamp: new Date().toISOString(),
-        contentId: content.id
-      };
+    const formats = Object.keys(generatedContents);
+    if (formats.length > 0 && !activeFormat) {
+      setActiveFormat(formats[0]);
+    }
+  }, [generatedContents, activeFormat]);
+
+  // Load saved formats for current content
+  useEffect(() => {
+    if (content?.metadata?.repurposedFormats) {
+      setSavedContentFormats(content.metadata.repurposedFormats);
       
-      localStorage.setItem(`repurposed_content_${content.id}`, JSON.stringify(dataToSave));
+      // Load saved content into generatedContents
+      if (content.metadata.repurposedContentMap) {
+        setGeneratedContents(content.metadata.repurposedContentMap);
+      }
+    } else {
+      setSavedContentFormats([]);
+      setGeneratedContents({});
     }
-  }, [generatedContents, selectedFormats, activeFormat, content?.id]);
-  
-  const handleGenerateContent = async (contentTypeIds: string[]) => {
-    if (contentTypeIds.length === 0) {
-      toast.error('Please select at least one content format');
+  }, [content]);
+
+  const handleGenerateContent = useCallback(async (formats: string[]) => {
+    if (!content || formats.length === 0) {
+      toast.error('Please select content and formats to generate');
       return;
     }
-    
-    if (!content) {
-      toast.error('Please select content to repurpose');
-      return;
-    }
-    
+
     setIsGenerating(true);
-    setSelectedFormats(contentTypeIds);
-    
+    const newGeneratedContents: Record<string, string> = { ...generatedContents };
+
     try {
-      const newGeneratedContents: Record<string, string> = { ...generatedContents };
-      
-      for (const formatId of contentTypeIds) {
-        if (!formatId) continue;
-        
-        const formatInfo = getFormatByIdOrDefault(formatId);
-        
+      for (const formatId of formats) {
+        const format = contentFormats.find(f => f.id === formatId);
+        if (!format) continue;
+
+        toast.info(`Generating ${format.name} format...`);
+
         try {
-          toast.info(`Generating ${formatInfo.name} content...`);
-          
-          const generatedContent = await generateContentByFormatType(
+          // Try template-based generation first
+          let generatedContent = await generateContentByFormatType(
             formatId,
             content.title,
             {
               content: content.content?.substring(0, 1500) || '',
-              keyword: content.keywords ? content.keywords[0] : ''
+              keyword: content.metadata?.mainKeyword || ''
             }
           );
-          
-          if (generatedContent) {
-            newGeneratedContents[formatId] = generatedContent;
-          } else {
-            toast.error(`Failed to generate ${formatInfo.name} content`);
+
+          // Fallback to AI service if template generation fails
+          if (!generatedContent) {
+            const response = await sendChatRequest('openai', {
+              messages: [
+                {
+                  role: 'system',
+                  content: `You are an expert content repurposing specialist. Transform the provided content into the requested ${format.name} format while maintaining its core message and value.`
+                },
+                {
+                  role: 'user',
+                  content: `Transform this content titled "${content.title}" for the ${format.name} format.
+                            
+                            Content: ${content.content?.substring(0, 1500)}...
+                            
+                            Make it appropriate for the ${format.name} format with all necessary elements.`
+                }
+              ]
+            });
+
+            if (response?.choices?.[0]?.message?.content) {
+              generatedContent = response.choices[0].message.content;
+            } else {
+              throw new Error(`Failed to generate content for ${format.name}`);
+            }
           }
-        } catch (error) {
-          console.error('Error generating content:', error);
-          toast.error(`Failed to generate ${formatInfo.name} content`);
+
+          newGeneratedContents[formatId] = generatedContent;
+          toast.success(`${format.name} format generated successfully`);
+
+        } catch (formatError) {
+          console.error(`Error generating ${format.name}:`, formatError);
+          toast.error(`Failed to generate ${format.name} format`);
         }
       }
-      
+
       setGeneratedContents(newGeneratedContents);
-      
-      if (Object.keys(newGeneratedContents).length > 0) {
-        setActiveFormat(Object.keys(newGeneratedContents)[0]);
-        toast.success(`Generated content for ${Object.keys(newGeneratedContents).length} format(s)`);
-      } else {
-        toast.error('Failed to generate any content');
+
+      // Auto-select first generated format
+      const firstFormat = Object.keys(newGeneratedContents)[0];
+      if (firstFormat && !activeFormat) {
+        setActiveFormat(firstFormat);
       }
+
     } catch (error) {
-      console.error('Error in content generation process:', error);
-      toast.error('Failed to generate content');
+      console.error('Error generating content:', error);
+      toast.error('Failed to generate content. Please try again.');
     } finally {
       setIsGenerating(false);
     }
-  };
-  
-  const saveAsNewContent = async (formatId: string, generatedContent: string): Promise<boolean> => {
-    if (!content || !formatId || !generatedContent || !user) {
-      toast.error('Missing required information for saving');
+  }, [content, generatedContents, activeFormat]);
+
+  const saveAsNewContent = useCallback(async (formatId: string, generatedContent: string): Promise<boolean> => {
+    if (!content || !user || !formatId || !generatedContent) {
+      toast.error('Missing required information to save content');
       return false;
     }
-    
+
     setIsSaving(true);
-    
     try {
-      const formatInfo = getFormatByIdOrDefault(formatId);
-      
+      const format = contentFormats.find(f => f.id === formatId);
+      const formatName = format?.name || formatId;
+
       const result = await repurposedContentService.saveRepurposedContent({
         contentId: content.id,
         formatCode: formatId,
         content: generatedContent,
-        title: `${content.title} - ${formatInfo.name}`,
+        title: `${content.title} - ${formatName}`,
         userId: user.id
       });
-      
+
       if (result) {
         setSavedContentFormats(prev => [...new Set([...prev, formatId])]);
-        toast.success(`${formatInfo.name} content saved successfully`);
+        toast.success(`${formatName} content saved successfully`);
         return true;
       }
-      
       return false;
     } catch (error) {
       console.error('Error saving content:', error);
@@ -163,16 +151,15 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     } finally {
       setIsSaving(false);
     }
-  };
-  
-  const handleSaveAllContent = async (): Promise<boolean> => {
+  }, [content, user]);
+
+  const handleSaveAllContent = useCallback(async (): Promise<boolean> => {
     if (!content || !user || Object.keys(generatedContents).length === 0) {
-      toast.error('No content available to save');
+      toast.error('No content to save');
       return false;
     }
-    
+
     setIsSavingAll(true);
-    
     try {
       const savedFormats = await repurposedContentService.saveAllRepurposedContent(
         content.id,
@@ -180,13 +167,14 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         generatedContents,
         content.title
       );
+
+      setSavedContentFormats(prev => [...new Set([...prev, ...savedFormats])]);
       
       if (savedFormats.length > 0) {
-        setSavedContentFormats(prev => [...new Set([...prev, ...savedFormats])]);
-        toast.success(`Successfully saved ${savedFormats.length} content format(s)`);
+        toast.success(`${savedFormats.length} format(s) saved successfully`);
         return true;
       } else {
-        toast.error('Failed to save any content');
+        toast.error('No formats were saved');
         return false;
       }
     } catch (error) {
@@ -196,34 +184,46 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     } finally {
       setIsSavingAll(false);
     }
-  };
-  
-  const deleteRepurposedContent = async (formatId: string): Promise<boolean> => {
-    if (!content || !formatId) return false;
-    
+  }, [content, user, generatedContents]);
+
+  const deleteRepurposedContent = useCallback(async (formatId: string): Promise<boolean> => {
+    if (!content || !formatId) {
+      toast.error('Missing information to delete content');
+      return false;
+    }
+
     try {
       const success = await repurposedContentService.deleteRepurposedContent(content.id, formatId);
-      
       if (success) {
         setSavedContentFormats(prev => prev.filter(id => id !== formatId));
-        toast.success('Content deleted successfully');
+        setGeneratedContents(prev => {
+          const updated = { ...prev };
+          delete updated[formatId];
+          return updated;
+        });
+        
+        // Reset active format if deleted
+        if (activeFormat === formatId) {
+          const remainingFormats = Object.keys(generatedContents).filter(id => id !== formatId);
+          setActiveFormat(remainingFormats.length > 0 ? remainingFormats[0] : null);
+        }
         return true;
       }
-      
       return false;
     } catch (error) {
-      console.error('Error deleting content:', error);
+      console.error('Error deleting repurposed content:', error);
       toast.error('Failed to delete content');
       return false;
     }
-  };
-  
+  }, [content, activeFormat, generatedContents]);
+
   return {
     selectedFormats,
     generatedContents,
     isGenerating,
     activeFormat,
     savedContentFormats,
+    setSavedContentFormats,
     isSaving,
     isSavingAll,
     setSelectedFormats,

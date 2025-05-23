@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 
 export const useContentRepurposing = () => {
   const { content, handleContentSelection, resetContent } = useContentSelection();
-  // Use contentItems directly from the context instead of calling getAllContent
   const { contentItems } = useContent();
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
@@ -35,6 +34,7 @@ export const useContentRepurposing = () => {
     isGenerating,
     activeFormat,
     savedContentFormats,
+    setSavedContentFormats,
     isSaving,
     isSavingAll,
     setSelectedFormats,
@@ -56,6 +56,7 @@ export const useContentRepurposing = () => {
       return await repurposedContentService.getRepurposedContentByFormat(contentId, formatId);
     } catch (error) {
       console.error('Error finding repurposed content:', error);
+      toast.error('Failed to load repurposed content');
       return null;
     }
   };
@@ -82,7 +83,6 @@ export const useContentRepurposing = () => {
     }
   };
 
-  // Add the missing functions from the build errors
   const handleDeleteActiveFormat = async (): Promise<boolean> => {
     if (!content || !activeFormat) {
       toast.error('No content selected to delete');
@@ -93,7 +93,7 @@ export const useContentRepurposing = () => {
     try {
       const success = await deleteRepurposedContent(activeFormat);
       if (success) {
-        toast.success(`Content format deleted successfully`);
+        toast.success('Content format deleted successfully');
         return true;
       }
       return false;
@@ -106,23 +106,20 @@ export const useContentRepurposing = () => {
     }
   };
 
-  const markAsSaved = (formatId: string) => {
+  const markAsSaved = useCallback((formatId: string) => {
     if (!savedContentFormats.includes(formatId)) {
       setSavedContentFormats(prev => [...prev, formatId]);
     }
-  };
+  }, [savedContentFormats, setSavedContentFormats]);
 
-  const saveAllFormats = () => {
+  const saveAllFormats = useCallback(() => {
     const formatIds = Object.keys(generatedContents || {});
     setSavedContentFormats(prev => [...new Set([...prev, ...formatIds])]);
-  };
-
-  // Add this function to update savedContentFormats state
-  const [, setSavedContentFormats] = useState<string[]>(savedContentFormats);
+  }, [generatedContents, setSavedContentFormats]);
   
   return {
     content,
-    contentItems: contentItems || [], // Ensure we always return an array
+    contentItems: contentItems || [],
     selectedFormats,
     generatedContents,
     isGenerating,

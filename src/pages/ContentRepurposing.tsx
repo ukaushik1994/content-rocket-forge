@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useContentRepurposing } from '@/components/content-repurposing/hooks/useContentRepurposing';
+import { ContentRepurposingErrorBoundary } from '@/components/content-repurposing/ErrorBoundary';
 import ContentRepurposingView from './content-repurposing/ContentRepurposingView';
 import ContentSelectionView from './content-repurposing/ContentSelectionView';
 
@@ -38,45 +39,49 @@ const ContentRepurposing: React.FC = () => {
 
   if (!content) {
     return (
-      <ContentSelectionView
-        contentItems={contentItems}
-        onSelectContent={handleContentSelection}
-        onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
-        repurposedDialogOpen={repurposedDialogOpen}
-        onCloseRepurposedDialog={handleCloseRepurposedDialog}
-        selectedRepurposedContent={selectedRepurposedContent}
-        copyToClipboard={copyToClipboard}
-        downloadAsText={downloadAsText}
-        deleteRepurposedContent={deleteRepurposedContent}
-        handleFormatChange={handleFormatChange}
-        isDeleting={isDeleting}
-        generatedFormats={generatedFormats}
-        savedContentFormats={savedContentFormats}
-      />
+      <ContentRepurposingErrorBoundary>
+        <ContentSelectionView
+          contentItems={contentItems}
+          onSelectContent={handleContentSelection}
+          onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
+          repurposedDialogOpen={repurposedDialogOpen}
+          onCloseRepurposedDialog={handleCloseRepurposedDialog}
+          selectedRepurposedContent={selectedRepurposedContent}
+          copyToClipboard={copyToClipboard}
+          downloadAsText={downloadAsText}
+          deleteRepurposedContent={deleteRepurposedContent}
+          handleFormatChange={handleFormatChange}
+          isDeleting={isDeleting}
+          generatedFormats={generatedFormats}
+          savedContentFormats={savedContentFormats}
+        />
+      </ContentRepurposingErrorBoundary>
     );
   }
 
   return (
-    <ContentRepurposingView
-      content={content}
-      selectedFormats={selectedFormats}
-      generatedContents={generatedContents}
-      isGenerating={isGenerating}
-      activeFormat={activeFormat}
-      isSaving={isSaving}
-      isSavingAll={isSavingAll}
-      savedContentFormats={savedContentFormats}
-      setSelectedFormats={setSelectedFormats}
-      setActiveFormat={setActiveFormat}
-      handleGenerateContent={handleGenerateContent}
-      copyToClipboard={copyToClipboard}
-      downloadAsText={downloadAsText}
-      saveAsNewContent={saveAsNewContent}
-      handleSaveAllContent={handleSaveAllContent}
-      handleDeleteActiveFormat={handleDeleteActiveFormat}
-      isDeleting={isDeleting}
-      resetContent={resetContent}
-    />
+    <ContentRepurposingErrorBoundary>
+      <ContentRepurposingView
+        content={content}
+        selectedFormats={selectedFormats}
+        generatedContents={generatedContents}
+        isGenerating={isGenerating}
+        activeFormat={activeFormat}
+        isSaving={isSaving}
+        isSavingAll={isSavingAll}
+        savedContentFormats={savedContentFormats}
+        setSelectedFormats={setSelectedFormats}
+        setActiveFormat={setActiveFormat}
+        handleGenerateContent={handleGenerateContent}
+        copyToClipboard={copyToClipboard}
+        downloadAsText={downloadAsText}
+        saveAsNewContent={saveAsNewContent}
+        handleSaveAllContent={handleSaveAllContent}
+        handleDeleteActiveFormat={handleDeleteActiveFormat}
+        isDeleting={isDeleting}
+        resetContent={resetContent}
+      />
+    </ContentRepurposingErrorBoundary>
   );
 };
 
