@@ -27,6 +27,8 @@ interface ContentRepurposingViewProps {
   saveAsNewContent: (formatId: string, content: string) => Promise<boolean>;
   handleSaveAllContent: () => Promise<boolean>;
   handleDeleteActiveFormat?: () => Promise<boolean>;
+  handleCopyAllContent?: () => void;
+  handleExportAllContent?: () => void;
   isDeleting?: boolean;
   resetContent: () => void;
 }
@@ -48,6 +50,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   saveAsNewContent,
   handleSaveAllContent,
   handleDeleteActiveFormat,
+  handleCopyAllContent,
+  handleExportAllContent,
   isDeleting = false,
   resetContent,
 }) => {
@@ -93,6 +97,11 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               setSelectedFormats={setSelectedFormats}
               onGenerateContent={handleGenerateContent}
               isGenerating={isGenerating}
+              generatedContents={generatedContents}
+              onSaveAllContent={handleSaveAllContent}
+              onExportAll={handleExportAllContent}
+              onCopyAll={handleCopyAllContent}
+              isSaving={isSavingAll}
             />
           </div>
 

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { contentFormats } from '../../formats';
@@ -217,6 +216,81 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
   }, [content, activeFormat, generatedContents]);
 
+  // New bulk operations
+  const handleCopyAllContent = useCallback(() => {
+    if (Object.keys(generatedContents).length === 0) {
+      toast.error('No content to copy');
+      return;
+    }
+
+    const allContent = Object.entries(generatedContents)
+      .map(([formatId, content]) => {
+        const format = contentFormats.find(f => f.id === formatId);
+        return `=== ${format?.name || formatId} ===\n\n${content}`;
+      })
+      .join('\n\n---\n\n');
+    
+    navigator.clipboard.writeText(allContent);
+    toast.success(`${Object.keys(generatedContents).length} formats copied to clipboard`);
+  }, [generatedContents]);
+
+  const handleExportAllContent = useCallback(() => {
+    if (Object.keys(generatedContents).length === 0) {
+      toast.error('No content to export');
+      return;
+    }
+
+    const allContent = Object.entries(generatedContents)
+      .map(([formatId, content]) => {
+        const format = contentFormats.find(f => f.id === formatId);
+        return `=== ${format?.name || formatId} ===\n\n${content}`;
+      })
+      .join('\n\n---\n\n');
+    
+    const blob = new Blob([allContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${content?.title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'content'}_repurposed_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`${Object.keys(generatedContents).length} formats exported successfully`);
+  }, [generatedContents, content]);
+
+  const handleDeleteAllContent = useCallback(async (): Promise<boolean> => {
+    if (Object.keys(generatedContents).length === 0) {
+      toast.error('No content to delete');
+      return false;
+    }
+
+    try {
+      const formatIds = Object.keys(generatedContents);
+      let deletedCount = 0;
+
+      for (const formatId of formatIds) {
+        const success = await repurposedContentService.deleteRepurposedContent(content!.id, formatId);
+        if (success) {
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        setSavedContentFormats([]);
+        setGeneratedContents({});
+        setActiveFormat(null);
+        toast.success(`${deletedCount} format(s) deleted successfully`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting all content:', error);
+      toast.error('Failed to delete content');
+      return false;
+    }
+  }, [generatedContents, content]);
+
   return {
     selectedFormats,
     generatedContents,
@@ -232,5 +306,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     saveAsNewContent,
     handleSaveAllContent,
     deleteRepurposedContent,
+    handleCopyAllContent,
+    handleExportAllContent,
+    handleDeleteAllContent,
   };
 };
