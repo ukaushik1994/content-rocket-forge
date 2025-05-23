@@ -1,6 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,7 +25,13 @@ serve(async (req) => {
     }
 
     const { endpoint, params, apiKey } = await req.json();
-    console.log('📥 Request received:', { endpoint, hasParams: !!params, hasApiKey: !!apiKey });
+    console.log('📥 Request received:', { 
+      endpoint, 
+      hasParams: !!params, 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length,
+      apiKeyType: typeof apiKey
+    });
 
     if (!apiKey) {
       console.error('❌ No API key provided');
@@ -38,16 +43,29 @@ serve(async (req) => {
 
     let serpApiKey = apiKey;
     
+    // Enhanced key processing with better logging
+    console.log('🔍 Processing API key - Length:', apiKey.length, 'Type:', typeof apiKey);
+    
     // If the API key looks like base64 (encrypted), try to decrypt it
     if (apiKey.match(/^[A-Za-z0-9+/]+=*$/)) {
       try {
-        console.log('🔓 Attempting to decrypt API key');
+        console.log('🔓 Attempting to decrypt base64-encoded API key');
         serpApiKey = atob(apiKey);
-        console.log('✅ API key decrypted successfully');
+        console.log('✅ API key decrypted successfully - New length:', serpApiKey.length);
       } catch (decryptError) {
         console.warn('⚠️ Failed to decrypt API key, using as-is:', decryptError);
         serpApiKey = apiKey;
       }
+    } else {
+      console.log('📝 API key appears to be plain text - using directly');
+    }
+    
+    // Validate the final key format
+    const keyValidation = validateSerpApiKeyFormat(serpApiKey);
+    console.log('🔍 API key validation result:', keyValidation);
+    
+    if (!keyValidation.valid) {
+      console.warn('⚠️ API key format validation failed:', keyValidation.issues);
     }
 
     console.log('🎯 Making SERP API call to endpoint:', endpoint);
@@ -101,6 +119,7 @@ serve(async (req) => {
     }
 
     console.log('📡 Making request to SerpAPI:', serpApiUrl);
+    console.log('🔧 Request parameters:', Object.keys(requestBody));
     
     // Convert to query string for GET request
     const queryParams = new URLSearchParams(requestBody as Record<string, string>);
@@ -114,20 +133,37 @@ serve(async (req) => {
     });
 
     console.log('📊 SerpAPI response status:', response.status);
+    console.log('📊 SerpAPI response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ SerpAPI error response:', errorText);
       
-      // Check for common API key issues
+      // Try to parse error as JSON
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+        console.error('❌ Parsed error data:', errorData);
+      } catch (parseError) {
+        console.error('❌ Could not parse error response as JSON');
+      }
+      
+      // Check for common API key issues with enhanced logging
       if (response.status === 401) {
+        console.error('🔑 Authentication failed (401) - API key likely invalid');
+        console.error('🔍 Key format used:', keyValidation);
         return new Response(
-          JSON.stringify({ error: 'Invalid API key. Please check your SerpAPI key in settings.' }),
+          JSON.stringify({ 
+            error: 'Invalid API key. Please check your SerpAPI key in settings.',
+            details: errorData?.error || errorText,
+            keyFormatValidation: keyValidation
+          }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       if (response.status === 429) {
+        console.error('⏱️ Rate limit exceeded (429)');
         return new Response(
           JSON.stringify({ error: 'API rate limit exceeded. Please try again later.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -135,13 +171,18 @@ serve(async (req) => {
       }
       
       return new Response(
-        JSON.stringify({ error: `SerpAPI error: ${response.status} - ${errorText}` }),
+        JSON.stringify({ 
+          error: `SerpAPI error: ${response.status} - ${errorData?.error || errorText}`,
+          statusCode: response.status,
+          details: errorData || errorText
+        }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const data = await response.json();
     console.log('✅ SerpAPI data received successfully');
+    console.log('📊 Response data structure:', Object.keys(data));
 
     // Transform the data based on endpoint
     let transformedData = {};
@@ -172,6 +213,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('💥 Edge Function error:', error);
+    console.error('💥 Error stack:', error.stack);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
@@ -185,6 +227,42 @@ serve(async (req) => {
     );
   }
 });
+
+function validateSerpApiKeyFormat(apiKey: string): { valid: boolean; format: string; issues?: string[] } {
+  const issues: string[] = [];
+  
+  // Check common SerpAPI key patterns
+  if (apiKey.match(/^[a-f0-9]{64}$/)) {
+    return { valid: true, format: '64-character hexadecimal (standard SerpAPI)' };
+  }
+  
+  if (apiKey.match(/^[a-f0-9]{32}$/)) {
+    return { valid: true, format: '32-character hexadecimal' };
+  }
+  
+  if (apiKey.match(/^[A-Za-z0-9_-]{32,}$/)) {
+    return { valid: true, format: 'Alphanumeric with special characters (32+ chars)' };
+  }
+  
+  // Invalid format - collect issues
+  if (apiKey.length < 16) {
+    issues.push('Key is too short (expected 32-64 characters)');
+  }
+  
+  if (apiKey.includes(' ')) {
+    issues.push('Key contains spaces');
+  }
+  
+  if (!apiKey.match(/^[A-Za-z0-9_-]+$/)) {
+    issues.push('Key contains invalid characters');
+  }
+  
+  return { 
+    valid: false, 
+    format: 'Invalid or unknown format',
+    issues 
+  };
+}
 
 function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   console.log('🔄 Transforming SERP data for keyword:', keyword);

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
@@ -16,7 +17,7 @@ const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 export type { SerpAnalysisResult };
 
 /**
- * Get API key from the unified settings service
+ * Get API key from the unified settings service with enhanced logging
  */
 async function getSerpApiKey(): Promise<string | null> {
   try {
@@ -24,28 +25,39 @@ async function getSerpApiKey(): Promise<string | null> {
     const apiKey = await getApiKey('serp');
     
     if (apiKey) {
-      console.log('✅ SERP API key found');
+      console.log('✅ SERP API key found - Length:', apiKey.length, 'Type:', typeof apiKey);
+      // Log first 6 and last 4 characters for debugging (masked)
+      const masked = apiKey.substring(0, 6) + '••••••••••••' + 
+        (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
+      console.log('🔍 Masked key for debugging:', masked);
       return apiKey;
     } else {
-      console.log('❌ No SERP API key found');
+      console.log('❌ No SERP API key found in unified service');
       return null;
     }
   } catch (error) {
-    console.error('❌ Error getting SERP API key:', error);
+    console.error('❌ Error getting SERP API key from unified service:', error);
     return null;
   }
 }
 
 /**
- * Call the Supabase Edge Function for SERP API requests with enhanced error handling
+ * Call the Supabase Edge Function for SERP API requests with enhanced error handling and logging
  */
 async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
   try {
     console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
       params: Object.keys(params), 
       hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length 
+      apiKeyLength: apiKey?.length,
+      apiKeyType: typeof apiKey
     });
+    
+    // Log the masked API key for debugging
+    const maskedKey = apiKey ? 
+      apiKey.substring(0, 6) + '••••••••••••' + 
+      (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '') : 'null';
+    console.log('🔍 Using API key (masked):', maskedKey);
     
     const { data, error } = await supabase.functions.invoke('serp-api', {
       body: {
@@ -57,6 +69,11 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
     
     if (error) {
       console.error('❌ Supabase Edge Function error:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       throw new Error(`Edge Function error: ${error.message || JSON.stringify(error)}`);
     }
     
@@ -68,21 +85,38 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
     // Check if the response contains an error
     if (data.error) {
       console.error('❌ SERP API error in response:', data.error);
+      
+      // Provide more specific error handling
+      if (data.error.includes('Invalid API key')) {
+        console.error('🔑 API Key validation failed - key may be incorrect or expired');
+        throw new Error('Invalid API key. Please check your SerpAPI key in Settings → API Keys');
+      } else if (data.error.includes('rate limit')) {
+        console.error('⏱️ API rate limit exceeded');
+        throw new Error('API rate limit exceeded. Please wait and try again.');
+      }
+      
       throw new Error(data.error);
     }
     
     console.log('✅ SERP Edge Function response received successfully');
+    console.log('📊 Response data keys:', Object.keys(data || {}));
     return data;
   } catch (error) {
     console.error('💥 Error calling SERP Edge Function:', error);
     
-    // Provide more specific error messages
+    // Provide more specific error messages based on error type
     if (error.message && error.message.includes('401')) {
-      throw new Error('Invalid API key. Please check your SERP API key in settings.');
+      console.error('🔑 Authentication failed - likely invalid API key');
+      throw new Error('Invalid API key. Please verify your SerpAPI key in Settings.');
     } else if (error.message && error.message.includes('429')) {
+      console.error('⏱️ Rate limit exceeded');
       throw new Error('API rate limit exceeded. Please try again later.');
     } else if (error.message && error.message.includes('timeout')) {
+      console.error('⏰ Request timeout');
       throw new Error('Request timeout. Please try again.');
+    } else if (error.message && error.message.includes('non-2xx status code')) {
+      console.error('📡 Edge function returned error status');
+      throw new Error('SERP API request failed. Please check your API key configuration.');
     }
     
     throw error;

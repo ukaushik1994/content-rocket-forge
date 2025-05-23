@@ -2,120 +2,230 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, AlertTriangle, RefreshCw, Key, Eye, EyeOff } from 'lucide-react';
 import { getApiKey, testApiKey } from '@/services/apiKeyService';
+import { validateSerpApiKey, testSerpApiConnection } from '@/utils/apiKeyTestUtils';
 
 type ApiStatus = 'checking' | 'success' | 'error' | 'warning' | 'not-found';
 
-export const SerpApiDiagnostics = () => {
-  const [apiKeyStatus, setApiKeyStatus] = useState<ApiStatus>('checking');
-  const [proxyStatus, setProxyStatus] = useState<ApiStatus>('checking');
-  const [directStatus, setDirectStatus] = useState<ApiStatus>('checking');
-  const [message, setMessage] = useState<string>('');
-  const [isRunning, setIsRunning] = useState(false);
+interface DiagnosticStep {
+  name: string;
+  status: ApiStatus;
+  message: string;
+  details?: string;
+}
 
-  // Run diagnostics on component mount
+export const SerpApiDiagnostics = () => {
+  const [steps, setSteps] = useState<DiagnosticStep[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyDetails, setApiKeyDetails] = useState<{
+    exists: boolean;
+    length?: number;
+    format?: string;
+    masked?: string;
+  }>({ exists: false });
+
   useEffect(() => {
     runDiagnostics();
   }, []);
 
   const runDiagnostics = async () => {
     setIsRunning(true);
+    setSteps([]);
     
-    // Check for API key
+    const diagnosticSteps: DiagnosticStep[] = [];
+    
+    // Step 1: Check for API key in database
     try {
-      setApiKeyStatus('checking');
-      setMessage('Checking for SERP API key...');
+      diagnosticSteps.push({
+        name: 'Database Key Check',
+        status: 'checking',
+        message: 'Checking for SERP API key in database...'
+      });
+      setSteps([...diagnosticSteps]);
       
-      // Check if we have a key in settings using unified API key service
-      try {
-        const storedKey = await getApiKey('serp');
-        if (storedKey) {
-          setApiKeyStatus('success');
-          setMessage('Found SERP API key in settings');
-          
-          // Test the key if it exists
-          const success = await testApiKey('serp', storedKey);
-          if (success) {
-            setApiKeyStatus('success');
-            setMessage('SERP API key tested successfully');
-          } else {
-            setApiKeyStatus('warning');
-            setMessage('SERP API key found but test failed');
-          }
-        } else {
-          setApiKeyStatus('not-found');
-          setMessage('No SERP API key found. You will see mock data.');
-        }
-      } catch (error) {
-        setApiKeyStatus('error');
-        setMessage('Error checking for API key in settings');
+      const storedKey = await getApiKey('serp');
+      if (storedKey) {
+        const maskedKey = storedKey.substring(0, 6) + '••••••••••••' + 
+          (storedKey.length > 16 ? storedKey.substring(storedKey.length - 4) : '');
+        
+        setApiKeyDetails({
+          exists: true,
+          length: storedKey.length,
+          format: detectKeyFormat(storedKey),
+          masked: maskedKey
+        });
+        
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Database Key Check',
+          status: 'success',
+          message: `API key found in database`,
+          details: `Length: ${storedKey.length} chars, Format: ${detectKeyFormat(storedKey)}`
+        };
+      } else {
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Database Key Check',
+          status: 'not-found',
+          message: 'No SERP API key found in database'
+        };
+        setSteps([...diagnosticSteps]);
+        setIsRunning(false);
+        return;
       }
+      setSteps([...diagnosticSteps]);
       
-      // Check proxy endpoint
-      setProxyStatus('checking');
-      setMessage('Checking proxy endpoint...');
+      // Step 2: Validate key format
+      diagnosticSteps.push({
+        name: 'Key Format Validation',
+        status: 'checking',
+        message: 'Validating API key format...'
+      });
+      setSteps([...diagnosticSteps]);
+      
+      const isValidFormat = validateSerpApiKey(storedKey);
+      diagnosticSteps[diagnosticSteps.length - 1] = {
+        name: 'Key Format Validation',
+        status: isValidFormat ? 'success' : 'warning',
+        message: isValidFormat ? 'API key format appears valid' : 'API key format may be invalid',
+        details: isValidFormat ? 'Matches expected SerpAPI pattern' : 'Does not match typical SerpAPI patterns'
+      };
+      setSteps([...diagnosticSteps]);
+      
+      // Step 3: Test unified API service
+      diagnosticSteps.push({
+        name: 'Unified Service Test',
+        status: 'checking',
+        message: 'Testing API key through unified service...'
+      });
+      setSteps([...diagnosticSteps]);
+      
       try {
-        // Use supabase functions to test the endpoint
+        const unifiedTestResult = await testApiKey('serp', storedKey);
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Unified Service Test',
+          status: unifiedTestResult ? 'success' : 'error',
+          message: unifiedTestResult ? 'Unified service test passed' : 'Unified service test failed',
+          details: unifiedTestResult ? 'Key works through api-proxy' : 'Key rejected by api-proxy'
+        };
+      } catch (error: any) {
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Unified Service Test',
+          status: 'error',
+          message: 'Unified service test error',
+          details: error.message
+        };
+      }
+      setSteps([...diagnosticSteps]);
+      
+      // Step 4: Test direct SerpAPI connection
+      diagnosticSteps.push({
+        name: 'Direct SerpAPI Test',
+        status: 'checking',
+        message: 'Testing direct connection to SerpAPI...'
+      });
+      setSteps([...diagnosticSteps]);
+      
+      try {
+        const directTestResult = await testSerpApiConnection(storedKey);
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Direct SerpAPI Test',
+          status: directTestResult.success ? 'success' : 'error',
+          message: directTestResult.success ? 'Direct SerpAPI test passed' : 'Direct SerpAPI test failed',
+          details: directTestResult.error || 'Direct connection to SerpAPI successful'
+        };
+      } catch (error: any) {
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Direct SerpAPI Test',
+          status: 'error',
+          message: 'Direct SerpAPI test error',
+          details: error.message
+        };
+      }
+      setSteps([...diagnosticSteps]);
+      
+      // Step 5: Test Edge Function
+      diagnosticSteps.push({
+        name: 'Edge Function Test',
+        status: 'checking',
+        message: 'Testing SERP edge function...'
+      });
+      setSteps([...diagnosticSteps]);
+      
+      try {
         const { supabase } = await import('@/integrations/supabase/client');
         const { data, error } = await supabase.functions.invoke('serp-api', {
           body: { 
             endpoint: 'test',
-            params: { test: true } 
+            params: { test: true },
+            apiKey: storedKey
           }
         });
         
         if (error) {
-          setProxyStatus('error');
-          setMessage('SERP API proxy endpoint error: ' + error.message);
-          console.error('SERP API proxy endpoint error:', error);
+          diagnosticSteps[diagnosticSteps.length - 1] = {
+            name: 'Edge Function Test',
+            status: 'error',
+            message: 'Edge function test failed',
+            details: error.message
+          };
         } else if (data && data.success) {
-          setProxyStatus('success');
-          setMessage('SERP API proxy endpoint is working');
+          diagnosticSteps[diagnosticSteps.length - 1] = {
+            name: 'Edge Function Test',
+            status: 'success',
+            message: 'Edge function test passed',
+            details: 'SERP edge function is working correctly'
+          };
         } else {
-          setProxyStatus('warning');
-          setMessage('SERP API proxy endpoint responded but returned an error or no data');
-          console.warn('SERP API proxy endpoint response:', data);
+          diagnosticSteps[diagnosticSteps.length - 1] = {
+            name: 'Edge Function Test',
+            status: 'warning',
+            message: 'Edge function responded but with warnings',
+            details: JSON.stringify(data)
+          };
         }
-      } catch (error) {
-        setProxyStatus('error');
-        setMessage('Error checking SERP API proxy endpoint: ' + (error.message || 'Unknown error'));
-        console.error('Error checking SERP API proxy endpoint:', error);
+      } catch (error: any) {
+        diagnosticSteps[diagnosticSteps.length - 1] = {
+          name: 'Edge Function Test',
+          status: 'error',
+          message: 'Edge function test error',
+          details: error.message
+        };
       }
-      
-      // Check direct API access (based on API key availability)
-      setDirectStatus('checking');
-      setMessage('Checking direct API access capabilities...');
-      
-      const apiKey = await getApiKey('serp');
-      if (apiKey) {
-        setDirectStatus('warning');
-        setMessage('API key found. Direct API access capabilities available as fallback.');
-      } else {
-        setDirectStatus('error');
-        setMessage('No API key found for direct API access capabilities.');
-      }
+      setSteps([...diagnosticSteps]);
       
     } catch (error: any) {
-      setApiKeyStatus('error');
-      setMessage(`Error during diagnostics: ${error.message || 'Unknown error'}`);
+      console.error('Diagnostics error:', error);
+      diagnosticSteps.push({
+        name: 'Diagnostic Error',
+        status: 'error',
+        message: `Error during diagnostics: ${error.message}`
+      });
+      setSteps([...diagnosticSteps]);
     } finally {
       setIsRunning(false);
     }
   };
 
+  const detectKeyFormat = (key: string): string => {
+    if (key.match(/^[a-f0-9]{64}$/)) return 'Hex (64 chars)';
+    if (key.match(/^[A-Za-z0-9_-]{32,}$/)) return 'Alphanumeric';
+    if (key.match(/^[A-Za-z0-9+/]+=*$/)) return 'Base64';
+    return 'Unknown';
+  };
+
   const getStatusIcon = (status: ApiStatus) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'not-found':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'checking':
-        return <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />;
+        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
     }
   };
 
@@ -131,41 +241,56 @@ export const SerpApiDiagnostics = () => {
 
   return (
     <Card className="border border-white/10 shadow-lg">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
-          SERP API Diagnostics
+          Enhanced SERP API Diagnostics
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">API Key Status</span>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(apiKeyStatus)}
-              <span className="text-xs">{getStatusText(apiKeyStatus)}</span>
+        {apiKeyDetails.exists && (
+          <div className="p-3 bg-white/5 rounded border border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium">API Key Details</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="h-6 w-6 p-0"
+              >
+                {showApiKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>Length: {apiKeyDetails.length} characters</div>
+              <div>Format: {apiKeyDetails.format}</div>
+              <div className="font-mono">
+                Key: {showApiKey ? '(hidden for security)' : apiKeyDetails.masked}
+              </div>
             </div>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Proxy Endpoint</span>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(proxyStatus)}
-              <span className="text-xs">{getStatusText(proxyStatus)}</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Direct API Access</span>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(directStatus)}
-              <span className="text-xs">{getStatusText(directStatus)}</span>
-            </div>
-          </div>
-        </div>
+        )}
         
-        <div className="text-xs text-muted-foreground border-t border-white/10 pt-2">
-          {message}
+        <div className="space-y-3">
+          {steps.map((step, index) => (
+            <div key={index} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{step.name}</span>
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(step.status)}
+                  <span className="text-xs">{getStatusText(step.status)}</span>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {step.message}
+              </div>
+              {step.details && (
+                <div className="text-xs text-muted-foreground bg-white/5 p-2 rounded border-l-2 border-blue-500/30">
+                  {step.details}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
         
         <Button 
@@ -178,12 +303,12 @@ export const SerpApiDiagnostics = () => {
           {isRunning ? (
             <>
               <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
-              Running Diagnostics
+              Running Enhanced Diagnostics
             </>
           ) : (
             <>
               <RefreshCw className="h-3 w-3 mr-2" />
-              Run Diagnostics
+              Run Enhanced Diagnostics
             </>
           )}
         </Button>
