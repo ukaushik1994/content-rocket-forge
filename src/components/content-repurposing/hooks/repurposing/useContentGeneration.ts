@@ -5,7 +5,7 @@ import { contentFormats } from '../../formats';
 import { generateContentByFormatType } from '@/services/contentTemplateService';
 import { sendChatRequest } from '@/services/aiService';
 import { repurposedContentService } from '@/services/repurposedContentService';
-import { useAuth } from '@/contexts/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export const useContentGeneration = (content: ContentItemType | null) => {

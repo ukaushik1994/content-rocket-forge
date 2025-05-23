@@ -180,13 +180,8 @@ const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
                     {/* Format badges */}
                     <div className="flex gap-1 mt-2">
                       <Badge variant="secondary" className="text-xs">
-                        {format.category || 'General'}
+                        Content Format
                       </Badge>
-                      {format.estimatedTime && (
-                        <Badge variant="outline" className="text-xs">
-                          ~{format.estimatedTime}
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>
