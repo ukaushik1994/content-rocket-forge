@@ -10,85 +10,114 @@ interface SearchKeywordParams {
   refresh?: boolean;
 }
 
-// Constants for API endpoints - ensure consistency
-const SERP_API_ENDPOINT = 'https://serpapi.com/search.json'; // Updated to correct endpoint
-const SERP_LOCAL_STORAGE_KEY = 'serp_api_key';
+// Constants for caching
 const SERP_CACHE_PREFIX = 'serp_data_';
 const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export type { SerpAnalysisResult };
 
 /**
- * Get API key from settings, localStorage, or Supabase
- * Returns the key if found, null otherwise
+ * Get API key from settings or localStorage
  */
 async function getSerpApiKey(): Promise<string | null> {
   try {
-    // First try to get from API key service (settings)
+    console.log('🔑 Attempting to get SERP API key from settings...');
     const settingsApiKey = await getApiKey('serp');
     if (settingsApiKey) {
-      console.log('Using SERP API key from settings');
+      console.log('✅ SERP API key found in settings');
       return settingsApiKey;
     }
   } catch (error) {
-    console.warn('Error getting SERP API key from settings:', error);
+    console.warn('⚠️ Error getting SERP API key from settings:', error);
   }
   
-  // Then check localStorage
-  const localApiKey = localStorage.getItem(SERP_LOCAL_STORAGE_KEY);
+  // Fallback to localStorage
+  const localApiKey = localStorage.getItem('serp_api_key');
   if (localApiKey) {
-    console.log('Using SERP API key from localStorage');
+    console.log('✅ SERP API key found in localStorage');
     return localApiKey;
   }
   
-  // If not in localStorage, try Supabase
+  console.log('❌ No SERP API key found');
+  return null;
+}
+
+/**
+ * Call the Supabase Edge Function for SERP API requests
+ */
+async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
   try {
-    const { data: apiKeyData, error } = await supabase
-      .from('api_keys')
-      .select('encrypted_key') // This is correct - we're selecting the encrypted_key column
-      .eq('service', 'serp')
-      .eq('is_active', true)
-      .single();
-      
+    console.log(`🚀 Calling Supabase Edge Function: ${endpoint}`, { params, hasApiKey: !!apiKey });
+    
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: {
+        endpoint,
+        params,
+        apiKey
+      }
+    });
+    
     if (error) {
-      console.warn('Error fetching SERP API key from Supabase:', error);
-      return null;
+      console.error('❌ Supabase Edge Function error:', error);
+      throw new Error(`Edge Function error: ${error.message || error}`);
     }
     
-    if (apiKeyData?.encrypted_key) { // Changed from value to encrypted_key
-      console.log('Using SERP API key from Supabase');
-      return apiKeyData.encrypted_key; // Changed from value to encrypted_key
-    }
+    console.log('✅ Supabase Edge Function response received:', data ? 'Success' : 'No data');
+    return data;
   } catch (error) {
-    console.error('Exception when fetching SERP API key:', error);
+    console.error('💥 Error calling Supabase Edge Function:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if cached data exists and is valid
+ */
+function getCachedSerpData(keyword: string): SerpAnalysisResult | null {
+  try {
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      const parsedData = JSON.parse(cachedData);
+      const timestamp = localStorage.getItem(`${cacheKey}_timestamp`);
+      
+      if (timestamp) {
+        const cachedTime = new Date(timestamp).getTime();
+        const currentTime = new Date().getTime();
+        
+        if (currentTime - cachedTime < SERP_CACHE_EXPIRY) {
+          console.log('📋 Using valid cached SERP data for:', keyword);
+          return parsedData;
+        } else {
+          console.log('🗑️ Cached SERP data expired for:', keyword);
+          localStorage.removeItem(cacheKey);
+          localStorage.removeItem(`${cacheKey}_timestamp`);
+          return null;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Error parsing cached SERP data:', err);
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
+    localStorage.removeItem(cacheKey);
+    localStorage.removeItem(`${cacheKey}_timestamp`);
   }
   
   return null;
 }
 
 /**
- * Directly call the SERP API
- * This is a fallback if the proxy doesn't work
+ * Cache SERP data with timestamp
  */
-async function callSerpApiDirectly(keyword: string, apiKey: string, limit: number = 10): Promise<any> {
+function cacheSerpData(keyword: string, data: SerpAnalysisResult): void {
   try {
-    console.log('Making direct SERP API call for:', keyword);
-    
-    // Use the proper SerpAPI endpoint format with API key as query param
-    const url = `${SERP_API_ENDPOINT}?api_key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(keyword)}&num=${limit}`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API error ${response.status}: ${errorText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Direct SERP API call successful', data);
-    return data;
-  } catch (error) {
-    console.error('Error making direct SERP API call:', error);
-    throw error;
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(`${cacheKey}_timestamp`, new Date().toISOString());
+    console.log('💾 SERP data cached for:', keyword);
+  } catch (err) {
+    console.warn('⚠️ Error caching SERP data:', err);
   }
 }
 
@@ -98,61 +127,22 @@ async function callSerpApiDirectly(keyword: string, apiKey: string, limit: numbe
 export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
     const { query, limit = 10, refresh = false } = params;
+    console.log(`🔍 Searching keywords for: "${query}"`);
     
-    // Get API key
     const apiKey = await getSerpApiKey();
     
-    // If we have an API key, attempt to use the API
     if (apiKey) {
       try {
-        console.log('Making SERP API call for keyword search:', query);
-        
-        // First try the proxy
-        try {
-          console.log('Attempting to use proxy for SERP API call');
-          const proxyResponse = await fetch('/api/proxy/serp-api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              endpoint: 'search',
-              params: { q: query, limit },
-              apiKey
-            }),
-          });
-          
-          if (proxyResponse.ok) {
-            const data = await proxyResponse.json();
-            return data.results || [];
-          } else {
-            const errorText = await proxyResponse.text();
-            console.warn('SERP API proxy failed, falling back to direct call:', errorText);
-            // Continue to direct call below
-          }
-        } catch (proxyError) {
-          console.warn('SERP API proxy error, falling back to direct call:', proxyError);
-          // Continue to direct call below
-        }
-        
-        // Fallback to direct API call
-        try {
-          const directData = await callSerpApiDirectly(query, apiKey, limit);
-          return directData.organic_results || [];
-        } catch (directError) {
-          console.error('Direct SERP API call failed:', directError);
-          toast.error('Error fetching keyword data. Falling back to mock data.');
-          return getBackupMockResults(query, refresh);
-        }
+        const data = await callSerpEdgeFunction('search', { q: query, limit }, apiKey);
+        return data?.results || [];
       } catch (error) {
-        console.error('Error calling SERP API for keyword search:', error);
-        toast.error('Error fetching keyword data. Falling back to mock data.');
-        // Fallback to mock data if API call fails
+        console.error('❌ SERP API search failed:', error);
+        toast.error('Error fetching keyword data. Using mock data.');
         return getBackupMockResults(query, refresh);
       }
     }
     
-    console.warn('No SERP API key found. Using mock data instead.');
+    console.warn('⚠️ No SERP API key found. Using mock data.');
     toast.warning('Using mock data for keyword search. Add your SERP API key in Settings for real results.', {
       duration: 5000,
       action: {
@@ -164,8 +154,76 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     });
     return getBackupMockResults(query, refresh);
   } catch (error) {
-    console.error('Error searching keywords:', error);
+    console.error('💥 Error searching keywords:', error);
     return getBackupMockResults(params.query, params.refresh || false);
+  }
+};
+
+/**
+ * Analyze keyword using SERP API
+ */
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
+  try {
+    console.log(`🎯 Analyzing keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
+    
+    // Check cache first (unless refresh is requested)
+    if (!refresh) {
+      const cachedData = getCachedSerpData(keyword);
+      if (cachedData) {
+        return cachedData;
+      }
+    }
+    
+    const apiKey = await getSerpApiKey();
+    
+    if (apiKey) {
+      try {
+        console.log('🔑 API key found, making real SERP API call...');
+        const data = await callSerpEdgeFunction('analyze', { keyword, refresh: !!refresh }, apiKey);
+        
+        if (data) {
+          console.log('✅ SERP API returned real data');
+          // Process and cache the result
+          const result: SerpAnalysisResult = {
+            keyword,
+            searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
+            keywordDifficulty: data.keywordDifficulty || Math.floor(Math.random() * 100),
+            competitionScore: data.competitionScore || Math.random() * 0.8,
+            entities: data.entities || [],
+            peopleAlsoAsk: data.peopleAlsoAsk || [],
+            headings: data.headings || [],
+            contentGaps: data.contentGaps || [],
+            topResults: data.topResults || [],
+            relatedSearches: data.relatedSearches || [],
+            keywords: data.keywords || [],
+            recommendations: data.recommendations || [],
+            isMockData: false
+          };
+          
+          cacheSerpData(keyword, result);
+          return result;
+        }
+      } catch (error) {
+        console.error('❌ SERP API call failed:', error);
+        toast.error('Error analyzing keyword. Using backup data.');
+        return generateMockSerpData(keyword, refresh);
+      }
+    } else {
+      console.warn('⚠️ No SERP API key found, using mock data');
+      toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
+        duration: 5000,
+        action: {
+          label: "Add Key",
+          onClick: () => {
+            window.location.href = "/settings/api";
+          }
+        }
+      });
+      return generateMockSerpData(keyword, refresh);
+    }
+  } catch (error) {
+    console.error('💥 Error analyzing keyword:', error);
+    return generateMockSerpData(keyword, refresh);
   }
 };
 
@@ -196,375 +254,23 @@ function getBackupMockResults(query: string, refresh: boolean) {
   return mockResults;
 }
 
-/**
- * Check if cached data exists and is valid
- */
-function getCachedSerpData(keyword: string): SerpAnalysisResult | null {
-  try {
-    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
-    const cachedData = localStorage.getItem(cacheKey);
-    
-    if (cachedData) {
-      const parsedData = JSON.parse(cachedData);
-      const timestamp = localStorage.getItem(`${cacheKey}_timestamp`);
-      
-      // Check if cache is still valid (less than SERP_CACHE_EXPIRY old)
-      if (timestamp) {
-        const cachedTime = new Date(timestamp).getTime();
-        const currentTime = new Date().getTime();
-        
-        if (currentTime - cachedTime < SERP_CACHE_EXPIRY) {
-          console.log('Using valid cached SERP data for:', keyword);
-          return parsedData;
-        } else {
-          console.log('Cached SERP data expired for:', keyword);
-          // Clean up expired cache
-          localStorage.removeItem(cacheKey);
-          localStorage.removeItem(`${cacheKey}_timestamp`);
-          return null;
-        }
-      }
-      
-      // No timestamp found, assume it's valid but set timestamp now
-      localStorage.setItem(`${cacheKey}_timestamp`, new Date().toISOString());
-      return parsedData;
-    }
-  } catch (err) {
-    console.warn('Error parsing cached SERP data:', err);
-    // Clean up invalid cache
-    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
-    localStorage.removeItem(cacheKey);
-    localStorage.removeItem(`${cacheKey}_timestamp`);
-  }
-  
-  return null;
-}
-
-/**
- * Cache SERP data with timestamp
- */
-function cacheSerpData(keyword: string, data: SerpAnalysisResult): void {
-  try {
-    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
-    localStorage.setItem(cacheKey, JSON.stringify(data));
-    localStorage.setItem(`${cacheKey}_timestamp`, new Date().toISOString());
-    console.log('SERP data cached for:', keyword);
-  } catch (err) {
-    console.warn('Error caching SERP data:', err);
-  }
-}
-
-/**
- * Analyze keyword using SERP API
- */
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
-  try {
-    console.log('Analyzing keyword with SERP API:', keyword, refresh ? '(refresh requested)' : '');
-    
-    // If not forced refresh, check cache first
-    if (!refresh) {
-      const cachedData = getCachedSerpData(keyword);
-      if (cachedData) {
-        return cachedData;
-      }
-    }
-    
-    // Get API key - prioritize the one from settings
-    const apiKey = await getSerpApiKey();
-    
-    // Debug the API key (masked for security)
-    if (apiKey) {
-      const maskedKey = apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
-      console.log('Found SERP API key:', maskedKey);
-    } else {
-      console.warn('No SERP API key found, will use mock data');
-    }
-
-    // If we found a key, use it to make the API call
-    if (apiKey) {
-      try {
-        console.log('Making real SERP API call for keyword:', keyword);
-        
-        // First try our proxy for consistency
-        try {
-          console.log('Attempting to use edge function proxy for SERP API call');
-          const proxyResponse = await fetch('/api/functions/serp-api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              endpoint: 'analyze',
-              params: { keyword, refresh: !!refresh },
-              apiKey
-            }),
-          });
-          
-          if (proxyResponse.ok) {
-            const data = await proxyResponse.json();
-            if (data) {
-              // Cache the successful result
-              cacheSerpData(keyword, data);
-              console.log('SERP API returned real data via proxy');
-              
-              // Return the processed data
-              return {
-                keyword,
-                searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
-                keywordDifficulty: data.difficulty || Math.floor(Math.random() * 100),
-                competitionScore: data.competition || Math.random() * 0.8,
-                entities: data.entities || [],
-                peopleAlsoAsk: data.peopleAlsoAsk || [],
-                headings: data.headings || [],
-                contentGaps: data.contentGaps || [],
-                topResults: data.topResults || [],
-                relatedSearches: data.relatedSearches || [],
-                keywords: data.keywords || [],
-                recommendations: data.recommendations || [],
-                isMockData: false
-              };
-            }
-          } else {
-            const errorText = await proxyResponse.text();
-            console.warn('SERP API proxy failed, falling back to direct call:', errorText);
-            // Continue to direct call below
-          }
-        } catch (proxyError) {
-          console.warn('SERP API proxy error, falling back to direct call:', proxyError);
-          // Continue to direct call below
-        }
-        
-        // Fallback to direct API call
-        try {
-          console.log('Attempting direct SERP API call');
-          const directData = await callSerpApiDirectly(keyword, apiKey);
-          
-          // Process the direct API response into our format
-          const result: SerpAnalysisResult = {
-            keyword,
-            searchVolume: directData.search_information?.total_results || Math.floor(Math.random() * 10000) + 1000,
-            keywordDifficulty: Math.floor(Math.random() * 100), // Not provided by basic SERP API
-            competitionScore: Math.random() * 0.8, // Not provided by basic SERP API
-            entities: extractEntities(directData),
-            peopleAlsoAsk: extractQuestions(directData),
-            headings: extractHeadings(directData),
-            contentGaps: extractContentGaps(directData, keyword),
-            topResults: extractTopResults(directData),
-            relatedSearches: extractRelatedSearches(directData),
-            keywords: extractKeywords(directData),
-            recommendations: generateRecommendations(keyword),
-            isMockData: false
-          };
-          
-          // Cache the processed result
-          cacheSerpData(keyword, result);
-          console.log('Direct SERP API call successful and processed');
-          return result;
-          
-        } catch (directError) {
-          console.error('Direct SERP API call failed:', directError);
-          toast.error('Error analyzing keyword. Using backup data.');
-          // Fall back to mock data
-          return generateMockSerpData(keyword, refresh);
-        }
-      } catch (error) {
-        console.error('Error calling SERP API:', error);
-        toast.error('Error analyzing keyword. Using backup data.');
-        // Fall back to mock data
-        return generateMockSerpData(keyword, refresh);
-      }
-    } else {
-      // If no API key found, notify the user and use mock data
-      console.warn('No SERP API key found, using mock data');
-      toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
-        duration: 5000,
-        action: {
-          label: "Add Key",
-          onClick: () => {
-            window.location.href = "/settings/api";
-          }
-        }
-      });
-      return generateMockSerpData(keyword, refresh);
-    }
-  } catch (error) {
-    console.error('Error analyzing keyword:', error);
-    return generateMockSerpData(keyword, refresh);
-  }
-};
-
-// Helper functions to extract data from SERP API response
-function extractEntities(data: any): any[] {
-  try {
-    // Try to extract knowledge graph entities
-    if (data.knowledge_graph) {
-      return [{
-        name: data.knowledge_graph.title || '',
-        type: 'entity',
-        description: data.knowledge_graph.description || ''
-      }];
-    }
-    // Extract entities from organic results
-    if (data.organic_results) {
-      return data.organic_results.slice(0, 3).map((result: any) => ({
-        name: result.title || '',
-        type: 'entity',
-        description: result.snippet || ''
-      }));
-    }
-    return [];
-  } catch (e) {
-    console.warn('Error extracting entities:', e);
-    return [];
-  }
-}
-
-function extractQuestions(data: any): any[] {
-  try {
-    if (data.related_questions) {
-      return data.related_questions.map((q: any) => ({
-        question: q.question || '',
-        source: 'search'
-      }));
-    }
-    return [];
-  } catch (e) {
-    console.warn('Error extracting questions:', e);
-    return [];
-  }
-}
-
-function extractHeadings(data: any): any[] {
-  try {
-    // This is a simplification as direct heading extraction requires website content analysis
-    // Here we generate headings from organic result titles
-    if (data.organic_results) {
-      return data.organic_results.slice(0, 5).map((result: any, idx: number) => {
-        const level = idx === 0 ? 'h1' : 'h2';
-        return {
-          text: result.title || '',
-          level
-        };
-      });
-    }
-    return [];
-  } catch (e) {
-    console.warn('Error extracting headings:', e);
-    return [];
-  }
-}
-
-function extractContentGaps(data: any, keyword: string): any[] {
-  try {
-    // Generate content gaps from related searches
-    if (data.related_searches) {
-      return data.related_searches.slice(0, 4).map((search: any) => ({
-        topic: search.query || '',
-        description: 'Related search',
-        recommendation: 'Include this topic',
-        content: `Content about ${search.query || keyword}`,
-        source: 'Content analysis'
-      }));
-    }
-    return [];
-  } catch (e) {
-    console.warn('Error extracting content gaps:', e);
-    return [];
-  }
-}
-
-function extractTopResults(data: any): any[] {
-  try {
-    if (data.organic_results) {
-      return data.organic_results.slice(0, 5).map((result: any, idx: number) => ({
-        title: result.title || '',
-        link: result.link || '',
-        snippet: result.snippet || '',
-        position: idx + 1
-      }));
-    }
-    return [];
-  } catch (e) {
-    console.warn('Error extracting top results:', e);
-    return [];
-  }
-}
-
-function extractRelatedSearches(data: any): any[] {
-  try {
-    if (data.related_searches) {
-      return data.related_searches.map((search: any) => ({
-        query: search.query || ''
-      }));
-    }
-    return [];
-  } catch (e) {
-    console.warn('Error extracting related searches:', e);
-    return [];
-  }
-}
-
-function extractKeywords(data: any): string[] {
-  try {
-    // Extract keywords from various sources
-    const keywords = new Set<string>();
-    
-    // From related searches
-    if (data.related_searches) {
-      data.related_searches.forEach((search: any) => {
-        if (search.query) keywords.add(search.query);
-      });
-    }
-    
-    // From organic results titles
-    if (data.organic_results) {
-      data.organic_results.forEach((result: any) => {
-        if (result.title) {
-          const words = result.title.split(' ');
-          words.filter((word: string) => word.length > 4).forEach((word: string) => {
-            keywords.add(word.toLowerCase());
-          });
-        }
-      });
-    }
-    
-    return Array.from(keywords).slice(0, 10);
-  } catch (e) {
-    console.warn('Error extracting keywords:', e);
-    return [];
-  }
-}
-
-function generateRecommendations(keyword: string): string[] {
-  return [
-    `Create a comprehensive guide on ${keyword}`,
-    `Include step-by-step instructions for implementing ${keyword}`,
-    `Add visual examples of ${keyword} in action`,
-    `Compare ${keyword} with alternative approaches`,
-    `Include case studies showing successful ${keyword} implementation`
-  ];
-}
-
-// Helper function to generate mock SERP data as a fallback - update this to match our types
+// Helper function to generate mock SERP data as a fallback
 function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
-  console.log('Generating mock SERP data for:', keyword);
+  console.log('🎭 Generating mock SERP data for:', keyword);
   
-  // Create variations based on refresh parameter
   const variationFactor = refresh ? Math.random() : 0.5;
   
-  // Generate mock data based on the keyword with potential variations
   return {
     keyword,
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
     competitionScore: Math.random() * 0.8,
     keywordDifficulty: Math.floor(Math.random() * 100),
-    isMockData: true, // Explicitly mark this as mock data
+    isMockData: true,
     entities: [
       { name: `${keyword} platform`, type: 'platform', description: `A platform focused on ${keyword}` },
       { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword}` },
       { name: `${keyword} tools`, type: 'tools', description: `Tools used for ${keyword} implementation` },
       { name: `${keyword} metrics`, type: 'metrics', description: `Measurements related to ${keyword} performance` },
-      // Add new entities if refreshing
       ...(refresh ? [
         { name: `${keyword} analytics`, type: 'analytics', description: `Analytic methods for ${keyword}` },
         { name: `${keyword} framework`, type: 'framework', description: `Structural frameworks for ${keyword}` },
@@ -576,7 +282,6 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       { question: `What is the best ${keyword} tool?`, source: 'search' },
       { question: `Why is ${keyword} important for SEO?`, source: 'search' },
       { question: `When should I use ${keyword}?`, source: 'search' },
-      // Add new questions if refreshing
       ...(refresh ? [
         { question: `What are the advantages of ${keyword}?`, source: 'search' },
         { question: `How much does ${keyword} cost on average?`, source: 'search' },
@@ -589,7 +294,6 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       { text: `How to Implement ${keyword}`, level: 'h3' as const },
       { text: `${keyword} Best Practices`, level: 'h2' as const },
       { text: `${keyword} Case Studies`, level: 'h2' as const },
-      // Add new headings if refreshing
       ...(refresh ? [
         { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' as const },
         { text: `Advanced ${keyword} Techniques`, level: 'h2' as const },
@@ -655,7 +359,6 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       { query: `${keyword} examples` },
       { query: `${keyword} techniques` },
       { query: `${keyword} trends` },
-      // Add new related searches if refreshing
       ...(refresh ? [
         { query: `affordable ${keyword} solutions` },
         { query: `${keyword} for small business` },
@@ -672,7 +375,6 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
       `${keyword} examples`,
       `${keyword} techniques`,
       `${keyword} trends`,
-      // Add new keywords if refreshing
       ...(refresh ? [
         `${keyword} certification`,
         `${keyword} for startups`,
@@ -690,88 +392,38 @@ function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisR
   };
 }
 
-// Add exports for related keyword search
 export const searchRelatedKeywords = async (keyword: string) => {
   try {
-    // Get API key
     const apiKey = await getSerpApiKey();
     
-    // Cache key for efficient repeat lookups
     const cacheKey = `related_keywords_${keyword}`;
     const cachedData = localStorage.getItem(cacheKey);
     
     if (cachedData) {
       try {
         const parsedData = JSON.parse(cachedData);
-        console.log('Using cached related keywords for:', keyword);
+        console.log('📋 Using cached related keywords for:', keyword);
         return parsedData;
       } catch (err) {
-        console.warn('Error parsing cached related keywords:', err);
+        console.warn('⚠️ Error parsing cached related keywords:', err);
         localStorage.removeItem(cacheKey);
       }
     }
 
     if (apiKey) {
       try {
-        // Try to use the proxy function first
-        try {
-          const proxyResponse = await fetch('/api/proxy/serp-api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              endpoint: 'related',
-              params: { keyword },
-              apiKey
-            }),
-          });
-          
-          if (proxyResponse.ok) {
-            const data = await proxyResponse.json();
-            // Cache the successful result
-            localStorage.setItem(cacheKey, JSON.stringify(data.keywords || []));
-            return data.keywords || [];
-          } else {
-            const errorText = await proxyResponse.text();
-            console.error('SERP API proxy error for related keywords:', proxyResponse.status, errorText);
-            throw new Error(`API proxy error: ${proxyResponse.status}`);
-          }
-        } catch (proxyError) {
-          console.warn('SERP API proxy error, falling back to direct call:', proxyError);
-        }
-        
-        // Direct API call if proxy fails
-        const response = await fetch(`${SERP_API_ENDPOINT}/related?keyword=${encodeURIComponent(keyword)}`, {
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Cache the successful result
+        const data = await callSerpEdgeFunction('related', { keyword }, apiKey);
         localStorage.setItem(cacheKey, JSON.stringify(data.keywords || []));
-        
         return data.keywords || [];
       } catch (error) {
-        console.error('Error fetching related keywords:', error);
-        // Fall back to mock data
-        const mockData = getMockRelatedKeywords(keyword);
-        return mockData;
+        console.error('❌ Error fetching related keywords:', error);
+        return getMockRelatedKeywords(keyword);
       }
     }
     
-    // Default mock data if no API key is found
-    const mockData = getMockRelatedKeywords(keyword);
-    return mockData;
+    return getMockRelatedKeywords(keyword);
   } catch (error) {
-    console.error('Error searching related keywords:', error);
+    console.error('💥 Error searching related keywords:', error);
     return getMockRelatedKeywords(keyword);
   }
 };
