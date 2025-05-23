@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +25,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
   { value: 'blog', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
@@ -171,6 +176,13 @@ export const ContentTypeStep = () => {
   const handleSelectSolution = (solution: Solution) => {
     dispatch({ type: 'SELECT_SOLUTION', payload: solution });
     toast.success(`Selected solution: ${solution.name}`);
+  };
+
+  const handleSelectContentTypeFromSolution = (contentTypeValue: string, solution: Solution) => {
+    // Select both content type and solution
+    handleSelectContentType(contentTypeValue);
+    handleSelectSolution(solution);
+    toast.success(`Selected ${contentTypes.find(ct => ct.value === contentTypeValue)?.label} for ${solution.name}`);
   };
 
   const handleNavigateToSolutions = () => {
@@ -322,7 +334,7 @@ export const ContentTypeStep = () => {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h4 className="font-semibold text-white mb-1">Solutions</h4>
-                  <p className="text-sm text-white/70">Select a solution to include in your content</p>
+                  <p className="text-sm text-white/70">Hover over solution logos to select content type</p>
                 </div>
                 <Button 
                   variant="outline" 
@@ -341,30 +353,54 @@ export const ContentTypeStep = () => {
               ) : (
                 <div className="flex items-center gap-3 flex-wrap">
                   {solutions.map((solution) => (
-                    <div
-                      key={solution.id}
-                      onClick={() => handleSelectSolution(solution)}
-                      className={`cursor-pointer transition-all hover:scale-105 ${
-                        selectedSolution?.id === solution.id 
-                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-transparent' 
-                          : ''
-                      }`}
-                      title={solution.name}
-                    >
-                      <Avatar className="h-12 w-12 rounded-lg border border-white/20 hover:border-primary/50">
-                        {solution.logoUrl ? (
-                          <AvatarImage 
-                            src={solution.logoUrl} 
-                            alt={solution.name}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <AvatarFallback className="rounded-lg bg-white/10 text-white font-medium text-sm">
-                            {getInitials(solution.name)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                    </div>
+                    <DropdownMenu key={solution.id}>
+                      <DropdownMenuTrigger asChild>
+                        <div
+                          className={`cursor-pointer transition-all hover:scale-105 ${
+                            selectedSolution?.id === solution.id 
+                              ? 'ring-2 ring-primary ring-offset-2 ring-offset-transparent' 
+                              : ''
+                          }`}
+                          title={`${solution.name} - Hover to select content type`}
+                        >
+                          <Avatar className="h-12 w-12 rounded-lg border border-white/20 hover:border-primary/50">
+                            {solution.logoUrl ? (
+                              <AvatarImage 
+                                src={solution.logoUrl} 
+                                alt={solution.name}
+                                className="object-cover"
+                              />
+                            ) : (
+                              <AvatarFallback className="rounded-lg bg-white/10 text-white font-medium text-sm">
+                                {getInitials(solution.name)}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                        </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        className="w-56 bg-background/95 backdrop-blur-sm border-white/20"
+                        align="center"
+                        side="bottom"
+                      >
+                        <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground border-b border-white/10">
+                          Select content type for {solution.name}
+                        </div>
+                        {contentTypes.map((type) => (
+                          <DropdownMenuItem
+                            key={type.value}
+                            onClick={() => handleSelectContentTypeFromSolution(type.value, solution)}
+                            className="flex items-center gap-3 py-2 cursor-pointer hover:bg-white/10"
+                          >
+                            <type.icon className="h-4 w-4" />
+                            <div className="flex-1">
+                              <div className="font-medium">{type.label}</div>
+                              <div className="text-xs text-muted-foreground">{type.description}</div>
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ))}
                 </div>
               )}
@@ -408,7 +444,7 @@ export const ContentTypeStep = () => {
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Content Type</h3>
         <p className="text-sm text-muted-foreground">
-          Select the type of content you want to create.
+          Select the type of content you want to create or use the solution dropdowns above.
         </p>
         
         <RadioGroup 
