@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -5,7 +6,6 @@ import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
-import { motion } from 'framer-motion';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
@@ -194,29 +194,8 @@ export const ContentBuilder = () => {
   // Check if we're on the final step
   const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
   
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
-  
   return (
-    <motion.div 
-      className="flex min-h-[calc(100vh-theme(spacing.20))]"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
+    <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
       {/* Content Builder Sidebar */}
       <ContentBuilderSidebar 
         steps={steps} 
@@ -232,92 +211,47 @@ export const ContentBuilder = () => {
       />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-gradient-to-br from-background via-background to-background/95">
-        {/* Enhanced Progress indicator */}
-        <motion.div 
-          variants={itemVariants}
-          className="sticky top-0 z-10 glass-panel bg-background/80 backdrop-blur-sm border-b border-white/10 px-6 py-4"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="h-6 w-6 text-neon-purple" />
-              </motion.div>
-              <div>
-                <h1 className="text-xl font-semibold text-gradient">
-                  {steps[activeStep].name}
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  Step {stepInfo.current} of {stepInfo.total}
-                </p>
-              </div>
+      <div className="flex-1 flex flex-col">
+        {/* Progress indicator */}
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/40 px-6 py-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+                {steps[activeStep].name}
+              </h1>
             </div>
             <div className="flex items-center gap-3">
               {apiKeyStatus === 'not-found' && (
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex items-center gap-1 text-xs text-amber-400 bg-amber-950/30 px-3 py-1.5 rounded-full border border-amber-800/30 backdrop-blur-sm"
-                >
+                <div className="flex items-center gap-1 text-xs text-amber-400 bg-amber-950/30 px-2 py-1 rounded-full border border-amber-800/30">
                   <AlertTriangle className="h-3 w-3" />
                   <span>Using mock data</span>
-                </motion.div>
+                </div>
               )}
-              <div className="text-xs text-muted-foreground px-4 py-2 glass-panel rounded-full border border-white/10 backdrop-blur-sm">
-                Progress: {Math.round(progressPercentage)}%
+              <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                Step {stepInfo.current} of {stepInfo.total}
               </div>
             </div>
           </div>
-          <div className="relative">
-            <Progress value={progressPercentage} className="h-2 bg-white/5 border border-white/10 rounded-full overflow-hidden" />
-            <motion.div 
-              className="absolute inset-0 bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 rounded-full"
-              animate={{ 
-                background: [
-                  "linear-gradient(to right, rgba(155, 135, 245, 0.2), rgba(51, 195, 240, 0.2))",
-                  "linear-gradient(to right, rgba(155, 135, 245, 0.3), rgba(51, 195, 240, 0.3))",
-                  "linear-gradient(to right, rgba(155, 135, 245, 0.2), rgba(51, 195, 240, 0.2))"
-                ]
-              }}
-              transition={{ duration: 3, repeat: Infinity, repeatType: "reverse" }}
-            />
-          </div>
-        </motion.div>
+          <Progress value={progressPercentage} className="h-1.5 bg-white/5" />
+        </div>
         
-        {/* Step content with enhanced styling */}
-        <motion.div 
-          variants={itemVariants}
-          className="flex-1 p-6 overflow-y-auto custom-scrollbar" 
-          id="content-builder-main-content"
-        >
+        {/* Step content */}
+        <div className="flex-1 p-6 overflow-y-auto" id="content-builder-main-content">
           <div className="max-w-5xl mx-auto space-y-6">
-            <motion.div
-              key={activeStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderStepContent()}
-            </motion.div>
+            {renderStepContent()}
           </div>
-        </motion.div>
+        </div>
         
-        {/* Enhanced Navigation controls */}
+        {/* Navigation controls */}
         {!isLastStep && (
-          <motion.div 
-            variants={itemVariants}
-            className="sticky bottom-0 z-10 glass-panel bg-background/90 backdrop-blur-sm border-t border-white/10 p-6"
-          >
+          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
             <div className="flex justify-between max-w-5xl mx-auto">
               <Button
                 variant="outline"
                 onClick={handlePrevStep}
                 disabled={activeStep === 0}
-                className="gap-2 glass-panel border border-white/20 hover:border-white/30 transition-all duration-300 disabled:opacity-50"
+                className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
               >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
@@ -325,16 +259,12 @@ export const ContentBuilder = () => {
               <Button
                 onClick={handleNextStep}
                 disabled={!canGoNext}
-                className={`gap-2 shadow-lg transition-all duration-300 ${
-                  canGoNext 
-                    ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple hover:shadow-[0_0_20px_rgba(155,135,245,0.5)]' 
-                    : 'opacity-50'
-                }`}
+                className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
               >
                 Next <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
       
@@ -345,6 +275,6 @@ export const ContentBuilder = () => {
         onSave={handleSaveBeforeNavigation}
         onDiscard={handleDiscardChanges}
       />
-    </motion.div>
+    </div>
   );
 };
