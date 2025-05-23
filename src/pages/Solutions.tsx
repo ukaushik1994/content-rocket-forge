@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +12,9 @@ import { CompanySection } from '@/components/solutions/company';
 import { BrandGuidelinesDisplay } from '@/components/solutions/brand';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 // Lazy load the SolutionManager for better performance
 const SolutionManager = lazy(() => import('@/components/solutions/manager').then(module => ({
@@ -54,42 +57,243 @@ const ErrorFallback = ({
 const Solutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Store company information and brand guidelines
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [brandGuidelines, setBrandGuidelines] = useState<BrandGuidelines | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load stored company and brand information from localStorage on mount
+  // Load company and brand information from database on mount
   useEffect(() => {
-    const storedCompanyInfo = localStorage.getItem('companyInfo');
-    if (storedCompanyInfo) {
-      try {
-        setCompanyInfo(JSON.parse(storedCompanyInfo));
-      } catch (e) {
-        console.error('Error parsing company info:', e);
-      }
+    if (user) {
+      loadCompanyData();
     }
-    
-    const storedBrandGuidelines = localStorage.getItem('brandGuidelines');
-    if (storedBrandGuidelines) {
-      try {
-        setBrandGuidelines(JSON.parse(storedBrandGuidelines));
-      } catch (e) {
-        console.error('Error parsing brand guidelines:', e);
+  }, [user]);
+
+  const loadCompanyData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // Load company info
+      const { data: companyData, error: companyError } = await supabase
+        .from('company_info')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (companyError) {
+        console.error('Error loading company info:', companyError);
+      } else if (companyData) {
+        setCompanyInfo({
+          id: companyData.id,
+          name: companyData.name,
+          description: companyData.description || '',
+          industry: companyData.industry || '',
+          founded: companyData.founded || '',
+          size: companyData.size || '',
+          mission: companyData.mission || '',
+          values: Array.isArray(companyData.values) ? companyData.values : [],
+          website: companyData.website,
+          logoUrl: companyData.logo_url,
+        });
       }
+
+      // Load brand guidelines
+      const { data: brandData, error: brandError } = await supabase
+        .from('brand_guidelines')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (brandError) {
+        console.error('Error loading brand guidelines:', brandError);
+      } else if (brandData) {
+        setBrandGuidelines({
+          id: brandData.id,
+          companyId: brandData.company_id || '',
+          primaryColor: brandData.primary_color,
+          secondaryColor: brandData.secondary_color,
+          accentColor: brandData.accent_color,
+          neutralColor: brandData.neutral_color,
+          fontFamily: brandData.font_family,
+          secondaryFontFamily: brandData.secondary_font_family,
+          tone: Array.isArray(brandData.tone) ? brandData.tone : [],
+          keywords: Array.isArray(brandData.keywords) ? brandData.keywords : [],
+          brandPersonality: brandData.brand_personality,
+          missionStatement: brandData.mission_statement,
+          doUse: Array.isArray(brandData.do_use) ? brandData.do_use : [],
+          dontUse: Array.isArray(brandData.dont_use) ? brandData.dont_use : [],
+          logoUsageNotes: brandData.logo_usage_notes,
+          imageryGuidelines: brandData.imagery_guidelines,
+          targetAudience: brandData.target_audience,
+          brandStory: brandData.brand_story,
+          brandValues: brandData.brand_values,
+          brandAssetsUrl: brandData.brand_assets_url,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading company data:', error);
+      toast.error('Failed to load company data');
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   // Handle saving company information
-  const handleSaveCompanyInfo = (info: CompanyInfo) => {
-    setCompanyInfo(info);
-    localStorage.setItem('companyInfo', JSON.stringify(info));
+  const handleSaveCompanyInfo = async (info: CompanyInfo) => {
+    if (!user) {
+      toast.error('You must be logged in to save company information');
+      return;
+    }
+
+    try {
+      const companyData = {
+        user_id: user.id,
+        name: info.name,
+        description: info.description,
+        industry: info.industry,
+        founded: info.founded,
+        size: info.size,
+        mission: info.mission,
+        values: info.values,
+        website: info.website,
+        logo_url: info.logoUrl,
+        updated_at: new Date().toISOString(),
+      };
+
+      let savedCompany;
+      if (companyInfo?.id) {
+        // Update existing company
+        const { data, error } = await supabase
+          .from('company_info')
+          .update(companyData)
+          .eq('id', companyInfo.id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedCompany = data;
+      } else {
+        // Create new company
+        const { data, error } = await supabase
+          .from('company_info')
+          .insert(companyData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedCompany = data;
+      }
+
+      setCompanyInfo({
+        id: savedCompany.id,
+        name: savedCompany.name,
+        description: savedCompany.description || '',
+        industry: savedCompany.industry || '',
+        founded: savedCompany.founded || '',
+        size: savedCompany.size || '',
+        mission: savedCompany.mission || '',
+        values: Array.isArray(savedCompany.values) ? savedCompany.values : [],
+        website: savedCompany.website,
+        logoUrl: savedCompany.logo_url,
+      });
+
+      toast.success('Company information saved successfully');
+    } catch (error: any) {
+      console.error('Error saving company info:', error);
+      toast.error('Failed to save company information: ' + error.message);
+    }
   };
 
   // Handle saving brand guidelines
-  const handleSaveBrandGuidelines = (guidelines: BrandGuidelines) => {
-    setBrandGuidelines(guidelines);
-    localStorage.setItem('brandGuidelines', JSON.stringify(guidelines));
+  const handleSaveBrandGuidelines = async (guidelines: BrandGuidelines) => {
+    if (!user) {
+      toast.error('You must be logged in to save brand guidelines');
+      return;
+    }
+
+    try {
+      const brandData = {
+        user_id: user.id,
+        company_id: companyInfo?.id || null,
+        primary_color: guidelines.primaryColor,
+        secondary_color: guidelines.secondaryColor,
+        accent_color: guidelines.accentColor,
+        neutral_color: guidelines.neutralColor,
+        font_family: guidelines.fontFamily,
+        secondary_font_family: guidelines.secondaryFontFamily,
+        tone: guidelines.tone,
+        keywords: guidelines.keywords,
+        brand_personality: guidelines.brandPersonality,
+        mission_statement: guidelines.missionStatement,
+        do_use: guidelines.doUse,
+        dont_use: guidelines.dontUse,
+        logo_usage_notes: guidelines.logoUsageNotes,
+        imagery_guidelines: guidelines.imageryGuidelines,
+        target_audience: guidelines.targetAudience,
+        brand_story: guidelines.brandStory,
+        brand_values: guidelines.brandValues,
+        brand_assets_url: guidelines.brandAssetsUrl,
+        updated_at: new Date().toISOString(),
+      };
+
+      let savedGuidelines;
+      if (brandGuidelines?.id) {
+        // Update existing guidelines
+        const { data, error } = await supabase
+          .from('brand_guidelines')
+          .update(brandData)
+          .eq('id', brandGuidelines.id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedGuidelines = data;
+      } else {
+        // Create new guidelines
+        const { data, error } = await supabase
+          .from('brand_guidelines')
+          .insert(brandData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedGuidelines = data;
+      }
+
+      setBrandGuidelines({
+        id: savedGuidelines.id,
+        companyId: savedGuidelines.company_id || '',
+        primaryColor: savedGuidelines.primary_color,
+        secondaryColor: savedGuidelines.secondary_color,
+        accentColor: savedGuidelines.accent_color,
+        neutralColor: savedGuidelines.neutral_color,
+        fontFamily: savedGuidelines.font_family,
+        secondaryFontFamily: savedGuidelines.secondary_font_family,
+        tone: Array.isArray(savedGuidelines.tone) ? savedGuidelines.tone : [],
+        keywords: Array.isArray(savedGuidelines.keywords) ? savedGuidelines.keywords : [],
+        brandPersonality: savedGuidelines.brand_personality,
+        missionStatement: savedGuidelines.mission_statement,
+        doUse: Array.isArray(savedGuidelines.do_use) ? savedGuidelines.do_use : [],
+        dontUse: Array.isArray(savedGuidelines.dont_use) ? savedGuidelines.dont_use : [],
+        logoUsageNotes: savedGuidelines.logo_usage_notes,
+        imageryGuidelines: savedGuidelines.imagery_guidelines,
+        targetAudience: savedGuidelines.target_audience,
+        brandStory: savedGuidelines.brand_story,
+        brandValues: savedGuidelines.brand_values,
+        brandAssetsUrl: savedGuidelines.brand_assets_url,
+      });
+
+      toast.success('Brand guidelines saved successfully');
+    } catch (error: any) {
+      console.error('Error saving brand guidelines:', error);
+      toast.error('Failed to save brand guidelines: ' + error.message);
+    }
   };
 
   // Animation variants for the page transition
@@ -127,6 +331,17 @@ const Solutions = () => {
       }
     }
   };
+  
+  if (loading) {
+    return (
+      <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+        <Navbar />
+        <main className="flex-1 container py-8 rounded-3xl">
+          <LoadingFallback />
+        </main>
+      </motion.div>
+    );
+  }
   
   return <motion.div className="min-h-screen flex flex-col bg-background" variants={pageVariants} initial="initial" animate="animate" exit="exit">
       <Helmet>

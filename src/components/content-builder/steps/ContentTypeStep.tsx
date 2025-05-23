@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ const contentTypes: Array<{value: ContentType; label: string; icon: React.Elemen
 export const ContentTypeStep = () => {
   const { state, dispatch } = useContentBuilder();
   const { contentType, selectedSolution } = state;
+  const { user } = useAuth();
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ export const ContentTypeStep = () => {
   // Add states for company info and brand guidelines
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [brandGuidelines, setBrandGuidelines] = useState<BrandGuidelines | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
   
   useEffect(() => {
     if (contentType && selectedSolution) {
@@ -61,36 +64,88 @@ export const ContentTypeStep = () => {
   useEffect(() => {
     fetchSolutions();
     
-    // Load company info from localStorage
-    const storedCompanyInfo = localStorage.getItem('companyInfo');
-    if (storedCompanyInfo) {
-      try {
-        const parsedInfo = JSON.parse(storedCompanyInfo);
-        setCompanyInfo(parsedInfo);
-      } catch (error) {
-        console.error("Error parsing company info:", error);
-      }
+    if (user) {
+      loadCompanyData();
+    } else {
+      setDataLoading(false);
     }
-    
-    // Load brand guidelines from localStorage
-    const storedBrandGuidelines = localStorage.getItem('brandGuidelines');
-    if (storedBrandGuidelines) {
-      try {
-        const parsedGuidelines = JSON.parse(storedBrandGuidelines);
-        setBrandGuidelines(parsedGuidelines);
-      } catch (error) {
-        console.error("Error parsing brand guidelines:", error);
-      }
-    }
-  }, []);
+  }, [user]);
 
-  // Separate useEffect to update additional instructions when company info or brand guidelines change
+  const loadCompanyData = async () => {
+    if (!user) return;
+
+    try {
+      // Load company info
+      const { data: companyData, error: companyError } = await supabase
+        .from('company_info')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (companyError) {
+        console.error('Error loading company info:', companyError);
+      } else if (companyData) {
+        setCompanyInfo({
+          id: companyData.id,
+          name: companyData.name,
+          description: companyData.description || '',
+          industry: companyData.industry || '',
+          founded: companyData.founded || '',
+          size: companyData.size || '',
+          mission: companyData.mission || '',
+          values: Array.isArray(companyData.values) ? companyData.values : [],
+          website: companyData.website,
+          logoUrl: companyData.logo_url,
+        });
+      }
+
+      // Load brand guidelines
+      const { data: brandData, error: brandError } = await supabase
+        .from('brand_guidelines')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (brandError) {
+        console.error('Error loading brand guidelines:', brandError);
+      } else if (brandData) {
+        setBrandGuidelines({
+          id: brandData.id,
+          companyId: brandData.company_id || '',
+          primaryColor: brandData.primary_color,
+          secondaryColor: brandData.secondary_color,
+          accentColor: brandData.accent_color,
+          neutralColor: brandData.neutral_color,
+          fontFamily: brandData.font_family,
+          secondaryFontFamily: brandData.secondary_font_family,
+          tone: Array.isArray(brandData.tone) ? brandData.tone : [],
+          keywords: Array.isArray(brandData.keywords) ? brandData.keywords : [],
+          brandPersonality: brandData.brand_personality,
+          missionStatement: brandData.mission_statement,
+          doUse: Array.isArray(brandData.do_use) ? brandData.do_use : [],
+          dontUse: Array.isArray(brandData.dont_use) ? brandData.dont_use : [],
+          logoUsageNotes: brandData.logo_usage_notes,
+          imageryGuidelines: brandData.imagery_guidelines,
+          targetAudience: brandData.target_audience,
+          brandStory: brandData.brand_story,
+          brandValues: brandData.brand_values,
+          brandAssetsUrl: brandData.brand_assets_url,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading company data:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Update additional instructions when company info or brand guidelines change
   useEffect(() => {
     if (companyInfo || brandGuidelines) {
       let instructions = '';
       
       if (companyInfo) {
-        instructions += `Company: ${companyInfo.name || 'Unknown'}. `;
+        instructions += `Company: ${companyInfo.name}. `;
         if (companyInfo.description) {
           instructions += `Description: ${companyInfo.description}. `;
         }
@@ -153,7 +208,7 @@ export const ContentTypeStep = () => {
             ? solution.target_audience.map(t => String(t)) 
             : [],
           description: `${solution.name} - Business Solution`,
-          category: solution.category || "Business Solution", // Using the category from DB with fallback
+          category: solution.category || "Business Solution",
           logoUrl: solution.logo_url,
           externalUrl: solution.external_url,
           resources: Array.isArray(solution.resources) 
@@ -172,7 +227,6 @@ export const ContentTypeStep = () => {
       }
     } catch (error) {
       console.error("Error fetching solutions:", error);
-      // Fallback to some default data if there's an error or no solutions
       setSolutions([{
         id: '1',
         name: 'Demo Solution',
@@ -181,7 +235,7 @@ export const ContentTypeStep = () => {
         useCases: ["Use case 1", "Use case 2"],
         painPoints: ["Pain point 1", "Pain point 2"],
         targetAudience: ["Audience 1", "Audience 2"],
-        category: "Business Solution", // Default category 
+        category: "Business Solution",
         logoUrl: null,
         externalUrl: null,
         resources: []
@@ -201,7 +255,6 @@ export const ContentTypeStep = () => {
   };
 
   const handleSelectContentTypeFromSolution = (contentTypeValue: string, solution: Solution) => {
-    // Select both content type and solution
     handleSelectContentType(contentTypeValue);
     handleSelectSolution(solution);
     toast.success(`Selected ${contentTypes.find(ct => ct.value === contentTypeValue)?.label} for ${solution.name}`);
@@ -211,7 +264,6 @@ export const ContentTypeStep = () => {
     navigate('/solutions');
   };
 
-  // Get initials for avatar fallback
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -224,7 +276,7 @@ export const ContentTypeStep = () => {
   return (
     <div className="space-y-8">
       {/* Enhanced Company & Brand Info Section with Solutions */}
-      {(companyInfo || brandGuidelines) && (
+      {(companyInfo || brandGuidelines) && !dataLoading && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

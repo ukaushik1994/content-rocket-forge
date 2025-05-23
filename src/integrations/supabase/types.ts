@@ -39,6 +39,140 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_guidelines: {
+        Row: {
+          accent_color: string | null
+          brand_assets_url: string | null
+          brand_personality: string | null
+          brand_story: string | null
+          brand_values: string | null
+          company_id: string | null
+          created_at: string
+          do_use: Json | null
+          dont_use: Json | null
+          font_family: string
+          id: string
+          imagery_guidelines: string | null
+          keywords: Json | null
+          logo_usage_notes: string
+          mission_statement: string | null
+          neutral_color: string | null
+          primary_color: string
+          secondary_color: string
+          secondary_font_family: string | null
+          target_audience: string | null
+          tone: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          brand_assets_url?: string | null
+          brand_personality?: string | null
+          brand_story?: string | null
+          brand_values?: string | null
+          company_id?: string | null
+          created_at?: string
+          do_use?: Json | null
+          dont_use?: Json | null
+          font_family: string
+          id?: string
+          imagery_guidelines?: string | null
+          keywords?: Json | null
+          logo_usage_notes: string
+          mission_statement?: string | null
+          neutral_color?: string | null
+          primary_color: string
+          secondary_color: string
+          secondary_font_family?: string | null
+          target_audience?: string | null
+          tone?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          brand_assets_url?: string | null
+          brand_personality?: string | null
+          brand_story?: string | null
+          brand_values?: string | null
+          company_id?: string | null
+          created_at?: string
+          do_use?: Json | null
+          dont_use?: Json | null
+          font_family?: string
+          id?: string
+          imagery_guidelines?: string | null
+          keywords?: Json | null
+          logo_usage_notes?: string
+          mission_statement?: string | null
+          neutral_color?: string | null
+          primary_color?: string
+          secondary_color?: string
+          secondary_font_family?: string | null
+          target_audience?: string | null
+          tone?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_guidelines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_info: {
+        Row: {
+          created_at: string
+          description: string | null
+          founded: string | null
+          id: string
+          industry: string | null
+          logo_url: string | null
+          mission: string | null
+          name: string
+          size: string | null
+          updated_at: string
+          user_id: string
+          values: Json | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          founded?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          mission?: string | null
+          name: string
+          size?: string | null
+          updated_at?: string
+          user_id: string
+          values?: Json | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          founded?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          mission?: string | null
+          name?: string
+          size?: string | null
+          updated_at?: string
+          user_id?: string
+          values?: Json | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       content_formats: {
         Row: {
           created_at: string
