@@ -53,7 +53,6 @@ const ContentRepurposing: React.FC = () => {
           handleFormatChange={handleFormatChange}
           isDeleting={isDeleting}
           generatedFormats={generatedFormats}
-          savedContentFormats={savedContentFormats}
         />
       </ContentRepurposingErrorBoundary>
     );
