@@ -16,10 +16,8 @@ interface GeneratedContentDisplayProps {
   setActiveFormat: React.Dispatch<React.SetStateAction<string | null>>;
   onCopyToClipboard: (content: string) => void;
   onDownloadAsText: (content: string, formatName: string) => void;
-  onSaveAsNewContent: (formatId: string, generatedContent: string) => void;
-  onSaveAllContent?: () => Promise<boolean>;
-  onDeleteRepurposedContent?: (formatId: string) => Promise<boolean>;
-  isDeleting?: boolean;
+  onSaveAsNewContent: (formatId: string, generatedContent: string) => Promise<boolean>;
+  onSaveAllContent: () => Promise<boolean>;
   isSaving?: boolean;
   isSavingAll?: boolean;
   savedContentFormats?: string[];
@@ -33,13 +31,11 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   onDownloadAsText,
   onSaveAsNewContent,
   onSaveAllContent,
-  onDeleteRepurposedContent,
-  isDeleting = false,
   isSaving = false,
   isSavingAll = false,
   savedContentFormats = []
 }) => {
-  const generatedFormats = Object.keys(generatedContents).filter(id => !!id); // Filter out empty IDs
+  const generatedFormats = Object.keys(generatedContents).filter(id => !!id);
   const hasGeneratedContent = generatedFormats.length > 0;
   const hasMultipleFormats = generatedFormats.length > 1;
   const isCurrentFormatSaved = activeFormat ? savedContentFormats.includes(activeFormat) : false;
@@ -85,7 +81,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
                 );
               }}
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
-              onSaveAll={hasMultipleFormats && onSaveAllContent ? onSaveAllContent : undefined}
+              onSaveAll={hasMultipleFormats ? onSaveAllContent : undefined}
               hasMultipleFormats={hasMultipleFormats}
               isSaving={isSaving && !isCurrentFormatSaved}
               isSavingAll={isSavingAll}

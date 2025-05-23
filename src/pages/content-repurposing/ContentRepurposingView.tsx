@@ -8,7 +8,6 @@ import Navbar from '@/components/layout/Navbar';
 import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
-import { SaveStatusBar } from '@/components/content-repurposing/SaveStatusBar';
 import { ContentItemType } from '@/contexts/content/types';
 
 interface ContentRepurposingViewProps {
@@ -17,7 +16,6 @@ interface ContentRepurposingViewProps {
   generatedContents: Record<string, string>;
   isGenerating: boolean;
   activeFormat: string | null;
-  isDeleting: boolean;
   isSaving: boolean;
   isSavingAll: boolean;
   savedContentFormats: string[];
@@ -28,7 +26,6 @@ interface ContentRepurposingViewProps {
   downloadAsText: (content: string, formatName: string) => void;
   saveAsNewContent: (formatId: string, content: string) => Promise<boolean>;
   handleSaveAllContent: () => Promise<boolean>;
-  handleDeleteActiveFormat: (formatId: string) => Promise<boolean>;
   resetContent: () => void;
 }
 
@@ -38,7 +35,6 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   generatedContents,
   isGenerating,
   activeFormat,
-  isDeleting,
   isSaving,
   isSavingAll,
   savedContentFormats,
@@ -49,11 +45,8 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   downloadAsText,
   saveAsNewContent,
   handleSaveAllContent,
-  handleDeleteActiveFormat,
   resetContent,
 }) => {
-  const totalFormatsCount = Object.keys(generatedContents).filter(key => !!key).length;
-
   return (
     <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
@@ -87,7 +80,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
           <div className="w-10"></div> {/* For balance */}
         </div>
 
-        {/* Selection of content formats */}
+        {/* Content layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 space-y-6">
             <ContentDetails content={content} />
@@ -99,7 +92,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
             />
           </div>
 
-          <div className="md:col-span-2 flex flex-col">
+          <div className="md:col-span-2">
             <GeneratedContentDisplay
               generatedContents={generatedContents}
               activeFormat={activeFormat}
@@ -108,22 +101,10 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               onDownloadAsText={downloadAsText}
               onSaveAsNewContent={saveAsNewContent}
               onSaveAllContent={handleSaveAllContent}
-              onDeleteRepurposedContent={handleDeleteActiveFormat}
-              isDeleting={isDeleting}
               isSaving={isSaving}
               isSavingAll={isSavingAll}
               savedContentFormats={savedContentFormats}
             />
-
-            {totalFormatsCount > 0 && (
-              <SaveStatusBar
-                activeFormat={activeFormat}
-                savedFormats={savedContentFormats}
-                totalFormats={totalFormatsCount}
-                onSaveAll={handleSaveAllContent}
-                isSavingAll={isSavingAll}
-              />
-            )}
           </div>
         </div>
       </motion.main>
