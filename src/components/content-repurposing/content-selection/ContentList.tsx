@@ -28,11 +28,10 @@ const ContentList: React.FC<ContentListProps> = memo(({
       {contentItems.map((item) => (
         <ContentItem
           key={item.id}
-          item={item}
-          onSelect={onSelectContent}
+          content={item}
+          onSelect={() => onSelectContent(item)}
           onOpenRepurposedContent={onOpenRepurposedContent}
-          savedContentFormats={savedContentFormats}
-          isMobile={isMobile}
+          savedFormats={savedContentFormats}
         />
       ))}
     </motion.div>

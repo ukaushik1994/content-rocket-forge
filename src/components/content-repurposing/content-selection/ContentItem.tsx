@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { getFormatIcon } from '../content-selection/ContentFormatIcon';
 import { formatDistanceToNow } from 'date-fns';
 import { ContentItemType } from '@/contexts/content/types';
 import SelectButton from './SelectButton';
@@ -22,7 +21,7 @@ export const ContentItem: React.FC<ContentItemProps> = ({
   savedFormats = [] 
 }) => {
   const hasRepurposedFormats = savedFormats.length > 0;
-  const date = content.createdAt ? new Date(content.createdAt) : new Date();
+  const date = content.created_at ? new Date(content.created_at) : new Date();
   const timeAgo = formatDistanceToNow(date, { addSuffix: true });
   
   return (
@@ -37,13 +36,13 @@ export const ContentItem: React.FC<ContentItemProps> = ({
       }}
     >
       <div className="p-4 flex-1">
-        <ContentSummary content={content} timeAgo={timeAgo} />
+        <ContentSummary item={content} timeAgo={timeAgo} />
         
         {hasRepurposedFormats && (
           <FormatsList 
-            contentId={content.id} 
-            savedFormats={savedFormats}
-            onOpenFormat={onOpenRepurposedContent}
+            item={content}
+            savedContentFormats={savedFormats}
+            onOpenRepurposedContent={onOpenRepurposedContent}
           />
         )}
       </div>

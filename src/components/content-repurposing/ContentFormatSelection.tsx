@@ -134,7 +134,7 @@ export const ContentFormatSelection: React.FC<ContentFormatSelectionProps> = ({
                   >
                     <FormatInfoCard 
                       format={format} 
-                      isRecommended={format.recommended}
+                      isRecommended={false}
                     />
                     <div className="absolute inset-0 bg-transparent cursor-pointer" />
                     <div className="absolute top-3 right-3">
