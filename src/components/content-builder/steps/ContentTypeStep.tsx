@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,14 +67,6 @@ export const ContentTypeStep = () => {
       try {
         const parsedInfo = JSON.parse(storedCompanyInfo);
         setCompanyInfo(parsedInfo);
-        
-        // Store company info in context for content generation
-        if (parsedInfo) {
-          dispatch({ 
-            type: 'SET_ADDITIONAL_INSTRUCTIONS', 
-            payload: `Use the following company information: ${parsedInfo.name} - ${parsedInfo.description}. Industry: ${parsedInfo.industry}. Mission: ${parsedInfo.mission}.` 
-          });
-        }
       } catch (error) {
         console.error("Error parsing company info:", error);
       }
@@ -85,23 +78,53 @@ export const ContentTypeStep = () => {
       try {
         const parsedGuidelines = JSON.parse(storedBrandGuidelines);
         setBrandGuidelines(parsedGuidelines);
-        
-        // Update additional instructions if brand guidelines exist
-        if (parsedGuidelines) {
-          dispatch({ 
-            type: 'SET_ADDITIONAL_INSTRUCTIONS', 
-            payload: `Use the following company information: ${companyInfo?.name || ''} - ${companyInfo?.description || ''}. 
-            Follow these brand guidelines - Tone: ${parsedGuidelines.tone.join(', ')}. 
-            Use keywords: ${parsedGuidelines.keywords.join(', ')}. 
-            Do use: ${parsedGuidelines.doUse.join(', ')}. 
-            Don't use: ${parsedGuidelines.dontUse.join(', ')}.` 
-          });
-        }
       } catch (error) {
         console.error("Error parsing brand guidelines:", error);
       }
     }
-  }, [dispatch]);
+  }, []);
+
+  // Separate useEffect to update additional instructions when company info or brand guidelines change
+  useEffect(() => {
+    if (companyInfo || brandGuidelines) {
+      let instructions = '';
+      
+      if (companyInfo) {
+        instructions += `Company: ${companyInfo.name || 'Unknown'}. `;
+        if (companyInfo.description) {
+          instructions += `Description: ${companyInfo.description}. `;
+        }
+        if (companyInfo.industry) {
+          instructions += `Industry: ${companyInfo.industry}. `;
+        }
+        if (companyInfo.mission) {
+          instructions += `Mission: ${companyInfo.mission}. `;
+        }
+      }
+      
+      if (brandGuidelines) {
+        if (brandGuidelines.tone && brandGuidelines.tone.length > 0) {
+          instructions += `Brand tone: ${brandGuidelines.tone.join(', ')}. `;
+        }
+        if (brandGuidelines.keywords && brandGuidelines.keywords.length > 0) {
+          instructions += `Keywords to use: ${brandGuidelines.keywords.join(', ')}. `;
+        }
+        if (brandGuidelines.doUse && brandGuidelines.doUse.length > 0) {
+          instructions += `Do use: ${brandGuidelines.doUse.join(', ')}. `;
+        }
+        if (brandGuidelines.dontUse && brandGuidelines.dontUse.length > 0) {
+          instructions += `Don't use: ${brandGuidelines.dontUse.join(', ')}. `;
+        }
+      }
+      
+      if (instructions.trim()) {
+        dispatch({ 
+          type: 'SET_ADDITIONAL_INSTRUCTIONS', 
+          payload: instructions.trim()
+        });
+      }
+    }
+  }, [companyInfo, brandGuidelines, dispatch]);
 
   const fetchSolutions = async () => {
     setIsLoading(true);
@@ -229,12 +252,12 @@ export const ContentTypeStep = () => {
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle2 className="h-5 w-5 text-green-400" />
                     <h3 className="text-xl font-semibold text-gradient">
-                      {companyInfo?.name || 'Brand Configuration'} Active
+                      {companyInfo?.name || 'Brand Configuration'} - Active
                     </h3>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-white/70">
                     <Link className="h-4 w-4" />
-                    <span>Company & Brand settings linked</span>
+                    <span>Company & Brand settings configured</span>
                   </div>
                 </div>
               </div>
@@ -263,7 +286,7 @@ export const ContentTypeStep = () => {
                         <h4 className="font-semibold text-white mb-1">{companyInfo.name}</h4>
                         <p className="text-sm text-primary/80 mb-2">{companyInfo.industry}</p>
                         <p className="text-xs text-white/70 line-clamp-2">{companyInfo.description}</p>
-                        {companyInfo.values.length > 0 && (
+                        {companyInfo.values && companyInfo.values.length > 0 && (
                           <div className="mt-3">
                             <span className="text-xs font-medium text-primary">Values:</span>
                             <div className="flex flex-wrap gap-1 mt-1">
@@ -294,24 +317,24 @@ export const ContentTypeStep = () => {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-white mb-1 flex items-center gap-2">
-                          Brand Guidelines
-                        </h4>
+                        <h4 className="font-semibold text-white mb-1">Brand Guidelines</h4>
                         <div className="space-y-2">
-                          <div>
-                            <span className="text-xs font-medium text-primary">Tone:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {brandGuidelines.tone.slice(0, 3).map((tone, idx) => (
-                                <span key={idx} className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                                  {tone}
-                                </span>
-                              ))}
-                              {brandGuidelines.tone.length > 3 && (
-                                <span className="text-xs text-white/60">+{brandGuidelines.tone.length - 3} more</span>
-                              )}
+                          {brandGuidelines.tone && brandGuidelines.tone.length > 0 && (
+                            <div>
+                              <span className="text-xs font-medium text-primary">Tone:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {brandGuidelines.tone.slice(0, 3).map((tone, idx) => (
+                                  <span key={idx} className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                    {tone}
+                                  </span>
+                                ))}
+                                {brandGuidelines.tone.length > 3 && (
+                                  <span className="text-xs text-white/60">+{brandGuidelines.tone.length - 3} more</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          {brandGuidelines.keywords.length > 0 && (
+                          )}
+                          {brandGuidelines.keywords && brandGuidelines.keywords.length > 0 && (
                             <div>
                               <span className="text-xs font-medium text-primary">Keywords:</span>
                               <p className="text-xs text-white/70 truncate">
@@ -406,7 +429,7 @@ export const ContentTypeStep = () => {
             </div>
 
             {/* Brand Colors Preview */}
-            {brandGuidelines && (
+            {brandGuidelines && (brandGuidelines.primaryColor || brandGuidelines.secondaryColor || brandGuidelines.accentColor) && (
               <div className="mt-4 pt-4 border-t border-white/10">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-white/90">Brand Colors:</span>
