@@ -78,7 +78,7 @@ export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ childr
       // This would connect to an AI service in a real app
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      const keyword = content.metadata?.mainKeyword || '';
+      const keyword = content.metadata?.mainKeyword || content.keywords?.[0] || '';
       
       return [
         `The Ultimate Guide to ${keyword}`,
@@ -98,9 +98,11 @@ export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ childr
       // This would connect to an AI service in a real app
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      const keyword = content.metadata?.mainKeyword || content.keywords?.[0] || 'this topic';
+      
       return {
         title: `${content.title} - SEO Optimized Title`,
-        description: `Learn all about ${content.metadata?.mainKeyword || 'this topic'} with our comprehensive guide. Covers key aspects and strategies.`
+        description: `Learn all about ${keyword} with our comprehensive guide. Covers key aspects and strategies.`
       };
     } catch (error) {
       console.error('Error generating metadata:', error);

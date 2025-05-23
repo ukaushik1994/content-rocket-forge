@@ -18,6 +18,12 @@ export interface ContentItemType {
     wordCount?: number;
     readingTime?: number;
     repurposedContentMap?: Record<string, string>;
+    metaTitle?: string;
+    metaDescription?: string;
+    mainKeyword?: string;
+    secondaryKeywords?: string[];
+    seoScore?: number;
+    repurposedFormats?: string[];
   };
   submitted_for_review_at?: string;
   reviewer_id?: string;

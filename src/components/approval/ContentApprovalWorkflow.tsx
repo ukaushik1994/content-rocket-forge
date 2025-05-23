@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentApprovalSidebar } from './ContentApprovalSidebar';
@@ -49,7 +48,7 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
     
     try {
       await updateContentItem(selectedContent.id, { 
-        status: 'approved',
+        approval_status: 'approved',
         updated_at: new Date().toISOString()
       });
       toast.success('Content approved successfully');
@@ -79,8 +78,9 @@ export const ContentApprovalWorkflow: React.FC<ContentApprovalWorkflowProps> = (
   const renderStatusActions = () => {
     if (!selectedContent) return null;
     
-    switch(selectedContent.status) {
+    switch(selectedContent.approval_status) {
       case 'draft':
+      case 'pending_review':
         return (
           <Button 
             onClick={handleApprove}

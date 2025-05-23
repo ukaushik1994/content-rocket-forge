@@ -16,7 +16,7 @@ interface ApprovalMetadataProps {
 
 export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) => {
   const [metaTitle, setMetaTitle] = useState(content.metadata?.metaTitle || '');
-  const [metaDescription, setMetaDescription] = useState(content.metadata?.metaDescription || '');
+  const [metaDescription, setMetaDescription] = useState(content.metadata?.metaDescription || content.metadata?.description || '');
   const [isGenerating, setIsGenerating] = useState(false);
   
   const { generateMetadata } = useApproval();
@@ -24,7 +24,7 @@ export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) =
   
   useEffect(() => {
     setMetaTitle(content.metadata?.metaTitle || '');
-    setMetaDescription(content.metadata?.metaDescription || '');
+    setMetaDescription(content.metadata?.metaDescription || content.metadata?.description || '');
   }, [content]);
   
   const handleGenerateMetadata = async () => {

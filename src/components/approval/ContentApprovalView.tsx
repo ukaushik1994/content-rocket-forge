@@ -13,19 +13,20 @@ export const ContentApprovalView: React.FC = () => {
   
   // Filter content based on selected status
   const filteredContent = contentItems.filter(item => 
-    statusFilter === 'all' || item.status === statusFilter
+    statusFilter === 'all' || item.approval_status === statusFilter
   );
   
-  // Calculate content statistics
+  // Calculate content statistics using approval_status
   const contentStats = {
     all: contentItems.length,
-    draft: contentItems.filter(item => item.status === 'draft').length,
-    approved: contentItems.filter(item => item.status === 'approved').length,
-    published: contentItems.filter(item => item.status === 'published').length
+    draft: contentItems.filter(item => item.approval_status === 'draft').length,
+    pending_review: contentItems.filter(item => item.approval_status === 'pending_review').length,
+    approved: contentItems.filter(item => item.approval_status === 'approved').length,
+    published: contentItems.filter(item => item.approval_status === 'published').length
   };
   
   // Handle status filter change
-  const handleFilterChange = (status: 'all' | 'draft' | 'approved' | 'published') => {
+  const handleFilterChange = (status: string) => {
     setStatusFilter(status);
     setSelectedContent(null); // Reset selected content when filter changes
   };

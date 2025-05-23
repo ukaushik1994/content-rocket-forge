@@ -21,6 +21,7 @@ export const createAddContentAction = (
         title: item.title,
         content: item.content,
         status: item.status,
+        approval_status: item.approval_status || 'draft',
         seo_score: item.seo_score,
         user_id: userId,
         metadata: item.metadata || {}
@@ -48,6 +49,7 @@ export const createAddContentAction = (
           keywords: item.keywords || [],
           content: data.content || '',
           status: data.status as 'draft' | 'published' | 'archived',
+          approval_status: data.approval_status as 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published' | 'archived',
           metadata: (data.metadata as ContentItemType['metadata']) || {}
         };
         
@@ -66,7 +68,8 @@ export const createAddContentAction = (
           id: uuidv4(),
           created_at: now,
           updated_at: now,
-          user_id: userId
+          user_id: userId,
+          approval_status: item.approval_status || 'draft'
         };
         setContentItems(prev => [newItem, ...prev]);
         toast.info('Created content in memory (development mode)');

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContentItemType } from '@/contexts/content/types';
@@ -43,16 +42,20 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
       // Filter out the current content
       const otherContent = contentItems.filter(item => item.id !== content.id);
       
-      // Extract keywords from the current content
-      const keywords = content.metadata?.mainKeyword 
-        ? [content.metadata.mainKeyword, ...(content.metadata.secondaryKeywords || [])]
-        : [];
+      // Extract keywords from the current content - safely handle missing properties
+      const keywords = [
+        ...(content.keywords || []),
+        ...(content.metadata?.mainKeyword ? [content.metadata.mainKeyword] : []),
+        ...(content.metadata?.secondaryKeywords || [])
+      ];
       
       // Find relevant content by matching keywords
       const relevantContent = otherContent.filter(item => {
-        const itemKeywords = item.metadata?.mainKeyword 
-          ? [item.metadata.mainKeyword, ...(item.metadata.secondaryKeywords || [])]
-          : [];
+        const itemKeywords = [
+          ...(item.keywords || []),
+          ...(item.metadata?.mainKeyword ? [item.metadata.mainKeyword] : []),
+          ...(item.metadata?.secondaryKeywords || [])
+        ];
         
         return itemKeywords.some(kw => 
           keywords.some(keyword => 
@@ -64,7 +67,7 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
       
       // Find popular content (placeholder - in a real app this would be based on metrics)
       const popularContent = [...otherContent]
-        .sort((a, b) => (b.metadata?.seoScore || 0) - (a.metadata?.seoScore || 0))
+        .sort((a, b) => (b.metadata?.seoScore || b.seo_score || 0) - (a.metadata?.seoScore || a.seo_score || 0))
         .slice(0, 5);
       
       // Find recent content
@@ -103,6 +106,11 @@ export const InterLinkingSuggestions: React.FC<InterLinkingSuggestionsProps> = (
                     {item.metadata.mainKeyword}
                   </Badge>
                 )}
+                {item.keywords?.slice(0, 2).map((keyword, idx) => (
+                  <Badge key={idx} variant="outline" className="bg-purple-900/30 border-purple-500/30 text-purple-300 text-xs">
+                    {keyword}
+                  </Badge>
+                ))}
               </div>
               <p className="text-sm text-gray-400 line-clamp-2">
                 {item.content?.substring(0, 120)}...
