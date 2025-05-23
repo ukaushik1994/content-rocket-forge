@@ -20,7 +20,7 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
   contentItems
 }) => {
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
-  const [statusFilter, setStatusFilter] = useState('pending_review');
+  const [statusFilter, setStatusFilter] = useState('all'); // Changed from 'pending_review' to 'all'
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'dashboard' | 'review'>('dashboard');
   
@@ -32,9 +32,21 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
     requestChanges 
   } = useContent();
 
-  // Filter content based on status and search
+  // Filter content based on status and search - improved logic
   const filteredContent = contentItems.filter(item => {
-    const matchesStatus = statusFilter === 'all' || item.approval_status === statusFilter;
+    // Status filter logic
+    let matchesStatus = true;
+    if (statusFilter !== 'all') {
+      // Handle approval status filtering
+      if (item.approval_status) {
+        matchesStatus = item.approval_status === statusFilter;
+      } else {
+        // Fallback to regular status if approval_status is not set
+        matchesStatus = item.status === statusFilter;
+      }
+    }
+    
+    // Search filter logic
     const matchesSearch = searchQuery === '' || 
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.content && item.content.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -153,9 +165,14 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
               <Search className="h-8 w-8 text-white/30" />
             </div>
             <h3 className="text-lg font-medium text-white/80 mb-2">No content found</h3>
-            <p className="text-white/60">
+            <p className="text-white/60 mb-4">
               {searchQuery ? 'Try adjusting your search terms' : 'No content matches the selected filter'}
             </p>
+            {contentItems.length === 0 && (
+              <p className="text-white/50 text-sm">
+                Total content items available: {contentItems.length}
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
