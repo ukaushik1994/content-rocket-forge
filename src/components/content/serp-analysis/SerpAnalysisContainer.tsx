@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { SerpAnalysisResult } from '@/types/serp';
-import { SerpOverviewSection } from './serp-analysis/SerpOverviewSection';
-import { SerpKeywordsSection } from './serp-analysis/SerpKeywordsSection';
-import { SerpQuestionsSection } from './serp-analysis/SerpQuestionsSection';
-import { SerpEntitiesSection } from './serp-analysis/SerpEntitiesSection';
-import { SerpHeadingsSection } from './serp-analysis/SerpHeadingsSection';
-import { SerpContentGapsSection } from './serp-analysis/SerpContentGapsSection';
-import { SerpCompetitorsSection } from './serp-analysis/SerpCompetitorsSection';
-import { SerpSectionHeader } from './serp-analysis/SerpSectionHeader';
+import { SerpOverviewSection } from './SerpOverviewSection';
+import { SerpKeywordsSection } from './SerpKeywordsSection';
+import { SerpQuestionsSection } from './SerpQuestionsSection';
+import { SerpEntitiesSection } from './SerpEntitiesSection';
+import { SerpHeadingsSection } from './SerpHeadingsSection';
+import { SerpContentGapsSection } from './SerpContentGapsSection';
+import { SerpCompetitorsSection } from './SerpCompetitorsSection';
+import { SerpSectionHeader } from './SerpSectionHeader';
 
 export interface SerpAnalysisContainerProps {
   serpData: SerpAnalysisResult | null;
@@ -84,7 +85,12 @@ export function SerpAnalysisContainer({
           description="Search landscape analysis"
         />
         {expandedSections.overview && (
-          <SerpOverviewSection serpData={data} />
+          <SerpOverviewSection 
+            serpData={data} 
+            mainKeyword={mainKeyword}
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
         )}
       </div>
 
@@ -191,7 +197,7 @@ export function SerpAnalysisContainer({
           onToggle={() => handleToggleSection('competitors')}
           variant="purple"
           description="Leading competitors analysis"
-          count={data?.competitors?.length || 0}
+          count={data?.topResults?.length || 0}
         />
         {expandedSections.competitors && (
           <SerpCompetitorsSection 
