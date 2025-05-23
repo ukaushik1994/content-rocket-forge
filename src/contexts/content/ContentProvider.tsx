@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ContentItemType, ContentContextType } from './types';
 import { fetchItemKeywords, processContentItems } from './utils';
 import { createContentActions } from './actions';
+import { createApprovalActions } from './actions/approvalActions';
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
@@ -128,6 +129,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   
   // Create all content-related actions using our refactored approach
   const actions = createContentActions(contentItems, setContentItems, user?.id);
+  const approvalActions = createApprovalActions(actions.updateContentItem, user?.id);
 
   return (
     <ContentContext.Provider 
@@ -135,6 +137,7 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
         contentItems: deduplicateItems(contentItems), // Always return deduplicated content
         loading,
         ...actions,
+        ...approvalActions,
         refreshContent: fetchContentItems
       }}
     >

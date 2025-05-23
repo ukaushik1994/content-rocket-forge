@@ -39,6 +39,41 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_comments: {
+        Row: {
+          approval_id: string
+          comment: string
+          comment_type: string | null
+          created_at: string
+          id: string
+          reviewer_id: string
+        }
+        Insert: {
+          approval_id: string
+          comment: string
+          comment_type?: string | null
+          created_at?: string
+          id?: string
+          reviewer_id: string
+        }
+        Update: {
+          approval_id?: string
+          comment?: string
+          comment_type?: string | null
+          created_at?: string
+          id?: string
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_comments_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "content_approvals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_guidelines: {
         Row: {
           accent_color: string | null
@@ -173,6 +208,47 @@ export type Database = {
         }
         Relationships: []
       }
+      content_approvals: {
+        Row: {
+          comments: string | null
+          content_id: string
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          reviewer_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          content_id: string
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          content_id?: string
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_approvals_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_formats: {
         Row: {
           created_at: string
@@ -202,34 +278,46 @@ export type Database = {
       }
       content_items: {
         Row: {
+          approval_status: string | null
           content: string | null
           created_at: string
           id: string
           metadata: Json | null
+          review_deadline: string | null
+          reviewer_id: string | null
           seo_score: number | null
           status: string
+          submitted_for_review_at: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          approval_status?: string | null
           content?: string | null
           created_at?: string
           id?: string
           metadata?: Json | null
+          review_deadline?: string | null
+          reviewer_id?: string | null
           seo_score?: number | null
           status?: string
+          submitted_for_review_at?: string | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          approval_status?: string | null
           content?: string | null
           created_at?: string
           id?: string
           metadata?: Json | null
+          review_deadline?: string | null
+          reviewer_id?: string | null
           seo_score?: number | null
           status?: string
+          submitted_for_review_at?: string | null
           title?: string
           updated_at?: string
           user_id?: string
