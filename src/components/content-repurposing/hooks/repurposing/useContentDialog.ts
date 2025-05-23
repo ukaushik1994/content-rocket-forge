@@ -1,18 +1,28 @@
 
 import { useState } from 'react';
-import { ContentItemType } from '@/contexts/content/types';
+import { RepurposedContentRecord } from '@/services/repurposedContentService';
 
-export const useContentDialog = (findRepurposedContent: (contentId: string, formatId: string) => any) => {
+type FindRepurposedContentFn = (contentId: string, formatId: string) => Promise<RepurposedContentRecord | null>;
+
+export const useContentDialog = (findRepurposedContent: FindRepurposedContentFn) => {
   const [repurposedDialogOpen, setRepurposedDialogOpen] = useState(false);
-  const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<any>(null);
+  const [selectedRepurposedContent, setSelectedRepurposedContent] = useState<RepurposedContentRecord | null>(null);
+  const [isLoadingFormat, setIsLoadingFormat] = useState(false);
   const [generatedFormats, setGeneratedFormats] = useState<string[]>([]);
 
-  const handleOpenRepurposedContent = (contentId: string, formatId: string, availableFormats: string[] = []) => {
-    const repurposedContent = findRepurposedContent(contentId, formatId);
-    if (repurposedContent) {
-      setSelectedRepurposedContent(repurposedContent);
-      setGeneratedFormats(Array.isArray(availableFormats) ? availableFormats : []);
-      setRepurposedDialogOpen(true);
+  const handleOpenRepurposedContent = async (contentId: string, formatId: string, availableFormats: string[] = []) => {
+    setIsLoadingFormat(true);
+    try {
+      const repurposedContent = await findRepurposedContent(contentId, formatId);
+      if (repurposedContent) {
+        setSelectedRepurposedContent(repurposedContent);
+        setGeneratedFormats(Array.isArray(availableFormats) ? availableFormats : []);
+        setRepurposedDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error opening repurposed content:', error);
+    } finally {
+      setIsLoadingFormat(false);
     }
   };
 
@@ -21,10 +31,19 @@ export const useContentDialog = (findRepurposedContent: (contentId: string, form
     setSelectedRepurposedContent(null);
   };
 
-  const handleFormatChange = (contentId: string, formatId: string) => {
-    const repurposedContent = findRepurposedContent(contentId, formatId);
-    if (repurposedContent) {
-      setSelectedRepurposedContent(repurposedContent);
+  const handleFormatChange = async (contentId: string, formatId: string) => {
+    if (!contentId || !formatId) return;
+    
+    setIsLoadingFormat(true);
+    try {
+      const repurposedContent = await findRepurposedContent(contentId, formatId);
+      if (repurposedContent) {
+        setSelectedRepurposedContent(repurposedContent);
+      }
+    } catch (error) {
+      console.error('Error loading format content:', error);
+    } finally {
+      setIsLoadingFormat(false);
     }
   };
 
@@ -32,6 +51,7 @@ export const useContentDialog = (findRepurposedContent: (contentId: string, form
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats,
+    isLoadingFormat,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
     handleFormatChange,
