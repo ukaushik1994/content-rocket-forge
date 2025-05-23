@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -188,7 +189,7 @@ export const ContentTypeStep = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Company & Brand Info Section */}
+      {/* Enhanced Company & Brand Info Section with Solutions */}
       {(companyInfo || brandGuidelines) && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
@@ -316,6 +317,59 @@ export const ContentTypeStep = () => {
               )}
             </div>
 
+            {/* Solutions Selection Section */}
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold text-white mb-1">Solutions</h4>
+                  <p className="text-sm text-white/70">Select a solution to include in your content</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleNavigateToSolutions}
+                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs"
+                >
+                  Manage Solutions
+                </Button>
+              </div>
+              
+              {isLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {solutions.map((solution) => (
+                    <div
+                      key={solution.id}
+                      onClick={() => handleSelectSolution(solution)}
+                      className={`cursor-pointer transition-all hover:scale-105 ${
+                        selectedSolution?.id === solution.id 
+                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-transparent' 
+                          : ''
+                      }`}
+                      title={solution.name}
+                    >
+                      <Avatar className="h-12 w-12 rounded-lg border border-white/20 hover:border-primary/50">
+                        {solution.logoUrl ? (
+                          <AvatarImage 
+                            src={solution.logoUrl} 
+                            alt={solution.name}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <AvatarFallback className="rounded-lg bg-white/10 text-white font-medium text-sm">
+                            {getInitials(solution.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Brand Colors Preview */}
             {brandGuidelines && (
               <div className="mt-4 pt-4 border-t border-white/10">
@@ -382,110 +436,6 @@ export const ContentTypeStep = () => {
             </div>
           ))}
         </RadioGroup>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Select a Solution</h3>
-          <Button
-            variant="outline"
-            onClick={handleNavigateToSolutions}
-            className="text-xs"
-          >
-            Manage Solutions
-          </Button>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Choose which business solution this content should promote or reference.
-        </p>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {solutions.map((solution) => (
-              <Card 
-                key={solution.id} 
-                className={`cursor-pointer transition-all hover:shadow-md hover:border-primary overflow-hidden
-                  ${selectedSolution?.id === solution.id ? 'border-primary bg-primary/5' : ''}`}
-                onClick={() => handleSelectSolution(solution)}
-              >
-                <CardContent className="p-4 flex gap-4">
-                  <div className="flex-shrink-0">
-                    <Avatar className="h-12 w-12 rounded-md border">
-                      {solution.logoUrl ? (
-                        <AvatarImage 
-                          src={solution.logoUrl} 
-                          alt={solution.name}
-                          className="object-cover"
-                        />
-                      ) : (
-                        <AvatarFallback className="rounded-md bg-primary/10 text-primary font-medium">
-                          {getInitials(solution.name)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{solution.name}</h4>
-                      {solution.externalUrl && (
-                        <a 
-                          href={solution.externalUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="text-muted-foreground hover:text-primary"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                    
-                    {solution.features && solution.features.length > 0 && (
-                      <div className="mt-3">
-                        <span className="text-xs font-medium">Features:</span>
-                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
-                          {solution.features.slice(0, 3).map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                          {solution.features.length > 3 && (
-                            <li className="text-xs text-primary">+{solution.features.length - 3} more features</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-
-                    {solution.useCases && solution.useCases.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-medium">Use Cases:</span>
-                        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4">
-                          {solution.useCases.slice(0, 2).map((useCase, idx) => (
-                            <li key={idx}>{useCase}</li>
-                          ))}
-                          {solution.useCases.length > 2 && (
-                            <li className="text-xs text-primary">+{solution.useCases.length - 2} more use cases</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {solution.resources && solution.resources.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-medium">Resources:</span>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {solution.resources.length} resource(s) available
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
