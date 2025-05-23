@@ -422,6 +422,3 @@ export const ContentTypeStep = () => {
     </div>
   );
 };
-
-// Import motion
-import { motion } from 'framer-motion';
