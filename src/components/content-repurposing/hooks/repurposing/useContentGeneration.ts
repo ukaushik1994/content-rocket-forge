@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { contentFormats } from '../../formats';
@@ -6,6 +7,7 @@ import { sendChatRequest } from '@/services/aiService';
 import { repurposedContentService } from '@/services/repurposedContentService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useRepurposedContentData } from './useRepurposedContentData';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const { user } = useAuth();
@@ -13,9 +15,32 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [generatedContents, setGeneratedContents] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
-  const [savedContentFormats, setSavedContentFormats] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
+
+  // Use the new hook to get repurposed content data from database
+  const {
+    repurposedFormats: savedContentFormats,
+    repurposedContentMap,
+    isLoading: isLoadingRepurposed,
+    refreshData: refreshRepurposedData
+  } = useRepurposedContentData(content?.id || null);
+
+  // Load saved content into generatedContents when data changes
+  useEffect(() => {
+    if (repurposedContentMap && Object.keys(repurposedContentMap).length > 0) {
+      setGeneratedContents(repurposedContentMap);
+      
+      // Auto-select first format if none is active
+      if (!activeFormat && Object.keys(repurposedContentMap).length > 0) {
+        setActiveFormat(Object.keys(repurposedContentMap)[0]);
+      }
+    } else {
+      // Clear generated contents if no repurposed content exists
+      setGeneratedContents({});
+      setActiveFormat(null);
+    }
+  }, [repurposedContentMap, activeFormat]);
 
   // Auto-select first format when generated contents change
   useEffect(() => {
@@ -24,21 +49,6 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       setActiveFormat(formats[0]);
     }
   }, [generatedContents, activeFormat]);
-
-  // Load saved formats for current content
-  useEffect(() => {
-    if (content?.metadata?.repurposedFormats) {
-      setSavedContentFormats(content.metadata.repurposedFormats);
-      
-      // Load saved content into generatedContents
-      if (content.metadata.repurposedContentMap) {
-        setGeneratedContents(content.metadata.repurposedContentMap);
-      }
-    } else {
-      setSavedContentFormats([]);
-      setGeneratedContents({});
-    }
-  }, [content]);
 
   const handleGenerateContent = useCallback(async (formats: string[]) => {
     if (!content || formats.length === 0) {
@@ -138,7 +148,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       });
 
       if (result) {
-        setSavedContentFormats(prev => [...new Set([...prev, formatId])]);
+        // Refresh data to get latest from database
+        refreshRepurposedData();
         toast.success(`${formatName} content saved successfully`);
         return true;
       }
@@ -150,7 +161,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     } finally {
       setIsSaving(false);
     }
-  }, [content, user]);
+  }, [content, user, refreshRepurposedData]);
 
   const handleSaveAllContent = useCallback(async (): Promise<boolean> => {
     if (!content || !user || Object.keys(generatedContents).length === 0) {
@@ -167,9 +178,9 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         content.title
       );
 
-      setSavedContentFormats(prev => [...new Set([...prev, ...savedFormats])]);
-      
       if (savedFormats.length > 0) {
+        // Refresh data to get latest from database
+        refreshRepurposedData();
         toast.success(`${savedFormats.length} format(s) saved successfully`);
         return true;
       } else {
@@ -183,7 +194,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     } finally {
       setIsSavingAll(false);
     }
-  }, [content, user, generatedContents]);
+  }, [content, user, generatedContents, refreshRepurposedData]);
 
   const deleteRepurposedContent = useCallback(async (formatId: string): Promise<boolean> => {
     if (!content || !formatId) {
@@ -194,12 +205,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     try {
       const success = await repurposedContentService.deleteRepurposedContent(content.id, formatId);
       if (success) {
-        setSavedContentFormats(prev => prev.filter(id => id !== formatId));
-        setGeneratedContents(prev => {
-          const updated = { ...prev };
-          delete updated[formatId];
-          return updated;
-        });
+        // Refresh data to get latest from database
+        refreshRepurposedData();
         
         // Reset active format if deleted
         if (activeFormat === formatId) {
@@ -214,9 +221,9 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       toast.error('Failed to delete content');
       return false;
     }
-  }, [content, activeFormat, generatedContents]);
+  }, [content, activeFormat, generatedContents, refreshRepurposedData]);
 
-  // New bulk operations
+  // Bulk operations
   const handleCopyAllContent = useCallback(() => {
     if (Object.keys(generatedContents).length === 0) {
       toast.error('No content to copy');
@@ -277,8 +284,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       }
 
       if (deletedCount > 0) {
-        setSavedContentFormats([]);
-        setGeneratedContents({});
+        // Refresh data to get latest from database
+        refreshRepurposedData();
         setActiveFormat(null);
         toast.success(`${deletedCount} format(s) deleted successfully`);
         return true;
@@ -289,7 +296,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       toast.error('Failed to delete content');
       return false;
     }
-  }, [generatedContents, content]);
+  }, [generatedContents, content, refreshRepurposedData]);
 
   return {
     selectedFormats,
@@ -297,9 +304,10 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     isGenerating,
     activeFormat,
     savedContentFormats,
-    setSavedContentFormats,
+    setSavedContentFormats: () => {}, // Deprecated - data comes from database now
     isSaving,
     isSavingAll,
+    isLoadingRepurposed,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
@@ -309,5 +317,6 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     handleCopyAllContent,
     handleExportAllContent,
     handleDeleteAllContent,
+    refreshRepurposedData
   };
 };

@@ -27,6 +27,7 @@ export interface RepurposedContentRecord {
 export const repurposedContentService = {
   async saveRepurposedContent(data: RepurposedContentData): Promise<RepurposedContentRecord | null> {
     try {
+      // Save to repurposed_contents table
       const { data: result, error } = await supabase
         .from('repurposed_contents')
         .insert({
@@ -42,6 +43,9 @@ export const repurposedContentService = {
         .single();
 
       if (error) throw error;
+      
+      // Update content item metadata to include this format
+      await this.syncContentItemMetadata(data.contentId);
       
       return result;
     } catch (error: any) {
@@ -88,8 +92,73 @@ export const repurposedContentService = {
     }
   },
 
+  async getRepurposedFormatsForContent(contentId: string): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('repurposed_contents')
+        .select('format_code')
+        .eq('content_id', contentId)
+        .eq('status', 'saved');
+
+      if (error) throw error;
+      
+      return data?.map(item => item.format_code) || [];
+    } catch (error: any) {
+      console.error('Error fetching repurposed formats:', error);
+      return [];
+    }
+  },
+
+  async getRepurposedContentMap(contentId: string): Promise<Record<string, string>> {
+    try {
+      const { data, error } = await supabase
+        .from('repurposed_contents')
+        .select('format_code, content')
+        .eq('content_id', contentId)
+        .eq('status', 'saved');
+
+      if (error) throw error;
+      
+      const contentMap: Record<string, string> = {};
+      data?.forEach(item => {
+        contentMap[item.format_code] = item.content;
+      });
+      
+      return contentMap;
+    } catch (error: any) {
+      console.error('Error fetching repurposed content map:', error);
+      return {};
+    }
+  },
+
+  async syncContentItemMetadata(contentId: string): Promise<void> {
+    try {
+      // Get all repurposed formats for this content
+      const repurposedFormats = await this.getRepurposedFormatsForContent(contentId);
+      const repurposedContentMap = await this.getRepurposedContentMap(contentId);
+      
+      // Update the content item's metadata
+      const { error } = await supabase
+        .from('content_items')
+        .update({
+          metadata: {
+            repurposedFormats,
+            repurposedContentMap,
+            lastSynced: new Date().toISOString()
+          }
+        })
+        .eq('id', contentId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error syncing content item metadata:', error);
+      // Don't throw here to avoid breaking the main operation
+    }
+  },
+
   async deleteRepurposedContent(contentId: string, formatCode: string): Promise<boolean> {
     try {
+      // Delete from repurposed_contents table
       const { error } = await supabase
         .from('repurposed_contents')
         .delete()
@@ -97,6 +166,9 @@ export const repurposedContentService = {
         .eq('format_code', formatCode);
 
       if (error) throw error;
+      
+      // Sync metadata after deletion
+      await this.syncContentItemMetadata(contentId);
       
       return true;
     } catch (error: any) {
@@ -123,6 +195,11 @@ export const repurposedContentService = {
       if (result) {
         savedFormats.push(formatCode);
       }
+    }
+    
+    // Final sync after all saves
+    if (savedFormats.length > 0) {
+      await this.syncContentItemMetadata(contentId);
     }
     
     return savedFormats;

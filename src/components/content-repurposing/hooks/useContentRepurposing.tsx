@@ -34,15 +34,16 @@ export const useContentRepurposing = () => {
     isGenerating,
     activeFormat,
     savedContentFormats,
-    setSavedContentFormats,
     isSaving,
     isSavingAll,
+    isLoadingRepurposed,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,
     saveAsNewContent,
     handleSaveAllContent,
     deleteRepurposedContent,
+    refreshRepurposedData,
   } = useContentGeneration(content);
   
   const {
@@ -106,16 +107,16 @@ export const useContentRepurposing = () => {
     }
   };
 
+  // These functions are now handled by the database sync
   const markAsSaved = useCallback((formatId: string) => {
-    if (!savedContentFormats.includes(formatId)) {
-      setSavedContentFormats(prev => [...prev, formatId]);
-    }
-  }, [savedContentFormats, setSavedContentFormats]);
+    // This is now handled automatically by the database sync
+    refreshRepurposedData();
+  }, [refreshRepurposedData]);
 
   const saveAllFormats = useCallback(() => {
-    const formatIds = Object.keys(generatedContents || {});
-    setSavedContentFormats(prev => [...new Set([...prev, ...formatIds])]);
-  }, [generatedContents, setSavedContentFormats]);
+    // This is now handled automatically by the database sync
+    refreshRepurposedData();
+  }, [refreshRepurposedData]);
   
   return {
     content,
@@ -132,6 +133,7 @@ export const useContentRepurposing = () => {
     isDeleting,
     savedContentFormats,
     isLoadingFormat,
+    isLoadingRepurposed,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -148,6 +150,7 @@ export const useContentRepurposing = () => {
     markAsSaved,
     saveAllFormats,
     resetContent,
+    refreshRepurposedData,
   };
 };
 

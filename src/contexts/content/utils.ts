@@ -1,126 +1,101 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from './types';
-import { toast } from 'sonner';
+import { repurposedContentService } from '@/services/repurposedContentService';
 
-// Helper function to fetch keywords for a single content item
-export const fetchItemKeywords = async (item: any): Promise<ContentItemType> => {
+export const fetchItemKeywords = async (item: ContentItemType): Promise<ContentItemType> => {
   try {
-    // Fetch keyword relationships for this item
-    const { data: relations, error: relationsError } = await supabase
+    // Fetch keywords for this content item
+    const { data: keywordRelations, error: relationsError } = await supabase
       .from('content_keywords')
       .select('keyword_id')
       .eq('content_id', item.id);
     
-    if (relationsError) throw relationsError;
-    
-    if (!relations || relations.length === 0) {
-      // No keywords for this item
-      return {
-        ...item,
-        content: item.content || '',
-        keywords: [],
-        status: item.status as 'draft' | 'published' | 'archived'
-      };
+    if (relationsError) {
+      console.error('Error fetching keyword relations:', relationsError);
+      return { ...item, keywords: [] };
     }
     
-    // Get the keyword IDs
-    const keywordIds = relations.map(rel => rel.keyword_id);
+    if (!keywordRelations || keywordRelations.length === 0) {
+      return { ...item, keywords: [] };
+    }
     
-    // Fetch the actual keywords
-    const { data: keywordsData, error: keywordsError } = await supabase
+    const keywordIds = keywordRelations.map(rel => rel.keyword_id);
+    
+    const { data: keywords, error: keywordsError } = await supabase
       .from('keywords')
       .select('keyword')
       .in('id', keywordIds);
     
-    if (keywordsError) throw keywordsError;
+    if (keywordsError) {
+      console.error('Error fetching keywords:', keywordsError);
+      return { ...item, keywords: [] };
+    }
     
-    // Extract the keyword texts
-    const keywords = keywordsData ? keywordsData.map(kw => kw.keyword) : [];
+    const keywordTexts = keywords ? keywords.map(k => k.keyword) : [];
     
     return {
       ...item,
-      content: item.content || '',
-      keywords,
-      status: item.status as 'draft' | 'published' | 'archived'
+      keywords: keywordTexts
     };
   } catch (error) {
-    console.error('Error fetching keywords for content item:', error);
-    return {
-      ...item,
-      content: item.content || '',
-      keywords: [],
-      status: item.status as 'draft' | 'published' | 'archived'
-    };
+    console.error('Error in fetchItemKeywords:', error);
+    return { ...item, keywords: [] };
   }
 };
 
-// Function to process content items with keywords
-export const processContentItems = async (contentData: any[]): Promise<ContentItemType[]> => {
+export const fetchRepurposedContentData = async (item: ContentItemType): Promise<ContentItemType> => {
   try {
-    // Get all content IDs to fetch their associated keywords
-    const contentIds = contentData.map(item => item.id);
-    
-    // Fetch the keyword relationships
-    const { data: keywordRelations, error: relationsError } = await supabase
-      .from('content_keywords')
-      .select('content_id, keyword_id')
-      .in('content_id', contentIds);
-    
-    if (relationsError) throw relationsError;
-    
-    // Get unique keyword IDs to fetch the actual keyword texts
-    const keywordIds = keywordRelations ? 
-      [...new Set(keywordRelations.map(rel => rel.keyword_id))] 
-      : [];
-    
-    let keywordMap: Record<string, string> = {};
-    
-    // Only fetch keywords if there are any relationships
-    if (keywordIds.length > 0) {
-      const { data: keywordsData, error: keywordsError } = await supabase
-        .from('keywords')
-        .select('id, keyword')
-        .in('id', keywordIds);
-      
-      if (keywordsError) throw keywordsError;
-      
-      // Create a map of keyword IDs to their text values
-      keywordMap = (keywordsData || []).reduce((acc, kw) => {
-        acc[kw.id] = kw.keyword;
-        return acc;
-      }, {} as Record<string, string>);
-    }
-    
-    // Map content data with their keywords
-    const mappedData: ContentItemType[] = contentData.map(item => {
-      // Find all keyword relations for this content item
-      const itemKeywordRelations = keywordRelations ? 
-        keywordRelations.filter(rel => rel.content_id === item.id) 
-        : [];
-        
-      // Get the actual keyword texts using the map
-      const itemKeywords = itemKeywordRelations
-        .map(rel => keywordMap[rel.keyword_id])
-        .filter(kw => kw !== undefined);
-      
-      return {
-        id: item.id,
-        title: item.title,
-        content: item.content || '',
-        status: item.status as 'draft' | 'published' | 'archived',
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        seo_score: item.seo_score || 0,
-        keywords: itemKeywords,
-        user_id: item.user_id,
-      };
-    });
-    
-    return mappedData;
+    // Get repurposed formats and content from the database
+    const [repurposedFormats, repurposedContentMap] = await Promise.all([
+      repurposedContentService.getRepurposedFormatsForContent(item.id),
+      repurposedContentService.getRepurposedContentMap(item.id)
+    ]);
+
+    // Update metadata with database data
+    const updatedMetadata = {
+      ...item.metadata,
+      repurposedFormats,
+      repurposedContentMap,
+      lastSynced: new Date().toISOString()
+    };
+
+    return {
+      ...item,
+      metadata: updatedMetadata
+    };
   } catch (error) {
-    console.error('Error processing content items:', error);
-    toast.error('Failed to process content items');
-    return [];
+    console.error('Error fetching repurposed content data:', error);
+    return item;
   }
+};
+
+export const processContentItems = async (contentData: any[]): Promise<ContentItemType[]> => {
+  const processedItems = await Promise.all(
+    contentData.map(async (dbItem) => {
+      // Convert database item to ContentItemType
+      let item: ContentItemType = {
+        id: dbItem.id,
+        title: dbItem.title || '',
+        content: dbItem.content || '',
+        status: dbItem.status as 'draft' | 'approved' | 'published' | 'archived',
+        created_at: dbItem.created_at,
+        updated_at: dbItem.updated_at,
+        seo_score: dbItem.seo_score || 0,
+        keywords: [], // Will be populated below
+        user_id: dbItem.user_id,
+        metadata: dbItem.metadata || {}
+      };
+
+      // Fetch keywords
+      item = await fetchItemKeywords(item);
+      
+      // Fetch repurposed content data from database
+      item = await fetchRepurposedContentData(item);
+      
+      return item;
+    })
+  );
+  
+  return processedItems;
 };

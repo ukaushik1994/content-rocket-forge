@@ -4,25 +4,26 @@ import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
 import { ContentItemType } from '@/contexts/content/types';
 import { getFormatByIdOrDefault } from '../../formats';
+import { repurposedContentService } from '@/services/repurposedContentService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useContentActions = (content: ContentItemType | null) => {
-  const { contentItems, addContentItem, updateContentItem, deleteContentItem } = useContent();
+  const { contentItems } = useContent();
+  const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Utility function to find content by original content ID and format
-  const findRepurposedContent = (originalContentId: string, formatId: string): string | null => {
+  const findRepurposedContent = async (originalContentId: string, formatId: string): Promise<string | null> => {
     if (!originalContentId || !formatId) return null;
     
-    // Find the content item
-    const originalContent = contentItems.find(item => item.id === originalContentId);
-    
-    // Check if it has repurposed content for this format
-    if (originalContent?.metadata?.repurposedContentMap?.[formatId]) {
-      return originalContent.metadata.repurposedContentMap[formatId];
+    try {
+      const repurposedContent = await repurposedContentService.getRepurposedContentByFormat(originalContentId, formatId);
+      return repurposedContent?.content || null;
+    } catch (error) {
+      console.error('Error finding repurposed content:', error);
+      return null;
     }
-    
-    return null;
   };
   
   const copyToClipboard = (content: string) => {
@@ -48,40 +49,29 @@ export const useContentActions = (content: ContentItemType | null) => {
   };
   
   const saveAsNewContent = async (formatId: string, generatedContent: string): Promise<boolean> => {
-    if (!content || !formatId || !generatedContent) return false;
+    if (!content || !user || !formatId || !generatedContent) {
+      toast.error('Missing required information to save content');
+      return false;
+    }
     
     try {
       setIsSaving(true);
       const formatInfo = getFormatByIdOrDefault(formatId);
       const formatName = formatInfo.name;
       
-      // Get the current metadata or initialize an empty object
-      const currentMetadata = content.metadata || {};
-      
-      // Get or initialize repurposed formats array and content map
-      const repurposedFormats = currentMetadata.repurposedFormats || [];
-      const repurposedContentMap = currentMetadata.repurposedContentMap || {};
-      
-      // Add the format to the list if not already present
-      if (!repurposedFormats.includes(formatId)) {
-        repurposedFormats.push(formatId);
-      }
-      
-      // Store the actual repurposed content in the map
-      repurposedContentMap[formatId] = generatedContent;
-      
-      // Update the content with the new metadata
-      await updateContentItem(content.id, {
-        metadata: {
-          ...currentMetadata,
-          repurposedFormats,
-          repurposedContentMap,
-          lastUpdated: new Date().toISOString()
-        }
+      const result = await repurposedContentService.saveRepurposedContent({
+        contentId: content.id,
+        formatCode: formatId,
+        content: generatedContent,
+        title: `${content.title} - ${formatName}`,
+        userId: user.id
       });
       
-      toast.success(`${formatName} content saved successfully`);
-      return true;
+      if (result) {
+        toast.success(`${formatName} content saved successfully`);
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Error saving content:', error);
       toast.error(`Failed to save ${formatId} content`);
@@ -97,34 +87,12 @@ export const useContentActions = (content: ContentItemType | null) => {
     setIsDeleting(true);
     
     try {
-      // Get the content item
-      const originalContent = contentItems.find(item => item.id === contentId);
-      if (!originalContent) {
-        toast.error('Content not found');
-        return false;
+      const success = await repurposedContentService.deleteRepurposedContent(contentId, formatId);
+      if (success) {
+        toast.success('Content deleted successfully');
+        return true;
       }
-      
-      const currentMetadata = originalContent.metadata || {};
-      const repurposedFormats = currentMetadata.repurposedFormats || [];
-      const repurposedContentMap = currentMetadata.repurposedContentMap || {};
-      
-      // Remove the format from the list and the content from the map
-      const updatedFormats = repurposedFormats.filter(format => format !== formatId);
-      const updatedContentMap = { ...repurposedContentMap };
-      delete updatedContentMap[formatId];
-      
-      // Update the content with the new metadata
-      await updateContentItem(contentId, {
-        metadata: {
-          ...currentMetadata,
-          repurposedFormats: updatedFormats,
-          repurposedContentMap: updatedContentMap,
-          lastUpdated: new Date().toISOString()
-        }
-      });
-      
-      toast.success('Content deleted successfully');
-      return true;
+      return false;
     } catch (error) {
       console.error('Error deleting content:', error);
       toast.error('Failed to delete content');
