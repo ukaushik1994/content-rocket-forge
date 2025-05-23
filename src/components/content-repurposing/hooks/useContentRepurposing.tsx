@@ -11,21 +11,10 @@ import { toast } from 'sonner';
 
 export const useContentRepurposing = () => {
   const { content, handleContentSelection, resetContent } = useContentSelection();
-  const { getAllContent } = useContent();
-  const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
+  // Use contentItems directly from the context instead of calling getAllContent
+  const { contentItems } = useContent();
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
-  
-  // Load all content items for selection view
-  useEffect(() => {
-    const items = getAllContent();
-    if (items && Array.isArray(items)) {
-      setContentItems(items);
-    } else {
-      console.warn('getAllContent did not return an array:', items);
-      setContentItems([]); // Ensure we always have an array
-    }
-  }, [getAllContent]);
   
   const handleContentChange = useCallback(() => {
     if (content && content.id !== currentContentId) {
@@ -75,6 +64,7 @@ export const useContentRepurposing = () => {
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats,
+    isLoadingFormat,
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
     handleFormatChange: formatChangeHandler,
@@ -132,7 +122,7 @@ export const useContentRepurposing = () => {
   
   return {
     content,
-    contentItems,
+    contentItems: contentItems || [], // Ensure we always return an array
     selectedFormats,
     generatedContents,
     isGenerating,
@@ -144,6 +134,7 @@ export const useContentRepurposing = () => {
     isSavingAll,
     isDeleting,
     savedContentFormats,
+    isLoadingFormat,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
