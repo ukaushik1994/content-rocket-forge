@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import ContentSelection from '@/components/content-repurposing/ContentSelection';
 import { ContentItemType } from '@/contexts/content/types';
+import ContentBreadcrumbs from '@/components/content-repurposing/navigation/ContentBreadcrumbs';
+import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
 
 interface ContentSelectionViewProps {
   contentItems: ContentItemType[];
@@ -51,6 +53,9 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
         transition={{ duration: 0.5 }}
         className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
       >
+        {/* Breadcrumb navigation */}
+        <ContentBreadcrumbs />
+        
         <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-neon-purple to-neon-blue bg-clip-text text-transparent">Content Repurposing</h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">Transform your existing content into various formats and platforms with AI assistance</p>
@@ -71,6 +76,9 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
           generatedFormats={generatedFormats}
           savedContentFormats={savedContentFormats}
         />
+        
+        {/* Guided Tour Component */}
+        <ContentRepurposingTour />
       </motion.main>
     </div>
   );

@@ -1,14 +1,24 @@
 
-import React, { memo } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Save, Loader2, SaveAll, Check, Trash } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Copy, 
+  Download, 
+  Save, 
+  Trash, 
+  CheckCircle,
+  Loader2,
+  Eye
+} from 'lucide-react';
 
 interface ActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
-  onSave: () => void;
+  onSave?: () => Promise<boolean>;
   onSaveAll?: () => Promise<boolean>;
   onDelete?: () => Promise<boolean>;
+  onPreview?: () => void;
   isSaving?: boolean;
   isSavingAll?: boolean;
   isDeleting?: boolean;
@@ -16,12 +26,13 @@ interface ActionButtonsProps {
   isFormatSaved?: boolean;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = memo(({
+export const ActionButtons: React.FC<ActionButtonsProps> = ({
   onCopy,
   onDownload,
   onSave,
   onSaveAll,
   onDelete,
+  onPreview,
   isSaving = false,
   isSavingAll = false,
   isDeleting = false,
@@ -29,105 +40,118 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   isFormatSaved = false
 }) => {
   return (
-    <div className="flex justify-end gap-2 mt-4 border-t border-white/10 pt-4">
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onCopy}
-        className="bg-transparent hover:bg-white/5 border-white/10"
-      >
-        <Copy className="h-4 w-4 mr-1" />
-        Copy
-      </Button>
-      
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onDownload}
-        className="bg-transparent hover:bg-white/5 border-white/10"
-      >
-        <Download className="h-4 w-4 mr-1" />
-        Download
-      </Button>
-
-      {isFormatSaved && onDelete && (
+    <div className="flex items-center justify-between mt-4 border-t pt-4">
+      <div className="flex items-center gap-2">
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onDelete}
-          disabled={isDeleting}
-          className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/40"
+          onClick={onCopy} 
+          className="gap-1"
         >
-          {isDeleting ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              Deleting...
-            </>
-          ) : (
-            <>
-              <Trash className="h-4 w-4 mr-1" />
-              Delete
-            </>
-          )}
+          <Copy className="h-4 w-4" />
+          <span className="hidden sm:inline">Copy</span>
         </Button>
-      )}
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onDownload}
+          className="gap-1"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Download</span>
+        </Button>
+        
+        {onPreview && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onPreview}
+            className="gap-1"
+          >
+            <Eye className="h-4 w-4" />
+            <span className="hidden sm:inline">Preview</span>
+          </Button>
+        )}
+      </div>
       
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onSave}
-        disabled={isSaving || isFormatSaved}
-        className={isFormatSaved ? 
-          "bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/40" : 
-          "bg-transparent hover:bg-white/5 border-white/10"
-        }
-      >
-        {isSaving ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-            Saving...
-          </>
-        ) : isFormatSaved ? (
-          <>
-            <Check className="h-4 w-4 mr-1" />
+      <div className="flex items-center gap-2">
+        {isFormatSaved ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled
+            className="gap-1 text-green-500"
+          >
+            <CheckCircle className="h-4 w-4" />
             Saved
-          </>
-        ) : (
+          </Button>
+        ) : onSave && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onSave}
+            disabled={isSaving || isSavingAll}
+            className="gap-1"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>Save</span>
+              </>
+            )}
+          </Button>
+        )}
+        
+        {onSaveAll && hasMultipleFormats && (
           <>
-            <Save className="h-4 w-4 mr-1" />
-            Save
+            <Separator orientation="vertical" className="h-6" />
+            
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={onSaveAll}
+              disabled={isSaving || isSavingAll}
+              className="gap-1"
+            >
+              {isSavingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Saving all...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>Save all</span>
+                </>
+              )}
+            </Button>
           </>
         )}
-      </Button>
-
-      {hasMultipleFormats && onSaveAll && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={async () => {
-            if (onSaveAll) await onSaveAll();
-          }}
-          disabled={isSavingAll}
-          className="bg-transparent hover:bg-white/5 border-white/10"
-          title="Save all generated content formats"
-        >
-          {isSavingAll ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              Saving All...
-            </>
-          ) : (
-            <>
-              <SaveAll className="h-4 w-4 mr-1" />
-              Save All
-            </>
-          )}
-        </Button>
-      )}
+        
+        {onDelete && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onDelete}
+            disabled={isDeleting}
+            className="gap-1 text-destructive hover:bg-destructive/10"
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   );
-});
-
-ActionButtons.displayName = 'ActionButtons';
+};
 
 export default ActionButtons;

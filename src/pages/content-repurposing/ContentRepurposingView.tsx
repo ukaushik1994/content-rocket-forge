@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -9,6 +9,9 @@ import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
 import { ContentItemType } from '@/contexts/content/types';
+import ContentBreadcrumbs from '@/components/content-repurposing/navigation/ContentBreadcrumbs';
+import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
+import ContentPreviewDialog from '@/components/content-repurposing/preview/ContentPreviewDialog';
 
 interface ContentRepurposingViewProps {
   content: ContentItemType;
@@ -55,6 +58,23 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   isDeleting = false,
   resetContent,
 }) => {
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewContent, setPreviewContent] = useState<{
+    content: string;
+    formatId: string;
+    formatName: string;
+  } | null>(null);
+
+  const handleOpenPreview = (content: string, formatId: string, formatName: string) => {
+    setPreviewContent({ content, formatId, formatName });
+    setIsPreviewOpen(true);
+  };
+
+  const handleSavePreviewContent = async (editedContent: string) => {
+    if (!previewContent) return false;
+    return await saveAsNewContent(previewContent.formatId, editedContent);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-black">
       <Helmet>
@@ -69,6 +89,9 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
         transition={{ duration: 0.5 }}
         className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
       >
+        {/* Breadcrumb navigation */}
+        <ContentBreadcrumbs contentId={content.id} contentTitle={content.title} />
+        
         {/* Header with back button */}
         <div className="flex items-center justify-between mb-8">
           <Button 
@@ -105,7 +128,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 content-display">
             <GeneratedContentDisplay
               generatedContents={generatedContents}
               activeFormat={activeFormat}
@@ -115,6 +138,7 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
               onSaveAsNewContent={saveAsNewContent}
               onSaveAllContent={handleSaveAllContent}
               onDeleteFormat={handleDeleteActiveFormat}
+              onPreviewContent={handleOpenPreview}
               isSaving={isSaving}
               isSavingAll={isSavingAll}
               isDeleting={isDeleting}
@@ -122,6 +146,21 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
             />
           </div>
         </div>
+        
+        {/* Guided Tour Component */}
+        <ContentRepurposingTour />
+        
+        {/* Content Preview Dialog */}
+        {previewContent && (
+          <ContentPreviewDialog
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            content={previewContent.content}
+            formatName={previewContent.formatName}
+            onSave={handleSavePreviewContent}
+            isReadOnly={savedContentFormats.includes(previewContent.formatId)}
+          />
+        )}
       </motion.main>
     </div>
   );

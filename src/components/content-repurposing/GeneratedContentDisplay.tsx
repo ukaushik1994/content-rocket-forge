@@ -19,6 +19,7 @@ interface GeneratedContentDisplayProps {
   onSaveAsNewContent: (formatId: string, generatedContent: string) => Promise<boolean>;
   onSaveAllContent: () => Promise<boolean>;
   onDeleteFormat?: () => Promise<boolean>;
+  onPreviewContent?: (content: string, formatId: string, formatName: string) => void;
   isSaving?: boolean;
   isSavingAll?: boolean;
   isDeleting?: boolean;
@@ -34,6 +35,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   onSaveAsNewContent,
   onSaveAllContent,
   onDeleteFormat,
+  onPreviewContent,
   isSaving = false,
   isSavingAll = false,
   isDeleting = false,
@@ -87,6 +89,10 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
               onSaveAll={hasMultipleFormats ? onSaveAllContent : undefined}
               onDelete={onDeleteFormat}
+              onPreview={onPreviewContent ? () => {
+                const format = getFormatByIdOrDefault(activeFormat);
+                onPreviewContent(generatedContents[activeFormat], activeFormat, format.name);
+              } : undefined}
               hasMultipleFormats={hasMultipleFormats}
               isSaving={isSaving && !isCurrentFormatSaved}
               isSavingAll={isSavingAll}
