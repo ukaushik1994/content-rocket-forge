@@ -8,16 +8,16 @@ export const useContentBuilderValidation = () => {
     switch (stepIndex) {
       case 0: // Keyword Selection
         return !!(state.mainKeyword && state.selectedKeywords.length > 0);
-      case 1: // Topic Selection
-        return !!(state.selectedTopic || state.customTopic);
+      case 1: // Content Type Selection
+        return !!(state.contentType && state.contentFormat && state.contentIntent);
       case 2: // SERP Analysis
         return !!(state.serpData && state.serpSelections.some(item => item.selected));
       case 3: // Outline
         return !!(state.outline && state.outline.length > 0);
       case 4: // Content Generation
-        return !!(state.generatedContent && state.generatedContent.trim().length > 0);
+        return !!(state.content && state.content.trim().length > 0);
       case 5: // Final Review
-        return !!(state.generatedContent && state.isContentApproved);
+        return !!(state.content && state.steps[5]?.completed);
       default:
         return false;
     }

@@ -18,7 +18,7 @@ export const useContentBuilderNavigation = () => {
   };
   
   const nextStep = () => {
-    const nextStepIndex = state.currentStep + 1;
+    const nextStepIndex = state.activeStep + 1;
     if (nextStepIndex < 6) {
       return goToStep(nextStepIndex);
     }
@@ -26,7 +26,7 @@ export const useContentBuilderNavigation = () => {
   };
   
   const previousStep = () => {
-    const prevStepIndex = state.currentStep - 1;
+    const prevStepIndex = state.activeStep - 1;
     if (prevStepIndex >= 0) {
       return goToStep(prevStepIndex);
     }
@@ -37,6 +37,6 @@ export const useContentBuilderNavigation = () => {
     goToStep,
     nextStep,
     previousStep,
-    currentStep: state.currentStep
+    currentStep: state.activeStep
   };
 };
