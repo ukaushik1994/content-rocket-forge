@@ -82,7 +82,6 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
           contentItems={filteredItems}
           onSelectContent={onSelectContent}
           onOpenRepurposedContent={onOpenRepurposedContent}
-          savedContentFormats={savedContentFormats}
           isMobile={isMobile}
         />
       )}

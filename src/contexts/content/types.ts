@@ -16,6 +16,7 @@ export type ContentItemType = {
     serpSelections?: any[];
     serpData?: any;
     notes?: string;
+    repurposedFormats?: string[];  // Array of format IDs that have been repurposed
     [key: string]: any;  // Allow for additional properties
   };
 };
@@ -42,6 +43,9 @@ export const initialContent: ContentItemType[] = [
     seo_score: 87,
     keywords: ['project management', 'remote work', 'productivity tools'],
     user_id: 'placeholder-user-id',
+    metadata: {
+      repurposedFormats: ['linkedin-post', 'tweet-thread', 'newsletter']
+    }
   },
   {
     id: '2',
@@ -53,6 +57,9 @@ export const initialContent: ContentItemType[] = [
     seo_score: 74,
     keywords: ['email marketing', 'digital marketing', 'marketing automation'],
     user_id: 'placeholder-user-id',
+    metadata: {
+      repurposedFormats: ['youtube-script', 'infographic-text']
+    }
   },
   {
     id: '3',

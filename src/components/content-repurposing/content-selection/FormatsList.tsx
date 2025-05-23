@@ -9,25 +9,20 @@ import { motion } from 'framer-motion';
 interface FormatsListProps {
   item: ContentItemType;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
-  savedContentFormats?: string[];
   isMobile?: boolean;
 }
 
 const FormatsList: React.FC<FormatsListProps> = memo(({
   item,
   onOpenRepurposedContent,
-  savedContentFormats = [],
   isMobile = false
 }) => {
-  // Check if a content item has been repurposed for a specific format
-  const hasRepurposedFormat = (item: ContentItemType, formatId: string): boolean => {
-    const repurposedFormats = item.metadata?.repurposedFormats || [];
-    return repurposedFormats.includes(formatId) || savedContentFormats.includes(formatId);
-  };
+  // Get repurposed formats from the content item's metadata
+  const repurposedFormatIds = item.metadata?.repurposedFormats || [];
   
-  // Get only the formats that have been repurposed
+  // Get the format details for the repurposed formats
   const repurposedFormats = contentFormats.filter(format => 
-    hasRepurposedFormat(item, format.id)
+    repurposedFormatIds.includes(format.id)
   );
   
   if (repurposedFormats.length === 0) {
@@ -42,7 +37,6 @@ const FormatsList: React.FC<FormatsListProps> = memo(({
         className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
       >
         {repurposedFormats.map((format, index) => {
-          const isSaved = savedContentFormats.includes(format.id);
           return (
             <motion.div
               key={format.id}
@@ -53,7 +47,7 @@ const FormatsList: React.FC<FormatsListProps> = memo(({
               <ContentFormatIcon 
                 formatId={format.id}
                 isFormatUsed={true}
-                isSaved={isSaved}
+                isSaved={true}
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenRepurposedContent(item.id, format.id);

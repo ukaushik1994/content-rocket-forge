@@ -8,7 +8,6 @@ interface ContentListProps {
   contentItems: ContentItemType[];
   onSelectContent: (content: ContentItemType) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
-  savedContentFormats?: string[];
   isMobile?: boolean;
 }
 
@@ -16,7 +15,6 @@ const ContentList: React.FC<ContentListProps> = memo(({
   contentItems,
   onSelectContent,
   onOpenRepurposedContent,
-  savedContentFormats = [],
   isMobile = false
 }) => {
   return (
@@ -31,7 +29,6 @@ const ContentList: React.FC<ContentListProps> = memo(({
           content={item}
           onSelect={() => onSelectContent(item)}
           onOpenRepurposedContent={onOpenRepurposedContent}
-          savedFormats={savedContentFormats}
         />
       ))}
     </motion.div>

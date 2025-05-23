@@ -13,16 +13,17 @@ interface ContentItemProps {
   content: ContentItemType;
   onSelect: () => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
-  savedFormats?: string[];
 }
 
 export const ContentItem: React.FC<ContentItemProps> = ({ 
   content, 
   onSelect, 
-  onOpenRepurposedContent,
-  savedFormats = [] 
+  onOpenRepurposedContent
 }) => {
-  const hasRepurposedFormats = savedFormats.length > 0;
+  // Get repurposed formats from the content item's metadata
+  const repurposedFormats = content.metadata?.repurposedFormats || [];
+  const hasRepurposedFormats = repurposedFormats.length > 0;
+  
   const date = content.created_at ? new Date(content.created_at) : new Date();
   const timeAgo = formatDistanceToNow(date, { addSuffix: true });
   
@@ -47,12 +48,11 @@ export const ContentItem: React.FC<ContentItemProps> = ({
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-neon-purple" />
                 <span className="text-sm font-medium text-muted-foreground">
-                  Generated Formats ({savedFormats.length})
+                  Generated Formats ({repurposedFormats.length})
                 </span>
               </div>
               <FormatsList 
                 item={content}
-                savedContentFormats={savedFormats}
                 onOpenRepurposedContent={onOpenRepurposedContent}
               />
             </>
@@ -70,7 +70,7 @@ export const ContentItem: React.FC<ContentItemProps> = ({
       <div className="border-t border-white/10 p-4 bg-gradient-to-r from-muted/5 to-muted/10 flex justify-between items-center">
         {hasRepurposedFormats && (
           <Badge variant="secondary" className="bg-neon-purple/10 text-neon-purple border-neon-purple/20">
-            {savedFormats.length} format{savedFormats.length !== 1 ? 's' : ''} ready
+            {repurposedFormats.length} format{repurposedFormats.length !== 1 ? 's' : ''} ready
           </Badge>
         )}
         <div className={hasRepurposedFormats ? '' : 'ml-auto'}>
