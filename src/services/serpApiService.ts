@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
@@ -30,6 +29,7 @@ async function getSerpApiKey(): Promise<string | null> {
       const masked = apiKey.substring(0, 6) + '••••••••••••' + 
         (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
       console.log('🔍 Masked key for debugging:', masked);
+      console.log('🔍 Key appears to be:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64 encoded' : 'Plain text');
       return apiKey;
     } else {
       console.log('❌ No SERP API key found in unified service');
@@ -58,12 +58,13 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
       apiKey.substring(0, 6) + '••••••••••••' + 
       (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '') : 'null';
     console.log('🔍 Using API key (masked):', maskedKey);
+    console.log('🔍 Sending key in format:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64' : 'Plain text');
     
     const { data, error } = await supabase.functions.invoke('serp-api', {
       body: {
         endpoint,
         params,
-        apiKey
+        apiKey // Send the key as-is (already decrypted by getApiKey)
       }
     });
     

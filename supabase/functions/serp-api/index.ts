@@ -41,24 +41,9 @@ serve(async (req) => {
       );
     }
 
+    // FIXED: Use the API key directly since it's already decrypted by the client
     let serpApiKey = apiKey;
-    
-    // Enhanced key processing with better logging
-    console.log('🔍 Processing API key - Length:', apiKey.length, 'Type:', typeof apiKey);
-    
-    // If the API key looks like base64 (encrypted), try to decrypt it
-    if (apiKey.match(/^[A-Za-z0-9+/]+=*$/)) {
-      try {
-        console.log('🔓 Attempting to decrypt base64-encoded API key');
-        serpApiKey = atob(apiKey);
-        console.log('✅ API key decrypted successfully - New length:', serpApiKey.length);
-      } catch (decryptError) {
-        console.warn('⚠️ Failed to decrypt API key, using as-is:', decryptError);
-        serpApiKey = apiKey;
-      }
-    } else {
-      console.log('📝 API key appears to be plain text - using directly');
-    }
+    console.log('🔍 Using API key directly - Length:', apiKey.length, 'Type:', typeof apiKey);
     
     // Validate the final key format
     const keyValidation = validateSerpApiKeyFormat(serpApiKey);
@@ -66,6 +51,7 @@ serve(async (req) => {
     
     if (!keyValidation.valid) {
       console.warn('⚠️ API key format validation failed:', keyValidation.issues);
+      // Continue anyway since validation might be too strict
     }
 
     console.log('🎯 Making SERP API call to endpoint:', endpoint);
@@ -231,7 +217,7 @@ serve(async (req) => {
 function validateSerpApiKeyFormat(apiKey: string): { valid: boolean; format: string; issues?: string[] } {
   const issues: string[] = [];
   
-  // Check common SerpAPI key patterns
+  // Updated patterns for SerpAPI keys - more permissive
   if (apiKey.match(/^[a-f0-9]{64}$/)) {
     return { valid: true, format: '64-character hexadecimal (standard SerpAPI)' };
   }
@@ -244,17 +230,27 @@ function validateSerpApiKeyFormat(apiKey: string): { valid: boolean; format: str
     return { valid: true, format: 'Alphanumeric with special characters (32+ chars)' };
   }
   
+  // More permissive pattern for various SerpAPI key formats
+  if (apiKey.match(/^[A-Za-z0-9]{20,}$/)) {
+    return { valid: true, format: 'Alphanumeric (20+ characters)' };
+  }
+  
+  // Accept any reasonable length key that doesn't have obvious issues
+  if (apiKey.length >= 16 && !apiKey.includes(' ') && apiKey.match(/^[A-Za-z0-9_.-]+$/)) {
+    return { valid: true, format: 'Valid API key format' };
+  }
+  
   // Invalid format - collect issues
   if (apiKey.length < 16) {
-    issues.push('Key is too short (expected 32-64 characters)');
+    issues.push('Key is too short (expected 16+ characters)');
   }
   
   if (apiKey.includes(' ')) {
     issues.push('Key contains spaces');
   }
   
-  if (!apiKey.match(/^[A-Za-z0-9_-]+$/)) {
-    issues.push('Key contains invalid characters');
+  if (!apiKey.match(/^[A-Za-z0-9_.-]+$/)) {
+    issues.push('Key contains unexpected characters');
   }
   
   return { 

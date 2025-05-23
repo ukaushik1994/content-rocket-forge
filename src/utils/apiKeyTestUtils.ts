@@ -21,12 +21,13 @@ export const testApiKeyDecryption = (encryptedKey: string): string | null => {
 };
 
 export const validateSerpApiKey = (apiKey: string): boolean => {
-  // SerpAPI keys typically follow these patterns:
+  // Updated SerpAPI key patterns - more permissive to match real SerpAPI keys
   const serpApiPatterns = [
     /^[a-f0-9]{64}$/, // 64-character hex string (most common)
-    /^[A-Za-z0-9_-]{32,}$/, // Base64-like string (32+ chars)
     /^[a-f0-9]{32}$/, // 32-character hex string
-    /^[A-Za-z0-9]{40,}$/ // 40+ character alphanumeric
+    /^[A-Za-z0-9_-]{32,}$/, // Base64-like string (32+ chars)
+    /^[A-Za-z0-9]{20,}$/, // 20+ character alphanumeric
+    /^[A-Za-z0-9_.-]{16,}$/ // 16+ chars with common special characters
   ];
   
   return serpApiPatterns.some(pattern => pattern.test(apiKey));
@@ -107,7 +108,7 @@ export const testSerpApiConnection = async (apiKey: string): Promise<{ success: 
 export const testSerpApiKeyFormat = (apiKey: string): { valid: boolean; format: string; suggestions?: string[] } => {
   const suggestions: string[] = [];
   
-  // Check common patterns
+  // Check common patterns - updated to be more permissive
   if (apiKey.match(/^[a-f0-9]{64}$/)) {
     return { valid: true, format: '64-character hexadecimal (most common SerpAPI format)' };
   }
@@ -120,21 +121,26 @@ export const testSerpApiKeyFormat = (apiKey: string): { valid: boolean; format: 
     return { valid: true, format: 'Alphanumeric with special characters (32+ chars)' };
   }
   
-  if (apiKey.match(/^[A-Za-z0-9]{40,}$/)) {
-    return { valid: true, format: 'Alphanumeric (40+ characters)' };
+  if (apiKey.match(/^[A-Za-z0-9]{20,}$/)) {
+    return { valid: true, format: 'Alphanumeric (20+ characters)' };
+  }
+  
+  // Accept any reasonable key format
+  if (apiKey.length >= 16 && !apiKey.includes(' ') && apiKey.match(/^[A-Za-z0-9_.-]+$/)) {
+    return { valid: true, format: 'Valid API key format' };
   }
   
   // Invalid format - provide suggestions
   if (apiKey.length < 16) {
-    suggestions.push('SerpAPI keys are typically 32-64 characters long');
+    suggestions.push('SerpAPI keys are typically 20-64 characters long');
   }
   
   if (apiKey.includes(' ')) {
     suggestions.push('Remove any spaces from the API key');
   }
   
-  if (!apiKey.match(/^[A-Za-z0-9_-]+$/)) {
-    suggestions.push('SerpAPI keys typically contain only letters, numbers, hyphens, and underscores');
+  if (!apiKey.match(/^[A-Za-z0-9_.-]+$/)) {
+    suggestions.push('SerpAPI keys typically contain only letters, numbers, hyphens, underscores, and dots');
   }
   
   return { 
