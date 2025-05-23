@@ -1,14 +1,31 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useContent } from '@/contexts/content';
+import { ContentItemType } from '@/contexts/content/types';
 import { useContentSelection } from './repurposing/useContentSelection';
 import { useContentGeneration } from './repurposing/useContentGeneration';
 import { useContentDialog } from './repurposing/useContentDialog';
 import { useContentActions } from './repurposing/useContentActions';
+import { repurposedContentService } from '@/services/repurposedContentService';
+import { toast } from 'sonner';
 
 export const useContentRepurposing = () => {
   const { content, handleContentSelection, resetContent } = useContentSelection();
-  
+  const { getAllContent } = useContent();
+  const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  
+  // Load all content items for selection view
+  useEffect(() => {
+    const items = getAllContent();
+    if (items && Array.isArray(items)) {
+      setContentItems(items);
+    } else {
+      console.warn('getAllContent did not return an array:', items);
+      setContentItems([]); // Ensure we always have an array
+    }
+  }, [getAllContent]);
   
   const handleContentChange = useCallback(() => {
     if (content && content.id !== currentContentId) {
@@ -43,6 +60,16 @@ export const useContentRepurposing = () => {
     copyToClipboard,
     downloadAsText,
   } = useContentActions(content);
+
+  // Function to find repurposed content
+  const findRepurposedContent = async (contentId: string, formatId: string) => {
+    try {
+      return await repurposedContentService.getRepurposedContentByFormat(contentId, formatId);
+    } catch (error) {
+      console.error('Error finding repurposed content:', error);
+      return null;
+    }
+  };
   
   const {
     repurposedDialogOpen,
@@ -51,7 +78,7 @@ export const useContentRepurposing = () => {
     handleOpenRepurposedContent,
     handleCloseRepurposedDialog,
     handleFormatChange: formatChangeHandler,
-  } = useContentDialog(() => null); // Simplified for now
+  } = useContentDialog(findRepurposedContent);
   
   const handleOpenRepurposedContentWithFormats = (contentId: string, formatId: string) => {
     const availableFormats = Object.keys(generatedContents || {}).filter(id => !!id);
@@ -64,9 +91,48 @@ export const useContentRepurposing = () => {
       formatChangeHandler(contentId, formatId);
     }
   };
+
+  // Add the missing functions from the build errors
+  const handleDeleteActiveFormat = async (): Promise<boolean> => {
+    if (!content || !activeFormat) {
+      toast.error('No content selected to delete');
+      return false;
+    }
+
+    setIsDeleting(true);
+    try {
+      const success = await deleteRepurposedContent(activeFormat);
+      if (success) {
+        toast.success(`Content format deleted successfully`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting active format:', error);
+      toast.error('Failed to delete content format');
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const markAsSaved = (formatId: string) => {
+    if (!savedContentFormats.includes(formatId)) {
+      setSavedContentFormats(prev => [...prev, formatId]);
+    }
+  };
+
+  const saveAllFormats = () => {
+    const formatIds = Object.keys(generatedContents || {});
+    setSavedContentFormats(prev => [...new Set([...prev, ...formatIds])]);
+  };
+
+  // Add this function to update savedContentFormats state
+  const [, setSavedContentFormats] = useState<string[]>(savedContentFormats);
   
   return {
     content,
+    contentItems,
     selectedFormats,
     generatedContents,
     isGenerating,
@@ -76,6 +142,7 @@ export const useContentRepurposing = () => {
     generatedFormats,
     isSaving,
     isSavingAll,
+    isDeleting,
     savedContentFormats,
     setSelectedFormats,
     setActiveFormat,
@@ -89,6 +156,9 @@ export const useContentRepurposing = () => {
     saveAsNewContent,
     handleSaveAllContent,
     deleteRepurposedContent,
+    handleDeleteActiveFormat,
+    markAsSaved,
+    saveAllFormats,
     resetContent,
   };
 };

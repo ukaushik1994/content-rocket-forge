@@ -25,7 +25,7 @@ interface ContentSelectionProps {
 }
 
 const ContentSelection: React.FC<ContentSelectionProps> = memo(({
-  contentItems,
+  contentItems = [], // Add default empty array to prevent undefined
   onSelectContent,
   onOpenRepurposedContent,
   repurposedDialogOpen,
@@ -45,6 +45,11 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
   
   // Deduplicate content items before filtering
   const uniqueContentItems = useMemo(() => {
+    // Check if contentItems is undefined or null before trying to use forEach
+    if (!contentItems || !Array.isArray(contentItems)) {
+      return [];
+    }
+    
     const uniqueMap = new Map<string, ContentItemType>();
     contentItems.forEach(item => {
       if (item && item.id) {

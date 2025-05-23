@@ -18,8 +18,10 @@ interface GeneratedContentDisplayProps {
   onDownloadAsText: (content: string, formatName: string) => void;
   onSaveAsNewContent: (formatId: string, generatedContent: string) => Promise<boolean>;
   onSaveAllContent: () => Promise<boolean>;
+  onDeleteFormat?: () => Promise<boolean>;
   isSaving?: boolean;
   isSavingAll?: boolean;
+  isDeleting?: boolean;
   savedContentFormats?: string[];
 }
 
@@ -31,8 +33,10 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   onDownloadAsText,
   onSaveAsNewContent,
   onSaveAllContent,
+  onDeleteFormat,
   isSaving = false,
   isSavingAll = false,
+  isDeleting = false,
   savedContentFormats = []
 }) => {
   const generatedFormats = Object.keys(generatedContents).filter(id => !!id);
@@ -82,9 +86,11 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
               }}
               onSave={() => onSaveAsNewContent(activeFormat, generatedContents[activeFormat])}
               onSaveAll={hasMultipleFormats ? onSaveAllContent : undefined}
+              onDelete={onDeleteFormat}
               hasMultipleFormats={hasMultipleFormats}
               isSaving={isSaving && !isCurrentFormatSaved}
               isSavingAll={isSavingAll}
+              isDeleting={isDeleting}
               isFormatSaved={isCurrentFormatSaved}
             />
           </div>

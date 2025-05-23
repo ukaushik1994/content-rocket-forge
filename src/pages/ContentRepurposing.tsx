@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { ContentSelectionView, ContentRepurposingView } from './content-repurposing';
 import { useContentRepurposing } from '@/components/content-repurposing/hooks';
@@ -100,7 +100,7 @@ const ContentRepurposing = () => {
     <>
       {!content ? (
         <ContentSelectionView
-          contentItems={contentItems}
+          contentItems={contentItems || []} // Ensure we have a valid array
           onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
           onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
           repurposedDialogOpen={repurposedDialogOpen}
@@ -110,7 +110,7 @@ const ContentRepurposing = () => {
           downloadAsText={downloadAsText}
           deleteRepurposedContent={deleteRepurposedContent}
           handleFormatChange={handleFormatChange}
-          isDeleting={isDeleting}
+          isDeleting={isDeleting || false}
           generatedFormats={generatedFormats || []} // Add fallback empty array
         />
       ) : (
@@ -120,7 +120,6 @@ const ContentRepurposing = () => {
           generatedContents={generatedContents || {}} // Add fallback empty object
           isGenerating={isGenerating}
           activeFormat={activeFormat}
-          isDeleting={isDeleting}
           isSaving={isSaving}
           isSavingAll={isSavingAll}
           savedContentFormats={savedContentFormats}
@@ -132,6 +131,7 @@ const ContentRepurposing = () => {
           saveAsNewContent={saveAsNewContent}
           handleSaveAllContent={handleSaveAllContent}
           handleDeleteActiveFormat={handleDeleteActiveFormat}
+          isDeleting={isDeleting}
           resetContent={resetContent}
         />
       )}

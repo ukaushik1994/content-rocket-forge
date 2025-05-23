@@ -1,15 +1,17 @@
 
 import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Save, Loader2, SaveAll, Check } from 'lucide-react';
+import { Copy, Download, Save, Loader2, SaveAll, Check, Trash } from 'lucide-react';
 
 interface ActionButtonsProps {
   onCopy: () => void;
   onDownload: () => void;
   onSave: () => void;
   onSaveAll?: () => Promise<boolean>;
+  onDelete?: () => Promise<boolean>;
   isSaving?: boolean;
   isSavingAll?: boolean;
+  isDeleting?: boolean;
   hasMultipleFormats?: boolean;
   isFormatSaved?: boolean;
 }
@@ -19,8 +21,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   onDownload,
   onSave,
   onSaveAll,
+  onDelete,
   isSaving = false,
   isSavingAll = false,
+  isDeleting = false,
   hasMultipleFormats = false,
   isFormatSaved = false
 }) => {
@@ -45,6 +49,28 @@ const ActionButtons: React.FC<ActionButtonsProps> = memo(({
         <Download className="h-4 w-4 mr-1" />
         Download
       </Button>
+
+      {isFormatSaved && onDelete && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onDelete}
+          disabled={isDeleting}
+          className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/40"
+        >
+          {isDeleting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              Deleting...
+            </>
+          ) : (
+            <>
+              <Trash className="h-4 w-4 mr-1" />
+              Delete
+            </>
+          )}
+        </Button>
+      )}
       
       <Button 
         variant="outline" 
