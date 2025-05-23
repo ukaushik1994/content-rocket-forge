@@ -158,7 +158,7 @@ export const testSerpApiKeyComprehensive = async (apiKey: string): Promise<{
   const formatTest = testSerpApiKeyFormat(apiKey);
   
   // Test through edge function
-  let edgeFunctionResult = { success: false, error: 'Not tested' };
+  let edgeFunctionResult: { success: boolean; error?: string } = { success: false, error: 'Not tested' };
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     const { data, error } = await supabase.functions.invoke('serp-api', {
