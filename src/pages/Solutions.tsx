@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
@@ -139,6 +138,12 @@ const Solutions = () => {
       
       <main className="flex-1 container py-8 rounded-3xl">
         <motion.div variants={itemVariants} className="mb-8 space-y-12">
+          {/* Company Section - Moved to top */}
+          <CompanySection 
+            companyInfo={companyInfo}
+            onSave={handleSaveCompanyInfo}
+          />
+          
           {/* Solutions Manager */}
           <ContentBuilderProvider>
             <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -147,12 +152,6 @@ const Solutions = () => {
               </Suspense>
             </ErrorBoundary>
           </ContentBuilderProvider>
-          
-          {/* Company Section */}
-          <CompanySection 
-            companyInfo={companyInfo}
-            onSave={handleSaveCompanyInfo}
-          />
           
           {/* Brand Guidelines Display */}
           <BrandGuidelinesDisplay
