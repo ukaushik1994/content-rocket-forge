@@ -33,20 +33,17 @@ export const useContentSelection = () => {
     }
   }, [location, getContentItem, loadedContentId]);
   
-  const handleContentSelection = (contentId: string) => {
+  const handleContentSelection = (contentItem: ContentItemType) => {
     // Check if it's the same content we already have loaded
-    if (contentId === loadedContentId) {
+    if (contentItem.id === loadedContentId) {
       console.log('Content already selected, skipping');
       return;
     }
     
-    const selectedContent = getContentItem(contentId);
-    if (selectedContent) {
-      setContent(selectedContent);
-      setLoadedContentId(contentId);
-      // Update the URL without page reload
-      navigate(`/content-repurposing?id=${contentId}`, { replace: true });
-    }
+    setContent(contentItem);
+    setLoadedContentId(contentItem.id);
+    // Update the URL without page reload
+    navigate(`/content-repurposing?id=${contentItem.id}`, { replace: true });
   };
   
   const resetContent = () => {
