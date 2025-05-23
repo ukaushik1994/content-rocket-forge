@@ -22,10 +22,11 @@ interface ContentSelectionProps {
   isDeleting?: boolean;
   isLoadingFormat?: boolean;
   generatedFormats?: string[];
+  savedContentFormats?: string[];
 }
 
 const ContentSelection: React.FC<ContentSelectionProps> = memo(({
-  contentItems = [], // Add default empty array to prevent undefined
+  contentItems = [],
   onSelectContent,
   onOpenRepurposedContent,
   repurposedDialogOpen,
@@ -37,15 +38,14 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
   onFormatChange,
   isDeleting = false,
   isLoadingFormat = false,
-  generatedFormats = []
+  generatedFormats = [],
+  savedContentFormats = []
 }) => {
-  // Add state for search functionality
   const [searchQuery, setSearchQuery] = useState<string>('');
   const isMobile = useIsMobile();
   
   // Deduplicate content items before filtering
   const uniqueContentItems = useMemo(() => {
-    // Check if contentItems is undefined or null before trying to use forEach
     if (!contentItems || !Array.isArray(contentItems)) {
       return [];
     }
@@ -82,6 +82,7 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
           contentItems={filteredItems}
           onSelectContent={onSelectContent}
           onOpenRepurposedContent={onOpenRepurposedContent}
+          savedContentFormats={savedContentFormats}
           isMobile={isMobile}
         />
       )}

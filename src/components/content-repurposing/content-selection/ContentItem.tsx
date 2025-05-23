@@ -1,76 +1,60 @@
 
 import React, { memo } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
 import { ContentItemType } from '@/contexts/content/types';
-import SelectButton from './SelectButton';
+import ContentSummary from './ContentSummary';
 import FormatsList from './FormatsList';
+import SelectButton from './SelectButton';
 
 interface ContentItemProps {
   item: ContentItemType;
-  onSelectContent: () => void;
+  onSelect: (content: ContentItemType) => void;
   onOpenRepurposedContent: (contentId: string, formatId: string) => void;
+  savedContentFormats?: string[];
   isMobile?: boolean;
 }
 
 const ContentItem: React.FC<ContentItemProps> = memo(({
   item,
-  onSelectContent,
+  onSelect,
   onOpenRepurposedContent,
+  savedContentFormats = [],
   isMobile = false
 }) => {
-  // Check if the item has any repurposed formats
-  const hasRepurposedContent = item.metadata?.repurposedFormats && item.metadata.repurposedFormats.length > 0;
-  
-  const item_animation = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-  
   return (
-    <motion.div 
-      variants={item_animation}
-      transition={{ duration: 0.3 }}
-      className="h-full"
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
     >
-      <Card 
-        className="h-full cursor-pointer hover:bg-accent/5 overflow-hidden backdrop-blur-sm bg-black/30 border border-white/10 transition-all duration-200 flex flex-col"
-        onClick={onSelectContent}
-      >
-        <CardHeader className={`${isMobile ? 'pb-2 pt-3 px-3' : 'pb-3'}`}>
-          <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-white line-clamp-2`}>
-            {item.title}
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className={`flex-grow ${isMobile ? 'px-3' : ''}`}>
-          <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground line-clamp-3 mb-3`}>
-            {item.content?.substring(0, isMobile ? 100 : 150)}...
-          </p>
-          
-          {hasRepurposedContent && (
-            <div className="mt-2">
-              <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-1 sm:mb-2">
-                Repurposed Content
-              </h4>
-              <FormatsList 
-                item={item}
-                onOpenRepurposedContent={onOpenRepurposedContent}
+      <Card className="bg-gray-900/40 backdrop-blur-sm border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/10">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <ContentSummary item={item} />
+              
+              <div className="mt-3 sm:mt-4">
+                <FormatsList 
+                  item={item}
+                  onOpenRepurposedContent={onOpenRepurposedContent}
+                  savedContentFormats={savedContentFormats}
+                  isMobile={isMobile}
+                />
+              </div>
+            </div>
+            
+            <div className="flex-shrink-0">
+              <SelectButton 
+                onSelect={() => onSelect(item)}
                 isMobile={isMobile}
               />
             </div>
-          )}
+          </div>
         </CardContent>
-        
-        <CardFooter className={`${isMobile ? 'pt-2 px-3 pb-3' : 'pt-3'} border-t border-white/10`}>
-          <SelectButton 
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectContent();
-            }} 
-            isMobile={isMobile}
-          />
-        </CardFooter>
       </Card>
     </motion.div>
   );

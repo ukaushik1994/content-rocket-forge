@@ -1,13 +1,10 @@
 
-import React, { useState } from 'react';
-import { toast } from 'sonner';
-import { ContentSelectionView, ContentRepurposingView } from './content-repurposing';
-import { useContentRepurposing } from '@/components/content-repurposing/hooks';
-import { ContentItemType } from '@/contexts/content/types';
+import React from 'react';
+import { useContentRepurposing } from '@/components/content-repurposing/hooks/useContentRepurposing';
+import ContentRepurposingView from './content-repurposing/ContentRepurposingView';
+import ContentSelectionView from './content-repurposing/ContentSelectionView';
 
-const ContentRepurposing = () => {
-  const [isSavingAll, setIsSavingAll] = useState<boolean>(false);
-  
+const ContentRepurposing: React.FC = () => {
   const {
     content,
     contentItems,
@@ -18,9 +15,11 @@ const ContentRepurposing = () => {
     repurposedDialogOpen,
     selectedRepurposedContent,
     generatedFormats,
-    isDeleting,
     isSaving,
+    isSavingAll,
+    isDeleting,
     savedContentFormats,
+    isLoadingFormat,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -31,111 +30,53 @@ const ContentRepurposing = () => {
     copyToClipboard,
     downloadAsText,
     saveAsNewContent,
+    handleSaveAllContent,
     deleteRepurposedContent,
     handleDeleteActiveFormat,
     resetContent,
-    markAsSaved,
-    saveAllFormats
   } = useContentRepurposing();
-  
-  // Function to save all generated content
-  const handleSaveAllContent = async (): Promise<boolean> => {
-    if (!content || Object.keys(generatedContents || {}).length === 0) {
-      toast.error('No content to save');
-      return false;
-    }
-    
-    setIsSavingAll(true);
-    try {
-      const formatIds = Object.keys(generatedContents || {}).filter(id => !!id); // Filter out empty IDs
-      let allSuccess = true;
-      let savedCount = 0;
-      
-      // Save each format one by one
-      for (const formatId of formatIds) {
-        try {
-          // Skip already saved formats
-          if (savedContentFormats.includes(formatId)) {
-            savedCount++;
-            continue;
-          }
-          
-          console.log(`Saving format: ${formatId}`);
-          const success = await saveAsNewContent(formatId, generatedContents[formatId]);
-          if (success) {
-            // Mark as saved in frontend state
-            markAsSaved(formatId);
-            savedCount++;
-          } else {
-            allSuccess = false;
-          }
-        } catch (err) {
-          console.error(`Error saving format ${formatId}:`, err);
-          allSuccess = false;
-        }
-      }
-      
-      // After saving all formats to the backend, update the local savedContentFormats state
-      if (savedCount > 0) {
-        // Update local state with all saved formats
-        saveAllFormats();
-        
-        toast.success(`Successfully saved ${savedCount} content format${savedCount > 1 ? 's' : ''}`);
-        return true;
-      } else {
-        toast.error('Failed to save any content formats');
-        return false;
-      }
-      
-    } catch (error) {
-      console.error('Error saving all content:', error);
-      toast.error('Error saving all content formats');
-      return false;
-    } finally {
-      setIsSavingAll(false);
-    }
-  };
+
+  if (!content) {
+    return (
+      <ContentSelectionView
+        contentItems={contentItems}
+        onSelectContent={handleContentSelection}
+        onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
+        repurposedDialogOpen={repurposedDialogOpen}
+        onCloseRepurposedDialog={handleCloseRepurposedDialog}
+        selectedRepurposedContent={selectedRepurposedContent}
+        copyToClipboard={copyToClipboard}
+        downloadAsText={downloadAsText}
+        deleteRepurposedContent={deleteRepurposedContent}
+        handleFormatChange={handleFormatChange}
+        isDeleting={isDeleting}
+        generatedFormats={generatedFormats}
+        savedContentFormats={savedContentFormats}
+      />
+    );
+  }
 
   return (
-    <>
-      {!content ? (
-        <ContentSelectionView
-          contentItems={contentItems || []} // Ensure we have a valid array
-          onSelectContent={(selectedContent: ContentItemType) => handleContentSelection(selectedContent.id)}
-          onOpenRepurposedContent={handleOpenRepurposedContentWithFormats}
-          repurposedDialogOpen={repurposedDialogOpen}
-          onCloseRepurposedDialog={handleCloseRepurposedDialog}
-          selectedRepurposedContent={selectedRepurposedContent}
-          copyToClipboard={copyToClipboard}
-          downloadAsText={downloadAsText}
-          deleteRepurposedContent={deleteRepurposedContent}
-          handleFormatChange={handleFormatChange}
-          isDeleting={isDeleting || false}
-          generatedFormats={generatedFormats || []} // Add fallback empty array
-        />
-      ) : (
-        <ContentRepurposingView
-          content={content}
-          selectedFormats={selectedFormats}
-          generatedContents={generatedContents || {}} // Add fallback empty object
-          isGenerating={isGenerating}
-          activeFormat={activeFormat}
-          isSaving={isSaving}
-          isSavingAll={isSavingAll}
-          savedContentFormats={savedContentFormats}
-          setSelectedFormats={setSelectedFormats}
-          setActiveFormat={setActiveFormat}
-          handleGenerateContent={handleGenerateContent}
-          copyToClipboard={copyToClipboard}
-          downloadAsText={downloadAsText}
-          saveAsNewContent={saveAsNewContent}
-          handleSaveAllContent={handleSaveAllContent}
-          handleDeleteActiveFormat={handleDeleteActiveFormat}
-          isDeleting={isDeleting}
-          resetContent={resetContent}
-        />
-      )}
-    </>
+    <ContentRepurposingView
+      content={content}
+      selectedFormats={selectedFormats}
+      generatedContents={generatedContents}
+      isGenerating={isGenerating}
+      activeFormat={activeFormat}
+      isSaving={isSaving}
+      isSavingAll={isSavingAll}
+      savedContentFormats={savedContentFormats}
+      setSelectedFormats={setSelectedFormats}
+      setActiveFormat={setActiveFormat}
+      handleGenerateContent={handleGenerateContent}
+      copyToClipboard={copyToClipboard}
+      downloadAsText={downloadAsText}
+      saveAsNewContent={saveAsNewContent}
+      handleSaveAllContent={handleSaveAllContent}
+      handleDeleteActiveFormat={handleDeleteActiveFormat}
+      isDeleting={isDeleting}
+      resetContent={resetContent}
+    />
   );
 };
 

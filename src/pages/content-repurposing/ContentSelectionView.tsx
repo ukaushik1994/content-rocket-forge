@@ -19,6 +19,7 @@ interface ContentSelectionViewProps {
   handleFormatChange: (contentId: string, formatId: string) => void;
   isDeleting: boolean;
   generatedFormats: string[];
+  savedContentFormats?: string[];
 }
 
 const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
@@ -33,7 +34,8 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
   deleteRepurposedContent,
   handleFormatChange,
   isDeleting,
-  generatedFormats = [], // Default empty array for generatedFormats
+  generatedFormats = [],
+  savedContentFormats = [],
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-black">
@@ -67,6 +69,7 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
           onFormatChange={handleFormatChange}
           isDeleting={isDeleting}
           generatedFormats={generatedFormats}
+          savedContentFormats={savedContentFormats}
         />
       </motion.main>
     </div>

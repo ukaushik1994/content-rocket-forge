@@ -8,19 +8,20 @@ interface ContentFormatIconProps {
   isFormatUsed: boolean;
   onClick: (e: React.MouseEvent) => void;
   isMobile?: boolean;
+  isSaved?: boolean;
 }
 
 const ContentFormatIcon: React.FC<ContentFormatIconProps> = memo(({
   formatId,
   isFormatUsed,
   onClick,
-  isMobile = false
+  isMobile = false,
+  isSaved = false
 }) => {
-  // Ensure we're working with a valid formatId
   const safeFormatId = formatId || '';
   const IconComponent = getFormatIconComponent(safeFormatId);
   const format = getFormatByIdOrDefault(safeFormatId);
-  const tooltipText = `${format.name} ${isFormatUsed ? '(Click to view)' : ''}`;
+  const tooltipText = `${format.name} ${isFormatUsed ? (isSaved ? '(Saved - Click to view)' : '(Click to view)') : ''}`;
 
   return (
     <FormatBadge 
@@ -28,6 +29,7 @@ const ContentFormatIcon: React.FC<ContentFormatIconProps> = memo(({
       tooltipText={tooltipText}
       onClick={onClick}
       isMobile={isMobile}
+      isSaved={isSaved}
     >
       <IconComponent className="h-full w-full" />
     </FormatBadge>
