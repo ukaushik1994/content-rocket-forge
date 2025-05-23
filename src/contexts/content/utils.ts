@@ -73,18 +73,22 @@ export const fetchRepurposedContentData = async (item: ContentItemType): Promise
 export const processContentItems = async (contentData: any[]): Promise<ContentItemType[]> => {
   const processedItems = await Promise.all(
     contentData.map(async (dbItem) => {
-      // Convert database item to ContentItemType
+      // Convert database item to ContentItemType with proper type casting
       let item: ContentItemType = {
         id: dbItem.id,
         title: dbItem.title || '',
         content: dbItem.content || '',
-        status: dbItem.status as 'draft' | 'approved' | 'published' | 'archived',
+        status: dbItem.status as 'draft' | 'published' | 'archived',
+        approval_status: dbItem.approval_status as 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published' | 'archived',
         created_at: dbItem.created_at,
         updated_at: dbItem.updated_at,
         seo_score: dbItem.seo_score || 0,
         keywords: [], // Will be populated below
         user_id: dbItem.user_id,
-        metadata: dbItem.metadata || {}
+        metadata: dbItem.metadata || {},
+        submitted_for_review_at: dbItem.submitted_for_review_at,
+        reviewer_id: dbItem.reviewer_id,
+        review_deadline: dbItem.review_deadline
       };
 
       // Fetch keywords
