@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
@@ -20,6 +19,14 @@ import { toast } from 'sonner';
 const SolutionManager = lazy(() => import('@/components/solutions/manager').then(module => ({
   default: module.SolutionManager
 })));
+
+// Helper function to safely convert Json to string array
+const jsonToStringArray = (jsonValue: any): string[] => {
+  if (Array.isArray(jsonValue)) {
+    return jsonValue.map(item => String(item)).filter(item => item !== 'null' && item !== 'undefined');
+  }
+  return [];
+};
 
 // Loading fallback component
 const LoadingFallback = () => <div className="flex flex-col justify-center items-center py-12 space-y-4">
@@ -95,7 +102,7 @@ const Solutions = () => {
           founded: companyData.founded || '',
           size: companyData.size || '',
           mission: companyData.mission || '',
-          values: Array.isArray(companyData.values) ? companyData.values : [],
+          values: jsonToStringArray(companyData.values),
           website: companyData.website,
           logoUrl: companyData.logo_url,
         });
@@ -120,12 +127,12 @@ const Solutions = () => {
           neutralColor: brandData.neutral_color,
           fontFamily: brandData.font_family,
           secondaryFontFamily: brandData.secondary_font_family,
-          tone: Array.isArray(brandData.tone) ? brandData.tone : [],
-          keywords: Array.isArray(brandData.keywords) ? brandData.keywords : [],
+          tone: jsonToStringArray(brandData.tone),
+          keywords: jsonToStringArray(brandData.keywords),
           brandPersonality: brandData.brand_personality,
           missionStatement: brandData.mission_statement,
-          doUse: Array.isArray(brandData.do_use) ? brandData.do_use : [],
-          dontUse: Array.isArray(brandData.dont_use) ? brandData.dont_use : [],
+          doUse: jsonToStringArray(brandData.do_use),
+          dontUse: jsonToStringArray(brandData.dont_use),
           logoUsageNotes: brandData.logo_usage_notes,
           imageryGuidelines: brandData.imagery_guidelines,
           targetAudience: brandData.target_audience,

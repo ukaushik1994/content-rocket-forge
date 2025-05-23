@@ -34,6 +34,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// Helper function to safely convert Json to string array
+const jsonToStringArray = (jsonValue: any): string[] => {
+  if (Array.isArray(jsonValue)) {
+    return jsonValue.map(item => String(item)).filter(item => item !== 'null' && item !== 'undefined');
+  }
+  return [];
+};
+
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
   { value: 'blog', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
   { value: 'glossary', label: 'Glossary', icon: ListTree, description: 'Definitions and explanations of industry terms' },
@@ -93,7 +101,7 @@ export const ContentTypeStep = () => {
           founded: companyData.founded || '',
           size: companyData.size || '',
           mission: companyData.mission || '',
-          values: Array.isArray(companyData.values) ? companyData.values : [],
+          values: jsonToStringArray(companyData.values),
           website: companyData.website,
           logoUrl: companyData.logo_url,
         });
@@ -118,12 +126,12 @@ export const ContentTypeStep = () => {
           neutralColor: brandData.neutral_color,
           fontFamily: brandData.font_family,
           secondaryFontFamily: brandData.secondary_font_family,
-          tone: Array.isArray(brandData.tone) ? brandData.tone : [],
-          keywords: Array.isArray(brandData.keywords) ? brandData.keywords : [],
+          tone: jsonToStringArray(brandData.tone),
+          keywords: jsonToStringArray(brandData.keywords),
           brandPersonality: brandData.brand_personality,
           missionStatement: brandData.mission_statement,
-          doUse: Array.isArray(brandData.do_use) ? brandData.do_use : [],
-          dontUse: Array.isArray(brandData.dont_use) ? brandData.dont_use : [],
+          doUse: jsonToStringArray(brandData.do_use),
+          dontUse: jsonToStringArray(brandData.dont_use),
           logoUsageNotes: brandData.logo_usage_notes,
           imageryGuidelines: brandData.imagery_guidelines,
           targetAudience: brandData.target_audience,
