@@ -7,6 +7,9 @@ import { API_PROVIDERS } from './api/types';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Key } from 'lucide-react';
 
 export function APISettings() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
@@ -64,29 +67,79 @@ export function APISettings() {
     !p.required && !selectedProviders.includes(p.id)
   );
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="space-y-6">
-      <ApiSettingsHeader 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onDisplayOptionChange={handleDisplayOptionChange}
-      />
+    <motion.div 
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={itemVariants}>
+        <Card className="glass-panel bg-glass border border-white/10 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-neon-purple/20 p-2">
+                <Key className="h-5 w-5 text-neon-purple" />
+              </div>
+              <div>
+                <CardTitle className="text-gradient">API Configuration</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Manage your API keys and provider settings for content generation.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ApiSettingsHeader 
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onDisplayOptionChange={handleDisplayOptionChange}
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
       
-      <DefaultAiProviderSelector 
-        defaultAiProvider={defaultAiProvider} 
-        onDefaultAiProviderChange={handleDefaultAiProviderChange} 
-      />
+      <motion.div variants={itemVariants}>
+        <DefaultAiProviderSelector 
+          defaultAiProvider={defaultAiProvider} 
+          onDefaultAiProviderChange={handleDefaultAiProviderChange} 
+        />
+      </motion.div>
 
-      <div className="space-y-4">
-        {filteredProviders.map(provider => (
-          <ApiKeyInput key={provider.id} provider={provider} />
+      <motion.div variants={itemVariants} className="space-y-4">
+        {filteredProviders.map((provider, index) => (
+          <motion.div
+            key={provider.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <ApiKeyInput provider={provider} />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      <AvailableProviders 
-        providers={availableProviders} 
-        onToggleProvider={handleProviderToggle} 
-      />
-    </div>
+      <motion.div variants={itemVariants}>
+        <AvailableProviders 
+          providers={availableProviders} 
+          onToggleProvider={handleProviderToggle} 
+        />
+      </motion.div>
+    </motion.div>
   );
 }
