@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +12,9 @@ import {
   Loader2,
   ExternalLink,
   Building2,
-  Palette
+  Palette,
+  Edit3,
+  CheckCircle2
 } from 'lucide-react';
 import { ContentType, Solution } from '@/contexts/content-builder/types';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { motion } from 'framer-motion';
 
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
   { value: 'blog', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
@@ -185,45 +187,98 @@ export const ContentTypeStep = () => {
 
   return (
     <div className="space-y-8">
-      {/* Company & Brand Info Section */}
+      {/* Enhanced Company & Brand Info Section */}
       {(companyInfo || brandGuidelines) && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="border border-primary/20 rounded-lg p-4 bg-primary/5"
+          className="glass-panel rounded-xl overflow-hidden"
         >
-          <div className="flex flex-wrap justify-between items-start gap-4">
-            {companyInfo && (
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">{companyInfo.name}</p>
-                  <p className="text-xs text-muted-foreground">{companyInfo.industry}</p>
-                </div>
-              </div>
-            )}
+          <div className="bg-gradient-to-r from-neon-purple/20 via-neon-blue/20 to-neon-purple/20 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gradient flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-400" />
+                Brand Configuration Active
+              </h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleNavigateToSolutions}
+                className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Settings
+              </Button>
+            </div>
             
-            {brandGuidelines && (
-              <div className="flex items-center gap-3">
-                <Palette className="h-5 w-5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">Brand Guidelines Applied</p>
-                  <p className="text-xs text-muted-foreground">
-                    Tone: {brandGuidelines.tone.slice(0, 2).join(', ')}
-                    {brandGuidelines.tone.length > 2 ? '...' : ''}
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleNavigateToSolutions}
-              className="ml-auto text-xs"
-            >
-              Edit Info
-            </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {companyInfo && (
+                <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <Avatar className="h-12 w-12 rounded-lg border border-white/20">
+                          <AvatarFallback className="rounded-lg bg-primary/20 text-primary font-bold text-lg">
+                            {getInitials(companyInfo.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="h-4 w-4 text-primary flex-shrink-0" />
+                          <h4 className="font-semibold text-white truncate">{companyInfo.name}</h4>
+                        </div>
+                        <p className="text-sm text-primary/80 mb-2">{companyInfo.industry}</p>
+                        <p className="text-xs text-white/70 line-clamp-2">{companyInfo.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {brandGuidelines && (
+                <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
+                          <Palette className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-white mb-1 flex items-center gap-2">
+                          Brand Guidelines
+                        </h4>
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-xs font-medium text-primary">Tone:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {brandGuidelines.tone.slice(0, 3).map((tone, idx) => (
+                                <span key={idx} className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                  {tone}
+                                </span>
+                              ))}
+                              {brandGuidelines.tone.length > 3 && (
+                                <span className="text-xs text-white/60">+{brandGuidelines.tone.length - 3} more</span>
+                              )}
+                            </div>
+                          </div>
+                          {brandGuidelines.keywords.length > 0 && (
+                            <div>
+                              <span className="text-xs font-medium text-primary">Keywords:</span>
+                              <p className="text-xs text-white/70 truncate">
+                                {brandGuidelines.keywords.slice(0, 3).join(', ')}
+                                {brandGuidelines.keywords.length > 3 ? '...' : ''}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </motion.div>
       )}
