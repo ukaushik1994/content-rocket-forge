@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Sparkles } from 'lucide-react';
 import { SerpAnalysisResult } from '@/types/serp';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { toast } from 'sonner';
-import { SerpAnalysisHeader } from './SerpAnalysisHeader';
-import { SerpAnalysisSections } from './SerpAnalysisSections';
-import { SerpEmptyState, SerpNoDataFound } from './index';
+import { SerpOverviewSection } from './serp-analysis/SerpOverviewSection';
+import { SerpKeywordsSection } from './serp-analysis/SerpKeywordsSection';
+import { SerpQuestionsSection } from './serp-analysis/SerpQuestionsSection';
+import { SerpEntitiesSection } from './serp-analysis/SerpEntitiesSection';
+import { SerpHeadingsSection } from './serp-analysis/SerpHeadingsSection';
+import { SerpContentGapsSection } from './serp-analysis/SerpContentGapsSection';
+import { SerpCompetitorsSection } from './serp-analysis/SerpCompetitorsSection';
+import { SerpSectionHeader } from './serp-analysis/SerpSectionHeader';
 
 export interface SerpAnalysisContainerProps {
   serpData: SerpAnalysisResult | null;
@@ -19,90 +19,188 @@ export interface SerpAnalysisContainerProps {
 }
 
 export function SerpAnalysisContainer({ 
-  serpData: initialSerpData, 
-  isLoading: initialIsLoading, 
-  mainKeyword,
-  onAddToContent = () => {},
-  onRetry = () => {},
-  onSerpDataChange = () => {}
+  serpData, 
+  isLoading, 
+  mainKeyword, 
+  onAddToContent,
+  onRetry,
+  onSerpDataChange
 }: SerpAnalysisContainerProps) {
-  const [internalSerpData, setInternalSerpData] = useState<SerpAnalysisResult | null>(initialSerpData);
-  const [internalIsLoading, setInternalIsLoading] = useState<boolean>(initialIsLoading);
-  
-  // Effect to sync props with internal state
+  const [data, setData] = useState<SerpAnalysisResult | null>(serpData);
+  const [expandedSections, setExpandedSections] = useState({
+    overview: true,
+    keywords: false,
+    questions: false,
+    entities: false,
+    headings: false,
+    contentGaps: false,
+    competitors: false
+  });
+
   useEffect(() => {
-    setInternalSerpData(initialSerpData);
-    setInternalIsLoading(initialIsLoading);
-  }, [initialSerpData, initialIsLoading]);
-  
-  // Effect to fetch SERP data when the mainKeyword changes
-  useEffect(() => {
-    if (mainKeyword && !internalSerpData && !internalIsLoading) {
-      fetchSerpData();
+    setData(serpData);
+    if (onSerpDataChange) {
+      onSerpDataChange(serpData);
     }
-  }, [mainKeyword]);
-  
-  const fetchSerpData = async () => {
-    if (!mainKeyword) return;
-    
-    setInternalIsLoading(true);
-    
-    try {
-      const result = await analyzeKeywordSerp(mainKeyword);
-      setInternalSerpData(result);
-      onSerpDataChange(result);
-      
-      if (result) {
-        console.log("SERP data fetched successfully:", result);
-        if (result.isMockData) {
-          toast.warning("Using mock data. Add your API key in settings for real results.");
-        } else {
-          toast.success("Search analysis completed successfully.");
-        }
-      } else {
-        console.error("No SERP data returned");
-        toast.error("Failed to retrieve search data. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error fetching SERP data:", error);
-      toast.error("Failed to analyze keyword. Please check your API key and try again.");
-    } finally {
-      setInternalIsLoading(false);
-    }
-  };
-  
-  const handleRetry = () => {
-    fetchSerpData();
-    onRetry();
-  };
-  
-  if (internalIsLoading) {
+  }, [serpData, onSerpDataChange]);
+
+  if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col items-center justify-center py-12 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary h-8 w-8 animate-pulse" />
-          </div>
-          <p className="mt-6 text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">Analyzing search results...</p>
-          <p className="text-sm text-muted-foreground mt-2">Extracting insights from top-ranking content</p>
-        </div>
+      <div className="flex items-center justify-center h-48 text-lg text-muted-foreground animate-pulse">
+        Analyzing search results...
       </div>
     );
   }
 
-  if (internalSerpData === null && mainKeyword) {
-    return <SerpNoDataFound mainKeyword={mainKeyword} onRetry={handleRetry} />;
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-center">
+        <p className="text-lg font-semibold text-muted-foreground mb-2">No data found</p>
+        {onRetry && (
+          <button onClick={onRetry} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">
+            Retry Analysis
+          </button>
+        )}
+      </div>
+    );
   }
 
-  if (!internalSerpData) {
-    return <SerpEmptyState />;
-  }
+  const handleToggleSection = (sectionKey: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
 
   return (
-    <div className="space-y-8">
-      <SerpAnalysisHeader serpData={internalSerpData} mainKeyword={mainKeyword} />
-      <SerpAnalysisSections serpData={internalSerpData} onAddToContent={onAddToContent} />
+    <div className="space-y-6">
+      {/* SERP Overview Section */}
+      <div>
+        <SerpSectionHeader 
+          title="SERP Overview"
+          expanded={expandedSections.overview}
+          onToggle={() => handleToggleSection('overview')}
+          variant="blue"
+          description="Search landscape analysis"
+        />
+        {expandedSections.overview && (
+          <SerpOverviewSection serpData={data} />
+        )}
+      </div>
+
+      {/* Keywords & Related Searches */}
+      <div>
+        <SerpSectionHeader 
+          title="Keywords & Related Searches"
+          expanded={expandedSections.keywords}
+          onToggle={() => handleToggleSection('keywords')}
+          variant="green"
+          description="Keyword opportunities"
+          count={data?.keywords?.length || 0}
+        />
+        {expandedSections.keywords && (
+          <SerpKeywordsSection 
+            serpData={data} 
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
+        )}
+      </div>
+
+      {/* People Also Ask (FAQs) */}
+      <div>
+        <SerpSectionHeader 
+          title="Frequently Asked Questions"
+          expanded={expandedSections.questions}
+          onToggle={() => handleToggleSection('questions')}
+          variant="amber"
+          description="Popular questions from search results"
+          count={data?.peopleAlsoAsk?.length || 0}
+        />
+        {expandedSections.questions && (
+          <SerpQuestionsSection 
+            serpData={data} 
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
+        )}
+      </div>
+
+      {/* Entities & Topics */}
+      <div>
+        <SerpSectionHeader 
+          title="Entities & Topics"
+          expanded={expandedSections.entities}
+          onToggle={() => handleToggleSection('entities')}
+          variant="indigo"
+          description="Key concepts and entities"
+          count={data?.entities?.length || 0}
+        />
+        {expandedSections.entities && (
+          <SerpEntitiesSection 
+            serpData={data} 
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
+        )}
+      </div>
+
+      {/* Headings & Structure */}
+      <div>
+        <SerpSectionHeader 
+          title="Content Structure"
+          expanded={expandedSections.headings}
+          onToggle={() => handleToggleSection('headings')}
+          variant="teal"
+          description="Common heading patterns"
+          count={data?.headings?.length || 0}
+        />
+        {expandedSections.headings && (
+          <SerpHeadingsSection 
+            serpData={data} 
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
+        )}
+      </div>
+
+      {/* Content Gaps */}
+      <div>
+        <SerpSectionHeader 
+          title="Content Opportunities"
+          expanded={expandedSections.contentGaps}
+          onToggle={() => handleToggleSection('contentGaps')}
+          variant="rose"
+          description="Missing content opportunities"
+          count={data?.contentGaps?.length || 0}
+        />
+        {expandedSections.contentGaps && (
+          <SerpContentGapsSection 
+            serpData={data} 
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
+        )}
+      </div>
+
+      {/* Top Competitors */}
+      <div>
+        <SerpSectionHeader 
+          title="Top Competitors"
+          expanded={expandedSections.competitors}
+          onToggle={() => handleToggleSection('competitors')}
+          variant="purple"
+          description="Leading competitors analysis"
+          count={data?.competitors?.length || 0}
+        />
+        {expandedSections.competitors && (
+          <SerpCompetitorsSection 
+            serpData={data} 
+            expanded={true}
+            onAddToContent={onAddToContent}
+          />
+        )}
+      </div>
     </div>
   );
 }
