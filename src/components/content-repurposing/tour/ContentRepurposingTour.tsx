@@ -90,11 +90,11 @@ export const ContentRepurposingTour: React.FC = () => {
     },
     {
       id: 'finish',
-      title: 'You're Ready!',
+      title: 'You\'re Ready!',
       description: (
         <div className="space-y-2">
           <p>You now know how to repurpose content effectively across multiple formats.</p>
-          <p>Let's get started by selecting a piece of content to repurpose!</p>
+          <p>Let\'s get started by selecting a piece of content to repurpose!</p>
         </div>
       ),
       position: 'center',
