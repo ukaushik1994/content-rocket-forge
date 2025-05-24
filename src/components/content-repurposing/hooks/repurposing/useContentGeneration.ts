@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { contentFormats } from '../../formats';
@@ -26,17 +25,26 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     refreshData: refreshRepurposedData
   } = useRepurposedContentData(content?.id || null);
 
+  console.log('[useContentGeneration] Content:', content?.id);
+  console.log('[useContentGeneration] repurposedContentMap:', repurposedContentMap);
+  console.log('[useContentGeneration] generatedContents state:', generatedContents);
+
   // Load saved content into generatedContents when data changes
   useEffect(() => {
+    console.log('[useContentGeneration] Effect - repurposedContentMap changed:', repurposedContentMap);
     if (repurposedContentMap && Object.keys(repurposedContentMap).length > 0) {
+      console.log('[useContentGeneration] Setting generatedContents from repurposedContentMap');
       setGeneratedContents(repurposedContentMap);
       
       // Auto-select first format if none is active
       if (!activeFormat && Object.keys(repurposedContentMap).length > 0) {
-        setActiveFormat(Object.keys(repurposedContentMap)[0]);
+        const firstFormat = Object.keys(repurposedContentMap)[0];
+        console.log('[useContentGeneration] Auto-selecting first format:', firstFormat);
+        setActiveFormat(firstFormat);
       }
     } else {
       // Clear generated contents if no repurposed content exists
+      console.log('[useContentGeneration] No repurposed content, clearing generatedContents');
       setGeneratedContents({});
       setActiveFormat(null);
     }
@@ -45,7 +53,9 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   // Auto-select first format when generated contents change
   useEffect(() => {
     const formats = Object.keys(generatedContents);
+    console.log('[useContentGeneration] generatedContents changed, formats:', formats);
     if (formats.length > 0 && !activeFormat) {
+      console.log('[useContentGeneration] Auto-selecting first format from generatedContents:', formats[0]);
       setActiveFormat(formats[0]);
     }
   }, [generatedContents, activeFormat]);
@@ -56,6 +66,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       return;
     }
 
+    console.log('[useContentGeneration] Starting content generation for formats:', formats);
     setIsGenerating(true);
     const newGeneratedContents: Record<string, string> = { ...generatedContents };
 
@@ -64,6 +75,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         const format = contentFormats.find(f => f.id === formatId);
         if (!format) continue;
 
+        console.log(`[useContentGeneration] Generating content for format: ${format.name}`);
         toast.info(`Generating ${format.name} format...`);
 
         try {
@@ -79,6 +91,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
           // Fallback to AI service if template generation fails
           if (!generatedContent) {
+            console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service`);
             const response = await sendChatRequest('openai', {
               messages: [
                 {
@@ -103,6 +116,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
             }
           }
 
+          console.log(`[useContentGeneration] Generated content for ${format.name}:`, generatedContent?.substring(0, 100) + '...');
           newGeneratedContents[formatId] = generatedContent;
           toast.success(`${format.name} format generated successfully`);
 
@@ -112,11 +126,13 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         }
       }
 
+      console.log('[useContentGeneration] Setting new generated contents:', newGeneratedContents);
       setGeneratedContents(newGeneratedContents);
 
       // Auto-select first generated format
       const firstFormat = Object.keys(newGeneratedContents)[0];
       if (firstFormat && !activeFormat) {
+        console.log('[useContentGeneration] Auto-selecting first generated format:', firstFormat);
         setActiveFormat(firstFormat);
       }
 

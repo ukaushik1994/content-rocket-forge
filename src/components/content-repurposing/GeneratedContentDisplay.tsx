@@ -41,10 +41,18 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   isDeleting = false,
   savedContentFormats = []
 }) => {
-  const generatedFormats = Object.keys(generatedContents).filter(id => !!id);
+  // Debug logging to help identify the issue
+  console.log('[GeneratedContentDisplay] generatedContents:', generatedContents);
+  console.log('[GeneratedContentDisplay] activeFormat:', activeFormat);
+  console.log('[GeneratedContentDisplay] savedContentFormats:', savedContentFormats);
+  
+  const generatedFormats = Object.keys(generatedContents).filter(id => !!id && !!generatedContents[id]);
   const hasGeneratedContent = generatedFormats.length > 0;
   const hasMultipleFormats = generatedFormats.length > 1;
   const isCurrentFormatSaved = activeFormat ? savedContentFormats.includes(activeFormat) : false;
+  
+  console.log('[GeneratedContentDisplay] generatedFormats:', generatedFormats);
+  console.log('[GeneratedContentDisplay] hasGeneratedContent:', hasGeneratedContent);
   
   return (
     <Card className="h-full">
@@ -71,7 +79,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
       <CardContent className="p-4 h-[500px] flex flex-col">
         {!hasGeneratedContent ? (
           <NoContentDisplay />
-        ) : activeFormat ? (
+        ) : activeFormat && generatedContents[activeFormat] ? (
           <div className="flex flex-col h-full">
             <ContentViewer 
               content={generatedContents[activeFormat]} 
