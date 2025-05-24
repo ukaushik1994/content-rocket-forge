@@ -79,6 +79,18 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
     }
     setExpandedQuestions(newExpanded);
   };
+
+  const handleAddQuestion = (question: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    onAddToContent(question, 'question');
+  };
+
+  const handleAddAnswer = (answer: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    onAddToContent(answer, 'answer');
+  };
   
   // Animation variants
   const container = {
@@ -168,58 +180,68 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
         const question = faq.question;
         const answer = faq.answer || '';
         const source = faq.source || 'Search results';
+        const isExpanded = expandedQuestions.has(index);
 
         return (
           <motion.div key={`faq-${index}`} variants={item}>
             <Card className="bg-amber-900/10 border-amber-500/20 hover:border-amber-500/40 transition-all">
               <CardContent className="p-0">
-                {/* Question Header */}
-                <div 
-                  className="p-4 flex justify-between items-start cursor-pointer hover:bg-amber-900/5 transition-colors"
-                  onClick={() => toggleQuestion(index)}
-                >
-                  <div className="flex items-start gap-3 flex-1">
+                {/* Question Header - Fixed layout and click handling */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
                     <HelpCircle className="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-white/90">{question}</p>
-                      <div className="text-xs text-amber-400/70 mt-1 flex items-center">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-white/90 leading-relaxed">
+                        {question}
+                      </p>
+                      <div className="text-xs text-amber-400/70 mt-1">
                         <span>Source: {source}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 ml-2">
+                  {/* Action buttons - Better positioning and click handling */}
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-500/10">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="h-7 px-2 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddToContent(question, 'question');
-                      }}
+                      className="h-8 px-3 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-900/20 hover:border-amber-500/50"
+                      onClick={(e) => handleAddQuestion(question, e)}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add Question
                     </Button>
                     
                     {answer && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                        className="h-8 px-3 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          toggleQuestion(index);
+                        }}
                       >
-                        {expandedQuestions.has(index) ? (
-                          <ChevronDown className="h-4 w-4" />
+                        {isExpanded ? (
+                          <>
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                            Hide Answer
+                          </>
                         ) : (
-                          <ChevronRight className="h-4 w-4" />
+                          <>
+                            <ChevronRight className="h-3 w-3 mr-1" />
+                            Show Answer
+                          </>
                         )}
                       </Button>
                     )}
                   </div>
                 </div>
                 
-                {/* Answer Content */}
+                {/* Answer Content - Improved layout */}
                 <AnimatePresence>
-                  {expandedQuestions.has(index) && answer && (
+                  {isExpanded && answer && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -227,16 +249,16 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-4 pl-12 border-t border-amber-500/10">
-                        <div className="pt-3">
-                          <p className="text-sm text-white/80 leading-relaxed mb-3">
+                      <div className="px-4 pb-4 border-t border-amber-500/10">
+                        <div className="pt-3 space-y-3">
+                          <p className="text-sm text-white/80 leading-relaxed">
                             {answer}
                           </p>
                           <Button
                             variant="outline"
                             size="sm"
                             className="h-7 px-3 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-900/20 hover:border-amber-500/50"
-                            onClick={() => onAddToContent(answer, 'answer')}
+                            onClick={(e) => handleAddAnswer(answer, e)}
                           >
                             <Plus className="h-3 w-3 mr-1" />
                             Add Answer
