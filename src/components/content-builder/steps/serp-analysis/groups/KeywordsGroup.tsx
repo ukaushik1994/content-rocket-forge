@@ -20,6 +20,29 @@ export const KeywordsGroup: React.FC<KeywordsGroupProps> = ({
   
   if (selectedItems.length === 0) return null;
 
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(', ');
+      }
+      // Handle other object types
+      if (content.text) return String(content.text);
+      if (content.title) return String(content.title);
+      if (content.query) return String(content.query);
+      if (content.name) return String(content.name);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -33,14 +56,11 @@ export const KeywordsGroup: React.FC<KeywordsGroupProps> = ({
       
       <div className="flex flex-wrap gap-2">
         {selectedItems.map((item, idx) => {
-          // Ensure content is always a string
-          const contentString = typeof item.content === 'string' 
-            ? item.content 
-            : String(item.content || '');
+          const contentString = extractStringContent(item.content);
             
           return (
             <Badge
-              key={`keyword-${idx}-${contentString}`}
+              key={`keyword-${idx}-${contentString.substring(0, 20)}`}
               variant="secondary"
               className="bg-blue-500/20 text-blue-200 border-blue-500/30 hover:bg-blue-500/30 cursor-pointer flex items-center gap-1"
               onClick={() => handleToggleSelection(item.type, contentString)}

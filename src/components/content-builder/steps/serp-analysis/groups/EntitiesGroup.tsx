@@ -20,6 +20,29 @@ export const EntitiesGroup: React.FC<EntitiesGroupProps> = ({
   
   if (selectedItems.length === 0) return null;
 
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(', ');
+      }
+      // Handle other object types
+      if (content.name) return String(content.name);
+      if (content.entity) return String(content.entity);
+      if (content.text) return String(content.text);
+      if (content.title) return String(content.title);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -33,14 +56,11 @@ export const EntitiesGroup: React.FC<EntitiesGroupProps> = ({
       
       <div className="flex flex-wrap gap-2">
         {selectedItems.map((item, idx) => {
-          // Ensure content is always a string
-          const contentString = typeof item.content === 'string' 
-            ? item.content 
-            : String(item.content || '');
+          const contentString = extractStringContent(item.content);
             
           return (
             <Badge
-              key={`entity-${idx}-${contentString}`}
+              key={`entity-${idx}-${contentString.substring(0, 20)}`}
               variant="secondary"
               className="bg-indigo-500/20 text-indigo-200 border-indigo-500/30 hover:bg-indigo-500/30 cursor-pointer flex items-center gap-1"
               onClick={() => handleToggleSelection(item.type, contentString)}

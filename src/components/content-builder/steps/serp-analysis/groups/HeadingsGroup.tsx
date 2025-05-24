@@ -19,6 +19,28 @@ export const HeadingsGroup: React.FC<HeadingsGroupProps> = ({
   
   if (selectedItems.length === 0) return null;
 
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(' ');
+      }
+      // Handle other object types
+      if (content.text) return String(content.text);
+      if (content.heading) return String(content.heading);
+      if (content.title) return String(content.title);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -32,14 +54,11 @@ export const HeadingsGroup: React.FC<HeadingsGroupProps> = ({
       
       <div className="space-y-2">
         {selectedItems.map((item, idx) => {
-          // Ensure content is always a string
-          const contentString = typeof item.content === 'string' 
-            ? item.content 
-            : String(item.content || '');
+          const contentString = extractStringContent(item.content);
             
           return (
             <div
-              key={`heading-${idx}-${contentString.slice(0, 20)}`}
+              key={`heading-${idx}-${contentString.substring(0, 20)}`}
               className="bg-teal-500/20 border border-teal-500/30 rounded-lg p-3 cursor-pointer hover:bg-teal-500/30 transition-colors flex items-start justify-between gap-2"
               onClick={() => handleToggleSelection(item.type, contentString)}
             >
