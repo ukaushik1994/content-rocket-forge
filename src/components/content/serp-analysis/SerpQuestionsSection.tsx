@@ -22,21 +22,67 @@ export function SerpQuestionsSection({
 }: SerpQuestionsSectionProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   
+  // Add debug logging
+  console.log('🔍 SerpQuestionsSection Debug:', {
+    expanded,
+    hasSerpData: !!serpData,
+    peopleAlsoAskCount: serpData?.peopleAlsoAsk?.length || 0,
+    peopleAlsoAskData: serpData?.peopleAlsoAsk,
+    isMockData: serpData?.isMockData
+  });
+  
   // Standardize and validate FAQ data
   const standardizedFAQs = useMemo(() => {
     if (!serpData?.peopleAlsoAsk) {
+      console.log('⚠️ No peopleAlsoAsk data available');
       return [];
     }
     
     try {
-      return validateAndStandardizeFAQList(serpData.peopleAlsoAsk);
+      console.log('🔄 Processing FAQ data:', serpData.peopleAlsoAsk);
+      const result = validateAndStandardizeFAQList(serpData.peopleAlsoAsk);
+      console.log('✅ Standardized FAQs:', result.length, 'items');
+      return result;
     } catch (error) {
-      console.error('Error standardizing FAQ data:', error);
+      console.error('❌ Error standardizing FAQ data:', error);
       return [];
     }
   }, [serpData?.peopleAlsoAsk]);
 
   const { toggleFAQSelection, isFAQSelected } = useFAQSelection();
+  
+  // Show debug info when expanded but no FAQs
+  if (expanded && standardizedFAQs.length === 0) {
+    return (
+      <SerpErrorBoundary>
+        <Card className="border-amber-500/20 bg-amber-900/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-amber-400 mb-3">
+              <HelpCircle className="h-4 w-4" />
+              <span className="text-sm font-medium">FAQ Debug Information</span>
+            </div>
+            <div className="space-y-2 text-xs text-amber-400/70">
+              <p>Expanded: {expanded ? 'Yes' : 'No'}</p>
+              <p>Has SERP Data: {serpData ? 'Yes' : 'No'}</p>
+              <p>PeopleAlsoAsk Array Length: {serpData?.peopleAlsoAsk?.length || 0}</p>
+              <p>Is Mock Data: {serpData?.isMockData ? 'Yes' : 'No'}</p>
+              {serpData?.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer">Raw FAQ Data</summary>
+                  <pre className="mt-1 p-2 bg-amber-900/20 rounded text-xs overflow-auto max-h-32">
+                    {JSON.stringify(serpData.peopleAlsoAsk, null, 2)}
+                  </pre>
+                </details>
+              )}
+              {standardizedFAQs.length === 0 && serpData?.peopleAlsoAsk?.length > 0 && (
+                <p className="text-red-400">⚠️ FAQ data exists but standardization failed</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </SerpErrorBoundary>
+    );
+  }
   
   if (!expanded || standardizedFAQs.length === 0) return null;
   
@@ -54,8 +100,9 @@ export function SerpQuestionsSection({
     try {
       onAddToContent(faq.question, 'question');
       toggleFAQSelection(faq);
+      console.log('✅ Added FAQ question to content:', faq.question);
     } catch (error) {
-      console.error('Error adding question to content:', error);
+      console.error('❌ Error adding question to content:', error);
     }
   };
 
@@ -64,8 +111,9 @@ export function SerpQuestionsSection({
     
     try {
       onAddToContent(faq.answer, 'answer');
+      console.log('✅ Added FAQ answer to content:', faq.answer);
     } catch (error) {
-      console.error('Error adding answer to content:', error);
+      console.error('❌ Error adding answer to content:', error);
     }
   };
   
@@ -93,6 +141,11 @@ export function SerpQuestionsSection({
         animate="show"
         className="space-y-3 py-4"
       >
+        {/* Success message for displaying FAQs */}
+        <div className="text-xs text-green-400 mb-2">
+          ✅ Displaying {standardizedFAQs.length} FAQ{standardizedFAQs.length !== 1 ? 's' : ''}
+        </div>
+
         {standardizedFAQs.map((faq) => (
           <motion.div key={faq.id} variants={item}>
             <Card className="bg-amber-900/10 border-amber-500/20 hover:border-amber-500/40 transition-all">
@@ -178,21 +231,6 @@ export function SerpQuestionsSection({
             </Card>
           </motion.div>
         ))}
-        
-        {/* Error state for when standardization fails but we have raw data */}
-        {serpData?.peopleAlsoAsk?.length > 0 && standardizedFAQs.length === 0 && (
-          <Card className="border-red-500/20 bg-red-900/10">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-red-400">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="text-sm">Unable to process FAQ data</span>
-              </div>
-              <p className="text-xs text-red-400/70 mt-1">
-                The FAQ data format is not supported. Raw data: {serpData.peopleAlsoAsk.length} items
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </motion.div>
     </SerpErrorBoundary>
   );
