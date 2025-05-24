@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -351,16 +352,16 @@ function extractFeaturedSnippetsData(snippetData: any) {
     return snippetData.map(snippet => ({
       type: snippet.type || 'paragraph',
       content: snippet.snippet || snippet.answer || '',
-      source: snippet.link || '',
-      title: snippet.title || ''
+      source: snippet.link || snippet.source || '',
+      title: snippet.title || snippet.displayed_link || 'Featured Snippet'
     }));
   }
   
   return [{
     type: snippetData.type || 'paragraph',
     content: snippetData.snippet || snippetData.answer || '',
-    source: snippetData.link || '',
-    title: snippetData.title || ''
+    source: snippetData.link || snippetData.source || '',
+    title: snippetData.title || snippetData.displayed_link || 'Featured Snippet'
   }];
 }
 

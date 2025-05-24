@@ -66,11 +66,7 @@ export interface SerpAnalysisResult {
     source: string;
     answer?: string;
   }>;
-  featuredSnippets?: Array<{
-    content: string;
-    source: string;
-    type?: string;
-  }>;
+  featuredSnippets?: FeaturedSnippet[];
   keywords?: string[];
   recommendations?: string[];
   isMockData?: boolean;
