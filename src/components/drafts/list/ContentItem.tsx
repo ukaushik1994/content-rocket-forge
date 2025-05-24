@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Tag, List } from 'lucide-react';
+import { Eye, Edit, Trash2, Tag, List, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { RepurposeButton } from '../RepurposeButton';
@@ -33,6 +33,10 @@ export const ContentItem: React.FC<ContentItemProps> = ({
     }).format(date);
   };
 
+  // Get solution data from metadata
+  const solutionData = item.metadata?.solution;
+  const contentType = item.metadata?.contentType || 'article';
+
   return (
     <motion.div
       variants={{
@@ -44,11 +48,50 @@ export const ContentItem: React.FC<ContentItemProps> = ({
       <Card className="overflow-hidden border border-white/10 bg-card/30 backdrop-blur-sm hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 h-full flex flex-col">
         <CardHeader className="pb-2 relative">
           <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-to-br from-neon-purple/20 to-neon-blue/10 rounded-full blur-xl z-0"></div>
-          <div className="flex justify-between items-start z-10 relative">
-            <CardTitle className="text-lg line-clamp-2">{item.title}</CardTitle>
+          
+          {/* Solution Logo and Content Type Row */}
+          <div className="flex items-center justify-between mb-3 z-10 relative">
+            <div className="flex items-center gap-3">
+              {solutionData?.logoUrl ? (
+                <div className="h-8 w-8 rounded-md overflow-hidden bg-white/10 flex items-center justify-center border border-white/20">
+                  <img 
+                    src={solutionData.logoUrl} 
+                    alt={`${solutionData.name} logo`} 
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              ) : solutionData?.name ? (
+                <div className="h-8 w-8 rounded-md bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 flex items-center justify-center border border-white/20">
+                  <span className="text-xs font-semibold text-white/80">
+                    {solutionData.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              ) : (
+                <div className="h-8 w-8 rounded-md bg-white/5 flex items-center justify-center border border-white/10">
+                  <FileText className="h-4 w-4 text-white/40" />
+                </div>
+              )}
+              
+              <div className="flex flex-col">
+                {solutionData?.name && (
+                  <span className="text-xs text-muted-foreground">{solutionData.name}</span>
+                )}
+                <Badge variant="outline" className="w-fit text-xs bg-white/5 border-white/20 text-foreground/70">
+                  {contentType}
+                </Badge>
+              </div>
+            </div>
+            
             <Badge variant={item.status === 'draft' ? 'outline' : 'default'} className={`${item.status === 'draft' ? 'border-white/20' : 'bg-primary text-primary-foreground'}`}>
               {item.status === 'draft' ? 'Draft' : 'Published'}
             </Badge>
+          </div>
+
+          <div className="flex justify-between items-start z-10 relative">
+            <CardTitle className="text-lg line-clamp-2">{item.title}</CardTitle>
           </div>
           <CardDescription className="flex items-center gap-2 text-xs mt-2 text-muted-foreground">
             <span>{formatDate(item.created_at)}</span>
