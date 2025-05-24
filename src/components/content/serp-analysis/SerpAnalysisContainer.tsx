@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, HelpCircle, FileText, Tag, Heading, Brain, Target, TrendingUp, DollarSign, BarChart3, Newspaper, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,6 +48,30 @@ export function SerpAnalysisContainer({
     }
     setExpandedSections(newExpandedSections);
   };
+
+  // Add debugging for data display issues
+  React.useEffect(() => {
+    if (serpData) {
+      console.log('🔍 SERP Data Debug:', {
+        hasData: !!serpData,
+        peopleAlsoAskCount: serpData.peopleAlsoAsk?.length || 0,
+        featuredSnippetsCount: serpData.featuredSnippets?.length || 0,
+        entitiesCount: serpData.entities?.length || 0,
+        headingsCount: serpData.headings?.length || 0,
+        contentGapsCount: serpData.contentGaps?.length || 0,
+        keywordsCount: serpData.keywords?.length || 0,
+        isMockData: serpData.isMockData
+      });
+      
+      // Log first few items for debugging
+      if (serpData.peopleAlsoAsk?.length > 0) {
+        console.log('📝 People Also Ask Sample:', serpData.peopleAlsoAsk.slice(0, 2));
+      }
+      if (serpData.featuredSnippets?.length > 0) {
+        console.log('🎯 Featured Snippets Sample:', serpData.featuredSnippets.slice(0, 2));
+      }
+    }
+  }, [serpData]);
 
   if (isLoading) {
     return (
@@ -150,6 +175,21 @@ export function SerpAnalysisContainer({
       )
     },
     {
+      id: 'featured-snippets',
+      title: 'Featured Snippets',
+      icon: Target,
+      description: 'Snippet optimization opportunities',
+      count: serpData?.featuredSnippets?.length || 0,
+      variant: 'green' as const,
+      component: (expanded: boolean) => (
+        <SerpFeaturedSnippetsSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+        />
+      )
+    },
+    {
       id: 'top-stories',
       title: 'Top Stories',
       icon: Newspaper,
@@ -223,21 +263,6 @@ export function SerpAnalysisContainer({
           onAddToContent={onAddToContent}
         />
       )
-    },
-    {
-      id: 'featured-snippets',
-      title: 'Featured Snippets',
-      icon: Target,
-      description: 'Snippet optimization opportunities',
-      count: serpData?.featuredSnippets?.length || 0,
-      variant: 'green' as const,
-      component: (expanded: boolean) => (
-        <SerpFeaturedSnippetsSection
-          serpData={serpData}
-          expanded={expanded}
-          onAddToContent={onAddToContent}
-        />
-      )
     }
   ];
 
@@ -251,6 +276,11 @@ export function SerpAnalysisContainer({
               SERP Analysis: <span className="text-neon-purple">{mainKeyword}</span>
             </h3>
           </div>
+          {serpData?.isMockData && (
+            <div className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded">
+              Using mock data
+            </div>
+          )}
         </div>
       </div>
 

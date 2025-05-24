@@ -20,7 +20,24 @@ export function SerpFeaturedSnippetsSection({
 }: SerpFeaturedSnippetsSectionProps) {
   const [expandedSnippets, setExpandedSnippets] = useState<Set<number>>(new Set());
   
-  if (!expanded || !serpData?.featuredSnippets?.length) return null;
+  console.log('🔍 Featured Snippets Section Debug:', {
+    expanded,
+    hasFeaturedSnippets: !!serpData?.featuredSnippets,
+    featuredSnippetsLength: serpData?.featuredSnippets?.length || 0,
+    firstSnippet: serpData?.featuredSnippets?.[0]
+  });
+  
+  if (!expanded) return null;
+  
+  if (!serpData?.featuredSnippets?.length) {
+    return (
+      <div className="p-4 text-center text-white/50">
+        <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p>No featured snippets found for this keyword</p>
+        <p className="text-xs mt-1">Featured snippets provide great opportunities for ranking</p>
+      </div>
+    );
+  }
   
   const toggleSnippet = (index: number) => {
     const newExpanded = new Set(expandedSnippets);

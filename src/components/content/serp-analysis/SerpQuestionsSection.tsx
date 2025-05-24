@@ -15,7 +15,24 @@ interface SerpQuestionsSectionProps {
 export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () => {} }: SerpQuestionsSectionProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
   
-  if (!expanded || !serpData?.peopleAlsoAsk?.length) return null;
+  console.log('🔍 Questions Section Debug:', {
+    expanded,
+    hasPeopleAlsoAsk: !!serpData?.peopleAlsoAsk,
+    peopleAlsoAskLength: serpData?.peopleAlsoAsk?.length || 0,
+    firstQuestion: serpData?.peopleAlsoAsk?.[0]
+  });
+  
+  if (!expanded) return null;
+  
+  if (!serpData?.peopleAlsoAsk?.length) {
+    return (
+      <div className="p-4 text-center text-white/50">
+        <HelpCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p>No questions found for this keyword</p>
+        <p className="text-xs mt-1">Questions help address user intent in your content</p>
+      </div>
+    );
+  }
   
   const toggleQuestion = (index: number) => {
     const newExpanded = new Set(expandedQuestions);

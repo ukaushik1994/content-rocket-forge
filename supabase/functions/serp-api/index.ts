@@ -170,7 +170,7 @@ serve(async (req) => {
     console.log('✅ SerpAPI data received successfully');
     console.log('📊 Response data structure:', Object.keys(data));
 
-    // Log enhanced data extraction
+    // Enhanced data extraction logging
     console.log('🔍 Enhanced SERP data extraction:', {
       hasKnowledgeGraph: !!data.knowledge_graph,
       hasFeaturedSnippets: !!data.featured_snippets,
@@ -180,7 +180,9 @@ serve(async (req) => {
       hasVideos: !!data.videos,
       hasShoppingResults: !!data.shopping_results,
       hasPeopleAlsoAsk: !!data.people_also_ask,
-      hasRelatedQuestions: !!data.related_questions
+      hasRelatedQuestions: !!data.related_questions,
+      hasAds: !!data.ads,
+      hasTopStories: !!data.top_stories
     });
 
     // Transform the data based on endpoint
@@ -277,12 +279,14 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   console.log('🔄 Transforming SERP data for keyword:', keyword);
   
   const organicResults = data.organic_results || [];
-  const peopleAlsoAsk = data.people_also_ask || data.related_questions || [];
   const relatedSearches = data.related_searches || [];
+  
+  // FIXED: Enhanced extraction for People Also Ask and Featured Snippets
+  const peopleAlsoAsk = extractPeopleAlsoAsk(data);
+  const featuredSnippets = extractFeaturedSnippets(data);
   
   // Enhanced data extraction
   const knowledgeGraph = extractKnowledgeGraphData(data.knowledge_graph);
-  const featuredSnippets = extractFeaturedSnippetsData(data.featured_snippets || data.answer_box);
   const localResults = extractLocalResultsData(data.local_results);
   const multimediaOpportunities = extractMultimediaData(data.images, data.videos);
   const commercialSignals = extractCommercialSignals(data.shopping_results, data.ads);
@@ -295,6 +299,14 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   
   // Generate content gaps based on competitor analysis
   const contentGaps = generateContentGaps(organicResults, keyword);
+  
+  console.log('📊 Data extraction results:', {
+    peopleAlsoAskCount: peopleAlsoAsk.length,
+    featuredSnippetsCount: featuredSnippets.length,
+    entitiesCount: entities.length,
+    headingsCount: headings.length,
+    contentGapsCount: contentGaps.length
+  });
   
   const result = {
     keyword,
@@ -310,11 +322,8 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
     relatedSearches: relatedSearches.map((search: any) => ({
       query: search.query || search
     })),
-    peopleAlsoAsk: peopleAlsoAsk.map((q: any) => ({
-      question: q.question || '',
-      source: q.link || 'search',
-      answer: q.snippet || q.answer || ''
-    })),
+    peopleAlsoAsk,
+    featuredSnippets,
     entities,
     headings,
     contentGaps,
@@ -322,7 +331,6 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
     recommendations: generateRecommendations(organicResults, keyword),
     // Enhanced fields
     knowledgeGraph,
-    featuredSnippets,
     localResults,
     multimediaOpportunities,
     commercialSignals,
@@ -331,6 +339,88 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   
   console.log('✅ Enhanced data transformation complete');
   return result;
+}
+
+// FIXED: Enhanced People Also Ask extraction
+function extractPeopleAlsoAsk(data: any) {
+  console.log('🔍 Extracting People Also Ask data...');
+  
+  const questions = [];
+  
+  // Check multiple possible fields
+  const peopleAlsoAsk = data.people_also_ask || [];
+  const relatedQuestions = data.related_questions || [];
+  
+  console.log('📊 PAA Sources:', {
+    peopleAlsoAskCount: peopleAlsoAsk.length,
+    relatedQuestionsCount: relatedQuestions.length
+  });
+  
+  // Process people_also_ask
+  if (peopleAlsoAsk.length > 0) {
+    peopleAlsoAsk.forEach((item: any) => {
+      questions.push({
+        question: item.question || '',
+        source: item.link || item.source || 'People Also Ask',
+        answer: item.snippet || item.answer || ''
+      });
+    });
+  }
+  
+  // Process related_questions
+  if (relatedQuestions.length > 0) {
+    relatedQuestions.forEach((item: any) => {
+      questions.push({
+        question: item.question || '',
+        source: item.link || item.source || 'Related Questions',
+        answer: item.snippet || item.answer || ''
+      });
+    });
+  }
+  
+  console.log('✅ Extracted questions:', questions.length);
+  return questions;
+}
+
+// FIXED: Enhanced Featured Snippets extraction
+function extractFeaturedSnippets(data: any) {
+  console.log('🔍 Extracting Featured Snippets data...');
+  
+  const snippets = [];
+  
+  // Check both featured_snippets and answer_box
+  const featuredSnippets = data.featured_snippets || [];
+  const answerBox = data.answer_box;
+  
+  console.log('📊 Snippet Sources:', {
+    featuredSnippetsCount: featuredSnippets.length,
+    hasAnswerBox: !!answerBox
+  });
+  
+  // Process featured_snippets array
+  if (Array.isArray(featuredSnippets) && featuredSnippets.length > 0) {
+    featuredSnippets.forEach((snippet: any) => {
+      snippets.push({
+        type: snippet.type || 'paragraph',
+        content: snippet.snippet || snippet.answer || snippet.text || '',
+        source: snippet.link || snippet.source || '',
+        title: snippet.title || snippet.displayed_link || 'Featured Snippet'
+      });
+    });
+  }
+  
+  // Process answer_box (common in SerpAPI responses)
+  if (answerBox) {
+    snippets.push({
+      type: answerBox.type || 'paragraph',
+      content: answerBox.snippet || answerBox.answer || answerBox.text || '',
+      source: answerBox.link || answerBox.source || '',
+      title: answerBox.title || answerBox.displayed_link || 'Answer Box'
+    });
+  }
+  
+  console.log('✅ Extracted snippets:', snippets.length);
+  return snippets;
 }
 
 function extractKnowledgeGraphData(knowledgeGraph: any) {
@@ -343,26 +433,6 @@ function extractKnowledgeGraphData(knowledgeGraph: any) {
     attributes: knowledgeGraph.attributes || {},
     relatedEntities: knowledgeGraph.people_also_search_for || []
   };
-}
-
-function extractFeaturedSnippetsData(snippetData: any) {
-  if (!snippetData) return [];
-  
-  if (Array.isArray(snippetData)) {
-    return snippetData.map(snippet => ({
-      type: snippet.type || 'paragraph',
-      content: snippet.snippet || snippet.answer || '',
-      source: snippet.link || snippet.source || '',
-      title: snippet.title || snippet.displayed_link || 'Featured Snippet'
-    }));
-  }
-  
-  return [{
-    type: snippetData.type || 'paragraph',
-    content: snippetData.snippet || snippetData.answer || '',
-    source: snippetData.link || snippetData.source || '',
-    title: snippetData.title || snippetData.displayed_link || 'Featured Snippet'
-  }];
 }
 
 function extractLocalResultsData(localResults: any) {
