@@ -24,6 +24,9 @@ export const ContentItem: React.FC<ContentItemProps> = ({
   const repurposedFormats = content.metadata?.repurposedFormats || [];
   const hasRepurposedFormats = repurposedFormats.length > 0;
   
+  console.log('[ContentItem] Content metadata:', content.metadata);
+  console.log('[ContentItem] Repurposed formats:', repurposedFormats);
+  
   const date = content.created_at ? new Date(content.created_at) : new Date();
   const timeAgo = formatDistanceToNow(date, { addSuffix: true });
   

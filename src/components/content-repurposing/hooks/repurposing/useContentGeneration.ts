@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { contentFormats } from '../../formats';
@@ -17,7 +18,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
 
-  // Use the new hook to get repurposed content data from database
+  // Use the repurposed content data hook
   const {
     repurposedFormats: savedContentFormats,
     repurposedContentMap,
@@ -37,18 +38,17 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       setGeneratedContents(repurposedContentMap);
       
       // Auto-select first format if none is active
-      if (!activeFormat && Object.keys(repurposedContentMap).length > 0) {
+      if (!activeFormat) {
         const firstFormat = Object.keys(repurposedContentMap)[0];
         console.log('[useContentGeneration] Auto-selecting first format:', firstFormat);
         setActiveFormat(firstFormat);
       }
-    } else {
-      // Clear generated contents if no repurposed content exists
-      console.log('[useContentGeneration] No repurposed content, clearing generatedContents');
-      setGeneratedContents({});
+    } else if (Object.keys(generatedContents).length === 0) {
+      // Only clear if we don't have any generated content in memory
+      console.log('[useContentGeneration] No repurposed content and no generated content, clearing state');
       setActiveFormat(null);
     }
-  }, [repurposedContentMap, activeFormat]);
+  }, [repurposedContentMap]);
 
   // Auto-select first format when generated contents change
   useEffect(() => {
@@ -59,6 +59,16 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       setActiveFormat(formats[0]);
     }
   }, [generatedContents, activeFormat]);
+
+  // Reset state when content changes
+  useEffect(() => {
+    if (!content) {
+      console.log('[useContentGeneration] Content cleared, resetting state');
+      setSelectedFormats([]);
+      setGeneratedContents({});
+      setActiveFormat(null);
+    }
+  }, [content?.id]);
 
   const handleGenerateContent = useCallback(async (formats: string[]) => {
     if (!content || formats.length === 0) {
@@ -126,7 +136,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         }
       }
 
-      console.log('[useContentGeneration] Setting new generated contents:', newGeneratedContents);
+      console.log('[useContentGeneration] Setting new generated contents:', Object.keys(newGeneratedContents));
       setGeneratedContents(newGeneratedContents);
 
       // Auto-select first generated format
@@ -155,6 +165,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       const format = contentFormats.find(f => f.id === formatId);
       const formatName = format?.name || formatId;
 
+      console.log('[useContentGeneration] Saving content for format:', formatId);
+
       const result = await repurposedContentService.saveRepurposedContent({
         contentId: content.id,
         formatCode: formatId,
@@ -165,7 +177,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
       if (result) {
         // Refresh data to get latest from database
-        refreshRepurposedData();
+        await refreshRepurposedData();
         toast.success(`${formatName} content saved successfully`);
         return true;
       }
@@ -187,6 +199,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
     setIsSavingAll(true);
     try {
+      console.log('[useContentGeneration] Saving all content:', Object.keys(generatedContents));
+
       const savedFormats = await repurposedContentService.saveAllRepurposedContent(
         content.id,
         user.id,
@@ -196,7 +210,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
       if (savedFormats.length > 0) {
         // Refresh data to get latest from database
-        refreshRepurposedData();
+        await refreshRepurposedData();
         toast.success(`${savedFormats.length} format(s) saved successfully`);
         return true;
       } else {
@@ -219,16 +233,27 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     }
 
     try {
+      console.log('[useContentGeneration] Deleting format:', formatId);
+
       const success = await repurposedContentService.deleteRepurposedContent(content.id, formatId);
       if (success) {
         // Refresh data to get latest from database
-        refreshRepurposedData();
+        await refreshRepurposedData();
+        
+        // Remove from local generated contents as well
+        setGeneratedContents(prev => {
+          const newContents = { ...prev };
+          delete newContents[formatId];
+          return newContents;
+        });
         
         // Reset active format if deleted
         if (activeFormat === formatId) {
           const remainingFormats = Object.keys(generatedContents).filter(id => id !== formatId);
           setActiveFormat(remainingFormats.length > 0 ? remainingFormats[0] : null);
         }
+        
+        toast.success('Content deleted successfully');
         return true;
       }
       return false;
@@ -301,7 +326,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
       if (deletedCount > 0) {
         // Refresh data to get latest from database
-        refreshRepurposedData();
+        await refreshRepurposedData();
+        setGeneratedContents({});
         setActiveFormat(null);
         toast.success(`${deletedCount} format(s) deleted successfully`);
         return true;

@@ -53,6 +53,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = m
   
   console.log('[GeneratedContentDisplay] generatedFormats:', generatedFormats);
   console.log('[GeneratedContentDisplay] hasGeneratedContent:', hasGeneratedContent);
+  console.log('[GeneratedContentDisplay] isCurrentFormatSaved:', isCurrentFormatSaved);
   
   return (
     <Card className="h-full">
