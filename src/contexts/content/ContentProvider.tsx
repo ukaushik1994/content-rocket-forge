@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../AuthContext';
@@ -10,7 +9,7 @@ import { createApprovalActions } from './actions/approvalActions';
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
-export const ContentProvider = ({ children }: { children: ReactNode }) => {
+export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [contentItems, setContentItems] = useState<ContentItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
