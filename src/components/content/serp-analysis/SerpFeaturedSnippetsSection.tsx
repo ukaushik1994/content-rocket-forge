@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Plus, ChevronDown, ChevronRight, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,8 @@ export function SerpFeaturedSnippetsSection({
   const [expandedSnippets, setExpandedSnippets] = useState<Set<number>>(new Set());
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  // Enhanced debugging with data validation
-  const debugInfo = React.useMemo(() => {
+  // Always call all hooks - Enhanced debugging with data validation
+  const debugInfo = useMemo(() => {
     const info = {
       hasData: !!serpData,
       hasFeaturedSnippets: !!serpData?.featuredSnippets,
@@ -48,12 +48,8 @@ export function SerpFeaturedSnippetsSection({
     return info;
   }, [serpData]);
   
-  console.log('🔍 Featured Snippets Section Enhanced Debug:', debugInfo);
-  
-  if (!expanded) return null;
-  
-  // Validate and filter snippets
-  const validSnippets = React.useMemo(() => {
+  // Validate and filter snippets - always call this hook
+  const validSnippets = useMemo(() => {
     if (!Array.isArray(serpData?.featuredSnippets)) {
       console.warn('❌ featuredSnippets is not an array:', typeof serpData?.featuredSnippets);
       return [];
@@ -74,6 +70,46 @@ export function SerpFeaturedSnippetsSection({
     });
   }, [serpData?.featuredSnippets]);
   
+  console.log('🔍 Featured Snippets Section Enhanced Debug:', debugInfo);
+  
+  // Early return after all hooks have been called
+  if (!expanded) return null;
+  
+  const toggleSnippet = (index: number) => {
+    const newExpanded = new Set(expandedSnippets);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedSnippets(newExpanded);
+  };
+  
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
+  const getSnippetTypeColor = (type: string) => {
+    switch (type) {
+      case 'paragraph': return 'bg-green-500/20 text-green-300';
+      case 'list': return 'bg-orange-500/20 text-orange-300';
+      case 'table': return 'bg-purple-500/20 text-purple-300';
+      case 'dictionary_results': return 'bg-blue-500/20 text-blue-300';
+      default: return 'bg-gray-500/20 text-gray-300';
+    }
+  };
+
   // Show empty state with debugging info
   if (validSnippets.length === 0) {
     return (
@@ -122,41 +158,6 @@ export function SerpFeaturedSnippetsSection({
       </div>
     );
   }
-  
-  const toggleSnippet = (index: number) => {
-    const newExpanded = new Set(expandedSnippets);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
-    }
-    setExpandedSnippets(newExpanded);
-  };
-  
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
-  const getSnippetTypeColor = (type: string) => {
-    switch (type) {
-      case 'paragraph': return 'bg-green-500/20 text-green-300';
-      case 'list': return 'bg-orange-500/20 text-orange-300';
-      case 'table': return 'bg-purple-500/20 text-purple-300';
-      case 'dictionary_results': return 'bg-blue-500/20 text-blue-300';
-      default: return 'bg-gray-500/20 text-gray-300';
-    }
-  };
 
   return (
     <motion.div
