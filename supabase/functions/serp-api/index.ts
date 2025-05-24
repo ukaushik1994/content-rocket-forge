@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -185,6 +184,17 @@ serve(async (req) => {
       hasTopStories: !!data.top_stories
     });
 
+    // DEBUG: Log the actual structure of key fields
+    if (data.answer_box) {
+      console.log('🔍 Answer Box structure:', JSON.stringify(data.answer_box, null, 2));
+    }
+    if (data.related_questions) {
+      console.log('🔍 Related Questions structure:', JSON.stringify(data.related_questions, null, 2));
+    }
+    if (data.people_also_ask) {
+      console.log('🔍 People Also Ask structure:', JSON.stringify(data.people_also_ask, null, 2));
+    }
+
     // Transform the data based on endpoint
     let transformedData = {};
     
@@ -300,7 +310,7 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   // Generate content gaps based on competitor analysis
   const contentGaps = generateContentGaps(organicResults, keyword);
   
-  console.log('📊 Data extraction results:', {
+  console.log('📊 Final extraction results:', {
     peopleAlsoAskCount: peopleAlsoAsk.length,
     featuredSnippetsCount: featuredSnippets.length,
     entitiesCount: entities.length,
@@ -341,7 +351,7 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   return result;
 }
 
-// FIXED: Enhanced People Also Ask extraction
+// FIXED: Enhanced People Also Ask extraction with proper structure handling
 function extractPeopleAlsoAsk(data: any) {
   console.log('🔍 Extracting People Also Ask data...');
   
@@ -360,29 +370,37 @@ function extractPeopleAlsoAsk(data: any) {
   if (peopleAlsoAsk.length > 0) {
     peopleAlsoAsk.forEach((item: any) => {
       questions.push({
-        question: item.question || '',
+        question: item.question || item.title || '',
         source: item.link || item.source || 'People Also Ask',
-        answer: item.snippet || item.answer || ''
+        answer: item.snippet || item.answer || item.text || ''
       });
     });
   }
   
-  // Process related_questions
+  // Process related_questions with proper structure handling
   if (relatedQuestions.length > 0) {
     relatedQuestions.forEach((item: any) => {
+      // Handle the actual structure from SerpAPI
+      const question = item.question || item.title || item;
+      const answer = item.snippet || item.answer || item.text || '';
+      const source = item.link || item.source || 'Related Questions';
+      
       questions.push({
-        question: item.question || '',
-        source: item.link || item.source || 'Related Questions',
-        answer: item.snippet || item.answer || ''
+        question: typeof question === 'string' ? question : String(question),
+        source: typeof source === 'string' ? source : String(source),
+        answer: typeof answer === 'string' ? answer : String(answer)
       });
     });
   }
   
   console.log('✅ Extracted questions:', questions.length);
+  if (questions.length > 0) {
+    console.log('📝 Sample question:', questions[0]);
+  }
   return questions;
 }
 
-// FIXED: Enhanced Featured Snippets extraction
+// FIXED: Enhanced Featured Snippets extraction with proper answer_box handling
 function extractFeaturedSnippets(data: any) {
   console.log('🔍 Extracting Featured Snippets data...');
   
@@ -409,17 +427,62 @@ function extractFeaturedSnippets(data: any) {
     });
   }
   
-  // Process answer_box (common in SerpAPI responses)
+  // Process answer_box (common in SerpAPI responses) with proper structure handling
   if (answerBox) {
-    snippets.push({
-      type: answerBox.type || 'paragraph',
-      content: answerBox.snippet || answerBox.answer || answerBox.text || '',
-      source: answerBox.link || answerBox.source || '',
-      title: answerBox.title || answerBox.displayed_link || 'Answer Box'
-    });
+    console.log('📦 Processing answer_box:', Object.keys(answerBox));
+    
+    // Extract content from various answer_box structures
+    let content = '';
+    let type = 'paragraph';
+    let title = '';
+    let source = '';
+    
+    // Handle different answer_box formats
+    if (answerBox.snippet) {
+      content = answerBox.snippet;
+    } else if (answerBox.answer) {
+      content = answerBox.answer;
+    } else if (answerBox.text) {
+      content = answerBox.text;
+    } else if (answerBox.result) {
+      content = answerBox.result;
+    }
+    
+    // Extract type
+    if (answerBox.type) {
+      type = answerBox.type;
+    }
+    
+    // Extract title
+    if (answerBox.title) {
+      title = answerBox.title;
+    } else if (answerBox.displayed_link) {
+      title = answerBox.displayed_link;
+    } else {
+      title = 'Answer Box';
+    }
+    
+    // Extract source
+    if (answerBox.link) {
+      source = answerBox.link;
+    } else if (answerBox.source) {
+      source = answerBox.source;
+    }
+    
+    if (content) {
+      snippets.push({
+        type,
+        content: String(content),
+        source: String(source),
+        title: String(title)
+      });
+    }
   }
   
   console.log('✅ Extracted snippets:', snippets.length);
+  if (snippets.length > 0) {
+    console.log('📝 Sample snippet:', snippets[0]);
+  }
   return snippets;
 }
 
