@@ -8,7 +8,7 @@ export function useSerpIntegration() {
   const { state } = useContentBuilder();
   const [serpIntegrationSuggestions, setSerpIntegrationSuggestions] = useState<OptimizationSuggestion[]>([]);
 
-  const analyzeSerpUsage = useCallback(async (content: string) => {
+  const analyzeSerpUsageHook = useCallback(async (content: string) => {
     const selectedSerpItems = state.serpSelections?.filter(item => item.selected) || [];
     if (selectedSerpItems.length > 0) {
       const serpAnalysis = await analyzeSerpUsage(content, selectedSerpItems);
@@ -35,7 +35,7 @@ export function useSerpIntegration() {
 
   return {
     serpIntegrationSuggestions,
-    analyzeSerpUsage,
+    analyzeSerpUsage: analyzeSerpUsageHook,
     setSerpIntegrationSuggestions,
     incorporateAllSerpItems
   };
