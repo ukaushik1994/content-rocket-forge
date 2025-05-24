@@ -1,8 +1,79 @@
-
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
+
+const processEnhancedSerpSelections = (serpData: any): SerpSelection[] => {
+  const selections: SerpSelection[] = [];
+  
+  // Knowledge Graph entities
+  if (serpData.knowledgeGraph) {
+    const kg = serpData.knowledgeGraph;
+    selections.push({
+      type: 'knowledgeEntity',
+      content: kg.title,
+      selected: false,
+      source: 'knowledge_graph',
+      metadata: { type: kg.type, description: kg.description }
+    });
+    
+    // Related entities from knowledge graph
+    if (kg.relatedEntities) {
+      kg.relatedEntities.forEach((entity: any) => {
+        selections.push({
+          type: 'relatedEntity',
+          content: entity.name,
+          selected: false,
+          source: 'knowledge_graph',
+          metadata: { link: entity.link }
+        });
+      });
+    }
+  }
+  
+  // Featured snippets
+  if (serpData.featuredSnippets) {
+    serpData.featuredSnippets.forEach((snippet: any) => {
+      selections.push({
+        type: 'featuredSnippet',
+        content: snippet.content,
+        selected: false,
+        source: 'featured_snippets',
+        metadata: { type: snippet.type, title: snippet.title, source: snippet.source }
+      });
+    });
+  }
+  
+  // Local business data
+  if (serpData.localResults) {
+    serpData.localResults.forEach((business: any) => {
+      selections.push({
+        type: 'localBusiness',
+        content: `${business.name} - ${business.address}`,
+        selected: false,
+        source: 'local_results',
+        metadata: { rating: business.rating, reviews: business.reviews }
+      });
+    });
+  }
+  
+  // Multimedia opportunities
+  if (serpData.multimediaOpportunities) {
+    serpData.multimediaOpportunities.forEach((opportunity: any) => {
+      opportunity.suggestions.forEach((suggestion: any) => {
+        selections.push({
+          type: `multimedia_${opportunity.type}`,
+          content: suggestion.title,
+          selected: false,
+          source: 'multimedia',
+          metadata: { mediaType: opportunity.type, source: suggestion.source }
+        });
+      });
+    });
+  }
+  
+  return selections;
+};
 
 export const createSerpActions = (
   state: ContentBuilderState, 
@@ -25,6 +96,10 @@ export const createSerpActions = (
         toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
       } else {
         console.log("SERP data successfully retrieved:", serpData);
+        
+        // Process enhanced SERP selections
+        const enhancedSelections = processEnhancedSerpSelections(serpData);
+        console.log("Enhanced SERP selections processed:", enhancedSelections.length);
         
         if (serpData.isMockData) {
           toast.warning("Using mock search data. Add your SERP API key for real results.");

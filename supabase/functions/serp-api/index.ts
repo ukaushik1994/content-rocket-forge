@@ -51,7 +51,6 @@ serve(async (req) => {
     
     if (!keyValidation.valid) {
       console.warn('⚠️ API key format validation failed:', keyValidation.issues);
-      // Continue anyway since validation might be too strict
     }
 
     console.log('🎯 Making SERP API call to endpoint:', endpoint);
@@ -170,6 +169,19 @@ serve(async (req) => {
     console.log('✅ SerpAPI data received successfully');
     console.log('📊 Response data structure:', Object.keys(data));
 
+    // Log enhanced data extraction
+    console.log('🔍 Enhanced SERP data extraction:', {
+      hasKnowledgeGraph: !!data.knowledge_graph,
+      hasFeaturedSnippets: !!data.featured_snippets,
+      hasAnswerBox: !!data.answer_box,
+      hasLocalResults: !!data.local_results,
+      hasImages: !!data.images,
+      hasVideos: !!data.videos,
+      hasShoppingResults: !!data.shopping_results,
+      hasPeopleAlsoAsk: !!data.people_also_ask,
+      hasRelatedQuestions: !!data.related_questions
+    });
+
     // Transform the data based on endpoint
     let transformedData = {};
     
@@ -264,11 +276,18 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   console.log('🔄 Transforming SERP data for keyword:', keyword);
   
   const organicResults = data.organic_results || [];
-  const peopleAlsoAsk = data.people_also_ask || [];
+  const peopleAlsoAsk = data.people_also_ask || data.related_questions || [];
   const relatedSearches = data.related_searches || [];
   
-  // Extract entities from snippets and titles
-  const entities = extractEntities(organicResults);
+  // Enhanced data extraction
+  const knowledgeGraph = extractKnowledgeGraphData(data.knowledge_graph);
+  const featuredSnippets = extractFeaturedSnippetsData(data.featured_snippets || data.answer_box);
+  const localResults = extractLocalResultsData(data.local_results);
+  const multimediaOpportunities = extractMultimediaData(data.images, data.videos);
+  const commercialSignals = extractCommercialSignals(data.shopping_results, data.ads);
+  
+  // Extract entities from multiple sources
+  const entities = extractEntitiesEnhanced(organicResults, data.knowledge_graph);
   
   // Extract headings from organic results
   const headings = extractHeadings(organicResults);
@@ -278,7 +297,7 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   
   const result = {
     keyword,
-    searchVolume: Math.floor(Math.random() * 10000) + 1000, // SerpAPI doesn't provide this in basic plan
+    searchVolume: data.search_information?.total_results || Math.floor(Math.random() * 10000) + 1000,
     keywordDifficulty: Math.floor(Math.random() * 100),
     competitionScore: Math.random() * 0.8,
     topResults: organicResults.slice(0, 10).map((result: any, index: number) => ({
@@ -293,23 +312,120 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
     peopleAlsoAsk: peopleAlsoAsk.map((q: any) => ({
       question: q.question || '',
       source: q.link || 'search',
-      answer: q.snippet || ''
+      answer: q.snippet || q.answer || ''
     })),
     entities,
     headings,
     contentGaps,
     keywords: relatedSearches.map((s: any) => s.query || s).slice(0, 10),
     recommendations: generateRecommendations(organicResults, keyword),
+    // Enhanced fields
+    knowledgeGraph,
+    featuredSnippets,
+    localResults,
+    multimediaOpportunities,
+    commercialSignals,
     isMockData: false
   };
   
-  console.log('✅ Data transformation complete');
+  console.log('✅ Enhanced data transformation complete');
   return result;
 }
 
-function extractEntities(organicResults: any[]) {
+function extractKnowledgeGraphData(knowledgeGraph: any) {
+  if (!knowledgeGraph) return null;
+  
+  return {
+    title: knowledgeGraph.title || '',
+    type: knowledgeGraph.type || '',
+    description: knowledgeGraph.description || '',
+    attributes: knowledgeGraph.attributes || {},
+    relatedEntities: knowledgeGraph.people_also_search_for || []
+  };
+}
+
+function extractFeaturedSnippetsData(snippetData: any) {
+  if (!snippetData) return [];
+  
+  if (Array.isArray(snippetData)) {
+    return snippetData.map(snippet => ({
+      type: snippet.type || 'paragraph',
+      content: snippet.snippet || snippet.answer || '',
+      source: snippet.link || '',
+      title: snippet.title || ''
+    }));
+  }
+  
+  return [{
+    type: snippetData.type || 'paragraph',
+    content: snippetData.snippet || snippetData.answer || '',
+    source: snippetData.link || '',
+    title: snippetData.title || ''
+  }];
+}
+
+function extractLocalResultsData(localResults: any) {
+  if (!localResults || !Array.isArray(localResults)) return [];
+  
+  return localResults.map(result => ({
+    name: result.title || '',
+    address: result.address || '',
+    rating: result.rating || 0,
+    reviews: result.reviews || 0,
+    type: result.type || 'business'
+  }));
+}
+
+function extractMultimediaData(images: any, videos: any) {
+  const opportunities = [];
+  
+  if (images && Array.isArray(images)) {
+    opportunities.push({
+      type: 'images',
+      count: images.length,
+      suggestions: images.slice(0, 3).map((img: any) => ({
+        title: img.title || '',
+        source: img.source || ''
+      }))
+    });
+  }
+  
+  if (videos && Array.isArray(videos)) {
+    opportunities.push({
+      type: 'videos',
+      count: videos.length,
+      suggestions: videos.slice(0, 3).map((vid: any) => ({
+        title: vid.title || '',
+        source: vid.link || ''
+      }))
+    });
+  }
+  
+  return opportunities;
+}
+
+function extractCommercialSignals(shoppingResults: any, ads: any) {
+  const signals = {
+    hasShoppingResults: !!shoppingResults && Array.isArray(shoppingResults) && shoppingResults.length > 0,
+    hasAds: !!ads && Array.isArray(ads) && ads.length > 0,
+    commercialIntent: 'unknown' as 'high' | 'medium' | 'low' | 'unknown'
+  };
+  
+  if (signals.hasShoppingResults && signals.hasAds) {
+    signals.commercialIntent = 'high';
+  } else if (signals.hasShoppingResults || signals.hasAds) {
+    signals.commercialIntent = 'medium';
+  } else {
+    signals.commercialIntent = 'low';
+  }
+  
+  return signals;
+}
+
+function extractEntitiesEnhanced(organicResults: any[], knowledgeGraph: any) {
   const entities = new Set<string>();
   
+  // Extract from organic results
   organicResults.forEach(result => {
     const text = `${result.title} ${result.snippet}`.toLowerCase();
     
@@ -328,10 +444,22 @@ function extractEntities(organicResults: any[]) {
     });
   });
   
-  return Array.from(entities).slice(0, 8).map(entity => ({
+  // Extract from knowledge graph
+  if (knowledgeGraph) {
+    if (knowledgeGraph.title) entities.add(knowledgeGraph.title.toLowerCase());
+    if (knowledgeGraph.type) entities.add(knowledgeGraph.type.toLowerCase());
+    if (knowledgeGraph.people_also_search_for) {
+      knowledgeGraph.people_also_search_for.forEach((entity: any) => {
+        if (entity.name) entities.add(entity.name.toLowerCase());
+      });
+    }
+  }
+  
+  return Array.from(entities).slice(0, 12).map(entity => ({
     name: entity,
     type: 'concept',
-    description: `Key concept related to the search topic`
+    description: `Key concept related to the search topic`,
+    source: knowledgeGraph && knowledgeGraph.title?.toLowerCase().includes(entity) ? 'knowledge_graph' : 'organic_results'
   }));
 }
 
@@ -352,7 +480,7 @@ function extractHeadings(organicResults: any[]) {
     }
   });
   
-  return headings.slice(0, 6);
+  return headings.slice(0, 8);
 }
 
 function generateContentGaps(organicResults: any[], keyword: string) {

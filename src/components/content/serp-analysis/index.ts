@@ -1,4 +1,3 @@
-
 // Export all SERP analysis components
 export * from './SerpSectionHeader';
 export * from './SerpEmptyState';
@@ -10,3 +9,7 @@ export * from './SerpCompetitorsSection';
 export * from './SerpEntitiesSection';
 export * from './SerpHeadingsSection';
 export * from './SerpContentGapsSection';
+
+// Add new enhanced sections
+export { SerpKnowledgeGraphSection } from './SerpKnowledgeGraphSection';
+export { SerpFeaturedSnippetsSection } from './SerpFeaturedSnippetsSection';

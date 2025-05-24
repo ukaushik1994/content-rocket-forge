@@ -23,6 +23,7 @@ export interface Entity {
   type?: string;
   importance?: number;
   description?: string;
+  source?: 'organic_results' | 'knowledge_graph';
 }
 
 export interface ContentGap {
@@ -50,4 +51,40 @@ export interface TopResult {
   link: string;
   snippet: string;
   position: number;
+}
+
+// New enhanced types
+export interface KnowledgeGraphData {
+  title: string;
+  type: string;
+  description: string;
+  attributes: Record<string, any>;
+  relatedEntities: Array<{
+    name: string;
+    link?: string;
+  }>;
+}
+
+export interface FeaturedSnippetData {
+  type: 'paragraph' | 'list' | 'table';
+  content: string;
+  source: string;
+  title: string;
+}
+
+export interface LocalBusinessData {
+  name: string;
+  address: string;
+  rating: number;
+  reviews: number;
+  type: string;
+}
+
+export interface MultimediaData {
+  type: 'images' | 'videos';
+  count: number;
+  suggestions: Array<{
+    title: string;
+    source: string;
+  }>;
 }
