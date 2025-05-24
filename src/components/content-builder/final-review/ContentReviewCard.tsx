@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Eye, Edit, FileText, Save, Wand } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AutoOptimizeDialog } from './optimization/AutoOptimizeDialog';
+import { EnhancedAutoOptimizeDialog } from './optimization/EnhancedAutoOptimizeDialog';
 
 interface ContentReviewCardProps {
   content: string;
@@ -19,7 +19,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   const [editedContent, setEditedContent] = useState(content);
   const [activeTab, setActiveTab] = useState('preview');
   const { setContent } = useContentBuilder();
-  const [isAutoOptimizeDialogOpen, setIsAutoOptimizeDialogOpen] = useState(false);
+  const [isEnhancedOptimizeDialogOpen, setIsEnhancedOptimizeDialogOpen] = useState(false);
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {
@@ -33,27 +33,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
     toast.success("Content updated successfully");
   };
 
-  // Handle mode toggle
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-    if (!isEditing) {
-      setEditedContent(content);
-    }
-  };
-  
-  // Format markdown headings for display
-  const formatContentForDisplay = (text: string) => {
-    return text
-      .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mb-3 mt-4">$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mb-2 mt-4">$2</h2>')
-      .replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mb-2 mt-3">$1</h3>')
-      .replace(/^#### (.*$)/gm, '<h4 class="text-md font-bold mb-1 mt-2">$1</h4>')
-      .split('\n\n')
-      .map(paragraph => paragraph ? `<p class="mb-3">${paragraph}</p>` : '')
-      .join('');
-  };
-
-  // Handle content update from auto-optimize dialog
+  // Handle content update from enhanced optimize dialog
   const handleContentUpdate = (newContent: string) => {
     setEditedContent(newContent);
     setContent(newContent);
@@ -61,8 +41,8 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
     // Switch to preview tab to show the optimized content
     setActiveTab('preview');
     
-    toast.success("Content optimized successfully", {
-      description: "The content has been updated with the optimized version."
+    toast.success("Content optimized with SERP integration and humanization", {
+      description: "The content has been enhanced with comprehensive optimizations."
     });
   };
 
@@ -107,10 +87,10 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
               variant="outline" 
               size="sm"
               className="text-xs border-dashed border-muted-foreground/50"
-              onClick={() => setIsAutoOptimizeDialogOpen(true)}
+              onClick={() => setIsEnhancedOptimizeDialogOpen(true)}
             >
               <Wand className="h-3.5 w-3.5 mr-1" />
-              Auto-optimize
+              Smart Optimize
             </Button>
           </div>
         </div>
@@ -147,10 +127,10 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </TabsContent>
       </Tabs>
 
-      <AutoOptimizeDialog 
-        isOpen={isAutoOptimizeDialogOpen}
-        onClose={() => setIsAutoOptimizeDialogOpen(false)}
-        content={editedContent} // Use editedContent instead of content to ensure we're optimizing the current version
+      <EnhancedAutoOptimizeDialog 
+        isOpen={isEnhancedOptimizeDialogOpen}
+        onClose={() => setIsEnhancedOptimizeDialogOpen(false)}
+        content={editedContent}
         onContentUpdate={handleContentUpdate}
       />
     </Card>
