@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -66,6 +67,13 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } finally {
       setIsLoadingAnalysis(false);
     }
+  };
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
   
   if (!draft) return null;
@@ -480,13 +488,6 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
         </CardContent>
       </Card>
     );
-  };
-
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
   };
 
   return (
