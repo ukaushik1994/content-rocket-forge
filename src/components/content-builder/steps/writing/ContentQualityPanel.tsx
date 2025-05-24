@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -93,19 +94,18 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <BarChart3 className="h-5 w-5" />
           Content Quality Analysis
         </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Configuration Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
+        
+        {/* Configuration Controls - Moved up and made more compact */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <div className="space-y-1.5">
             <label className="text-sm font-medium">Writing Style</label>
             <Select value={writingStyle} onValueChange={onWritingStyleChange}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select writing style" />
               </SelectTrigger>
               <SelectContent>
@@ -121,10 +121,10 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label className="text-sm font-medium">Target Expertise</label>
             <Select value={expertiseLevel} onValueChange={onExpertiseLevelChange}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select expertise level" />
               </SelectTrigger>
               <SelectContent>
@@ -140,23 +140,25 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
             </Select>
           </div>
         </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+      </CardHeader>
+      
+      <CardContent className="pt-0 space-y-4">
+        {/* Quick Stats - More compact */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
           <div className="text-center">
-            <div className="text-2xl font-bold">{wordCount}</div>
+            <div className="text-xl font-bold">{wordCount}</div>
             <div className="text-xs text-muted-foreground">Words</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">{readingTime}m</div>
+            <div className="text-xl font-bold">{readingTime}m</div>
             <div className="text-xs text-muted-foreground">Read Time</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">{content.split('\n\n').length}</div>
+            <div className="text-xl font-bold">{content.split('\n\n').length}</div>
             <div className="text-xs text-muted-foreground">Paragraphs</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">{(content.match(/#{1,6}\s/g) || []).length}</div>
+            <div className="text-xl font-bold">{(content.match(/#{1,6}\s/g) || []).length}</div>
             <div className="text-xs text-muted-foreground">Headings</div>
           </div>
         </div>
@@ -166,6 +168,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
           onClick={runQualityAnalysis} 
           disabled={isAnalyzing || !content}
           className="w-full"
+          size="sm"
         >
           {isAnalyzing ? (
             <>
@@ -188,29 +191,29 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
               <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="scores" className="space-y-4">
+            <TabsContent value="scores" className="space-y-3 mt-3">
               {/* Overall Score */}
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <div className={`text-3xl font-bold ${getScoreColor(metrics.overallScore)}`}>
+              <div className="text-center p-3 bg-muted/30 rounded-lg">
+                <div className={`text-2xl font-bold ${getScoreColor(metrics.overallScore)}`}>
                   {metrics.overallScore}
                 </div>
                 <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                <Badge variant={getScoreBadgeVariant(metrics.overallScore)} className="mt-2">
+                <Badge variant={getScoreBadgeVariant(metrics.overallScore)} className="mt-1">
                   {metrics.overallScore >= 80 ? 'Excellent' : 
                    metrics.overallScore >= 60 ? 'Good' : 'Needs Improvement'}
                 </Badge>
               </div>
 
-              {/* Individual Scores */}
-              <div className="space-y-3">
+              {/* Individual Scores - More compact */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4" />
                     <span className="text-sm">Readability</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Progress value={metrics.readabilityScore} className="w-24" />
-                    <span className={`text-sm font-medium ${getScoreColor(metrics.readabilityScore)}`}>
+                    <Progress value={metrics.readabilityScore} className="w-20" />
+                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.readabilityScore)}`}>
                       {metrics.readabilityScore}
                     </span>
                   </div>
@@ -222,8 +225,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                     <span className="text-sm">Engagement</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Progress value={metrics.engagementScore} className="w-24" />
-                    <span className={`text-sm font-medium ${getScoreColor(metrics.engagementScore)}`}>
+                    <Progress value={metrics.engagementScore} className="w-20" />
+                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.engagementScore)}`}>
                       {metrics.engagementScore}
                     </span>
                   </div>
@@ -235,8 +238,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                     <span className="text-sm">SEO</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Progress value={metrics.seoScore} className="w-24" />
-                    <span className={`text-sm font-medium ${getScoreColor(metrics.seoScore)}`}>
+                    <Progress value={metrics.seoScore} className="w-20" />
+                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.seoScore)}`}>
                       {metrics.seoScore}
                     </span>
                   </div>
@@ -248,8 +251,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                     <span className="text-sm">Structure</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Progress value={metrics.structureScore} className="w-24" />
-                    <span className={`text-sm font-medium ${getScoreColor(metrics.structureScore)}`}>
+                    <Progress value={metrics.structureScore} className="w-20" />
+                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.structureScore)}`}>
                       {metrics.structureScore}
                     </span>
                   </div>
@@ -261,8 +264,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                     <span className="text-sm">Brand Voice</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Progress value={metrics.brandVoiceScore} className="w-24" />
-                    <span className={`text-sm font-medium ${getScoreColor(metrics.brandVoiceScore)}`}>
+                    <Progress value={metrics.brandVoiceScore} className="w-20" />
+                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.brandVoiceScore)}`}>
                       {metrics.brandVoiceScore}
                     </span>
                   </div>
@@ -270,9 +273,9 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
               </div>
             </TabsContent>
 
-            <TabsContent value="recommendations" className="space-y-4">
+            <TabsContent value="recommendations" className="space-y-3 mt-3">
               {metrics.recommendations.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {['critical', 'major', 'minor'].map((type) => {
                     const categoryRecs = categorizeRecommendations(metrics.recommendations)[type as keyof ReturnType<typeof categorizeRecommendations>];
                     if (categoryRecs.length === 0) return null;
@@ -287,7 +290,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                         </h4>
                         <div className="space-y-2">
                           {categoryRecs.map((rec) => (
-                            <div key={rec.id} className="p-3 border rounded-lg space-y-1">
+                            <div key={rec.id} className="p-2 border rounded-lg space-y-1">
                               <div className="flex items-center justify-between">
                                 <h5 className="text-sm font-medium">{rec.title}</h5>
                                 <div className="flex gap-1">
@@ -313,8 +316,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="text-center p-8 text-muted-foreground">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <div className="text-center p-6 text-muted-foreground">
+                  <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-50" />
                   <p>No specific recommendations available.</p>
                   <p className="text-sm">Your content quality looks good!</p>
                 </div>
