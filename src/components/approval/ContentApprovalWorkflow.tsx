@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ContentApprovalSidebar } from './ContentApprovalSidebar';
 import { ContentApprovalEditor } from './ContentApprovalEditor';
 import { InterLinkingSuggestions } from './interlinking/InterLinkingSuggestions';
 import { SeoRecommendations } from './seo/SeoRecommendations';
+import { AdvancedFilters, BatchOperations, AssignmentManager } from './workflow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApproval } from './context/ApprovalContext';
 import { useContent } from '@/contexts/content';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Link, BarChart3, CheckCircle } from 'lucide-react';
+import { FileText, Link, BarChart3, CheckCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
