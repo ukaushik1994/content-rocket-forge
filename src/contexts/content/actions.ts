@@ -24,11 +24,14 @@ export const createContentActions = (
     }
 
     try {
+      // Ensure approval_status is valid for database
+      const validApprovalStatus = item.approval_status === 'archived' ? 'draft' : item.approval_status;
+      
       const newItem = {
         title: item.title,
         content: item.content,
         status: item.status,
-        approval_status: item.approval_status || 'draft',
+        approval_status: validApprovalStatus || 'draft',
         seo_score: item.seo_score,
         user_id: userId,
         metadata: item.metadata || {}
@@ -103,7 +106,7 @@ export const createContentActions = (
           keywords: item.keywords || [],
           content: data.content || '',
           status: data.status as 'draft' | 'published' | 'archived',
-          approval_status: data.approval_status as 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published' | 'archived',
+          approval_status: data.approval_status as 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published',
           metadata: (data.metadata as ContentItemType['metadata']) || {}
         };
         
@@ -122,7 +125,7 @@ export const createContentActions = (
           created_at: now,
           updated_at: now,
           user_id: userId,
-          approval_status: item.approval_status || 'draft'
+          approval_status: item.approval_status === 'archived' ? 'draft' : (item.approval_status || 'draft')
         };
         setContentItems(prev => [newItem, ...prev]);
         toast.info('Created content in memory (development mode)');
@@ -147,10 +150,12 @@ export const createContentActions = (
       // Handle keyword updates separately
       const keywordsToUpdate = updates.keywords;
       
-      // Prepare updates for the database
+      // Ensure approval_status is valid for database
       const dbUpdates = {
         ...updates,
         updated_at: new Date().toISOString(),
+        // Handle approval_status conversion
+        approval_status: updates.approval_status === 'archived' ? 'draft' : updates.approval_status,
         // Remove id, user_id and keywords from updates
         id: undefined,
         user_id: undefined,

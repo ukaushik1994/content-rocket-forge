@@ -4,7 +4,7 @@ export interface ContentItemType {
   title: string;
   content: string;
   status: 'draft' | 'published' | 'archived';
-  approval_status: 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published' | 'archived';
+  approval_status: 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published';
   seo_score?: number;
   keywords?: string[];
   created_at: string;
