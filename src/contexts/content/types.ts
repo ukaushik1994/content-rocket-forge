@@ -24,6 +24,9 @@ export interface ContentItemType {
     secondaryKeywords?: string[];
     seoScore?: number;
     repurposedFormats?: string[];
+    qualityScore?: number;
+    readabilityScore?: number;
+    engagementScore?: number;
   };
   submitted_for_review_at?: string;
   reviewer_id?: string;
@@ -78,6 +81,7 @@ export interface ApprovalAssignmentType {
 export interface ContentContextType {
   contentItems: ContentItemType[];
   loading: boolean;
+  error?: string;
   addContentItem: (item: Omit<ContentItemType, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
   updateContentItem: (id: string, updates: Partial<ContentItemType>) => Promise<void>;
   deleteContentItem: (id: string) => Promise<void>;
