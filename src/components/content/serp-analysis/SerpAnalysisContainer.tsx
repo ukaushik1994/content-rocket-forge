@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, HelpCircle, FileText, Tag, Heading, Brain, Target } from 'lucide-react';
+import { Search, HelpCircle, FileText, Tag, Heading, Brain, Target, TrendingUp, DollarSign, BarChart3, Newspaper, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,11 @@ import {
   SerpKnowledgeGraphSection, 
   SerpFeaturedSnippetsSection
 } from './index';
+import { SerpPaidAdsSection } from './SerpPaidAdsSection';
+import { SerpMetricsSection } from './SerpMetricsSection';
+import { SerpContentGapsSection } from './SerpContentGapsSection';
+import { SerpTopStoriesSection } from './SerpTopStoriesSection';
+import { SerpMultimediaSection } from './SerpMultimediaSection';
 
 export interface SerpAnalysisContainerProps {
   serpData: SerpAnalysisResult | null;
@@ -32,7 +37,7 @@ export function SerpAnalysisContainer({
   onRetry = () => {},
   onSerpDataChange = () => {}
 }: SerpAnalysisContainerProps) {
-  const [expandedSections, setExpandedSections] = useState(new Set<string>(['keywords'])); // Default expand keywords
+  const [expandedSections, setExpandedSections] = useState(new Set<string>(['metrics', 'keywords'])); // Default expand metrics and keywords
 
   const toggleSection = (sectionId: string) => {
     const newExpandedSections = new Set(expandedSections);
@@ -71,6 +76,51 @@ export function SerpAnalysisContainer({
 
   const sections = [
     {
+      id: 'metrics',
+      title: 'SEO Metrics',
+      icon: BarChart3,
+      description: 'Volume, competition, and opportunity analysis',
+      count: 4, // Always show 4 metrics
+      variant: 'indigo' as const,
+      component: (expanded: boolean) => (
+        <SerpMetricsSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+        />
+      )
+    },
+    {
+      id: 'content-gaps',
+      title: 'Content Gaps',
+      icon: Target,
+      description: 'Opportunities competitors are missing',
+      count: serpData?.contentGaps?.length || 0,
+      variant: 'pink' as const,
+      component: (expanded: boolean) => (
+        <SerpContentGapsSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+        />
+      )
+    },
+    {
+      id: 'paid-ads',
+      title: 'Paid Ads',
+      icon: DollarSign,
+      description: 'Commercial competition analysis',
+      count: serpData?.commercialSignals?.hasAds ? 2 : 0,
+      variant: 'green' as const,
+      component: (expanded: boolean) => (
+        <SerpPaidAdsSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+        />
+      )
+    },
+    {
       id: 'keywords',
       title: 'Keywords',
       icon: Tag,
@@ -94,6 +144,36 @@ export function SerpAnalysisContainer({
       variant: 'amber' as const,
       component: (expanded: boolean) => (
         <SerpQuestionsSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+        />
+      )
+    },
+    {
+      id: 'top-stories',
+      title: 'Top Stories',
+      icon: Newspaper,
+      description: 'Recent news and trending content',
+      count: 3, // Mock count for demo
+      variant: 'blue' as const,
+      component: (expanded: boolean) => (
+        <SerpTopStoriesSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+        />
+      )
+    },
+    {
+      id: 'multimedia',
+      title: 'Multimedia',
+      icon: Camera,
+      description: 'Image and video opportunities',
+      count: serpData?.multimediaOpportunities?.reduce((acc, m) => acc + m.count, 0) || 0,
+      variant: 'purple' as const,
+      component: (expanded: boolean) => (
+        <SerpMultimediaSection
           serpData={serpData}
           expanded={expanded}
           onAddToContent={onAddToContent}
