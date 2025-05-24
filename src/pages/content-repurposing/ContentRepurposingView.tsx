@@ -9,7 +9,6 @@ import ContentDetails from '@/components/content-repurposing/ContentDetails';
 import ContentFormatSelection from '@/components/content-repurposing/ContentFormatSelection';
 import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedContentDisplay';
 import { ContentItemType } from '@/contexts/content/types';
-import ContentBreadcrumbs from '@/components/content-repurposing/navigation/ContentBreadcrumbs';
 import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
 import ContentPreviewDialog from '@/components/content-repurposing/preview/ContentPreviewDialog';
 
@@ -89,9 +88,6 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
         transition={{ duration: 0.5 }}
         className="flex-1 container py-8 max-w-7xl mx-auto px-4 sm:px-6"
       >
-        {/* Breadcrumb navigation */}
-        <ContentBreadcrumbs contentId={content.id} contentTitle={content.title} />
-        
         {/* Header with back button */}
         <div className="flex items-center justify-between mb-8">
           <Button 
