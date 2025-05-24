@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, Plus, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,8 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  // Enhanced debugging with data validation
-  const debugInfo = React.useMemo(() => {
+  // Always call all hooks - Enhanced debugging with data validation
+  const debugInfo = useMemo(() => {
     const info = {
       hasData: !!serpData,
       hasPeopleAlsoAsk: !!serpData?.peopleAlsoAsk,
@@ -43,12 +43,8 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
     return info;
   }, [serpData]);
   
-  console.log('🔍 Questions Section Enhanced Debug:', debugInfo);
-  
-  if (!expanded) return null;
-  
-  // Validate and filter questions
-  const validQuestions = React.useMemo(() => {
+  // Validate and filter questions - always call this hook
+  const validQuestions = useMemo(() => {
     if (!Array.isArray(serpData?.peopleAlsoAsk)) {
       console.warn('❌ peopleAlsoAsk is not an array:', typeof serpData?.peopleAlsoAsk);
       return [];
@@ -69,6 +65,37 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
     });
   }, [serpData?.peopleAlsoAsk]);
   
+  console.log('🔍 Questions Section Enhanced Debug:', debugInfo);
+  
+  // Early return after all hooks have been called
+  if (!expanded) return null;
+  
+  const toggleQuestion = (index: number) => {
+    const newExpanded = new Set(expandedQuestions);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedQuestions(newExpanded);
+  };
+  
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   // Show empty state with debugging info
   if (validQuestions.length === 0) {
     return (
@@ -117,32 +144,6 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
       </div>
     );
   }
-  
-  const toggleQuestion = (index: number) => {
-    const newExpanded = new Set(expandedQuestions);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
-    }
-    setExpandedQuestions(newExpanded);
-  };
-  
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
 
   return (
     <motion.div
