@@ -29,7 +29,7 @@ export const ContentItem: React.FC<ContentItemProps> = ({
   
   return (
     <Card 
-      className="content-item hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border border-white/10"
+      className="content-item hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border border-white/10 h-full"
       onClick={(e) => {
         // Prevent click if we clicked on a button inside
         if ((e.target as Element).closest('button')) {
@@ -38,17 +38,17 @@ export const ContentItem: React.FC<ContentItemProps> = ({
         onSelect();
       }}
     >
-      <div className="p-6 flex-1 space-y-4">
+      <div className="p-4 flex-1 space-y-3">
         <ContentSummary item={content} timeAgo={timeAgo} />
         
         {/* Content Types Created Section */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {hasRepurposedFormats ? (
             <>
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-neon-purple" />
-                <span className="text-sm font-medium text-muted-foreground">
-                  Generated Formats ({repurposedFormats.length})
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-neon-purple" />
+                <span className="text-xs font-medium text-muted-foreground">
+                  {repurposedFormats.length} Format{repurposedFormats.length !== 1 ? 's' : ''}
                 </span>
               </div>
               <FormatsList 
@@ -57,20 +57,20 @@ export const ContentItem: React.FC<ContentItemProps> = ({
               />
             </>
           ) : (
-            <div className="flex items-center gap-2 py-3 px-4 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
-              <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
-              <span className="text-sm text-muted-foreground italic">
-                No formats generated yet
+            <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/20 border border-dashed border-muted-foreground/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+              <span className="text-xs text-muted-foreground italic">
+                No formats yet
               </span>
             </div>
           )}
         </div>
       </div>
       
-      <div className="border-t border-white/10 p-4 bg-gradient-to-r from-muted/5 to-muted/10 flex justify-between items-center">
+      <div className="border-t border-white/10 p-3 bg-gradient-to-r from-muted/5 to-muted/10 flex justify-between items-center">
         {hasRepurposedFormats && (
-          <Badge variant="secondary" className="bg-neon-purple/10 text-neon-purple border-neon-purple/20">
-            {repurposedFormats.length} format{repurposedFormats.length !== 1 ? 's' : ''} ready
+          <Badge variant="secondary" className="bg-neon-purple/10 text-neon-purple border-neon-purple/20 text-xs">
+            {repurposedFormats.length} ready
           </Badge>
         )}
         <div className={hasRepurposedFormats ? '' : 'ml-auto'}>
