@@ -187,7 +187,10 @@ export const repurposedContentService = {
         
       if (fetchError) throw fetchError;
       
-      const currentMetadata = currentContent?.metadata || {};
+      // Ensure currentMetadata is an object or default to empty object
+      const currentMetadata = (currentContent?.metadata && typeof currentContent.metadata === 'object') 
+        ? currentContent.metadata 
+        : {};
       
       // Update the content item's metadata
       const updatedMetadata = {
