@@ -8,6 +8,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { RealTimeSeoScore } from '@/components/seo/RealTimeSeoScore';
 import { KeywordIntelligenceDashboard } from '@/components/seo/KeywordIntelligenceDashboard';
 import { RealTimeOptimizationDashboard } from '@/components/optimization/RealTimeOptimizationDashboard';
+import { AdvancedSeoGenerator } from '@/components/seo/AdvancedSeoGenerator';
 import { useWritingStep } from './writing/useWritingStep';
 import { useRealTimeSeoAnalysis } from '@/hooks/seo/useRealTimeSeoAnalysis';
 import { useKeywordIntelligence } from '@/hooks/seo/useKeywordIntelligence';
@@ -15,7 +16,7 @@ import { useRealTimeOptimization } from '@/hooks/optimization/useRealTimeOptimiz
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Sparkles, Brain, Zap } from 'lucide-react';
+import { Sparkles, Brain, Zap, Wand2 } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -134,6 +135,11 @@ export const ContentWritingStep = () => {
     }
   };
 
+  const handleSeoContentGenerated = (generatedContent: string, title: string, metaDescription: string) => {
+    handleContentChange(generatedContent);
+    toast.success("Advanced SEO content generated successfully!");
+  };
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       <ContentGenerationHeader
@@ -184,8 +190,12 @@ export const ContentWritingStep = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="optimization" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                <Tabs defaultValue="seo-generator" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 mb-4">
+                    <TabsTrigger value="seo-generator" className="text-xs">
+                      <Wand2 className="h-3 w-3 mr-1" />
+                      SEO Gen
+                    </TabsTrigger>
                     <TabsTrigger value="optimization" className="text-xs">
                       <Zap className="h-3 w-3 mr-1" />
                       Live
@@ -199,6 +209,12 @@ export const ContentWritingStep = () => {
                       Keywords
                     </TabsTrigger>
                   </TabsList>
+                  
+                  <TabsContent value="seo-generator" className="space-y-3">
+                    <div className="max-h-[600px] overflow-y-auto">
+                      <AdvancedSeoGenerator onContentGenerated={handleSeoContentGenerated} />
+                    </div>
+                  </TabsContent>
                   
                   <TabsContent value="optimization" className="space-y-3">
                     {optimizationResult ? (
