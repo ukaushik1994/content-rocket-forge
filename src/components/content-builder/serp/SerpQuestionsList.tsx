@@ -6,7 +6,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { SerpSelection } from '@/contexts/content-builder/types';
 import { HelpCircle, Plus } from 'lucide-react';
-import { extractStringContent } from '@/utils/faqDataUtils';
 
 interface SerpQuestionsListProps {
   questions: SerpSelection[];
@@ -17,6 +16,28 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
   questions,
   handleToggleSelection
 }) => {
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(', ');
+      }
+      // Handle other object types
+      if (content.question) return String(content.question);
+      if (content.text) return String(content.text);
+      if (content.title) return String(content.title);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -32,17 +53,6 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
     visible: { opacity: 1, y: 0 }
   };
 
-  const handleSelectionToggle = (question: SerpSelection) => {
-    try {
-      const contentString = extractStringContent(question.content);
-      if (contentString) {
-        handleToggleSelection(question.type, contentString);
-      }
-    } catch (error) {
-      console.error('Error toggling question selection:', error);
-    }
-  };
-
   return (
     <Card className="border-purple-500/20 bg-gradient-to-br from-purple-900/10 to-purple-900/5 backdrop-blur-md shadow-xl">
       <CardContent className="pt-6">
@@ -54,11 +64,6 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
         >
           {questions.map((question, index) => {
             const contentString = extractStringContent(question.content);
-            
-            if (!contentString) {
-              console.warn(`Invalid question content at index ${index}:`, question.content);
-              return null;
-            }
             
             return (
               <motion.div 
@@ -75,7 +80,7 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
                   <Checkbox 
                     id={`question-${index}`} 
                     checked={question.selected}
-                    onCheckedChange={() => handleSelectionToggle(question)}
+                    onCheckedChange={() => handleToggleSelection(question.type, contentString)}
                     className={`${
                       question.selected 
                         ? "border-purple-500 bg-purple-500 text-white" 
@@ -92,8 +97,8 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
                 
                 {!question.selected && (
                   <span 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-purple-500/10 text-purple-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-purple-500/20 cursor-pointer"
-                    onClick={() => handleSelectionToggle(question)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-purple-500/10 text-purple-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-purple-500/20"
+                    onClick={() => handleToggleSelection(question.type, contentString)}
                   >
                     <Plus className="h-3 w-3" />
                     Add

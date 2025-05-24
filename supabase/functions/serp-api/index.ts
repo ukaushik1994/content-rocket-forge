@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -170,11 +169,6 @@ serve(async (req) => {
     const data = await response.json();
     console.log('✅ SerpAPI data received successfully');
     console.log('📊 Response data structure:', Object.keys(data));
-    
-    // Add debugging for FAQ-related data
-    console.log('🔍 FAQ Debug - Raw SerpAPI data keys:', Object.keys(data));
-    console.log('🔍 FAQ Debug - related_questions:', data.related_questions);
-    console.log('🔍 FAQ Debug - people_also_ask:', data.people_also_ask);
 
     // Transform the data based on endpoint
     let transformedData = {};
@@ -270,49 +264,7 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   console.log('🔄 Transforming SERP data for keyword:', keyword);
   
   const organicResults = data.organic_results || [];
-  
-  // FIX: Properly extract FAQ data from multiple possible sources
-  let peopleAlsoAsk = [];
-  
-  // Check for related_questions first (most common)
-  if (data.related_questions && Array.isArray(data.related_questions)) {
-    console.log('📝 Found related_questions:', data.related_questions.length, 'items');
-    peopleAlsoAsk = data.related_questions.map((q: any) => ({
-      question: q.question || q.title || '',
-      source: q.source?.title || q.link || 'search',
-      answer: q.snippet || q.answer || ''
-    }));
-  }
-  
-  // Fallback to people_also_ask
-  else if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
-    console.log('📝 Found people_also_ask:', data.people_also_ask.length, 'items');
-    peopleAlsoAsk = data.people_also_ask.map((q: any) => ({
-      question: q.question || q.title || '',
-      source: q.source?.title || q.link || 'search',
-      answer: q.snippet || q.answer || ''
-    }));
-  }
-  
-  // If no FAQ data found, create some sample questions for debugging
-  else {
-    console.log('⚠️ No FAQ data found in SerpAPI response, creating fallback questions');
-    peopleAlsoAsk = [
-      {
-        question: `What is ${keyword}?`,
-        source: 'Generated',
-        answer: `${keyword} is a topic that appears in search results but no FAQ data was available from the SERP API.`
-      },
-      {
-        question: `How does ${keyword} work?`,
-        source: 'Generated',
-        answer: `This is a generated question because no FAQ data was returned from the search results.`
-      }
-    ];
-  }
-  
-  console.log('✅ Final peopleAlsoAsk count:', peopleAlsoAsk.length);
-  
+  const peopleAlsoAsk = data.people_also_ask || [];
   const relatedSearches = data.related_searches || [];
   
   // Extract entities from snippets and titles
@@ -338,7 +290,11 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
     relatedSearches: relatedSearches.map((search: any) => ({
       query: search.query || search
     })),
-    peopleAlsoAsk, // Now properly extracted
+    peopleAlsoAsk: peopleAlsoAsk.map((q: any) => ({
+      question: q.question || '',
+      source: q.link || 'search',
+      answer: q.snippet || ''
+    })),
     entities,
     headings,
     contentGaps,
@@ -347,7 +303,7 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
     isMockData: false
   };
   
-  console.log('✅ Data transformation complete - Final FAQ count:', result.peopleAlsoAsk.length);
+  console.log('✅ Data transformation complete');
   return result;
 }
 
