@@ -37,6 +37,11 @@ export const ContentItem: React.FC<ContentItemProps> = ({
   const solutionData = item.metadata?.solution;
   const contentType = item.metadata?.contentType || 'article';
 
+  // Debug logging to see what solution data we have
+  console.log('[ContentItem] Item metadata:', item.metadata);
+  console.log('[ContentItem] Solution data:', solutionData);
+  console.log('[ContentItem] Content type:', contentType);
+
   return (
     <motion.div
       variants={{
@@ -59,7 +64,11 @@ export const ContentItem: React.FC<ContentItemProps> = ({
                     alt={`${solutionData.name} logo`} 
                     className="h-full w-full object-contain"
                     onError={(e) => {
+                      console.log('[ContentItem] Logo failed to load:', solutionData.logoUrl);
                       (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('[ContentItem] Logo loaded successfully:', solutionData.logoUrl);
                     }}
                   />
                 </div>
