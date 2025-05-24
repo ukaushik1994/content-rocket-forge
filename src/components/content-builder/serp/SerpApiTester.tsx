@@ -23,12 +23,47 @@ interface SerpApiTesterProps {
   onTestComplete?: (data: any) => void;
 }
 
+interface AnalysisResult {
+  dataPresence: {
+    organicResults: boolean;
+    peopleAlsoAsk: boolean;
+    featuredSnippets: boolean;
+    relatedSearches: boolean;
+    entities: boolean;
+    headings: boolean;
+    contentGaps: boolean;
+    knowledgeGraph: boolean;
+    localResults: boolean;
+    multimediaOpportunities: boolean;
+    commercialSignals: boolean;
+  };
+  counts: {
+    organicResults: number;
+    peopleAlsoAsk: number;
+    featuredSnippets: number;
+    relatedSearches: number;
+    entities: number;
+    headings: number;
+    contentGaps: number;
+    localResults: number;
+    multimediaOpportunities: number;
+  };
+  quality: {
+    hasMinimumData: boolean;
+    hasQuestions: boolean;
+    hasSnippets: boolean;
+    hasEntities: boolean;
+  };
+  isMockData: boolean;
+  overallScore: number;
+}
+
 export function SerpApiTester({ onTestComplete = () => {} }: SerpApiTesterProps) {
   const [testKeyword, setTestKeyword] = useState('test');
   const [isLoading, setIsLoading] = useState(false);
   const [rawResponse, setRawResponse] = useState<any>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<AnalysisResult | null>(null);
   const [showRawData, setShowRawData] = useState(false);
   const [activeTab, setActiveTab] = useState('test');
 
@@ -84,8 +119,8 @@ export function SerpApiTester({ onTestComplete = () => {} }: SerpApiTesterProps)
     }
   };
 
-  const analyzeSerpData = (data: any) => {
-    const analysis = {
+  const analyzeSerpData = (data: any): AnalysisResult => {
+    const analysis: Omit<AnalysisResult, 'overallScore'> = {
       dataPresence: {
         organicResults: !!data.topResults && data.topResults.length > 0,
         peopleAlsoAsk: !!data.peopleAlsoAsk && data.peopleAlsoAsk.length > 0,
@@ -122,9 +157,12 @@ export function SerpApiTester({ onTestComplete = () => {} }: SerpApiTesterProps)
     // Calculate overall score
     const totalFields = Object.keys(analysis.dataPresence).length;
     const presentFields = Object.values(analysis.dataPresence).filter(Boolean).length;
-    analysis.overallScore = Math.round((presentFields / totalFields) * 100);
+    const overallScore = Math.round((presentFields / totalFields) * 100);
 
-    return analysis;
+    return {
+      ...analysis,
+      overallScore
+    };
   };
 
   const getStoredApiKey = async () => {
@@ -225,7 +263,7 @@ export function SerpApiTester({ onTestComplete = () => {} }: SerpApiTesterProps)
                         )}
                         <span className="text-sm capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                         <Badge variant="outline" className="ml-auto text-xs">
-                          {testResults.counts[key] || 0}
+                          {testResults.counts[key as keyof typeof testResults.counts] || 0}
                         </Badge>
                       </div>
                     ))}
