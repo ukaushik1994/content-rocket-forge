@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { ApprovalHeader } from './dashboard/ApprovalHeader';
@@ -7,6 +6,7 @@ import { ApprovalTabs } from './dashboard/ApprovalTabs';
 import { useContent } from '@/contexts/content';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { FileText } from 'lucide-react';
 
 interface ContentApprovalDashboardProps {
   contentItems: ContentItemType[];

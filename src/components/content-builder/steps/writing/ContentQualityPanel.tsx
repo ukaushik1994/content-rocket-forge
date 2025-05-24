@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Target, Zap, Eye, Structure, MessageSquare, RefreshCw } from 'lucide-react';
+import { BarChart3, Target, Zap, Eye, LayoutGrid, MessageSquare, RefreshCw } from 'lucide-react';
 import { ContentQualityMetrics, QualityRecommendation, WRITING_STYLES, EXPERTISE_LEVELS, analyzeContentQuality } from '@/services/contentQualityService';
 import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
@@ -245,7 +244,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Structure className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" />
                     <span className="text-sm">Structure</span>
                   </div>
                   <div className="flex items-center gap-2">
