@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import ContentSelection from '@/components/content-repurposing/ContentSelection';
 import { ContentItemType } from '@/contexts/content/types';
-import ContentBreadcrumbs from '@/components/content-repurposing/navigation/ContentBreadcrumbs';
 import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
 import { Sparkles, Zap } from 'lucide-react';
 
@@ -57,9 +56,6 @@ const ContentSelectionView: React.FC<ContentSelectionViewProps> = memo(({
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="flex-1 container py-12 max-w-7xl mx-auto px-4 sm:px-6 relative z-10"
       >
-        {/* Breadcrumb navigation */}
-        <ContentBreadcrumbs />
-        
         {/* Enhanced Header Section */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
