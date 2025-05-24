@@ -21,7 +21,7 @@ const ContentList: React.FC<ContentListProps> = memo(({
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+      className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
     >
       {contentItems.map((item) => (
         <ContentItem
