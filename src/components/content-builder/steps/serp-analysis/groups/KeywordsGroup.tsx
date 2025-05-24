@@ -2,46 +2,55 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tag, X } from 'lucide-react';
+import { SerpSelection } from '@/contexts/content-builder/types';
 import { motion } from 'framer-motion';
-import { SelectedItemsGroupProps } from '../types';
 
-export const KeywordsGroup: React.FC<SelectedItemsGroupProps> = ({ 
-  count, 
-  items, 
-  handleToggleSelection 
+interface KeywordsGroupProps {
+  count: number;
+  items: SerpSelection[];
+  handleToggleSelection: (type: string, content: string) => void;
+}
+
+export const KeywordsGroup: React.FC<KeywordsGroupProps> = ({
+  count,
+  items,
+  handleToggleSelection
 }) => {
-  if (count === 0) return null;
-  
   const selectedItems = items.filter(item => item.selected);
   
+  if (selectedItems.length === 0) return null;
+
   return (
-    <div>
-      <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
-        <Tag className="h-3.5 w-3.5 text-blue-400" />
-        Secondary Keywords ({count})
-      </h4>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-3"
+    >
+      <div className="flex items-center gap-2">
+        <Tag className="h-4 w-4 text-blue-400" />
+        <h4 className="font-medium text-sm">Keywords ({count})</h4>
+      </div>
+      
       <div className="flex flex-wrap gap-2">
-        {selectedItems.map((item, i) => {
-          // Ensure content is a string
-          const content = typeof item.content === 'string' ? item.content : JSON.stringify(item.content);
-          
+        {selectedItems.map((item, idx) => {
+          // Ensure content is always a string
+          const contentString = typeof item.content === 'string' 
+            ? item.content 
+            : String(item.content || '');
+            
           return (
-            <Badge 
-              key={i} 
-              variant="outline" 
-              className="bg-blue-950/30 hover:bg-blue-950/50 border-blue-500/30 group"
+            <Badge
+              key={`keyword-${idx}-${contentString}`}
+              variant="secondary"
+              className="bg-blue-500/20 text-blue-200 border-blue-500/30 hover:bg-blue-500/30 cursor-pointer flex items-center gap-1"
+              onClick={() => handleToggleSelection(item.type, contentString)}
             >
-              {content}
-              <button 
-                className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
-                onClick={() => handleToggleSelection(item.type, content)}
-              >
-                <X className="h-3 w-3" />
-              </button>
+              <span className="truncate max-w-[200px]">{contentString}</span>
+              <X className="h-3 w-3 hover:text-red-300" />
             </Badge>
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 };
