@@ -5,19 +5,17 @@ export interface SerpSearchParams {
   num?: number;
 }
 
-export interface TopResult {
-  title: string;
-  link: string;
-  snippet: string;
-  position: number;
-}
-
 export interface SerpAnalysisResult {
   keyword: string;
   searchVolume?: number;
   competitionScore?: number;
   keywordDifficulty?: number;
-  topResults?: TopResult[];
+  topResults?: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+    position: number;
+  }>;
   relatedSearches?: Array<{
     query: string;
     volume?: number;
