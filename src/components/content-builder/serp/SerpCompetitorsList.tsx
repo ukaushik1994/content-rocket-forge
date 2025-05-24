@@ -16,6 +16,29 @@ export const SerpCompetitorsList: React.FC<SerpCompetitorsListProps> = ({
   competitors,
   handleToggleSelection
 }) => {
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(' ');
+      }
+      // Handle other object types
+      if (content.title) return String(content.title);
+      if (content.snippet) return String(content.snippet);
+      if (content.text) return String(content.text);
+      if (content.description) return String(content.description);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -40,68 +63,72 @@ export const SerpCompetitorsList: React.FC<SerpCompetitorsListProps> = ({
           animate="visible"
           className="space-y-4"
         >
-          {competitors.map((competitor, index) => (
-            <motion.div 
-              key={index} 
-              variants={item}
-              whileHover={{ scale: 1.01 }}
-              className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md ${
-                competitor.selected 
-                  ? "border-amber-500 bg-amber-500/10 shadow-inner" 
-                  : "border-white/10 hover:border-amber-500/30 hover:bg-amber-900/20"
-              }`}
-            >
-              <div className="flex items-start mb-3">
-                <Checkbox 
-                  id={`competitor-${index}`} 
-                  checked={competitor.selected}
-                  onCheckedChange={() => handleToggleSelection(competitor.type, competitor.content)}
-                  className={`mt-1 mr-3 ${
-                    competitor.selected 
-                      ? "border-amber-500 bg-amber-500 text-white" 
-                      : "border-white/40 text-transparent"
-                  }`}
-                />
-                <div className="flex-1">
-                  <Label 
-                    htmlFor={`competitor-${index}`} 
-                    className="cursor-pointer flex-1 text-sm select-none mb-2 block"
-                  >
-                    {competitor.content.length > 100 
-                      ? `${competitor.content.substring(0, 100)}...` 
-                      : competitor.content
-                    }
-                  </Label>
+          {competitors.map((competitor, index) => {
+            const contentString = extractStringContent(competitor.content);
+            
+            return (
+              <motion.div 
+                key={`competitor-${index}-${contentString.substring(0, 20)}`}
+                variants={item}
+                whileHover={{ scale: 1.01 }}
+                className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md ${
+                  competitor.selected 
+                    ? "border-amber-500 bg-amber-500/10 shadow-inner" 
+                    : "border-white/10 hover:border-amber-500/30 hover:bg-amber-900/20"
+                }`}
+              >
+                <div className="flex items-start mb-3">
+                  <Checkbox 
+                    id={`competitor-${index}`} 
+                    checked={competitor.selected}
+                    onCheckedChange={() => handleToggleSelection(competitor.type, contentString)}
+                    className={`mt-1 mr-3 ${
+                      competitor.selected 
+                        ? "border-amber-500 bg-amber-500 text-white" 
+                        : "border-white/40 text-transparent"
+                    }`}
+                  />
+                  <div className="flex-1">
+                    <Label 
+                      htmlFor={`competitor-${index}`} 
+                      className="cursor-pointer flex-1 text-sm select-none mb-2 block"
+                    >
+                      {contentString.length > 100 
+                        ? `${contentString.substring(0, 100)}...` 
+                        : contentString
+                      }
+                    </Label>
+                    
+                    {competitor.source && (
+                      <div className="text-xs text-blue-300 flex items-center gap-1 hover:underline">
+                        <Link className="h-3 w-3" />
+                        <a 
+                          href={competitor.source} 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {competitor.source.length > 40 
+                            ? `${competitor.source.substring(0, 40)}...` 
+                            : competitor.source
+                          }
+                        </a>
+                      </div>
+                    )}
+                  </div>
                   
-                  {competitor.source && (
-                    <div className="text-xs text-blue-300 flex items-center gap-1 hover:underline">
-                      <Link className="h-3 w-3" />
-                      <a 
-                        href={competitor.source} 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {competitor.source.length > 40 
-                          ? `${competitor.source.substring(0, 40)}...` 
-                          : competitor.source
-                        }
-                      </a>
-                    </div>
+                  {!competitor.selected && (
+                    <span 
+                      className="opacity-0 hover:opacity-100 transition-opacity duration-200 text-xs bg-amber-500/10 text-amber-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-amber-500/20"
+                      onClick={() => handleToggleSelection(competitor.type, contentString)}
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add
+                    </span>
                   )}
                 </div>
-                
-                {!competitor.selected && (
-                  <span 
-                    className="opacity-0 hover:opacity-100 transition-opacity duration-200 text-xs bg-amber-500/10 text-amber-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-amber-500/20"
-                    onClick={() => handleToggleSelection(competitor.type, competitor.content)}
-                  >
-                    <Plus className="h-3 w-3" />
-                    Add
-                  </span>
-                )}
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </motion.div>
         
         {competitors.length === 0 && (

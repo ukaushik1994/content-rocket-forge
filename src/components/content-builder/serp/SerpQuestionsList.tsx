@@ -16,6 +16,28 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
   questions,
   handleToggleSelection
 }) => {
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(', ');
+      }
+      // Handle other object types
+      if (content.question) return String(content.question);
+      if (content.text) return String(content.text);
+      if (content.title) return String(content.title);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -40,47 +62,51 @@ export const SerpQuestionsList: React.FC<SerpQuestionsListProps> = ({
           animate="visible"
           className="space-y-4"
         >
-          {questions.map((question, index) => (
-            <motion.div 
-              key={index} 
-              variants={item}
-              whileHover={{ scale: 1.01 }}
-              className={`flex items-center border rounded-md p-3 transition-all duration-200 group hover:shadow-md ${
-                question.selected 
-                  ? "border-purple-500 bg-purple-500/10 shadow-inner" 
-                  : "border-white/10 hover:border-purple-500/30 hover:bg-purple-900/20"
-              }`}
-            >
-              <div className="flex items-center space-x-2 flex-1">
-                <Checkbox 
-                  id={`question-${index}`} 
-                  checked={question.selected}
-                  onCheckedChange={() => handleToggleSelection(question.type, question.content)}
-                  className={`${
-                    question.selected 
-                      ? "border-purple-500 bg-purple-500 text-white" 
-                      : "border-white/40 text-transparent"
-                  }`}
-                />
-                <Label 
-                  htmlFor={`question-${index}`} 
-                  className="cursor-pointer flex-1 text-sm select-none"
-                >
-                  {question.content}
-                </Label>
-              </div>
-              
-              {!question.selected && (
-                <span 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-purple-500/10 text-purple-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-purple-500/20"
-                  onClick={() => handleToggleSelection(question.type, question.content)}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add
-                </span>
-              )}
-            </motion.div>
-          ))}
+          {questions.map((question, index) => {
+            const contentString = extractStringContent(question.content);
+            
+            return (
+              <motion.div 
+                key={`question-${index}-${contentString.substring(0, 20)}`}
+                variants={item}
+                whileHover={{ scale: 1.01 }}
+                className={`flex items-center border rounded-md p-3 transition-all duration-200 group hover:shadow-md ${
+                  question.selected 
+                    ? "border-purple-500 bg-purple-500/10 shadow-inner" 
+                    : "border-white/10 hover:border-purple-500/30 hover:bg-purple-900/20"
+                }`}
+              >
+                <div className="flex items-center space-x-2 flex-1">
+                  <Checkbox 
+                    id={`question-${index}`} 
+                    checked={question.selected}
+                    onCheckedChange={() => handleToggleSelection(question.type, contentString)}
+                    className={`${
+                      question.selected 
+                        ? "border-purple-500 bg-purple-500 text-white" 
+                        : "border-white/40 text-transparent"
+                    }`}
+                  />
+                  <Label 
+                    htmlFor={`question-${index}`} 
+                    className="cursor-pointer flex-1 text-sm select-none"
+                  >
+                    {contentString}
+                  </Label>
+                </div>
+                
+                {!question.selected && (
+                  <span 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-purple-500/10 text-purple-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-purple-500/20"
+                    onClick={() => handleToggleSelection(question.type, contentString)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add
+                  </span>
+                )}
+              </motion.div>
+            );
+          })}
         </motion.div>
         
         {questions.length === 0 && (

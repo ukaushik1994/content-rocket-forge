@@ -16,6 +16,29 @@ export const SerpKeywordList: React.FC<SerpKeywordListProps> = ({
   keywords,
   handleToggleSelection
 }) => {
+  // Helper function to safely extract string content from any data type
+  const extractStringContent = (content: any): string => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null) {
+      // Handle objects with block_position and items
+      if (content.items && Array.isArray(content.items)) {
+        return content.items.map((item: any) => 
+          typeof item === 'string' ? item : String(item)
+        ).join(', ');
+      }
+      // Handle other object types
+      if (content.text) return String(content.text);
+      if (content.title) return String(content.title);
+      if (content.query) return String(content.query);
+      if (content.name) return String(content.name);
+      // Fallback for other objects
+      return JSON.stringify(content);
+    }
+    return String(content || '');
+  };
+
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -41,12 +64,12 @@ export const SerpKeywordList: React.FC<SerpKeywordListProps> = ({
           className="grid grid-cols-1 md:grid-cols-2 gap-3"
         >
           {keywords.map((keyword, index) => {
-            // Ensure content is a string
-            const content = typeof keyword.content === 'string' ? keyword.content : JSON.stringify(keyword.content);
+            // Ensure content is a string using our helper function
+            const contentString = extractStringContent(keyword.content);
             
             return (
               <motion.div 
-                key={index} 
+                key={`keyword-${index}-${contentString.substring(0, 20)}`} 
                 variants={item}
                 whileHover={{ scale: 1.02 }}
                 className={`flex items-center border rounded-md p-3 transition-all duration-200 group hover:shadow-md ${
@@ -59,7 +82,7 @@ export const SerpKeywordList: React.FC<SerpKeywordListProps> = ({
                   <Checkbox 
                     id={`keyword-${index}`} 
                     checked={keyword.selected}
-                    onCheckedChange={() => handleToggleSelection(keyword.type, content)}
+                    onCheckedChange={() => handleToggleSelection(keyword.type, contentString)}
                     className={`${
                       keyword.selected 
                         ? "border-blue-500 bg-blue-500 text-white" 
@@ -70,14 +93,14 @@ export const SerpKeywordList: React.FC<SerpKeywordListProps> = ({
                     htmlFor={`keyword-${index}`} 
                     className="cursor-pointer flex-1 text-sm select-none"
                   >
-                    {content}
+                    {contentString}
                   </Label>
                 </div>
                 
                 {!keyword.selected && (
                   <span 
                     className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs bg-blue-500/10 text-blue-400 rounded-full px-2 py-0.5 flex items-center gap-1 border border-blue-500/20"
-                    onClick={() => handleToggleSelection(keyword.type, content)}
+                    onClick={() => handleToggleSelection(keyword.type, contentString)}
                   >
                     <Plus className="h-3 w-3" />
                     Add
