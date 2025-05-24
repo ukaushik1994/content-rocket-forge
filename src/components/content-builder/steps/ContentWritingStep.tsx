@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -170,8 +169,8 @@ export const ContentWritingStep = () => {
         </h2>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
-        {/* Sidebar with outline and advanced analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+        {/* Sidebar with outline */}
         {showOutline && (
           <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
@@ -180,123 +179,127 @@ export const ContentWritingStep = () => {
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}
             />
-            
-            {/* Advanced Analysis Panel */}
-            <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-950/20 dark:to-blue-950/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                  <Brain className="h-4 w-4" />
-                  Advanced Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="seo-generator" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-4">
-                    <TabsTrigger value="seo-generator" className="text-xs">
-                      <Wand2 className="h-3 w-3 mr-1" />
-                      SEO Gen
-                    </TabsTrigger>
-                    <TabsTrigger value="optimization" className="text-xs">
-                      <Zap className="h-3 w-3 mr-1" />
-                      Live
-                    </TabsTrigger>
-                    <TabsTrigger value="seo" className="text-xs">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      SEO
-                    </TabsTrigger>
-                    <TabsTrigger value="keywords" className="text-xs">
-                      <Brain className="h-3 w-3 mr-1" />
-                      Keywords
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="seo-generator" className="space-y-3">
-                    <div className="max-h-[600px] overflow-y-auto">
-                      <AdvancedSeoGenerator onContentGenerated={handleSeoContentGenerated} />
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="optimization" className="space-y-3">
-                    {optimizationResult ? (
-                      <div className="max-h-[500px] overflow-y-auto">
-                        <RealTimeOptimizationDashboard
-                          result={optimizationResult}
-                          isOptimizing={isOptimizing}
-                          onApplyAutoFix={handleApplyOptimization}
-                        />
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground text-sm">
-                        {isOptimizing ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full" />
-                            Analyzing optimization...
-                          </div>
-                        ) : (
-                          'Start writing to see live optimization suggestions'
-                        )}
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="seo" className="space-y-3">
-                    {analysisResult && (
-                      <RealTimeSeoScore
-                        score={analysisResult.score}
-                        suggestions={analysisResult.suggestions}
-                        isAnalyzing={isSeoAnalyzing}
-                      />
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="keywords" className="space-y-3">
-                    {intelligenceResult ? (
-                      <div className="max-h-[400px] overflow-y-auto">
-                        <KeywordIntelligenceDashboard
-                          result={intelligenceResult}
-                          isAnalyzing={isKeywordAnalyzing}
-                        />
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground text-sm">
-                        {isKeywordAnalyzing ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full" />
-                            Analyzing keywords...
-                          </div>
-                        ) : (
-                          'Start typing to see keyword intelligence'
-                        )}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
           </div>
         )}
         
-        <div className={`${showOutline ? 'lg:col-span-3' : 'lg:col-span-4'} h-full flex flex-col`}>
-          <ContentEditor
-            content={content}
-            onContentChange={handleContentChange}
-          />
-          
-          {/* Add auto-save notice at the bottom */}
-          {(autoSaveTimestamp || hasUnsavedChanges) && (
-            <div className="mt-2 text-xs text-white/50 flex items-center justify-end gap-1 px-4 py-2 border-t border-white/5">
-              {hasUnsavedChanges ? (
-                <>
-                  <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
-                  Unsaved changes
-                </>
-              ) : (
-                <>
-                  <span className="text-green-400">✓</span> Auto-saved
-                </>
-              )}
-            </div>
-          )}
+        {/* Advanced Analysis Panel - Now bigger and wider */}
+        <div className={`${showOutline ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-6`}>
+          {/* Main Content Editor */}
+          <div className="h-96">
+            <ContentEditor
+              content={content}
+              onContentChange={handleContentChange}
+            />
+            
+            {/* Add auto-save notice at the bottom */}
+            {(autoSaveTimestamp || hasUnsavedChanges) && (
+              <div className="mt-2 text-xs text-white/50 flex items-center justify-end gap-1 px-4 py-2 border-t border-white/5">
+                {hasUnsavedChanges ? (
+                  <>
+                    <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
+                    Unsaved changes
+                  </>
+                ) : (
+                  <>
+                    <span className="text-green-400">✓</span> Auto-saved
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Expanded Advanced Analysis Panel */}
+          <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-950/20 dark:to-blue-950/20 min-h-[600px]">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                <Brain className="h-5 w-5" />
+                Advanced Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-full">
+              <Tabs defaultValue="seo-generator" className="w-full h-full">
+                <TabsList className="grid w-full grid-cols-4 mb-6">
+                  <TabsTrigger value="seo-generator" className="text-sm">
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    SEO Generator
+                  </TabsTrigger>
+                  <TabsTrigger value="optimization" className="text-sm">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Live Optimization
+                  </TabsTrigger>
+                  <TabsTrigger value="seo" className="text-sm">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    SEO Analysis
+                  </TabsTrigger>
+                  <TabsTrigger value="keywords" className="text-sm">
+                    <Brain className="h-4 w-4 mr-2" />
+                    Keywords
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="seo-generator" className="space-y-4 h-full">
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <AdvancedSeoGenerator onContentGenerated={handleSeoContentGenerated} />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="optimization" className="space-y-4 h-full">
+                  {optimizationResult ? (
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <RealTimeOptimizationDashboard
+                        result={optimizationResult}
+                        isOptimizing={isOptimizing}
+                        onApplyAutoFix={handleApplyOptimization}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      {isOptimizing ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                          Analyzing optimization...
+                        </div>
+                      ) : (
+                        'Start writing to see live optimization suggestions'
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="seo" className="space-y-4 h-full">
+                  {analysisResult && (
+                    <RealTimeSeoScore
+                      score={analysisResult.score}
+                      suggestions={analysisResult.suggestions}
+                      isAnalyzing={isSeoAnalyzing}
+                    />
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="keywords" className="space-y-4 h-full">
+                  {intelligenceResult ? (
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <KeywordIntelligenceDashboard
+                        result={intelligenceResult}
+                        isAnalyzing={isKeywordAnalyzing}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      {isKeywordAnalyzing ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                          Analyzing keywords...
+                        </div>
+                      ) : (
+                        'Start typing to see keyword intelligence'
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
