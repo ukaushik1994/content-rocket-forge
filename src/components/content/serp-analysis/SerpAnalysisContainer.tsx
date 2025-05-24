@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, HelpCircle, FileText, Tag, Heading, Brain, Target } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +11,8 @@ import {
   SerpQuestionsSection,
   SerpEntitiesSection,
   SerpHeadingsSection,
-  SerpKnowledgeGraphSection, SerpFeaturedSnippetsSection
+  SerpKnowledgeGraphSection, 
+  SerpFeaturedSnippetsSection
 } from './index';
 
 export interface SerpAnalysisContainerProps {
@@ -30,7 +32,7 @@ export function SerpAnalysisContainer({
   onRetry = () => {},
   onSerpDataChange = () => {}
 }: SerpAnalysisContainerProps) {
-  const [expandedSections, setExpandedSections] = useState(new Set<string>());
+  const [expandedSections, setExpandedSections] = useState(new Set<string>(['keywords'])); // Default expand keywords
 
   const toggleSection = (sectionId: string) => {
     const newExpandedSections = new Set(expandedSections);
@@ -74,6 +76,7 @@ export function SerpAnalysisContainer({
       icon: Tag,
       description: 'Related keywords and search terms',
       count: serpData?.keywords?.length || 0,
+      variant: 'blue' as const,
       component: (expanded: boolean) => (
         <SerpKeywordsSection
           serpData={serpData}
@@ -88,6 +91,7 @@ export function SerpAnalysisContainer({
       icon: HelpCircle,
       description: 'People also ask questions',
       count: serpData?.peopleAlsoAsk?.length || 0,
+      variant: 'amber' as const,
       component: (expanded: boolean) => (
         <SerpQuestionsSection
           serpData={serpData}
@@ -102,6 +106,7 @@ export function SerpAnalysisContainer({
       icon: FileText,
       description: 'Key entities and concepts',
       count: serpData?.entities?.length || 0,
+      variant: 'indigo' as const,
       component: (expanded: boolean) => (
         <SerpEntitiesSection
           serpData={serpData}
@@ -116,6 +121,7 @@ export function SerpAnalysisContainer({
       icon: Heading,
       description: 'Suggested content headings',
       count: serpData?.headings?.length || 0,
+      variant: 'teal' as const,
       component: (expanded: boolean) => (
         <SerpHeadingsSection
           serpData={serpData}
@@ -123,16 +129,14 @@ export function SerpAnalysisContainer({
           onAddToContent={onAddToContent}
         />
       )
-    }
-  ];
-
-  const enhancedSections = [
+    },
     {
       id: 'knowledge-graph',
       title: 'Knowledge Graph',
       icon: Brain,
       description: 'Entity information and related topics',
       count: serpData?.knowledgeGraph ? 1 : 0,
+      variant: 'purple' as const,
       component: (expanded: boolean) => (
         <SerpKnowledgeGraphSection
           serpData={serpData}
@@ -147,6 +151,7 @@ export function SerpAnalysisContainer({
       icon: Target,
       description: 'Snippet optimization opportunities',
       count: serpData?.featuredSnippets?.length || 0,
+      variant: 'green' as const,
       component: (expanded: boolean) => (
         <SerpFeaturedSnippetsSection
           serpData={serpData}
@@ -157,10 +162,8 @@ export function SerpAnalysisContainer({
     }
   ];
 
-  const allSections = [...sections, ...enhancedSections];
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       <div className="px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -172,26 +175,21 @@ export function SerpAnalysisContainer({
         </div>
       </div>
 
-      <Tabs defaultValue="analysis" className="w-full">
-        <TabsList className="w-full bg-white/5 border-b border-white/10 rounded-none p-0">
-          <TabsTrigger value="analysis" className="w-full rounded-none data-[state=active]:bg-white/5">
-            Analysis
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="analysis" className="space-y-4">
-          <div className="grid gap-4">
-            {allSections.map((section) => (
-              <SerpSectionHeader
-                key={section.id}
-                {...section}
-                expanded={expandedSections.has(section.id)}
-                onToggle={() => toggleSection(section.id)}
-              />
-            ))}
+      <div className="bg-black/20 border border-white/10 backdrop-blur-lg rounded-lg overflow-hidden">
+        {sections.map((section) => (
+          <div key={section.id} className="border-b border-white/5 last:border-b-0">
+            <SerpSectionHeader
+              title={section.title}
+              expanded={expandedSections.has(section.id)}
+              onToggle={() => toggleSection(section.id)}
+              variant={section.variant}
+              description={section.description}
+              count={section.count}
+            />
+            {section.component(expandedSections.has(section.id))}
           </div>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
     </div>
   );
 }

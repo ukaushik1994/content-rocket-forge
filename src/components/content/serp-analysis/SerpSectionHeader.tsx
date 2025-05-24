@@ -32,40 +32,40 @@ export function SerpSectionHeader({
   };
   
   const bgVariantColors = {
-    blue: "bg-blue-500/10",
-    green: "bg-green-500/10",
-    amber: "bg-amber-500/10",
-    indigo: "bg-indigo-500/10",
-    teal: "bg-teal-500/10",
-    rose: "bg-rose-500/10",
-    purple: "bg-purple-500/10",
+    blue: "bg-blue-500/10 text-blue-300",
+    green: "bg-green-500/10 text-green-300",
+    amber: "bg-amber-500/10 text-amber-300",
+    indigo: "bg-indigo-500/10 text-indigo-300",
+    teal: "bg-teal-500/10 text-teal-300",
+    rose: "bg-rose-500/10 text-rose-300",
+    purple: "bg-purple-500/10 text-purple-300",
   };
   
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col border-b border-white/10">
       <Button
         variant="ghost"
         onClick={onToggle}
-        className={`justify-between h-auto py-2 px-3 text-left ${variantColors[variant]} hover:bg-transparent group`}
+        className={`justify-between h-auto py-3 px-4 text-left ${variantColors[variant]} hover:bg-white/5 transition-colors w-full`}
       >
-        <div className="flex items-center gap-2">
-          <span className={`text-base font-medium`}>{title}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-base font-medium">{title}</span>
           {count !== undefined && count > 0 && (
-            <span className={`text-xs font-medium ${bgVariantColors[variant]} px-2 py-0.5 rounded-full`}>
+            <span className={`text-xs font-medium ${bgVariantColors[variant]} px-2 py-1 rounded-full`}>
               {count}
             </span>
           )}
-        </div>
-        <div className="flex items-center">
           {description && (
-            <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
-              {description}
+            <span className="text-xs text-white/50 hidden sm:inline">
+              • {description}
             </span>
           )}
+        </div>
+        <div className="flex items-center ml-2">
           {expanded ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4 transition-transform" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 transition-transform" />
           )}
         </div>
       </Button>
