@@ -114,7 +114,7 @@ export const AdvancedSeoGenerator: React.FC<AdvancedSeoGeneratorProps> = ({
           {/* Content Type Selection */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Content Type</label>
-            <Select value={selectedContentType} onValueChange={setSelectedContentType}>
+            <Select value={selectedContentType} onValueChange={(value) => setSelectedContentType(value as typeof selectedContentType)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -156,7 +156,7 @@ export const AdvancedSeoGenerator: React.FC<AdvancedSeoGeneratorProps> = ({
           {/* User Intent Selection */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Search Intent</label>
-            <Select value={selectedIntent} onValueChange={setSelectedIntent}>
+            <Select value={selectedIntent} onValueChange={(value) => setSelectedIntent(value as typeof selectedIntent)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
