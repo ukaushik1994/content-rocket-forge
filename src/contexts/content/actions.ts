@@ -24,14 +24,15 @@ export const createContentActions = (
     }
 
     try {
-      // Ensure approval_status is valid for database
-      const validApprovalStatus = item.approval_status === 'archived' ? 'draft' : item.approval_status;
+      // For archived content, set approval_status to draft and status to archived
+      const finalStatus = item.status === 'archived' ? 'archived' : item.status;
+      const finalApprovalStatus = item.status === 'archived' ? 'draft' as const : (item.approval_status || 'draft' as const);
       
       const newItem = {
         title: item.title,
         content: item.content,
-        status: item.status,
-        approval_status: validApprovalStatus || 'draft',
+        status: finalStatus,
+        approval_status: finalApprovalStatus,
         seo_score: item.seo_score,
         user_id: userId,
         metadata: item.metadata || {}
@@ -119,13 +120,14 @@ export const createContentActions = (
       // Fallback for development: Create in memory if database fails
       if (process.env.NODE_ENV === 'development') {
         const now = new Date().toISOString();
+        const finalApprovalStatus = item.status === 'archived' ? 'draft' as const : (item.approval_status || 'draft' as const);
         const newItem: ContentItemType = {
           ...item,
           id: uuidv4(),
           created_at: now,
           updated_at: now,
           user_id: userId,
-          approval_status: item.approval_status === 'archived' ? 'draft' : (item.approval_status || 'draft')
+          approval_status: finalApprovalStatus
         };
         setContentItems(prev => [newItem, ...prev]);
         toast.info('Created content in memory (development mode)');
@@ -150,12 +152,17 @@ export const createContentActions = (
       // Handle keyword updates separately
       const keywordsToUpdate = updates.keywords;
       
-      // Ensure approval_status is valid for database
+      // Handle status and approval_status logic
+      let finalApprovalStatus = updates.approval_status;
+      if (updates.status === 'archived' && finalApprovalStatus !== 'draft') {
+        // When archiving content, set approval_status to draft
+        finalApprovalStatus = 'draft' as const;
+      }
+      
       const dbUpdates = {
         ...updates,
         updated_at: new Date().toISOString(),
-        // Handle approval_status conversion
-        approval_status: updates.approval_status === 'archived' ? 'draft' : updates.approval_status,
+        approval_status: finalApprovalStatus,
         // Remove id, user_id and keywords from updates
         id: undefined,
         user_id: undefined,

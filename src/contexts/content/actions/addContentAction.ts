@@ -17,14 +17,15 @@ export const createAddContentAction = (
     }
 
     try {
-      // Ensure approval_status is valid for database
-      const validApprovalStatus = item.approval_status === 'archived' ? 'draft' : item.approval_status;
+      // For archived content, set approval_status to draft and status to archived
+      const finalStatus = item.status === 'archived' ? 'archived' : item.status;
+      const finalApprovalStatus = item.status === 'archived' ? 'draft' as const : (item.approval_status || 'draft' as const);
       
       const newItem = {
         title: item.title,
         content: item.content,
-        status: item.status,
-        approval_status: validApprovalStatus || 'draft',
+        status: finalStatus,
+        approval_status: finalApprovalStatus,
         seo_score: item.seo_score,
         user_id: userId,
         metadata: item.metadata || {}
@@ -66,13 +67,14 @@ export const createAddContentAction = (
       // Fallback for development: Create in memory if database fails
       if (process.env.NODE_ENV === 'development') {
         const now = new Date().toISOString();
+        const finalApprovalStatus = item.status === 'archived' ? 'draft' as const : (item.approval_status || 'draft' as const);
         const newItem: ContentItemType = {
           ...item,
           id: uuidv4(),
           created_at: now,
           updated_at: now,
           user_id: userId,
-          approval_status: item.approval_status === 'archived' ? 'draft' : (item.approval_status || 'draft')
+          approval_status: finalApprovalStatus
         };
         setContentItems(prev => [newItem, ...prev]);
         toast.info('Created content in memory (development mode)');

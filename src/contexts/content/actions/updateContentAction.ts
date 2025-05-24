@@ -26,12 +26,18 @@ export const createUpdateContentAction = (
       // Handle keyword updates separately
       const keywordsToUpdate = updates.keywords;
       
-      // Prepare updates for the database - ensure approval_status is valid
+      // Handle status and approval_status logic
+      let finalApprovalStatus = updates.approval_status;
+      if (updates.status === 'archived' && finalApprovalStatus !== 'draft') {
+        // When archiving content, set approval_status to draft
+        finalApprovalStatus = 'draft' as const;
+      }
+      
+      // Prepare updates for the database
       const dbUpdates = {
         ...updates,
         updated_at: new Date().toISOString(),
-        // Handle approval_status conversion
-        approval_status: updates.approval_status === 'archived' ? 'draft' : updates.approval_status,
+        approval_status: finalApprovalStatus,
         // Remove id, user_id and keywords from updates
         id: undefined,
         user_id: undefined,
