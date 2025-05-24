@@ -12,6 +12,7 @@ export interface SerpMetrics {
   trend?: 'rising' | 'stable' | 'declining';
   seasonality?: boolean;
   intent?: 'informational' | 'commercial' | 'transactional' | 'navigational';
+  [key: string]: any; // Make it JSON-serializable
 }
 
 export interface CompetitorAnalysis {
@@ -26,6 +27,7 @@ export interface CompetitorAnalysis {
   averageWordCount?: number;
   commonFeatures: string[];
   gapOpportunities: string[];
+  [key: string]: any; // Make it JSON-serializable
 }
 
 export interface RankingOpportunities {
@@ -36,6 +38,7 @@ export interface RankingOpportunities {
   localOpportunities: boolean;
   recommendedContentLength: number;
   missingTopics: string[];
+  [key: string]: any; // Make it JSON-serializable
 }
 
 export interface SerpSelectionStats {
@@ -54,6 +57,7 @@ export interface SerpSelectionStats {
     source?: string;
     priority?: 'high' | 'medium' | 'low';
   }>;
+  [key: string]: any; // Make it JSON-serializable
 }
 
 export interface ComprehensiveSerpData {
@@ -63,4 +67,5 @@ export interface ComprehensiveSerpData {
   selectionStats: SerpSelectionStats;
   rawSerpData: any; // Keep original SERP data
   analysisTimestamp: string;
+  [key: string]: any; // Make it JSON-serializable
 }

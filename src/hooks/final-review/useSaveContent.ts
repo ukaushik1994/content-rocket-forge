@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -127,6 +128,22 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
+      // Prepare metadata as plain object for JSON storage
+      const metadata = {
+        contentType: saveParams.contentType,
+        metaTitle: saveParams.metaTitle,
+        metaDescription: saveParams.metaDescription,
+        outline: saveParams.outline,
+        serpSelections: saveParams.serpSelections,
+        // Enhanced SERP data - convert to plain objects
+        comprehensiveSerpData: comprehensiveSerpData ? JSON.parse(JSON.stringify(comprehensiveSerpData)) : null,
+        serpMetrics: comprehensiveSerpData?.serpMetrics ? JSON.parse(JSON.stringify(comprehensiveSerpData.serpMetrics)) : null,
+        competitorAnalysis: comprehensiveSerpData?.competitorAnalysis ? JSON.parse(JSON.stringify(comprehensiveSerpData.competitorAnalysis)) : null,
+        rankingOpportunities: comprehensiveSerpData?.rankingOpportunities ? JSON.parse(JSON.stringify(comprehensiveSerpData.rankingOpportunities)) : null,
+        selectionStats: comprehensiveSerpData?.selectionStats ? JSON.parse(JSON.stringify(comprehensiveSerpData.selectionStats)) : null,
+        analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
+      };
+      
       // Save the content item first with comprehensive metadata
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
@@ -136,20 +153,7 @@ export const useSaveContent = () => {
           user_id: user.user.id,
           status: 'draft',
           seo_score: state.seoScore || 0,
-          metadata: {
-            contentType: saveParams.contentType,
-            metaTitle: saveParams.metaTitle,
-            metaDescription: saveParams.metaDescription,
-            outline: saveParams.outline,
-            serpSelections: saveParams.serpSelections,
-            // Enhanced SERP data
-            comprehensiveSerpData: comprehensiveSerpData,
-            serpMetrics: comprehensiveSerpData?.serpMetrics,
-            competitorAnalysis: comprehensiveSerpData?.competitorAnalysis,
-            rankingOpportunities: comprehensiveSerpData?.rankingOpportunities,
-            selectionStats: comprehensiveSerpData?.selectionStats,
-            analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
-          }
+          metadata: metadata
         })
         .select()
         .single();
@@ -278,6 +282,22 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
+      // Prepare metadata as plain object for JSON storage
+      const metadata = {
+        contentType: publishParams.contentType,
+        metaTitle: publishParams.metaTitle,
+        metaDescription: publishParams.metaDescription,
+        outline: publishParams.outline,
+        serpSelections: publishParams.serpSelections,
+        // Enhanced SERP data - convert to plain objects
+        comprehensiveSerpData: comprehensiveSerpData ? JSON.parse(JSON.stringify(comprehensiveSerpData)) : null,
+        serpMetrics: comprehensiveSerpData?.serpMetrics ? JSON.parse(JSON.stringify(comprehensiveSerpData.serpMetrics)) : null,
+        competitorAnalysis: comprehensiveSerpData?.competitorAnalysis ? JSON.parse(JSON.stringify(comprehensiveSerpData.competitorAnalysis)) : null,
+        rankingOpportunities: comprehensiveSerpData?.rankingOpportunities ? JSON.parse(JSON.stringify(comprehensiveSerpData.rankingOpportunities)) : null,
+        selectionStats: comprehensiveSerpData?.selectionStats ? JSON.parse(JSON.stringify(comprehensiveSerpData.selectionStats)) : null,
+        analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
+      };
+      
       // Save the content item first with comprehensive metadata
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
@@ -287,20 +307,7 @@ export const useSaveContent = () => {
           user_id: user.user.id,
           status: 'published',
           seo_score: publishParams.seoScore || 0,
-          metadata: {
-            contentType: publishParams.contentType,
-            metaTitle: publishParams.metaTitle,
-            metaDescription: publishParams.metaDescription,
-            outline: publishParams.outline,
-            serpSelections: publishParams.serpSelections,
-            // Enhanced SERP data
-            comprehensiveSerpData: comprehensiveSerpData,
-            serpMetrics: comprehensiveSerpData?.serpMetrics,
-            competitorAnalysis: comprehensiveSerpData?.competitorAnalysis,
-            rankingOpportunities: comprehensiveSerpData?.rankingOpportunities,
-            selectionStats: comprehensiveSerpData?.selectionStats,
-            analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
-          }
+          metadata: metadata
         })
         .select()
         .single();

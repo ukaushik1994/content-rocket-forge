@@ -35,6 +35,9 @@ export const initialState: ContentBuilderState = {
   serpSelections: [],
   isAnalyzing: false,
   
+  // Enhanced SERP Analysis Data
+  comprehensiveSerpData: null,
+  
   // Outline
   outline: [],
   outlineSections: [],
