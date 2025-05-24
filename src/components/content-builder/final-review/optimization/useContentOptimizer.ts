@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { OptimizationSuggestion } from './types';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
@@ -6,6 +7,7 @@ import { toast } from 'sonner';
 import { detectAIContent } from '@/services/aiContentDetectionService';
 import { analyzeSerpUsage, integrateSerpItems } from '@/services/serpIntegrationAnalyzer';
 import { humanizeContent } from '@/services/aiContentDetectionService';
+import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 
 export function useContentOptimizer(content: string) {
   const { state } = useContentBuilder();
