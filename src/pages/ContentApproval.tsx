@@ -1,16 +1,17 @@
+
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/layout/Navbar';
 import { ApprovalWorkspace } from '@/components/approval/ApprovalWorkspace';
 import { ContentProvider, useContent } from '@/contexts/content';
 import { motion } from 'framer-motion';
+
 const ContentApprovalContent = () => {
-  const {
-    contentItems,
-    loading
-  } = useContent();
+  const { contentItems, loading } = useContent();
+
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">
+    return (
+      <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="w-16 h-16 rounded-full border-4 border-neon-purple/30 border-t-neon-purple animate-spin"></div>
@@ -20,18 +21,21 @@ const ContentApprovalContent = () => {
           </div>
           <span className="text-lg font-medium text-gradient">Loading approval workspace...</span>
         </div>
-      </div>;
+      </div>
+    );
   }
+
   return <ApprovalWorkspace contentItems={contentItems} />;
 };
+
 const ContentApproval = () => {
-  return <motion.div initial={{
-    opacity: 0
-  }} animate={{
-    opacity: 1
-  }} transition={{
-    duration: 0.5
-  }} className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-900 to-black bg-gray-950">
+  return (
+    <motion.div 
+      className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-900 to-black"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <Helmet>
         <title>Content Approval | ContentRocketForge</title>
         <meta name="description" content="Review and approve content submissions with advanced workflow management" />
@@ -52,6 +56,8 @@ const ContentApproval = () => {
         <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-neon-pink/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-1/4 right-1/4 w-48 h-48 bg-neon-green/10 rounded-full blur-3xl animate-pulse"></div>
       </div>
-    </motion.div>;
+    </motion.div>
+  );
 };
+
 export default ContentApproval;
