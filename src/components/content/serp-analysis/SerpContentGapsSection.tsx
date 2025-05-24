@@ -3,7 +3,7 @@ import React from 'react';
 import { SerpAnalysisResult } from '@/types/serp';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Gap, Lightbulb, Plus, Target } from 'lucide-react';
+import { Target, Lightbulb, Plus } from 'lucide-react';
 
 interface SerpContentGapsSectionProps {
   serpData: SerpAnalysisResult;
@@ -48,7 +48,7 @@ export function SerpContentGapsSection({ serpData, expanded, onAddToContent }: S
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Gap className="h-4 w-4 text-pink-400" />
+          <Target className="h-4 w-4 text-pink-400" />
           <span className="text-sm font-medium text-white">Content Gap Analysis</span>
         </div>
         <Badge variant="secondary" className="bg-pink-500/20 text-pink-300">

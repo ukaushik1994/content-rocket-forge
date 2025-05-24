@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, HelpCircle, FileText, Tag, Heading, Brain, Target, TrendingUp, DollarSign, BarChart3, Newspaper, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -96,7 +95,7 @@ export function SerpAnalysisContainer({
       icon: Target,
       description: 'Opportunities competitors are missing',
       count: serpData?.contentGaps?.length || 0,
-      variant: 'pink' as const,
+      variant: 'rose' as const,
       component: (expanded: boolean) => (
         <SerpContentGapsSection
           serpData={serpData}

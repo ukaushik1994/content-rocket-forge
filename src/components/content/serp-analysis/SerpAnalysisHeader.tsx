@@ -83,8 +83,8 @@ export function SerpAnalysisHeader({ serpData, mainKeyword }: SerpAnalysisHeader
       
       <SerpMetricsSection 
         serpData={serpData} 
-        mainKeyword={mainKeyword} 
         expanded={expanded} 
+        onAddToContent={() => {}}
       />
     </motion.div>
   );
