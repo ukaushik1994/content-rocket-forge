@@ -21,15 +21,21 @@ const ContentList: React.FC<ContentListProps> = memo(({
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+      className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8"
     >
       {contentItems.map((item) => (
-        <ContentItem
+        <motion.div
           key={item.id}
-          content={item}
-          onSelect={() => onSelectContent(item)}
-          onOpenRepurposedContent={onOpenRepurposedContent}
-        />
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: Math.random() * 0.2 }}
+        >
+          <ContentItem
+            content={item}
+            onSelect={() => onSelectContent(item)}
+            onOpenRepurposedContent={onOpenRepurposedContent}
+          />
+        </motion.div>
       ))}
     </motion.div>
   );

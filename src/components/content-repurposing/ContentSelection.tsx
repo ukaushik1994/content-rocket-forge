@@ -68,7 +68,7 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
   }, [uniqueContentItems, searchQuery]);
   
   return (
-    <div>
+    <div className="space-y-8">
       <ContentSelectionHeader 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -78,12 +78,14 @@ const ContentSelection: React.FC<ContentSelectionProps> = memo(({
       {uniqueContentItems.length === 0 ? (
         <EmptyContentState />
       ) : (
-        <ContentList
-          contentItems={filteredItems}
-          onSelectContent={onSelectContent}
-          onOpenRepurposedContent={onOpenRepurposedContent}
-          isMobile={isMobile}
-        />
+        <div className="mt-8">
+          <ContentList
+            contentItems={filteredItems}
+            onSelectContent={onSelectContent}
+            onOpenRepurposedContent={onOpenRepurposedContent}
+            isMobile={isMobile}
+          />
+        </div>
       )}
       
       <RepurposedContentDialog

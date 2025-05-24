@@ -41,17 +41,17 @@ export const ContentItem: React.FC<ContentItemProps> = ({
         onSelect();
       }}
     >
-      <div className="p-6 flex-1 space-y-4">
+      <div className="p-6 flex-1 space-y-5">
         <ContentSummary item={content} timeAgo={timeAgo} />
         
         {/* Content Types Created Section */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {hasRepurposedFormats ? (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-neon-purple" />
                 <span className="text-sm font-medium text-muted-foreground">
-                  {repurposedFormats.length} Format{repurposedFormats.length !== 1 ? 's' : ''}
+                  {repurposedFormats.length} Format{repurposedFormats.length !== 1 ? 's' : ''} Created
                 </span>
               </div>
               <FormatsList 
@@ -60,19 +60,19 @@ export const ContentItem: React.FC<ContentItemProps> = ({
               />
             </>
           ) : (
-            <div className="flex items-center gap-2 py-3 px-4 rounded-md bg-muted/20 border border-dashed border-muted-foreground/20">
+            <div className="flex items-center gap-3 py-4 px-4 rounded-lg bg-muted/20 border border-dashed border-muted-foreground/20">
               <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
               <span className="text-sm text-muted-foreground italic">
-                No formats yet
+                No formats created yet
               </span>
             </div>
           )}
         </div>
       </div>
       
-      <div className="border-t border-white/10 p-4 bg-gradient-to-r from-muted/5 to-muted/10 flex justify-between items-center">
+      <div className="border-t border-white/10 p-4 bg-gradient-to-r from-muted/5 to-muted/10 flex justify-between items-center min-h-[60px]">
         {hasRepurposedFormats && (
-          <Badge variant="secondary" className="bg-neon-purple/10 text-neon-purple border-neon-purple/20 text-sm">
+          <Badge variant="secondary" className="bg-neon-purple/10 text-neon-purple border-neon-purple/20 text-sm font-medium">
             {repurposedFormats.length} ready
           </Badge>
         )}
