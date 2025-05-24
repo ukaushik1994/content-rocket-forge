@@ -1,26 +1,32 @@
+
 import React from 'react';
-import { useEnhancedChecklistItems } from '../hooks/useEnhancedChecklistItems';
-import { EnhancedFinalChecklistCard } from '../EnhancedFinalChecklistCard';
 import { ContentReviewCard } from '../ContentReviewCard';
+import { FinalChecklistCard } from '../FinalChecklistCard';
 import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
+import { motion } from 'framer-motion';
+import { useRunChecks } from '@/hooks/final-review/useRunChecks';
+import { useChecklistItems } from '../hooks/useChecklistItems';
 
 interface OverviewTabProps {
   content: string;
-  checklistItems: Array<{title: string, passed: boolean}>;
+  checklistItems: {
+    title: string;
+    passed: boolean;
+  }[];
   onRunAllChecks: () => void;
   metaTitle: string | null;
   metaDescription: string | null;
   onMetaTitleChange: (value: string) => void;
   onMetaDescriptionChange: (value: string) => void;
   onGenerateMeta: () => void;
-  solutionIntegrationMetrics: any;
-  selectedSolution: any;
+  solutionIntegrationMetrics: any | null;
+  selectedSolution: any | null;
   isAnalyzing: boolean;
   onAnalyze: () => void;
 }
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({
+export const OverviewTab = ({
   content,
   checklistItems,
   onRunAllChecks,
@@ -33,53 +39,72 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   selectedSolution,
   isAnalyzing,
   onAnalyze
-}) => {
-  const {
-    sections,
-    totalChecks,
-    passedChecks,
-    overallCompletionPercentage,
-    isAnalyzing: isChecklistAnalyzing,
-    refreshChecklist,
-    toggleSection
-  } = useEnhancedChecklistItems();
+}: OverviewTabProps) => {
+  const { isRunningAllChecks, runAllChecks } = useRunChecks();
+  const { refreshChecklist } = useChecklistItems();
+  
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
 
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+  
+  // Handler that combines running all checks and refreshing the checklist
+  const handleRunAllChecks = () => {
+    // Pass refreshChecklist function to runAllChecks
+    runAllChecks(refreshChecklist);
+    onRunAllChecks(); // Call the original onRunAllChecks prop for backward compatibility
+  };
+  
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Content Review */}
-      <div className="space-y-4">
+    <motion.div
+      className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      {/* Main content area */}
+      <motion.div className="lg:col-span-2" variants={item}>
         <ContentReviewCard content={content} />
-      </div>
+      </motion.div>
       
-      {/* Enhanced Checklist */}
-      <div className="space-y-4">
-        <EnhancedFinalChecklistCard
-          sections={sections}
-          totalChecks={totalChecks}
-          passedChecks={passedChecks}
-          overallCompletionPercentage={overallCompletionPercentage}
-          isAnalyzing={isChecklistAnalyzing}
-          onRefresh={refreshChecklist}
-          onToggleSection={toggleSection}
-        />
+      {/* Side panel */}
+      <motion.div className="space-y-6">
+        <motion.div variants={item}>
+          <FinalChecklistCard 
+            checks={checklistItems}
+            isRefreshing={isRunningAllChecks}
+          />
+        </motion.div>
         
-        <MetaInformationCard
-          metaTitle={metaTitle}
-          metaDescription={metaDescription}
-          onMetaTitleChange={onMetaTitleChange}
-          onMetaDescriptionChange={onMetaDescriptionChange}
-          onGenerateMeta={onGenerateMeta}
-        />
-        
-        {selectedSolution && (
+        <motion.div variants={item}>
+          <MetaInformationCard 
+            metaTitle={metaTitle || ''} 
+            metaDescription={metaDescription || ''}
+            onMetaTitleChange={onMetaTitleChange}
+            onMetaDescriptionChange={onMetaDescriptionChange}
+            onGenerateMeta={onGenerateMeta}
+          />
+        </motion.div>
+
+        <motion.div variants={item}>
           <SolutionIntegrationCard
-            solutionIntegrationMetrics={solutionIntegrationMetrics}
-            selectedSolution={selectedSolution}
+            metrics={solutionIntegrationMetrics}
+            solution={selectedSolution}
             isAnalyzing={isAnalyzing}
             onAnalyze={onAnalyze}
           />
-        )}
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
