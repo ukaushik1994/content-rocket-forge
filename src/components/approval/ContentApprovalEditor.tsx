@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +9,10 @@ import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { 
   FileText, CheckCircle, Wand, History, 
-  ThumbsUp, AlertCircle, Search, PanelRight
+  ThumbsUp, AlertCircle, Search, PanelRight, Clock
 } from 'lucide-react';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
@@ -19,6 +21,8 @@ import { motion } from 'framer-motion';
 import { ApprovalSerpSummary } from './serp/ApprovalSerpSummary';
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
+import { ApprovalTimeline } from './ApprovalTimeline';
+import { StatusBadge } from './StatusBadge';
 
 interface ContentApprovalEditorProps {
   content: ContentItemType;
@@ -29,11 +33,18 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
   const [approvalNotes, setApprovalNotes] = useState('');
   const [activeTab, setActiveTab] = useState('edit');
   const [showSidebar, setShowSidebar] = useState(false);
-  const [activeSidebarTab, setActiveSidebarTab] = useState('serp');
+  const [activeSidebarTab, setActiveSidebarTab] = useState('timeline');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(content.title);
   
-  const { updateContentItem, publishContent } = useContent();
+  const { 
+    updateContentItem, 
+    approveContent, 
+    rejectContent, 
+    requestChanges,
+    submitForReview
+  } = useContent();
+  
   const { 
     improveContentWithAI, 
     isImproving,
@@ -53,6 +64,10 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
   
   const handleContentChange = (newContent: string) => {
     setEditedContent(newContent);
+  };
+  
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedTitle(e.target.value);
   };
   
   const handleSave = async () => {
@@ -78,7 +93,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
-      await publishContent(content.id);
+      await approveContent(content.id, approvalNotes || undefined);
       toast.success('Content approved and published successfully', {
         icon: <CheckCircle className="h-4 w-4 text-green-500" />
       });
@@ -86,6 +101,59 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
       toast.error('Failed to approve content', {
         icon: <AlertCircle className="h-4 w-4 text-red-500" />
       });
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!approvalNotes.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await rejectContent(content.id, approvalNotes);
+      toast.success('Content rejected with feedback provided', {
+        icon: <AlertCircle className="h-4 w-4 text-red-500" />
+      });
+    } catch (error) {
+      toast.error('Failed to reject content');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRequestChanges = async () => {
+    if (!approvalNotes.trim()) {
+      toast.error('Please provide specific change requests');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await requestChanges(content.id, approvalNotes);
+      toast.success('Change request sent to author', {
+        icon: <AlertCircle className="h-4 w-4 text-orange-500" />
+      });
+    } catch (error) {
+      toast.error('Failed to request changes');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitForReview = async () => {
+    setIsSubmitting(true);
+    try {
+      await submitForReview(content.id, approvalNotes || undefined);
+      toast.success('Content submitted for review');
+    } catch (error) {
+      toast.error('Failed to submit for review');
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -140,6 +208,54 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
     setEditedContent(prev => prev + insertText);
     toast.success(`Added ${type} to content`);
   };
+
+  const getActionButtons = () => {
+    switch (content.approval_status) {
+      case 'draft':
+        return (
+          <Button 
+            onClick={handleSubmitForReview} 
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Submit for Review
+          </Button>
+        );
+      case 'pending_review':
+      case 'in_review':
+        return (
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleApprove} 
+              disabled={isSubmitting}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Approve & Publish
+            </Button>
+            <Button 
+              onClick={handleRequestChanges} 
+              disabled={isSubmitting || !approvalNotes.trim()}
+              variant="outline"
+              className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
+            >
+              Request Changes
+            </Button>
+            <Button 
+              onClick={handleReject} 
+              disabled={isSubmitting || !approvalNotes.trim()}
+              variant="destructive"
+              className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"
+            >
+              Reject
+            </Button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
   
   return (
     <motion.div 
@@ -149,15 +265,18 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
       transition={{ duration: 0.3 }}
     >
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-5">
-        <div>
-          <h2 className="text-xl font-semibold text-white/90">{editedTitle}</h2>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <Badge 
-              variant="outline" 
-              className="border-white/20 bg-white/5 text-white/70"
-            >
-              {content.status}
-            </Badge>
+        <div className="flex-1 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-2">Title</label>
+            <Input
+              value={editedTitle}
+              onChange={handleTitleChange}
+              className="bg-white/5 border-white/10 text-white text-lg font-semibold"
+              placeholder="Content title..."
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={content.approval_status} showIcon={true} />
             {content.keywords?.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {content.keywords.map((keyword, i) => (
@@ -180,14 +299,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
             <History className="mr-2 h-4 w-4" />
             Save Draft
           </Button>
-          <Button 
-            onClick={handleApprove} 
-            disabled={isSubmitting}
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple shadow-md shadow-neon-purple/20"
-          >
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Approve & Publish
-          </Button>
+          {getActionButtons()}
         </div>
       </div>
       
@@ -261,9 +373,17 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
           <CardFooter className="border-t border-white/10 p-4">
             <div className="w-full space-y-4">
               <div>
-                <h4 className="text-sm font-medium mb-2 text-white/80">Approval Notes</h4>
+                <h4 className="text-sm font-medium mb-2 text-white/80">
+                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review' 
+                    ? 'Review Notes & Feedback' 
+                    : 'Notes'}
+                </h4>
                 <Textarea 
-                  placeholder="Add any notes, feedback, or comments about this content..."
+                  placeholder={
+                    content.approval_status === 'pending_review' || content.approval_status === 'in_review'
+                      ? "Provide feedback, suggestions, or reasons for your decision..."
+                      : "Add any notes about this content..."
+                  }
                   value={approvalNotes}
                   onChange={(e) => setApprovalNotes(e.target.value)}
                   className="min-h-[100px] bg-gray-800/30 border-white/10 focus-visible:ring-neon-purple/50"
@@ -273,14 +393,16 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
               <Alert className="border-amber-600/30 bg-amber-600/10">
                 <FileText className="h-4 w-4 text-amber-500" />
                 <AlertDescription className="text-amber-200">
-                  Review and update the content before approving. Once approved, the content will be published and visible to all users.
+                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review'
+                    ? 'Review the content carefully before making your decision. Your feedback will be sent to the content author.'
+                    : 'Review and update the content before proceeding. Changes will be saved automatically.'}
                 </AlertDescription>
               </Alert>
             </div>
           </CardFooter>
         </Card>
         
-        {/* AI & SERP Tools Sidebar */}
+        {/* Enhanced Sidebar with Timeline */}
         {showSidebar && (
           <motion.div 
             initial={{ opacity: 0, width: 0 }}
@@ -289,7 +411,11 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
             className="w-80 space-y-4"
           >
             <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="timeline" className="text-xs">
+                  <Clock className="h-4 w-4 mr-1" />
+                  Timeline
+                </TabsTrigger>
                 <TabsTrigger value="serp" className="text-xs">
                   <Search className="h-4 w-4 mr-1" />
                   SERP
@@ -303,6 +429,10 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
                   Sections
                 </TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="timeline" className="mt-4">
+                <ApprovalTimeline contentId={content.id} />
+              </TabsContent>
               
               <TabsContent value="serp" className="mt-4">
                 <ApprovalSerpSummary

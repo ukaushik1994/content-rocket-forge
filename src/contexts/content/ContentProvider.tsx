@@ -67,27 +67,22 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     fetchContentItems();
   }, [fetchContentItems]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription for content and approval tables
   useEffect(() => {
     if (user) {
       const channel = supabase
-        .channel('content-changes')
+        .channel('content-approval-changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'content_items' },
           (payload) => {
-            // Handle the change based on the event type
+            // Handle content item changes
             if (payload.eventType === 'INSERT') {
               const newItem = payload.new as ContentItemType;
               if (newItem.user_id === user.id) {
-                // For newly inserted items, we need to fetch any keywords that might be associated
                 fetchItemKeywords(newItem).then(itemWithKeywords => {
                   setContentItems(prev => {
-                    // Check if we already have this item to prevent duplicates
                     const exists = prev.some(item => item.id === itemWithKeywords.id);
-                    if (exists) {
-                      console.log('Skipping duplicate insert for item:', itemWithKeywords.id);
-                      return prev;
-                    }
+                    if (exists) return prev;
                     return [itemWithKeywords, ...prev];
                   });
                 });
@@ -95,14 +90,11 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
             } else if (payload.eventType === 'UPDATE') {
               const updatedItem = payload.new as ContentItemType;
               if (updatedItem.user_id === user.id) {
-                // For updated items, we need to fetch any keywords that might be updated
                 fetchItemKeywords(updatedItem).then(itemWithKeywords => {
                   setContentItems(prev => {
-                    // Only update the specific item, ensuring no duplicates
                     const updated = prev.map(item => 
                       item.id === itemWithKeywords.id ? itemWithKeywords : item
                     );
-                    // If it wasn't found, it's a new item
                     if (!updated.some(item => item.id === itemWithKeywords.id)) {
                       return [itemWithKeywords, ...prev];
                     }
@@ -112,11 +104,22 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
               }
             } else if (payload.eventType === 'DELETE') {
               const deletedItem = payload.old as ContentItemType;
-              // Remove the item from state immediately
               setContentItems(prev => prev.filter(item => item.id !== deletedItem.id));
-              // Re-fetch all items to ensure state is fresh (optional, helps with complex deletions)
-              setTimeout(fetchContentItems, 500);
             }
+          }
+        )
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'approval_history' },
+          () => {
+            // Refresh content when approval history changes
+            fetchContentItems();
+          }
+        )
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'content_approvals' },
+          () => {
+            // Refresh content when approvals change
+            fetchContentItems();
           }
         )
         .subscribe();

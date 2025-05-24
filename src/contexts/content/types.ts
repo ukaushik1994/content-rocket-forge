@@ -39,6 +39,9 @@ export interface ApprovalType {
   reviewed_at?: string;
   created_at: string;
   updated_at: string;
+  assigned_at?: string;
+  priority?: string;
+  approval_notes?: string;
 }
 
 export interface ApprovalCommentType {
@@ -48,6 +51,28 @@ export interface ApprovalCommentType {
   comment: string;
   comment_type: 'general' | 'suggestion' | 'issue' | 'praise';
   created_at: string;
+}
+
+export interface ApprovalHistoryType {
+  id: string;
+  content_id: string;
+  user_id: string;
+  action: string;
+  from_status?: string;
+  to_status?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface ApprovalAssignmentType {
+  id: string;
+  content_id: string;
+  reviewer_id: string;
+  assigned_by: string;
+  assigned_at: string;
+  due_date?: string;
+  priority: string;
+  is_active: boolean;
 }
 
 export interface ContentContextType {
@@ -60,10 +85,12 @@ export interface ContentContextType {
   publishContent: (id: string) => Promise<void>;
   refreshContent: () => Promise<void>;
   
-  // New approval methods
-  submitForReview: (id: string) => Promise<void>;
+  // Enhanced approval methods
+  submitForReview: (id: string, notes?: string) => Promise<void>;
   approveContent: (id: string, comments?: string) => Promise<void>;
   rejectContent: (id: string, comments: string) => Promise<void>;
   requestChanges: (id: string, comments: string) => Promise<void>;
   addApprovalComment: (approvalId: string, comment: string, type?: ApprovalCommentType['comment_type']) => Promise<void>;
+  assignReviewer: (contentId: string, reviewerId: string, dueDate?: string, priority?: string) => Promise<void>;
+  getApprovalHistory: (contentId: string) => Promise<ApprovalHistoryType[]>;
 }

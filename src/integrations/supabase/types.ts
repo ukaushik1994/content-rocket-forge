@@ -39,6 +39,47 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string
+          content_id: string
+          due_date: string | null
+          id: string
+          is_active: boolean | null
+          priority: string | null
+          reviewer_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by: string
+          content_id: string
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+          reviewer_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string
+          content_id?: string
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_assignments_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_comments: {
         Row: {
           approval_id: string
@@ -70,6 +111,59 @@ export type Database = {
             columns: ["approval_id"]
             isOneToOne: false
             referencedRelation: "content_approvals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_history: {
+        Row: {
+          action: string
+          content_id: string
+          created_at: string | null
+          from_status:
+            | Database["public"]["Enums"]["approval_workflow_status"]
+            | null
+          id: string
+          notes: string | null
+          to_status:
+            | Database["public"]["Enums"]["approval_workflow_status"]
+            | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          content_id: string
+          created_at?: string | null
+          from_status?:
+            | Database["public"]["Enums"]["approval_workflow_status"]
+            | null
+          id?: string
+          notes?: string | null
+          to_status?:
+            | Database["public"]["Enums"]["approval_workflow_status"]
+            | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          content_id?: string
+          created_at?: string | null
+          from_status?:
+            | Database["public"]["Enums"]["approval_workflow_status"]
+            | null
+          id?: string
+          notes?: string | null
+          to_status?:
+            | Database["public"]["Enums"]["approval_workflow_status"]
+            | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_history_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
             referencedColumns: ["id"]
           },
         ]
@@ -210,30 +304,39 @@ export type Database = {
       }
       content_approvals: {
         Row: {
+          approval_notes: string | null
+          assigned_at: string | null
           comments: string | null
           content_id: string
           created_at: string
           id: string
+          priority: string | null
           reviewed_at: string | null
           reviewer_id: string
           status: string
           updated_at: string
         }
         Insert: {
+          approval_notes?: string | null
+          assigned_at?: string | null
           comments?: string | null
           content_id: string
           created_at?: string
           id?: string
+          priority?: string | null
           reviewed_at?: string | null
           reviewer_id: string
           status?: string
           updated_at?: string
         }
         Update: {
+          approval_notes?: string | null
+          assigned_at?: string | null
           comments?: string | null
           content_id?: string
           created_at?: string
           id?: string
+          priority?: string | null
           reviewed_at?: string | null
           reviewer_id?: string
           status?: string
@@ -278,7 +381,7 @@ export type Database = {
       }
       content_items: {
         Row: {
-          approval_status: string | null
+          approval_status: Database["public"]["Enums"]["approval_workflow_status"]
           content: string | null
           created_at: string
           id: string
@@ -293,7 +396,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          approval_status?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_workflow_status"]
           content?: string | null
           created_at?: string
           id?: string
@@ -308,7 +411,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          approval_status?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_workflow_status"]
           content?: string | null
           created_at?: string
           id?: string
@@ -586,7 +689,14 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      approval_workflow_status:
+        | "draft"
+        | "pending_review"
+        | "in_review"
+        | "approved"
+        | "rejected"
+        | "needs_changes"
+        | "published"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -701,6 +811,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      approval_workflow_status: [
+        "draft",
+        "pending_review",
+        "in_review",
+        "approved",
+        "rejected",
+        "needs_changes",
+        "published",
+      ],
+    },
   },
 } as const
