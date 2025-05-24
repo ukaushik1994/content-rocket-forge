@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { ContentReviewCard } from '../ContentReviewCard';
-import { EnhancedFinalChecklistCard } from '../EnhancedFinalChecklistCard';
+import { FinalChecklistCard } from '../FinalChecklistCard';
 import { MetaInformationCard } from '../MetaInformationCard';
 import { SolutionIntegrationCard } from '../SolutionIntegrationCard';
 import { motion } from 'framer-motion';
 import { useRunChecks } from '@/hooks/final-review/useRunChecks';
+import { useChecklistItems } from '../hooks/useChecklistItems';
 
 interface OverviewTabProps {
   content: string;
@@ -40,6 +41,7 @@ export const OverviewTab = ({
   onAnalyze
 }: OverviewTabProps) => {
   const { isRunningAllChecks, runAllChecks } = useRunChecks();
+  const { refreshChecklist } = useChecklistItems();
   
   const container = {
     hidden: { opacity: 0 },
@@ -56,10 +58,11 @@ export const OverviewTab = ({
     show: { opacity: 1, y: 0 }
   };
   
-  // Handler that combines running all checks
+  // Handler that combines running all checks and refreshing the checklist
   const handleRunAllChecks = () => {
-    runAllChecks();
-    onRunAllChecks();
+    // Pass refreshChecklist function to runAllChecks
+    runAllChecks(refreshChecklist);
+    onRunAllChecks(); // Call the original onRunAllChecks prop for backward compatibility
   };
   
   return (
@@ -77,9 +80,9 @@ export const OverviewTab = ({
       {/* Side panel */}
       <motion.div className="space-y-6">
         <motion.div variants={item}>
-          <EnhancedFinalChecklistCard 
+          <FinalChecklistCard 
+            checks={checklistItems}
             isRefreshing={isRunningAllChecks}
-            onRefresh={handleRunAllChecks}
           />
         </motion.div>
         
