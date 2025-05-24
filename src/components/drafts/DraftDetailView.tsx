@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ContentType } from '@/contexts/content-builder/types/content-types';
-import { CheckCircle2, Edit2, FileText, Tag, Clock, BarChart2, Search, Puzzle, FileCode } from 'lucide-react';
+import { CheckCircle2, Edit2, FileText, Tag, Clock, BarChart2, Search, Puzzle, FileCode, ChevronDown, ChevronUp, Plus, Eye, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
@@ -22,6 +22,15 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
   const [documentStructure, setDocumentStructure] = useState(null);
   const [solutionMetrics, setSolutionMetrics] = useState(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    serp: false,
+    solution: false,
+    structure: false,
+    keywords: false,
+    questions: false,
+    entities: false,
+    gaps: false
+  });
   
   // Load analysis data when metadata tab is selected
   useEffect(() => {
@@ -72,70 +81,148 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     }).format(date);
   };
 
-  const renderSerpAnalysis = () => {
+  const renderDetailedSerpAnalysis = () => {
     if (!serpData) {
       return (
-        <Card className="bg-card/50 border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Search className="h-4 w-4 text-blue-400" />
-              <h3 className="text-sm font-medium">SERP Analysis</h3>
+        <Card className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 border border-blue-200/30">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Search className="h-6 w-6 text-blue-500" />
+              <h3 className="text-lg font-semibold text-blue-900">SERP Analysis</h3>
             </div>
-            <p className="text-xs text-muted-foreground">No SERP data available</p>
+            <p className="text-blue-700/70">No SERP data available for analysis</p>
           </CardContent>
         </Card>
       );
     }
 
     return (
-      <Card className="bg-card/50 border">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Search className="h-4 w-4 text-blue-400" />
-            <h3 className="text-sm font-medium">SERP Analysis</h3>
+      <Card className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 border border-blue-200/30">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Search className="h-6 w-6 text-blue-500" />
+            <h3 className="text-lg font-semibold text-blue-900">SERP Analysis Details</h3>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Keywords Section */}
             {serpData.keywords && serpData.keywords.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Target Keywords ({serpData.keywords.length})</p>
-                <div className="flex flex-wrap gap-1">
-                  {serpData.keywords.slice(0, 5).map((keyword, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
-                      {keyword.keyword}
-                    </Badge>
-                  ))}
-                  {serpData.keywords.length > 5 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{serpData.keywords.length - 5} more
-                    </Badge>
-                  )}
-                </div>
-              </div>
+              <Collapsible open={expandedSections.keywords} onOpenChange={() => toggleSection('keywords')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-white/60 rounded-lg border hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium">Target Keywords ({serpData.keywords.length})</span>
+                  </div>
+                  {expandedSections.keywords ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-white/40 rounded-lg p-4 space-y-3">
+                    {serpData.keywords.map((keyword, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white/60 rounded-md">
+                        <span className="font-medium text-blue-900">{keyword.keyword}</span>
+                        <div className="flex gap-2">
+                          {keyword.volume && (
+                            <Badge variant="secondary" className="text-xs">
+                              {keyword.volume} searches
+                            </Badge>
+                          )}
+                          {keyword.difficulty && (
+                            <Badge variant="outline" className="text-xs">
+                              Difficulty: {keyword.difficulty}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
-            
+
+            {/* Questions Section */}
             {serpData.peopleAlsoAsk && serpData.peopleAlsoAsk.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Questions Covered ({serpData.peopleAlsoAsk.length})</p>
-                <div className="text-xs space-y-1 max-h-20 overflow-y-auto">
-                  {serpData.peopleAlsoAsk.slice(0, 3).map((question, idx) => (
-                    <div key={idx} className="truncate">{question.question}</div>
-                  ))}
-                </div>
-              </div>
+              <Collapsible open={expandedSections.questions} onOpenChange={() => toggleSection('questions')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-white/60 rounded-lg border hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">People Also Ask ({serpData.peopleAlsoAsk.length})</span>
+                  </div>
+                  {expandedSections.questions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-white/40 rounded-lg p-4 space-y-3">
+                    {serpData.peopleAlsoAsk.map((question, idx) => (
+                      <div key={idx} className="p-3 bg-white/60 rounded-md">
+                        <p className="font-medium text-green-900 mb-2">{question.question}</p>
+                        {question.answer && (
+                          <p className="text-sm text-green-700/80 line-clamp-3">{question.answer}</p>
+                        )}
+                        {question.source && (
+                          <p className="text-xs text-green-600/60 mt-2">Source: {question.source}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
-            
+
+            {/* Entities Section */}
             {serpData.entities && serpData.entities.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Entities ({serpData.entities.length})</p>
-                <div className="flex flex-wrap gap-1">
-                  {serpData.entities.slice(0, 4).map((entity, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {entity.title}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <Collapsible open={expandedSections.entities} onOpenChange={() => toggleSection('entities')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-white/60 rounded-lg border hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-purple-600" />
+                    <span className="font-medium">Key Entities ({serpData.entities.length})</span>
+                  </div>
+                  {expandedSections.entities ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-white/40 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {serpData.entities.map((entity, idx) => (
+                        <div key={idx} className="p-3 bg-white/60 rounded-md">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-purple-900">{entity.title || entity.name}</span>
+                            {entity.type && (
+                              <Badge variant="outline" className="text-xs">{entity.type}</Badge>
+                            )}
+                          </div>
+                          {entity.description && (
+                            <p className="text-sm text-purple-700/80 line-clamp-2">{entity.description}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Content Gaps Section */}
+            {serpData.contentGaps && serpData.contentGaps.length > 0 && (
+              <Collapsible open={expandedSections.gaps} onOpenChange={() => toggleSection('gaps')}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-white/60 rounded-lg border hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-orange-600" />
+                    <span className="font-medium">Content Opportunities ({serpData.contentGaps.length})</span>
+                  </div>
+                  {expandedSections.gaps ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-white/40 rounded-lg p-4 space-y-3">
+                    {serpData.contentGaps.map((gap, idx) => (
+                      <div key={idx} className="p-3 bg-white/60 rounded-md">
+                        <h4 className="font-medium text-orange-900 mb-2">{gap.topic}</h4>
+                        <p className="text-sm text-orange-700/80 mb-2">{gap.description}</p>
+                        {gap.recommendation && (
+                          <p className="text-xs text-orange-600/70 italic">💡 {gap.recommendation}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
         </CardContent>
@@ -143,133 +230,108 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     );
   };
 
-  const renderDocumentStructure = () => {
-    if (!documentStructure) {
-      return (
-        <Card className="bg-card/50 border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <FileCode className="h-4 w-4 text-green-400" />
-              <h3 className="text-sm font-medium">Document Structure</h3>
-            </div>
-            <p className="text-xs text-muted-foreground">No structure analysis available</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <Card className="bg-card/50 border">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <FileCode className="h-4 w-4 text-green-400" />
-            <h3 className="text-sm font-medium">Document Structure</h3>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">H1 Tags:</span>
-                <span className={documentStructure.h1?.length === 1 ? 'text-green-500' : 'text-amber-500'}>
-                  {documentStructure.h1?.length || 0}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">H2 Tags:</span>
-                <span>{documentStructure.h2?.length || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">H3 Tags:</span>
-                <span>{documentStructure.h3?.length || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Word Count:</span>
-                <span>{documentStructure.metadata?.wordCount || 0}</span>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs">
-                <div className={`w-2 h-2 rounded-full ${documentStructure.hasSingleH1 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span>Single H1 Tag</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <div className={`w-2 h-2 rounded-full ${documentStructure.hasLogicalHierarchy ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span>Logical Hierarchy</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderSolutionIntegration = () => {
+  const renderDetailedSolutionIntegration = () => {
     const selectedSolution = draft.metadata?.selectedSolution;
     
     if (!selectedSolution) {
       return (
-        <Card className="bg-card/50 border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Puzzle className="h-4 w-4 text-purple-400" />
-              <h3 className="text-sm font-medium">Solution Integration</h3>
+        <Card className="bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-200/30">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Puzzle className="h-6 w-6 text-purple-500" />
+              <h3 className="text-lg font-semibold text-purple-900">Solution Integration</h3>
             </div>
-            <p className="text-xs text-muted-foreground">No solution selected</p>
+            <p className="text-purple-700/70">No solution selected for this content</p>
           </CardContent>
         </Card>
       );
     }
 
     return (
-      <Card className="bg-card/50 border">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Puzzle className="h-4 w-4 text-purple-400" />
-            <h3 className="text-sm font-medium">Solution Integration</h3>
+      <Card className="bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-200/30">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Puzzle className="h-6 w-6 text-purple-500" />
+            <h3 className="text-lg font-semibold text-purple-900">Solution Integration Analysis</h3>
           </div>
           
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium">{selectedSolution.name}</p>
-              <p className="text-xs text-muted-foreground">{selectedSolution.category}</p>
+          <div className="space-y-6">
+            {/* Solution Overview */}
+            <div className="bg-white/60 rounded-lg p-4">
+              <h4 className="font-semibold text-purple-900 mb-3">{selectedSolution.name}</h4>
+              <p className="text-purple-700/80 mb-3">{selectedSolution.description}</p>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{selectedSolution.category}</Badge>
+                {selectedSolution.targetAudience && selectedSolution.targetAudience.length > 0 && (
+                  <Badge variant="outline">
+                    {selectedSolution.targetAudience.slice(0, 2).join(', ')}
+                    {selectedSolution.targetAudience.length > 2 && ` +${selectedSolution.targetAudience.length - 2}`}
+                  </Badge>
+                )}
+              </div>
             </div>
-            
+
+            {/* Integration Metrics */}
             {solutionMetrics && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Feature Integration:</span>
-                  <span className={solutionMetrics.featureIncorporation >= 50 ? 'text-green-500' : 'text-amber-500'}>
-                    {solutionMetrics.featureIncorporation}%
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Positioning Score:</span>
-                  <span className={solutionMetrics.positioningScore >= 50 ? 'text-green-500' : 'text-amber-500'}>
-                    {solutionMetrics.positioningScore}%
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Name Mentions:</span>
-                  <span>{solutionMetrics.nameMentions}</span>
+              <div className="bg-white/40 rounded-lg p-4">
+                <h4 className="font-medium text-purple-900 mb-4">Integration Metrics</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-white/60 rounded-md">
+                    <div className="text-2xl font-bold text-purple-600">{solutionMetrics.featureIncorporation}%</div>
+                    <div className="text-sm text-purple-700/70">Feature Integration</div>
+                  </div>
+                  <div className="p-3 bg-white/60 rounded-md">
+                    <div className="text-2xl font-bold text-purple-600">{solutionMetrics.positioningScore}%</div>
+                    <div className="text-sm text-purple-700/70">Positioning Score</div>
+                  </div>
+                  <div className="p-3 bg-white/60 rounded-md">
+                    <div className="text-2xl font-bold text-purple-600">{solutionMetrics.nameMentions}</div>
+                    <div className="text-sm text-purple-700/70">Name Mentions</div>
+                  </div>
+                  <div className="p-3 bg-white/60 rounded-md">
+                    <div className="text-2xl font-bold text-purple-600">{solutionMetrics.audienceAlignment}%</div>
+                    <div className="text-sm text-purple-700/70">Audience Alignment</div>
+                  </div>
                 </div>
               </div>
             )}
-            
-            {selectedSolution.features && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Key Features</p>
-                <div className="flex flex-wrap gap-1">
-                  {selectedSolution.features.slice(0, 3).map((feature, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {feature}
-                    </Badge>
+
+            {/* Features Analysis */}
+            {selectedSolution.features && selectedSolution.features.length > 0 && (
+              <div className="bg-white/40 rounded-lg p-4">
+                <h4 className="font-medium text-purple-900 mb-4">Features ({selectedSolution.features.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {selectedSolution.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-white/60 rounded-md">
+                      <CheckCircle2 className={`h-4 w-4 ${
+                        solutionMetrics?.mentionedFeatures?.includes(feature) 
+                          ? 'text-green-500' 
+                          : 'text-gray-400'
+                      }`} />
+                      <span className={`text-sm ${
+                        solutionMetrics?.mentionedFeatures?.includes(feature) 
+                          ? 'text-purple-900' 
+                          : 'text-purple-700/50'
+                      }`}>
+                        {feature}
+                      </span>
+                    </div>
                   ))}
-                  {selectedSolution.features.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{selectedSolution.features.length - 3} more
-                    </Badge>
-                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Pain Points Addressed */}
+            {selectedSolution.painPoints && selectedSolution.painPoints.length > 0 && (
+              <div className="bg-white/40 rounded-lg p-4">
+                <h4 className="font-medium text-purple-900 mb-4">Pain Points Addressed</h4>
+                <div className="space-y-2">
+                  {selectedSolution.painPoints.map((painPoint, idx) => (
+                    <div key={idx} className="flex items-start gap-2 p-2 bg-white/60 rounded-md">
+                      <Target className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-purple-800">{painPoint}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -279,9 +341,157 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     );
   };
 
+  const renderDetailedDocumentStructure = () => {
+    if (!documentStructure) {
+      return (
+        <Card className="bg-gradient-to-br from-green-50/50 to-emerald-50/50 border border-green-200/30">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <FileCode className="h-6 w-6 text-green-500" />
+              <h3 className="text-lg font-semibold text-green-900">Document Structure</h3>
+            </div>
+            <p className="text-green-700/70">No structure analysis available</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card className="bg-gradient-to-br from-green-50/50 to-emerald-50/50 border border-green-200/30">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <FileCode className="h-6 w-6 text-green-500" />
+            <h3 className="text-lg font-semibold text-green-900">Document Structure Analysis</h3>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Structure Validation */}
+            <div className="bg-white/60 rounded-lg p-4">
+              <h4 className="font-medium text-green-900 mb-4">Structure Validation</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`flex items-center gap-2 p-3 rounded-md ${
+                  documentStructure.hasSingleH1 ? 'bg-green-100/60' : 'bg-red-100/60'
+                }`}>
+                  {documentStructure.hasSingleH1 ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <FileText className="h-5 w-5 text-red-600" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    documentStructure.hasSingleH1 ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    Single H1 Tag
+                  </span>
+                </div>
+                
+                <div className={`flex items-center gap-2 p-3 rounded-md ${
+                  documentStructure.hasLogicalHierarchy ? 'bg-green-100/60' : 'bg-red-100/60'
+                }`}>
+                  {documentStructure.hasLogicalHierarchy ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <FileText className="h-5 w-5 text-red-600" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    documentStructure.hasLogicalHierarchy ? 'text-green-800' : 'text-red-800'
+                  }`}>
+                    Logical Hierarchy
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Heading Statistics */}
+            <div className="bg-white/40 rounded-lg p-4">
+              <h4 className="font-medium text-green-900 mb-4">Content Statistics</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 bg-white/60 rounded-md text-center">
+                  <div className="text-2xl font-bold text-green-600">{documentStructure.h1?.length || 0}</div>
+                  <div className="text-sm text-green-700/70">H1 Tags</div>
+                </div>
+                <div className="p-3 bg-white/60 rounded-md text-center">
+                  <div className="text-2xl font-bold text-green-600">{documentStructure.h2?.length || 0}</div>
+                  <div className="text-sm text-green-700/70">H2 Tags</div>
+                </div>
+                <div className="p-3 bg-white/60 rounded-md text-center">
+                  <div className="text-2xl font-bold text-green-600">{documentStructure.h3?.length || 0}</div>
+                  <div className="text-sm text-green-700/70">H3 Tags</div>
+                </div>
+                <div className="p-3 bg-white/60 rounded-md text-center">
+                  <div className="text-2xl font-bold text-green-600">{documentStructure.metadata?.wordCount || 0}</div>
+                  <div className="text-sm text-green-700/70">Words</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Headings */}
+            <Collapsible open={expandedSections.structure} onOpenChange={() => toggleSection('structure')}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-white/60 rounded-lg border hover:bg-white/80 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">View All Headings</span>
+                </div>
+                {expandedSections.structure ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-white/40 rounded-lg p-4 space-y-4">
+                  {documentStructure.h1?.length > 0 && (
+                    <div>
+                      <Badge variant="secondary" className="mb-2">H1 Headings</Badge>
+                      <div className="space-y-2">
+                        {documentStructure.h1.map((heading, idx) => (
+                          <div key={idx} className="p-2 bg-white/60 rounded-md text-green-900 font-medium">
+                            {heading}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {documentStructure.h2?.length > 0 && (
+                    <div>
+                      <Badge variant="secondary" className="mb-2">H2 Headings</Badge>
+                      <div className="space-y-2">
+                        {documentStructure.h2.map((heading, idx) => (
+                          <div key={idx} className="p-2 bg-white/60 rounded-md text-green-800">
+                            {heading}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {documentStructure.h3?.length > 0 && (
+                    <div>
+                      <Badge variant="secondary" className="mb-2">H3 Headings</Badge>
+                      <div className="space-y-2">
+                        {documentStructure.h3.map((heading, idx) => (
+                          <div key={idx} className="p-2 bg-white/60 rounded-md text-green-700">
+                            {heading}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl">{draft.title}</DialogTitle>
@@ -325,112 +535,116 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
           {activeTab === 'metadata' && (
             <div className="space-y-6">
               {isLoadingAnalysis && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                  <span className="ml-3 text-sm text-muted-foreground">Loading analysis...</span>
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                  <span className="ml-4 text-lg text-muted-foreground">Loading detailed analysis...</span>
                 </div>
               )}
               
-              {/* SERP Analysis, Solution Integration, and Document Structure */}
-              <div className="grid grid-cols-1 gap-4">
-                {renderSerpAnalysis()}
-                {renderSolutionIntegration()}
-                {renderDocumentStructure()}
-              </div>
-              
-              {/* Original metadata information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium flex items-center">
-                    <Tag className="w-4 h-4 mr-2" /> 
-                    Keywords
-                  </h3>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {draft.keywords && draft.keywords.length > 0 ? draft.keywords.map((keyword: string, idx: number) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
-                        {keyword}
-                      </Badge>
-                    )) : (
-                      <span className="text-sm text-muted-foreground">No keywords</span>
-                    )}
+              {!isLoadingAnalysis && (
+                <>
+                  {/* Detailed Analysis Sections */}
+                  <div className="space-y-6">
+                    {renderDetailedSerpAnalysis()}
+                    {renderDetailedSolutionIntegration()}
+                    {renderDetailedDocumentStructure()}
                   </div>
-                </div>
-                
-                <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium flex items-center">
-                    <BarChart2 className="w-4 h-4 mr-2" /> 
-                    SEO Score
-                  </h3>
-                  <div className="mt-2">
-                    <div className="flex items-center mt-1">
-                      <div className="bg-muted w-full h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${
-                            draft.seo_score >= 80 ? 'bg-green-500' : 
-                            draft.seo_score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${draft.seo_score || 0}%` }}
-                        ></div>
+
+                  {/* Original metadata information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-card p-4 rounded-lg border">
+                      <h3 className="font-medium flex items-center">
+                        <Tag className="w-4 h-4 mr-2" /> 
+                        Keywords
+                      </h3>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {draft.keywords && draft.keywords.length > 0 ? draft.keywords.map((keyword: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {keyword}
+                          </Badge>
+                        )) : (
+                          <span className="text-sm text-muted-foreground">No keywords</span>
+                        )}
                       </div>
-                      <span className="ml-2 font-medium text-sm">{draft.seo_score || 0}%</span>
+                    </div>
+                    
+                    <div className="bg-card p-4 rounded-lg border">
+                      <h3 className="font-medium flex items-center">
+                        <BarChart2 className="w-4 h-4 mr-2" /> 
+                        SEO Score
+                      </h3>
+                      <div className="mt-2">
+                        <div className="flex items-center mt-1">
+                          <div className="bg-muted w-full h-2 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${
+                                draft.seo_score >= 80 ? 'bg-green-500' : 
+                                draft.seo_score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                              }`}
+                              style={{ width: `${draft.seo_score || 0}%` }}
+                            ></div>
+                          </div>
+                          <span className="ml-2 font-medium text-sm">{draft.seo_score || 0}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-card p-4 rounded-lg border">
+                      <h3 className="font-medium flex items-center">
+                        <Clock className="w-4 h-4 mr-2" /> 
+                        Timestamps
+                      </h3>
+                      <div className="mt-2 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Created:</span>
+                          <span>{formatDate(draft.created_at)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Updated:</span>
+                          <span>{formatDate(draft.updated_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-card p-4 rounded-lg border">
+                      <h3 className="font-medium flex items-center">
+                        <CheckCircle2 className="w-4 h-4 mr-2" /> 
+                        Status
+                      </h3>
+                      <div className="mt-2 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Content Type:</span>
+                          <span>{draft.contentType || 'Not specified'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Status:</span>
+                          <Badge variant={draft.status === 'draft' ? 'outline' : 'default'}>
+                            {draft.status === 'draft' ? 'Draft' : 'Published'}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium flex items-center">
-                    <Clock className="w-4 h-4 mr-2" /> 
-                    Timestamps
-                  </h3>
-                  <div className="mt-2 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Created:</span>
-                      <span>{formatDate(draft.created_at)}</span>
+                  
+                  {draft.metaTitle || draft.metaDescription ? (
+                    <div className="bg-card p-4 rounded-lg border">
+                      <h3 className="font-medium mb-2">Meta Information</h3>
+                      {draft.metaTitle && (
+                        <div className="mb-2">
+                          <div className="text-xs text-muted-foreground">Meta Title</div>
+                          <div className="text-sm">{draft.metaTitle}</div>
+                        </div>
+                      )}
+                      {draft.metaDescription && (
+                        <div>
+                          <div className="text-xs text-muted-foreground">Meta Description</div>
+                          <div className="text-sm">{draft.metaDescription}</div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Updated:</span>
-                      <span>{formatDate(draft.updated_at)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-2" /> 
-                    Status
-                  </h3>
-                  <div className="mt-2 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Content Type:</span>
-                      <span>{draft.contentType || 'Not specified'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Status:</span>
-                      <Badge variant={draft.status === 'draft' ? 'outline' : 'default'}>
-                        {draft.status === 'draft' ? 'Draft' : 'Published'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {draft.metaTitle || draft.metaDescription ? (
-                <div className="bg-card p-4 rounded-lg border">
-                  <h3 className="font-medium mb-2">Meta Information</h3>
-                  {draft.metaTitle && (
-                    <div className="mb-2">
-                      <div className="text-xs text-muted-foreground">Meta Title</div>
-                      <div className="text-sm">{draft.metaTitle}</div>
-                    </div>
-                  )}
-                  {draft.metaDescription && (
-                    <div>
-                      <div className="text-xs text-muted-foreground">Meta Description</div>
-                      <div className="text-sm">{draft.metaDescription}</div>
-                    </div>
-                  )}
-                </div>
-              ) : null}
+                  ) : null}
+                </>
+              )}
             </div>
           )}
         </div>
