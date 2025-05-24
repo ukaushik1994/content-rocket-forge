@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { HelpCircle, Plus, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SerpAnalysisResult } from '@/types/serp';
@@ -14,26 +14,105 @@ interface SerpQuestionsSectionProps {
 
 export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () => {} }: SerpQuestionsSectionProps) {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  console.log('🔍 Questions Section Debug:', {
-    expanded,
-    hasPeopleAlsoAsk: !!serpData?.peopleAlsoAsk,
-    peopleAlsoAskLength: serpData?.peopleAlsoAsk?.length || 0,
-    firstQuestion: serpData?.peopleAlsoAsk?.[0],
-    allQuestions: serpData?.peopleAlsoAsk
-  });
+  // Enhanced debugging with data validation
+  const debugInfo = React.useMemo(() => {
+    const info = {
+      hasData: !!serpData,
+      hasPeopleAlsoAsk: !!serpData?.peopleAlsoAsk,
+      peopleAlsoAskType: typeof serpData?.peopleAlsoAsk,
+      peopleAlsoAskLength: Array.isArray(serpData?.peopleAlsoAsk) ? serpData.peopleAlsoAsk.length : 'not array',
+      firstQuestionStructure: serpData?.peopleAlsoAsk?.[0] ? Object.keys(serpData.peopleAlsoAsk[0]) : 'no first item',
+      validQuestions: 0,
+      invalidQuestions: 0,
+      sampleData: serpData?.peopleAlsoAsk?.slice(0, 2) || []
+    };
+    
+    // Count valid vs invalid questions
+    if (Array.isArray(serpData?.peopleAlsoAsk)) {
+      serpData.peopleAlsoAsk.forEach(question => {
+        if (question && typeof question === 'object' && question.question) {
+          info.validQuestions++;
+        } else {
+          info.invalidQuestions++;
+        }
+      });
+    }
+    
+    return info;
+  }, [serpData]);
+  
+  console.log('🔍 Questions Section Enhanced Debug:', debugInfo);
   
   if (!expanded) return null;
   
-  if (!serpData?.peopleAlsoAsk?.length) {
-    console.log('❌ No questions data found:', serpData?.peopleAlsoAsk);
+  // Validate and filter questions
+  const validQuestions = React.useMemo(() => {
+    if (!Array.isArray(serpData?.peopleAlsoAsk)) {
+      console.warn('❌ peopleAlsoAsk is not an array:', typeof serpData?.peopleAlsoAsk);
+      return [];
+    }
+    
+    return serpData.peopleAlsoAsk.filter((faq, index) => {
+      if (!faq || typeof faq !== 'object') {
+        console.warn(`⚠️ Invalid question at index ${index}:`, faq);
+        return false;
+      }
+      
+      if (!faq.question || typeof faq.question !== 'string') {
+        console.warn(`⚠️ Missing or invalid question at index ${index}:`, faq);
+        return false;
+      }
+      
+      return true;
+    });
+  }, [serpData?.peopleAlsoAsk]);
+  
+  // Show empty state with debugging info
+  if (validQuestions.length === 0) {
     return (
       <div className="p-4 text-center text-white/50">
         <HelpCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-        <p>No questions found for this keyword</p>
+        <p>No valid questions found for this keyword</p>
         <p className="text-xs mt-1">Questions help address user intent in your content</p>
-        <div className="text-xs mt-2 opacity-50">
-          Debug: {serpData?.peopleAlsoAsk ? `Array with ${serpData.peopleAlsoAsk.length} items` : 'No peopleAlsoAsk data'}
+        
+        {/* Debug information panel */}
+        <div className="mt-4 p-3 bg-red-900/20 border border-red-500/30 rounded text-xs text-left">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium text-red-400">Debug Information</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebugInfo(!showDebugInfo)}
+              className="h-6 px-2 text-xs text-red-400"
+            >
+              {showDebugInfo ? 'Hide' : 'Show'} Details
+            </Button>
+          </div>
+          
+          <div className="space-y-1 text-red-300/80">
+            <div>Data Present: {debugInfo.hasData ? '✅' : '❌'}</div>
+            <div>PeopleAlsoAsk: {debugInfo.hasPeopleAlsoAsk ? '✅' : '❌'}</div>
+            <div>Type: {debugInfo.peopleAlsoAskType}</div>
+            <div>Length: {debugInfo.peopleAlsoAskLength}</div>
+            <div>Valid Questions: {debugInfo.validQuestions}</div>
+            <div>Invalid Questions: {debugInfo.invalidQuestions}</div>
+          </div>
+          
+          {showDebugInfo && (
+            <div className="mt-2 pt-2 border-t border-red-500/20">
+              <div className="text-xs">First Item Structure: {Array.isArray(debugInfo.firstQuestionStructure) ? debugInfo.firstQuestionStructure.join(', ') : debugInfo.firstQuestionStructure}</div>
+              {debugInfo.sampleData.length > 0 && (
+                <div className="mt-2">
+                  <div className="font-medium">Sample Data:</div>
+                  <pre className="text-xs bg-black/20 p-2 rounded mt-1 overflow-auto">
+                    {JSON.stringify(debugInfo.sampleData, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -72,21 +151,22 @@ export function SerpQuestionsSection({ serpData, expanded, onAddToContent = () =
       animate="show"
       className="space-y-3 py-4"
     >
-      {serpData.peopleAlsoAsk.map((faq, index) => {
-        // Add validation for question data structure
-        if (!faq || typeof faq !== 'object') {
-          console.warn('⚠️ Invalid question data at index', index, faq);
-          return null;
-        }
-
-        const question = faq.question || '';
+      {/* Success indicator */}
+      <div className="flex items-center gap-2 text-xs text-green-400 mb-2">
+        <HelpCircle className="h-3.5 w-3.5" />
+        <span>Found {validQuestions.length} valid question{validQuestions.length !== 1 ? 's' : ''}</span>
+        {debugInfo.invalidQuestions > 0 && (
+          <span className="text-amber-400 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {debugInfo.invalidQuestions} skipped
+          </span>
+        )}
+      </div>
+      
+      {validQuestions.map((faq, index) => {
+        const question = faq.question;
         const answer = faq.answer || '';
         const source = faq.source || 'Search results';
-
-        if (!question) {
-          console.warn('⚠️ Empty question at index', index, faq);
-          return null;
-        }
 
         return (
           <motion.div key={`faq-${index}`} variants={item}>

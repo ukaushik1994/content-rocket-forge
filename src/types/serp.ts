@@ -17,10 +17,28 @@ export interface KnowledgeGraph {
 }
 
 export interface FeaturedSnippet {
-  type: 'paragraph' | 'list' | 'table';
+  type: 'paragraph' | 'list' | 'table' | 'dictionary_results';
   content: string;
   source: string;
   title: string;
+  metadata?: {
+    word_type?: string;
+    syllables?: string;
+    definitions?: string[];
+    examples?: string[];
+    pronunciation_audio?: string;
+  };
+}
+
+export interface PeopleAlsoAskQuestion {
+  question: string;
+  source: string;
+  answer?: string;
+  metadata?: {
+    source_link?: string;
+    snippet?: string;
+    position?: number;
+  };
 }
 
 export interface LocalResult {
@@ -61,11 +79,7 @@ export interface SerpAnalysisResult {
     query: string;
     volume?: number;
   }>;
-  peopleAlsoAsk?: Array<{
-    question: string;
-    source: string;
-    answer?: string;
-  }>;
+  peopleAlsoAsk?: PeopleAlsoAskQuestion[];
   featuredSnippets?: FeaturedSnippet[];
   keywords?: string[];
   recommendations?: string[];
@@ -99,4 +113,11 @@ export interface SerpAnalysisResult {
   localResults?: LocalResult[];
   multimediaOpportunities?: MultimediaOpportunity[];
   commercialSignals?: CommercialSignals;
+  
+  // Debug information
+  debugInfo?: {
+    rawDataStructure?: Record<string, any>;
+    extractionErrors?: string[];
+    dataPresence?: Record<string, boolean>;
+  };
 }

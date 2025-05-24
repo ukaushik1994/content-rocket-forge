@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Plus, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { Target, Plus, ChevronDown, ChevronRight, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,26 +19,105 @@ export function SerpFeaturedSnippetsSection({
   onAddToContent = () => {} 
 }: SerpFeaturedSnippetsSectionProps) {
   const [expandedSnippets, setExpandedSnippets] = useState<Set<number>>(new Set());
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  console.log('🔍 Featured Snippets Section Debug:', {
-    expanded,
-    hasFeaturedSnippets: !!serpData?.featuredSnippets,
-    featuredSnippetsLength: serpData?.featuredSnippets?.length || 0,
-    firstSnippet: serpData?.featuredSnippets?.[0],
-    allSnippets: serpData?.featuredSnippets
-  });
+  // Enhanced debugging with data validation
+  const debugInfo = React.useMemo(() => {
+    const info = {
+      hasData: !!serpData,
+      hasFeaturedSnippets: !!serpData?.featuredSnippets,
+      featuredSnippetsType: typeof serpData?.featuredSnippets,
+      featuredSnippetsLength: Array.isArray(serpData?.featuredSnippets) ? serpData.featuredSnippets.length : 'not array',
+      firstSnippetStructure: serpData?.featuredSnippets?.[0] ? Object.keys(serpData.featuredSnippets[0]) : 'no first item',
+      validSnippets: 0,
+      invalidSnippets: 0,
+      sampleData: serpData?.featuredSnippets?.slice(0, 2) || []
+    };
+    
+    // Count valid vs invalid snippets
+    if (Array.isArray(serpData?.featuredSnippets)) {
+      serpData.featuredSnippets.forEach(snippet => {
+        if (snippet && typeof snippet === 'object' && snippet.content) {
+          info.validSnippets++;
+        } else {
+          info.invalidSnippets++;
+        }
+      });
+    }
+    
+    return info;
+  }, [serpData]);
+  
+  console.log('🔍 Featured Snippets Section Enhanced Debug:', debugInfo);
   
   if (!expanded) return null;
   
-  if (!serpData?.featuredSnippets?.length) {
-    console.log('❌ No featured snippets data found:', serpData?.featuredSnippets);
+  // Validate and filter snippets
+  const validSnippets = React.useMemo(() => {
+    if (!Array.isArray(serpData?.featuredSnippets)) {
+      console.warn('❌ featuredSnippets is not an array:', typeof serpData?.featuredSnippets);
+      return [];
+    }
+    
+    return serpData.featuredSnippets.filter((snippet, index) => {
+      if (!snippet || typeof snippet !== 'object') {
+        console.warn(`⚠️ Invalid snippet at index ${index}:`, snippet);
+        return false;
+      }
+      
+      if (!snippet.content || typeof snippet.content !== 'string') {
+        console.warn(`⚠️ Missing or invalid content at index ${index}:`, snippet);
+        return false;
+      }
+      
+      return true;
+    });
+  }, [serpData?.featuredSnippets]);
+  
+  // Show empty state with debugging info
+  if (validSnippets.length === 0) {
     return (
       <div className="p-4 text-center text-white/50">
         <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-        <p>No featured snippets found for this keyword</p>
+        <p>No valid featured snippets found for this keyword</p>
         <p className="text-xs mt-1">Featured snippets provide great opportunities for ranking</p>
-        <div className="text-xs mt-2 opacity-50">
-          Debug: {serpData?.featuredSnippets ? `Array with ${serpData.featuredSnippets.length} items` : 'No featuredSnippets data'}
+        
+        {/* Debug information panel */}
+        <div className="mt-4 p-3 bg-red-900/20 border border-red-500/30 rounded text-xs text-left">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium text-red-400">Debug Information</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebugInfo(!showDebugInfo)}
+              className="h-6 px-2 text-xs text-red-400"
+            >
+              {showDebugInfo ? 'Hide' : 'Show'} Details
+            </Button>
+          </div>
+          
+          <div className="space-y-1 text-red-300/80">
+            <div>Data Present: {debugInfo.hasData ? '✅' : '❌'}</div>
+            <div>FeaturedSnippets: {debugInfo.hasFeaturedSnippets ? '✅' : '❌'}</div>
+            <div>Type: {debugInfo.featuredSnippetsType}</div>
+            <div>Length: {debugInfo.featuredSnippetsLength}</div>
+            <div>Valid Snippets: {debugInfo.validSnippets}</div>
+            <div>Invalid Snippets: {debugInfo.invalidSnippets}</div>
+          </div>
+          
+          {showDebugInfo && (
+            <div className="mt-2 pt-2 border-t border-red-500/20">
+              <div className="text-xs">First Item Structure: {Array.isArray(debugInfo.firstSnippetStructure) ? debugInfo.firstSnippetStructure.join(', ') : debugInfo.firstSnippetStructure}</div>
+              {debugInfo.sampleData.length > 0 && (
+                <div className="mt-2">
+                  <div className="font-medium">Sample Data:</div>
+                  <pre className="text-xs bg-black/20 p-2 rounded mt-1 overflow-auto">
+                    {JSON.stringify(debugInfo.sampleData, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -74,6 +153,7 @@ export function SerpFeaturedSnippetsSection({
       case 'paragraph': return 'bg-green-500/20 text-green-300';
       case 'list': return 'bg-orange-500/20 text-orange-300';
       case 'table': return 'bg-purple-500/20 text-purple-300';
+      case 'dictionary_results': return 'bg-blue-500/20 text-blue-300';
       default: return 'bg-gray-500/20 text-gray-300';
     }
   };
@@ -85,22 +165,23 @@ export function SerpFeaturedSnippetsSection({
       animate="show"
       className="space-y-3 py-4"
     >
-      {serpData.featuredSnippets.map((snippet, index) => {
-        // Add validation for snippet data structure
-        if (!snippet || typeof snippet !== 'object') {
-          console.warn('⚠️ Invalid snippet data at index', index, snippet);
-          return null;
-        }
-
-        const content = snippet.content || '';
+      {/* Success indicator */}
+      <div className="flex items-center gap-2 text-xs text-green-400 mb-2">
+        <Target className="h-3.5 w-3.5" />
+        <span>Found {validSnippets.length} valid snippet{validSnippets.length !== 1 ? 's' : ''}</span>
+        {debugInfo.invalidSnippets > 0 && (
+          <span className="text-amber-400 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {debugInfo.invalidSnippets} skipped
+          </span>
+        )}
+      </div>
+      
+      {validSnippets.map((snippet, index) => {
+        const content = snippet.content;
         const type = snippet.type || 'paragraph';
         const title = snippet.title || '';
         const source = snippet.source || 'Search results';
-
-        if (!content) {
-          console.warn('⚠️ Empty snippet content at index', index, snippet);
-          return null;
-        }
 
         return (
           <motion.div key={`snippet-${index}`} variants={item}>
@@ -173,6 +254,27 @@ export function SerpFeaturedSnippetsSection({
                             <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">
                               {content}
                             </p>
+                            
+                            {/* Show dictionary-specific metadata */}
+                            {type === 'dictionary_results' && snippet.metadata && (
+                              <div className="mt-3 pt-3 border-t border-green-500/20">
+                                {snippet.metadata.word_type && (
+                                  <div className="text-xs text-green-300 mb-1">
+                                    <span className="font-medium">Type:</span> {snippet.metadata.word_type}
+                                  </div>
+                                )}
+                                {snippet.metadata.definitions && (
+                                  <div className="text-xs text-green-300">
+                                    <span className="font-medium">Definitions:</span>
+                                    <ul className="list-disc list-inside mt-1 space-y-1">
+                                      {snippet.metadata.definitions.slice(0, 3).map((def, i) => (
+                                        <li key={i}>{def}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="flex gap-2">
                             <Button
