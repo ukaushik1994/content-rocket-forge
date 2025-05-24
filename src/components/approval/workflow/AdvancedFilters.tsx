@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Filter, X, Calendar, User, Tag } from 'lucide-react';
-import { DatePickerWithRange } from '@/components/ui/date-picker';
 import { ContentItemType } from '@/contexts/content/types';
 
 interface FilterCriteria {
   status?: string;
   assignee?: string;
-  dateRange?: { from: Date; to: Date };
+  dateRange?: { from: string; to: string };
   keyword?: string;
   tags?: string[];
   seoScore?: { min: number; max: number };
@@ -102,20 +101,23 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   };
 
   return (
-    <Card className={className}>
+    <Card className={`bg-white/5 border-white/10 backdrop-blur-sm ${className}`}>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between text-white/90">
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
             Advanced Filters
             {getActiveFilterCount() > 0 && (
-              <Badge variant="outline">{getActiveFilterCount()} active</Badge>
+              <Badge variant="outline" className="bg-neon-purple/20 text-neon-purple border-neon-purple/30">
+                {getActiveFilterCount()} active
+              </Badge>
             )}
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
+            className="text-white/70 hover:text-white hover:bg-white/10"
           >
             {isExpanded ? 'Collapse' : 'Expand'}
           </Button>
@@ -126,8 +128,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         {getActiveFilterCount() > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Active Filters:</Label>
-              <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+              <Label className="text-sm font-medium text-white/80">Active Filters:</Label>
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-white/70 hover:text-white">
                 Clear All
               </Button>
             </div>
@@ -140,7 +142,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         {/* Quick Filters */}
         <div className="grid grid-cols-2 gap-2">
           <Select value={filters.status || ''} onValueChange={(value) => updateFilter('status', value || undefined)}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-white/5 border-white/10 text-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -155,7 +157,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           </Select>
 
           <Select value={filters.assignee || ''} onValueChange={(value) => updateFilter('assignee', value || undefined)}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-white/5 border-white/10 text-white">
               <SelectValue placeholder="Assignee" />
             </SelectTrigger>
             <SelectContent>
@@ -170,20 +172,21 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
         {/* Expanded Filters */}
         {isExpanded && (
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t border-white/10">
             {/* Keyword Search */}
             <div className="space-y-2">
-              <Label>Keyword Search</Label>
+              <Label className="text-white/80">Keyword Search</Label>
               <Input
                 placeholder="Search in title and content..."
                 value={filters.keyword || ''}
                 onChange={(e) => updateFilter('keyword', e.target.value || undefined)}
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
               />
             </div>
 
             {/* SEO Score Range */}
             <div className="space-y-2">
-              <Label>SEO Score Range</Label>
+              <Label className="text-white/80">SEO Score Range</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   type="number"
@@ -198,6 +201,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                       max: filters.seoScore?.max || 100 
                     });
                   }}
+                  className="bg-white/5 border-white/10 text-white"
                 />
                 <Input
                   type="number"
@@ -212,15 +216,16 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                       max 
                     });
                   }}
+                  className="bg-white/5 border-white/10 text-white"
                 />
               </div>
             </div>
 
             {/* Priority Filter */}
             <div className="space-y-2">
-              <Label>Priority</Label>
+              <Label className="text-white/80">Priority</Label>
               <Select value={filters.priority || ''} onValueChange={(value) => updateFilter('priority', value || undefined)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
