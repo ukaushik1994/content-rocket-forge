@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +5,7 @@ import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useContent } from '@/contexts/content';
 import { supabase } from '@/integrations/supabase/client';
+import { ComprehensiveSerpData, SerpMetrics, CompetitorAnalysis, RankingOpportunities, SerpSelectionStats } from '@/types/serp-metrics';
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -17,10 +17,83 @@ export const useSaveContent = () => {
   const { refreshContent } = useContent();
   const navigate = useNavigate();
 
+  // Helper function to extract comprehensive SERP data
+  const extractComprehensiveSerpData = (): ComprehensiveSerpData | null => {
+    if (!state.serpData) return null;
+
+    // Extract SEO metrics
+    const serpMetrics: SerpMetrics = {
+      keyword: state.mainKeyword,
+      searchVolume: state.serpData.searchVolume,
+      keywordDifficulty: state.serpData.keywordDifficulty,
+      competitionScore: state.serpData.competitionScore,
+      intent: state.serpData.commercialSignals?.commercialIntent === 'high' ? 'commercial' : 'informational'
+    };
+
+    // Extract competitor analysis
+    const competitorAnalysis: CompetitorAnalysis = {
+      topCompetitors: state.serpData.topResults?.slice(0, 5).map((result: any, index: number) => ({
+        domain: new URL(result.link || '').hostname,
+        title: result.title,
+        position: result.position || index + 1,
+        snippet: result.snippet,
+        features: []
+      })) || [],
+      commonFeatures: [
+        ...(state.serpData.featuredSnippets?.length > 0 ? ['Featured Snippets'] : []),
+        ...(state.serpData.peopleAlsoAsk?.length > 0 ? ['People Also Ask'] : []),
+        ...(state.serpData.localResults?.length > 0 ? ['Local Results'] : [])
+      ],
+      gapOpportunities: state.serpData.contentGaps?.map((gap: any) => gap.topic) || []
+    };
+
+    // Extract ranking opportunities
+    const rankingOpportunities: RankingOpportunities = {
+      featuredSnippetChance: state.serpData.featuredSnippets?.length > 0 ? 'high' : 'low',
+      paaOpportunities: state.serpData.peopleAlsoAsk?.length || 0,
+      imageOpportunities: state.serpData.multimediaOpportunities?.some((m: any) => m.type === 'images') || false,
+      videoOpportunities: state.serpData.multimediaOpportunities?.some((m: any) => m.type === 'videos') || false,
+      localOpportunities: state.serpData.localResults?.length > 0 || false,
+      recommendedContentLength: competitorAnalysis.averageWordCount || 1500,
+      missingTopics: state.serpData.contentGaps?.map((gap: any) => gap.topic) || []
+    };
+
+    // Extract selection statistics
+    const selectionStats: SerpSelectionStats = {
+      totalSelected: state.serpSelections.length,
+      byType: {
+        questions: state.serpSelections.filter(s => s.type === 'question').length,
+        featuredSnippets: state.serpSelections.filter(s => s.type === 'featuredSnippet').length,
+        relatedSearches: state.serpSelections.filter(s => s.type === 'relatedSearch').length,
+        entities: state.serpSelections.filter(s => s.type === 'entity').length,
+        headings: state.serpSelections.filter(s => s.type === 'heading').length,
+        contentGaps: state.serpSelections.filter(s => s.type === 'contentGap').length
+      },
+      selections: state.serpSelections.map(selection => ({
+        type: selection.type,
+        content: selection.content,
+        source: selection.source,
+        priority: 'medium' // Default priority
+      }))
+    };
+
+    return {
+      serpMetrics,
+      competitorAnalysis,
+      rankingOpportunities,
+      selectionStats,
+      rawSerpData: state.serpData,
+      analysisTimestamp: new Date().toISOString()
+    };
+  };
+
   const handleSaveToDraft = async (): Promise<string | null> => {
     try {
       setIsSaving(true);
       console.log('[useSaveContent] Starting save to draft process');
+      
+      // Extract comprehensive SERP data
+      const comprehensiveSerpData = extractComprehensiveSerpData();
       
       // Prepare content for saving with extended metadata
       const saveParams: SaveContentParams = {
@@ -38,13 +111,14 @@ export const useSaveContent = () => {
         serpData: state.serpData
       };
       
-      console.log('[useSaveContent] Saving content with params:', {
+      console.log('[useSaveContent] Saving content with comprehensive SERP data:', {
         title: saveParams.title,
         contentLength: saveParams.content?.length,
         mainKeyword: saveParams.mainKeyword,
         secondaryKeywords: saveParams.secondaryKeywords?.length,
         outline: saveParams.outline?.length,
-        serpSelections: saveParams.serpSelections?.length
+        serpSelections: saveParams.serpSelections?.length,
+        comprehensiveSerpData: !!comprehensiveSerpData
       });
       
       // Save to database
@@ -53,7 +127,7 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
-      // Save the content item first
+      // Save the content item first with comprehensive metadata
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
         .insert({
@@ -68,6 +142,13 @@ export const useSaveContent = () => {
             metaDescription: saveParams.metaDescription,
             outline: saveParams.outline,
             serpSelections: saveParams.serpSelections,
+            // Enhanced SERP data
+            comprehensiveSerpData: comprehensiveSerpData,
+            serpMetrics: comprehensiveSerpData?.serpMetrics,
+            competitorAnalysis: comprehensiveSerpData?.competitorAnalysis,
+            rankingOpportunities: comprehensiveSerpData?.rankingOpportunities,
+            selectionStats: comprehensiveSerpData?.selectionStats,
+            analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
           }
         })
         .select()
@@ -79,7 +160,7 @@ export const useSaveContent = () => {
       }
       
       const contentId = contentItem.id as string;
-      console.log('[useSaveContent] Content saved, ID:', contentId);
+      console.log('[useSaveContent] Content saved with comprehensive SERP data, ID:', contentId);
       
       // Now save the keywords if any
       if (saveParams.mainKeyword || (saveParams.secondaryKeywords && saveParams.secondaryKeywords.length > 0)) {
@@ -141,7 +222,7 @@ export const useSaveContent = () => {
       await refreshContent();
       
       setIsSavedToDraft(true);
-      toast.success('Content saved to drafts successfully');
+      toast.success('Content saved to drafts with comprehensive SERP analysis');
       console.log('[useSaveContent] Save completed successfully, ID:', contentId);
       
       // Set session storage flags for the drafts page to detect
@@ -169,6 +250,9 @@ export const useSaveContent = () => {
     try {
       setIsSaving(true);
       
+      // Extract comprehensive SERP data
+      const comprehensiveSerpData = extractComprehensiveSerpData();
+      
       // Prepare content for publishing with extended metadata
       const publishParams: SaveContentParams = {
         title: state.contentTitle || state.metaTitle || state.mainKeyword,
@@ -186,7 +270,7 @@ export const useSaveContent = () => {
         serpData: state.serpData
       };
       
-      console.log('[useSaveContent] Publishing content with params:', publishParams);
+      console.log('[useSaveContent] Publishing content with comprehensive SERP data:', publishParams);
       
       // Save to database
       const { data: user } = await supabase.auth.getUser();
@@ -194,7 +278,7 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
-      // Save the content item first
+      // Save the content item first with comprehensive metadata
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
         .insert({
@@ -209,6 +293,13 @@ export const useSaveContent = () => {
             metaDescription: publishParams.metaDescription,
             outline: publishParams.outline,
             serpSelections: publishParams.serpSelections,
+            // Enhanced SERP data
+            comprehensiveSerpData: comprehensiveSerpData,
+            serpMetrics: comprehensiveSerpData?.serpMetrics,
+            competitorAnalysis: comprehensiveSerpData?.competitorAnalysis,
+            rankingOpportunities: comprehensiveSerpData?.rankingOpportunities,
+            selectionStats: comprehensiveSerpData?.selectionStats,
+            analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
           }
         })
         .select()
@@ -278,7 +369,7 @@ export const useSaveContent = () => {
       // Force refresh the content list
       await refreshContent();
       
-      toast.success('Content published successfully');
+      toast.success('Content published successfully with comprehensive SERP analysis');
       
       // Navigate to drafts page with a refresh parameter
       sessionStorage.setItem('from_content_builder', 'true');

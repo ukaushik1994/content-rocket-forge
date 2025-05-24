@@ -11,6 +11,7 @@ import { OutlineSection } from './outline-types';
 import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { DocumentStructure } from './document-types';
+import { ComprehensiveSerpData } from '@/types/serp-metrics';
 
 // Content Builder State
 export interface ContentBuilderState {
@@ -39,6 +40,9 @@ export interface ContentBuilderState {
   serpData: any;
   serpSelections: SerpSelection[];
   isAnalyzing: boolean;
+  
+  // Enhanced SERP Analysis Data
+  comprehensiveSerpData: ComprehensiveSerpData | null;
   
   // Outline
   outline: string[];

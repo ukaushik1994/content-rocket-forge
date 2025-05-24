@@ -5,6 +5,9 @@ import { Tag, BarChart2, Clock, CheckCircle2 } from 'lucide-react';
 import { SerpAnalysisDetails } from './SerpAnalysisDetails';
 import { SolutionIntegrationDetails } from './SolutionIntegrationDetails';
 import { DocumentStructureDetails } from './DocumentStructureDetails';
+import { SerpMetricsDisplay } from './SerpMetricsDisplay';
+import { SelectedItemsDisplay } from './SelectedItemsDisplay';
+import { ComprehensiveSerpData } from '@/types/serp-metrics';
 
 interface MetadataTabContentProps {
   draft: any;
@@ -36,8 +39,39 @@ export const MetadataTabContent = ({
     );
   }
 
+  // Extract comprehensive SERP data from metadata
+  const comprehensiveSerpData: ComprehensiveSerpData | null = draft.metadata?.comprehensiveSerpData || null;
+  const serpMetrics = draft.metadata?.serpMetrics || comprehensiveSerpData?.serpMetrics;
+  const rankingOpportunities = draft.metadata?.rankingOpportunities || comprehensiveSerpData?.rankingOpportunities;
+  const selectionStats = draft.metadata?.selectionStats || comprehensiveSerpData?.selectionStats;
+
   return (
     <>
+      {/* Enhanced SERP Analysis Display */}
+      {(serpMetrics || selectionStats) && (
+        <div className="space-y-6 mb-6">
+          {/* SEO Metrics Section */}
+          {serpMetrics && rankingOpportunities && (
+            <SerpMetricsDisplay 
+              serpMetrics={serpMetrics}
+              rankingOpportunities={rankingOpportunities}
+            />
+          )}
+          
+          {/* Selected Items Section */}
+          {selectionStats && (
+            <SelectedItemsDisplay selectionStats={selectionStats} />
+          )}
+          
+          {/* Analysis Timestamp */}
+          {comprehensiveSerpData?.analysisTimestamp && (
+            <div className="text-xs text-muted-foreground text-center border-t pt-4">
+              SERP Analysis performed: {formatDate(comprehensiveSerpData.analysisTimestamp)}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Detailed Analysis Sections */}
       <div className="space-y-6">
         <SerpAnalysisDetails 
