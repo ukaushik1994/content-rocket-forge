@@ -5,8 +5,12 @@ import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
+import { RealTimeSeoScore } from '@/components/seo/RealTimeSeoScore';
 import { useWritingStep } from './writing/useWritingStep';
+import { useRealTimeSeoAnalysis } from '@/hooks/seo/useRealTimeSeoAnalysis';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sparkles } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -41,6 +45,9 @@ export const ContentWritingStep = () => {
     handleManualSave,
     handleWordCountChange
   } = useWritingStep();
+  
+  // Real-time SEO analysis
+  const { analysisResult, isAnalyzing: isSeoAnalyzing } = useRealTimeSeoAnalysis();
   
   // Setup leave confirmation
   useEffect(() => {
@@ -88,7 +95,7 @@ export const ContentWritingStep = () => {
       secondaryKeywordsStr,
       selectedSolution,
       additionalInstructions,
-      state.serpSelections, // Pass SERP selections for enhanced content generation
+      state.serpSelections,
       wordCountLimit,
       setIsGenerating,
       handleContentChange
@@ -138,7 +145,8 @@ export const ContentWritingStep = () => {
         </h2>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
+        {/* Sidebar with outline and SEO scoring */}
         {showOutline && (
           <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
@@ -147,10 +155,29 @@ export const ContentWritingStep = () => {
               additionalInstructions={additionalInstructions}
               handleInstructionsChange={handleInstructionsChange}
             />
+            
+            {/* Real-time SEO Score */}
+            {analysisResult && (
+              <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-950/20 dark:to-blue-950/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                    <Sparkles className="h-4 w-4" />
+                    Live SEO Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RealTimeSeoScore
+                    score={analysisResult.score}
+                    suggestions={analysisResult.suggestions}
+                    isAnalyzing={isSeoAnalyzing}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
         
-        <div className={`${showOutline ? 'lg:col-span-2' : 'lg:col-span-3'} h-full flex flex-col`}>
+        <div className={`${showOutline ? 'lg:col-span-3' : 'lg:col-span-4'} h-full flex flex-col`}>
           <ContentEditor
             content={content}
             onContentChange={handleContentChange}
