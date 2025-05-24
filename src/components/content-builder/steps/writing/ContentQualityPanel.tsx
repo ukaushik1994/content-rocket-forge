@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Target, Zap, Eye, LayoutGrid, MessageSquare, RefreshCw } from 'lucide-react';
+import { BarChart3, Target, Zap, Eye, LayoutGrid, MessageSquare, RefreshCw, Bot, Users, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ContentQualityMetrics, QualityRecommendation, WRITING_STYLES, EXPERTISE_LEVELS, analyzeContentQuality } from '@/services/contentQualityService';
 import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { detectAIContent, AIDetectionResult } from '@/services/aiContentDetectionService';
+import { analyzeSerpUsage, SerpUsageAnalysis } from '@/services/serpIntegrationAnalyzer';
 
 interface ContentQualityPanelProps {
   content: string;
@@ -30,7 +32,12 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
   onExpertiseLevelChange,
   aiProvider = 'openai'
 }) => {
+  const { state } = useContentBuilder();
+  const { serpSelections } = state;
+  
   const [metrics, setMetrics] = useState<ContentQualityMetrics | null>(null);
+  const [aiDetection, setAiDetection] = useState<AIDetectionResult | null>(null);
+  const [serpUsage, setSerpUsage] = useState<SerpUsageAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastAnalyzedContent, setLastAnalyzedContent] = useState('');
 
@@ -42,16 +49,31 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
 
     setIsAnalyzing(true);
     try {
-      const result = await analyzeContentQuality(content, title, writingStyle, expertiseLevel, aiProvider);
-      if (result) {
-        setMetrics(result);
-        setLastAnalyzedContent(content);
+      // Run quality analysis
+      const qualityResult = await analyzeContentQuality(content, title, writingStyle, expertiseLevel, aiProvider);
+      if (qualityResult) {
+        setMetrics(qualityResult);
         toast.success('Quality analysis completed');
-      } else {
-        toast.error('Failed to analyze content quality');
       }
+
+      // Run AI detection
+      const aiResult = await detectAIContent(content, aiProvider);
+      if (aiResult) {
+        setAiDetection(aiResult);
+      }
+
+      // Run SERP usage analysis
+      const selectedSerpItems = serpSelections.filter(item => item.selected);
+      if (selectedSerpItems.length > 0) {
+        const serpResult = await analyzeSerpUsage(content, selectedSerpItems, aiProvider);
+        if (serpResult) {
+          setSerpUsage(serpResult);
+        }
+      }
+
+      setLastAnalyzedContent(content);
     } catch (error) {
-      console.error('Quality analysis error:', error);
+      console.error('Analysis error:', error);
       toast.error('Analysis failed. Please try again.');
     } finally {
       setIsAnalyzing(false);
@@ -100,7 +122,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
           Content Quality Analysis
         </CardTitle>
         
-        {/* Configuration Controls - Moved up and made more compact */}
+        {/* Configuration Controls */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Writing Style</label>
@@ -143,7 +165,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
       </CardHeader>
       
       <CardContent className="pt-0 space-y-4">
-        {/* Quick Stats - More compact */}
+        {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
           <div className="text-center">
             <div className="text-xl font-bold">{wordCount}</div>
@@ -184,93 +206,99 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
         </Button>
 
         {/* Quality Metrics */}
-        {metrics && (
+        {(metrics || aiDetection || serpUsage) && (
           <Tabs defaultValue="scores" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="scores">Quality Scores</TabsTrigger>
               <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+              <TabsTrigger value="humanizer">Content Humanizer</TabsTrigger>
+              <TabsTrigger value="serp">SERP Usage</TabsTrigger>
             </TabsList>
             
             <TabsContent value="scores" className="space-y-3 mt-3">
-              {/* Overall Score */}
-              <div className="text-center p-3 bg-muted/30 rounded-lg">
-                <div className={`text-2xl font-bold ${getScoreColor(metrics.overallScore)}`}>
-                  {metrics.overallScore}
-                </div>
-                <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                <Badge variant={getScoreBadgeVariant(metrics.overallScore)} className="mt-1">
-                  {metrics.overallScore >= 80 ? 'Excellent' : 
-                   metrics.overallScore >= 60 ? 'Good' : 'Needs Improvement'}
-                </Badge>
-              </div>
+              {metrics && (
+                <>
+                  {/* Overall Score */}
+                  <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <div className={`text-2xl font-bold ${getScoreColor(metrics.overallScore)}`}>
+                      {metrics.overallScore}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Overall Quality Score</div>
+                    <Badge variant={getScoreBadgeVariant(metrics.overallScore)} className="mt-1">
+                      {metrics.overallScore >= 80 ? 'Excellent' : 
+                       metrics.overallScore >= 60 ? 'Good' : 'Needs Improvement'}
+                    </Badge>
+                  </div>
 
-              {/* Individual Scores - More compact */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    <span className="text-sm">Readability</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={metrics.readabilityScore} className="w-20" />
-                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.readabilityScore)}`}>
-                      {metrics.readabilityScore}
-                    </span>
-                  </div>
-                </div>
+                  {/* Individual Scores */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        <span className="text-sm">Readability</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={metrics.readabilityScore} className="w-20" />
+                        <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.readabilityScore)}`}>
+                          {metrics.readabilityScore}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    <span className="text-sm">Engagement</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={metrics.engagementScore} className="w-20" />
-                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.engagementScore)}`}>
-                      {metrics.engagementScore}
-                    </span>
-                  </div>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        <span className="text-sm">Engagement</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={metrics.engagementScore} className="w-20" />
+                        <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.engagementScore)}`}>
+                          {metrics.engagementScore}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    <span className="text-sm">SEO</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={metrics.seoScore} className="w-20" />
-                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.seoScore)}`}>
-                      {metrics.seoScore}
-                    </span>
-                  </div>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        <span className="text-sm">SEO</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={metrics.seoScore} className="w-20" />
+                        <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.seoScore)}`}>
+                          {metrics.seoScore}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <LayoutGrid className="h-4 w-4" />
-                    <span className="text-sm">Structure</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={metrics.structureScore} className="w-20" />
-                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.structureScore)}`}>
-                      {metrics.structureScore}
-                    </span>
-                  </div>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <LayoutGrid className="h-4 w-4" />
+                        <span className="text-sm">Structure</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={metrics.structureScore} className="w-20" />
+                        <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.structureScore)}`}>
+                          {metrics.structureScore}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span className="text-sm">Brand Voice</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="text-sm">Brand Voice</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={metrics.brandVoiceScore} className="w-20" />
+                        <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.brandVoiceScore)}`}>
+                          {metrics.brandVoiceScore}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={metrics.brandVoiceScore} className="w-20" />
-                    <span className={`text-sm font-medium w-8 ${getScoreColor(metrics.brandVoiceScore)}`}>
-                      {metrics.brandVoiceScore}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="recommendations" className="space-y-3 mt-3">
@@ -320,6 +348,158 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
                   <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-50" />
                   <p>No specific recommendations available.</p>
                   <p className="text-sm">Your content quality looks good!</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="humanizer" className="space-y-3 mt-3">
+              {aiDetection ? (
+                <div className="space-y-4">
+                  {/* AI Detection Status */}
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Bot className="h-4 w-4" />
+                        <span className="font-medium">AI Content Detection</span>
+                      </div>
+                      <Badge variant={aiDetection.isAIWritten ? 'destructive' : 'default'}>
+                        {aiDetection.isAIWritten ? 'AI Detected' : 'Human-like'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Progress value={aiDetection.confidence} className="flex-1" />
+                      <span className="text-sm font-medium">{aiDetection.confidence}%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Confidence level for AI detection analysis
+                    </p>
+                  </div>
+
+                  {/* AI Indicators */}
+                  {aiDetection.aiIndicators.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        AI Writing Patterns Found
+                      </h4>
+                      <div className="space-y-1">
+                        {aiDetection.aiIndicators.map((indicator, i) => (
+                          <div key={i} className="text-xs p-2 bg-amber-50 border border-amber-200 rounded">
+                            {indicator}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Humanization Suggestions */}
+                  {aiDetection.humanizationSuggestions.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4 text-blue-500" />
+                        Humanization Suggestions
+                      </h4>
+                      <div className="space-y-2">
+                        {aiDetection.humanizationSuggestions.map((suggestion, i) => (
+                          <div key={i} className="text-xs p-2 bg-blue-50 border border-blue-200 rounded">
+                            {suggestion}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center p-6 text-muted-foreground">
+                  <Bot className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                  <p>Run analysis to check for AI content patterns</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="serp" className="space-y-3 mt-3">
+              {serpUsage ? (
+                <div className="space-y-4">
+                  {/* SERP Usage Overview */}
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        <span className="font-medium">SERP Items Usage</span>
+                      </div>
+                      <Badge variant={serpUsage.usagePercentage >= 80 ? 'default' : 'secondary'}>
+                        {serpUsage.totalUsed}/{serpUsage.totalSelected} Used
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Progress value={serpUsage.usagePercentage} className="flex-1" />
+                      <span className="text-sm font-medium">{serpUsage.usagePercentage}%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Percentage of selected SERP items integrated into content
+                    </p>
+                  </div>
+
+                  {/* Usage by Type */}
+                  {Object.keys(serpUsage.usageByType).length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Usage by Type</h4>
+                      {Object.entries(serpUsage.usageByType).map(([type, data]) => (
+                        <div key={type} className="flex items-center justify-between text-sm">
+                          <span className="capitalize">{type}</span>
+                          <div className="flex items-center gap-2">
+                            <Progress value={data.percentage} className="w-16" />
+                            <span className="w-12 text-right">{data.used}/{data.total}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Unused Items */}
+                  {serpUsage.unusedItems.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        Unused SERP Items
+                      </h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {serpUsage.unusedItems.map((item, i) => (
+                          <div key={i} className="text-xs p-2 bg-amber-50 border border-amber-200 rounded">
+                            <span className="font-medium capitalize">{item.type}:</span> {item.content}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Integration Suggestions */}
+                  {serpUsage.integrationSuggestions.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Integration Suggestions
+                      </h4>
+                      <div className="space-y-2">
+                        {serpUsage.integrationSuggestions.map((suggestion, i) => (
+                          <div key={i} className="text-xs p-2 bg-green-50 border border-green-200 rounded">
+                            {suggestion}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center p-6 text-muted-foreground">
+                  <Target className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                  <p>Run analysis to check SERP items usage</p>
+                  <p className="text-sm">
+                    {serpSelections.filter(item => item.selected).length > 0 
+                      ? 'Analysis will show how well selected SERP items are integrated'
+                      : 'No SERP items selected for analysis'
+                    }
+                  </p>
                 </div>
               )}
             </TabsContent>
