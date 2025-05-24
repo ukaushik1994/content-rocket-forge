@@ -79,6 +79,7 @@ export const ContentWritingStep = () => {
     // Prepare secondary keywords
     const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
     
+    // Pass SERP selections to content generation
     await generateContent(
       aiProvider,
       mainKeyword,
@@ -87,6 +88,7 @@ export const ContentWritingStep = () => {
       secondaryKeywordsStr,
       selectedSolution,
       additionalInstructions,
+      state.serpSelections, // Pass SERP selections for enhanced content generation
       wordCountLimit,
       setIsGenerating,
       handleContentChange

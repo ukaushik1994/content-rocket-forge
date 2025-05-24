@@ -1,12 +1,12 @@
 
 import { toast } from 'sonner';
 import { AiProvider } from '@/services/aiService/types';
-import { Solution } from '@/contexts/content-builder/types';
+import { Solution, SerpSelection } from '@/contexts/content-builder/types';
 import { sendChatRequest } from '@/services/aiService';
 import { getUserPreference } from '@/services/userPreferencesService';
 
 /**
- * Generate content using AI
+ * Generate content using AI with SERP data integration
  */
 export const generateContent = async (
   aiProvider: AiProvider,
@@ -16,6 +16,7 @@ export const generateContent = async (
   secondaryKeywords: string,
   selectedSolution: Solution | null,
   additionalInstructions: string,
+  serpSelections: SerpSelection[],
   wordCountLimit?: number,
   setIsGenerating?: (value: boolean) => void,
   setContent?: (content: string) => void
@@ -30,35 +31,28 @@ export const generateContent = async (
   }
   
   try {
-    // Create a detailed prompt for the AI
-    const prompt = `
-    Write comprehensive, high-quality content for an article with the title: "${contentTitle || `Complete Guide to ${mainKeyword}`}".
+    // Organize SERP selections by type for better prompt structure
+    const serpData = organizeSerpSelections(serpSelections);
     
-    Title: ${contentTitle || `Complete Guide to ${mainKeyword}`}
-    Primary Keyword: ${mainKeyword}
-    ${secondaryKeywords ? `Secondary Keywords: ${secondaryKeywords}` : ''}
-    ${wordCountLimit ? `Word Count Target: Exactly ${wordCountLimit} words (with a margin of error of +/- 3 words)` : ''}
+    // Create a comprehensive prompt that includes all available data
+    const prompt = createComprehensivePrompt({
+      mainKeyword,
+      contentTitle,
+      outlineText,
+      secondaryKeywords,
+      selectedSolution,
+      additionalInstructions,
+      serpData,
+      wordCountLimit
+    });
     
-    The content MUST start with the title as an H1 heading. For example:
-    # ${contentTitle || `Complete Guide to ${mainKeyword}`}
-    
-    Then use this outline structure for the rest of the content:
-    ${outlineText}
-    
-    ${selectedSolution ? `This content should mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.` : ''}
-    
-    ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
-    
-    Format the content using Markdown syntax, with proper headings, paragraphs, and emphasis. 
-    Include a compelling introduction and a strong conclusion. 
-    Optimize the content for readability and search engines.
-    ${wordCountLimit ? `It's CRITICAL to hit exactly ${wordCountLimit} words (with a margin of error of +/- 3 words). Please count your words carefully before submitting.` : ''}
-    `;
+    // Enhanced system prompt for better content quality
+    const systemPrompt = createEnhancedSystemPrompt();
     
     // Call the AI API via our service
     const chatResponse = await sendChatRequest(aiProvider, {
       messages: [
-        { role: 'system', content: 'You are an expert content writer specializing in SEO-optimized articles. Create comprehensive, well-structured content that follows the provided outline and incorporates the specified keywords naturally. Always start with the title as an H1 heading. If a specific word count is requested, you MUST adhere to it precisely (with a margin of error of +/- 3 words).' },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
@@ -86,7 +80,7 @@ export const generateContent = async (
         setContent(finalContent);
       }
       
-      toast.success('Content generated successfully');
+      toast.success('Content generated successfully with SERP insights');
       return true;
     } else {
       toast.error('Failed to generate content. Please try again.');
@@ -101,6 +95,152 @@ export const generateContent = async (
       setIsGenerating(false);
     }
   }
+};
+
+/**
+ * Organize SERP selections by type for better prompt structure
+ */
+const organizeSerpSelections = (serpSelections: SerpSelection[]) => {
+  const selectedItems = serpSelections.filter(item => item.selected);
+  
+  return {
+    keywords: selectedItems.filter(item => item.type === 'keyword').map(item => item.content),
+    questions: selectedItems.filter(item => item.type === 'question').map(item => item.content),
+    entities: selectedItems.filter(item => item.type === 'entity').map(item => item.content),
+    headings: selectedItems.filter(item => item.type === 'heading').map(item => item.content),
+    contentGaps: selectedItems.filter(item => item.type === 'contentGap').map(item => item.content),
+    topResults: selectedItems.filter(item => item.type === 'topRank').map(item => item.content),
+    competitors: selectedItems.filter(item => item.type === 'competitor').map(item => item.content),
+    snippets: selectedItems.filter(item => item.type === 'snippet').map(item => item.content)
+  };
+};
+
+/**
+ * Create a comprehensive prompt that includes all available research data
+ */
+const createComprehensivePrompt = ({
+  mainKeyword,
+  contentTitle,
+  outlineText,
+  secondaryKeywords,
+  selectedSolution,
+  additionalInstructions,
+  serpData,
+  wordCountLimit
+}: {
+  mainKeyword: string;
+  contentTitle: string | null;
+  outlineText: string;
+  secondaryKeywords: string;
+  selectedSolution: Solution | null;
+  additionalInstructions: string;
+  serpData: any;
+  wordCountLimit?: number;
+}) => {
+  const title = contentTitle || `Complete Guide to ${mainKeyword}`;
+  
+  let prompt = `Write comprehensive, helpful content for an article with the title: "${title}".
+
+CONTENT REQUIREMENTS:
+- Title: ${title}
+- Primary Keyword: ${mainKeyword}
+${secondaryKeywords ? `- Secondary Keywords: ${secondaryKeywords}` : ''}
+${wordCountLimit ? `- Word Count Target: Exactly ${wordCountLimit} words (with a margin of error of +/- 3 words)` : ''}
+
+STRUCTURE TO FOLLOW:
+The content MUST start with the title as an H1 heading: # ${title}
+
+Then follow this outline structure:
+${outlineText}
+`;
+
+  // Add SERP research insights if available
+  if (serpData.questions.length > 0) {
+    prompt += `\nIMPORTANT QUESTIONS TO ADDRESS:
+Based on search research, users are asking these questions. Make sure to answer them thoroughly:
+${serpData.questions.map((q: string, i: number) => `${i + 1}. ${q}`).join('\n')}
+`;
+  }
+
+  if (serpData.entities.length > 0) {
+    prompt += `\nKEY CONCEPTS TO INCLUDE:
+These important concepts should be naturally incorporated and explained:
+${serpData.entities.map((e: string, i: number) => `- ${e}`).join('\n')}
+`;
+  }
+
+  if (serpData.contentGaps.length > 0) {
+    prompt += `\nCONTENT OPPORTUNITIES:
+Address these gaps that competitors are missing:
+${serpData.contentGaps.map((gap: string, i: number) => `- ${gap}`).join('\n')}
+`;
+  }
+
+  if (serpData.keywords.length > 0) {
+    prompt += `\nADDITIONAL KEYWORDS TO INCORPORATE:
+Naturally include these related keywords where relevant:
+${serpData.keywords.join(', ')}
+`;
+  }
+
+  if (serpData.headings.length > 0) {
+    prompt += `\nCOMPETITOR HEADING INSIGHTS:
+Consider these heading patterns from top-ranking content:
+${serpData.headings.map((h: string, i: number) => `- ${h}`).join('\n')}
+`;
+  }
+
+  if (selectedSolution) {
+    prompt += `\nSOLUTION TO HIGHLIGHT:
+Mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.
+`;
+  }
+
+  if (additionalInstructions) {
+    prompt += `\nADDITIONAL INSTRUCTIONS:
+${additionalInstructions}
+`;
+  }
+
+  prompt += `\nFORMATTING REQUIREMENTS:
+- Use Markdown syntax with proper headings (H1, H2, H3, etc.)
+- Create engaging, scannable content with bullet points and numbered lists
+- Include a compelling introduction that hooks the reader
+- Write a strong conclusion that summarizes key takeaways
+- Optimize for readability and search engines
+- Make the content genuinely helpful and actionable for readers
+${wordCountLimit ? `- CRITICAL: Hit exactly ${wordCountLimit} words (±3 words). Count carefully.` : ''}
+
+CONTENT QUALITY FOCUS:
+- Answer user questions comprehensively
+- Provide practical, actionable advice
+- Include relevant examples where helpful
+- Ensure accuracy and helpfulness above all else`;
+
+  return prompt;
+};
+
+/**
+ * Create an enhanced system prompt for better content quality
+ */
+const createEnhancedSystemPrompt = () => {
+  return `You are an expert content writer specializing in creating comprehensive, SEO-optimized articles that genuinely help readers. Your content is:
+
+1. HELPFUL FIRST: Always prioritize providing real value to readers over SEO optimization
+2. ACCURATE: Base content on factual information and best practices
+3. COMPREHENSIVE: Cover topics thoroughly while remaining focused
+4. ACTIONABLE: Provide concrete steps and practical advice readers can implement
+5. ENGAGING: Use clear, conversational language that keeps readers interested
+6. WELL-STRUCTURED: Follow logical flow with proper headings and formatting
+
+When incorporating research data:
+- Answer user questions directly and thoroughly
+- Explain concepts and entities clearly for all knowledge levels
+- Address content gaps that competitors miss
+- Use keywords naturally without keyword stuffing
+- Structure content based on proven heading patterns
+
+Always start with the title as an H1 heading and follow the provided outline structure. Focus on creating content that readers will find genuinely useful and that search engines will recognize as high-quality.`;
 };
 
 /**
