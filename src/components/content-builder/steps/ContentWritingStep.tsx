@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { toast } from 'sonner';
@@ -6,13 +7,15 @@ import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { RealTimeSeoScore } from '@/components/seo/RealTimeSeoScore';
 import { KeywordIntelligenceDashboard } from '@/components/seo/KeywordIntelligenceDashboard';
+import { RealTimeOptimizationDashboard } from '@/components/optimization/RealTimeOptimizationDashboard';
 import { useWritingStep } from './writing/useWritingStep';
 import { useRealTimeSeoAnalysis } from '@/hooks/seo/useRealTimeSeoAnalysis';
 import { useKeywordIntelligence } from '@/hooks/seo/useKeywordIntelligence';
+import { useRealTimeOptimization } from '@/hooks/optimization/useRealTimeOptimization';
 import { generateContent, saveContentToDraft } from './writing/ContentGenerationService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Sparkles, Brain } from 'lucide-react';
+import { Sparkles, Brain, Zap } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -53,6 +56,9 @@ export const ContentWritingStep = () => {
   
   // Advanced keyword intelligence
   const { intelligenceResult, isAnalyzing: isKeywordAnalyzing } = useKeywordIntelligence();
+  
+  // Real-time optimization engine
+  const { optimizationResult, isOptimizing, applyAutoFix } = useRealTimeOptimization();
   
   // Setup leave confirmation
   useEffect(() => {
@@ -120,6 +126,14 @@ export const ContentWritingStep = () => {
     );
   };
 
+  const handleApplyOptimization = (suggestionId: string) => {
+    const optimizedContent = applyAutoFix(suggestionId);
+    if (optimizedContent && optimizedContent !== content) {
+      handleContentChange(optimizedContent);
+      toast.success("Optimization applied successfully!");
+    }
+  };
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       <ContentGenerationHeader
@@ -151,7 +165,7 @@ export const ContentWritingStep = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
-        {/* Sidebar with outline and advanced SEO analysis */}
+        {/* Sidebar with outline and advanced analysis */}
         {showOutline && (
           <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
@@ -161,28 +175,55 @@ export const ContentWritingStep = () => {
               handleInstructionsChange={handleInstructionsChange}
             />
             
-            {/* Advanced SEO Analysis Panel */}
+            {/* Advanced Analysis Panel */}
             <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-950/20 dark:to-blue-950/20">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
                   <Brain className="h-4 w-4" />
-                  Advanced SEO Analysis
+                  Advanced Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="realtime" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="realtime" className="text-xs">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Live SEO
+                <Tabs defaultValue="optimization" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="optimization" className="text-xs">
+                      <Zap className="h-3 w-3 mr-1" />
+                      Live
                     </TabsTrigger>
-                    <TabsTrigger value="intelligence" className="text-xs">
+                    <TabsTrigger value="seo" className="text-xs">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      SEO
+                    </TabsTrigger>
+                    <TabsTrigger value="keywords" className="text-xs">
                       <Brain className="h-3 w-3 mr-1" />
                       Keywords
                     </TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="realtime" className="space-y-3">
+                  <TabsContent value="optimization" className="space-y-3">
+                    {optimizationResult ? (
+                      <div className="max-h-[500px] overflow-y-auto">
+                        <RealTimeOptimizationDashboard
+                          result={optimizationResult}
+                          isOptimizing={isOptimizing}
+                          onApplyAutoFix={handleApplyOptimization}
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground text-sm">
+                        {isOptimizing ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full" />
+                            Analyzing optimization...
+                          </div>
+                        ) : (
+                          'Start writing to see live optimization suggestions'
+                        )}
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="seo" className="space-y-3">
                     {analysisResult && (
                       <RealTimeSeoScore
                         score={analysisResult.score}
@@ -192,7 +233,7 @@ export const ContentWritingStep = () => {
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="intelligence" className="space-y-3">
+                  <TabsContent value="keywords" className="space-y-3">
                     {intelligenceResult ? (
                       <div className="max-h-[400px] overflow-y-auto">
                         <KeywordIntelligenceDashboard
