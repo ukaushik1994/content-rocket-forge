@@ -53,11 +53,11 @@ export const ContentTypeAndOutlineStep = () => {
           </p>
         </div>
 
-        {/* Selected Items Summary */}
-        <SelectedSerpItemsCard />
-
-        {/* AI Outline Generator */}
-        <AIOutlineGenerator />
+        {/* Selected Items Summary & AI Generator - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SelectedSerpItemsCard />
+          <AIOutlineGenerator />
+        </div>
 
         {/* Outline Table */}
         <Card>
