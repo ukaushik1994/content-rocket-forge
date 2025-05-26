@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle, ChevronRight, CheckSquare, Settings, Search, FileText, Edit, Sparkles, BarChart4, Upload } from 'lucide-react';
+import { CheckCircle, ChevronRight, CheckSquare, Settings, Search, FileText, Edit, Sparkles, BarChart4, Upload, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ContentBuilderSidebarProps {
@@ -22,12 +22,10 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
   const getStepIcon = (stepId: number) => {
     switch (stepId) {
       case 0: return <Sparkles className="h-4 w-4" />;
-      case 1: return <CheckSquare className="h-4 w-4" />;
+      case 1: return <Layers className="h-4 w-4" />; // Combined step icon
       case 2: return <Search className="h-4 w-4" />;
-      case 3: return <FileText className="h-4 w-4" />;
-      case 4: return <Edit className="h-4 w-4" />;
-      case 5: return <BarChart4 className="h-4 w-4" />;
-      case 6: return <Upload className="h-4 w-4" />;
+      case 3: return <Edit className="h-4 w-4" />;
+      case 4: return <BarChart4 className="h-4 w-4" />;
       default: return <Sparkles className="h-4 w-4" />;
     }
   };

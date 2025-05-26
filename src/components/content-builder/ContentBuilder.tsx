@@ -9,11 +9,9 @@ import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
-import { ContentTypeStep } from './steps/ContentTypeStep';
-import { OutlineStep } from './steps/OutlineStep';
+import { ContentTypeAndOutlineStep } from './steps/ContentTypeAndOutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
-import { SaveStep } from './steps/save';
 import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { toast } from "sonner";
 import { getApiKey } from '@/services/apiKeyService';
@@ -80,7 +78,7 @@ export const ContentBuilder = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
     
-    if (hasUnsavedChanges && currentStepId === 4) { // Writing step
+    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
       setPendingNavigation(activeStep + 1);
       setShowUnsavedDialog(true);
     } else {
@@ -90,7 +88,7 @@ export const ContentBuilder = () => {
   
   // Handle previous step navigation
   const handlePrevStep = () => {
-    if (hasUnsavedChanges && currentStepId === 4) { // Writing step
+    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
       setPendingNavigation(activeStep - 1);
       setShowUnsavedDialog(true);
     } else {
@@ -168,11 +166,10 @@ export const ContentBuilder = () => {
     
     switch (stepID) {
       case 0: return <KeywordSelectionStep />;
-      case 1: return <ContentTypeStep />;
+      case 1: return <ContentTypeAndOutlineStep />;
       case 2: return <SerpAnalysisStep />;
-      case 3: return <OutlineStep />;
-      case 4: return <ContentWritingStep />;
-      case 5: return <OptimizeAndReviewStep />;
+      case 3: return <ContentWritingStep />;
+      case 4: return <OptimizeAndReviewStep />;
       default: return <KeywordSelectionStep />;
     }
   };
@@ -192,7 +189,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 4;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -201,7 +198,7 @@ export const ContentBuilder = () => {
         steps={steps} 
         activeStep={activeStep} 
         navigateToStep={(step) => {
-          if (hasUnsavedChanges && currentStepId === 4) {
+          if (hasUnsavedChanges && currentStepId === 3) {
             setPendingNavigation(step);
             setShowUnsavedDialog(true);
           } else {

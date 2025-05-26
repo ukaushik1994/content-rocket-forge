@@ -48,7 +48,7 @@ export function useWritingStep() {
   // Mark this step as complete when we have content
   useEffect(() => {
     if (content && content.trim().length > 100) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 }); // Updated to step 3
     }
   }, [content, dispatch]);
 

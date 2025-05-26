@@ -37,7 +37,7 @@ export const createNavigationActions = (
     
     // Skip SERP Analysis (step with id 2) when navigating between steps
     if (state.activeStep === 0 && step > state.activeStep) {
-      // If going from keyword selection to content type, move forward normally
+      // If going from keyword selection to content type & outline, move forward normally
       dispatch({ type: 'SET_CURRENT_STEP', payload: step });
       return;
     }
