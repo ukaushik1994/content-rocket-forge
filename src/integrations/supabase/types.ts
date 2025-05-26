@@ -302,6 +302,47 @@ export type Database = {
         }
         Relationships: []
       }
+      content_analytics: {
+        Row: {
+          analytics_data: Json | null
+          content_id: string
+          created_at: string
+          id: string
+          last_fetched_at: string | null
+          published_url: string
+          search_console_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          analytics_data?: Json | null
+          content_id: string
+          created_at?: string
+          id?: string
+          last_fetched_at?: string | null
+          published_url: string
+          search_console_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          analytics_data?: Json | null
+          content_id?: string
+          created_at?: string
+          id?: string
+          last_fetched_at?: string | null
+          published_url?: string
+          search_console_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_analytics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_approvals: {
         Row: {
           approval_notes: string | null
@@ -386,6 +427,7 @@ export type Database = {
           created_at: string
           id: string
           metadata: Json | null
+          published_url: string | null
           review_deadline: string | null
           reviewer_id: string | null
           seo_score: number | null
@@ -401,6 +443,7 @@ export type Database = {
           created_at?: string
           id?: string
           metadata?: Json | null
+          published_url?: string | null
           review_deadline?: string | null
           reviewer_id?: string | null
           seo_score?: number | null
@@ -416,6 +459,7 @@ export type Database = {
           created_at?: string
           id?: string
           metadata?: Json | null
+          published_url?: string | null
           review_deadline?: string | null
           reviewer_id?: string | null
           seo_score?: number | null

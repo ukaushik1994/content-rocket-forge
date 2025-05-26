@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -229,17 +228,7 @@ export const useSaveContent = () => {
       toast.success('Content saved to drafts with comprehensive SERP analysis');
       console.log('[useSaveContent] Save completed successfully, ID:', contentId);
       
-      // Set session storage flags for the drafts page to detect
-      sessionStorage.setItem('content_draft_saved', 'true');
-      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
-      console.log('[useSaveContent] Set session storage flags for draft saved');
-      
-      // Navigate to drafts page
-      setTimeout(() => {
-        console.log('[useSaveContent] Navigating to drafts page...');
-        navigate('/drafts', { state: { contentRefresh: true } });
-      }, 1000);
-      
+      // Don't navigate immediately, let the SaveAndExportPanel handle the published URL dialog
       return contentId;
     } catch (error) {
       console.error('Error saving content to draft:', error);
@@ -378,16 +367,7 @@ export const useSaveContent = () => {
       
       toast.success('Content published successfully with comprehensive SERP analysis');
       
-      // Navigate to drafts page with a refresh parameter
-      sessionStorage.setItem('from_content_builder', 'true');
-      sessionStorage.setItem('content_save_timestamp', Date.now().toString());
-      
-      setTimeout(() => {
-        navigate('/drafts', { 
-          state: { contentRefresh: true }
-        });
-      }, 1000);
-      
+      // Don't navigate immediately, let the SaveAndExportPanel handle the published URL dialog
       return contentId;
     } catch (error) {
       console.error('Error publishing content:', error);
