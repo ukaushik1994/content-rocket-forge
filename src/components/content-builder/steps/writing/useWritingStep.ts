@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { OutlineSection } from '@/contexts/content-builder/types';
 import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';

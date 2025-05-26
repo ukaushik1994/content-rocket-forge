@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
 import { ContentTitleCard } from '../outline/ContentTitleCard';
 import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
