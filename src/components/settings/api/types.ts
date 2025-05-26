@@ -1,71 +1,117 @@
+import { LucideIcon } from 'lucide-react';
 
-import { ReactNode } from 'react';
-
-export type ApiProvider = {
+export interface ApiProvider {
   id: string;
   name: string;
   description: string;
   serviceKey: string;
+  icon: LucideIcon;
   link: string;
-  icon: ReactNode;
-  required?: boolean;
-  autoDetectable?: boolean;
-};
+  required: boolean;
+  category?: string;
+}
+
+import { 
+  Key, 
+  MessageSquare, 
+  Brain, 
+  Search, 
+  Mail, 
+  Phone, 
+  CreditCard, 
+  BarChart3,
+  TrendingUp 
+} from 'lucide-react';
 
 export const API_PROVIDERS: ApiProvider[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'Power AI-assisted content generation, writing assistance, and keyword suggestions.',
+    description: 'Advanced AI models for content generation and analysis',
     serviceKey: 'openai',
+    icon: Brain,
     link: 'https://platform.openai.com/api-keys',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
-  },
-  {
-    id: 'serp',
-    name: 'SERP API',
-    description: 'Access competitor content analysis, keyword data, and search volume metrics.',
-    serviceKey: 'serp',
-    link: 'https://serpapi.com/dashboard',
     required: true,
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    category: 'AI Services'
   },
   {
     id: 'anthropic',
-    name: 'Anthropic',
-    description: 'Use Claude AI for content generation and analysis.',
+    name: 'Anthropic Claude',
+    description: 'Constitutional AI for safe and helpful content creation',
     serviceKey: 'anthropic',
-    link: 'https://console.anthropic.com/settings/keys',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    icon: MessageSquare,
+    link: 'https://console.anthropic.com/account/keys',
+    required: false,
+    category: 'AI Services'
   },
   {
     id: 'gemini',
     name: 'Google Gemini',
-    description: 'Leverage Google\'s AI for enhanced content creation.',
+    description: 'Google\'s multimodal AI for diverse content tasks',
     serviceKey: 'gemini',
+    icon: Brain,
     link: 'https://aistudio.google.com/app/apikey',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    required: false,
+    category: 'AI Services'
   },
   {
-    id: 'mistral',
-    name: 'Mistral AI',
-    description: 'Utilize Mistral\'s powerful language models for content creation and analysis.',
-    serviceKey: 'mistral',
-    link: 'https://console.mistral.ai/api-keys/',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    id: 'serp',
+    name: 'SERP API',
+    description: 'Search Engine Results Page data for SEO analysis',
+    serviceKey: 'serp',
+    icon: Search,
+    link: 'https://serpapi.com/manage-api-key',
+    required: true,
+    category: 'SEO & Analytics'
   },
   {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    description: 'Use your local LLM models for content generation with full privacy and control.',
-    serviceKey: 'lmstudio',
-    link: 'https://lmstudio.ai/',
-    icon: null, // We'll add icons in the component
-    autoDetectable: true
+    id: 'google-analytics',
+    name: 'Google Analytics',
+    description: 'Website traffic and user behavior analytics',
+    serviceKey: 'google-analytics',
+    icon: BarChart3,
+    link: 'https://console.cloud.google.com/apis/credentials',
+    required: false,
+    category: 'SEO & Analytics'
+  },
+  {
+    id: 'google-search-console',
+    name: 'Google Search Console',
+    description: 'Search performance and indexing data',
+    serviceKey: 'google-search-console',
+    icon: TrendingUp,
+    link: 'https://console.cloud.google.com/apis/credentials',
+    required: false,
+    category: 'SEO & Analytics'
+  },
+  {
+    id: 'sendgrid',
+    name: 'SendGrid',
+    description: 'Email delivery and marketing automation',
+    serviceKey: 'sendgrid',
+    icon: Mail,
+    link: 'https://app.sendgrid.com/settings/api_keys',
+    required: false,
+    category: 'Communication'
+  },
+  {
+    id: 'twilio',
+    name: 'Twilio',
+    description: 'SMS, voice, and video communication APIs',
+    serviceKey: 'twilio',
+    icon: Phone,
+    link: 'https://console.twilio.com/project/api-keys',
+    required: false,
+    category: 'Communication'
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    description: 'Payment processing and subscription management',
+    serviceKey: 'stripe',
+    icon: CreditCard,
+    link: 'https://dashboard.stripe.com/apikeys',
+    required: false,
+    category: 'Payments'
   }
 ];

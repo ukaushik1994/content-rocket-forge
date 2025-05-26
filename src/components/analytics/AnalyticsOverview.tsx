@@ -1,333 +1,373 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, BarChart3, TrendingUp, Users, Eye, MousePointerClick, Clock, Search } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { 
+  BarChart3, 
+  Users, 
+  MousePointer, 
+  TrendingUp, 
+  Settings,
+  AlertCircle,
+  ExternalLink
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
-// Mock data for analytics charts
-const performanceData = [
-  { name: 'Apr 26', impressions: 342, clicks: 45, position: 6.2 },
-  { name: 'Apr 27', impressions: 385, clicks: 52, position: 5.8 },
-  { name: 'Apr 28', impressions: 420, clicks: 61, position: 5.5 },
-  { name: 'Apr 29', impressions: 501, clicks: 73, position: 4.9 },
-  { name: 'Apr 30', impressions: 489, clicks: 68, position: 4.7 },
-  { name: 'May 1', impressions: 530, clicks: 82, position: 4.2 },
-  { name: 'May 2', impressions: 601, clicks: 91, position: 3.8 },
-];
+interface AnalyticsData {
+  pageViews: number;
+  sessions: number;
+  bounceRate: number;
+  avgSessionDuration: number;
+  newUsers: number;
+  returningUsers: number;
+  conversionRate: number;
+  demographics: {
+    desktop: number;
+    mobile: number;
+    tablet: number;
+  };
+  lastUpdated: string;
+}
 
-const engagementData = [
-  { name: 'Introduction', views: 601, avgTime: 35, dropoff: 12 },
-  { name: 'Section 1', views: 532, avgTime: 95, dropoff: 15 },
-  { name: 'Section 2', views: 452, avgTime: 120, dropoff: 18 },
-  { name: 'Section 3', views: 371, avgTime: 85, dropoff: 22 },
-  { name: 'Section 4', views: 289, avgTime: 75, dropoff: 25 },
-  { name: 'Conclusion', views: 217, avgTime: 40, dropoff: 0 },
-];
-
-const keywordData = [
-  { keyword: 'project management software', position: 3, change: +2, volume: 9800 },
-  { keyword: 'best project management tools', position: 5, change: +1, volume: 5400 },
-  { keyword: 'remote team management software', position: 7, change: 0, volume: 3200 },
-  { keyword: 'project management for remote teams', position: 4, change: +3, volume: 2900 },
-  { keyword: 'free project management tools', position: 9, change: -1, volume: 7400 },
-];
+interface SearchConsoleData {
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  averagePosition: number;
+  topQueries: Array<{
+    query: string;
+    clicks: number;
+    impressions: number;
+  }>;
+  lastUpdated: string;
+}
 
 export const AnalyticsOverview = () => {
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4">
-        <Card className="flex-1 glass-panel bg-glass hover:shadow-neon transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              <span>Performance Overview</span>
-            </CardTitle>
-            <CardDescription>Last 7 days analytics</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-background/50 p-3 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">Impressions</div>
-                  <div className="text-xs text-green-400 flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +12.4%
-                  </div>
+  const { user } = useAuth();
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
+  const [searchConsoleData, setSearchConsoleData] = useState<SearchConsoleData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasApiKeys, setHasApiKeys] = useState(false);
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+
+        // Check if user has configured Google Analytics and Search Console API keys
+        const { data: apiKeys } = await supabase
+          .from('api_keys')
+          .select('service')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .in('service', ['google-analytics', 'google-search-console']);
+
+        const hasAnalytics = apiKeys?.some(key => key.service === 'google-analytics');
+        const hasSearchConsole = apiKeys?.some(key => key.service === 'google-search-console');
+        setHasApiKeys(hasAnalytics || hasSearchConsole);
+
+        if (!hasAnalytics && !hasSearchConsole) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch content analytics data
+        const { data: contentAnalytics, error } = await supabase
+          .from('content_analytics')
+          .select(`
+            analytics_data,
+            search_console_data,
+            content_items!inner(user_id, title, published_url)
+          `)
+          .eq('content_items.user_id', user.id)
+          .not('analytics_data', 'is', null)
+          .not('search_console_data', 'is', null);
+
+        if (error) {
+          console.error('Error fetching analytics:', error);
+          toast.error('Failed to load analytics data');
+          return;
+        }
+
+        if (contentAnalytics && contentAnalytics.length > 0) {
+          const analytics = contentAnalytics
+            .map(item => item.analytics_data)
+            .filter(Boolean) as AnalyticsData[];
+          
+          const searchData = contentAnalytics
+            .map(item => item.search_console_data)
+            .filter(Boolean) as SearchConsoleData[];
+
+          setAnalyticsData(analytics);
+          setSearchConsoleData(searchData);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+        toast.error('Failed to load analytics data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="glass-panel">
+              <CardContent className="pt-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-white/10 rounded w-1/2"></div>
                 </div>
-                <div className="text-2xl font-bold">3,268</div>
-              </div>
-              <div className="bg-background/50 p-3 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">Clicks</div>
-                  <div className="text-xs text-green-400 flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +8.2%
-                  </div>
-                </div>
-                <div className="text-2xl font-bold">472</div>
-              </div>
-              <div className="bg-background/50 p-3 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">Avg Position</div>
-                  <div className="text-xs text-green-400 flex items-center">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +2.4
-                  </div>
-                </div>
-                <div className="text-2xl font-bold">3.8</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasApiKeys) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-panel bg-amber-950/20 border-amber-500/30">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 text-amber-400" />
+              <div>
+                <CardTitle className="text-amber-100">Analytics Setup Required</CardTitle>
+                <CardDescription className="text-amber-200/70">
+                  Configure your Google Analytics and Search Console API keys to view analytics data.
+                </CardDescription>
               </div>
             </div>
-            
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={performanceData}
-                  margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button asChild variant="outline" className="border-amber-500/30 hover:bg-amber-500/10">
+                <Link to="/settings?tab=api">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure API Keys
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <a 
+                  href="https://console.cloud.google.com/apis/credentials" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-amber-200/70 hover:text-amber-200"
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.1} />
-                  <XAxis dataKey="name" stroke="#888" fontSize={12} />
-                  <YAxis stroke="#888" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(15, 15, 15, 0.9)', 
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="impressions" 
-                    name="Impressions"
-                    stroke="#8884d8" 
-                    activeDot={{ r: 8 }} 
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="clicks" 
-                    name="Clicks"
-                    stroke="#82ca9d" 
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Get Google API Keys
+                </a>
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="w-full md:w-80 glass-panel bg-glass hover:shadow-neon transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-primary" />
-              <span>Ranking Keywords</span>
-            </CardTitle>
-            <CardDescription>Top performing keywords</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {keywordData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-background/50 transition-colors">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium truncate max-w-[180px]">{item.keyword}</span>
-                  <span className="text-xs text-muted-foreground">{item.volume.toLocaleString()} searches/mo</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-secondary/80 text-foreground px-2 py-0.5 rounded text-xs font-medium">
-                    #{item.position}
-                  </span>
-                  <span className={`text-xs ${item.change > 0 ? 'text-green-400' : item.change < 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                    {item.change > 0 ? `+${item.change}` : item.change}
-                  </span>
-                </div>
-              </div>
-            ))}
-            <Button variant="outline" size="sm" className="w-full gap-1">
-              View all keywords <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
           </CardContent>
         </Card>
       </div>
-      
-      <Tabs defaultValue="engagement">
-        <TabsList className="bg-secondary/30">
-          <TabsTrigger value="engagement" className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            Engagement
-          </TabsTrigger>
-          <TabsTrigger value="seo" className="flex items-center gap-1">
-            <BarChart3 className="h-3 w-3" />
-            SEO Performance
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="engagement" className="mt-4">
-          <Card className="glass-panel">
-            <CardHeader>
-              <CardTitle>Content Engagement</CardTitle>
-              <CardDescription>How users interact with your content</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-background/50 rounded-lg p-4 flex flex-col">
-                  <div className="flex items-center mb-2">
-                    <Eye className="h-4 w-4 mr-2 text-primary" />
-                    <h3 className="text-sm font-medium">Total Views</h3>
-                  </div>
-                  <div className="text-2xl font-bold mb-2">601</div>
-                  <div className="text-xs text-muted-foreground">+12% from last week</div>
-                </div>
-                <div className="bg-background/50 rounded-lg p-4 flex flex-col">
-                  <div className="flex items-center mb-2">
-                    <MousePointerClick className="h-4 w-4 mr-2 text-primary" />
-                    <h3 className="text-sm font-medium">Link Clicks</h3>
-                  </div>
-                  <div className="text-2xl font-bold mb-2">87</div>
-                  <div className="text-xs text-muted-foreground">14.5% click rate</div>
-                </div>
-                <div className="bg-background/50 rounded-lg p-4 flex flex-col">
-                  <div className="flex items-center mb-2">
-                    <Clock className="h-4 w-4 mr-2 text-primary" />
-                    <h3 className="text-sm font-medium">Avg. Time on Page</h3>
-                  </div>
-                  <div className="text-2xl font-bold mb-2">4:12</div>
-                  <div className="text-xs text-muted-foreground">+1:24 vs site average</div>
-                </div>
+    );
+  }
+
+  if (analyticsData.length === 0 && searchConsoleData.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-panel bg-blue-950/20 border-blue-500/30">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-6 w-6 text-blue-400" />
+              <div>
+                <CardTitle className="text-blue-100">No Analytics Data Available</CardTitle>
+                <CardDescription className="text-blue-200/70">
+                  Publish your content and add published URLs to start tracking analytics data.
+                </CardDescription>
               </div>
-              
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Content Section Engagement</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={engagementData}
-                      margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.1} />
-                      <XAxis dataKey="name" stroke="#888" fontSize={12} />
-                      <YAxis stroke="#888" fontSize={12} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(15, 15, 15, 0.9)', 
-                          borderColor: 'rgba(255, 255, 255, 0.1)',
-                          borderRadius: '8px',
-                          color: '#fff'
-                        }} 
-                      />
-                      <Bar 
-                        dataKey="views" 
-                        name="Views"
-                        fill="#8884d8" 
-                      />
-                      <Bar 
-                        dataKey="avgTime" 
-                        name="Avg. Time (sec)"
-                        fill="#82ca9d" 
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-blue-200/60">
+              Once you publish content and provide the published URLs, we'll automatically start 
+              collecting Google Analytics and Search Console data for your content.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Aggregate data from all content items
+  const totalAnalytics = analyticsData.reduce((acc, data) => ({
+    pageViews: acc.pageViews + data.pageViews,
+    sessions: acc.sessions + data.sessions,
+    bounceRate: acc.bounceRate + data.bounceRate,
+    avgSessionDuration: acc.avgSessionDuration + data.avgSessionDuration,
+    newUsers: acc.newUsers + data.newUsers,
+    returningUsers: acc.returningUsers + data.returningUsers,
+  }), {
+    pageViews: 0,
+    sessions: 0,
+    bounceRate: 0,
+    avgSessionDuration: 0,
+    newUsers: 0,
+    returningUsers: 0,
+  });
+
+  const totalSearchConsole = searchConsoleData.reduce((acc, data) => ({
+    impressions: acc.impressions + data.impressions,
+    clicks: acc.clicks + data.clicks,
+    ctr: acc.ctr + data.ctr,
+    averagePosition: acc.averagePosition + data.averagePosition,
+  }), {
+    impressions: 0,
+    clicks: 0,
+    ctr: 0,
+    averagePosition: 0,
+  });
+
+  // Calculate averages
+  const avgBounceRate = analyticsData.length > 0 ? totalAnalytics.bounceRate / analyticsData.length : 0;
+  const avgSessionDuration = analyticsData.length > 0 ? totalAnalytics.avgSessionDuration / analyticsData.length : 0;
+  const avgCTR = searchConsoleData.length > 0 ? totalSearchConsole.ctr / searchConsoleData.length : 0;
+  const avgPosition = searchConsoleData.length > 0 ? totalSearchConsole.averagePosition / searchConsoleData.length : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Overview Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Page Views</p>
+                <p className="text-2xl font-bold">{totalAnalytics.pageViews.toLocaleString()}</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="seo" className="mt-4">
-          <Card className="glass-panel">
-            <CardHeader>
-              <CardTitle>SEO Performance</CardTitle>
-              <CardDescription>How your content is performing in search engines</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Content SEO Score: 87/100</h3>
-                <Progress value={87} className="h-2 w-full" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-background/50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground mb-1">Content Quality</div>
-                    <Progress value={92} className="h-2 w-full bg-secondary [&>div]:bg-green-500 mb-1" />
-                    <div className="text-xs flex justify-between">
-                      <span>Score: 92/100</span>
-                      <span className="text-green-400">Excellent</span>
-                    </div>
-                  </div>
-                  <div className="bg-background/50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground mb-1">Keyword Usage</div>
-                    <Progress value={85} className="h-2 w-full bg-secondary [&>div]:bg-green-500 mb-1" />
-                    <div className="text-xs flex justify-between">
-                      <span>Score: 85/100</span>
-                      <span className="text-green-400">Good</span>
-                    </div>
-                  </div>
-                  <div className="bg-background/50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground mb-1">Readability</div>
-                    <Progress value={88} className="h-2 w-full bg-secondary [&>div]:bg-green-500 mb-1" />
-                    <div className="text-xs flex justify-between">
-                      <span>Score: 88/100</span>
-                      <span className="text-green-400">Good</span>
-                    </div>
-                  </div>
-                  <div className="bg-background/50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground mb-1">Technical SEO</div>
-                    <Progress value={78} className="h-2 w-full bg-secondary [&>div]:bg-yellow-500 mb-1" />
-                    <div className="text-xs flex justify-between">
-                      <span>Score: 78/100</span>
-                      <span className="text-yellow-500">Needs Improvement</span>
-                    </div>
-                  </div>
-                </div>
+              <BarChart3 className="h-8 w-8 text-blue-500" />
+            </div>
+            <Badge variant="outline" className="mt-2">
+              Google Analytics
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
+                <p className="text-2xl font-bold">{totalAnalytics.sessions.toLocaleString()}</p>
               </div>
-              
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Recommendations</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-green-500 text-xs font-bold">✓</span>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium">Keyword density is optimal</h3>
-                      <p className="text-xs text-muted-foreground">Primary keyword appears at the recommended frequency</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-green-500 text-xs font-bold">✓</span>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium">Good heading structure</h3>
-                      <p className="text-xs text-muted-foreground">Headers are properly organized with keywords</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-yellow-500 text-xs font-bold">!</span>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium">Add more internal links</h3>
-                      <p className="text-xs text-muted-foreground">Add 3-5 more internal links to related content</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-red-500 text-xs font-bold">×</span>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium">Image alt text missing</h3>
-                      <p className="text-xs text-muted-foreground">Add descriptive alt text to 4 images</p>
-                    </div>
-                  </div>
-                </div>
+              <Users className="h-8 w-8 text-green-500" />
+            </div>
+            <Badge variant="outline" className="mt-2">
+              Google Analytics
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Search Impressions</p>
+                <p className="text-2xl font-bold">{totalSearchConsole.impressions.toLocaleString()}</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <TrendingUp className="h-8 w-8 text-purple-500" />
+            </div>
+            <Badge variant="outline" className="mt-2">
+              Search Console
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Search Clicks</p>
+                <p className="text-2xl font-bold">{totalSearchConsole.clicks.toLocaleString()}</p>
+              </div>
+              <MousePointer className="h-8 w-8 text-orange-500" />
+            </div>
+            <Badge variant="outline" className="mt-2">
+              Search Console
+            </Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <p className="text-sm font-medium text-muted-foreground">Avg. Bounce Rate</p>
+            <p className="text-2xl font-bold">{(avgBounceRate * 100).toFixed(1)}%</p>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <p className="text-sm font-medium text-muted-foreground">Avg. Session Duration</p>
+            <p className="text-2xl font-bold">{Math.floor(avgSessionDuration / 60)}:{(avgSessionDuration % 60).toFixed(0).padStart(2, '0')}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <p className="text-sm font-medium text-muted-foreground">Avg. Click-through Rate</p>
+            <p className="text-2xl font-bold">{(avgCTR * 100).toFixed(1)}%</p>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-panel bg-glass">
+          <CardContent className="pt-6">
+            <p className="text-sm font-medium text-muted-foreground">Avg. Search Position</p>
+            <p className="text-2xl font-bold">{avgPosition.toFixed(1)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Performing Queries */}
+      {searchConsoleData.length > 0 && (
+        <Card className="glass-panel bg-glass">
+          <CardHeader>
+            <CardTitle>Top Performing Search Queries</CardTitle>
+            <CardDescription>
+              Search queries driving the most traffic to your content
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {searchConsoleData
+                .flatMap(data => data.topQueries)
+                .sort((a, b) => b.clicks - a.clicks)
+                .slice(0, 10)
+                .map((query, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{query.query}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {query.impressions.toLocaleString()} impressions
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{query.clicks}</p>
+                      <p className="text-sm text-muted-foreground">clicks</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
