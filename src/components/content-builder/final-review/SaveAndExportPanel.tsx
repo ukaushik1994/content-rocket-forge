@@ -36,10 +36,24 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
   
   const handleSave = async () => {
     try {
-      const contentId = await onSave();
-      if (contentId) {
-        setSavedContentId(contentId);
-        setShowUrlDialog(true);
+      await onSave();
+      // After save, we need to get the content ID from the database
+      // Let's query for the most recently created draft by this user
+      const { data: user } = await supabase.auth.getUser();
+      if (user?.user) {
+        const { data: contentItem } = await supabase
+          .from('content_items')
+          .select('id')
+          .eq('user_id', user.user.id)
+          .eq('status', 'draft')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (contentItem) {
+          setSavedContentId(contentItem.id);
+          setShowUrlDialog(true);
+        }
       }
     } catch (error) {
       console.error('Error saving content:', error);
@@ -53,10 +67,24 @@ export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
     }
     
     try {
-      const contentId = await onPublish();
-      if (contentId) {
-        setSavedContentId(contentId);
-        setShowUrlDialog(true);
+      await onPublish();
+      // After publish, we need to get the content ID from the database
+      // Let's query for the most recently created published content by this user
+      const { data: user } = await supabase.auth.getUser();
+      if (user?.user) {
+        const { data: contentItem } = await supabase
+          .from('content_items')
+          .select('id')
+          .eq('user_id', user.user.id)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (contentItem) {
+          setSavedContentId(contentItem.id);
+          setShowUrlDialog(true);
+        }
       }
     } catch (error) {
       console.error('Error publishing content:', error);
