@@ -98,11 +98,13 @@ export const AnalyticsOverview = () => {
         if (contentAnalytics && contentAnalytics.length > 0) {
           const analytics = contentAnalytics
             .map(item => item.analytics_data)
-            .filter(Boolean) as AnalyticsData[];
+            .filter(Boolean)
+            .map(data => data as unknown as AnalyticsData);
           
           const searchData = contentAnalytics
             .map(item => item.search_console_data)
-            .filter(Boolean) as SearchConsoleData[];
+            .filter(Boolean)
+            .map(data => data as unknown as SearchConsoleData);
 
           setAnalyticsData(analytics);
           setSearchConsoleData(searchData);

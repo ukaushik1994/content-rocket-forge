@@ -101,26 +101,6 @@ export const ApiKeyActions = ({
           'Save API Key'
         )}
       </Button>
-      
-      {provider.autoDetectable && (
-        <Button
-          variant="outline"
-          onClick={onDetect}
-          disabled={isDetecting || !apiKey}
-        >
-          {isDetecting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Detecting...
-            </>
-          ) : (
-            <>
-              <Zap className="mr-2 h-4 w-4" />
-              Auto-Detect
-            </>
-          )}
-        </Button>
-      )}
     </div>
   );
 };
