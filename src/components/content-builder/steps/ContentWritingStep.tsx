@@ -73,21 +73,32 @@ export const ContentWritingStep: React.FC = () => {
 
       {/* Content Generation Header */}
       <ContentGenerationHeader
+        isGenerating={isGenerating}
+        handleGenerateContent={() => {}} // Placeholder function
+        handleToggleOutline={handleToggleOutline}
         showOutline={showOutline}
-        showGenerator={showGenerator}
-        onToggleOutline={handleToggleOutline}
-        onToggleGenerator={handleToggleGenerator}
-        wordCount={wordCount}
-        wordCountLimit={wordCountLimit}
-        onWordCountChange={handleWordCountChange}
+        outlineLength={outline.length}
         aiProvider={aiProvider}
         onAiProviderChange={handleAiProviderChange}
+        autoSaveTimestamp={autoSaveTimestamp}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onManualSave={handleManualSave}
+        wordCountLimit={wordCountLimit}
+        onWordCountChange={handleWordCountChange}
       />
 
       {/* Content Quality Panel */}
-      <ContentQualityPanel />
+      <ContentQualityPanel
+        content={content}
+        title={state.contentTitle || mainKeyword}
+        writingStyle="Professional"
+        expertiseLevel="Intermediate"
+        onWritingStyleChange={() => {}}
+        onExpertiseLevelChange={() => {}}
+        aiProvider={aiProvider}
+      />
 
-      {/* Main Content Area - removed the grid section */}
+      {/* Main Content Area */}
       <div className="flex-1 min-h-[600px]">
         <Card className="h-full">
           <CardHeader className="pb-2">
@@ -139,34 +150,29 @@ export const ContentWritingStep: React.FC = () => {
       </div>
 
       {/* Content Sidebar */}
-      {(showOutline || showGenerator) && (
+      {showOutline && (
         <ContentSidebar
-          showOutline={showOutline}
-          showGenerator={showGenerator}
           outline={outline}
-          isGenerating={isGenerating}
+          selectedSolution={selectedSolution}
           additionalInstructions={additionalInstructions}
-          onInstructionsChange={handleInstructionsChange}
-          aiProvider={aiProvider}
-          onAiProviderChange={handleAiProviderChange}
-          wordCountLimit={wordCountLimit}
-          onWordCountChange={handleWordCountChange}
+          handleInstructionsChange={handleInstructionsChange}
         />
       )}
 
       {/* Save Content Dialog */}
       <SaveContentDialog
-        open={showSaveDialog}
-        onClose={() => setShowSaveDialog(false)}
-        content={content}
-        title={saveTitle}
-        setTitle={setSaveTitle}
-        note={saveNote}
-        setNote={setSaveNote}
+        showSaveDialog={showSaveDialog}
+        setShowSaveDialog={setShowSaveDialog}
+        saveTitle={saveTitle}
+        setSaveTitle={setSaveTitle}
+        saveNote={saveNote}
+        setSaveNote={setSaveNote}
+        handleSaveToDraft={async () => {}} // Placeholder function
         isSaving={isSaving}
         mainKeyword={mainKeyword}
         secondaryKeywords={secondaryKeywords}
-        selectedSolution={selectedSolution}
+        content={content}
+        outlineLength={outline.length}
       />
     </div>
   );
