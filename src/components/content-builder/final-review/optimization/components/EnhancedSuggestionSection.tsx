@@ -6,11 +6,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, Info, Zap, Target, FileText, Search, Wrench } from 'lucide-react';
-import { QualityCheckSuggestion } from '../hooks/useContentQualityIntegration';
+import { UnifiedSuggestion } from '../types';
 
 interface EnhancedSuggestionSectionProps {
   title: string;
-  suggestions: QualityCheckSuggestion[];
+  suggestions: UnifiedSuggestion[];
   selectedSuggestions: string[];
   onToggleSuggestion: (id: string) => void;
   showCategory?: boolean;
@@ -50,6 +50,10 @@ export const EnhancedSuggestionSection: React.FC<EnhancedSuggestionSectionProps>
       case 'critical': return <AlertTriangle className="h-4 w-4 text-red-500" />;
       case 'major': return <Info className="h-4 w-4 text-amber-500" />;
       case 'minor': return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      case 'content': return <FileText className="h-4 w-4 text-indigo-500" />;
+      case 'solution': return <Zap className="h-4 w-4 text-amber-500" />;
+      case 'humanization': return <Info className="h-4 w-4 text-purple-500" />;
+      case 'serp_integration': return <Search className="h-4 w-4 text-green-500" />;
       default: return <Info className="h-4 w-4 text-gray-500" />;
     }
   };
@@ -59,6 +63,10 @@ export const EnhancedSuggestionSection: React.FC<EnhancedSuggestionSectionProps>
       case 'critical': return 'bg-red-500/10 text-red-500 border-red-500/30';
       case 'major': return 'bg-amber-500/10 text-amber-500 border-amber-500/30';
       case 'minor': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
+      case 'content': return 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30';
+      case 'solution': return 'bg-amber-500/10 text-amber-500 border-amber-500/30';
+      case 'humanization': return 'bg-purple-500/10 text-purple-500 border-purple-500/30';
+      case 'serp_integration': return 'bg-green-500/10 text-green-500 border-green-500/30';
       default: return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
     }
   };

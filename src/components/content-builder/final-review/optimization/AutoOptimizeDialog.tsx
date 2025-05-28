@@ -11,6 +11,7 @@ import { useContentOptimizer } from './useContentOptimizer';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
 import { EnhancedSerpItemsReference } from './components/EnhancedSerpItemsReference';
 import { EnhancedSuggestionSection } from './components/EnhancedSuggestionSection';
+import { UnifiedSuggestion } from './types';
 
 interface AutoOptimizeDialogProps {
   isOpen: boolean;
@@ -62,16 +63,24 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
     incorporateAllSerpItems();
   };
 
+  // Convert OptimizationSuggestion to UnifiedSuggestion
+  const convertToUnified = (suggestions: any[]): UnifiedSuggestion[] => {
+    return suggestions.map(s => ({
+      ...s,
+      type: s.type as any,
+      priority: s.priority as any
+    }));
+  };
+
   const allSuggestions = [
-    ...contentSuggestions,
-    ...solutionSuggestions,
-    ...aiDetectionSuggestions,
-    ...serpIntegrationSuggestions,
+    ...convertToUnified(contentSuggestions),
+    ...convertToUnified(solutionSuggestions),
+    ...convertToUnified(aiDetectionSuggestions),
+    ...convertToUnified(serpIntegrationSuggestions),
     ...qualitySuggestions
   ];
 
   const hasSuggestions = allSuggestions.length > 0;
-  const selectedQualitySuggestions = qualitySuggestions.filter(s => selectedSuggestions.includes(s.id));
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -178,7 +187,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                     <TabsContent value="content" className="space-y-4 mt-0">
                       <EnhancedSuggestionSection
                         title="Content Quality Suggestions"
-                        suggestions={contentSuggestions}
+                        suggestions={convertToUnified(contentSuggestions)}
                         selectedSuggestions={selectedSuggestions}
                         onToggleSuggestion={toggleSuggestion}
                         showCategory={false}
@@ -186,7 +195,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                       
                       <EnhancedSuggestionSection
                         title="Solution Integration"
-                        suggestions={solutionSuggestions}
+                        suggestions={convertToUnified(solutionSuggestions)}
                         selectedSuggestions={selectedSuggestions}
                         onToggleSuggestion={toggleSuggestion}
                         showCategory={false}
@@ -198,7 +207,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                       
                       <EnhancedSuggestionSection
                         title="SERP Integration Opportunities"
-                        suggestions={serpIntegrationSuggestions}
+                        suggestions={convertToUnified(serpIntegrationSuggestions)}
                         selectedSuggestions={selectedSuggestions}
                         onToggleSuggestion={toggleSuggestion}
                         showCategory={false}
@@ -208,7 +217,7 @@ export function AutoOptimizeDialog({ isOpen, onClose, content, onContentUpdate }
                     <TabsContent value="ai" className="space-y-4 mt-0">
                       <EnhancedSuggestionSection
                         title="AI Content Humanization"
-                        suggestions={aiDetectionSuggestions}
+                        suggestions={convertToUnified(aiDetectionSuggestions)}
                         selectedSuggestions={selectedSuggestions}
                         onToggleSuggestion={toggleSuggestion}
                         showCategory={false}
