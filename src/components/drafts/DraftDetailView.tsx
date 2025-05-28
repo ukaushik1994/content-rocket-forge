@@ -40,30 +40,29 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     keywordUsage: []
   });
 
-  // Load comprehensive analysis when component mounts or draft changes
-  useEffect(() => {
-    if (draft && draft.content) {
-      loadComprehensiveAnalysis();
-    }
-  }, [draft]);
+  // Stabilize draft properties to prevent unnecessary re-renders
+  const draftId = draft?.id;
+  const draftContent = draft?.content;
+  const draftKeywords = draft?.keywords;
+  const draftSelectedSolution = draft?.metadata?.selectedSolution;
 
   const loadComprehensiveAnalysis = useCallback(async () => {
-    if (!draft || !draft.content) return;
+    if (!draftContent) return;
     
     setIsAnalyzing(true);
     setAnalysisError(null);
     
     try {
       // Extract document structure (always works)
-      const structure = extractDocumentStructure(draft.content);
+      const structure = extractDocumentStructure(draftContent);
       
       // Calculate keyword usage if keywords available
       let keywordUsage = [];
-      if (draft.keywords && Array.isArray(draft.keywords) && draft.keywords.length > 0) {
+      if (draftKeywords && Array.isArray(draftKeywords) && draftKeywords.length > 0) {
         try {
-          const mainKeyword = draft.keywords[0];
-          const selectedKeywords = draft.keywords.slice(1);
-          keywordUsage = calculateKeywordUsage(draft.content, mainKeyword, selectedKeywords);
+          const mainKeyword = draftKeywords[0];
+          const selectedKeywords = draftKeywords.slice(1);
+          keywordUsage = calculateKeywordUsage(draftContent, mainKeyword, selectedKeywords);
         } catch (error) {
           console.warn('Failed to calculate keyword usage:', error);
         }
@@ -71,9 +70,9 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
       
       // Analyze SERP data if keywords available
       let serpAnalysis = null;
-      if (draft.keywords && Array.isArray(draft.keywords) && draft.keywords.length > 0) {
+      if (draftKeywords && Array.isArray(draftKeywords) && draftKeywords.length > 0) {
         try {
-          const mainKeyword = draft.keywords[0];
+          const mainKeyword = draftKeywords[0];
           if (mainKeyword && typeof mainKeyword === 'string') {
             serpAnalysis = await analyzeKeywordSerp(mainKeyword);
           }
@@ -84,9 +83,9 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
       
       // Analyze solution integration if solution data is available
       let solutionAnalysis = null;
-      if (draft.metadata?.selectedSolution) {
+      if (draftSelectedSolution) {
         try {
-          solutionAnalysis = analyzeSolutionIntegration(draft.content, draft.metadata.selectedSolution);
+          solutionAnalysis = analyzeSolutionIntegration(draftContent, draftSelectedSolution);
         } catch (error) {
           console.warn('Failed to analyze solution integration:', error);
         }
@@ -105,11 +104,16 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } finally {
       setIsAnalyzing(false);
     }
-  }, [draft]);
-  
-  if (!draft) return null;
+  }, [draftContent, draftKeywords, draftSelectedSolution]);
 
-  const formatDate = (dateString: string) => {
+  // Load comprehensive analysis when component mounts or draft changes
+  useEffect(() => {
+    if (draftContent) {
+      loadComprehensiveAnalysis();
+    }
+  }, [draftContent, loadComprehensiveAnalysis]);
+  
+  const formatDate = useCallback((dateString: string) => {
     if (!dateString) return 'Unknown';
     try {
       const date = new Date(dateString);
@@ -123,17 +127,17 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } catch (error) {
       return 'Invalid date';
     }
-  };
+  }, []);
 
   const handleCopyContent = useCallback(async () => {
-    if (draft.content) {
+    if (draftContent) {
       try {
-        await navigator.clipboard.writeText(draft.content);
+        await navigator.clipboard.writeText(draftContent);
         toast.success('Content copied to clipboard');
       } catch (error) {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
-        textArea.value = draft.content;
+        textArea.value = draftContent;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
@@ -141,19 +145,19 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
         toast.success('Content copied to clipboard');
       }
     }
-  }, [draft.content]);
+  }, [draftContent]);
 
   const handleExport = useCallback(() => {
-    if (!draft.content) {
+    if (!draftContent) {
       toast.error('No content to export');
       return;
     }
 
     try {
       const element = document.createElement('a');
-      const file = new Blob([draft.content], { type: 'text/plain' });
+      const file = new Blob([draftContent], { type: 'text/plain' });
       element.href = URL.createObjectURL(file);
-      element.download = `${draft.title || 'content'}.txt`;
+      element.download = `${draft?.title || 'content'}.txt`;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
@@ -161,11 +165,13 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } catch (error) {
       toast.error('Failed to export content');
     }
-  }, [draft.content, draft.title]);
+  }, [draftContent, draft?.title]);
 
   const retryAnalysis = useCallback(() => {
     loadComprehensiveAnalysis();
   }, [loadComprehensiveAnalysis]);
+
+  if (!draft) return null;
 
   return (
     <ErrorBoundary fallbackTitle="Draft Detail View Error" onRetry={() => window.location.reload()}>
