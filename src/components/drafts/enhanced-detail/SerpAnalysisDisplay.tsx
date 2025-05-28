@@ -21,6 +21,26 @@ interface SerpAnalysisDisplayProps {
   isAnalyzing: boolean;
 }
 
+// Helper function to safely get string value from data
+const getStringValue = (value: any): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value !== null) {
+    // Handle objects with question/query properties
+    if (value.question) return value.question;
+    if (value.query) return value.query;
+    if (value.text) return value.text;
+    // Fallback to JSON string for debugging
+    return JSON.stringify(value);
+  }
+  return String(value || '');
+};
+
+// Helper function to safely get array of strings
+const getStringArray = (arr: any[]): string[] => {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(item => getStringValue(item));
+};
+
 export const SerpAnalysisDisplay = ({
   serpData,
   draft,
@@ -66,7 +86,7 @@ export const SerpAnalysisDisplay = ({
           {draft?.keywords && draft.keywords.length > 0 && (
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-2">
-                Target keyword: <span className="font-medium">{draft.keywords[0]}</span>
+                Target keyword: <span className="font-medium">{getStringValue(draft.keywords[0])}</span>
               </p>
               <Badge variant="outline" className="text-xs">
                 Configure SERP API for analysis
@@ -78,10 +98,10 @@ export const SerpAnalysisDisplay = ({
     );
   }
 
-  // Display SERP data if available
-  const topResults = serpData.topResults || [];
-  const relatedSearches = serpData.relatedSearches || [];
-  const peopleAlsoAsk = serpData.peopleAlsoAsk || [];
+  // Safely extract data arrays
+  const topResults = Array.isArray(serpData.topResults) ? serpData.topResults : [];
+  const relatedSearches = getStringArray(serpData.relatedSearches || []);
+  const peopleAlsoAsk = getStringArray(serpData.peopleAlsoAsk || []);
 
   return (
     <Card className="h-full">
@@ -134,12 +154,12 @@ export const SerpAnalysisDisplay = ({
                     #{index + 1}
                   </Badge>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate font-medium">{result.title}</p>
-                    <p className="truncate text-muted-foreground">{result.domain}</p>
+                    <p className="truncate font-medium">{getStringValue(result.title)}</p>
+                    <p className="truncate text-muted-foreground">{getStringValue(result.domain || result.link)}</p>
                   </div>
                   {result.url && (
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
-                      <a href={result.url} target="_blank" rel="noopener noreferrer">
+                      <a href={getStringValue(result.url)} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
@@ -202,7 +222,7 @@ export const SerpAnalysisDisplay = ({
         {/* Analysis Summary */}
         <div className="pt-2 border-t">
           <div className="text-xs text-muted-foreground">
-            <p>Analysis based on keyword: <span className="font-medium">{draft?.keywords?.[0] || 'Unknown'}</span></p>
+            <p>Analysis based on keyword: <span className="font-medium">{getStringValue(draft?.keywords?.[0] || 'Unknown')}</span></p>
             {serpData.analysisTimestamp && (
               <p>Updated: {new Date(serpData.analysisTimestamp).toLocaleDateString()}</p>
             )}

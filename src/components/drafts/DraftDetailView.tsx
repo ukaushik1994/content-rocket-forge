@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -17,6 +16,7 @@ import { SerpAnalysisDisplay } from './enhanced-detail/SerpAnalysisDisplay';
 import { SolutionIntegrationDashboard } from './enhanced-detail/SolutionIntegrationDashboard';
 import { DocumentStructureVisualization } from './enhanced-detail/DocumentStructureVisualization';
 import { KeywordPerformanceCard } from './enhanced-detail/KeywordPerformanceCard';
+import { TabErrorBoundary } from './enhanced-detail/TabErrorBoundary';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 interface DraftDetailViewProps {
@@ -294,14 +294,16 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                       transition={{ duration: 0.3 }}
                       className="h-full"
                     >
-                      <ContentPreviewSection 
-                        content={draft.content || ''}
-                        title={draft.title || 'Untitled Draft'}
-                        keywords={normalizedKeywords}
-                        onCopy={handleCopyContent}
-                        onExport={handleExport}
-                        isLoading={false}
-                      />
+                      <TabErrorBoundary tabName="Content Preview" onRetry={retryAnalysis}>
+                        <ContentPreviewSection 
+                          content={draft.content || ''}
+                          title={draft.title || 'Untitled Draft'}
+                          keywords={normalizedKeywords}
+                          onCopy={handleCopyContent}
+                          onExport={handleExport}
+                          isLoading={false}
+                        />
+                      </TabErrorBoundary>
                     </motion.div>
                   </TabsContent>
                   
@@ -314,12 +316,14 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                       transition={{ duration: 0.3 }}
                       className="h-full"
                     >
-                      <MetadataAnalytics 
-                        draft={draft}
-                        isAnalyzing={isAnalyzing}
-                        analysisData={analysisData}
-                        formatDate={formatDate}
-                      />
+                      <TabErrorBoundary tabName="Analytics" onRetry={retryAnalysis}>
+                        <MetadataAnalytics 
+                          draft={draft}
+                          isAnalyzing={isAnalyzing}
+                          analysisData={analysisData}
+                          formatDate={formatDate}
+                        />
+                      </TabErrorBoundary>
                     </motion.div>
                   </TabsContent>
                   
@@ -332,19 +336,21 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                       transition={{ duration: 0.3 }}
                       className="h-full"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                        <KeywordPerformanceCard 
-                          keywords={normalizedKeywords}
-                          keywordUsage={analysisData.keywordUsage}
-                          isAnalyzing={isAnalyzing}
-                          onRetryAnalysis={retryAnalysis}
-                        />
-                        <SerpAnalysisDisplay 
-                          serpData={analysisData.serpData}
-                          draft={draft}
-                          isAnalyzing={isAnalyzing}
-                        />
-                      </div>
+                      <TabErrorBoundary tabName="SEO Analysis" onRetry={retryAnalysis}>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                          <KeywordPerformanceCard 
+                            keywords={normalizedKeywords}
+                            keywordUsage={analysisData.keywordUsage}
+                            isAnalyzing={isAnalyzing}
+                            onRetryAnalysis={retryAnalysis}
+                          />
+                          <SerpAnalysisDisplay 
+                            serpData={analysisData.serpData}
+                            draft={draft}
+                            isAnalyzing={isAnalyzing}
+                          />
+                        </div>
+                      </TabErrorBoundary>
                     </motion.div>
                   </TabsContent>
                   
@@ -357,17 +363,19 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                       transition={{ duration: 0.3 }}
                       className="h-full"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                        <DocumentStructureVisualization 
-                          documentStructure={analysisData.documentStructure}
-                          isAnalyzing={isAnalyzing}
-                        />
-                        <SolutionIntegrationDashboard 
-                          solution={solutionData}
-                          solutionMetrics={analysisData.solutionMetrics}
-                          isAnalyzing={isAnalyzing}
-                        />
-                      </div>
+                      <TabErrorBoundary tabName="Structure Analysis" onRetry={retryAnalysis}>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                          <DocumentStructureVisualization 
+                            documentStructure={analysisData.documentStructure}
+                            isAnalyzing={isAnalyzing}
+                          />
+                          <SolutionIntegrationDashboard 
+                            solution={solutionData}
+                            solutionMetrics={analysisData.solutionMetrics}
+                            isAnalyzing={isAnalyzing}
+                          />
+                        </div>
+                      </TabErrorBoundary>
                     </motion.div>
                   </TabsContent>
                 </AnimatePresence>
