@@ -7,8 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { MetricsSkeleton } from '@/components/common/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
+import { validateKeywordUsage } from '@/utils/validation/dataValidation';
 
 interface KeywordPerformanceCardProps {
   keywords: string[];
@@ -23,24 +23,47 @@ export const KeywordPerformanceCard: React.FC<KeywordPerformanceCardProps> = ({
   isAnalyzing,
   onRetryAnalysis
 }) => {
-  const getDensityScore = (density: string) => {
-    if (!density) return 'unknown';
+  // Validate input data
+  const validKeywords = React.useMemo(() => {
+    return Array.isArray(keywords) ? keywords.filter(k => k && typeof k === 'string') : [];
+  }, [keywords]);
+
+  const validKeywordUsage = React.useMemo(() => {
+    if (!Array.isArray(keywordUsage)) return [];
+    
+    const validation = validateKeywordUsage(keywordUsage);
+    if (!validation.isValid) {
+      console.warn('Keyword usage validation failed:', validation.errors);
+    }
+    
+    return keywordUsage.filter(usage => 
+      usage && 
+      typeof usage === 'object' && 
+      usage.keyword && 
+      typeof usage.keyword === 'string'
+    );
+  }, [keywordUsage]);
+
+  const getDensityScore = useCallback((density: string) => {
+    if (!density || typeof density !== 'string') return 'unknown';
     const num = parseFloat(density.replace('%', ''));
     if (isNaN(num)) return 'unknown';
     if (num >= 1 && num <= 3) return 'optimal';
     if (num < 1) return 'low';
     return 'high';
-  };
+  }, []);
 
-  const getDensityColor = (density: string) => {
+  const getDensityColor = useCallback((density: string) => {
     const score = getDensityScore(density);
-    if (score === 'optimal') return 'text-green-500';
-    if (score === 'low') return 'text-yellow-500';
-    if (score === 'unknown') return 'text-muted-foreground';
-    return 'text-red-500';
-  };
+    switch (score) {
+      case 'optimal': return 'text-green-500';
+      case 'low': return 'text-yellow-500';
+      case 'high': return 'text-red-500';
+      default: return 'text-muted-foreground';
+    }
+  }, [getDensityScore]);
 
-  const getScoreText = (density: string) => {
+  const getScoreText = useCallback((density: string) => {
     const score = getDensityScore(density);
     switch (score) {
       case 'optimal': return 'Optimal';
@@ -48,7 +71,7 @@ export const KeywordPerformanceCard: React.FC<KeywordPerformanceCardProps> = ({
       case 'high': return 'Too High';
       default: return 'Unknown';
     }
-  };
+  }, [getDensityScore]);
 
   if (isAnalyzing) {
     return (
@@ -78,17 +101,17 @@ export const KeywordPerformanceCard: React.FC<KeywordPerformanceCardProps> = ({
         </CardHeader>
         <CardContent className="h-full p-0">
           <ScrollArea className="h-[calc(100%-4rem)] p-6">
-            {keywords && keywords.length > 0 ? (
+            {validKeywords && validKeywords.length > 0 ? (
               <div className="space-y-4">
                 {/* Keywords Overview */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <div className="p-3 bg-background/50 rounded-lg border border-white/10 text-center">
-                    <div className="text-lg font-bold text-green-500">{keywords.length}</div>
+                    <div className="text-lg font-bold text-green-500">{validKeywords.length}</div>
                     <div className="text-xs text-muted-foreground">Total Keywords</div>
                   </div>
                   <div className="p-3 bg-background/50 rounded-lg border border-white/10 text-center">
                     <div className="text-lg font-bold text-green-500">
-                      {keywordUsage ? keywordUsage.filter(k => k?.density && getDensityScore(k.density) === 'optimal').length : 0}
+                      {validKeywordUsage.filter(k => k?.density && getDensityScore(k.density) === 'optimal').length}
                     </div>
                     <div className="text-xs text-muted-foreground">Optimized</div>
                   </div>
@@ -97,23 +120,21 @@ export const KeywordPerformanceCard: React.FC<KeywordPerformanceCardProps> = ({
                 {/* Keywords List */}
                 <div className="space-y-3">
                   <h4 className="font-medium text-green-700 dark:text-green-300">All Keywords</h4>
-                  {keywords.map((keyword, index) => {
-                    if (!keyword || typeof keyword !== 'string') return null;
-                    
-                    const usage = keywordUsage?.find(k => 
+                  {validKeywords.map((keyword, index) => {
+                    const usage = validKeywordUsage.find(k => 
                       k?.keyword && k.keyword.toLowerCase() === keyword.toLowerCase()
                     );
                     
                     return (
                       <motion.div
-                        key={index}
+                        key={`keyword-${index}-${keyword}`}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
                         className="p-4 bg-background/50 rounded-lg border border-white/10"
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium truncate">{keyword}</span>
+                          <span className="font-medium truncate" title={keyword}>{keyword}</span>
                           <div className="flex items-center gap-2 ml-2">
                             {index === 0 && (
                               <Badge variant="default" className="text-xs">Primary</Badge>
@@ -153,28 +174,24 @@ export const KeywordPerformanceCard: React.FC<KeywordPerformanceCardProps> = ({
                 </div>
 
                 {/* Keyword Usage Analysis */}
-                {keywordUsage && keywordUsage.length > 0 && (
+                {validKeywordUsage && validKeywordUsage.length > 0 && (
                   <div className="mt-6 p-4 bg-background/30 rounded-lg border border-white/10">
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" />
                       Usage Analysis
                     </h4>
                     <div className="space-y-2">
-                      {keywordUsage.map((usage, index) => {
-                        if (!usage || !usage.keyword) return null;
-                        
-                        return (
-                          <div key={index} className="flex justify-between items-center text-sm">
-                            <span className="truncate">{usage.keyword}</span>
-                            <div className="flex items-center gap-2 ml-2">
-                              <span className="text-muted-foreground">{usage.count || 0}x</span>
-                              <span className={`font-medium ${getDensityColor(usage.density || '')}`}>
-                                {usage.density || 'N/A'}
-                              </span>
-                            </div>
+                      {validKeywordUsage.map((usage, index) => (
+                        <div key={`usage-${index}-${usage.keyword}`} className="flex justify-between items-center text-sm">
+                          <span className="truncate" title={usage.keyword}>{usage.keyword}</span>
+                          <div className="flex items-center gap-2 ml-2">
+                            <span className="text-muted-foreground">{usage.count || 0}x</span>
+                            <span className={`font-medium ${getDensityColor(usage.density || '')}`}>
+                              {usage.density || 'N/A'}
+                            </span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

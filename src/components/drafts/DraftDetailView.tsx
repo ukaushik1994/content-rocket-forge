@@ -1,18 +1,11 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Edit2, FileText, Tag, Copy, Download, Maximize2, Eye, BarChart3, Zap, Target, RefreshCw } from 'lucide-react';
+import { Edit2, FileText, Maximize2, Eye, BarChart3, Zap, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
-import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
-import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 import { toast } from 'sonner';
 import { ContentPreviewSection } from './enhanced-detail/ContentPreviewSection';
 import { MetadataAnalytics } from './enhanced-detail/MetadataAnalytics';
@@ -20,7 +13,10 @@ import { SerpAnalysisDisplay } from './enhanced-detail/SerpAnalysisDisplay';
 import { SolutionIntegrationDashboard } from './enhanced-detail/SolutionIntegrationDashboard';
 import { DocumentStructureVisualization } from './enhanced-detail/DocumentStructureVisualization';
 import { KeywordPerformanceCard } from './enhanced-detail/KeywordPerformanceCard';
+import { TabErrorBoundary } from './enhanced-detail/TabErrorBoundary';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { useSmartAnalysisLoading } from '@/hooks/drafts/useSmartAnalysisLoading';
+import { validateDraftData } from '@/utils/validation/dataValidation';
 
 interface DraftDetailViewProps {
   open: boolean;
@@ -31,92 +27,37 @@ interface DraftDetailViewProps {
 export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) {
   const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'seo' | 'structure'>('content');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState({
-    serpData: null,
-    documentStructure: null,
-    solutionMetrics: null,
-    keywordUsage: []
-  });
-
-  // Stabilize draft properties to prevent unnecessary re-renders
-  const draftId = draft?.id;
-  const draftContent = draft?.content;
-  const draftKeywords = draft?.keywords;
-  const draftSelectedSolution = draft?.metadata?.selectedSolution;
-
-  const loadComprehensiveAnalysis = useCallback(async () => {
-    if (!draftContent) return;
-    
-    setIsAnalyzing(true);
-    setAnalysisError(null);
-    
-    try {
-      // Extract document structure (always works)
-      const structure = extractDocumentStructure(draftContent);
-      
-      // Calculate keyword usage if keywords available
-      let keywordUsage = [];
-      if (draftKeywords && Array.isArray(draftKeywords) && draftKeywords.length > 0) {
-        try {
-          const mainKeyword = draftKeywords[0];
-          const selectedKeywords = draftKeywords.slice(1);
-          keywordUsage = calculateKeywordUsage(draftContent, mainKeyword, selectedKeywords);
-        } catch (error) {
-          console.warn('Failed to calculate keyword usage:', error);
-        }
-      }
-      
-      // Analyze SERP data if keywords available
-      let serpAnalysis = null;
-      if (draftKeywords && Array.isArray(draftKeywords) && draftKeywords.length > 0) {
-        try {
-          const mainKeyword = draftKeywords[0];
-          if (mainKeyword && typeof mainKeyword === 'string') {
-            serpAnalysis = await analyzeKeywordSerp(mainKeyword);
-          }
-        } catch (error) {
-          console.warn('Failed to analyze SERP data:', error);
-        }
-      }
-      
-      // Analyze solution integration if solution data is available
-      let solutionAnalysis = null;
-      if (draftSelectedSolution) {
-        try {
-          solutionAnalysis = analyzeSolutionIntegration(draftContent, draftSelectedSolution);
-        } catch (error) {
-          console.warn('Failed to analyze solution integration:', error);
-        }
-      }
-      
-      setAnalysisData({
-        serpData: serpAnalysis,
-        documentStructure: structure,
-        solutionMetrics: solutionAnalysis,
-        keywordUsage
-      });
-    } catch (error) {
-      console.error('Error loading comprehensive analysis:', error);
-      setAnalysisError(error instanceof Error ? error.message : 'Failed to load analysis data');
-      toast.error('Some analysis features may not be available');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [draftContent, draftKeywords, draftSelectedSolution]);
-
-  // Load comprehensive analysis when component mounts or draft changes
+  
+  // Use smart analysis loading hook
+  const { 
+    isAnalyzing, 
+    analysisError, 
+    analysisData, 
+    retryAnalysis, 
+    resetAnalysis 
+  } = useSmartAnalysisLoading({ draft, activeTab });
+  
+  // Reset states when draft changes
   useEffect(() => {
-    if (draftContent) {
-      loadComprehensiveAnalysis();
+    if (draft?.id) {
+      resetAnalysis();
+      setActiveTab('content');
+      setIsFullscreen(false);
     }
-  }, [draftContent, loadComprehensiveAnalysis]);
+  }, [draft?.id, resetAnalysis]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      resetAnalysis();
+    };
+  }, [resetAnalysis]);
   
   const formatDate = useCallback((dateString: string) => {
     if (!dateString) return 'Unknown';
     try {
       const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
       return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'short',
@@ -125,53 +66,88 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
         minute: '2-digit'
       }).format(date);
     } catch (error) {
+      console.warn('Date formatting error:', error);
       return 'Invalid date';
     }
   }, []);
 
   const handleCopyContent = useCallback(async () => {
-    if (draftContent) {
+    if (!draft?.content) {
+      toast.error('No content to copy');
+      return;
+    }
+    
+    try {
+      await navigator.clipboard.writeText(draft.content);
+      toast.success('Content copied to clipboard');
+    } catch (error) {
+      // Fallback for older browsers
       try {
-        await navigator.clipboard.writeText(draftContent);
-        toast.success('Content copied to clipboard');
-      } catch (error) {
-        // Fallback for older browsers
         const textArea = document.createElement('textarea');
-        textArea.value = draftContent;
+        textArea.value = draft.content;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
         toast.success('Content copied to clipboard');
+      } catch (fallbackError) {
+        console.error('Copy failed:', fallbackError);
+        toast.error('Failed to copy content');
       }
     }
-  }, [draftContent]);
+  }, [draft?.content]);
 
   const handleExport = useCallback(() => {
-    if (!draftContent) {
+    if (!draft?.content) {
       toast.error('No content to export');
       return;
     }
 
     try {
       const element = document.createElement('a');
-      const file = new Blob([draftContent], { type: 'text/plain' });
+      const file = new Blob([draft.content], { type: 'text/plain' });
       element.href = URL.createObjectURL(file);
       element.download = `${draft?.title || 'content'}.txt`;
+      element.style.display = 'none';
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
+      URL.revokeObjectURL(element.href);
       toast.success('Content exported successfully');
     } catch (error) {
+      console.error('Export failed:', error);
       toast.error('Failed to export content');
     }
-  }, [draftContent, draft?.title]);
+  }, [draft?.content, draft?.title]);
 
-  const retryAnalysis = useCallback(() => {
-    loadComprehensiveAnalysis();
-  }, [loadComprehensiveAnalysis]);
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value as any);
+  }, []);
+
+  const handleRetryForTab = useCallback(() => {
+    retryAnalysis();
+  }, [retryAnalysis]);
+
+  // Validate draft data
+  if (draft) {
+    const validation = validateDraftData(draft);
+    if (!validation.isValid) {
+      console.warn('Draft validation failed:', validation.errors);
+    }
+  }
 
   if (!draft) return null;
+
+  const tabContentProps = {
+    draft,
+    isAnalyzing,
+    analysisData,
+    formatDate,
+    onRetry: handleRetryForTab
+  };
 
   return (
     <ErrorBoundary fallbackTitle="Draft Detail View Error" onRetry={() => window.location.reload()}>
@@ -203,8 +179,14 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                     size="sm"
                     onClick={retryAnalysis}
                     className="p-2"
+                    aria-label="Retry analysis"
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <motion.div
+                      animate={{ rotate: isAnalyzing ? 360 : 0 }}
+                      transition={{ duration: 1, repeat: isAnalyzing ? Infinity : 0 }}
+                    >
+                      <Zap className="h-4 w-4" />
+                    </motion.div>
                   </Button>
                 )}
                 <Badge 
@@ -218,6 +200,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                   size="sm"
                   onClick={() => setIsFullscreen(!isFullscreen)}
                   className="p-2"
+                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                 >
                   <Maximize2 className="h-4 w-4" />
                 </Button>
@@ -226,7 +209,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
           </DialogHeader>
           
           <div className="flex-1 overflow-hidden">
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-full flex flex-col">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-4 bg-muted/30 backdrop-blur-sm">
                 <TabsTrigger value="content" className="flex items-center gap-2 data-[state=active]:bg-background/60">
                   <Eye className="h-4 w-4" />
@@ -249,89 +232,92 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
               <div className="flex-1 overflow-hidden mt-4">
                 <AnimatePresence mode="wait">
                   <TabsContent value="content" className="h-full m-0">
-                    <motion.div
-                      key="content"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                      className="h-full"
-                    >
-                      <ContentPreviewSection 
-                        content={draft.content || ''}
-                        title={draft.title || 'Untitled Draft'}
-                        keywords={draft.keywords || []}
-                        onCopy={handleCopyContent}
-                        onExport={handleExport}
-                        isLoading={false}
-                      />
-                    </motion.div>
+                    <TabErrorBoundary tabName="Content Preview" onRetry={handleRetryForTab}>
+                      <motion.div
+                        key="content-tab"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full"
+                      >
+                        <ContentPreviewSection 
+                          content={draft.content || ''}
+                          title={draft.title || 'Untitled Draft'}
+                          keywords={draft.keywords || []}
+                          onCopy={handleCopyContent}
+                          onExport={handleExport}
+                          isLoading={false}
+                        />
+                      </motion.div>
+                    </TabErrorBoundary>
                   </TabsContent>
                   
                   <TabsContent value="analytics" className="h-full m-0">
-                    <motion.div
-                      key="analytics"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                      className="h-full"
-                    >
-                      <MetadataAnalytics 
-                        draft={draft}
-                        isAnalyzing={isAnalyzing}
-                        analysisData={analysisData}
-                        formatDate={formatDate}
-                      />
-                    </motion.div>
+                    <TabErrorBoundary tabName="Analytics" onRetry={handleRetryForTab}>
+                      <motion.div
+                        key="analytics-tab"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full"
+                      >
+                        <MetadataAnalytics {...tabContentProps} />
+                      </motion.div>
+                    </TabErrorBoundary>
                   </TabsContent>
                   
                   <TabsContent value="seo" className="h-full m-0">
-                    <motion.div
-                      key="seo"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                      className="h-full"
-                    >
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                        <KeywordPerformanceCard 
-                          keywords={draft.keywords || []}
-                          keywordUsage={analysisData.keywordUsage}
-                          isAnalyzing={isAnalyzing}
-                          onRetryAnalysis={retryAnalysis}
-                        />
-                        <SerpAnalysisDisplay 
-                          serpData={analysisData.serpData}
-                          draft={draft}
-                          isAnalyzing={isAnalyzing}
-                        />
-                      </div>
-                    </motion.div>
+                    <TabErrorBoundary tabName="SEO Analysis" onRetry={handleRetryForTab}>
+                      <motion.div
+                        key="seo-tab"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full"
+                      >
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                          <KeywordPerformanceCard 
+                            keywords={draft.keywords || []}
+                            keywordUsage={analysisData.keywordUsage}
+                            isAnalyzing={isAnalyzing}
+                            onRetryAnalysis={retryAnalysis}
+                          />
+                          <SerpAnalysisDisplay 
+                            serpData={analysisData.serpData}
+                            draft={draft}
+                            isAnalyzing={isAnalyzing}
+                          />
+                        </div>
+                      </motion.div>
+                    </TabErrorBoundary>
                   </TabsContent>
                   
                   <TabsContent value="structure" className="h-full m-0">
-                    <motion.div
-                      key="structure"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                      className="h-full"
-                    >
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                        <DocumentStructureVisualization 
-                          documentStructure={analysisData.documentStructure}
-                          isAnalyzing={isAnalyzing}
-                        />
-                        <SolutionIntegrationDashboard 
-                          solution={draft.metadata?.selectedSolution}
-                          solutionMetrics={analysisData.solutionMetrics}
-                          isAnalyzing={isAnalyzing}
-                        />
-                      </div>
-                    </motion.div>
+                    <TabErrorBoundary tabName="Structure" onRetry={handleRetryForTab}>
+                      <motion.div
+                        key="structure-tab"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full"
+                      >
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                          <DocumentStructureVisualization 
+                            documentStructure={analysisData.documentStructure}
+                            isAnalyzing={isAnalyzing}
+                          />
+                          <SolutionIntegrationDashboard 
+                            solution={draft.metadata?.selectedSolution}
+                            solutionMetrics={analysisData.solutionMetrics}
+                            isAnalyzing={isAnalyzing}
+                          />
+                        </div>
+                      </motion.div>
+                    </TabErrorBoundary>
                   </TabsContent>
                 </AnimatePresence>
               </div>
