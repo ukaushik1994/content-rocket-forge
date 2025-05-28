@@ -37,103 +37,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     keywordUsage: []
   });
 
-  // Stable callback for loading analysis
-  const loadComprehensiveAnalysis = useCallback(async () => {
-    if (!draft || !draft.content) {
-      console.log('[DraftDetailView] No draft or content available for analysis');
-      return;
-    }
-    
-    setIsAnalyzing(true);
-    setAnalysisError(null);
-    
-    try {
-      console.log('[DraftDetailView] Starting comprehensive analysis for draft:', draft.id);
-      
-      // Extract document structure (always works with any content)
-      let structure = null;
-      try {
-        structure = extractDocumentStructure(draft.content);
-        console.log('[DraftDetailView] Document structure extracted:', structure);
-      } catch (error) {
-        console.warn('[DraftDetailView] Failed to extract document structure:', error);
-      }
-      
-      // Calculate keyword usage if keywords are available
-      let keywordUsage = [];
-      if (draft.keywords && Array.isArray(draft.keywords) && draft.keywords.length > 0) {
-        try {
-          const mainKeyword = draft.keywords[0];
-          const selectedKeywords = draft.keywords.slice(1);
-          keywordUsage = calculateKeywordUsage(draft.content, mainKeyword, selectedKeywords);
-          console.log('[DraftDetailView] Keyword usage calculated:', keywordUsage);
-        } catch (error) {
-          console.warn('[DraftDetailView] Failed to calculate keyword usage:', error);
-        }
-      } else {
-        console.log('[DraftDetailView] No keywords available for analysis');
-      }
-      
-      // Analyze SERP data if keywords are available
-      let serpAnalysis = null;
-      if (draft.keywords && Array.isArray(draft.keywords) && draft.keywords.length > 0) {
-        try {
-          const mainKeyword = draft.keywords[0];
-          if (mainKeyword && typeof mainKeyword === 'string') {
-            console.log('[DraftDetailView] Analyzing SERP for keyword:', mainKeyword);
-            serpAnalysis = await analyzeKeywordSerp(mainKeyword);
-            console.log('[DraftDetailView] SERP analysis completed:', serpAnalysis);
-          }
-        } catch (error) {
-          console.warn('[DraftDetailView] Failed to analyze SERP data:', error);
-        }
-      } else {
-        console.log('[DraftDetailView] No keywords available for SERP analysis');
-      }
-      
-      // Analyze solution integration if solution data is available
-      let solutionAnalysis = null;
-      const solutionData = draft.metadata?.selectedSolution || draft.solution;
-      if (solutionData) {
-        try {
-          console.log('[DraftDetailView] Analyzing solution integration for:', solutionData.name);
-          solutionAnalysis = analyzeSolutionIntegration(draft.content, solutionData);
-          console.log('[DraftDetailView] Solution analysis completed:', solutionAnalysis);
-        } catch (error) {
-          console.warn('[DraftDetailView] Failed to analyze solution integration:', error);
-        }
-      } else {
-        console.log('[DraftDetailView] No solution data available for analysis');
-      }
-      
-      // Update analysis data
-      const newAnalysisData = {
-        serpData: serpAnalysis,
-        documentStructure: structure,
-        solutionMetrics: solutionAnalysis,
-        keywordUsage
-      };
-      
-      console.log('[DraftDetailView] Analysis completed successfully:', newAnalysisData);
-      setAnalysisData(newAnalysisData);
-      
-    } catch (error) {
-      console.error('[DraftDetailView] Error loading comprehensive analysis:', error);
-      setAnalysisError(error instanceof Error ? error.message : 'Failed to load analysis data');
-      toast.error('Some analysis features may not be available');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [draft]);
-
-  // Load comprehensive analysis when draft changes
-  useEffect(() => {
-    if (draft && draft.content && open) {
-      console.log('[DraftDetailView] Draft changed, reloading analysis');
-      loadComprehensiveAnalysis();
-    }
-  }, [draft, open, loadComprehensiveAnalysis]);
-
+  // Move all useMemo and useCallback hooks to the top, before any conditional logic
   const formatDate = useCallback((dateString: string) => {
     if (!dateString) return 'Unknown';
     try {
@@ -188,26 +92,123 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     }
   }, [draft?.content, draft?.title]);
 
+  // Normalize keywords to ensure they're always an array
+  const normalizedKeywords = React.useMemo(() => {
+    if (!draft?.keywords) return [];
+    if (Array.isArray(draft.keywords)) return draft.keywords;
+    if (typeof draft.keywords === 'string') return [draft.keywords];
+    return [];
+  }, [draft?.keywords]);
+
+  // Extract solution data from various possible locations
+  const solutionData = React.useMemo(() => {
+    if (!draft) return null;
+    return draft.metadata?.selectedSolution || draft.solution || null;
+  }, [draft?.metadata?.selectedSolution, draft?.solution]);
+
+  // Stable callback for loading analysis
+  const loadComprehensiveAnalysis = useCallback(async () => {
+    if (!draft || !draft.content) {
+      console.log('[DraftDetailView] No draft or content available for analysis');
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    
+    try {
+      console.log('[DraftDetailView] Starting comprehensive analysis for draft:', draft.id);
+      
+      // Extract document structure (always works with any content)
+      let structure = null;
+      try {
+        structure = extractDocumentStructure(draft.content);
+        console.log('[DraftDetailView] Document structure extracted:', structure);
+      } catch (error) {
+        console.warn('[DraftDetailView] Failed to extract document structure:', error);
+      }
+      
+      // Calculate keyword usage if keywords are available
+      let keywordUsage = [];
+      if (normalizedKeywords.length > 0) {
+        try {
+          const mainKeyword = normalizedKeywords[0];
+          const selectedKeywords = normalizedKeywords.slice(1);
+          keywordUsage = calculateKeywordUsage(draft.content, mainKeyword, selectedKeywords);
+          console.log('[DraftDetailView] Keyword usage calculated:', keywordUsage);
+        } catch (error) {
+          console.warn('[DraftDetailView] Failed to calculate keyword usage:', error);
+        }
+      } else {
+        console.log('[DraftDetailView] No keywords available for analysis');
+      }
+      
+      // Analyze SERP data if keywords are available
+      let serpAnalysis = null;
+      if (normalizedKeywords.length > 0) {
+        try {
+          const mainKeyword = normalizedKeywords[0];
+          if (mainKeyword && typeof mainKeyword === 'string') {
+            console.log('[DraftDetailView] Analyzing SERP for keyword:', mainKeyword);
+            serpAnalysis = await analyzeKeywordSerp(mainKeyword);
+            console.log('[DraftDetailView] SERP analysis completed:', serpAnalysis);
+          }
+        } catch (error) {
+          console.warn('[DraftDetailView] Failed to analyze SERP data:', error);
+        }
+      } else {
+        console.log('[DraftDetailView] No keywords available for SERP analysis');
+      }
+      
+      // Analyze solution integration if solution data is available
+      let solutionAnalysis = null;
+      if (solutionData) {
+        try {
+          console.log('[DraftDetailView] Analyzing solution integration for:', solutionData.name);
+          solutionAnalysis = analyzeSolutionIntegration(draft.content, solutionData);
+          console.log('[DraftDetailView] Solution analysis completed:', solutionAnalysis);
+        } catch (error) {
+          console.warn('[DraftDetailView] Failed to analyze solution integration:', error);
+        }
+      } else {
+        console.log('[DraftDetailView] No solution data available for analysis');
+      }
+      
+      // Update analysis data
+      const newAnalysisData = {
+        serpData: serpAnalysis,
+        documentStructure: structure,
+        solutionMetrics: solutionAnalysis,
+        keywordUsage
+      };
+      
+      console.log('[DraftDetailView] Analysis completed successfully:', newAnalysisData);
+      setAnalysisData(newAnalysisData);
+      
+    } catch (error) {
+      console.error('[DraftDetailView] Error loading comprehensive analysis:', error);
+      setAnalysisError(error instanceof Error ? error.message : 'Failed to load analysis data');
+      toast.error('Some analysis features may not be available');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [draft, normalizedKeywords, solutionData]);
+
   const retryAnalysis = useCallback(() => {
     console.log('[DraftDetailView] Retrying analysis');
     loadComprehensiveAnalysis();
   }, [loadComprehensiveAnalysis]);
 
+  // Load comprehensive analysis when draft changes
+  useEffect(() => {
+    if (draft && draft.content && open) {
+      console.log('[DraftDetailView] Draft changed, reloading analysis');
+      loadComprehensiveAnalysis();
+    }
+  }, [draft, open, loadComprehensiveAnalysis]);
+
   // Early return after all hooks are called
   if (!draft) return null;
-
-  // Normalize keywords to ensure they're always an array
-  const normalizedKeywords = React.useMemo(() => {
-    if (!draft.keywords) return [];
-    if (Array.isArray(draft.keywords)) return draft.keywords;
-    if (typeof draft.keywords === 'string') return [draft.keywords];
-    return [];
-  }, [draft.keywords]);
-
-  // Extract solution data from various possible locations
-  const solutionData = React.useMemo(() => {
-    return draft.metadata?.selectedSolution || draft.solution || null;
-  }, [draft.metadata?.selectedSolution, draft.solution]);
 
   return (
     <ErrorBoundary fallbackTitle="Draft Detail View Error" onRetry={() => window.location.reload()}>
