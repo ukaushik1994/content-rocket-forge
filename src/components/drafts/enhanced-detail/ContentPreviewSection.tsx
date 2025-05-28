@@ -101,22 +101,22 @@ export const ContentPreviewSection: React.FC<ContentPreviewSectionProps> = ({
 
   const handleCopy = useCallback(async () => {
     try {
-      await onCopy();
+      onCopy();
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (error) {
       toast.error('Failed to copy content');
     }
-  }, [onCopy]);
+  }, []); // Remove onCopy from dependencies to prevent infinite loops
 
   const handleExport = useCallback(async () => {
     try {
-      await onExport();
+      onExport();
       toast.success('Content exported successfully');
     } catch (error) {
       toast.error('Failed to export content');
     }
-  }, [onExport]);
+  }, []); // Remove onExport from dependencies to prevent infinite loops
 
   if (isLoading) {
     return (
