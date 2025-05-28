@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Edit2, FileText, Maximize2, Eye, BarChart3, Zap, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { ContentPreviewSection } from './enhanced-detail/ContentPreviewSection';
+import { EnhancedContentPreviewSection } from './enhanced-detail/EnhancedContentPreviewSection';
 import { MetadataAnalytics } from './enhanced-detail/MetadataAnalytics';
 import { SerpAnalysisDisplay } from './enhanced-detail/SerpAnalysisDisplay';
 import { SolutionIntegrationDashboard } from './enhanced-detail/SolutionIntegrationDashboard';
@@ -15,7 +14,7 @@ import { DocumentStructureVisualization } from './enhanced-detail/DocumentStruct
 import { KeywordPerformanceCard } from './enhanced-detail/KeywordPerformanceCard';
 import { TabErrorBoundary } from './enhanced-detail/TabErrorBoundary';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { useSmartAnalysisLoading } from '@/hooks/drafts/useSmartAnalysisLoading';
+import { useEnhancedAnalysisLoading } from '@/hooks/drafts/useEnhancedAnalysisLoading';
 import { validateDraftData } from '@/utils/validation/dataValidation';
 
 interface DraftDetailViewProps {
@@ -35,7 +34,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     analysisData, 
     retryAnalysis, 
     resetAnalysis 
-  } = useSmartAnalysisLoading({ draft, activeTab });
+  } = useEnhancedAnalysisLoading({ draft, activeTab });
   
   // Reset states when draft changes
   useEffect(() => {
@@ -241,7 +240,7 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
                         transition={{ duration: 0.3 }}
                         className="h-full"
                       >
-                        <ContentPreviewSection 
+                        <EnhancedContentPreviewSection 
                           content={draft.content || ''}
                           title={draft.title || 'Untitled Draft'}
                           keywords={draft.keywords || []}
