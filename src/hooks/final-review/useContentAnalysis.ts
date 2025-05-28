@@ -44,10 +44,34 @@ export const useContentAnalysis = () => {
     return 'up-to-date';
   };
 
+  // Calculate keyword usage from content and selected keywords
+  const keywordUsage = state.selectedKeywords.map(keyword => {
+    const content = state.content || '';
+    const keywordCount = (content.toLowerCase().match(new RegExp(keyword.toLowerCase(), 'g')) || []).length;
+    const wordCount = content.split(/\s+/).length;
+    const density = wordCount > 0 ? (keywordCount / wordCount) * 100 : 0;
+    
+    return {
+      keyword,
+      count: keywordCount,
+      density: Math.round(density * 100) / 100,
+      status: density >= 0.5 && density <= 2.5 ? 'good' : density > 2.5 ? 'high' : 'low'
+    };
+  });
+
+  // Analyze CTA information from content
+  const ctaInfo = {
+    hasCallToAction: /\b(learn more|sign up|get started|contact us|download|subscribe|buy now|click here)\b/i.test(state.content || ''),
+    ctaCount: (state.content || '').match(/\b(learn more|sign up|get started|contact us|download|subscribe|buy now|click here)\b/gi)?.length || 0,
+    position: 'end' as const // Simplified for now
+  };
+
   return {
     isAnalyzing: isAnalyzing || state.isAnalyzingContent,
     analyzeContent,
     analysisStatus: getAnalysisStatus(),
-    analytics: state.comprehensiveAnalytics
+    analytics: state.comprehensiveAnalytics,
+    keywordUsage,
+    ctaInfo
   };
 };

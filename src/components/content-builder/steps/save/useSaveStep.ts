@@ -4,7 +4,6 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContent } from '@/contexts/content';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 
 export const useSaveStep = () => {
   const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();

@@ -8,6 +8,7 @@ import { ContentBuilderAction } from './action-types';
 import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
 import { Solution } from './solution-types';
 import { OutlineSection } from './outline-types';
+import { ComprehensiveAnalytics } from './analytics-types';
 
 // Context Type
 export interface ContentBuilderContextType {
@@ -23,31 +24,38 @@ export interface ContentBuilderContextType {
   removeKeyword: (keyword: string) => void;
   
   // SERP Actions
-  analyzeKeyword: (keyword: string) => Promise<void>;
-  addContentFromSerp: (content: string, type: string) => void;
-  generateOutlineFromSelections: () => void;
+  setSerpData: (data: any) => void;
+  analyzeKeyword?: (keyword: string) => Promise<void>;
+  addContentFromSerp?: (content: string, type: string) => void;
+  generateOutlineFromSelections?: () => void;
   
   // Content Actions
   setContentTitle: (title: string) => void;
-  setContentType: (type: ContentType) => void;
-  setContentFormat: (format: ContentFormat) => void;
-  setContentIntent: (intent: ContentIntent) => void;
-  generateContent: (outline: OutlineSection[]) => Promise<void>;
-  saveContent: (options: { title: string; content: string }) => Promise<boolean>;
+  setContentType?: (type: ContentType) => void;
+  setContentFormat?: (format: ContentFormat) => void;
+  setContentIntent?: (intent: ContentIntent) => void;
+  generateContent?: (outline: OutlineSection[]) => Promise<void>;
+  saveContent?: (options: { title: string; content: string }) => Promise<boolean>;
   setContent: (content: string) => void;
-  updateContent: (content: string) => void;
+  updateContent?: (content: string) => void;
   
   // Meta Actions
   setMetaTitle: (title: string) => void;
   setMetaDescription: (description: string) => void;
+  setAdditionalInstructions: (instructions: string) => void;
   
   // SEO Actions
-  analyzeSeo: (content: string) => Promise<void>;
-  applySeoImprovement: (id: string) => void;
-  skipOptimizationStep: () => void;
+  analyzeSeo?: (content: string) => Promise<void>;
+  applySeoImprovement?: (id: string) => void;
+  skipOptimizationStep?: () => void;
 
   // Advanced Content Actions
-  saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
-  saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
-  setAdditionalInstructions: (instructions: string) => void;
+  saveContentToDraft: () => Promise<string | null>;
+  saveContentToPublished: () => Promise<string | null>;
+  
+  // Analytics Actions
+  runComprehensiveAnalysis: () => Promise<void>;
+  analyzeReadability: (content: string) => any;
+  analyzeTechnicalSeo: (content: string, metaTitle?: string | null, metaDescription?: string | null) => any;
+  calculateContentQuality: (readability: any, technical: any, serpMetrics?: any) => any;
 }

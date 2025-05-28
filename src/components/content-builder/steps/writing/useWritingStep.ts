@@ -164,7 +164,7 @@ export function useWritingStep() {
   };
 
   const handleRunAnalysis = async () => {
-    if (content && content.trim().length > 0) {
+    if (content && content.trim().length > 0 && runComprehensiveAnalysis) {
       await runComprehensiveAnalysis();
     }
   };
