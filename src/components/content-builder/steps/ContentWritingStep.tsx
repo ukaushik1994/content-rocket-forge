@@ -5,13 +5,11 @@ import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
-import { ContentQualityPanel } from './writing/ContentQualityPanel';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { saveContentToDraft } from './writing/ContentGenerationService';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, BarChart3, Settings } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -54,7 +52,6 @@ export const ContentWritingStep = () => {
   const [includeStats, setIncludeStats] = useState(true);
   const [includeCaseStudies, setIncludeCaseStudies] = useState(true);
   const [includeFAQs, setIncludeFAQs] = useState(true);
-  const [activeTab, setActiveTab] = useState('editor');
   
   // Setup leave confirmation
   useEffect(() => {
@@ -186,130 +183,33 @@ export const ContentWritingStep = () => {
         )}
         
         <div className={`${showOutline ? 'lg:col-span-3' : 'lg:col-span-4'} h-full flex flex-col`}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="editor" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Editor
-              </TabsTrigger>
-              <TabsTrigger value="quality" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Quality
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Settings
-              </TabsTrigger>
-            </TabsList>
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-4 w-4" />
+            <span className="font-medium">Content Editor</span>
+          </div>
+          
+          <div className="flex-1 flex flex-col">
+            <ContentEditor
+              content={content}
+              onContentChange={handleContentChange}
+            />
             
-            <TabsContent value="editor" className="flex-1 flex flex-col mt-4">
-              <ContentEditor
-                content={content}
-                onContentChange={handleContentChange}
-              />
-              
-              {/* Add auto-save notice at the bottom */}
-              {(autoSaveTimestamp || hasUnsavedChanges) && (
-                <div className="mt-2 text-xs text-white/50 flex items-center justify-end gap-1 px-4 py-2 border-t border-white/5">
-                  {hasUnsavedChanges ? (
-                    <>
-                      <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
-                      Unsaved changes
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-green-400">✓</span> Auto-saved
-                    </>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="quality" className="flex-1 mt-4">
-              <ContentQualityPanel
-                content={content}
-                title={state.contentTitle || mainKeyword}
-                writingStyle={writingStyle}
-                expertiseLevel={expertiseLevel}
-                onWritingStyleChange={setWritingStyle}
-                onExpertiseLevelChange={setExpertiseLevel}
-                aiProvider={aiProvider}
-              />
-            </TabsContent>
-            
-            <TabsContent value="settings" className="flex-1 mt-4">
-              <div className="space-y-6 p-6 border rounded-lg">
-                <h3 className="text-lg font-semibold">Content Generation Settings</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Content Type</label>
-                      <select 
-                        value={contentType} 
-                        onChange={(e) => setContentType(e.target.value as any)}
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value="general">General Article</option>
-                        <option value="how-to">How-To Guide</option>
-                        <option value="listicle">Listicle</option>
-                        <option value="comprehensive">Comprehensive Guide</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Target Word Count</label>
-                      <input
-                        type="number"
-                        value={wordCountLimit || 1500}
-                        onChange={(e) => handleWordCountChange(parseInt(e.target.value))}
-                        className="w-full p-2 border rounded-md"
-                        min="300"
-                        max="5000"
-                        step="100"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Content Elements</label>
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeStats}
-                            onChange={(e) => setIncludeStats(e.target.checked)}
-                          />
-                          <span className="text-sm">Include Statistics</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeCaseStudies}
-                            onChange={(e) => setIncludeCaseStudies(e.target.checked)}
-                          />
-                          <span className="text-sm">Include Case Studies</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={includeFAQs}
-                            onChange={(e) => setIncludeFAQs(e.target.checked)}
-                          />
-                          <span className="text-sm">Include FAQ Section</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <Button onClick={handleGenerateContent} disabled={isGenerating} className="w-full">
-                  {isGenerating ? 'Generating...' : 'Generate Content with Current Settings'}
-                </Button>
+            {/* Add auto-save notice at the bottom */}
+            {(autoSaveTimestamp || hasUnsavedChanges) && (
+              <div className="mt-2 text-xs text-white/50 flex items-center justify-end gap-1 px-4 py-2 border-t border-white/5">
+                {hasUnsavedChanges ? (
+                  <>
+                    <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
+                    Unsaved changes
+                  </>
+                ) : (
+                  <>
+                    <span className="text-green-400">✓</span> Auto-saved
+                  </>
+                )}
               </div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </div>
       </div>
 
