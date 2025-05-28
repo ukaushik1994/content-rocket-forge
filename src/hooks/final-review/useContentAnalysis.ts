@@ -1,53 +1,34 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { toast } from 'sonner';
+import { detectCTAs } from '@/utils/seo/content/detectCTAs';
+import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 
+/**
+ * Custom hook for analyzing content
+ */
 export const useContentAnalysis = () => {
-  const { state, runComprehensiveAnalysis } = useContentBuilder();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const analyzeContent = useCallback(async () => {
-    if (!state.content || state.content.trim().length === 0) {
-      toast.error('No content to analyze');
-      return;
+  const { state } = useContentBuilder();
+  const { content, mainKeyword, selectedKeywords } = state;
+  
+  const [keywordUsage, setKeywordUsage] = useState<{ keyword: string; count: number; density: string }[]>([]);
+  const [ctaInfo, setCTAInfo] = useState<{ hasCTA: boolean; ctaText: string[] }>({ hasCTA: false, ctaText: [] });
+  
+  // Analyze content when it changes
+  useEffect(() => {
+    if (content) {
+      // Analyze keyword usage
+      const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
+      setKeywordUsage(usage);
+      
+      // Detect CTAs
+      const cta = detectCTAs(content);
+      setCTAInfo(cta);
     }
-
-    setIsAnalyzing(true);
-    try {
-      await runComprehensiveAnalysis();
-      toast.success('Content analysis completed');
-    } catch (error) {
-      console.error('Content analysis failed:', error);
-      toast.error('Failed to analyze content');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [state.content, runComprehensiveAnalysis]);
-
-  const getAnalysisStatus = () => {
-    if (!state.content || state.content.trim().length === 0) {
-      return 'no-content';
-    }
-    
-    if (!state.comprehensiveAnalytics) {
-      return 'not-analyzed';
-    }
-
-    const currentHash = state.lastAnalysisHash;
-    const contentHash = state.comprehensiveAnalytics.contentHash;
-    
-    if (currentHash !== contentHash) {
-      return 'outdated';
-    }
-
-    return 'up-to-date';
-  };
+  }, [content, mainKeyword, selectedKeywords]);
 
   return {
-    isAnalyzing: isAnalyzing || state.isAnalyzingContent,
-    analyzeContent,
-    analysisStatus: getAnalysisStatus(),
-    analytics: state.comprehensiveAnalytics
+    keywordUsage,
+    ctaInfo
   };
 };

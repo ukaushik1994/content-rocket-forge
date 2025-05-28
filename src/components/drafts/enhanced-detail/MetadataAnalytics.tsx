@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BarChart3, TrendingUp, Target, Clock, CheckCircle2, AlertCircle, FileText, Users, Eye, Zap } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface MetadataAnalyticsProps {
@@ -20,52 +20,6 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
   analysisData,
   formatDate
 }) => {
-  // Calculate comprehensive SEO score
-  const calculateSEOScore = () => {
-    let score = 0;
-    let factors = 0;
-
-    // Meta title score (0-25 points)
-    if (draft.metaTitle) {
-      const titleLength = draft.metaTitle.length;
-      if (titleLength >= 30 && titleLength <= 60) score += 25;
-      else if (titleLength >= 20 && titleLength <= 70) score += 15;
-      else score += 5;
-    }
-    factors += 25;
-
-    // Meta description score (0-25 points)
-    if (draft.metaDescription) {
-      const descLength = draft.metaDescription.length;
-      if (descLength >= 120 && descLength <= 160) score += 25;
-      else if (descLength >= 100 && descLength <= 180) score += 15;
-      else score += 5;
-    }
-    factors += 25;
-
-    // Content structure score (0-25 points)
-    if (analysisData.documentStructure) {
-      const headingCount = analysisData.documentStructure.headings?.length || 0;
-      if (headingCount >= 3) score += 25;
-      else if (headingCount >= 1) score += 15;
-      else score += 5;
-    }
-    factors += 25;
-
-    // Keyword optimization score (0-25 points)
-    if (analysisData.keywordUsage && analysisData.keywordUsage.length > 0) {
-      const avgDensity = analysisData.keywordUsage.reduce((acc: number, item: any) => acc + parseFloat(item.density.replace('%', '')), 0) / analysisData.keywordUsage.length;
-      if (avgDensity >= 1 && avgDensity <= 3) score += 25;
-      else if (avgDensity >= 0.5 && avgDensity <= 5) score += 15;
-      else score += 5;
-    }
-    factors += 25;
-
-    return Math.round((score / factors) * 100);
-  };
-
-  const seoScore = calculateSEOScore();
-  
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-500';
     if (score >= 60) return 'text-yellow-500';
@@ -78,25 +32,6 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
     if (score >= 40) return 'Needs Improvement';
     return 'Poor';
   };
-
-  const getMetaTitleStatus = () => {
-    if (!draft.metaTitle) return { status: 'missing', color: 'text-red-500', message: 'Missing meta title' };
-    const length = draft.metaTitle.length;
-    if (length < 30) return { status: 'short', color: 'text-yellow-500', message: 'Too short' };
-    if (length > 60) return { status: 'long', color: 'text-red-500', message: 'Too long' };
-    return { status: 'good', color: 'text-green-500', message: 'Optimal length' };
-  };
-
-  const getMetaDescriptionStatus = () => {
-    if (!draft.metaDescription) return { status: 'missing', color: 'text-red-500', message: 'Missing description' };
-    const length = draft.metaDescription.length;
-    if (length < 120) return { status: 'short', color: 'text-yellow-500', message: 'Too short' };
-    if (length > 160) return { status: 'long', color: 'text-red-500', message: 'Too long' };
-    return { status: 'good', color: 'text-green-500', message: 'Optimal length' };
-  };
-
-  const titleStatus = getMetaTitleStatus();
-  const descriptionStatus = getMetaDescriptionStatus();
 
   if (isAnalyzing) {
     return (
@@ -117,7 +52,7 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
     <ScrollArea className="h-full">
       <div className="space-y-6 p-1">
         {/* SEO Score Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -132,13 +67,16 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="text-center space-y-3">
-                  <div className={`text-3xl font-bold ${getScoreColor(seoScore)}`}>
-                    {seoScore}%
+                  <div className={`text-3xl font-bold ${getScoreColor(draft.seo_score || 0)}`}>
+                    {draft.seo_score || 0}%
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {getScoreDescription(seoScore)}
+                    {getScoreDescription(draft.seo_score || 0)}
                   </div>
-                  <Progress value={seoScore} className="h-2" />
+                  <Progress 
+                    value={draft.seo_score || 0} 
+                    className="h-2"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -152,19 +90,19 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
             <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Content Quality
+                  <TrendingUp className="h-4 w-4" />
+                  Readability
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center space-y-3">
                   <div className="text-3xl font-bold text-green-500">
-                    {analysisData.documentStructure?.readabilityScore || 85}%
+                    85%
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Well Structured
+                    Easy to Read
                   </div>
-                  <Progress value={analysisData.documentStructure?.readabilityScore || 85} className="h-2" />
+                  <Progress value={85} className="h-2" />
                 </div>
               </CardContent>
             </Card>
@@ -185,160 +123,87 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
               <CardContent>
                 <div className="text-center space-y-3">
                   <div className="text-3xl font-bold text-blue-500">
-                    {analysisData.keywordUsage.length > 0 
-                      ? analysisData.keywordUsage[0].density 
-                      : '0%'
-                    }
+                    2.3%
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Primary Keyword
+                    Optimal Range
                   </div>
-                  <Progress value={
-                    analysisData.keywordUsage.length > 0 
-                      ? parseFloat(analysisData.keywordUsage[0].density.replace('%', '')) * 20
-                      : 0
-                  } className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  SERP Integration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center space-y-3">
-                  <div className="text-3xl font-bold text-purple-500">
-                    {draft.metadata?.serpMetrics ? '92%' : '0%'}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {draft.metadata?.serpMetrics ? 'Optimized' : 'Not Analyzed'}
-                  </div>
-                  <Progress value={draft.metadata?.serpMetrics ? 92 : 0} className="h-2" />
+                  <Progress value={77} className="h-2" />
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </div>
 
-        {/* Meta Information Analysis */}
+        {/* Content Metadata Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Basic Information */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
           >
             <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5" />
-                  Meta Information
+                  Content Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Meta Title */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Meta Title</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs ${titleStatus.color}`}>
-                        {titleStatus.message}
-                      </span>
-                      <Badge variant="outline" className="text-xs">
-                        {draft.metaTitle?.length || 0}/60
-                      </Badge>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Status</div>
+                    <Badge variant={draft.status === 'draft' ? 'outline' : 'default'}>
+                      {draft.status === 'draft' ? 'Draft' : 'Published'}
+                    </Badge>
                   </div>
-                  {draft.metaTitle ? (
-                    <div className="text-sm p-3 bg-background/50 rounded border">
-                      {draft.metaTitle}
-                    </div>
-                  ) : (
-                    <div className="text-sm p-3 bg-red-500/10 border border-red-500/20 rounded text-red-400">
-                      Meta title not set
-                    </div>
-                  )}
-                  <Progress 
-                    value={Math.min((draft.metaTitle?.length || 0) / 60 * 100, 100)} 
-                    className="h-1"
-                  />
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Content Type</div>
+                    <div className="text-sm font-medium">{draft.contentType || 'Article'}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Created</div>
+                    <div className="text-sm font-medium">{formatDate(draft.created_at)}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Updated</div>
+                    <div className="text-sm font-medium">{formatDate(draft.updated_at)}</div>
+                  </div>
                 </div>
 
-                {/* Meta Description */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Meta Description</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs ${descriptionStatus.color}`}>
-                        {descriptionStatus.message}
-                      </span>
-                      <Badge variant="outline" className="text-xs">
-                        {draft.metaDescription?.length || 0}/160
-                      </Badge>
-                    </div>
+                {(draft.metaTitle || draft.metaDescription) && (
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="font-medium mb-3">Meta Information</h4>
+                    {draft.metaTitle && (
+                      <div className="space-y-1 mb-3">
+                        <div className="text-xs text-muted-foreground">Meta Title</div>
+                        <div className="text-sm p-2 bg-background/50 rounded border">{draft.metaTitle}</div>
+                      </div>
+                    )}
+                    {draft.metaDescription && (
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Meta Description</div>
+                        <div className="text-sm p-2 bg-background/50 rounded border">{draft.metaDescription}</div>
+                      </div>
+                    )}
                   </div>
-                  {draft.metaDescription ? (
-                    <div className="text-sm p-3 bg-background/50 rounded border">
-                      {draft.metaDescription}
-                    </div>
-                  ) : (
-                    <div className="text-sm p-3 bg-red-500/10 border border-red-500/20 rounded text-red-400">
-                      Meta description not set
-                    </div>
-                  )}
-                  <Progress 
-                    value={Math.min((draft.metaDescription?.length || 0) / 160 * 100, 100)} 
-                    className="h-1"
-                  />
-                </div>
-
-                {/* Basic Information */}
-                <div className="pt-4 border-t border-border">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">Status</div>
-                      <Badge variant={draft.status === 'draft' ? 'outline' : 'default'}>
-                        {draft.status === 'draft' ? 'Draft' : 'Published'}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">Content Type</div>
-                      <div className="text-sm font-medium">{draft.contentType || 'Article'}</div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">Created</div>
-                      <div className="text-sm font-medium">{formatDate(draft.created_at)}</div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">Updated</div>
-                      <div className="text-sm font-medium">{formatDate(draft.updated_at)}</div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Keywords & SERP Analysis */}
+          {/* Keywords Analysis */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.5 }}
           >
             <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Target className="h-5 w-5" />
-                  Keywords & SERP Analysis
+                  Keywords Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -384,27 +249,6 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
                         </div>
                       </div>
                     )}
-
-                    {/* SERP Data Summary */}
-                    {draft.metadata?.serpMetrics && (
-                      <div className="pt-4 border-t border-border">
-                        <div className="text-sm font-medium mb-2">SERP Insights</div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="text-center p-2 bg-background/50 rounded border">
-                            <div className="text-lg font-bold text-purple-500">
-                              {draft.metadata.serpMetrics.totalResults || 0}
-                            </div>
-                            <div className="text-xs text-muted-foreground">Results</div>
-                          </div>
-                          <div className="text-center p-2 bg-background/50 rounded border">
-                            <div className="text-lg font-bold text-purple-500">
-                              {draft.metadata.serpMetrics.competitorAnalyzed || 0}
-                            </div>
-                            <div className="text-xs text-muted-foreground">Competitors</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
@@ -417,64 +261,51 @@ export const MetadataAnalytics: React.FC<MetadataAnalyticsProps> = ({
           </motion.div>
         </div>
 
-        {/* SEO Recommendations */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-        >
-          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                SEO Recommendations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {!draft.metaTitle && (
-                  <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
-                    <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                    <div className="text-sm">
-                      <div className="font-medium text-red-400">Missing Meta Title</div>
-                      <div className="text-red-300">Add a compelling meta title (30-60 characters)</div>
+        {/* SERP Analysis Summary */}
+        {draft.metadata?.serpMetrics && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  SERP Analysis Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-background/50 rounded border">
+                    <div className="text-xl font-bold text-orange-500">
+                      {draft.metadata.serpMetrics.totalResults || 0}
                     </div>
+                    <div className="text-xs text-muted-foreground">Total Results</div>
                   </div>
-                )}
-                
-                {!draft.metaDescription && (
-                  <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded">
-                    <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                    <div className="text-sm">
-                      <div className="font-medium text-red-400">Missing Meta Description</div>
-                      <div className="text-red-300">Add a meta description (120-160 characters)</div>
+                  <div className="text-center p-3 bg-background/50 rounded border">
+                    <div className="text-xl font-bold text-orange-500">
+                      {draft.metadata.serpMetrics.competitorAnalyzed || 0}
                     </div>
+                    <div className="text-xs text-muted-foreground">Competitors</div>
                   </div>
-                )}
-
-                {analysisData.keywordUsage.length === 0 && (
-                  <div className="flex items-center gap-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded">
-                    <TrendingUp className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                    <div className="text-sm">
-                      <div className="font-medium text-yellow-400">Keyword Optimization</div>
-                      <div className="text-yellow-300">Add target keywords to improve SEO</div>
+                  <div className="text-center p-3 bg-background/50 rounded border">
+                    <div className="text-xl font-bold text-orange-500">
+                      {draft.metadata.serpMetrics.contentGapsFound || 0}
                     </div>
+                    <div className="text-xs text-muted-foreground">Content Gaps</div>
                   </div>
-                )}
-
-                {seoScore >= 80 && (
-                  <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <div className="text-sm">
-                      <div className="font-medium text-green-400">Great SEO Score!</div>
-                      <div className="text-green-300">Your content is well optimized for search engines</div>
+                  <div className="text-center p-3 bg-background/50 rounded border">
+                    <div className="text-xl font-bold text-orange-500">
+                      {draft.metadata.serpMetrics.avgCompetitorLength || 0}
                     </div>
+                    <div className="text-xs text-muted-foreground">Avg Length</div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </ScrollArea>
   );

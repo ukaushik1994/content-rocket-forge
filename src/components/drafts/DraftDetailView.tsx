@@ -29,7 +29,6 @@ interface DraftDetailViewProps {
 }
 
 export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) {
-  // All hooks must be called before any conditional returns
   const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'seo' | 'structure'>('content');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -41,7 +40,13 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     keywordUsage: []
   });
 
-  // Stable callback for loading analysis - remove draft dependency to prevent infinite loops
+  // Load comprehensive analysis when component mounts or draft changes
+  useEffect(() => {
+    if (draft && draft.content) {
+      loadComprehensiveAnalysis();
+    }
+  }, [draft]);
+
   const loadComprehensiveAnalysis = useCallback(async () => {
     if (!draft || !draft.content) return;
     
@@ -100,16 +105,11 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } finally {
       setIsAnalyzing(false);
     }
-  }, []); // Empty dependency array to prevent infinite loops
+  }, [draft]);
+  
+  if (!draft) return null;
 
-  // Load comprehensive analysis when component mounts or draft changes
-  useEffect(() => {
-    if (draft && draft.content) {
-      loadComprehensiveAnalysis();
-    }
-  }, [draft, loadComprehensiveAnalysis]);
-
-  const formatDate = useCallback((dateString: string) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return 'Unknown';
     try {
       const date = new Date(dateString);
@@ -123,10 +123,10 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } catch (error) {
       return 'Invalid date';
     }
-  }, []);
+  };
 
   const handleCopyContent = useCallback(async () => {
-    if (draft?.content) {
+    if (draft.content) {
       try {
         await navigator.clipboard.writeText(draft.content);
         toast.success('Content copied to clipboard');
@@ -141,10 +141,10 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
         toast.success('Content copied to clipboard');
       }
     }
-  }, []); // Remove draft dependency
+  }, [draft.content]);
 
   const handleExport = useCallback(() => {
-    if (!draft?.content) {
+    if (!draft.content) {
       toast.error('No content to export');
       return;
     }
@@ -161,14 +161,11 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     } catch (error) {
       toast.error('Failed to export content');
     }
-  }, []); // Remove draft dependency
+  }, [draft.content, draft.title]);
 
   const retryAnalysis = useCallback(() => {
     loadComprehensiveAnalysis();
   }, [loadComprehensiveAnalysis]);
-
-  // Early return after all hooks are called
-  if (!draft) return null;
 
   return (
     <ErrorBoundary fallbackTitle="Draft Detail View Error" onRetry={() => window.location.reload()}>
