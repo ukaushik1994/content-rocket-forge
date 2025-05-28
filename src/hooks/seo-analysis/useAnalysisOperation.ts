@@ -101,7 +101,7 @@ export const useAnalysisOperation = () => {
         });
         
         setImprovements(newImprovements);
-        dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: newImprovements });
+        dispatch({ type: 'ADD_SEO_IMPROVEMENT', payload: newImprovements[0] });
         
         // Weighted average
         const calculatedScore = Math.round(
