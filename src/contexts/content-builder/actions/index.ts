@@ -6,6 +6,7 @@ import { createSerpActions } from './serpActions';
 import { createNavigationActions } from './navigationActions';
 import { createPublishActions } from './publishActions';
 import { createSeoActions } from './seoActions';
+import { createAnalyticsActions } from './analyticsActions';
 
 /**
  * Creates and combines all content builder actions
@@ -22,6 +23,12 @@ export const createContentBuilderActions = (
   const navigationActions = createNavigationActions(state, dispatch);
   const publishActions = createPublishActions(state, dispatch);
   const seoActions = createSeoActions(state, dispatch);
+  const analyticsActions = createAnalyticsActions(state, dispatch);
+
+  // Add setSerpData action
+  const setSerpData = (data: any) => {
+    dispatch({ type: 'SET_SERP_DATA', payload: data });
+  };
 
   // Merge all action groups and return
   return {
@@ -30,7 +37,8 @@ export const createContentBuilderActions = (
     ...serpActions,
     ...navigationActions,
     ...publishActions,
-    ...seoActions
+    ...seoActions,
+    ...analyticsActions,
+    setSerpData
   };
 };
-

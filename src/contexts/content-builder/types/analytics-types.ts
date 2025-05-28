@@ -1,56 +1,39 @@
 
 /**
- * Analytics and metadata types for content builder
+ * Analytics-related type definitions
  */
 
 export interface ReadabilityMetrics {
-  score: number;
+  wordCount: number;
+  sentenceCount: number;
+  avgWordsPerSentence: number;
   grade: string;
-  readingTime: number;
-  sentenceComplexity: 'simple' | 'moderate' | 'complex';
-  wordComplexity: 'basic' | 'intermediate' | 'advanced';
+  score: number;
+}
+
+export interface TechnicalSeoMetrics {
+  contentLength: number;
+  headingCount: number;
+  linkCount: number;
+  imageCount: number;
+  metaTitleLength: number;
+  metaDescriptionLength: number;
+  hasMetaTitle: boolean;
+  hasMetaDescription: boolean;
 }
 
 export interface ContentQualityMetrics {
   overallScore: number;
   structureScore: number;
   keywordOptimizationScore: number;
-  readabilityScore: number;
   metaOptimizationScore: number;
-}
-
-export interface TechnicalSeoMetrics {
-  metaTitleStatus: 'missing' | 'short' | 'long' | 'good';
-  metaDescriptionStatus: 'missing' | 'short' | 'long' | 'good';
-  headingStructure: {
-    h1Count: number;
-    h2Count: number;
-    h3Count: number;
-    totalHeadings: number;
-  };
-  keywordDensity: {
-    primary: number;
-    secondary: number[];
-  };
-  contentLength: number;
-  imageCount: number;
-  linkCount: number;
-}
-
-export interface SerpIntegrationMetrics {
-  competitorsAnalyzed: number;
-  contentGapsFound: number;
-  questionsIntegrated: number;
-  entitiesIncluded: number;
-  avgCompetitorLength: number;
-  serpOptimizationScore: number;
+  readabilityScore: number;
 }
 
 export interface ComprehensiveAnalytics {
+  contentHash: string;
   readabilityMetrics: ReadabilityMetrics;
-  contentQualityMetrics: ContentQualityMetrics;
   technicalSeoMetrics: TechnicalSeoMetrics;
-  serpIntegrationMetrics: SerpIntegrationMetrics;
+  contentQualityMetrics: ContentQualityMetrics;
   analysisTimestamp: string;
-  contentHash: string; // To track if content changed since analysis
 }

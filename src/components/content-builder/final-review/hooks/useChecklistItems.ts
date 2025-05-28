@@ -45,7 +45,7 @@ export const useChecklistItems = () => {
       },
       {
         title: 'Content has call-to-action',
-        passed: ctaInfo.hasCTA
+        passed: ctaInfo.hasCallToAction
       },
       {
         title: 'Solution features are incorporated',
@@ -58,8 +58,8 @@ export const useChecklistItems = () => {
       {
         title: 'Primary keyword has optimal density (0.5% - 3%)',
         passed: keywordUsage.some(k => k.keyword === mainKeyword && 
-          parseFloat(k.density) >= 0.5 && 
-          parseFloat(k.density) <= 3)
+          k.density >= 0.5 && 
+          k.density <= 3)
       },
       {
         title: 'Secondary keywords are included in content',

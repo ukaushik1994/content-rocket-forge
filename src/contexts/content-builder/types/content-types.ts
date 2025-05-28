@@ -3,32 +3,24 @@
  * Content-related type definitions
  */
 
-// Content Type Options
-export type ContentType = 'article' | 'blog' | 'landingPage' | 'productDescription' | 'glossary';
+export type ContentType = 'article' | 'blog-post' | 'product-description' | 'landing-page' | 'email' | 'social-media';
 
-// Content Format Options
-export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'list';
+export type ContentFormat = 'blog-post' | 'how-to-guide' | 'listicle' | 'review' | 'case-study' | 'tutorial' | 'opinion' | 'news' | 'interview' | 'comparison';
 
-// Content Intent Options
-export type ContentIntent = 'inform' | 'convert' | 'entertain' | 'educate';
+export type ContentIntent = 'informational' | 'commercial' | 'navigational' | 'transactional';
 
-// Save Content Params
 export interface SaveContentParams {
   title: string;
   content: string;
-  mainKeyword: string;
-  secondaryKeywords: string[];
-  contentType: ContentType;
-  metaTitle: string | null;
-  metaDescription: string | null;
-  status: 'draft' | 'published' | 'archived';
-  notes: string;
-  // Optional fields
+  mainKeyword?: string;
+  secondaryKeywords?: string[];
+  contentType?: ContentType;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  status: 'draft' | 'published';
+  notes?: string;
   seoScore?: number;
-  outlineJson?: string;
-  
-  // Adding missing properties
-  outline?: string[];
+  outline?: any[];
   serpSelections?: any[];
   serpData?: any;
 }

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
@@ -217,7 +218,7 @@ export const useSaveContent = () => {
       
       // Save using content builder context (legacy)
       if (saveContentToDraft) {
-        await saveContentToDraft(saveParams);
+        await saveContentToDraft();
       }
       
       // Force refresh the content list to make sure it shows up
@@ -359,7 +360,7 @@ export const useSaveContent = () => {
       
       // Try publishing using content builder context (legacy)
       if (saveContentToPublished) {
-        await saveContentToPublished(publishParams);
+        await saveContentToPublished();
       }
       
       // Force refresh the content list
