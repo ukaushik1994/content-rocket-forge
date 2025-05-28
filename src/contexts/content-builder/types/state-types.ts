@@ -12,6 +12,7 @@ import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { DocumentStructure } from './document-types';
 import { ComprehensiveSerpData } from '@/types/serp-metrics';
+import { ComprehensiveAnalytics } from './analytics-types';
 
 // Content Builder State
 export interface ContentBuilderState {
@@ -56,7 +57,7 @@ export interface ContentBuilderState {
   // SEO
   seoScore: number;
   seoImprovements: SeoImprovement[];
-  optimizationSkipped: boolean; // New field to track if optimization was skipped
+  optimizationSkipped: boolean;
   
   // Selected Cluster
   selectedCluster: ContentCluster | null;
@@ -73,4 +74,11 @@ export interface ContentBuilderState {
 
   // Additional Instructions
   additionalInstructions: string;
+
+  // Enhanced Analytics
+  comprehensiveAnalytics: ComprehensiveAnalytics | null;
+  
+  // Real-time Analysis State
+  isAnalyzingContent: boolean;
+  lastAnalysisHash: string | null;
 }

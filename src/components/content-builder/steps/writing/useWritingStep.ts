@@ -6,7 +6,7 @@ import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
 
 export function useWritingStep() {
-  const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
+  const { state, dispatch, setAdditionalInstructions, setContent, runComprehensiveAnalysis } = useContentBuilder();
   const { 
     mainKeyword, 
     outline, 
@@ -15,7 +15,9 @@ export function useWritingStep() {
     serpData, 
     selectedSolution,
     contentTitle,
-    selectedKeywords
+    selectedKeywords,
+    isAnalyzingContent,
+    comprehensiveAnalytics
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,7 +50,7 @@ export function useWritingStep() {
   // Mark this step as complete when we have content
   useEffect(() => {
     if (content && content.trim().length > 100) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 }); // Updated to step 3
+      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
     }
   }, [content, dispatch]);
 
@@ -66,13 +68,12 @@ export function useWritingStep() {
     const savedTitle = localStorage.getItem('content_builder_title');
     
     if (savedDraft && (!content || content.trim().length === 0)) {
-      // There's a draft in localStorage and no content in state
       const loadSavedDraft = window.confirm(
         'We found a previously unsaved draft. Would you like to load it?'
       );
       
       if (loadSavedDraft) {
-        dispatch({ type: 'SET_CONTENT', payload: savedDraft });
+        setContent(savedDraft);
         
         if (savedKeyword && (!mainKeyword || mainKeyword.trim().length === 0)) {
           dispatch({ type: 'SET_MAIN_KEYWORD', payload: savedKeyword });
@@ -85,14 +86,13 @@ export function useWritingStep() {
         toast.success('Loaded your unsaved draft');
         setAutoSaveTimestamp(savedTimestamp || null);
       } else {
-        // Clear the saved draft since user chose not to use it
         localStorage.removeItem('content_builder_draft');
         localStorage.removeItem('content_builder_timestamp');
         localStorage.removeItem('content_builder_keyword');
         localStorage.removeItem('content_builder_title');
       }
     }
-  }, [dispatch, content, mainKeyword, contentTitle]);
+  }, [dispatch, content, mainKeyword, contentTitle, setContent]);
   
   // Set up auto-save functionality
   useEffect(() => {
@@ -126,7 +126,7 @@ export function useWritingStep() {
   }, [hasUnsavedChanges]);
 
   const handleContentChange = (newContent: string) => {
-    dispatch({ type: 'SET_CONTENT', payload: newContent });
+    setContent(newContent);
     setHasUnsavedChanges(true);
   };
 
@@ -160,6 +160,12 @@ export function useWritingStep() {
       setAutoSaveTimestamp(timestamp);
       setHasUnsavedChanges(false);
       toast.success("Content saved as draft");
+    }
+  };
+
+  const handleRunAnalysis = async () => {
+    if (content && content.trim().length > 0) {
+      await runComprehensiveAnalysis();
     }
   };
 
@@ -199,12 +205,15 @@ export function useWritingStep() {
     autoSaveTimestamp,
     hasUnsavedChanges,
     wordCountLimit,
+    isAnalyzingContent,
+    comprehensiveAnalytics,
     handleContentChange,
     handleInstructionsChange,
     handleToggleOutline,
     handleToggleGenerator,
     handleAiProviderChange,
     handleManualSave,
-    handleWordCountChange
+    handleWordCountChange,
+    handleRunAnalysis
   };
 }

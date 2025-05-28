@@ -1,15 +1,16 @@
 
-import { ContentBuilderState } from './types';
+import { ContentBuilderState } from './types/index';
 
 export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
   steps: [
-    { id: 0, name: 'Keyword Selection', description: 'Choose your target keywords', completed: false, visited: true },
-    { id: 1, name: 'Content Type & Outline', description: 'Select content type and create outline', completed: false, visited: false },
-    { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
-    { id: 3, name: 'Content Writing', description: 'Write your content', completed: false, visited: false },
-    { id: 4, name: 'Optimize & Review', description: 'Optimize and review your content', completed: false, visited: false, analyzed: false }
+    { id: 0, name: 'Keywords', completed: false, visited: false, analyzed: false },
+    { id: 1, name: 'SERP Analysis', completed: false, visited: false, analyzed: false },
+    { id: 2, name: 'Content Type & Outline', completed: false, visited: false, analyzed: false },
+    { id: 3, name: 'Writing', completed: false, visited: false, analyzed: false },
+    { id: 4, name: 'Optimize & Review', completed: false, visited: false, analyzed: false },
+    { id: 5, name: 'Save', completed: false, visited: false, analyzed: false }
   ],
   
   // Keywords
@@ -19,8 +20,8 @@ export const initialState: ContentBuilderState = {
   
   // Content Type
   contentType: 'article',
-  contentFormat: 'long-form',
-  contentIntent: 'inform',
+  contentFormat: 'blog-post',
+  contentIntent: 'informational',
   
   // Solutions
   selectedSolution: null,
@@ -53,17 +54,22 @@ export const initialState: ContentBuilderState = {
   
   // Selected Cluster
   selectedCluster: null,
-  
+
   // Meta Information
   metaTitle: null,
   metaDescription: null,
-  
+
   // Document Structure
   documentStructure: null,
-  
+
   // Solution Integration
   solutionIntegrationMetrics: null,
-  
+
   // Additional Instructions
-  additionalInstructions: ''
+  additionalInstructions: '',
+
+  // Enhanced Analytics
+  comprehensiveAnalytics: null,
+  isAnalyzingContent: false,
+  lastAnalysisHash: null
 };

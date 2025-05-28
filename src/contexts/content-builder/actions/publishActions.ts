@@ -1,26 +1,26 @@
+
 import { ContentBuilderState, ContentBuilderAction, SaveContentParams } from '../types/index';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 export const createPublishActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
   // Implementation for saving content to draft
-  const saveContentToDraft = async (content: SaveContentParams): Promise<string | null> => {
+  const saveContentToDraft = async (): Promise<string | null> => {
     try {
       // Set saving state to true
       dispatch({ type: 'SET_IS_SAVING', payload: true });
       
-      console.log('Saving content to draft:', content);
+      console.log('Saving content to draft with enhanced metadata');
       
       // Check that required fields are present
-      if (!content.title || !content.content || !content.mainKeyword) {
+      if (!state.contentTitle || !state.content || !state.mainKeyword) {
         console.error('Missing required fields for saving content:', { 
-          title: content.title, 
-          content: !!content.content, 
-          mainKeyword: content.mainKeyword 
+          title: state.contentTitle, 
+          content: !!state.content, 
+          mainKeyword: state.mainKeyword 
         });
         toast.error('Missing required fields for saving content');
         return null;
@@ -33,23 +33,48 @@ export const createPublishActions = (
         return null;
       }
 
+      // Prepare enhanced metadata structure
+      const enhancedMetadata = {
+        mainKeyword: state.mainKeyword,
+        secondaryKeywords: state.selectedKeywords || [],
+        contentType: state.contentType,
+        metaTitle: state.metaTitle,
+        metaDescription: state.metaDescription,
+        outline: state.outline || [],
+        serpSelections: state.serpSelections || [],
+        serpData: state.serpData,
+        serpMetrics: state.comprehensiveSerpData ? {
+          totalResults: state.comprehensiveSerpData.totalResults,
+          competitorAnalyzed: state.comprehensiveSerpData.competitors?.length || 0,
+          contentGapsFound: state.serpSelections.filter(s => s.type === 'contentGap').length,
+          avgCompetitorLength: state.comprehensiveSerpData.avgContentLength || 0
+        } : null,
+        // Enhanced analytics data
+        comprehensiveAnalytics: state.comprehensiveAnalytics,
+        documentStructure: state.documentStructure,
+        solutionIntegrationMetrics: state.solutionIntegrationMetrics,
+        selectedSolution: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          category: state.selectedSolution.category
+        } : null,
+        contentIntent: state.contentIntent,
+        contentFormat: state.contentFormat,
+        additionalInstructions: state.additionalInstructions,
+        // SEO and optimization data
+        seoImprovements: state.seoImprovements,
+        optimizationSkipped: state.optimizationSkipped,
+        analysisTimestamp: new Date().toISOString()
+      };
+
       // Prepare content data for database
       const contentData = {
-        title: content.title,
-        content: content.content,
+        title: state.contentTitle,
+        content: state.content,
         status: 'draft',
-        seo_score: content.seoScore || 0,
+        seo_score: state.comprehensiveAnalytics?.contentQualityMetrics.overallScore || state.seoScore || 0,
         user_id: user.id,
-        metadata: {
-          mainKeyword: content.mainKeyword,
-          secondaryKeywords: content.secondaryKeywords || [],
-          contentType: content.contentType,
-          metaTitle: content.metaTitle,
-          metaDescription: content.metaDescription,
-          outline: content.outline || [],
-          serpSelections: content.serpSelections || [],
-          serpData: content.serpData
-        }
+        metadata: enhancedMetadata
       };
 
       // Save to database
@@ -62,8 +87,8 @@ export const createPublishActions = (
       if (error) throw error;
 
       // Save keywords if available
-      if (content.mainKeyword || (content.secondaryKeywords && content.secondaryKeywords.length > 0)) {
-        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])];
+      if (state.mainKeyword || (state.selectedKeywords && state.selectedKeywords.length > 0)) {
+        const keywords = [state.mainKeyword, ...(state.selectedKeywords || [])];
         
         for (const keyword of keywords) {
           // Check if keyword exists
@@ -105,20 +130,7 @@ export const createPublishActions = (
         }
       }
 
-      // Update state with saved content info
-      if (content.metaTitle) {
-        dispatch({ type: 'SET_META_TITLE', payload: content.metaTitle });
-      }
-      
-      if (content.metaDescription) {
-        dispatch({ type: 'SET_META_DESCRIPTION', payload: content.metaDescription });
-      }
-      
-      if (content.title) {
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: content.title });
-      }
-
-      toast.success('Content saved as draft successfully');
+      toast.success('Content saved as draft with enhanced analytics');
       
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });
@@ -133,20 +145,16 @@ export const createPublishActions = (
   };
   
   // Implementation for publishing content
-  const saveContentToPublished = async (content: SaveContentParams): Promise<string | null> => {
+  const saveContentToPublished = async (): Promise<string | null> => {
     try {
       // Set saving state to true
       dispatch({ type: 'SET_IS_SAVING', payload: true });
       
-      console.log('Publishing content:', content);
+      console.log('Publishing content with enhanced metadata');
       
       // Check that required fields are present
-      if (!content.title || !content.content || !content.mainKeyword) {
-        console.error('Missing required fields for publishing content:', { 
-          title: content.title, 
-          content: !!content.content, 
-          mainKeyword: content.mainKeyword 
-        });
+      if (!state.contentTitle || !state.content || !state.mainKeyword) {
+        console.error('Missing required fields for publishing content');
         toast.error('Missing required fields for publishing content');
         return null;
       }
@@ -158,23 +166,46 @@ export const createPublishActions = (
         return null;
       }
 
+      // Prepare enhanced metadata structure (same as draft)
+      const enhancedMetadata = {
+        mainKeyword: state.mainKeyword,
+        secondaryKeywords: state.selectedKeywords || [],
+        contentType: state.contentType,
+        metaTitle: state.metaTitle,
+        metaDescription: state.metaDescription,
+        outline: state.outline || [],
+        serpSelections: state.serpSelections || [],
+        serpData: state.serpData,
+        serpMetrics: state.comprehensiveSerpData ? {
+          totalResults: state.comprehensiveSerpData.totalResults,
+          competitorAnalyzed: state.comprehensiveSerpData.competitors?.length || 0,
+          contentGapsFound: state.serpSelections.filter(s => s.type === 'contentGap').length,
+          avgCompetitorLength: state.comprehensiveSerpData.avgContentLength || 0
+        } : null,
+        comprehensiveAnalytics: state.comprehensiveAnalytics,
+        documentStructure: state.documentStructure,
+        solutionIntegrationMetrics: state.solutionIntegrationMetrics,
+        selectedSolution: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          category: state.selectedSolution.category
+        } : null,
+        contentIntent: state.contentIntent,
+        contentFormat: state.contentFormat,
+        additionalInstructions: state.additionalInstructions,
+        seoImprovements: state.seoImprovements,
+        optimizationSkipped: state.optimizationSkipped,
+        analysisTimestamp: new Date().toISOString()
+      };
+
       // Prepare content data for database
       const contentData = {
-        title: content.title,
-        content: content.content,
+        title: state.contentTitle,
+        content: state.content,
         status: 'published',
-        seo_score: content.seoScore || 0,
+        seo_score: state.comprehensiveAnalytics?.contentQualityMetrics.overallScore || state.seoScore || 0,
         user_id: user.id,
-        metadata: {
-          mainKeyword: content.mainKeyword,
-          secondaryKeywords: content.secondaryKeywords || [],
-          contentType: content.contentType,
-          metaTitle: content.metaTitle,
-          metaDescription: content.metaDescription,
-          outline: content.outline || [],
-          serpSelections: content.serpSelections || [],
-          serpData: content.serpData
-        }
+        metadata: enhancedMetadata
       };
 
       // Save to database
@@ -186,12 +217,11 @@ export const createPublishActions = (
 
       if (error) throw error;
 
-      // Save keywords if available
-      if (content.mainKeyword || (content.secondaryKeywords && content.secondaryKeywords.length > 0)) {
-        const keywords = [content.mainKeyword, ...(content.secondaryKeywords || [])];
+      // Save keywords (same as draft process)
+      if (state.mainKeyword || (state.selectedKeywords && state.selectedKeywords.length > 0)) {
+        const keywords = [state.mainKeyword, ...(state.selectedKeywords || [])];
         
         for (const keyword of keywords) {
-          // Check if keyword exists
           const { data: existingKeyword } = await supabase
             .from('keywords')
             .select('id')
@@ -202,7 +232,6 @@ export const createPublishActions = (
           let keywordId;
           
           if (!existingKeyword) {
-            // Create new keyword
             const { data: newKeyword, error: keywordError } = await supabase
               .from('keywords')
               .insert({
@@ -218,7 +247,6 @@ export const createPublishActions = (
             keywordId = existingKeyword.id;
           }
 
-          // Create content-keyword relationship
           const { error: relationError } = await supabase
             .from('content_keywords')
             .insert({
@@ -230,20 +258,7 @@ export const createPublishActions = (
         }
       }
 
-      // Update state with published content info
-      if (content.metaTitle) {
-        dispatch({ type: 'SET_META_TITLE', payload: content.metaTitle });
-      }
-      
-      if (content.metaDescription) {
-        dispatch({ type: 'SET_META_DESCRIPTION', payload: content.metaDescription });
-      }
-      
-      if (content.title) {
-        dispatch({ type: 'SET_CONTENT_TITLE', payload: content.title });
-      }
-
-      toast.success('Content published successfully');
+      toast.success('Content published successfully with enhanced analytics');
       
       // Set saving state to false
       dispatch({ type: 'SET_IS_SAVING', payload: false });

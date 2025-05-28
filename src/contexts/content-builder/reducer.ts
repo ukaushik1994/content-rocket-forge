@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 import { OutlineSection } from './types/outline-types';
 
@@ -252,6 +251,24 @@ export const contentBuilderReducer = (
       return {
         ...state,
         additionalInstructions: action.payload
+      };
+
+    case 'SET_COMPREHENSIVE_ANALYTICS':
+      return {
+        ...state,
+        comprehensiveAnalytics: action.payload
+      };
+
+    case 'SET_IS_ANALYZING_CONTENT':
+      return {
+        ...state,
+        isAnalyzingContent: action.payload
+      };
+
+    case 'SET_LAST_ANALYSIS_HASH':
+      return {
+        ...state,
+        lastAnalysisHash: action.payload
       };
       
     default:

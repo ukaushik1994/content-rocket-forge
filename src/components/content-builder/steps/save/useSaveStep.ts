@@ -5,10 +5,9 @@ import { useContent } from '@/contexts/content';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
-import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 
 export const useSaveStep = () => {
-  const { state } = useContentBuilder();
+  const { state, saveContentToDraft, saveContentToPublished } = useContentBuilder();
   const { 
     mainKeyword, 
     contentType, 
@@ -19,12 +18,12 @@ export const useSaveStep = () => {
     contentTitle,
     seoImprovements,
     selectedKeywords,
-    content
+    content,
+    comprehensiveAnalytics
   } = state;
   
   const { contentItems, refreshContent } = useContent();
   const navigate = useNavigate();
-  const { handlePublish, handleSaveToDraft } = useSaveContent();
   
   // Track optimizations
   const hasAppliedOptimizations = seoImprovements?.some(improvement => improvement.applied) || false;
@@ -47,7 +46,6 @@ export const useSaveStep = () => {
     const hasDraft = localStorage.getItem('content_builder_draft') !== null;
     setAutoSaved(hasDraft);
     
-    // If there's an auto-saved draft, remind the user it needs to be saved properly
     if (hasDraft && !saveCompleted) {
       toast.info(
         "You have auto-saved content that needs to be properly saved to your library",
@@ -77,12 +75,8 @@ export const useSaveStep = () => {
   // Improved check for similar content already exists
   useEffect(() => {
     if (mainKeyword && title) {
-      // Look for similar content based on title or main keyword
       const similarContent = contentItems.find(item => {
-        // Check for similar title (case insensitive)
         const titleMatch = item.title.toLowerCase() === title.toLowerCase();
-        
-        // Check for main keyword match
         const keywordMatch = item.keywords && 
           item.keywords.some(kw => 
             kw.toLowerCase() === mainKeyword.toLowerCase()
@@ -104,7 +98,6 @@ export const useSaveStep = () => {
   
   const handleViewExisting = () => {
     if (existingContentId) {
-      // Navigate to content library with focus on the existing item
       navigate('/content', { state: { highlightId: existingContentId } });
     } else {
       navigate('/content');
@@ -117,40 +110,35 @@ export const useSaveStep = () => {
       return;
     }
 
-    // If content is already saved, navigate directly to content library
     if (alreadySaved && existingContentId) {
       toast.info("Navigating to existing content in your library");
       handleViewExisting();
       return;
     }
 
-    // Save to content library
     try {
       setIsSubmitting(true);
-      console.log("[SaveStep] Saving content with title:", title);
-      console.log("[SaveStep] Using description:", description);
-      console.log("[SaveStep] Applied optimizations:", hasAppliedOptimizations ? "Yes" : "No");
+      console.log("[SaveStep] Saving content with enhanced analytics:", {
+        title,
+        description,
+        hasAnalytics: !!comprehensiveAnalytics,
+        analyticsScore: comprehensiveAnalytics?.contentQualityMetrics.overallScore
+      });
       
-      await handleSaveToDraft();
+      await saveContentToDraft();
       
-      // Clear auto-saved content now that it's properly saved
       localStorage.removeItem('content_builder_draft');
       localStorage.removeItem('content_builder_timestamp');
       
-      // Force refresh content before navigating
-      console.log("[SaveStep] Draft saved, refreshing content...");
+      console.log("[SaveStep] Draft saved with enhanced metadata, refreshing content...");
       await refreshContent();
-      console.log("[SaveStep] Content refreshed, found items:", contentItems.length);
       
       setSaveCompleted(true);
-      toast.success("Content saved to library");
+      toast.success("Content saved with comprehensive analytics");
       
-      // Set a consistent flag for content draft saved
       sessionStorage.setItem('content_draft_saved', 'true');
       sessionStorage.setItem('content_save_timestamp', Date.now().toString());
-      console.log("[SaveStep] Session storage flags set for draft saved");
       
-      // Navigate to drafts page after a short delay 
       setTimeout(() => {
         console.log("[SaveStep] Navigating to drafts page...");
         navigate('/drafts', { 
@@ -164,11 +152,43 @@ export const useSaveStep = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handlePublishContent = async () => {
+    if (!content || !mainKeyword) {
+      toast.error("Content or keywords are missing");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      console.log("[SaveStep] Publishing content with enhanced analytics");
+      
+      await saveContentToPublished();
+      
+      localStorage.removeItem('content_builder_draft');
+      localStorage.removeItem('content_builder_timestamp');
+      
+      await refreshContent();
+      
+      setSaveCompleted(true);
+      toast.success("Content published with comprehensive analytics");
+      
+      setTimeout(() => {
+        navigate('/content', { 
+          state: { contentRefresh: true }
+        });
+      }, 1000);
+    } catch (error) {
+      console.error('Error publishing content:', error);
+      toast.error('Failed to publish content');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   const handleDownload = (format: 'pdf' | 'docx' | 'html') => {
     toast.success(`Content exported as ${format.toUpperCase()}`);
     
-    // Mock download functionality
     setTimeout(() => {
       const link = document.createElement('a');
       link.href = '#';
@@ -177,6 +197,28 @@ export const useSaveStep = () => {
       link.click();
       document.body.removeChild(link);
     }, 1000);
+  };
+  
+  // Enhanced analytics summary for display
+  const getAnalyticsSummary = () => {
+    if (!comprehensiveAnalytics) {
+      return {
+        overallScore: seoScore || 0,
+        hasAnalytics: false,
+        readabilityGrade: 'Unknown',
+        contentLength: content?.split(/\s+/).length || 0
+      };
+    }
+
+    return {
+      overallScore: comprehensiveAnalytics.contentQualityMetrics.overallScore,
+      hasAnalytics: true,
+      readabilityGrade: comprehensiveAnalytics.readabilityMetrics.grade,
+      contentLength: comprehensiveAnalytics.technicalSeoMetrics.contentLength,
+      structureScore: comprehensiveAnalytics.contentQualityMetrics.structureScore,
+      keywordScore: comprehensiveAnalytics.contentQualityMetrics.keywordOptimizationScore,
+      metaScore: comprehensiveAnalytics.contentQualityMetrics.metaOptimizationScore
+    };
   };
   
   return {
@@ -191,13 +233,15 @@ export const useSaveStep = () => {
     socialShare,
     setSocialShare,
     handleSaveContent,
+    handlePublishContent,
     isSubmitting,
     handleDownload,
     solutionName: selectedSolution ? selectedSolution.name : 'Not specified',
-    seoScore,
+    seoScore: comprehensiveAnalytics?.contentQualityMetrics.overallScore || seoScore,
     contentType,
     content,
     saveCompleted,
-    autoSaved
+    autoSaved,
+    analyticsSummary: getAnalyticsSummary()
   };
 };
