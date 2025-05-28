@@ -8,6 +8,7 @@ export interface OptimizationSuggestion {
   autoFixable?: boolean;
   impact?: 'high' | 'medium' | 'low';
   effort?: 'high' | 'medium' | 'low';
+  category: 'structure' | 'seo' | 'keywords' | 'solution' | 'content';
 }
 
 export interface ContentOptimizationResult {
