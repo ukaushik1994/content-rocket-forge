@@ -9,5 +9,5 @@ export interface ContentBuilderStep {
   description: string;
   completed: boolean;
   visited: boolean;
-  analyzed: boolean;
+  analyzed?: boolean; // Field to track if analysis has been run
 }

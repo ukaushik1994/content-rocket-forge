@@ -5,12 +5,12 @@ export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
   steps: [
-    { id: 0, name: 'Keywords', description: 'Select and research target keywords', completed: false, visited: false, analyzed: false },
-    { id: 1, name: 'SERP Analysis', description: 'Analyze search results and competitors', completed: false, visited: false, analyzed: false },
-    { id: 2, name: 'Content Type & Outline', description: 'Choose content format and create outline', completed: false, visited: false, analyzed: false },
-    { id: 3, name: 'Writing', description: 'Generate and write your content', completed: false, visited: false, analyzed: false },
-    { id: 4, name: 'Optimize & Review', description: 'Review, optimize and finalize content', completed: false, visited: false, analyzed: false },
-    { id: 5, name: 'Save', description: 'Save your content as draft or publish', completed: false, visited: false, analyzed: false }
+    { id: 0, name: 'Keywords', completed: false, visited: false, analyzed: false },
+    { id: 1, name: 'SERP Analysis', completed: false, visited: false, analyzed: false },
+    { id: 2, name: 'Content Type & Outline', completed: false, visited: false, analyzed: false },
+    { id: 3, name: 'Writing', completed: false, visited: false, analyzed: false },
+    { id: 4, name: 'Optimize & Review', completed: false, visited: false, analyzed: false },
+    { id: 5, name: 'Save', completed: false, visited: false, analyzed: false }
   ],
   
   // Keywords

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,11 +43,11 @@ const jsonToStringArray = (jsonValue: any): string[] => {
 };
 
 const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
-  { value: 'blog-post', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
+  { value: 'blog', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
+  { value: 'glossary', label: 'Glossary', icon: ListTree, description: 'Definitions and explanations of industry terms' },
+  { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
   { value: 'article', label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
-  { value: 'landing-page', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
-  { value: 'product-description', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' },
-  { value: 'email', label: 'Email', icon: ListTree, description: 'Email marketing content and newsletters' }
+  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' }
 ];
 
 export const ContentTypeStep = () => {

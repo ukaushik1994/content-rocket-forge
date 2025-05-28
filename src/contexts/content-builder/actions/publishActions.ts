@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction } from '../types/index';
+import { ContentBuilderState, ContentBuilderAction, SaveContentParams } from '../types/index';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -7,11 +7,6 @@ export const createPublishActions = (
   state: ContentBuilderState, 
   dispatch: React.Dispatch<ContentBuilderAction>
 ) => {
-  // Helper function to serialize complex objects for JSON storage
-  const serializeForJson = (obj: any): any => {
-    return JSON.parse(JSON.stringify(obj));
-  };
-
   // Implementation for saving content to draft
   const saveContentToDraft = async (): Promise<string | null> => {
     try {
@@ -38,8 +33,8 @@ export const createPublishActions = (
         return null;
       }
 
-      // Prepare enhanced metadata structure and serialize for JSON
-      const enhancedMetadata = serializeForJson({
+      // Prepare enhanced metadata structure
+      const enhancedMetadata = {
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords || [],
         contentType: state.contentType,
@@ -70,7 +65,7 @@ export const createPublishActions = (
         seoImprovements: state.seoImprovements,
         optimizationSkipped: state.optimizationSkipped,
         analysisTimestamp: new Date().toISOString()
-      });
+      };
 
       // Prepare content data for database
       const contentData = {
@@ -171,8 +166,8 @@ export const createPublishActions = (
         return null;
       }
 
-      // Prepare enhanced metadata structure (same as draft) and serialize for JSON
-      const enhancedMetadata = serializeForJson({
+      // Prepare enhanced metadata structure (same as draft)
+      const enhancedMetadata = {
         mainKeyword: state.mainKeyword,
         secondaryKeywords: state.selectedKeywords || [],
         contentType: state.contentType,
@@ -201,7 +196,7 @@ export const createPublishActions = (
         seoImprovements: state.seoImprovements,
         optimizationSkipped: state.optimizationSkipped,
         analysisTimestamp: new Date().toISOString()
-      });
+      };
 
       // Prepare content data for database
       const contentData = {
