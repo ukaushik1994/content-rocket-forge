@@ -3,12 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ContentType } from '@/contexts/content-builder/types/content-types';
-import { Edit2, FileText, Tag } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Edit2, FileText, Tag, Copy, Download, Maximize2, Eye, BarChart3, Zap, Target } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
-import { MetadataTabContent } from './detail/MetadataTabContent';
+import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
+import { toast } from 'sonner';
+import { ContentPreviewSection } from './enhanced-detail/ContentPreviewSection';
+import { MetadataAnalytics } from './enhanced-detail/MetadataAnalytics';
+import { SerpAnalysisDisplay } from './enhanced-detail/SerpAnalysisDisplay';
+import { SolutionIntegrationDashboard } from './enhanced-detail/SolutionIntegrationDashboard';
+import { DocumentStructureVisualization } from './enhanced-detail/DocumentStructureVisualization';
+import { KeywordPerformanceCard } from './enhanced-detail/KeywordPerformanceCard';
 
 interface DraftDetailViewProps {
   open: boolean;
@@ -17,62 +28,65 @@ interface DraftDetailViewProps {
 }
 
 export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) {
-  const [activeTab, setActiveTab] = useState<'content' | 'metadata'>('content');
-  const [serpData, setSerpData] = useState(null);
-  const [documentStructure, setDocumentStructure] = useState(null);
-  const [solutionMetrics, setSolutionMetrics] = useState(null);
-  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    serp: false,
-    solution: false,
-    structure: false,
-    keywords: false,
-    questions: false,
-    entities: false,
-    gaps: false
+  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'seo' | 'structure'>('content');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisData, setAnalysisData] = useState({
+    serpData: null,
+    documentStructure: null,
+    solutionMetrics: null,
+    keywordUsage: []
   });
-  
-  // Load analysis data when metadata tab is selected
-  useEffect(() => {
-    if (activeTab === 'metadata' && draft && draft.content) {
-      loadAnalysisData();
-    }
-  }, [activeTab, draft]);
 
-  const loadAnalysisData = async () => {
+  // Load comprehensive analysis when component mounts or draft changes
+  useEffect(() => {
+    if (draft && draft.content) {
+      loadComprehensiveAnalysis();
+    }
+  }, [draft]);
+
+  const loadComprehensiveAnalysis = async () => {
     if (!draft || !draft.content) return;
     
-    setIsLoadingAnalysis(true);
+    setIsAnalyzing(true);
     
     try {
       // Extract document structure
       const structure = extractDocumentStructure(draft.content);
-      setDocumentStructure(structure);
       
-      // Analyze SERP data if keywords available
+      // Calculate keyword usage if keywords available
+      let keywordUsage = [];
       if (draft.keywords && draft.keywords.length > 0) {
         const mainKeyword = draft.keywords[0];
-        const serpAnalysis = await analyzeKeywordSerp(mainKeyword);
-        setSerpData(serpAnalysis);
+        const selectedKeywords = draft.keywords.slice(1);
+        keywordUsage = calculateKeywordUsage(draft.content, mainKeyword, selectedKeywords);
+      }
+      
+      // Analyze SERP data if keywords available
+      let serpAnalysis = null;
+      if (draft.keywords && draft.keywords.length > 0) {
+        const mainKeyword = draft.keywords[0];
+        serpAnalysis = await analyzeKeywordSerp(mainKeyword);
       }
       
       // Analyze solution integration if solution data is available
+      let solutionAnalysis = null;
       if (draft.metadata?.selectedSolution) {
-        const solutionAnalysis = analyzeSolutionIntegration(draft.content, draft.metadata.selectedSolution);
-        setSolutionMetrics(solutionAnalysis);
+        solutionAnalysis = analyzeSolutionIntegration(draft.content, draft.metadata.selectedSolution);
       }
+      
+      setAnalysisData({
+        serpData: serpAnalysis,
+        documentStructure: structure,
+        solutionMetrics: solutionAnalysis,
+        keywordUsage
+      });
     } catch (error) {
-      console.error('Error loading analysis data:', error);
+      console.error('Error loading comprehensive analysis:', error);
+      toast.error('Failed to load analysis data');
     } finally {
-      setIsLoadingAnalysis(false);
+      setIsAnalyzing(false);
     }
-  };
-
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
   };
   
   if (!draft) return null;
@@ -88,70 +102,181 @@ export function DraftDetailView({ open, onClose, draft }: DraftDetailViewProps) 
     }).format(date);
   };
 
+  const handleCopyContent = () => {
+    if (draft.content) {
+      navigator.clipboard.writeText(draft.content);
+      toast.success('Content copied to clipboard');
+    }
+  };
+
+  const handleExport = () => {
+    const element = document.createElement('a');
+    const file = new Blob([draft.content || ''], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${draft.title}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    toast.success('Content exported successfully');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className={`${isFullscreen ? 'max-w-[100vw] max-h-[100vh] w-full h-full' : 'max-w-7xl max-h-[90vh]'} overflow-hidden flex flex-col bg-gradient-to-br from-background via-background/95 to-background/90 backdrop-blur-xl border border-white/10`}>
+        <DialogHeader className="pb-6 border-b border-white/5">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl">{draft.title}</DialogTitle>
-            <Badge variant={draft.status === 'draft' ? 'outline' : 'default'}>
-              {draft.status === 'draft' ? 'Draft' : 'Published'}
-            </Badge>
+            <div className="flex items-center gap-4">
+              <motion.div 
+                className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FileText className="h-5 w-5 text-primary" />
+              </motion.div>
+              <div>
+                <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {draft.title}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                  Created: {formatDate(draft.created_at)} • Updated: {formatDate(draft.updated_at)}
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant={draft.status === 'draft' ? 'outline' : 'default'}
+                className="text-xs px-3 py-1 rounded-full"
+              >
+                {draft.status === 'draft' ? 'Draft' : 'Published'}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <DialogDescription>
-            Created: {formatDate(draft.created_at)}
-          </DialogDescription>
         </DialogHeader>
         
-        <div className="flex border-b mb-4">
-          <button
-            className={`px-4 py-2 ${activeTab === 'content' ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
-            onClick={() => setActiveTab('content')}
-          >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Content
-          </button>
-          <button
-            className={`px-4 py-2 ${activeTab === 'metadata' ? 'border-b-2 border-primary font-medium' : 'text-muted-foreground'}`}
-            onClick={() => setActiveTab('metadata')}
-          >
-            <Tag className="w-4 h-4 inline mr-2" />
-            Metadata
-          </button>
+        <div className="flex-1 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-4 bg-muted/30 backdrop-blur-sm">
+              <TabsTrigger value="content" className="flex items-center gap-2 data-[state=active]:bg-background/60">
+                <Eye className="h-4 w-4" />
+                Content Preview
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2 data-[state=active]:bg-background/60">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="seo" className="flex items-center gap-2 data-[state=active]:bg-background/60">
+                <Target className="h-4 w-4" />
+                SEO Analysis
+              </TabsTrigger>
+              <TabsTrigger value="structure" className="flex items-center gap-2 data-[state=active]:bg-background/60">
+                <Zap className="h-4 w-4" />
+                Structure
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="flex-1 overflow-hidden mt-4">
+              <AnimatePresence mode="wait">
+                <TabsContent value="content" className="h-full m-0">
+                  <motion.div
+                    key="content"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <ContentPreviewSection 
+                      content={draft.content || ''}
+                      title={draft.title}
+                      keywords={draft.keywords || []}
+                      onCopy={handleCopyContent}
+                      onExport={handleExport}
+                    />
+                  </motion.div>
+                </TabsContent>
+                
+                <TabsContent value="analytics" className="h-full m-0">
+                  <motion.div
+                    key="analytics"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <MetadataAnalytics 
+                      draft={draft}
+                      isAnalyzing={isAnalyzing}
+                      analysisData={analysisData}
+                      formatDate={formatDate}
+                    />
+                  </motion.div>
+                </TabsContent>
+                
+                <TabsContent value="seo" className="h-full m-0">
+                  <motion.div
+                    key="seo"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                      <KeywordPerformanceCard 
+                        keywords={draft.keywords || []}
+                        keywordUsage={analysisData.keywordUsage}
+                        isAnalyzing={isAnalyzing}
+                      />
+                      <SerpAnalysisDisplay 
+                        serpData={analysisData.serpData}
+                        draft={draft}
+                        isAnalyzing={isAnalyzing}
+                      />
+                    </div>
+                  </motion.div>
+                </TabsContent>
+                
+                <TabsContent value="structure" className="h-full m-0">
+                  <motion.div
+                    key="structure"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                      <DocumentStructureVisualization 
+                        documentStructure={analysisData.documentStructure}
+                        isAnalyzing={isAnalyzing}
+                      />
+                      <SolutionIntegrationDashboard 
+                        solution={draft.metadata?.selectedSolution}
+                        solutionMetrics={analysisData.solutionMetrics}
+                        isAnalyzing={isAnalyzing}
+                      />
+                    </div>
+                  </motion.div>
+                </TabsContent>
+              </AnimatePresence>
+            </div>
+          </Tabs>
         </div>
         
-        <div className="flex-1 overflow-y-auto">
-          {activeTab === 'content' && (
-            <div className="prose prose-invert max-w-none">
-              {draft.content ? (
-                <div dangerouslySetInnerHTML={{ __html: draft.content }} />
-              ) : (
-                <p className="text-muted-foreground italic">No content available</p>
-              )}
-            </div>
-          )}
-          
-          {activeTab === 'metadata' && (
-            <div className="space-y-6">
-              <MetadataTabContent 
-                draft={draft}
-                isLoadingAnalysis={isLoadingAnalysis}
-                serpData={serpData}
-                documentStructure={documentStructure}
-                solutionMetrics={solutionMetrics}
-                expandedSections={expandedSections}
-                toggleSection={toggleSection}
-                formatDate={formatDate}
-              />
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+          <Button variant="outline" onClick={onClose} className="px-6">
             Close
           </Button>
-          <Button>
+          <Button className="px-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
             <Edit2 className="h-4 w-4 mr-2" />
             Edit Draft
           </Button>
