@@ -18,9 +18,7 @@ export function useSerpIntegration() {
           title: 'Integrate SERP Items',
           description: suggestion,
           type: 'serp_integration',
-          priority: 'medium',
-          category: 'seo',
-          autoFixable: true
+          priority: 'medium'
         }));
         setSerpIntegrationSuggestions(suggestions);
         return suggestions;

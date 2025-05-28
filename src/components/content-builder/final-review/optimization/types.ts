@@ -8,21 +8,6 @@ export interface OptimizationSuggestion {
   autoFixable?: boolean;
   impact?: 'high' | 'medium' | 'low';
   effort?: 'high' | 'medium' | 'low';
-  category: 'structure' | 'seo' | 'keywords' | 'solution' | 'content';
-}
-
-// Unified suggestion type that works for both optimization and quality checks
-export interface UnifiedSuggestion {
-  id: string;
-  title: string;
-  description: string;
-  type: 'critical' | 'major' | 'minor' | 'content' | 'solution' | 'humanization' | 'serp_integration';
-  priority: 'high' | 'medium' | 'low' | number;
-  autoFixable?: boolean;
-  impact?: 'high' | 'medium' | 'low';
-  effort?: 'high' | 'medium' | 'low';
-  category: 'structure' | 'seo' | 'keywords' | 'solution' | 'content';
-  checklistItem?: string;
 }
 
 export interface ContentOptimizationResult {

@@ -1,135 +1,102 @@
 
 import { useState, useCallback } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { OptimizationSuggestion } from './types';
+import { toast } from 'sonner';
+import { useContentAnalysis } from './hooks/useContentAnalysis';
+import { useAIDetection } from './hooks/useAIDetection';
+import { useSerpIntegration } from './hooks/useSerpIntegration';
+import { useSolutionAnalysis } from './hooks/useSolutionAnalysis';
+import { useContentOptimization } from './hooks/useContentOptimization';
 
-export const useContentOptimizer = (content: string) => {
-  const { state } = useContentBuilder();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [contentSuggestions, setContentSuggestions] = useState<OptimizationSuggestion[]>([]);
-  const [solutionSuggestions, setSolutionSuggestions] = useState<OptimizationSuggestion[]>([]);
-  const [aiDetectionSuggestions, setAiDetectionSuggestions] = useState<OptimizationSuggestion[]>([]);
-  const [serpIntegrationSuggestions, setSerpIntegrationSuggestions] = useState<OptimizationSuggestion[]>([]);
+export function useContentOptimizer(content: string) {
+  const [analyzedContent, setAnalyzedContent] = useState('');
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
 
+  const { 
+    contentSuggestions, 
+    isAnalyzing: isAnalyzingContent, 
+    analyzeContentQuality,
+    setContentSuggestions
+  } = useContentAnalysis();
+
+  const { 
+    aiDetectionSuggestions, 
+    analyzeAIContent,
+    setAiDetectionSuggestions
+  } = useAIDetection();
+
+  const { 
+    serpIntegrationSuggestions, 
+    analyzeSerpUsage: analyzeSerpUsageHook,
+    setSerpIntegrationSuggestions,
+    incorporateAllSerpItems: incorporateAllSerpItemsHook
+  } = useSerpIntegration();
+
+  const { 
+    solutionSuggestions, 
+    analyzedSolutionIntegration, 
+    analyzeSolution,
+    setSolutionSuggestions
+  } = useSolutionAnalysis();
+
+  const { isOptimizing, optimizeContent: optimizeContentHook } = useContentOptimization();
+
+  const isAnalyzing = isAnalyzingContent;
+
   const analyzeContent = useCallback(async () => {
-    setIsAnalyzing(true);
+    if (!content || content.length < 100) {
+      toast.error('Content too short for analysis');
+      return;
+    }
+
+    setContentSuggestions([]);
+    setSolutionSuggestions([]);
+    setAiDetectionSuggestions([]);
+    setSerpIntegrationSuggestions([]);
     
     try {
-      // Simulate analysis delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Run all analyses in parallel
+      const [contentSugs, aiSugs, serpSugs, solutionSugs] = await Promise.all([
+        analyzeContentQuality(content),
+        analyzeAIContent(content),
+        analyzeSerpUsageHook(content),
+        analyzeSolution(content)
+      ]);
+
+      // Pre-select high priority solution suggestions
+      const highPrioritySolutionSuggestions = solutionSugs
+        .filter(s => s.priority === 'high')
+        .map(s => s.id);
       
-      // Generate content quality suggestions
-      const contentSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'content-readability',
-          title: 'Improve Content Readability',
-          description: 'Break down complex sentences and use simpler language for better user engagement.',
-          type: 'content',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'content'
-        },
-        {
-          id: 'content-structure',
-          title: 'Enhance Content Structure',
-          description: 'Add more subheadings to improve content organization and scannability.',
-          type: 'content',
-          priority: 'high',
-          autoFixable: true,
-          category: 'structure'
-        }
-      ];
+      setSelectedSuggestions(prevSelected => [
+        ...prevSelected,
+        ...highPrioritySolutionSuggestions
+      ]);
       
-      // Generate solution integration suggestions
-      const solutionSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'solution-integration',
-          title: 'Better Solution Integration',
-          description: 'More naturally integrate your solution features throughout the content.',
-          type: 'solution',
-          priority: 'high',
-          autoFixable: true,
-          category: 'solution'
-        },
-        {
-          id: 'solution-cta',
-          title: 'Improve Call-to-Action',
-          description: 'Add a stronger call-to-action that connects to your solution benefits.',
-          type: 'solution',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'solution'
-        }
-      ];
-      
-      // Generate AI detection suggestions
-      const aiSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'ai-humanize',
-          title: 'Humanize AI Content',
-          description: 'Add personal experiences and varied sentence structures to reduce AI detection.',
-          type: 'humanization',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'content'
-        }
-      ];
-      
-      // Generate SERP integration suggestions
-      const serpSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'serp-keywords',
-          title: 'Integrate SERP Keywords',
-          description: 'Include additional keywords found in top-ranking SERP results.',
-          type: 'serp_integration',
-          priority: 'high',
-          autoFixable: true,
-          category: 'keywords'
-        },
-        {
-          id: 'serp-topics',
-          title: 'Cover Missing SERP Topics',
-          description: 'Address content gaps identified from competitor analysis.',
-          type: 'serp_integration',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'content'
-        }
-      ];
-      
-      setContentSuggestions(contentSuggs);
-      setSolutionSuggestions(solutionSuggs);
-      setAiDetectionSuggestions(aiSuggs);
-      setSerpIntegrationSuggestions(serpSuggs);
-      
+      setAnalyzedContent(content);
     } catch (error) {
       console.error('Error analyzing content:', error);
-    } finally {
-      setIsAnalyzing(false);
+      toast.error('Failed to analyze content');
     }
-  }, [content]);
+  }, [content, analyzeContentQuality, analyzeAIContent, analyzeSerpUsageHook, analyzeSolution]);
 
-  const optimizeContent = useCallback(async (): Promise<string | null> => {
-    if (selectedSuggestions.length === 0) return null;
-    
-    setIsOptimizing(true);
-    
-    try {
-      // Simulate optimization process
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Return optimized content (in real implementation, this would call AI service)
-      return content + '\n\n[Content optimized based on selected suggestions]';
-      
-    } catch (error) {
-      console.error('Error optimizing content:', error);
-      return null;
-    } finally {
-      setIsOptimizing(false);
-    }
-  }, [content, selectedSuggestions]);
+  const optimizeContent = useCallback(async () => {
+    return await optimizeContentHook(
+      content,
+      selectedSuggestions,
+      contentSuggestions,
+      aiDetectionSuggestions,
+      serpIntegrationSuggestions,
+      solutionSuggestions
+    );
+  }, [
+    content,
+    selectedSuggestions,
+    contentSuggestions,
+    aiDetectionSuggestions,
+    serpIntegrationSuggestions,
+    solutionSuggestions,
+    optimizeContentHook
+  ]);
 
   const toggleSuggestion = useCallback((suggestionId: string) => {
     setSelectedSuggestions(prev => 
@@ -140,9 +107,19 @@ export const useContentOptimizer = (content: string) => {
   }, []);
 
   const incorporateAllSerpItems = useCallback(() => {
-    const serpSuggestionIds = serpIntegrationSuggestions.map(s => s.id);
-    setSelectedSuggestions(prev => [...new Set([...prev, ...serpSuggestionIds])]);
-  }, [serpIntegrationSuggestions]);
+    const serpSuggestionIds = incorporateAllSerpItemsHook();
+    setSelectedSuggestions(prev => {
+      const newSelections = [...prev];
+      serpSuggestionIds.forEach(id => {
+        if (!newSelections.includes(id)) {
+          newSelections.push(id);
+        }
+      });
+      return newSelections;
+    });
+    
+    toast.success('All SERP integration suggestions selected');
+  }, [incorporateAllSerpItemsHook]);
 
   return {
     isAnalyzing,
@@ -151,10 +128,12 @@ export const useContentOptimizer = (content: string) => {
     solutionSuggestions,
     aiDetectionSuggestions,
     serpIntegrationSuggestions,
-    selectedSuggestions,
+    analyzedContent,
+    analyzedSolutionIntegration,
     analyzeContent,
     optimizeContent,
+    selectedSuggestions,
     toggleSuggestion,
     incorporateAllSerpItems
   };
-};
+}

@@ -14,9 +14,7 @@ export function useAIDetection() {
         title: 'Humanize AI Content',
         description: suggestion,
         type: 'humanization',
-        priority: 'high',
-        category: 'content',
-        autoFixable: true
+        priority: 'high'
       }));
       setAiDetectionSuggestions(suggestions);
       return suggestions;
