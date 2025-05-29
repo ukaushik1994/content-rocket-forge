@@ -42,18 +42,40 @@ export function isSerpApiKeyFormat(key: string): boolean {
 }
 
 /**
- * Check if the provided key appears to be a valid Google Analytics API key format
- * Google API keys typically start with AIza and are around 39 characters long
+ * Check if the provided key appears to be a valid Google Analytics credential
+ * Can be either an API key or service account JSON
  */
 export function isGoogleAnalyticsKeyFormat(key: string): boolean {
+  // Check if it's a service account JSON
+  try {
+    const parsed = JSON.parse(key);
+    if (parsed.type === 'service_account' && parsed.private_key && parsed.client_email) {
+      return true;
+    }
+  } catch (e) {
+    // Not JSON, check if it's an API key format
+  }
+  
+  // Check if it's a Google API key format (starts with AIza and is around 39 characters)
   return /^AIza[a-zA-Z0-9-_]{35}$/.test(key);
 }
 
 /**
- * Check if the provided key appears to be a valid Google Search Console API key format
- * Uses the same format as Google Analytics (Google API key)
+ * Check if the provided key appears to be a valid Google Search Console credential
+ * Can be either an API key or service account JSON
  */
 export function isGoogleSearchConsoleKeyFormat(key: string): boolean {
+  // Check if it's a service account JSON
+  try {
+    const parsed = JSON.parse(key);
+    if (parsed.type === 'service_account' && parsed.private_key && parsed.client_email) {
+      return true;
+    }
+  } catch (e) {
+    // Not JSON, check if it's an API key format
+  }
+  
+  // Check if it's a Google API key format (starts with AIza and is around 39 characters)
   return /^AIza[a-zA-Z0-9-_]{35}$/.test(key);
 }
 

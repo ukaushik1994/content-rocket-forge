@@ -25,9 +25,9 @@ export function getProviderKeyFormatError(provider: string): string {
     case 'gemini':
       return 'Gemini API keys must start with "AIzaSy" followed by alphanumeric characters';
     case 'google-analytics':
-      return 'Google Analytics API keys must start with "AIza" and be exactly 39 characters long';
+      return 'Google Analytics credentials must be either a service account JSON or an API key starting with "AIza"';
     case 'google-search-console':
-      return 'Google Search Console API keys must start with "AIza" and be exactly 39 characters long';
+      return 'Google Search Console credentials must be either a service account JSON or an API key starting with "AIza"';
     case 'mistral':
       return 'Mistral API keys must be at least 32 alphanumeric characters';
     case 'serp':
