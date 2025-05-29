@@ -42,12 +42,30 @@ export function isSerpApiKeyFormat(key: string): boolean {
 }
 
 /**
+ * Check if the provided key appears to be a valid Google Analytics API key format
+ * Google API keys typically start with AIza and are around 39 characters long
+ */
+export function isGoogleAnalyticsKeyFormat(key: string): boolean {
+  return /^AIza[a-zA-Z0-9-_]{35}$/.test(key);
+}
+
+/**
+ * Check if the provided key appears to be a valid Google Search Console API key format
+ * Uses the same format as Google Analytics (Google API key)
+ */
+export function isGoogleSearchConsoleKeyFormat(key: string): boolean {
+  return /^AIza[a-zA-Z0-9-_]{35}$/.test(key);
+}
+
+/**
  * Attempts to detect what type of API key this is based on its format
  */
 export function detectApiKeyType(key: string): string | null {
   if (isOpenAIKeyFormat(key)) return 'openai';
   if (isAnthropicKeyFormat(key)) return 'anthropic';
   if (isGeminiKeyFormat(key)) return 'gemini';
+  if (isGoogleAnalyticsKeyFormat(key)) return 'google-analytics';
+  if (isGoogleSearchConsoleKeyFormat(key)) return 'google-search-console';
   if (isMistralKeyFormat(key)) return 'mistral';
   if (isSerpApiKeyFormat(key)) return 'serp';
   return null;
@@ -68,6 +86,10 @@ export function validateProviderKeyFormat(provider: string, key: string): boolea
       return isMistralKeyFormat(key);
     case 'serp':
       return isSerpApiKeyFormat(key);
+    case 'google-analytics':
+      return isGoogleAnalyticsKeyFormat(key);
+    case 'google-search-console':
+      return isGoogleSearchConsoleKeyFormat(key);
     default:
       return true; // For other providers we don't have format validation
   }

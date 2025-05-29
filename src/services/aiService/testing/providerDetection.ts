@@ -1,66 +1,38 @@
 
-import { AiProvider } from "../types";
+import { validateProviderKeyFormat } from "@/services/apiKeys/validation";
 
 /**
- * Detect the type of AI API key based on its format
- * @param key The API key to detect
- * @returns A promise that resolves to the provider name or null
+ * Detect if a key matches a specific provider's format
+ * @param provider The provider to check against
+ * @param key The API key to validate
+ * @returns Boolean indicating if the key matches the provider's format
  */
-export async function detectAiKeyType(key: string): Promise<AiProvider | null> {
-  // Basic key pattern detection
-  if (!key || typeof key !== 'string' || key.trim() === '') {
-    return null;
-  }
-  
-  // OpenAI API keys start with "sk-" but not "sk-ant-"
-  if (key.startsWith('sk-') && !key.startsWith('sk-ant-')) {
-    return 'openai';
-  } 
-  
-  // Anthropic API keys start with "sk-ant-"
-  else if (key.startsWith('sk-ant-')) {
-    return 'anthropic';
-  } 
-  
-  // Gemini/Google API keys often start with "AIza"
-  else if (key.startsWith('AIza')) {
-    return 'gemini';
-  }
-  
-  // LM Studio uses a URL format (http://localhost:port)
-  else if (key.startsWith('http://') || key.startsWith('https://')) {
-    return 'lmstudio';
-  }
-  
-  // Unknown format
-  return null;
+export function isValidProviderKeyFormat(provider: string, key: string): boolean {
+  return validateProviderKeyFormat(provider, key);
 }
 
 /**
- * Get a friendly name for an AI provider
- * @param provider The provider identifier
- * @returns The friendly name
+ * Get a user-friendly error message for invalid key formats
+ * @param provider The provider name
+ * @returns A descriptive error message
  */
-export function getProviderFriendlyName(provider: AiProvider): string {
-  if (!provider) {
-    return 'Unknown Provider';
-  }
-  
+export function getProviderKeyFormatError(provider: string): string {
   switch (provider) {
     case 'openai':
-      return 'OpenAI';
+      return 'OpenAI API keys must start with "sk-" followed by alphanumeric characters';
     case 'anthropic':
-      return 'Anthropic';
+      return 'Anthropic API keys must start with "sk-ant-" followed by alphanumeric characters';
     case 'gemini':
-      return 'Google Gemini';
+      return 'Gemini API keys must start with "AIzaSy" followed by alphanumeric characters';
+    case 'google-analytics':
+      return 'Google Analytics API keys must start with "AIza" and be exactly 39 characters long';
+    case 'google-search-console':
+      return 'Google Search Console API keys must start with "AIza" and be exactly 39 characters long';
     case 'mistral':
-      return 'Mistral AI';
-    case 'lmstudio':
-      return 'LM Studio';
+      return 'Mistral API keys must be at least 32 alphanumeric characters';
+    case 'serp':
+      return 'SERP API keys must be at least 16 alphanumeric characters with optional dashes and underscores';
     default:
-      // Safely handle cases where provider might not be a string
-      return typeof provider === 'string' ? 
-        provider.charAt(0).toUpperCase() + provider.slice(1) : 
-        'Unknown Provider';
+      return `Invalid ${provider} API key format`;
   }
 }

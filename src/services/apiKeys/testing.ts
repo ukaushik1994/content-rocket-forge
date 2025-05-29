@@ -58,4 +58,3 @@ export async function testApiKey(service: string, key: string): Promise<boolean>
 export async function detectApiKeyType(key: string): Promise<string | null> {
   return detectApiKeyTypeFromValidation(key);
 }
-
