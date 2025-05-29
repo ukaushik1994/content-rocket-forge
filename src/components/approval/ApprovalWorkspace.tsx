@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, RefreshCw, Clock, AlertCircle, CheckCircle2, XCircle, BarChart3, Users, FileText, TrendingUp } from 'lucide-react';
+import { Search, Filter, RefreshCw, Clock, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
@@ -19,14 +19,14 @@ interface ApprovalWorkspaceProps {
 }
 
 const statusConfig = {
-  'draft': { label: 'Draft', icon: Clock, color: 'bg-gray-500/20 text-gray-300 border-gray-500/30' },
-  'pending_review': { label: 'Pending Review', icon: AlertCircle, color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' },
-  'in_review': { label: 'In Review', icon: Clock, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-  'approved': { label: 'Approved', icon: CheckCircle2, color: 'bg-green-500/20 text-green-300 border-green-500/30' },
-  'rejected': { label: 'Rejected', icon: XCircle, color: 'bg-red-500/20 text-red-300 border-red-500/30' },
-  'needs_changes': { label: 'Needs Changes', icon: AlertCircle, color: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
-  'published': { label: 'Published', icon: CheckCircle2, color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
-  'archived': { label: 'Archived', icon: XCircle, color: 'bg-gray-600/20 text-gray-400 border-gray-600/30' }
+  'draft': { label: 'Draft', icon: Clock, color: 'bg-gray-500/20 text-gray-400' },
+  'pending_review': { label: 'Pending Review', icon: AlertCircle, color: 'bg-yellow-500/20 text-yellow-400' },
+  'in_review': { label: 'In Review', icon: Clock, color: 'bg-blue-500/20 text-blue-400' },
+  'approved': { label: 'Approved', icon: CheckCircle2, color: 'bg-green-500/20 text-green-400' },
+  'rejected': { label: 'Rejected', icon: XCircle, color: 'bg-red-500/20 text-red-400' },
+  'needs_changes': { label: 'Needs Changes', icon: AlertCircle, color: 'bg-orange-500/20 text-orange-400' },
+  'published': { label: 'Published', icon: CheckCircle2, color: 'bg-purple-500/20 text-purple-400' },
+  'archived': { label: 'Archived', icon: XCircle, color: 'bg-gray-600/20 text-gray-500' }
 };
 
 export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
@@ -140,133 +140,66 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
 
   if (viewMode === 'review' && selectedContent) {
     return (
-      <motion.div 
-        className="space-y-6"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-gray-800/50 to-gray-700/50 backdrop-blur-sm rounded-xl border border-white/10">
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             onClick={() => setViewMode('dashboard')}
-            className="text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200"
+            className="text-white/70 hover:text-white hover:bg-white/10"
           >
             ← Back to Dashboard
           </Button>
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white/90">Review Content</h2>
-            <p className="text-white/60 text-sm">Detailed content review and editing interface</p>
-          </div>
-          <Badge className={`${statusConfig[selectedContent.approval_status as keyof typeof statusConfig]?.color} border`}>
+          <h2 className="text-xl font-semibold text-white/90">Review Content</h2>
+          <Badge className={statusConfig[selectedContent.approval_status as keyof typeof statusConfig]?.color}>
             {statusConfig[selectedContent.approval_status as keyof typeof statusConfig]?.label}
           </Badge>
         </div>
         <ContentApprovalEditor content={selectedContent} />
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Enhanced Dashboard Header */}
-      <motion.div 
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/40 to-gray-900/60 backdrop-blur-lg border border-white/10"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 to-neon-blue/10"></div>
-        <div className="relative p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-white/90 mb-2">Approval Dashboard</h2>
-              <p className="text-white/60">Manage and review your content efficiently</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => refreshContent()}
-                className="bg-white/5 border-white/20 hover:bg-white/10 text-white transition-all duration-200"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
+    <div className="space-y-6">
+      {/* Enhanced Dashboard */}
+      <div className="glass-panel rounded-xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white/90">Content Approval Dashboard</h2>
+          <div className="flex gap-2">
+            {Object.entries(stats).map(([key, value]) => (
+              <Badge key={key} variant="outline" className="bg-white/5 border-white/10 text-white/70">
+                {key.charAt(0).toUpperCase() + key.slice(1)}: {value}
+              </Badge>
+            ))}
           </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            {Object.entries(stats).map(([key, value]) => {
-              const getIcon = () => {
-                switch(key) {
-                  case 'total': return BarChart3;
-                  case 'pending': return Clock;
-                  case 'inReview': return Users;
-                  case 'approved': return CheckCircle2;
-                  case 'rejected': return XCircle;
-                  case 'needsChanges': return AlertCircle;
-                  default: return FileText;
-                }
-              };
-              const Icon = getIcon();
-              
-              return (
-                <motion.div
-                  key={key}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-200"
-                  whileHover={{ scale: 1.02 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-neon-purple/20 to-neon-blue/20">
-                      <Icon className="h-4 w-4 text-white/80" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-white">{value}</p>
-                      <p className="text-xs text-white/60 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <ApprovalDashboard 
-            contentItems={contentItems}
-            onFilterChange={setStatusFilter}
-            selectedFilter={statusFilter}
-          />
         </div>
-      </motion.div>
+
+        <ApprovalDashboard 
+          contentItems={contentItems}
+          onFilterChange={setStatusFilter}
+          selectedFilter={statusFilter}
+        />
+      </div>
 
       {/* Enhanced Search and Filters */}
-      <motion.div 
-        className="bg-gradient-to-r from-gray-800/40 to-gray-900/60 backdrop-blur-lg rounded-xl p-6 border border-white/10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
+      <div className="glass-panel rounded-xl p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/40" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
             <Input
               placeholder="Search content by title or content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 bg-white/5 border-white/20 text-white placeholder:text-white/40 h-12 rounded-lg focus:ring-2 focus:ring-neon-purple/50 transition-all duration-200"
+              className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40"
             />
           </div>
           
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-44 bg-white/5 border-white/20 text-white h-12 rounded-lg">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-white/20">
+              <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="pending_review">Pending Review</SelectItem>
@@ -279,46 +212,42 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
             </Select>
 
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-44 bg-white/5 border-white/20 text-white h-12 rounded-lg">
-                <TrendingUp className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-white/20">
+              <SelectContent>
                 <SelectItem value="updated_at">Last Updated</SelectItem>
                 <SelectItem value="created_at">Created Date</SelectItem>
                 <SelectItem value="title">Title</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              variant="outline"
+              onClick={() => refreshContent()}
+              className="bg-white/5 border-white/10 hover:bg-white/10 text-white"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Content Grid */}
-      <motion.div 
-        className="space-y-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
+      <div className="space-y-4">
         {filteredAndSortedContent.length === 0 ? (
-          <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/50 backdrop-blur-lg rounded-2xl p-16 text-center border border-white/10">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-neon-purple/20 to-neon-blue/20 flex items-center justify-center mx-auto mb-6">
-              <Search className="h-10 w-10 text-white/30" />
+          <div className="glass-panel rounded-xl p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-white/30" />
             </div>
-            <h3 className="text-2xl font-medium text-white/80 mb-3">No content found</h3>
-            <p className="text-white/60 mb-6 max-w-md mx-auto">
-              {searchQuery ? 'Try adjusting your search terms or filters to find content.' : 'No content matches the selected filter criteria.'}
+            <h3 className="text-lg font-medium text-white/80 mb-2">No content found</h3>
+            <p className="text-white/60 mb-4">
+              {searchQuery ? 'Try adjusting your search terms' : 'No content matches the selected filter'}
             </p>
-            <div className="flex justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2 text-white/50">
-                <span>Total items:</span>
-                <Badge variant="outline" className="border-white/20 text-white/70">{contentItems.length}</Badge>
-              </div>
-              <div className="flex items-center gap-2 text-white/50">
-                <span>Filtered results:</span>
-                <Badge variant="outline" className="border-white/20 text-white/70">{filteredAndSortedContent.length}</Badge>
-              </div>
-            </div>
+            <p className="text-white/50 text-sm">
+              Total content items: {contentItems.length} | Filtered results: {filteredAndSortedContent.length}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -326,11 +255,10 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
               {filteredAndSortedContent.map((item, index) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  whileHover={{ y: -5 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   <ApprovalCard
                     content={item}
@@ -346,7 +274,7 @@ export const ApprovalWorkspace: React.FC<ApprovalWorkspaceProps> = ({
             </AnimatePresence>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };
