@@ -1,3 +1,4 @@
+
 // Common types for AI service
 
 export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'other';
@@ -39,9 +40,9 @@ export interface AiEmbeddingParams {
   input: string | string[];
 }
 
-// Type for API requests to the Edge Function
+// Type for API requests to the Edge Function - allowing broader provider types
 export interface AiApiParams {
-  provider: AiProvider;
+  provider: string; // Changed from AiProvider to string to allow 'serp' and other non-AI providers
   endpoint: string;
   params: AiChatParams | AiCompletionParams | AiEmbeddingParams;
   apiKey?: string;
