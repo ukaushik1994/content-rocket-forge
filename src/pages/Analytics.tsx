@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,413 +15,467 @@ import {
   Download, 
   FileText, 
   Link,
-  MessageCircle,
   Activity,
   TrendingUp,
   Eye,
   Clock,
   Users,
-  MousePointer
+  MousePointer,
+  ArrowUpRight,
+  ArrowDownRight,
+  Zap,
+  Target,
+  Globe
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Analytics = () => {
+  const [selectedMetric, setSelectedMetric] = useState('views');
+  const [activeTab, setActiveTab] = useState('overview');
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1,
       transition: { 
-        staggerChildren: 0.1,
+        staggerChildren: 0.05,
         delayChildren: 0.1,
       }
     }
   };
   
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { 
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1]
+      } 
+    }
   };
 
+  const cardHoverVariants = {
+    hover: { 
+      y: -8,
+      scale: 1.02,
+      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+      transition: { duration: 0.3, ease: "easeOut" }
+    }
+  };
+
+  const metrics = [
+    { 
+      id: 'views', 
+      label: 'Total Views', 
+      value: '2.4M', 
+      change: '+12.5%', 
+      trend: 'up',
+      icon: Eye,
+      color: 'from-blue-500 to-cyan-400',
+      bgPattern: 'from-blue-500/5 to-cyan-400/10'
+    },
+    { 
+      id: 'engagement', 
+      label: 'Engagement Rate', 
+      value: '8.7%', 
+      change: '+2.3%', 
+      trend: 'up',
+      icon: TrendingUp,
+      color: 'from-emerald-500 to-teal-400',
+      bgPattern: 'from-emerald-500/5 to-teal-400/10'
+    },
+    { 
+      id: 'conversions', 
+      label: 'Conversions', 
+      value: '1,247', 
+      change: '+8.1%', 
+      trend: 'up',
+      icon: Target,
+      color: 'from-violet-500 to-purple-400',
+      bgPattern: 'from-violet-500/5 to-purple-400/10'
+    },
+    { 
+      id: 'revenue', 
+      label: 'Revenue', 
+      value: '$34.2K', 
+      change: '+15.7%', 
+      trend: 'up',
+      icon: Zap,
+      color: 'from-orange-500 to-pink-400',
+      bgPattern: 'from-orange-500/5 to-pink-400/10'
+    }
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse delay-2000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]" />
+      
       <Navbar />
       
-      <main className="flex-1 container py-8">
+      <main className="relative z-10 container py-8 space-y-8">
         <motion.div 
-          className="space-y-8"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
+          className="space-y-8"
         >
-          {/* Header Section */}
+          {/* Hero Header */}
           <motion.div 
-            className="flex flex-col lg:flex-row lg:items-center justify-between gap-6"
             variants={itemVariants}
+            className="text-center space-y-6 py-12"
           >
-            <div className="space-y-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent">
-                Analytics Dashboard
-              </h1>
-              <p className="text-xl text-muted-foreground">
-                Track your content performance and user engagement
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 backdrop-blur-sm"
+            >
+              <BarChart3 className="w-4 h-4 text-blue-400" />
+              <span className="text-sm text-blue-300">Real-time Analytics</span>
+            </motion.div>
             
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex items-center bg-glass rounded-lg border border-border/50 shadow-sm">
+            <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+              Analytics Hub
+            </h1>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              Discover insights, track performance, and optimize your content strategy with powerful analytics
+            </p>
+          </motion.div>
+
+          {/* Key Metrics Cards */}
+          <motion.div 
+            variants={itemVariants}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {metrics.map((metric, index) => (
+              <motion.div
+                key={metric.id}
+                variants={cardHoverVariants}
+                whileHover="hover"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`relative group cursor-pointer`}
+                onClick={() => setSelectedMetric(metric.id)}
+              >
+                <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgPattern} backdrop-blur-xl ${selectedMetric === metric.id ? 'ring-2 ring-white/20' : ''} transition-all duration-300`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+                  
+                  <CardContent className="p-6 relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                        <metric.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        metric.trend === 'up' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      }`}>
+                        {metric.trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                        {metric.change}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-bold text-white">{metric.value}</h3>
+                      <p className="text-sm text-slate-400">{metric.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Control Panel */}
+          <motion.div 
+            variants={itemVariants}
+            className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 rounded-2xl bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/30"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/50 border border-slate-600/30">
+                <CalendarRange className="w-4 h-4 text-slate-400" />
                 <Select defaultValue="7days">
-                  <SelectTrigger className="border-0 bg-transparent min-w-[150px] text-sm">
-                    <SelectValue placeholder="Select range" />
+                  <SelectTrigger className="border-0 bg-transparent text-white min-w-[140px]">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-slate-800 border-slate-600">
                     <SelectItem value="24h">Last 24 hours</SelectItem>
                     <SelectItem value="7days">Last 7 days</SelectItem>
                     <SelectItem value="30days">Last 30 days</SelectItem>
                     <SelectItem value="90days">Last 90 days</SelectItem>
-                    <SelectItem value="custom">Custom range</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" size="icon" className="rounded-none border-l border-border/50">
-                  <CalendarRange className="h-4 w-4" />
-                </Button>
               </div>
               
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="glass-panel hover:scale-105 transition-all duration-200">
-                  <RefreshCcw className="h-4 w-4" />
-                </Button>
-                
-                <Button variant="outline" size="icon" className="glass-panel hover:scale-105 transition-all duration-200">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                Live Data
+              </Badge>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50">
+                <RefreshCcw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
             </div>
           </motion.div>
           
           {/* Tabs Section */}
           <motion.div variants={itemVariants}>
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="bg-glass/50 backdrop-blur-sm border border-border/50 p-1 h-auto grid grid-cols-4 gap-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+              <TabsList className="bg-slate-800/50 backdrop-blur-xl border border-slate-600/30 p-2 h-auto grid grid-cols-3 gap-2">
                 <TabsTrigger 
                   value="overview" 
-                  className="gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200"
+                  className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300"
                 >
                   <BarChart3 className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
                 <TabsTrigger 
                   value="content" 
-                  className="gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200"
+                  className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300"
                 >
                   <FileText className="h-4 w-4" />
                   Content
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="links" 
-                  className="gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200"
+                  value="performance" 
+                  className="gap-2 py-3 px-6 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300"
                 >
-                  <Link className="h-4 w-4" />
-                  Links
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="engagement" 
-                  className="gap-2 py-3 px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Engagement
+                  <Activity className="h-4 w-4" />
+                  Performance
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="overview" className="space-y-6">
-                <AnalyticsOverview />
-              </TabsContent>
-              
-              <TabsContent value="content" className="space-y-6">
-                <Card className="glass-panel bg-gradient-to-br from-background/80 to-muted/20 border-border/50 shadow-lg">
-                  <CardHeader className="border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          Content Performance
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          Detailed performance metrics for your published content
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                        Live Data
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-                      <div className="relative flex-1 max-w-sm">
-                        <Input 
-                          className="pl-10 bg-background/50 border-border/50 focus:border-primary/50 transition-colors" 
-                          placeholder="Search content..." 
-                        />
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
-                        >
-                          <circle cx="11" cy="11" r="8" />
-                          <path d="m21 21-4.35-4.35" />
-                        </svg>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="border-border/50">
-                          Filter
-                        </Button>
-                        <Button variant="outline" size="sm" className="border-border/50">
-                          Sort
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="rounded-lg border border-border/50 overflow-hidden bg-background/30">
-                      <div className="relative w-full overflow-auto">
-                        <table className="w-full caption-bottom text-sm">
-                          <thead>
-                            <tr className="border-b border-border/50 bg-muted/30">
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Content</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Views</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Avg. Time</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Ranking</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">CTR</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Conversions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[
-                              { title: "Top 10 Project Management Tools", views: 1245, time: "4:12", ranking: 3, ctr: "8.2%", conv: 28 },
-                              { title: "Email Marketing Best Practices", views: 982, time: "3:45", ranking: 5, ctr: "6.8%", conv: 19 },
-                              { title: "CRM Solutions for Small Businesses", views: 876, time: "2:58", ranking: 7, ctr: "5.5%", conv: 15 },
-                              { title: "Remote Work Productivity Tips", views: 1532, time: "5:23", ranking: 2, ctr: "9.4%", conv: 42 },
-                              { title: "Guide to Email Automation", views: 742, time: "3:12", ranking: 8, ctr: "4.9%", conv: 12 },
-                            ].map((item, i) => (
-                              <tr key={i} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                                <td className="p-4 align-middle">
-                                  <div className="font-medium text-foreground">{item.title}</div>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <div className="flex items-center gap-2">
-                                    <Eye className="h-4 w-4 text-blue-500" />
-                                    <span className="font-medium">{item.views.toLocaleString()}</span>
-                                  </div>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-green-500" />
-                                    <span>{item.time}</span>
-                                  </div>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <Badge 
-                                    variant={item.ranking <= 3 ? "default" : item.ranking <= 5 ? "secondary" : "outline"}
-                                    className="font-medium"
-                                  >
-                                    #{item.ranking}
-                                  </Badge>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <span className="font-medium text-orange-500">{item.ctr}</span>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <span className="font-medium text-purple-500">{item.conv}</span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="links" className="space-y-6">
-                <Card className="glass-panel bg-gradient-to-br from-background/80 to-muted/20 border-border/50 shadow-lg">
-                  <CardHeader className="border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                          <Link className="h-5 w-5 text-primary" />
-                          Link Performance
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          Track how your affiliate and reference links are performing
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary" className="bg-green-500/10 text-green-500 border-green-500/20">
-                        Active Tracking
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="rounded-lg border border-border/50 overflow-hidden bg-background/30">
-                      <div className="relative w-full overflow-auto">
-                        <table className="w-full caption-bottom text-sm">
-                          <thead>
-                            <tr className="border-b border-border/50 bg-muted/30">
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Link Source</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Destination</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Clicks</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">CTR</th>
-                              <th className="h-12 px-4 text-left align-middle font-semibold text-foreground">Last Click</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[
-                              { source: "Top 10 Project Management Tools", dest: "TaskMaster Pro", clicks: 145, ctr: "12.2%", lastClick: "2 mins ago" },
-                              { source: "Email Marketing Best Practices", dest: "EmailPro Marketing", clicks: 98, ctr: "9.8%", lastClick: "15 mins ago" },
-                              { source: "CRM Solutions Guide", dest: "SalesForce CRM+", clicks: 87, ctr: "10.5%", lastClick: "1 hour ago" },
-                              { source: "Data Security Article", dest: "SecurityGuard Pro", clicks: 65, ctr: "8.4%", lastClick: "3 hours ago" },
-                              { source: "Business Analytics Guide", dest: "AnalyticsHub", clicks: 51, ctr: "7.9%", lastClick: "5 hours ago" },
-                            ].map((item, i) => (
-                              <tr key={i} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                                <td className="p-4 align-middle">
-                                  <div className="font-medium text-foreground max-w-xs truncate">{item.source}</div>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                    <span className="font-medium text-blue-500">{item.dest}</span>
-                                  </div>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <div className="flex items-center gap-2">
-                                    <MousePointer className="h-4 w-4 text-orange-500" />
-                                    <span className="font-medium">{item.clicks}</span>
-                                  </div>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <Badge variant="outline" className="font-medium">
-                                    {item.ctr}
-                                  </Badge>
-                                </td>
-                                <td className="p-4 align-middle">
-                                  <span className="text-muted-foreground text-xs">{item.lastClick}</span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="engagement" className="space-y-6">
-                <Card className="glass-panel bg-gradient-to-br from-background/80 to-muted/20 border-border/50 shadow-lg">
-                  <CardHeader className="border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                          <Activity className="h-5 w-5 text-primary" />
-                          User Engagement
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          Understand how users interact with your content
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary" className="bg-purple-500/10 text-purple-500 border-purple-500/20">
-                        Real-time
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-8">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {[
-                          { 
-                            label: "Avg. Time on Page", 
-                            value: "3:42", 
-                            change: "+0:56 vs last period", 
-                            icon: Clock, 
-                            color: "text-blue-500",
-                            bgColor: "bg-blue-500/10",
-                            borderColor: "border-blue-500/20"
-                          },
-                          { 
-                            label: "Bounce Rate", 
-                            value: "32.4%", 
-                            change: "-5.2% vs last period", 
-                            icon: TrendingUp, 
-                            color: "text-green-500",
-                            bgColor: "bg-green-500/10",
-                            borderColor: "border-green-500/20"
-                          },
-                          { 
-                            label: "Pages Per Visit", 
-                            value: "2.8", 
-                            change: "+0.4 vs last period", 
-                            icon: Eye, 
-                            color: "text-orange-500",
-                            bgColor: "bg-orange-500/10",
-                            borderColor: "border-orange-500/20"
-                          },
-                          { 
-                            label: "Return Visitors", 
-                            value: "42.7%", 
-                            change: "+8.3% vs last period", 
-                            icon: Users, 
-                            color: "text-purple-500",
-                            bgColor: "bg-purple-500/10",
-                            borderColor: "border-purple-500/20"
-                          }
-                        ].map((metric, index) => (
-                          <Card key={index} className={`${metric.bgColor} ${metric.borderColor} border`}>
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="text-sm font-medium text-muted-foreground">{metric.label}</div>
-                                <metric.icon className={`h-4 w-4 ${metric.color}`} />
+              <AnimatePresence mode="wait">
+                <TabsContent value="overview" className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <AnalyticsOverview />
+                  </motion.div>
+                </TabsContent>
+                
+                <TabsContent value="content" className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30 overflow-hidden">
+                      <CardHeader className="border-b border-slate-600/30 bg-gradient-to-r from-slate-700/50 to-transparent">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-2xl flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500">
+                                <FileText className="h-5 w-5 text-white" />
                               </div>
-                              <div className="text-2xl font-bold mb-1">{metric.value}</div>
-                              <div className="text-xs text-green-400 font-medium">{metric.change}</div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
+                              Content Performance
+                            </CardTitle>
+                            <CardDescription className="mt-2 text-slate-400">
+                              Track how your content is performing across all platforms
+                            </CardDescription>
+                          </div>
+                          <Badge className="bg-gradient-to-r from-emerald-500 to-teal-400 text-white border-0">
+                            Real-time
+                          </Badge>
+                        </div>
+                      </CardHeader>
                       
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                          <MessageCircle className="h-5 w-5 text-primary" />
-                          Top Comment Sections
-                        </h3>
-                        <div className="space-y-3">
-                          {[
-                            { title: "Top 10 Project Management Tools", comments: 28, lastComment: "2 hours ago" },
-                            { title: "Remote Work Productivity Tips", comments: 36, lastComment: "45 mins ago" },
-                            { title: "Guide to Email Automation", comments: 15, lastComment: "1 day ago" },
-                          ].map((item, i) => (
-                            <div key={i} className="flex items-center justify-between p-4 border border-border/50 rounded-lg bg-background/50 hover:bg-background/70 transition-colors">
-                              <div className="space-y-1">
-                                <h4 className="font-medium text-foreground">{item.title}</h4>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <MessageCircle className="h-3 w-3" />
-                                  {item.comments} comments
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs text-muted-foreground">Last activity</div>
-                                <div className="text-sm font-medium">{item.lastComment}</div>
+                      <CardContent className="p-0">
+                        <div className="p-6 border-b border-slate-600/20">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div className="relative flex-1 max-w-sm">
+                              <Input 
+                                className="pl-10 bg-slate-700/50 border-slate-600/50 text-white placeholder:text-slate-400 focus:border-blue-500/50 transition-colors" 
+                                placeholder="Search content..." 
+                              />
+                              <div className="absolute left-3 top-3 h-4 w-4 text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="11" cy="11" r="8" />
+                                  <path d="m21 21-4.35-4.35" />
+                                </svg>
                               </div>
                             </div>
-                          ))}
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" className="bg-slate-700/50 border-slate-600/50 text-white">
+                                Filter
+                              </Button>
+                              <Button variant="outline" size="sm" className="bg-slate-700/50 border-slate-600/50 text-white">
+                                Sort
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                        
+                        <div className="overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-slate-600/30 bg-slate-700/30">
+                                  <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Content</th>
+                                  <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Views</th>
+                                  <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Engagement</th>
+                                  <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Performance</th>
+                                  <th className="h-14 px-6 text-left align-middle font-semibold text-slate-200">Revenue</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[
+                                  { title: "Ultimate Project Management Guide", views: 15420, engagement: "8.2%", performance: 92, revenue: "$2,840" },
+                                  { title: "Email Marketing Automation Secrets", views: 12350, engagement: "6.8%", performance: 87, revenue: "$1,920" },
+                                  { title: "CRM Integration Best Practices", views: 9876, engagement: "5.5%", performance: 79, revenue: "$1,450" },
+                                  { title: "Remote Team Management Tips", views: 18532, engagement: "9.4%", performance: 96, revenue: "$3,240" },
+                                  { title: "Data Analytics for Beginners", views: 7420, engagement: "4.9%", performance: 72, revenue: "$1,120" },
+                                ].map((item, i) => (
+                                  <motion.tr 
+                                    key={i} 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="border-b border-slate-600/20 hover:bg-slate-700/30 transition-all duration-300 group"
+                                  >
+                                    <td className="p-6 align-middle">
+                                      <div className="font-medium text-white group-hover:text-blue-300 transition-colors">{item.title}</div>
+                                    </td>
+                                    <td className="p-6 align-middle">
+                                      <div className="flex items-center gap-2">
+                                        <Eye className="h-4 w-4 text-blue-400" />
+                                        <span className="font-medium text-white">{item.views.toLocaleString()}</span>
+                                      </div>
+                                    </td>
+                                    <td className="p-6 align-middle">
+                                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                                        {item.engagement}
+                                      </Badge>
+                                    </td>
+                                    <td className="p-6 align-middle">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-16 h-2 bg-slate-600 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                                            style={{ width: `${item.performance}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-sm font-medium text-white">{item.performance}%</span>
+                                      </div>
+                                    </td>
+                                    <td className="p-6 align-middle">
+                                      <span className="font-medium text-emerald-400">{item.revenue}</span>
+                                    </td>
+                                  </motion.tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </TabsContent>
+                
+                <TabsContent value="performance" className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  >
+                    {/* Performance Metrics */}
+                    <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500">
+                            <Activity className="h-5 w-5 text-white" />
+                          </div>
+                          User Engagement
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {[
+                          { label: "Avg. Session Duration", value: "4:32", icon: Clock, color: "text-blue-400" },
+                          { label: "Bounce Rate", value: "24.3%", icon: TrendingUp, color: "text-emerald-400" },
+                          { label: "Page Views/Session", value: "3.2", icon: Eye, color: "text-purple-400" },
+                          { label: "Return Visitors", value: "68.7%", icon: Users, color: "text-orange-400" },
+                        ].map((metric, index) => (
+                          <motion.div 
+                            key={metric.label}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="flex items-center justify-between p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-300"
+                          >
+                            <div className="flex items-center gap-3">
+                              <metric.icon className={`h-5 w-5 ${metric.color}`} />
+                              <span className="text-slate-300">{metric.label}</span>
+                            </div>
+                            <span className="text-xl font-bold text-white">{metric.value}</span>
+                          </motion.div>
+                        ))}
+                      </CardContent>
+                    </Card>
+
+                    {/* Top Links */}
+                    <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
+                            <Link className="h-5 w-5 text-white" />
+                          </div>
+                          Top Performing Links
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {[
+                          { source: "Project Management Tools", clicks: 2450, ctr: "12.8%" },
+                          { source: "Email Marketing Guide", clicks: 1890, ctr: "9.6%" },
+                          { source: "CRM Solutions", clicks: 1650, ctr: "8.4%" },
+                          { source: "Analytics Platform", clicks: 1420, ctr: "7.2%" },
+                        ].map((link, index) => (
+                          <motion.div 
+                            key={link.source}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="p-4 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-300 group"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-white group-hover:text-blue-300 transition-colors">{link.source}</h4>
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                                {link.ctr}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                              <MousePointer className="h-4 w-4" />
+                              <span>{link.clicks.toLocaleString()} clicks</span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </TabsContent>
+              </AnimatePresence>
             </Tabs>
           </motion.div>
         </motion.div>
