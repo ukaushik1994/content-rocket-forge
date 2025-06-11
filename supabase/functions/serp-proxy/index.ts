@@ -3,7 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleCorsPreflightRequest } from "../shared/cors.ts";
 import { createErrorResponse, createSuccessResponse } from "../shared/errors.ts";
 
-const SERP_API_KEY = Deno.env.get("SERP_API_KEY");
+const PICA_SECRET_KEY = Deno.env.get("PICA_SECRET_KEY");
+const PICA_SERP_API_CONNECTION_KEY = Deno.env.get("PICA_SERP_API_CONNECTION_KEY");
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -16,22 +17,20 @@ serve(async (req) => {
     
     console.log(`SERP Proxy: ${endpoint}`);
 
-    // Use client API key if provided, fall back to environment variable
-    const serpApiKey = apiKey || SERP_API_KEY;
-    
-    if (!serpApiKey) {
-      console.log('No SERP API key available');
+    // Check if Pica credentials are available
+    if (!PICA_SECRET_KEY || !PICA_SERP_API_CONNECTION_KEY) {
+      console.log('No Pica credentials available');
       return createSuccessResponse(null);
     }
 
     if (endpoint === 'test') {
-      return await testSerpKey(serpApiKey);
+      return await testPicaConnection();
     } else if (endpoint === 'search') {
-      return await handleSerpSearch(params, serpApiKey);
+      return await handlePicaSearch(params);
     } else if (endpoint === 'keywords') {
-      return await handleSerpKeywords(params, serpApiKey);
+      return await handlePicaKeywords(params);
     } else if (endpoint === 'analyze') {
-      return await handleSerpAnalyze(params, serpApiKey);
+      return await handlePicaAnalyze(params);
     } else {
       return createErrorResponse(`Unsupported SERP endpoint: ${endpoint}`, 400, 'serp', endpoint);
     }
@@ -40,76 +39,95 @@ serve(async (req) => {
   }
 });
 
-async function testSerpKey(apiKey: string) {
-  const url = new URL('https://serpapi.com/search');
+async function testPicaConnection() {
+  const url = new URL('https://api.picaos.com/v1/passthrough/search');
   url.searchParams.append('q', 'test');
-  url.searchParams.append('engine', 'google');
-  url.searchParams.append('api_key', apiKey);
   
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-pica-secret': PICA_SECRET_KEY!,
+      'x-pica-connection-key': PICA_SERP_API_CONNECTION_KEY!,
+      'x-pica-action-id': 'conn_mod_def::GCMod7dviGg::xZnK1c2iRYugO4QvBVtMUA',
+    },
+  });
   
   if (response.ok) {
-    return createSuccessResponse({ success: true, message: 'SERP API connection successful' });
+    return createSuccessResponse({ success: true, message: 'Pica SERP API connection successful' });
   } else {
     const data = await response.json();
-    return createErrorResponse(data.error || 'Invalid SERP API key', response.status, 'serp', 'test');
+    return createErrorResponse(data.error || 'Invalid Pica SERP API connection', response.status, 'serp', 'test');
   }
 }
 
-async function handleSerpSearch(params: any, apiKey: string) {
+async function handlePicaSearch(params: any) {
   const { keyword, country = 'us' } = params;
   
   if (!keyword) {
     return createErrorResponse('Keyword is required', 400, 'serp', 'search');
   }
 
-  console.log(`Calling SerpAPI search for keyword "${keyword}" in country "${country}"`);
-  const url = new URL('https://serpapi.com/search');
+  console.log(`Calling Pica SERP API search for keyword "${keyword}" in country "${country}"`);
+  
+  const url = new URL('https://api.picaos.com/v1/passthrough/search');
   url.searchParams.append('q', keyword);
-  url.searchParams.append('engine', 'google');
-  url.searchParams.append('google_domain', 'google.com');
   url.searchParams.append('gl', country);
   url.searchParams.append('hl', 'en');
-  url.searchParams.append('api_key', apiKey);
+  url.searchParams.append('num', '10');
   
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-pica-secret': PICA_SECRET_KEY!,
+      'x-pica-connection-key': PICA_SERP_API_CONNECTION_KEY!,
+      'x-pica-action-id': 'conn_mod_def::GCMod7dviGg::xZnK1c2iRYugO4QvBVtMUA',
+    },
+  });
   
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`SerpAPI error: ${response.status} - ${errorText}`);
-    return createErrorResponse(`SerpAPI error: ${response.status} - ${errorText}`, response.status, 'serp', 'search');
+    console.error(`Pica SERP API error: ${response.status} - ${errorText}`);
+    return createErrorResponse(`Pica SERP API error: ${response.status} - ${errorText}`, response.status, 'serp', 'search');
   }
   
   const data = await response.json();
   
-  // Transform SerpAPI response to app format
-  const transformedData = transformSerpApiResponse(data, keyword);
+  // Transform Pica SERP response to app format
+  const transformedData = transformPicaSerpResponse(data, keyword);
   
   return createSuccessResponse(transformedData);
 }
 
-async function handleSerpKeywords(params: any, apiKey: string) {
+async function handlePicaKeywords(params: any) {
   const { query } = params;
   
   if (!query) {
     return createErrorResponse('Query is required', 400, 'serp', 'keywords');
   }
   
-  console.log(`Calling SerpAPI related searches for "${query}"`);
-  const url = new URL('https://serpapi.com/search');
+  console.log(`Calling Pica SERP API related searches for "${query}"`);
+  
+  const url = new URL('https://api.picaos.com/v1/passthrough/search');
   url.searchParams.append('q', query);
-  url.searchParams.append('engine', 'google');
-  url.searchParams.append('google_domain', 'google.com');
   url.searchParams.append('gl', 'us');
   url.searchParams.append('hl', 'en');
-  url.searchParams.append('api_key', apiKey);
   
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-pica-secret': PICA_SECRET_KEY!,
+      'x-pica-connection-key': PICA_SERP_API_CONNECTION_KEY!,
+      'x-pica-action-id': 'conn_mod_def::GCMod7dviGg::xZnK1c2iRYugO4QvBVtMUA',
+    },
+  });
   
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`SerpAPI error: ${response.status} - ${errorText}`);
-    return createErrorResponse(`SerpAPI error: ${response.status} - ${errorText}`, response.status, 'serp', 'keywords');
+    console.error(`Pica SERP API error: ${response.status} - ${errorText}`);
+    return createErrorResponse(`Pica SERP API error: ${response.status} - ${errorText}`, response.status, 'serp', 'keywords');
   }
   
   const data = await response.json();
@@ -125,7 +143,7 @@ async function handleSerpKeywords(params: any, apiKey: string) {
   return createSuccessResponse({ results: transformedKeywords });
 }
 
-async function handleSerpAnalyze(params: any, apiKey: string) {
+async function handlePicaAnalyze(params: any) {
   const { content, keywords } = params;
   
   if (!content) {
@@ -141,20 +159,25 @@ async function handleSerpAnalyze(params: any, apiKey: string) {
   console.log(`Analyzing content for keyword "${mainKeyword}"`);
   
   // Get keyword data first
-  const url = new URL('https://serpapi.com/search');
+  const url = new URL('https://api.picaos.com/v1/passthrough/search');
   url.searchParams.append('q', mainKeyword);
-  url.searchParams.append('engine', 'google');
-  url.searchParams.append('google_domain', 'google.com');
   url.searchParams.append('gl', 'us');
   url.searchParams.append('hl', 'en');
-  url.searchParams.append('api_key', apiKey);
   
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-pica-secret': PICA_SECRET_KEY!,
+      'x-pica-connection-key': PICA_SERP_API_CONNECTION_KEY!,
+      'x-pica-action-id': 'conn_mod_def::GCMod7dviGg::xZnK1c2iRYugO4QvBVtMUA',
+    },
+  });
   
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`SerpAPI error: ${response.status} - ${errorText}`);
-    return createErrorResponse(`SerpAPI error: ${response.status} - ${errorText}`, response.status, 'serp', 'analyze');
+    console.error(`Pica SERP API error: ${response.status} - ${errorText}`);
+    return createErrorResponse(`Pica SERP API error: ${response.status} - ${errorText}`, response.status, 'serp', 'analyze');
   }
   
   const data = await response.json();
@@ -174,24 +197,24 @@ async function handleSerpAnalyze(params: any, apiKey: string) {
       position: index + 1
     })),
     
-    // Related searches from SerpAPI
+    // Related searches from Pica SERP API
     relatedSearches: (data.related_searches || []).map((search: any) => ({
       query: search.query,
       volume: Math.floor(Math.random() * 5000) + 500
     })),
     
-    // People also ask questions
+    // People also ask questions (related_questions in Pica API)
     peopleAlsoAsk: (data.related_questions || []).map((question: any) => ({
       question: question.question,
-      source: question.source || 'Google Search',
-      answer: question.answer || 'No answer available'
+      source: question.title || 'Google Search',
+      answer: question.snippet || 'No answer available'
     })),
     
     // Featured snippets if available
-    featuredSnippets: data.answer_box ? [
+    featuredSnippets: data.knowledge_graph ? [
       {
-        content: data.answer_box.snippet || data.answer_box.answer || '',
-        source: data.answer_box.source || 'Google Search',
+        content: data.knowledge_graph.description || '',
+        source: data.knowledge_graph.source?.name || 'Google Search',
         type: 'definition'
       }
     ] : [],
@@ -206,8 +229,8 @@ async function handleSerpAnalyze(params: any, apiKey: string) {
   return createSuccessResponse(contentAnalysis);
 }
 
-// Transform SerpAPI response to application format
-function transformSerpApiResponse(data: any, keyword: string) {
+// Transform Pica SERP response to application format
+function transformPicaSerpResponse(data: any, keyword: string) {
   return {
     keyword,
     searchVolume: Math.floor(Math.random() * 10000) + 1000,
@@ -222,24 +245,24 @@ function transformSerpApiResponse(data: any, keyword: string) {
       position: index + 1
     })),
     
-    // Related searches from SerpAPI
+    // Related searches from Pica SERP API
     relatedSearches: (data.related_searches || []).map((search: any) => ({
       query: search.query,
       volume: Math.floor(Math.random() * 5000) + 500
     })),
     
-    // People also ask questions
+    // People also ask questions (related_questions in Pica API)
     peopleAlsoAsk: (data.related_questions || []).map((question: any) => ({
       question: question.question,
-      source: question.source || 'Google Search',
-      answer: question.answer || 'No answer available'
+      source: question.title || 'Google Search',
+      answer: question.snippet || 'No answer available'
     })),
     
     // Featured snippets if available
-    featuredSnippets: data.answer_box ? [
+    featuredSnippets: data.knowledge_graph ? [
       {
-        content: data.answer_box.snippet || data.answer_box.answer || '',
-        source: data.answer_box.source || 'Google Search',
+        content: data.knowledge_graph.description || '',
+        source: data.knowledge_graph.source?.name || 'Google Search',
         type: 'definition'
       }
     ] : [],
