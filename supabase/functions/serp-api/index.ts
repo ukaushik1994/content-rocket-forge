@@ -41,7 +41,7 @@ serve(async (req) => {
       );
     }
 
-    // FIXED: Use the API key directly since it's already decrypted by the client
+    // Use the API key directly since it's already decrypted by the client
     let serpApiKey = apiKey;
     console.log('🔍 Using API key directly - Length:', apiKey.length, 'Type:', typeof apiKey);
     
@@ -169,31 +169,82 @@ serve(async (req) => {
     console.log('✅ SerpAPI data received successfully');
     console.log('📊 Response data structure:', Object.keys(data));
 
-    // DEBUG: Log the raw response structure for debugging
-    console.log('🔍 RAW SERP API RESPONSE STRUCTURE:', JSON.stringify({
+    // Enhanced debugging: Log all available fields
+    console.log('🔍 DETAILED SERP API RESPONSE ANALYSIS:', JSON.stringify({
+      // Top-level structure
+      topLevelKeys: Object.keys(data),
+      
+      // Knowledge graph analysis
       hasKnowledgeGraph: !!data.knowledge_graph,
+      knowledgeGraphKeys: data.knowledge_graph ? Object.keys(data.knowledge_graph) : null,
+      
+      // Answer box analysis
       hasAnswerBox: !!data.answer_box,
+      answerBoxKeys: data.answer_box ? Object.keys(data.answer_box) : null,
+      answerBoxType: data.answer_box?.type,
+      
+      // People also ask analysis
       hasPeopleAlsoAsk: !!data.people_also_ask,
+      peopleAlsoAskCount: Array.isArray(data.people_also_ask) ? data.people_also_ask.length : 0,
+      peopleAlsoAskSample: Array.isArray(data.people_also_ask) && data.people_also_ask.length > 0 ? data.people_also_ask[0] : null,
+      
+      // Related questions analysis
       hasRelatedQuestions: !!data.related_questions,
+      relatedQuestionsCount: Array.isArray(data.related_questions) ? data.related_questions.length : 0,
+      relatedQuestionsSample: Array.isArray(data.related_questions) && data.related_questions.length > 0 ? data.related_questions[0] : null,
+      
+      // Featured snippet analysis
+      hasFeaturedSnippet: !!data.featured_snippet,
+      featuredSnippetKeys: data.featured_snippet ? Object.keys(data.featured_snippet) : null,
+      
+      // Organic results analysis
+      organicResultsCount: Array.isArray(data.organic_results) ? data.organic_results.length : 0,
+      organicResultSample: Array.isArray(data.organic_results) && data.organic_results.length > 0 ? 
+        { 
+          title: data.organic_results[0].title,
+          hasSnippet: !!data.organic_results[0].snippet,
+          hasSitelinks: !!data.organic_results[0].sitelinks,
+          hasRichSnippet: !!data.organic_results[0].rich_snippet
+        } : null,
+      
+      // Related searches analysis
+      relatedSearchesCount: Array.isArray(data.related_searches) ? data.related_searches.length : 0,
+      relatedSearchesSample: Array.isArray(data.related_searches) && data.related_searches.length > 0 ? data.related_searches[0] : null,
+      
+      // Local results analysis
       hasLocalResults: !!data.local_results,
-      hasImages: !!data.images,
-      hasVideos: !!data.videos,
+      localResultsType: data.local_results ? (Array.isArray(data.local_results) ? 'array' : 'object') : null,
+      
+      // Shopping results analysis
       hasShoppingResults: !!data.shopping_results,
-      hasAds: !!data.ads,
+      shoppingResultsCount: Array.isArray(data.shopping_results) ? data.shopping_results.length : 0,
+      
+      // Images and videos analysis
+      hasImages: !!data.images,
+      imagesCount: Array.isArray(data.images) ? data.images.length : 0,
+      hasVideos: !!data.videos,
+      videosCount: Array.isArray(data.videos) ? data.videos.length : 0,
+      
+      // Other interesting fields
       hasTopStories: !!data.top_stories,
-      organicResultsCount: data.organic_results?.length || 0,
-      relatedSearchesCount: data.related_searches?.length || 0
+      hasAds: !!data.ads,
+      hasInlineImages: !!data.inline_images,
+      hasRecipes: !!data.recipes_results,
+      hasNews: !!data.news_results
     }, null, 2));
 
-    // DEBUG: Log actual data structures
+    // Log specific data structures for debugging
     if (data.answer_box) {
-      console.log('🔍 ANSWER BOX RAW DATA:', JSON.stringify(data.answer_box, null, 2));
+      console.log('🔍 ANSWER BOX DETAILED DATA:', JSON.stringify(data.answer_box, null, 2));
     }
-    if (data.people_also_ask) {
-      console.log('🔍 PEOPLE ALSO ASK RAW DATA:', JSON.stringify(data.people_also_ask, null, 2));
+    if (data.people_also_ask && data.people_also_ask.length > 0) {
+      console.log('🔍 PEOPLE ALSO ASK DETAILED DATA:', JSON.stringify(data.people_also_ask.slice(0, 2), null, 2));
     }
-    if (data.related_questions) {
-      console.log('🔍 RELATED QUESTIONS RAW DATA:', JSON.stringify(data.related_questions, null, 2));
+    if (data.related_questions && data.related_questions.length > 0) {
+      console.log('🔍 RELATED QUESTIONS DETAILED DATA:', JSON.stringify(data.related_questions.slice(0, 2), null, 2));
+    }
+    if (data.featured_snippet) {
+      console.log('🔍 FEATURED SNIPPET DETAILED DATA:', JSON.stringify(data.featured_snippet, null, 2));
     }
 
     // Transform the data based on endpoint
@@ -292,9 +343,9 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   const organicResults = data.organic_results || [];
   const relatedSearches = data.related_searches || [];
   
-  // FIXED: Enhanced extraction with proper field mapping
-  const peopleAlsoAsk = extractPeopleAlsoAskWithMapping(data);
-  const featuredSnippets = extractFeaturedSnippetsWithMapping(data);
+  // IMPROVED: Enhanced extraction with better field mapping and fallbacks
+  const peopleAlsoAsk = extractPeopleAlsoAskQuestions(data);
+  const featuredSnippets = extractFeaturedSnippets(data);
   
   // Enhanced data extraction
   const knowledgeGraph = extractKnowledgeGraphData(data.knowledge_graph);
@@ -311,7 +362,7 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   // Generate content gaps based on competitor analysis
   const contentGaps = generateContentGaps(organicResults, keyword);
   
-  console.log('📊 FINAL EXTRACTION RESULTS:', {
+  console.log('📊 EXTRACTION RESULTS:', {
     peopleAlsoAskCount: peopleAlsoAsk.length,
     featuredSnippetsCount: featuredSnippets.length,
     entitiesCount: entities.length,
@@ -352,225 +403,431 @@ function transformSerpDataToAnalysisResult(data: any, keyword: string) {
   return result;
 }
 
-// FIXED: Complete rewrite with proper SerpAPI field mapping
-function extractPeopleAlsoAskWithMapping(data: any) {
-  console.log('🔍 EXTRACTING PEOPLE ALSO ASK WITH FIELD MAPPING...');
-  
+// IMPROVED: Completely rewritten with better field mapping and combined source extraction
+function extractPeopleAlsoAskQuestions(data: any) {
+  console.log('🔍 Extracting People Also Ask questions');
   const questions = [];
   
-  // Map all possible SerpAPI fields for questions
-  const questionSources = [
+  // List all possible sources for questions
+  const sources = [
     { name: 'people_also_ask', data: data.people_also_ask },
     { name: 'related_questions', data: data.related_questions },
-    { name: 'questions', data: data.questions },
+    { name: 'question_answer', data: data.question_answer },
+    { name: 'questions_and_answers', data: data.questions_and_answers },
     { name: 'faq', data: data.faq }
   ];
   
-  console.log('🔍 Question sources found:', questionSources.map(s => ({ 
-    name: s.name, 
-    hasData: !!s.data, 
-    length: Array.isArray(s.data) ? s.data.length : 'not array',
-    type: typeof s.data
-  })));
-  
-  questionSources.forEach(source => {
-    if (!source.data) return;
+  // Try to extract from each source
+  for (const source of sources) {
+    if (!source.data) continue;
     
-    console.log(`🔍 Processing ${source.name}:`, typeof source.data, Array.isArray(source.data));
+    console.log(`Processing ${source.name} data`);
     
+    // Handle array sources
     if (Array.isArray(source.data)) {
-      source.data.forEach((item: any, index: number) => {
-        console.log(`🔍 ${source.name}[${index}]:`, JSON.stringify(item, null, 2));
-        
-        let question = '';
-        let answer = '';
-        let sourceLink = '';
-        
-        // Handle different SerpAPI response formats
-        if (typeof item === 'string') {
-          question = item;
-        } else if (typeof item === 'object' && item !== null) {
-          // Try multiple field names for question
-          question = item.question || item.title || item.query || item.text || '';
-          
-          // Try multiple field names for answer
-          answer = item.answer || item.snippet || item.content || item.description || '';
-          
-          // Try multiple field names for source
-          sourceLink = item.link || item.source || item.url || '';
+      source.data.forEach((item, index) => {
+        if (index === 0) {
+          console.log(`Sample ${source.name} item:`, JSON.stringify(item));
         }
+        
+        // Extract relevant fields with multiple fallbacks
+        const question = item.question || item.title || item.query || item.text || '';
+        const answer = item.answer || item.snippet || item.content || item.description || '';
+        const sourceLink = item.link || item.source || item.url || '';
         
         if (question) {
           questions.push({
             question: String(question),
             source: sourceLink || source.name,
-            answer: String(answer)
+            answer: String(answer || '')
           });
-          console.log(`✅ Extracted question from ${source.name}:`, question);
         }
       });
-    } else if (typeof source.data === 'object') {
-      // Handle object format (sometimes SerpAPI returns objects instead of arrays)
-      Object.entries(source.data).forEach(([key, value]: [string, any]) => {
-        if (typeof value === 'string') {
-          questions.push({
-            question: String(value),
-            source: source.name,
-            answer: ''
-          });
-          console.log(`✅ Extracted question from ${source.name} object:`, value);
-        }
-      });
+    } 
+    // Handle object sources that might contain question data
+    else if (typeof source.data === 'object' && source.data !== null) {
+      // Try to extract question from object structure
+      const possibleQuestions = findQuestionsInObject(source.data, source.name);
+      questions.push(...possibleQuestions);
     }
-  });
+  }
   
-  console.log(`✅ TOTAL QUESTIONS EXTRACTED: ${questions.length}`);
+  console.log(`✅ Extracted ${questions.length} questions total`);
   return questions;
 }
 
-// FIXED: Complete rewrite with proper SerpAPI field mapping  
-function extractFeaturedSnippetsWithMapping(data: any) {
-  console.log('🔍 EXTRACTING FEATURED SNIPPETS WITH FIELD MAPPING...');
+// Helper function to find questions in nested objects
+function findQuestionsInObject(obj: any, sourceName: string, maxDepth = 3, currentDepth = 0): any[] {
+  if (currentDepth > maxDepth || typeof obj !== 'object' || obj === null) {
+    return [];
+  }
   
+  const questions = [];
+  
+  // Check if current object looks like a question
+  if (obj.question || obj.title || (typeof obj.text === 'string' && obj.text.endsWith('?'))) {
+    const question = obj.question || obj.title || obj.text || '';
+    const answer = obj.answer || obj.snippet || obj.content || obj.description || '';
+    const sourceLink = obj.link || obj.source || obj.url || '';
+    
+    if (question) {
+      questions.push({
+        question: String(question),
+        source: sourceLink || sourceName,
+        answer: String(answer || '')
+      });
+    }
+  }
+  
+  // Recursively search in nested objects
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip if it's an array of primitives or empty
+    if (Array.isArray(value) && (value.length === 0 || typeof value[0] !== 'object')) {
+      continue;
+    }
+    
+    // Recursively search in object or array of objects
+    if (typeof value === 'object' && value !== null) {
+      const nestedQuestions = Array.isArray(value)
+        ? value.flatMap(item => findQuestionsInObject(item, sourceName, maxDepth, currentDepth + 1))
+        : findQuestionsInObject(value, sourceName, maxDepth, currentDepth + 1);
+      
+      questions.push(...nestedQuestions);
+    }
+  }
+  
+  return questions;
+}
+
+// IMPROVED: Completely rewritten to handle all featured snippet formats
+function extractFeaturedSnippets(data: any) {
+  console.log('🔍 Extracting Featured Snippets');
   const snippets = [];
   
-  // Map all possible SerpAPI fields for featured snippets
-  const snippetSources = [
+  // List all possible sources for featured snippets
+  const sources = [
     { name: 'featured_snippet', data: data.featured_snippet },
     { name: 'answer_box', data: data.answer_box },
     { name: 'featured_snippets', data: data.featured_snippets },
-    { name: 'knowledge_graph', data: data.knowledge_graph }
+    { name: 'knowledge_graph', data: data.knowledge_graph, isSpecial: true }
   ];
   
-  console.log('🔍 Snippet sources found:', snippetSources.map(s => ({ 
-    name: s.name, 
-    hasData: !!s.data,
-    type: typeof s.data,
-    isArray: Array.isArray(s.data)
-  })));
-  
-  snippetSources.forEach(source => {
-    if (!source.data) return;
+  // Try to extract from each source
+  for (const source of sources) {
+    if (!source.data) continue;
     
-    console.log(`🔍 Processing ${source.name}:`, JSON.stringify(source.data, null, 2));
+    console.log(`Processing ${source.name} data`);
     
-    if (Array.isArray(source.data)) {
-      // Handle array format
-      source.data.forEach((item: any, index: number) => {
-        const snippet = extractSingleSnippet(item, source.name);
-        if (snippet) {
-          snippets.push(snippet);
-          console.log(`✅ Extracted snippet from ${source.name}[${index}]`);
-        }
+    // Special handling for knowledge graph (only use if it has a description)
+    if (source.isSpecial && source.data.description) {
+      snippets.push({
+        type: 'knowledge',
+        content: source.data.description,
+        source: source.data.source?.link || 'Google Knowledge Graph',
+        title: source.data.title || 'Knowledge Graph'
       });
-    } else if (typeof source.data === 'object') {
-      // Handle single object format (most common for answer_box)
-      const snippet = extractSingleSnippet(source.data, source.name);
-      if (snippet) {
-        snippets.push(snippet);
-        console.log(`✅ Extracted snippet from ${source.name}`);
-      }
+      continue;
     }
-  });
+    
+    // Handle array sources
+    if (Array.isArray(source.data)) {
+      source.data.forEach(item => {
+        const snippet = extractSingleSnippet(item, source.name);
+        if (snippet) snippets.push(snippet);
+      });
+    } 
+    // Handle single object sources (most common)
+    else if (typeof source.data === 'object' && source.data !== null) {
+      const snippet = extractSingleSnippet(source.data, source.name);
+      if (snippet) snippets.push(snippet);
+    }
+  }
   
-  console.log(`✅ TOTAL SNIPPETS EXTRACTED: ${snippets.length}`);
+  // If we don't have any snippets but have organic results with rich snippets, use those
+  if (snippets.length === 0 && data.organic_results && data.organic_results.length > 0) {
+    const richResults = data.organic_results
+      .filter((result: any) => result.rich_snippet || result.snippet)
+      .slice(0, 2);
+      
+    richResults.forEach((result: any, index: number) => {
+      const content = result.rich_snippet 
+        ? extractRichSnippetContent(result.rich_snippet)
+        : result.snippet;
+        
+      if (content) {
+        snippets.push({
+          type: result.rich_snippet ? 'rich' : 'paragraph',
+          content: content,
+          source: result.link || '',
+          title: result.title || `Search Result ${index + 1}`
+        });
+      }
+    });
+  }
+  
+  // Handle direct answer box information if available
+  if (data.answer_box && !snippets.some(s => s.type === 'answer')) {
+    if (data.answer_box.answer) {
+      snippets.push({
+        type: 'answer',
+        content: data.answer_box.answer,
+        source: data.answer_box.link || '',
+        title: data.answer_box.title || 'Direct Answer'
+      });
+    } else if (data.answer_box.snippet) {
+      snippets.push({
+        type: 'snippet',
+        content: data.answer_box.snippet,
+        source: data.answer_box.link || data.answer_box.displayed_link || '',
+        title: data.answer_box.title || 'Featured Snippet'
+      });
+    }
+  }
+  
+  console.log(`✅ Extracted ${snippets.length} featured snippets`);
   return snippets;
+}
+
+// Helper function to extract rich snippet content
+function extractRichSnippetContent(richSnippet: any): string {
+  if (!richSnippet) return '';
+  
+  // Try to extract from different locations based on SerpAPI's structure
+  if (richSnippet.top && richSnippet.top.detected_extensions) {
+    return Object.entries(richSnippet.top.detected_extensions)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+  }
+  
+  if (richSnippet.bottom && richSnippet.bottom.extensions) {
+    return richSnippet.bottom.extensions.join(' ');
+  }
+  
+  if (richSnippet.bottom && richSnippet.bottom.detected_extensions) {
+    return Object.entries(richSnippet.bottom.detected_extensions)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+  }
+  
+  // Try to convert the whole rich snippet to a string if nothing else works
+  return JSON.stringify(richSnippet)
+    .replace(/[{}"]/g, '')
+    .replace(/,/g, ', ')
+    .substring(0, 200);
 }
 
 // Helper function to extract a single snippet from various formats
 function extractSingleSnippet(item: any, sourceName: string) {
   if (!item || typeof item !== 'object') return null;
   
+  // Debug the snippet structure
+  console.log(`Extracting snippet from ${sourceName}:`, JSON.stringify(item));
+  
+  // Extract content with multiple fallbacks
   let content = '';
-  let type = 'paragraph';
-  let title = '';
-  let source = '';
+  const contentSources = [
+    'snippet', 'answer', 'text', 'content', 'description', 'result', 'summary',
+    'displayed_text', 'plain_text'
+  ];
   
-  // Extract content using multiple possible field names
-  content = item.snippet || item.answer || item.text || item.content || 
-           item.description || item.result || item.summary || '';
-  
-  // Extract type
-  type = item.type || item.format || 'paragraph';
-  
-  // Extract title
-  title = item.title || item.heading || item.displayed_link || 
-         item.source_name || sourceName || 'Featured Snippet';
-  
-  // Extract source
-  source = item.link || item.source || item.url || item.cite || '';
-  
-  if (content) {
-    return {
-      type: String(type),
-      content: String(content),
-      source: String(source),
-      title: String(title)
-    };
+  // Try each possible content field
+  for (const field of contentSources) {
+    if (item[field] && typeof item[field] === 'string') {
+      content = item[field];
+      break;
+    }
   }
   
-  return null;
+  // If we couldn't extract content from direct fields, try nested fields
+  if (!content) {
+    if (item.contents && typeof item.contents === 'string') {
+      content = item.contents;
+    } else if (item.content && typeof item.content === 'object' && item.content.text) {
+      content = item.content.text;
+    } else if (item.details && typeof item.details === 'object' && item.details.description) {
+      content = item.details.description;
+    } else if (item.body && typeof item.body === 'string') {
+      content = item.body;
+    }
+  }
+  
+  // If we still don't have content but have a list, use that
+  if (!content && item.list && typeof item.list === 'object') {
+    content = Object.entries(item.list)
+      .map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return `${key}: ${value.join(', ')}`;
+        }
+        return `${key}: ${value}`;
+      })
+      .join(' | ');
+  }
+  
+  // If we still don't have content but have an array of items, use that
+  if (!content && Array.isArray(item) && item.length > 0) {
+    content = item.map(i => typeof i === 'string' ? i : JSON.stringify(i)).join(' | ');
+  }
+  
+  // If we still don't have content
+  if (!content) {
+    return null;
+  }
+  
+  // Get snippet type
+  const type = item.type || item.format || (item.list ? 'list' : 'paragraph');
+  
+  // Get snippet title
+  const title = item.title || item.heading || item.displayed_link || 
+                item.source_name || sourceName || 'Featured Snippet';
+  
+  // Get source
+  const source = item.link || item.source || item.url || item.cite || '';
+  
+  return {
+    type: String(type),
+    content: String(content),
+    source: String(source),
+    title: String(title)
+  };
 }
 
 function extractKnowledgeGraphData(knowledgeGraph: any) {
   if (!knowledgeGraph) return null;
   
-  return {
+  // Improved extraction with better null checking
+  const result = {
     title: knowledgeGraph.title || '',
     type: knowledgeGraph.type || '',
     description: knowledgeGraph.description || '',
-    attributes: knowledgeGraph.attributes || {},
-    relatedEntities: knowledgeGraph.people_also_search_for || []
+    attributes: {},
+    relatedEntities: []
   };
+  
+  // Extract attributes safely
+  if (knowledgeGraph.attributes && typeof knowledgeGraph.attributes === 'object') {
+    result.attributes = knowledgeGraph.attributes;
+  }
+  
+  // Extract related entities from various possible fields
+  const relatedEntitiesSources = [
+    'people_also_search_for',
+    'related_entities',
+    'see_results_about'
+  ];
+  
+  for (const source of relatedEntitiesSources) {
+    if (knowledgeGraph[source] && Array.isArray(knowledgeGraph[source])) {
+      const entities = knowledgeGraph[source].map((entity: any) => ({
+        name: entity.name || entity.title || entity.text || '',
+        link: entity.link || entity.url || '',
+        image: entity.image || entity.thumbnail || ''
+      }));
+      
+      result.relatedEntities = [...result.relatedEntities, ...entities];
+    }
+  }
+  
+  return result;
 }
 
 function extractLocalResultsData(localResults: any) {
-  if (!localResults || !Array.isArray(localResults)) return [];
+  if (!localResults) return [];
   
-  return localResults.map(result => ({
-    name: result.title || '',
-    address: result.address || '',
-    rating: result.rating || 0,
-    reviews: result.reviews || 0,
-    type: result.type || 'business'
+  // Improve extraction to handle different structures
+  let places = [];
+  
+  // Handle array structure
+  if (Array.isArray(localResults)) {
+    places = localResults;
+  } 
+  // Handle object structure with places array
+  else if (localResults.places && Array.isArray(localResults.places)) {
+    places = localResults.places;
+  } 
+  // Handle object structure with businesses/locations array
+  else if (localResults.businesses && Array.isArray(localResults.businesses)) {
+    places = localResults.businesses;
+  }
+  // Handle object structure with locations array
+  else if (localResults.locations && Array.isArray(localResults.locations)) {
+    places = localResults.locations;
+  }
+  
+  return places.map((place: any) => ({
+    name: place.title || place.name || '',
+    address: place.address || place.location || '',
+    rating: place.rating || 0,
+    reviews: place.reviews || place.review_count || 0,
+    type: place.type || place.category || 'business'
   }));
 }
 
 function extractMultimediaData(images: any, videos: any) {
   const opportunities = [];
   
-  if (images && Array.isArray(images)) {
-    opportunities.push({
-      type: 'images',
-      count: images.length,
-      suggestions: images.slice(0, 3).map((img: any) => ({
-        title: img.title || '',
-        source: img.source || ''
-      }))
-    });
+  // Extract images if available
+  if (images) {
+    const imagesData = Array.isArray(images) ? images : 
+                       (images.results && Array.isArray(images.results)) ? images.results : [];
+    
+    if (imagesData.length > 0) {
+      opportunities.push({
+        type: 'images',
+        count: imagesData.length,
+        suggestions: imagesData.slice(0, 3).map((img: any) => ({
+          title: img.title || img.alt || 'Image',
+          source: img.source || img.link || img.original || ''
+        }))
+      });
+    }
   }
   
-  if (videos && Array.isArray(videos)) {
-    opportunities.push({
-      type: 'videos',
-      count: videos.length,
-      suggestions: videos.slice(0, 3).map((vid: any) => ({
-        title: vid.title || '',
-        source: vid.link || ''
-      }))
-    });
+  // Extract videos if available
+  if (videos) {
+    const videosData = Array.isArray(videos) ? videos : 
+                      (videos.results && Array.isArray(videos.results)) ? videos.results : [];
+    
+    if (videosData.length > 0) {
+      opportunities.push({
+        type: 'videos',
+        count: videosData.length,
+        suggestions: videosData.slice(0, 3).map((vid: any) => ({
+          title: vid.title || 'Video',
+          source: vid.link || vid.url || ''
+        }))
+      });
+    }
   }
+  
+  // Extract inline images from organic results as well
+  const inlineImagesData = [];
   
   return opportunities;
 }
 
 function extractCommercialSignals(shoppingResults: any, ads: any) {
   const signals = {
-    hasShoppingResults: !!shoppingResults && Array.isArray(shoppingResults) && shoppingResults.length > 0,
-    hasAds: !!ads && Array.isArray(ads) && ads.length > 0,
+    hasShoppingResults: false,
+    hasAds: false,
     commercialIntent: 'unknown' as 'high' | 'medium' | 'low' | 'unknown'
   };
   
+  // Check for shopping results
+  if (shoppingResults) {
+    const shoppingItems = Array.isArray(shoppingResults) ? shoppingResults : 
+                         (shoppingResults.results && Array.isArray(shoppingResults.results)) ? 
+                           shoppingResults.results : [];
+    signals.hasShoppingResults = shoppingItems.length > 0;
+  }
+  
+  // Check for ads
+  if (ads) {
+    const adItems = Array.isArray(ads) ? ads : 
+                   (ads.results && Array.isArray(ads.results)) ? ads.results : [];
+    signals.hasAds = adItems.length > 0;
+  }
+  
+  // Determine commercial intent
   if (signals.hasShoppingResults && signals.hasAds) {
     signals.commercialIntent = 'high';
   } else if (signals.hasShoppingResults || signals.hasAds) {
@@ -585,37 +842,71 @@ function extractCommercialSignals(shoppingResults: any, ads: any) {
 function extractEntitiesEnhanced(organicResults: any[], knowledgeGraph: any) {
   const entities = new Set<string>();
   
-  // Extract from organic results
-  organicResults.forEach(result => {
-    const text = `${result.title} ${result.snippet}`.toLowerCase();
-    
-    // Extract common business/tech entities
-    const entityPatterns = [
-      /\b(platform|software|tool|service|solution|system|framework|api|database|cloud|ai|ml|analytics)\b/g,
-      /\b(strategy|method|approach|technique|process|workflow|best practice)\b/g,
-      /\b(metric|kpi|roi|conversion|engagement|traffic|revenue)\b/g
-    ];
-    
-    entityPatterns.forEach(pattern => {
-      const matches = text.match(pattern);
-      if (matches) {
-        matches.forEach(match => entities.add(match));
+  // Extract from organic results with improved patterns
+  if (Array.isArray(organicResults)) {
+    organicResults.forEach(result => {
+      if (!result) return;
+      
+      const text = `${result.title || ''} ${result.snippet || ''}`.toLowerCase();
+      
+      // Extract common business/tech/concept entities with improved patterns
+      const entityPatterns = [
+        /\b(platform|software|tool|service|solution|system|framework|api|database|cloud|ai|ml|analytics)\b/g,
+        /\b(strategy|method|approach|technique|process|workflow|best practice)\b/g,
+        /\b(metric|kpi|roi|conversion|engagement|traffic|revenue)\b/g,
+        /\b([a-z]+ology|[a-z]+ics|[a-z]+ment)\b/g, // Common suffixes for concepts/fields
+        /\b(analysis|research|study|guide|tutorial)\b/g
+      ];
+      
+      entityPatterns.forEach(pattern => {
+        const matches = text.match(pattern);
+        if (matches) {
+          matches.forEach(match => entities.add(match));
+        }
+      });
+      
+      // Extract named entities if present
+      if (result.about_this_result && result.about_this_result.keywords) {
+        result.about_this_result.keywords.forEach((keyword: string) => {
+          entities.add(keyword.toLowerCase());
+        });
       }
     });
-  });
+  }
   
-  // Extract from knowledge graph
+  // Extract from knowledge graph with better handling
   if (knowledgeGraph) {
+    // Add title and type
     if (knowledgeGraph.title) entities.add(knowledgeGraph.title.toLowerCase());
     if (knowledgeGraph.type) entities.add(knowledgeGraph.type.toLowerCase());
-    if (knowledgeGraph.people_also_search_for) {
-      knowledgeGraph.people_also_search_for.forEach((entity: any) => {
-        if (entity.name) entities.add(entity.name.toLowerCase());
-      });
+    
+    // Add related entities
+    const relatedEntitiesSources = [
+      'people_also_search_for',
+      'related_entities',
+      'see_results_about'
+    ];
+    
+    for (const source of relatedEntitiesSources) {
+      if (knowledgeGraph[source] && Array.isArray(knowledgeGraph[source])) {
+        knowledgeGraph[source].forEach((entity: any) => {
+          if (entity.name) entities.add(entity.name.toLowerCase());
+        });
+      }
+    }
+    
+    // Add attributes as entities if appropriate
+    if (knowledgeGraph.attributes && typeof knowledgeGraph.attributes === 'object') {
+      for (const [key, value] of Object.entries(knowledgeGraph.attributes)) {
+        if (typeof value === 'string' && value.length < 30) { // Only add short values as entities
+          entities.add(value.toLowerCase());
+        }
+      }
     }
   }
   
-  return Array.from(entities).slice(0, 12).map(entity => ({
+  // Convert to array and format
+  return Array.from(entities).slice(0, 15).map(entity => ({
     name: entity,
     type: 'concept',
     description: `Key concept related to the search topic`,
@@ -624,27 +915,65 @@ function extractEntitiesEnhanced(organicResults: any[], knowledgeGraph: any) {
 }
 
 function extractHeadings(organicResults: any[]) {
-  const headings = [];
+  if (!Array.isArray(organicResults)) return [];
   
-  organicResults.forEach(result => {
-    if (result.title) {
-      // Extract potential headings from titles
-      const title = result.title;
-      if (title.includes('How to')) {
-        headings.push({ text: title, level: 'h2' as const });
-      } else if (title.includes('What is') || title.includes('Why')) {
-        headings.push({ text: title, level: 'h2' as const });
-      } else if (title.includes('Best') || title.includes('Top')) {
-        headings.push({ text: title, level: 'h2' as const });
+  const headings = [];
+  const headingPatterns = [
+    { regex: /how to .+/i, level: 'h2', type: 'how-to' },
+    { regex: /what is .+|what are .+/i, level: 'h2', type: 'definition' },
+    { regex: /why .+/i, level: 'h2', type: 'explanation' },
+    { regex: /best .+|top .+/i, level: 'h2', type: 'list' },
+    { regex: /\d+ .+/i, level: 'h2', type: 'list' }, // Numbers like "10 ways to..."
+    { regex: /.+ guide|.+ tutorial/i, level: 'h1', type: 'guide' },
+    { regex: /.+ tips/i, level: 'h2', type: 'tips' },
+    { regex: /benefits of .+/i, level: 'h2', type: 'benefits' },
+    { regex: /.+ vs .+/i, level: 'h2', type: 'comparison' }
+  ];
+  
+  // Extract potential headings from titles
+  organicResults.forEach((result, index) => {
+    if (!result || !result.title) return;
+    
+    const title = result.title;
+    let matched = false;
+    
+    // Check against patterns
+    for (const pattern of headingPatterns) {
+      if (pattern.regex.test(title)) {
+        headings.push({ 
+          text: title, 
+          level: pattern.level as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',
+          type: pattern.type, 
+          subtext: result.snippet || '' 
+        });
+        matched = true;
+        break;
       }
+    }
+    
+    // For titles that didn't match any pattern but are from top results
+    if (!matched && index < 3 && title.length < 60) {
+      headings.push({ 
+        text: title, 
+        level: 'h2' as 'h2', 
+        subtext: result.snippet || '' 
+      });
     }
   });
   
-  return headings.slice(0, 8);
+  // Prioritize and limit headings
+  const uniqueHeadings = Array.from(new Map(
+    headings.map(h => [h.text.toLowerCase(), h])
+  ).values());
+  
+  return uniqueHeadings.slice(0, 8);
 }
 
 function generateContentGaps(organicResults: any[], keyword: string) {
-  const gaps = [
+  if (!Array.isArray(organicResults)) return [];
+  
+  // Standard gaps that are useful for most keywords
+  const standardGaps = [
     {
       topic: `${keyword} for beginners`,
       description: 'Beginner-friendly content',
@@ -658,25 +987,120 @@ function generateContentGaps(organicResults: any[], keyword: string) {
       recommendation: 'Develop advanced techniques content',
       content: `Professional-level ${keyword} implementation strategies`,
       source: 'Competitor analysis'
-    },
-    {
-      topic: `${keyword} case studies`,
-      description: 'Real-world examples',
-      recommendation: 'Include practical case studies',
-      content: `Real-world examples of successful ${keyword} implementation`,
-      source: 'Competitor analysis'
     }
   ];
   
-  return gaps;
+  // Custom gaps based on search results
+  const customGaps = [];
+  
+  // Look for comparison opportunities
+  const topCompetitors = new Set<string>();
+  organicResults.slice(0, 5).forEach(result => {
+    if (!result || !result.title) return;
+    
+    const title = result.title.toLowerCase();
+    const alternatives = title.match(/(?:vs|versus|compared to|alternative to) ([a-z0-9\s]+)/i);
+    
+    if (alternatives && alternatives[1]) {
+      const competitor = alternatives[1].trim();
+      if (competitor && competitor !== keyword.toLowerCase()) {
+        topCompetitors.add(competitor);
+      }
+    }
+  });
+  
+  // Add comparison gaps
+  topCompetitors.forEach(competitor => {
+    customGaps.push({
+      topic: `${keyword} vs ${competitor}`,
+      description: 'Comparative analysis',
+      recommendation: `Create a detailed comparison between ${keyword} and ${competitor}`,
+      content: `Analyze the differences, pros, and cons of ${keyword} versus ${competitor}`,
+      source: 'Competitive intelligence'
+    });
+  });
+  
+  // Look for question-based gaps
+  const questions = new Set<string>();
+  organicResults.forEach(result => {
+    if (!result || !result.snippet) return;
+    
+    const snippet = result.snippet.toLowerCase();
+    const questionMatches = snippet.match(/(?:how|what|why|when|where|which|who|can|should) [^.?!]+\?/gi);
+    
+    if (questionMatches) {
+      questionMatches.forEach(question => {
+        if (question.includes(keyword.toLowerCase())) {
+          questions.add(question);
+        }
+      });
+    }
+  });
+  
+  // Add question-based gap
+  if (questions.size > 0) {
+    customGaps.push({
+      topic: `${keyword} FAQ`,
+      description: 'Frequently asked questions',
+      recommendation: 'Create a comprehensive FAQ section',
+      content: `Answer common questions like: ${Array.from(questions).slice(0, 3).join(' | ')}`,
+      source: 'Search snippets'
+    });
+  }
+  
+  // Combine standard and custom gaps, limiting to prevent overwhelming
+  return [...standardGaps, ...customGaps].slice(0, 5);
 }
 
 function generateRecommendations(organicResults: any[], keyword: string) {
-  return [
-    `Create comprehensive content covering ${keyword} fundamentals`,
-    `Include practical examples and case studies`,
-    `Address common questions about ${keyword}`,
-    `Compare different approaches to ${keyword}`,
-    `Provide actionable tips for ${keyword} implementation`
+  if (!Array.isArray(organicResults)) {
+    return [
+      `Create comprehensive content covering ${keyword} fundamentals`,
+      `Include practical examples and case studies`
+    ];
+  }
+  
+  // Analyze organic results for insights
+  const snippets = organicResults.map(r => r.snippet || '').filter(Boolean);
+  const allText = snippets.join(' ').toLowerCase();
+  
+  const recommendations = [
+    `Create comprehensive content covering ${keyword} fundamentals`
   ];
+  
+  // Add recommendations based on content analysis
+  if (allText.includes('example') || allText.includes('case stud')) {
+    recommendations.push(`Include practical examples and case studies`);
+  }
+  
+  if (allText.includes('how to') || allText.includes('step')) {
+    recommendations.push(`Provide step-by-step instructions for ${keyword} implementation`);
+  }
+  
+  if (allText.includes('best practice') || allText.includes('tip')) {
+    recommendations.push(`Share best practices and expert tips`);
+  }
+  
+  if (allText.includes('vs') || allText.includes('versus') || allText.includes('compare')) {
+    recommendations.push(`Compare different approaches to ${keyword}`);
+  }
+  
+  if (allText.includes('benefit') || allText.includes('advantage')) {
+    recommendations.push(`Highlight the key benefits of ${keyword}`);
+  }
+  
+  // Always add these general recommendations if we don't have enough
+  if (recommendations.length < 5) {
+    const additionalRecs = [
+      `Address common questions about ${keyword}`,
+      `Provide actionable tips for ${keyword} implementation`,
+      `Include visual aids like diagrams or infographics`,
+      `Cite authoritative sources to build credibility`
+    ];
+    
+    recommendations.push(...additionalRecs);
+  }
+  
+  // Return top 5 recommendations
+  return recommendations.slice(0, 5);
 }
