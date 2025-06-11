@@ -45,8 +45,8 @@ export async function sendChatRequest(
       model: defaultModel.id
     };
 
-    // Call the API proxy
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
+    // Call the new AI proxy function
+    const { data, error } = await supabase.functions.invoke('ai-proxy', {
       body: JSON.stringify({
         service: provider,
         endpoint: 'chat',
@@ -104,8 +104,8 @@ export async function generateCompletion(
       model: defaultModel.id
     };
 
-    // Call the API proxy
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
+    // Call the new AI proxy function
+    const { data, error } = await supabase.functions.invoke('ai-proxy', {
       body: JSON.stringify({
         service: provider,
         endpoint: 'completion',

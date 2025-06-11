@@ -18,11 +18,10 @@ export async function testApiKey(service: string, key: string): Promise<boolean>
       return false;
     }
 
-    // Use the Edge Function to test the API key
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
+    // Use the new unified API testing function
+    const { data, error } = await supabase.functions.invoke('api-test', {
       body: JSON.stringify({
         service,
-        endpoint: 'test',
         apiKey: key
       }),
     });

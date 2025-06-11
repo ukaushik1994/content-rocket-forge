@@ -37,13 +37,38 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
       return null;
     }
     
-    // Call the API proxy
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
-      body: JSON.stringify({
+    // Determine the appropriate proxy function
+    let proxyFunction: string;
+    let requestBody: any;
+    
+    if (['openai', 'anthropic', 'gemini', 'mistral'].includes(config.provider)) {
+      proxyFunction = 'ai-proxy';
+      requestBody = {
+        service: config.provider,
+        endpoint: config.endpoint,
+        params: config.params,
+        apiKey
+      };
+    } else if (config.provider === 'serp') {
+      proxyFunction = 'serp-proxy';
+      requestBody = {
+        endpoint: config.endpoint,
+        params: config.params,
+        apiKey
+      };
+    } else {
+      // Fallback to legacy api-proxy
+      proxyFunction = 'api-proxy';
+      requestBody = {
         ...config,
         apiKey,
         hasApiKey
-      }),
+      };
+    }
+    
+    // Call the appropriate API proxy function
+    const { data, error } = await supabase.functions.invoke(proxyFunction, {
+      body: JSON.stringify(requestBody),
     });
     
     if (error) {

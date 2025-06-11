@@ -4,10 +4,61 @@ import { toast } from "sonner";
 import { getApiKey } from "./apiKeys";
 
 export type ApiProxyParams = {
-  service: 'serp' | 'openai' | 'anthropic' | 'gemini';
+  service: 'serp' | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'google-analytics' | 'google-search-console';
   endpoint: string;
   params?: Record<string, any>;
 };
+
+/**
+ * Get the appropriate proxy function name for a service
+ */
+function getProxyFunction(service: string): string {
+  if (['openai', 'anthropic', 'gemini', 'mistral'].includes(service)) {
+    return 'ai-proxy';
+  } else if (service === 'serp') {
+    return 'serp-proxy';
+  } else if (['google-analytics', 'google-search-console'].includes(service)) {
+    return 'google-proxy';
+  } else {
+    // Fallback to legacy api-proxy for unknown services
+    return 'api-proxy';
+  }
+}
+
+/**
+ * Prepare request body for the specific proxy function
+ */
+function prepareRequestBody(config: ApiProxyParams, apiKey: string | null): any {
+  const proxyFunction = getProxyFunction(config.service);
+  
+  if (proxyFunction === 'ai-proxy') {
+    return {
+      service: config.service,
+      endpoint: config.endpoint,
+      params: config.params,
+      apiKey
+    };
+  } else if (proxyFunction === 'serp-proxy') {
+    return {
+      endpoint: config.endpoint,
+      params: config.params,
+      apiKey
+    };
+  } else if (proxyFunction === 'google-proxy') {
+    return {
+      service: config.service,
+      endpoint: config.endpoint,
+      apiKey
+    };
+  } else {
+    // Legacy format for api-proxy
+    return {
+      ...config,
+      apiKey,
+      hasApiKey: !!apiKey
+    };
+  }
+}
 
 export async function callApiProxy<T>(config: ApiProxyParams): Promise<T | null> {
   try {
@@ -26,14 +77,15 @@ export async function callApiProxy<T>(config: ApiProxyParams): Promise<T | null>
       return null;
     }
     
-    // Call the API proxy with the actual API key
-    const { data, error } = await supabase.functions.invoke('api-proxy', {
-      body: JSON.stringify({
-        ...config,
-        // Pass the actual API key, not just a flag
-        apiKey: apiKey,
-        hasApiKey
-      }),
+    // Determine which proxy function to use
+    const proxyFunction = getProxyFunction(config.service);
+    const requestBody = prepareRequestBody(config, apiKey);
+    
+    console.log(`Calling ${proxyFunction} for ${config.service} - ${config.endpoint}`);
+    
+    // Call the appropriate API proxy function
+    const { data, error } = await supabase.functions.invoke(proxyFunction, {
+      body: JSON.stringify(requestBody),
     });
     
     if (error) {
