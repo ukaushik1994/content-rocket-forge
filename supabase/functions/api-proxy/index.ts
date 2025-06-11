@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -55,6 +54,85 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to create JWT for Google service accounts
+async function createGoogleJWT(serviceAccount: any, scopes: string[]): Promise<string> {
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT'
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: serviceAccount.client_email,
+    scope: scopes.join(' '),
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now
+  };
+
+  const encoder = new TextEncoder();
+  
+  // Encode header and payload
+  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  // Create signature
+  const signingInput = `${encodedHeader}.${encodedPayload}`;
+  
+  // Import private key
+  const privateKey = serviceAccount.private_key.replace(/\\n/g, '\n');
+  const keyData = await crypto.subtle.importKey(
+    'pkcs8',
+    new TextEncoder().encode(privateKey),
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256'
+    },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    keyData,
+    encoder.encode(signingInput)
+  );
+  
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  return `${signingInput}.${encodedSignature}`;
+}
+
+// Helper function to get Google access token
+async function getGoogleAccessToken(serviceAccount: any, scopes: string[]): Promise<string> {
+  try {
+    const jwt = await createGoogleJWT(serviceAccount, scopes);
+    
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get access token: ${data.error_description || data.error}`);
+    }
+    
+    return data.access_token;
+  } catch (error: any) {
+    console.error('Error getting Google access token:', error);
+    throw new Error(`Authentication failed: ${error.message}`);
+  }
+}
 
 // Handler for API key testing
 async function handleApiKeyTest(service: string, apiKey: string) {
@@ -193,7 +271,7 @@ async function handleApiKeyTest(service: string, apiKey: string) {
       }
     } else if (service === 'google-analytics') {
       // For Google Analytics, we need to handle different credential types
-      console.log('Testing Google Analytics API key');
+      console.log('Testing Google Analytics credentials');
       
       let isServiceAccount = false;
       let credentials = null;
@@ -210,60 +288,74 @@ async function handleApiKeyTest(service: string, apiKey: string) {
       }
       
       if (isServiceAccount) {
-        // For service account, we need to create a JWT token
-        // This is complex, so for now we'll just validate the format
-        if (!credentials.private_key || !credentials.client_email || !credentials.project_id) {
-          throw new Error('Invalid Google Analytics service account JSON format');
-        }
-        
-        return new Response(
-          JSON.stringify({ success: true, message: 'Google Analytics service account format is valid (full authentication testing requires additional setup)' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        // For API key, test with Analytics Management API v3
-        if (!apiKey || apiKey.length < 20) {
-          throw new Error('Invalid Google Analytics API key format');
-        }
-        
-        // Test with Management API v3 which is simpler and doesn't require view ID
-        const response = await fetch(
-          `https://www.googleapis.com/analytics/v3/management/accounts?key=${apiKey}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          }
-        );
-
-        const data = await response.text();
-        
-        // If we get a 200 response, the key is valid
-        if (response.ok) {
-          return new Response(
-            JSON.stringify({ success: true, message: 'Google Analytics API connection successful' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        // Try to parse as JSON for error details
+        // Test service account with Google Analytics Data API v1
         try {
-          const errorData = JSON.parse(data);
-          if (response.status === 403) {
-            throw new Error('Google Analytics API key is invalid or lacks required permissions');
+          const scopes = ['https://www.googleapis.com/auth/analytics.readonly'];
+          const accessToken = await getGoogleAccessToken(credentials, scopes);
+          
+          // Test with Google Analytics Data API v1 - list accounts
+          const response = await fetch(
+            'https://analyticsdata.googleapis.com/v1beta/accounts',
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+
+          if (response.ok) {
+            return new Response(
+              JSON.stringify({ success: true, message: 'Google Analytics service account authenticated successfully' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } else {
+            const errorData = await response.json();
+            console.error('GA API error:', errorData);
+            
+            if (response.status === 403) {
+              throw new Error('Google Analytics service account lacks required permissions. Please ensure the service account has Analytics Viewer access.');
+            }
+            throw new Error(errorData.error?.message || 'Google Analytics authentication failed');
           }
-          throw new Error(errorData.error?.message || 'Invalid Google Analytics API key');
-        } catch (parseError) {
-          // If we can't parse as JSON, it might be an HTML error page
-          if (data.includes('<!DOCTYPE')) {
-            throw new Error('Google Analytics API returned an HTML error page - check your API key and ensure Analytics API is enabled');
+        } catch (authError: any) {
+          console.error('Service account authentication error:', authError);
+          throw new Error(`Service account authentication failed: ${authError.message}`);
+        }
+      } else {
+        // For simple API keys, provide guidance
+        if (!apiKey || apiKey.length < 20) {
+          throw new Error('Invalid Google Analytics API key format. For Google Analytics, you typically need a Service Account JSON file, not a simple API key.');
+        }
+        
+        // Try basic API key test (though this is less common for GA)
+        try {
+          const response = await fetch(
+            `https://www.googleapis.com/analytics/v3/management/accounts?key=${apiKey}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+
+          if (response.ok) {
+            return new Response(
+              JSON.stringify({ success: true, message: 'Google Analytics API key connection successful' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } else {
+            const errorText = await response.text();
+            console.error('GA API key test failed:', errorText);
+            throw new Error('Google Analytics API key authentication failed. Consider using a Service Account JSON instead.');
           }
-          throw new Error('Invalid Google Analytics API key or API access denied');
+        } catch (error: any) {
+          throw new Error(`Google Analytics API key test failed: ${error.message}. Most Google Analytics integrations require Service Account JSON credentials.`);
         }
       }
     } else if (service === 'google-search-console') {
       // For Google Search Console, similar approach
-      console.log('Testing Google Search Console API key');
+      console.log('Testing Google Search Console credentials');
       
       let isServiceAccount = false;
       let credentials = null;
@@ -280,54 +372,69 @@ async function handleApiKeyTest(service: string, apiKey: string) {
       }
       
       if (isServiceAccount) {
-        // For service account, validate format
-        if (!credentials.private_key || !credentials.client_email || !credentials.project_id) {
-          throw new Error('Invalid Google Search Console service account JSON format');
+        // Test service account with Google Search Console API
+        try {
+          const scopes = ['https://www.googleapis.com/auth/webmasters.readonly'];
+          const accessToken = await getGoogleAccessToken(credentials, scopes);
+          
+          // Test with Search Console API - list sites
+          const response = await fetch(
+            'https://searchconsole.googleapis.com/webmasters/v3/sites',
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+
+          if (response.ok) {
+            return new Response(
+              JSON.stringify({ success: true, message: 'Google Search Console service account authenticated successfully' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } else {
+            const errorData = await response.json();
+            console.error('GSC API error:', errorData);
+            
+            if (response.status === 403) {
+              throw new Error('Google Search Console service account lacks required permissions. Please ensure the service account has Search Console access.');
+            }
+            throw new Error(errorData.error?.message || 'Google Search Console authentication failed');
+          }
+        } catch (authError: any) {
+          console.error('Service account authentication error:', authError);
+          throw new Error(`Service account authentication failed: ${authError.message}`);
         }
-        
-        return new Response(
-          JSON.stringify({ success: true, message: 'Google Search Console service account format is valid (full authentication testing requires additional setup)' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
       } else {
         // For API key, test with Search Console API
         if (!apiKey || apiKey.length < 20) {
-          throw new Error('Invalid Google Search Console API key format');
+          throw new Error('Invalid Google Search Console API key format. For Google Search Console, you typically need a Service Account JSON file, not a simple API key.');
         }
         
-        // Test with a simple Search Console API call
-        const response = await fetch(
-          `https://searchconsole.googleapis.com/webmasters/v3/sites?key=${apiKey}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          }
-        );
-
-        const data = await response.text();
-        
-        // If we get a 200 response, the key is valid
-        if (response.ok) {
-          return new Response(
-            JSON.stringify({ success: true, message: 'Google Search Console API connection successful' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        // Try to parse as JSON for error details
+        // Try basic API key test (though this is less common for GSC)
         try {
-          const errorData = JSON.parse(data);
-          if (response.status === 403) {
-            throw new Error('Google Search Console API key is invalid or lacks required permissions');
+          const response = await fetch(
+            `https://searchconsole.googleapis.com/webmasters/v3/sites?key=${apiKey}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+
+          if (response.ok) {
+            return new Response(
+              JSON.stringify({ success: true, message: 'Google Search Console API key connection successful' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } else {
+            const errorText = await response.text();
+            console.error('GSC API key test failed:', errorText);
+            throw new Error('Google Search Console API key authentication failed. Consider using a Service Account JSON instead.');
           }
-          throw new Error(errorData.error?.message || 'Invalid Google Search Console API key');
-        } catch (parseError) {
-          // If we can't parse as JSON, it might be an HTML error page
-          if (data.includes('<!DOCTYPE')) {
-            throw new Error('Google Search Console API returned an HTML error page - check your API key and ensure Search Console API is enabled');
-          }
-          throw new Error('Invalid Google Search Console API key or API access denied');
+        } catch (error: any) {
+          throw new Error(`Google Search Console API key test failed: ${error.message}. Most Google Search Console integrations require Service Account JSON credentials.`);
         }
       }
     } else {
@@ -891,7 +998,7 @@ async function handleSerpRequest(endpoint: string, params: any, clientApiKey: st
         // Extract entities from knowledge graph if available
         entities: data.knowledge_graph ? [
           { 
-            name: data.knowledge_graph.title || keyword, 
+            name: data.knowledge_graph.title || mainKeyword, 
             type: 'main', 
             importance: 10,
             description: data.knowledge_graph.description || ''
@@ -901,13 +1008,13 @@ async function handleSerpRequest(endpoint: string, params: any, clientApiKey: st
             type: 'attribute',
             importance: 5
           }))
-        ] : generateEntities(keyword, data),
+        ] : generateEntities(mainKeyword, data),
         
         // Generate headings based on the search results
-        headings: generateHeadings(keyword, data),
+        headings: generateHeadings(mainKeyword, data),
         
         // Generate content gaps based on the search results
-        contentGaps: generateContentGaps(keyword, data),
+        contentGaps: generateContentGaps(mainKeyword, data),
         
         // Generate recommendations
         recommendations: [

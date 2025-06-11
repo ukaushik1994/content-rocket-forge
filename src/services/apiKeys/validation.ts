@@ -46,10 +46,15 @@ export function isSerpApiKeyFormat(key: string): boolean {
  * Can be either an API key or service account JSON
  */
 export function isGoogleAnalyticsKeyFormat(key: string): boolean {
-  // Check if it's a service account JSON
+  // First, check if it's a service account JSON (most common for GA)
   try {
     const parsed = JSON.parse(key);
-    if (parsed.type === 'service_account' && parsed.private_key && parsed.client_email) {
+    if (parsed.type === 'service_account' && 
+        parsed.private_key && 
+        parsed.client_email && 
+        parsed.project_id &&
+        parsed.private_key_id &&
+        parsed.client_id) {
       return true;
     }
   } catch (e) {
@@ -65,10 +70,15 @@ export function isGoogleAnalyticsKeyFormat(key: string): boolean {
  * Can be either an API key or service account JSON
  */
 export function isGoogleSearchConsoleKeyFormat(key: string): boolean {
-  // Check if it's a service account JSON
+  // First, check if it's a service account JSON (most common for GSC)
   try {
     const parsed = JSON.parse(key);
-    if (parsed.type === 'service_account' && parsed.private_key && parsed.client_email) {
+    if (parsed.type === 'service_account' && 
+        parsed.private_key && 
+        parsed.client_email && 
+        parsed.project_id &&
+        parsed.private_key_id &&
+        parsed.client_id) {
       return true;
     }
   } catch (e) {
