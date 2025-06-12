@@ -13,6 +13,7 @@ import ContentApproval from "./pages/ContentApproval";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
+import Advocacy from "./pages/Advocacy";
 import NotFound from "./pages/NotFound";
 import { ContentProvider } from "./contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                <Route path="/advocacy" element={<ProtectedRoute><Advocacy /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
