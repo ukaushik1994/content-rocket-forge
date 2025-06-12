@@ -115,8 +115,8 @@ class EnhancedAIAgentService {
   }
 
   async addNavigationFunction() {
-    // Add navigation capability to the AI agent
-    aiAgentService.availableFunctions?.set('navigateToPage', this.navigateToPage.bind(this));
+    // Add navigation capability to the AI agent using the public method
+    aiAgentService.registerFunction('navigateToPage', this.navigateToPage.bind(this));
   }
 
   private async navigateToPage(params: any) {

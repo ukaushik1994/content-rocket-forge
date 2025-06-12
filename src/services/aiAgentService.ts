@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { analyzeKeywordSerp } from './serpApiService';
 import { sendChatRequest } from './aiService';
@@ -43,6 +42,16 @@ class AIAgentService {
   constructor() {
     this.initializeFunctions();
     this.loadRepositoryContext();
+  }
+
+  // Public method to register new functions
+  public registerFunction(name: string, func: Function) {
+    this.availableFunctions.set(name, func);
+  }
+
+  // Public method to get available function names
+  public getAvailableFunctions(): string[] {
+    return Array.from(this.availableFunctions.keys());
   }
 
   private initializeFunctions() {
