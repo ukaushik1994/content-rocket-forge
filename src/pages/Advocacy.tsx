@@ -5,7 +5,11 @@ import { ContentTemplates } from '@/components/advocacy/ContentTemplates';
 import { Leaderboard } from '@/components/advocacy/Leaderboard';
 import { AdvocacyOnboarding } from '@/components/advocacy/AdvocacyOnboarding';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Megaphone, Trophy, FileText, Target } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Navbar from '@/components/layout/Navbar';
+import { Megaphone, Trophy, FileText, Target, TrendingUp, Users, Zap, Star } from 'lucide-react';
 
 const Advocacy = () => {
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -22,82 +26,142 @@ const Advocacy = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-neon-purple to-neon-blue rounded-full">
-              <Megaphone className="h-8 w-8 text-white" />
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      
+      <main className="flex-1">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b">
+          <div className="container mx-auto px-4 py-12">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                    <Megaphone className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 h-6 w-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <Star className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-foreground mb-2">Employee Advocacy</h1>
+                  <p className="text-lg text-muted-foreground">
+                    Share our story, grow your voice, earn rewards
+                  </p>
+                </div>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowOnboarding(true)}
+                className="hidden md:flex"
+              >
+                View Tutorial
+              </Button>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Employee Advocacy</h1>
-              <p className="text-white/70">Share our story, grow your voice, earn rewards 🚀</p>
-            </div>
-          </div>
-          
-          {/* Quick stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
-              <div className="text-2xl font-bold text-white">156</div>
-              <div className="text-sm text-white/70">Your Points</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
-              <div className="text-2xl font-bold text-green-400">12</div>
-              <div className="text-sm text-white/70">Posts Shared</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
-              <div className="text-2xl font-bold text-blue-400">2.4K</div>
-              <div className="text-sm text-white/70">Total Reach</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
-              <div className="text-2xl font-bold text-purple-400">#5</div>
-              <div className="text-sm text-white/70">Leaderboard Rank</div>
+            
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-foreground">156</div>
+                  <div className="text-sm text-muted-foreground">Your Points</div>
+                  <Badge variant="secondary" className="mt-1 text-xs">
+                    +12 today
+                  </Badge>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">12</div>
+                  <div className="text-sm text-muted-foreground">Posts Shared</div>
+                  <Badge variant="outline" className="mt-1 text-xs border-green-200 text-green-700">
+                    This month
+                  </Badge>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">2.4K</div>
+                  <div className="text-sm text-muted-foreground">Total Reach</div>
+                  <div className="flex items-center justify-center mt-1">
+                    <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
+                    <span className="text-xs text-green-600">+15%</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">#5</div>
+                  <div className="text-sm text-muted-foreground">Leaderboard</div>
+                  <Badge className="mt-1 text-xs bg-gradient-to-r from-purple-500 to-blue-500">
+                    Top 10
+                  </Badge>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
 
-        {/* Main content */}
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-md">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Content Hub
-            </TabsTrigger>
-            <TabsTrigger value="leaderboard" className="flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              Leaderboard
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="flex items-center gap-2">
-              <Megaphone className="h-4 w-4" />
-              Campaigns
-            </TabsTrigger>
-          </TabsList>
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8">
+          <Tabs defaultValue="dashboard" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/50">
+              <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-background">
+                <Target className="h-4 w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="templates" className="flex items-center gap-2 data-[state=active]:bg-background">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Content Hub</span>
+              </TabsTrigger>
+              <TabsTrigger value="leaderboard" className="flex items-center gap-2 data-[state=active]:bg-background">
+                <Trophy className="h-4 w-4" />
+                <span className="hidden sm:inline">Leaderboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="campaigns" className="flex items-center gap-2 data-[state=active]:bg-background">
+                <Zap className="h-4 w-4" />
+                <span className="hidden sm:inline">Campaigns</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="dashboard">
-            <AdvocacyDashboard />
-          </TabsContent>
+            <TabsContent value="dashboard" className="space-y-6">
+              <AdvocacyDashboard />
+            </TabsContent>
 
-          <TabsContent value="templates">
-            <ContentTemplates />
-          </TabsContent>
+            <TabsContent value="templates" className="space-y-6">
+              <ContentTemplates />
+            </TabsContent>
 
-          <TabsContent value="leaderboard">
-            <Leaderboard />
-          </TabsContent>
+            <TabsContent value="leaderboard" className="space-y-6">
+              <Leaderboard />
+            </TabsContent>
 
-          <TabsContent value="campaigns">
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 text-center">
-              <h3 className="text-xl font-semibold text-white mb-4">Active Campaigns</h3>
-              <p className="text-white/70">No active campaigns right now. Check back soon! 🎯</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            <TabsContent value="campaigns" className="space-y-6">
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4">
+                    <Zap className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-xl">Active Campaigns</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                  <p className="text-muted-foreground">
+                    No active campaigns right now. Check back soon for exciting new challenges!
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span>Team campaigns launch every month</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
     </div>
   );
 };

@@ -9,7 +9,8 @@ import {
   Settings, 
   Puzzle, 
   BarChart3,
-  Megaphone
+  Megaphone,
+  FolderOpen
 } from 'lucide-react';
 
 export const navItems = [
@@ -19,24 +20,31 @@ export const navItems = [
     icon: Home,
   },
   {
-    title: "Drafts",
-    href: "/drafts",
-    icon: FileText,
-  },
-  {
-    title: "Content Builder",
-    href: "/content-builder",
-    icon: PlusCircle,
-  },
-  {
-    title: "Content Repurposing",
-    href: "/content-repurposing",
-    icon: Recycle,
-  },
-  {
-    title: "Content Approval",
-    href: "/content-approval",
-    icon: CheckCircle,
+    title: "Content",
+    href: "/content",
+    icon: FolderOpen,
+    subItems: [
+      {
+        title: "Drafts",
+        href: "/drafts",
+        icon: FileText,
+      },
+      {
+        title: "Content Builder",
+        href: "/content-builder",
+        icon: PlusCircle,
+      },
+      {
+        title: "Content Repurposing",
+        href: "/content-repurposing",
+        icon: Recycle,
+      },
+      {
+        title: "Content Approval",
+        href: "/content-approval",
+        icon: CheckCircle,
+      },
+    ]
   },
   {
     title: "Advocacy",
