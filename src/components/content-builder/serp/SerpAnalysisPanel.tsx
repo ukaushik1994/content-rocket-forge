@@ -26,18 +26,22 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
   
   const [isLocalLoading, setIsLocalLoading] = React.useState(false);
   const [dataSource, setDataSource] = React.useState<'real' | 'mock' | 'loading' | null>(null);
+  const [hasAutoFetched, setHasAutoFetched] = React.useState(false);
   const isLoading = externalLoading || isLocalLoading;
 
-  // If we have a mainKeyword but no serpData, try to fetch it automatically
+  // Auto-fetch SERP data when keyword is available but no data exists
   React.useEffect(() => {
     const fetchSerpData = async () => {
-      if (mainKeyword && !serpData && !isLoading) {
+      if (mainKeyword && !serpData && !isLoading && !hasAutoFetched) {
+        console.log("🔄 Auto-fetching SERP data for keyword:", mainKeyword);
         setIsLocalLoading(true);
         setDataSource('loading');
+        setHasAutoFetched(true);
+        
         try {
-          console.log("Automatically fetching SERP data for:", mainKeyword);
           const data = await analyzeKeywordSerp(mainKeyword);
           if (data) {
+            console.log("✅ Auto-fetch successful, data type:", data.isMockData ? 'mock' : 'real');
             onSerpDataChange(data);
             
             if (data.isMockData) {
@@ -55,23 +59,32 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
               setDataSource('real');
               toast.success("Retrieved real SERP data successfully!");
             }
+          } else {
+            console.warn("⚠️ Auto-fetch returned no data");
+            setDataSource(null);
           }
         } catch (error) {
-          console.error("Error auto-fetching SERP data:", error);
+          console.error("❌ Error auto-fetching SERP data:", error);
           setDataSource(null);
+          toast.error("Failed to fetch SERP data. Please try again.");
         } finally {
           setIsLocalLoading(false);
         }
       } else if (serpData) {
-        // Update data source indicator based on serpData
+        // Update data source indicator based on existing serpData
         setDataSource(serpData.isMockData ? 'mock' : 'real');
+        console.log("📊 Data source updated:", serpData.isMockData ? 'mock' : 'real');
       }
     };
     
     fetchSerpData();
-  }, [mainKeyword, serpData, isLoading, onSerpDataChange]);
+  }, [mainKeyword, serpData, isLoading, onSerpDataChange, hasAutoFetched]);
+
+  // Reset hasAutoFetched when keyword changes
+  React.useEffect(() => {
+    setHasAutoFetched(false);
+  }, [mainKeyword]);
   
-  // Pass all props to the core component with optional data source indicator
   return (
     <div className="relative">
       {dataSource && !isLoading && (
