@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
   const {
     user,
     signOut
@@ -34,9 +34,19 @@ const Navbar = () => {
   };
 
   const handleAIAssistantClick = () => {
-    // Trigger the AI chat to open by dispatching a custom event
-    document.dispatchEvent(new CustomEvent('open-ai-chat'));
-    toast.info('AI Assistant activated!');
+    console.log('🤖 Navbar: AI Assistant button clicked');
+    
+    // Dispatch the custom event
+    const event = new CustomEvent('open-ai-chat', { 
+      bubbles: true, 
+      detail: { source: 'navbar' } 
+    });
+    
+    console.log('🤖 Navbar: Dispatching open-ai-chat event', event);
+    document.dispatchEvent(event);
+    
+    // Show feedback to user
+    toast.info('Opening AI Assistant...');
   };
   
   const userFullName = user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` : user?.email || 'User';
@@ -69,18 +79,18 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* AI Assistant button - replaces the Settings button */}
+          {/* AI Assistant button - enhanced with better styling and debugging */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="rounded-full overflow-hidden border border-border bg-primary/10 hover:bg-primary/20"
+            className="rounded-full overflow-hidden border border-border bg-primary/10 hover:bg-primary/20 transition-all duration-200 hover:scale-105"
             onClick={handleAIAssistantClick}
             title="AI Assistant"
           >
             <Bot className="h-4 w-4 text-primary" />
           </Button>
 
-          {/* Settings button - replaces the feedback button */}
+          {/* Settings button */}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -91,7 +101,7 @@ const Navbar = () => {
             <Settings className="h-4 w-4" />
           </Button>
 
-          {/* User profile dropdown - keeping as is */}
+          {/* User profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full overflow-hidden border border-border">
@@ -146,6 +156,7 @@ const Navbar = () => {
                   variant="outline" 
                   className="flex-1 items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20" 
                   onClick={() => {
+                    console.log('🤖 Mobile: AI Assistant button clicked');
                     handleAIAssistantClick();
                     setShowMobileMenu(false);
                   }}

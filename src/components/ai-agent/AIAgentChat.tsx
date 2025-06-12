@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Minimize2, Bot, User, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,15 +58,19 @@ export const AIAgentChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Listen for custom event to open the AI chat from navbar
+  // Enhanced event listener with debugging
   useEffect(() => {
-    const handleOpenAIChat = () => {
+    const handleOpenAIChat = (event: Event) => {
+      console.log('🤖 AI Chat event received:', event);
       setIsExpanded(true);
+      toast.success('AI Assistant opened!');
     };
 
+    console.log('🤖 Setting up AI Chat event listener');
     document.addEventListener('open-ai-chat', handleOpenAIChat);
     
     return () => {
+      console.log('🤖 Cleaning up AI Chat event listener');
       document.removeEventListener('open-ai-chat', handleOpenAIChat);
     };
   }, []);
@@ -236,18 +241,24 @@ export const AIAgentChat = () => {
     </motion.div>
   );
 
+  // Debug logging
+  console.log('🤖 AIAgentChat render - isExpanded:', isExpanded);
+
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <AnimatePresence>
+    <div className="fixed bottom-4 right-4 z-[9999]">
+      <AnimatePresence mode="wait">
         {isExpanded ? (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="w-96 h-[600px] bg-background border rounded-lg shadow-xl flex flex-col"
+            key="expanded"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="w-96 h-[600px] bg-background border rounded-lg shadow-2xl flex flex-col"
+            style={{ zIndex: 9999 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center justify-between p-4 border-b bg-background rounded-t-lg">
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold">AI Agent</h3>
@@ -258,7 +269,10 @@ export const AIAgentChat = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsExpanded(false)}
+                onClick={() => {
+                  console.log('🤖 Closing AI Chat');
+                  setIsExpanded(false);
+                }}
               >
                 <Minimize2 className="h-4 w-4" />
               </Button>
@@ -286,7 +300,7 @@ export const AIAgentChat = () => {
             </ScrollArea>
 
             {/* Input */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-background rounded-b-lg">
               <div className="flex gap-2">
                 <Textarea
                   ref={textareaRef}
@@ -310,13 +324,18 @@ export const AIAgentChat = () => {
           </motion.div>
         ) : (
           <motion.div
+            key="collapsed"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
           >
             <Button
-              onClick={() => setIsExpanded(true)}
-              className="rounded-full w-14 h-14 shadow-lg bg-primary hover:bg-primary/90"
+              onClick={() => {
+                console.log('🤖 Opening AI Chat via button click');
+                setIsExpanded(true);
+              }}
+              className="rounded-full w-14 h-14 shadow-xl bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
               size="lg"
             >
               <Bot className="h-6 w-6" />
