@@ -29,6 +29,13 @@ export interface MessageContext {
   userPreferences: any;
 }
 
+interface AnalyticsData {
+  views?: number;
+  clicks?: number;
+  position?: number;
+  [key: string]: any;
+}
+
 class AIAgentService {
   private availableFunctions: Map<string, Function> = new Map();
   private repositoryContext: any = null;
@@ -418,10 +425,20 @@ Respond with a JSON object containing:
 
     if (error) throw error;
     
+    // Safely access analytics data properties
     const report = {
-      totalViews: data.reduce((sum, item) => sum + (item.analytics_data?.views || 0), 0),
-      totalClicks: data.reduce((sum, item) => sum + (item.analytics_data?.clicks || 0), 0),
-      averagePosition: data.reduce((sum, item) => sum + (item.analytics_data?.position || 0), 0) / data.length,
+      totalViews: data.reduce((sum, item) => {
+        const analyticsData = item.analytics_data as AnalyticsData | null;
+        return sum + (analyticsData?.views || 0);
+      }, 0),
+      totalClicks: data.reduce((sum, item) => {
+        const analyticsData = item.analytics_data as AnalyticsData | null;
+        return sum + (analyticsData?.clicks || 0);
+      }, 0),
+      averagePosition: data.reduce((sum, item) => {
+        const analyticsData = item.analytics_data as AnalyticsData | null;
+        return sum + (analyticsData?.position || 0);
+      }, 0) / (data.length || 1),
       contentCount: data.length
     };
 
