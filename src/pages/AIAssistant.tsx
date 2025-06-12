@@ -128,19 +128,29 @@ const AIAssistant = () => {
         return '○';
     }
   };
-  const renderMessage = (message: EnhancedMessage) => <motion.div key={message.id} initial={{
-    opacity: 0,
-    y: 20
-  }} animate={{
-    opacity: 1,
-    y: 0
-  }} className={`flex gap-4 mb-6 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+  const renderMessage = (message: EnhancedMessage) => (
+    <motion.div
+      key={message.id}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex gap-4 mb-6 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+    >
       <div className={`flex gap-4 max-w-[85%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${message.type === 'user' ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' : 'bg-gradient-to-br from-emerald-500 to-cyan-600 text-white border-2 border-white/20'}`}>
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${
+          message.type === 'user' 
+            ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white' 
+            : 'bg-gradient-to-br from-emerald-500 to-cyan-600 text-white border-2 border-white/20'
+        }`}>
           {message.type === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
         </div>
         
-        <div className={`rounded-2xl p-4 shadow-lg backdrop-blur-sm border ${message.type === 'user' ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white border-white/20' : message.status === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-white/80 border-gray-200 text-gray-800'}`}>
+        <div className={`rounded-2xl p-4 shadow-lg backdrop-blur-sm border ${
+          message.type === 'user' 
+            ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white border-white/20' 
+            : message.status === 'error' 
+              ? 'bg-red-50 border-red-200 text-red-800' 
+              : 'bg-white/80 border-gray-200 text-gray-800'
+        }`}>
           <div className="flex items-start justify-between mb-2">
             <p className="text-sm whitespace-pre-wrap leading-relaxed flex-1">{message.content}</p>
             <span className="ml-2 text-xs opacity-60">
@@ -148,33 +158,101 @@ const AIAssistant = () => {
             </span>
           </div>
           
-          {message.functionCalls && message.functionCalls.length > 0 && <div className="mt-4 space-y-2">
-              {message.functionCalls.map((call, idx) => <div key={idx} className="bg-black/10 rounded-lg p-3 text-xs">
+          {/* Smart Suggestions Display */}
+          {message.type === 'agent' && message.suggestions && message.suggestions.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <div className="text-xs font-medium opacity-75 mb-2">💡 Smart Suggestions:</div>
+              {message.suggestions.slice(0, 3).map((suggestion, idx) => (
+                <div 
+                  key={idx} 
+                  className="bg-black/5 rounded-lg p-2 text-xs border border-black/10 hover:bg-black/10 cursor-pointer transition-colors"
+                  onClick={() => {
+                    if (suggestion.actionType === 'navigation') {
+                      navigate(suggestion.actionData.page);
+                    } else if (suggestion.actionType === 'function_call') {
+                      setInputValue(suggestion.actionText);
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${
+                      suggestion.priority === 'critical' ? 'bg-red-500' :
+                      suggestion.priority === 'high' ? 'bg-orange-500' :
+                      suggestion.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}></span>
+                    <span className="font-medium">{suggestion.title}</span>
+                    {suggestion.confidence && (
+                      <span className="text-xs opacity-60">
+                        {Math.round(suggestion.confidence * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="opacity-75">{suggestion.description}</div>
+                  {suggestion.expectedImpact && (
+                    <div className="text-xs opacity-60 mt-1">Impact: {suggestion.expectedImpact}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Productivity Insights */}
+          {message.type === 'agent' && message.insights && (
+            <div className="mt-4 bg-black/5 rounded-lg p-3 text-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-3 w-3" />
+                <span className="font-medium">Workflow Intelligence</span>
+              </div>
+              <div className="space-y-1 opacity-75">
+                <div>📊 Productivity Score: {message.insights.productivityScore}/100</div>
+                <div>⏱️ Est. Completion: {message.insights.timeToCompletion.estimated}</div>
+                {message.insights.predictions.length > 0 && (
+                  <div>🔮 Predictions: {message.insights.predictions.length} insights available</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Function Calls */}
+          {message.functionCalls && message.functionCalls.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {message.functionCalls.map((call, idx) => (
+                <div key={idx} className="bg-black/10 rounded-lg p-3 text-xs">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant={call.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
                       {call.name}
                     </Badge>
                     {call.status === 'executing' && <Loader2 className="h-3 w-3 animate-spin" />}
                   </div>
-                  {call.result && <div className="opacity-75">
+                  {call.result && (
+                    <div className="opacity-75">
                       {call.status === 'error' ? 'Error: ' + call.result.error : 'Completed successfully'}
-                    </div>}
-                </div>)}
-            </div>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           
-          {message.attachments && message.attachments.length > 0 && <div className="mt-3 space-y-2">
-              {message.attachments.map((att, idx) => <div key={idx} className="flex items-center gap-2 text-xs opacity-75 bg-black/10 rounded-lg p-2">
+          {/* Attachments */}
+          {message.attachments && message.attachments.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {message.attachments.map((att, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-xs opacity-75 bg-black/10 rounded-lg p-2">
                   <FileText className="h-3 w-3" />
                   <span>{att.name}</span>
-                </div>)}
-            </div>}
+                </div>
+              ))}
+            </div>
+          )}
           
           <div className="text-xs opacity-50 mt-3">
             {new Date(message.created_at).toLocaleTimeString()}
           </div>
         </div>
       </div>
-    </motion.div>;
+    </motion.div>
+  );
   if (!user) {
     return <div className="min-h-screen bg-background">
         <Navbar />
@@ -197,7 +275,7 @@ const AIAssistant = () => {
             AI Assistant
           </h1>
           <p className="text-muted-foreground text-lg">
-            Your intelligent companion for content creation and platform management
+            Your intelligent companion with advanced workflow intelligence and predictive insights
           </p>
         </div>
 
