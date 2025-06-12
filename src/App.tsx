@@ -38,9 +38,6 @@ const App = () => (
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 
-                {/* Role redirector */}
-                <Route path="/advocacy" element={<Advocacy />} />
-                
                 {/* Employee-only routes */}
                 <Route 
                   path="/employee-advocacy" 
@@ -117,7 +114,7 @@ const App = () => (
                   } 
                 />
                 <Route 
-                  path="/admin-advocacy" 
+                  path="/advocacy" 
                   element={
                     <RoleProtectedRoute allowedRoles={['admin']}>
                       <AdminAdvocacy />
