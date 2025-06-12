@@ -34,18 +34,8 @@ const Navbar = () => {
   };
 
   const handleAIAssistantClick = () => {
-    console.log('🤖 Navbar: AI Assistant button clicked');
-    
-    // Dispatch the custom event
-    const event = new CustomEvent('open-ai-chat', { 
-      bubbles: true, 
-      detail: { source: 'navbar' } 
-    });
-    
-    console.log('🤖 Navbar: Dispatching open-ai-chat event', event);
-    document.dispatchEvent(event);
-    
-    // Show feedback to user
+    console.log('🤖 Navbar: AI Assistant button clicked - navigating to page');
+    navigate('/ai-assistant');
     toast.info('Opening AI Assistant...');
   };
   
@@ -79,7 +69,7 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* AI Assistant button - enhanced with better styling and debugging */}
+          {/* AI Assistant button - now navigates to page */}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -150,7 +140,7 @@ const Navbar = () => {
             <nav className="flex flex-col space-y-4">
               <NavItems />
               
-              {/* Mobile menu buttons - including AI Assistant and Settings */}
+              {/* Mobile menu buttons */}
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 

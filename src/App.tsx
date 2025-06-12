@@ -8,7 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import ContentBuilder from "./pages/ContentBuilder";
 import Settings from "./pages/Settings";
-import { FloatingAIAgent } from "./components/layout/FloatingAIAgent";
+import AIAssistant from "./pages/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -23,8 +23,8 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/content-builder" element={<ContentBuilder />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/ai-assistant" element={<AIAssistant />} />
             </Routes>
-            <FloatingAIAgent />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
