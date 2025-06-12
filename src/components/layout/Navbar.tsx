@@ -80,15 +80,15 @@ const Navbar = () => {
             <Bot className="h-4 w-4 text-primary" />
           </Button>
 
-          {/* Feedback button as icon */}
+          {/* Settings button - replaces the feedback button */}
           <Button 
             variant="ghost" 
             size="icon" 
             className="rounded-full overflow-hidden border border-border"
-            onClick={() => document.dispatchEvent(new CustomEvent('open-feedback'))}
-            title="Feedback"
+            onClick={() => navigate('/settings')}
+            title="Settings"
           >
-            <MessageSquarePlus className="h-4 w-4" />
+            <Settings className="h-4 w-4" />
           </Button>
 
           {/* User profile dropdown - keeping as is */}
@@ -140,7 +140,7 @@ const Navbar = () => {
             <nav className="flex flex-col space-y-4">
               <NavItems />
               
-              {/* Mobile menu buttons - including AI Assistant and keeping text versions for better usability on mobile */}
+              {/* Mobile menu buttons - including AI Assistant and Settings */}
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
@@ -157,18 +157,25 @@ const Navbar = () => {
                   variant="outline" 
                   className="flex-1 items-center justify-center gap-2"
                   onClick={() => {
-                    document.dispatchEvent(new CustomEvent('open-feedback'));
+                    navigate('/settings');
                     setShowMobileMenu(false);
                   }}
                 >
-                  <MessageSquarePlus className="h-4 w-4" />
-                  Feedback
+                  <Settings className="h-4 w-4" />
+                  Settings
                 </Button>
               </div>
               
-              <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={() => navigate('/settings')}>
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
+              <Button 
+                variant="outline" 
+                className="flex items-center justify-center gap-2"
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('open-feedback'));
+                  setShowMobileMenu(false);
+                }}
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                Feedback
               </Button>
               
               <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={handleSignOut}>
