@@ -117,13 +117,13 @@ class AnalyticsIntegrationService {
       recommendations.push('Implement content promotion strategies to increase visibility and traffic');
     }
 
-    const trends = [
+    const trends: { direction: 'up' | 'down' | 'stable'; description: string; }[] = [
       {
-        direction: state.performanceMetrics.totalViews > 500 ? 'up' : 'stable' as const,
+        direction: state.performanceMetrics.totalViews > 500 ? 'up' : 'stable',
         description: `Content views trending ${state.performanceMetrics.totalViews > 500 ? 'upward' : 'stable'}`
       },
       {
-        direction: state.averageSeoScore > 75 ? 'up' : 'down' as const,
+        direction: state.averageSeoScore > 75 ? 'up' : 'down',
         description: `SEO performance ${state.averageSeoScore > 75 ? 'improving' : 'needs attention'}`
       }
     ];
