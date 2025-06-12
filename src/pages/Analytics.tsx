@@ -9,13 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useRealAnalytics } from '@/hooks/useRealAnalytics';
 import { 
   BarChart3, 
   CalendarRange, 
   RefreshCcw, 
   Download, 
   FileText, 
-  Link,
   Activity,
   TrendingUp,
   Eye,
@@ -28,12 +28,12 @@ import {
   Target,
   Globe,
   Filter,
-  Search
+  Search,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Analytics = () => {
-  const [selectedMetric, setSelectedMetric] = useState('views');
   const [activeTab, setActiveTab] = useState('overview');
   const [drilldownData, setDrilldownData] = useState<{
     isOpen: boolean;
@@ -44,6 +44,9 @@ const Analytics = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('views');
   const [timeRange, setTimeRange] = useState('7days');
+
+  // Use real analytics data
+  const { metrics, contentAnalytics, timelineData, loading, error, refreshAnalytics } = useRealAnalytics(timeRange);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -78,13 +81,14 @@ const Analytics = () => {
     }
   };
 
-  const metrics = [
+  // Convert real metrics to display format
+  const metricsDisplay = metrics ? [
     { 
       id: 'views', 
       label: 'Total Views', 
-      value: '2.4M', 
-      change: '+12.5%', 
-      trend: 'up',
+      value: metrics.views > 1000000 ? `${(metrics.views / 1000000).toFixed(1)}M` : metrics.views.toLocaleString(), 
+      change: `${metrics.change.views >= 0 ? '+' : ''}${metrics.change.views.toFixed(1)}%`, 
+      trend: metrics.change.views >= 0 ? 'up' : 'down',
       icon: Eye,
       color: 'from-blue-500 to-cyan-400',
       bgPattern: 'from-blue-500/5 to-cyan-400/10'
@@ -92,9 +96,9 @@ const Analytics = () => {
     { 
       id: 'engagement', 
       label: 'Engagement Rate', 
-      value: '8.7%', 
-      change: '+2.3%', 
-      trend: 'up',
+      value: `${metrics.engagement.toFixed(1)}%`, 
+      change: `${metrics.change.engagement >= 0 ? '+' : ''}${metrics.change.engagement.toFixed(1)}%`, 
+      trend: metrics.change.engagement >= 0 ? 'up' : 'down',
       icon: TrendingUp,
       color: 'from-emerald-500 to-teal-400',
       bgPattern: 'from-emerald-500/5 to-teal-400/10'
@@ -102,9 +106,9 @@ const Analytics = () => {
     { 
       id: 'conversions', 
       label: 'Conversions', 
-      value: '1,247', 
-      change: '+8.1%', 
-      trend: 'up',
+      value: metrics.conversions.toLocaleString(), 
+      change: `${metrics.change.conversions >= 0 ? '+' : ''}${metrics.change.conversions.toFixed(1)}%`, 
+      trend: metrics.change.conversions >= 0 ? 'up' : 'down',
       icon: Target,
       color: 'from-violet-500 to-purple-400',
       bgPattern: 'from-violet-500/5 to-purple-400/10'
@@ -112,25 +116,16 @@ const Analytics = () => {
     { 
       id: 'revenue', 
       label: 'Revenue', 
-      value: '$34.2K', 
-      change: '+15.7%', 
-      trend: 'up',
+      value: `$${(metrics.revenue / 1000).toFixed(1)}K`, 
+      change: `${metrics.change.revenue >= 0 ? '+' : ''}${metrics.change.revenue.toFixed(1)}%`, 
+      trend: metrics.change.revenue >= 0 ? 'up' : 'down',
       icon: Zap,
       color: 'from-orange-500 to-pink-400',
       bgPattern: 'from-orange-500/5 to-pink-400/10'
     }
-  ];
-
-  const contentData = [
-    { title: "Ultimate Project Management Guide", views: 15420, engagement: "8.2%", performance: 92, revenue: "$2,840" },
-    { title: "Email Marketing Automation Secrets", views: 12350, engagement: "6.8%", performance: 87, revenue: "$1,920" },
-    { title: "CRM Integration Best Practices", views: 9876, engagement: "5.5%", performance: 79, revenue: "$1,450" },
-    { title: "Remote Team Management Tips", views: 18532, engagement: "9.4%", performance: 96, revenue: "$3,240" },
-    { title: "Data Analytics for Beginners", views: 7420, engagement: "4.9%", performance: 72, revenue: "$1,120" },
-  ];
+  ] : [];
 
   const handleMetricClick = (metric: any) => {
-    setSelectedMetric(metric.id);
     setDrilldownData({
       isOpen: true,
       metric: metric.id,
@@ -142,7 +137,7 @@ const Analytics = () => {
     setSelectedContent(content);
   };
 
-  const filteredContent = contentData.filter(item =>
+  const filteredContent = contentAnalytics.filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   ).sort((a, b) => {
     if (sortBy === 'views') return b.views - a.views;
@@ -157,6 +152,25 @@ const Analytics = () => {
     '30days': 'Last 30 days',
     '90days': 'Last 90 days'
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <Navbar />
+        <main className="container py-8">
+          <Card className="bg-red-50 border-red-200">
+            <CardContent className="p-6 text-center">
+              <p className="text-red-600 mb-4">Error loading analytics: {error}</p>
+              <Button onClick={refreshAnalytics} variant="outline">
+                <RefreshCcw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
@@ -180,16 +194,7 @@ const Analytics = () => {
               initial="hidden"
               animate="visible"
               exit="hidden"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: { 
-                  opacity: 1,
-                  transition: { 
-                    staggerChildren: 0.05,
-                    delayChildren: 0.1,
-                  }
-                }
-              }}
+              variants={containerVariants}
               className="space-y-8"
             >
               {/* Hero Header */}
@@ -211,63 +216,83 @@ const Analytics = () => {
                   Analytics Hub
                 </h1>
                 <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                  Discover insights, track performance, and optimize your content strategy with powerful analytics
+                  Discover insights, track performance, and optimize your content strategy with real analytics data
                 </p>
               </motion.div>
 
-              {/* Key Metrics Cards - Now Clickable */}
+              {/* Key Metrics Cards - Now using real data */}
               <motion.div 
                 variants={itemVariants}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
               >
-                {metrics.map((metric, index) => (
-                  <motion.div
-                    key={metric.id}
-                    variants={{
-                      hover: { 
-                        y: -8,
-                        scale: 1.02,
-                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                        transition: { duration: 0.3, ease: "easeOut" }
-                      }
-                    }}
-                    whileHover="hover"
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={`relative group cursor-pointer`}
-                    onClick={() => handleMetricClick(metric)}
-                  >
-                    <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgPattern} backdrop-blur-xl ${selectedMetric === metric.id ? 'ring-2 ring-white/20' : ''} transition-all duration-300`}>
-                      <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
-                      
-                      <CardContent className="p-6 relative z-10">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
-                            <metric.icon className="w-6 h-6 text-white" />
+                {loading ? (
+                  // Loading skeleton
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <Card key={index} className="bg-slate-800/50 backdrop-blur-xl border-slate-600/30">
+                      <CardContent className="p-6">
+                        <div className="animate-pulse">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="w-12 h-12 bg-slate-600 rounded-xl" />
+                            <div className="w-16 h-6 bg-slate-600 rounded-full" />
                           </div>
-                          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                            metric.trend === 'up' 
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                          }`}>
-                            {metric.trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                            {metric.change}
+                          <div className="space-y-2">
+                            <div className="w-20 h-8 bg-slate-600 rounded" />
+                            <div className="w-24 h-4 bg-slate-600 rounded" />
                           </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <h3 className="text-2xl font-bold text-white">{metric.value}</h3>
-                          <p className="text-sm text-slate-400">{metric.label}</p>
-                        </div>
-                        
-                        <div className="mt-3 text-xs text-slate-500">
-                          Click to drill down
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
-                ))}
+                  ))
+                ) : (
+                  metricsDisplay.map((metric, index) => (
+                    <motion.div
+                      key={metric.id}
+                      variants={{
+                        hover: { 
+                          y: -8,
+                          scale: 1.02,
+                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                          transition: { duration: 0.3, ease: "easeOut" }
+                        }
+                      }}
+                      whileHover="hover"
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative group cursor-pointer"
+                      onClick={() => handleMetricClick(metric)}
+                    >
+                      <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgPattern} backdrop-blur-xl transition-all duration-300`}>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+                        
+                        <CardContent className="p-6 relative z-10">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className={`p-3 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                              <metric.icon className="w-6 h-6 text-white" />
+                            </div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                              metric.trend === 'up' 
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            }`}>
+                              {metric.trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                              {metric.change}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <h3 className="text-2xl font-bold text-white">{metric.value}</h3>
+                            <p className="text-sm text-slate-400">{metric.label}</p>
+                          </div>
+                          
+                          <div className="mt-3 text-xs text-slate-500">
+                            Click to drill down
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))
+                )}
               </motion.div>
 
               {/* Control Panel */}
@@ -292,13 +317,26 @@ const Analytics = () => {
                   </div>
                   
                   <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                    Live Data
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Live Data'
+                    )}
                   </Badge>
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50">
-                    <RefreshCcw className="w-4 h-4 mr-2" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50"
+                    onClick={refreshAnalytics}
+                    disabled={loading}
+                  >
+                    <RefreshCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Refresh
                   </Button>
                   <Button variant="outline" size="sm" className="bg-slate-800/50 border-slate-600/30 text-white hover:bg-slate-700/50">
@@ -309,18 +347,7 @@ const Analytics = () => {
               </motion.div>
               
               {/* Tabs Section */}
-              <motion.div variants={{
-                hidden: { opacity: 0, y: 30, scale: 0.95 },
-                visible: { 
-                  opacity: 1, 
-                  y: 0, 
-                  scale: 1,
-                  transition: { 
-                    duration: 0.5,
-                    ease: [0.22, 1, 0.36, 1]
-                  } 
-                }
-              }}>
+              <motion.div variants={itemVariants}>
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
                   <TabsList className="bg-slate-800/50 backdrop-blur-xl border border-slate-600/30 p-2 h-auto grid grid-cols-3 gap-2">
                     <TabsTrigger 
@@ -380,7 +407,7 @@ const Analytics = () => {
                                 </CardDescription>
                               </div>
                               <Badge className="bg-gradient-to-r from-emerald-500 to-teal-400 text-white border-0">
-                                Real-time
+                                {loading ? 'Loading...' : 'Real-time'}
                               </Badge>
                             </div>
                           </CardHeader>
@@ -429,46 +456,71 @@ const Analytics = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {filteredContent.map((item, i) => (
-                                      <motion.tr 
-                                        key={i} 
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        className="border-b border-slate-600/20 hover:bg-slate-700/30 transition-all duration-300 group cursor-pointer"
-                                        onClick={() => handleContentClick(item)}
-                                      >
-                                        <td className="p-6 align-middle">
-                                          <div className="font-medium text-white group-hover:text-blue-300 transition-colors">{item.title}</div>
-                                          <div className="text-xs text-slate-500 mt-1">Click for details</div>
-                                        </td>
-                                        <td className="p-6 align-middle">
-                                          <div className="flex items-center gap-2">
-                                            <Eye className="h-4 w-4 text-blue-400" />
-                                            <span className="font-medium text-white">{item.views.toLocaleString()}</span>
-                                          </div>
-                                        </td>
-                                        <td className="p-6 align-middle">
-                                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                                            {item.engagement}
-                                          </Badge>
-                                        </td>
-                                        <td className="p-6 align-middle">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-16 h-2 bg-slate-600 rounded-full overflow-hidden">
-                                              <div 
-                                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
-                                                style={{ width: `${item.performance}%` }}
-                                              />
+                                    {loading ? (
+                                      Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="border-b border-slate-600/20">
+                                          <td className="p-6 align-middle">
+                                            <div className="animate-pulse">
+                                              <div className="h-4 bg-slate-600 rounded w-3/4 mb-2" />
+                                              <div className="h-3 bg-slate-700 rounded w-1/2" />
                                             </div>
-                                            <span className="text-sm font-medium text-white">{item.performance}%</span>
-                                          </div>
-                                        </td>
-                                        <td className="p-6 align-middle">
-                                          <span className="font-medium text-emerald-400">{item.revenue}</span>
-                                        </td>
-                                      </motion.tr>
-                                    ))}
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <div className="animate-pulse h-4 bg-slate-600 rounded w-16" />
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <div className="animate-pulse h-6 bg-slate-600 rounded w-12" />
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <div className="animate-pulse h-2 bg-slate-600 rounded w-16" />
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <div className="animate-pulse h-4 bg-slate-600 rounded w-14" />
+                                          </td>
+                                        </tr>
+                                      ))
+                                    ) : (
+                                      filteredContent.map((item, i) => (
+                                        <motion.tr 
+                                          key={item.id} 
+                                          initial={{ opacity: 0, y: 20 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ delay: i * 0.1 }}
+                                          className="border-b border-slate-600/20 hover:bg-slate-700/30 transition-all duration-300 group cursor-pointer"
+                                          onClick={() => handleContentClick(item)}
+                                        >
+                                          <td className="p-6 align-middle">
+                                            <div className="font-medium text-white group-hover:text-blue-300 transition-colors">{item.title}</div>
+                                            <div className="text-xs text-slate-500 mt-1">Updated: {item.last_updated}</div>
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <div className="flex items-center gap-2">
+                                              <Eye className="h-4 w-4 text-blue-400" />
+                                              <span className="font-medium text-white">{item.views.toLocaleString()}</span>
+                                            </div>
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                                              {item.engagement}
+                                            </Badge>
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-16 h-2 bg-slate-600 rounded-full overflow-hidden">
+                                                <div 
+                                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                                                  style={{ width: `${item.performance}%` }}
+                                                />
+                                              </div>
+                                              <span className="text-sm font-medium text-white">{item.performance}%</span>
+                                            </div>
+                                          </td>
+                                          <td className="p-6 align-middle">
+                                            <span className="font-medium text-emerald-400">{item.revenue}</span>
+                                          </td>
+                                        </motion.tr>
+                                      ))
+                                    )}
                                   </tbody>
                                 </table>
                               </div>
@@ -525,7 +577,7 @@ const Analytics = () => {
                           <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                               <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
-                                <Link className="h-5 w-5 text-white" />
+                                <Globe className="h-5 w-5 text-white" />
                               </div>
                               Top Performing Links
                             </CardTitle>
@@ -573,7 +625,7 @@ const Analytics = () => {
             >
               <DrilldownChart
                 title={drilldownData.title}
-                data={[]}
+                data={timelineData}
                 metric={drilldownData.metric}
                 timeRange={timeRangeLabels[timeRange as keyof typeof timeRangeLabels]}
                 onBack={() => setDrilldownData({ isOpen: false, metric: '', title: '' })}

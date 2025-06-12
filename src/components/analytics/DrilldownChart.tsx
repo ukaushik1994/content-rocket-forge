@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -14,8 +14,17 @@ interface DrilldownChartProps {
   onBack: () => void;
 }
 
-const mockDetailData = {
-  views: [
+export const DrilldownChart: React.FC<DrilldownChartProps> = ({
+  title,
+  data,
+  metric,
+  timeRange,
+  onBack
+}) => {
+  const [selectedPoint, setSelectedPoint] = useState<any>(null);
+
+  // Use real data or fallback to mock data
+  const chartData = data.length > 0 ? data : [
     { date: '2024-01-01', value: 1200, change: 5.2 },
     { date: '2024-01-02', value: 1450, change: 20.8 },
     { date: '2024-01-03', value: 1380, change: -4.8 },
@@ -23,26 +32,7 @@ const mockDetailData = {
     { date: '2024-01-05', value: 1890, change: 16.7 },
     { date: '2024-01-06', value: 2100, change: 11.1 },
     { date: '2024-01-07', value: 1950, change: -7.1 }
-  ],
-  engagement: [
-    { date: '2024-01-01', value: 8.2, change: 2.1 },
-    { date: '2024-01-02', value: 8.7, change: 6.1 },
-    { date: '2024-01-03', value: 8.4, change: -3.4 },
-    { date: '2024-01-04', value: 9.2, change: 9.5 },
-    { date: '2024-01-05', value: 9.8, change: 6.5 },
-    { date: '2024-01-06', value: 10.1, change: 3.1 },
-    { date: '2024-01-07', value: 9.6, change: -4.9 }
-  ]
-};
-
-export const DrilldownChart: React.FC<DrilldownChartProps> = ({
-  title,
-  metric,
-  timeRange,
-  onBack
-}) => {
-  const [selectedPoint, setSelectedPoint] = useState<any>(null);
-  const data = mockDetailData[metric as keyof typeof mockDetailData] || mockDetailData.views;
+  ];
 
   const formatValue = (value: number) => {
     if (metric === 'engagement') return `${value}%`;
@@ -96,7 +86,7 @@ export const DrilldownChart: React.FC<DrilldownChartProps> = ({
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={data} onClick={(e) => setSelectedPoint(e?.activePayload?.[0]?.payload)}>
+              <LineChart data={chartData} onClick={(e) => setSelectedPoint(e?.activePayload?.[0]?.payload)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                 <XAxis 
                   dataKey="date" 
@@ -116,7 +106,7 @@ export const DrilldownChart: React.FC<DrilldownChartProps> = ({
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="value" 
+                  dataKey={metric === 'views' ? 'views' : metric === 'engagement' ? 'engagement' : 'value'} 
                   stroke="#3b82f6" 
                   strokeWidth={3}
                   dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
@@ -134,7 +124,7 @@ export const DrilldownChart: React.FC<DrilldownChartProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {data.map((point, index) => (
+              {chartData.map((point, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
@@ -154,10 +144,10 @@ export const DrilldownChart: React.FC<DrilldownChartProps> = ({
                         day: 'numeric' 
                       })}
                     </span>
-                    {formatChange(point.change)}
+                    {point.change !== undefined && formatChange(point.change)}
                   </div>
                   <div className="text-lg font-bold text-white">
-                    {formatValue(point.value)}
+                    {formatValue(point[metric === 'views' ? 'views' : metric === 'engagement' ? 'engagement' : 'value'] || point.value)}
                   </div>
                 </motion.div>
               ))}
@@ -182,20 +172,24 @@ export const DrilldownChart: React.FC<DrilldownChartProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <p className="text-slate-400 text-sm">Value</p>
-                  <p className="text-2xl font-bold text-white">{formatValue(selectedPoint.value)}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {formatValue(selectedPoint[metric === 'views' ? 'views' : metric === 'engagement' ? 'engagement' : 'value'] || selectedPoint.value)}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-slate-400 text-sm">Change from Previous</p>
-                  <div className="text-xl font-bold">
-                    {formatChange(selectedPoint.change)}
+                {selectedPoint.change !== undefined && (
+                  <div className="space-y-2">
+                    <p className="text-slate-400 text-sm">Change from Previous</p>
+                    <div className="text-xl font-bold">
+                      {formatChange(selectedPoint.change)}
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="space-y-2">
                   <p className="text-slate-400 text-sm">Performance</p>
                   <div className={`text-lg font-medium ${
-                    selectedPoint.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                    (selectedPoint.change || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
                   }`}>
-                    {selectedPoint.change >= 0 ? 'Above Average' : 'Below Average'}
+                    {(selectedPoint.change || 0) >= 0 ? 'Above Average' : 'Below Average'}
                   </div>
                 </div>
               </div>
