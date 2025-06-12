@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Minimize2, Bot, User, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,6 +56,19 @@ export const AIAgentChat = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Listen for custom event to open the AI chat from navbar
+  useEffect(() => {
+    const handleOpenAIChat = () => {
+      setIsExpanded(true);
+    };
+
+    document.addEventListener('open-ai-chat', handleOpenAIChat);
+    
+    return () => {
+      document.removeEventListener('open-ai-chat', handleOpenAIChat);
+    };
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;

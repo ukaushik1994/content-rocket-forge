@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings } from 'lucide-react';
+import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -13,6 +13,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const {
     user,
     signOut
@@ -30,6 +31,12 @@ const Navbar = () => {
     } catch (error) {
       console.error('Sign out error:', error);
     }
+  };
+
+  const handleAIAssistantClick = () => {
+    // Trigger the AI chat to open by dispatching a custom event
+    document.dispatchEvent(new CustomEvent('open-ai-chat'));
+    toast.info('AI Assistant activated!');
   };
   
   const userFullName = user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` : user?.email || 'User';
@@ -62,15 +69,15 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Settings button as icon */}
+          {/* AI Assistant button - replaces the Settings button */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="rounded-full overflow-hidden border border-border"
-            onClick={() => navigate('/settings')}
-            title="Settings"
+            className="rounded-full overflow-hidden border border-border bg-primary/10 hover:bg-primary/20"
+            onClick={handleAIAssistantClick}
+            title="AI Assistant"
           >
-            <Settings className="h-4 w-4" />
+            <Bot className="h-4 w-4 text-primary" />
           </Button>
 
           {/* Feedback button as icon */}
@@ -133,18 +140,18 @@ const Navbar = () => {
             <nav className="flex flex-col space-y-4">
               <NavItems />
               
-              {/* Mobile menu buttons - keep text versions for better usability on mobile */}
+              {/* Mobile menu buttons - including AI Assistant and keeping text versions for better usability on mobile */}
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1 items-center justify-center gap-2" 
+                  className="flex-1 items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20" 
                   onClick={() => {
-                    navigate('/settings');
+                    handleAIAssistantClick();
                     setShowMobileMenu(false);
                   }}
                 >
-                  <Settings className="h-4 w-4" />
-                  Settings
+                  <Bot className="h-4 w-4 text-primary" />
+                  AI Assistant
                 </Button>
                 <Button 
                   variant="outline" 
@@ -158,6 +165,11 @@ const Navbar = () => {
                   Feedback
                 </Button>
               </div>
+              
+              <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={() => navigate('/settings')}>
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </Button>
               
               <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={handleSignOut}>
                 <LogOut className="h-5 w-5" />
