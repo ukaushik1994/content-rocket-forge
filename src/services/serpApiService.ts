@@ -1,5 +1,5 @@
 
-import { SerpAnalysisResult } from '@/types/serp';
+import { SerpAnalysisResult, PeopleAlsoAskQuestion, SerpSearchParams } from '@/types/serp';
 import { supabase } from '@/integrations/supabase/client';
 import { getApiKey } from '@/services/apiKeyService';
 import { serpResultsCache } from '@/utils/cacheUtils';
@@ -24,19 +24,19 @@ const generateMockSerpData = (keyword: string): SerpAnalysisResult => {
       `${keyword} comparison`
     ],
     headings: [
-      `Complete Guide to ${keyword}`,
-      `Understanding ${keyword}: A Beginner's Approach`,
-      `Advanced ${keyword} Techniques`,
-      `Common ${keyword} Mistakes to Avoid`,
-      `Best Practices for ${keyword}`,
-      `${keyword} vs Alternatives`
+      { text: `Complete Guide to ${keyword}`, level: 'h1' },
+      { text: `Understanding ${keyword}: A Beginner's Approach`, level: 'h2' },
+      { text: `Advanced ${keyword} Techniques`, level: 'h2' },
+      { text: `Common ${keyword} Mistakes to Avoid`, level: 'h3' },
+      { text: `Best Practices for ${keyword}`, level: 'h3' },
+      { text: `${keyword} vs Alternatives`, level: 'h2' }
     ],
     peopleAlsoAsk: [
-      `What is ${keyword}?`,
-      `How does ${keyword} work?`,
-      `Why is ${keyword} important?`,
-      `When should you use ${keyword}?`,
-      `Where can I learn more about ${keyword}?`
+      { question: `What is ${keyword}?`, source: 'mock', answer: `${keyword} is a comprehensive topic that requires understanding.` },
+      { question: `How does ${keyword} work?`, source: 'mock', answer: `${keyword} works through various mechanisms and processes.` },
+      { question: `Why is ${keyword} important?`, source: 'mock', answer: `${keyword} is important for many reasons in today's context.` },
+      { question: `When should you use ${keyword}?`, source: 'mock', answer: `${keyword} should be used in specific situations and contexts.` },
+      { question: `Where can I learn more about ${keyword}?`, source: 'mock', answer: `You can learn more about ${keyword} from various sources.` }
     ],
     entities: [
       { name: keyword, type: 'primary_topic', importance: 1 },
@@ -44,9 +44,9 @@ const generateMockSerpData = (keyword: string): SerpAnalysisResult => {
       { name: `${keyword} methods`, type: 'related_concept', importance: 0.7 }
     ],
     contentGaps: [
-      `Detailed ${keyword} implementation guide`,
-      `${keyword} case studies and examples`,
-      `Troubleshooting common ${keyword} issues`
+      { topic: `Detailed ${keyword} implementation guide`, description: `A comprehensive guide covering ${keyword} implementation`, recommendation: 'Create step-by-step tutorial' },
+      { topic: `${keyword} case studies and examples`, description: `Real-world examples and case studies`, recommendation: 'Include practical examples' },
+      { topic: `Troubleshooting common ${keyword} issues`, description: `Common problems and solutions`, recommendation: 'Add troubleshooting section' }
     ],
     topResults: [
       {
@@ -87,7 +87,7 @@ const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult 
     console.log('🔗 Found related searches:', relatedSearches.length);
 
     // Extract People Also Ask questions
-    const peopleAlsoAsk = (data.people_also_ask || []).map((item: any) => ({
+    const peopleAlsoAsk: PeopleAlsoAskQuestion[] = (data.people_also_ask || []).map((item: any) => ({
       question: item.question || item.title || 'Unknown question',
       source: item.link || 'Unknown source',
       answer: item.snippet || item.answer || undefined
@@ -96,15 +96,15 @@ const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult 
     console.log('❓ Found People Also Ask:', peopleAlsoAsk.length);
 
     // Extract headings from organic results
-    const headings: string[] = [];
+    const headings: { text: string; level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'; subtext?: string; type?: string; }[] = [];
     organicResults.forEach((result: any) => {
       if (result.title) {
-        headings.push(result.title);
+        headings.push({ text: result.title, level: 'h1' });
       }
       if (result.sitelinks) {
         result.sitelinks.forEach((sitelink: any) => {
           if (sitelink.title) {
-            headings.push(sitelink.title);
+            headings.push({ text: sitelink.title, level: 'h2' });
           }
         });
       }
@@ -189,22 +189,43 @@ const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult 
     console.log('🏆 Processed top results:', topResults.length);
 
     // Generate content gaps based on what's missing
-    const contentGaps: string[] = [];
+    const contentGaps: { topic: string; description: string; recommendation?: string; content?: string; opportunity?: string; source?: string; }[] = [];
     
     if (peopleAlsoAsk.length === 0) {
-      contentGaps.push(`FAQ section about ${keyword}`);
+      contentGaps.push({
+        topic: `FAQ section about ${keyword}`,
+        description: `Create frequently asked questions section`,
+        recommendation: 'Add comprehensive FAQ'
+      });
     }
     
     if (entities.length < 3) {
-      contentGaps.push(`Detailed explanation of ${keyword} concepts`);
+      contentGaps.push({
+        topic: `Detailed explanation of ${keyword} concepts`,
+        description: `Expand on core concepts and terminology`,
+        recommendation: 'Include detailed explanations'
+      });
     }
     
     if (headings.length < 5) {
-      contentGaps.push(`Comprehensive ${keyword} structure and organization`);
+      contentGaps.push({
+        topic: `Comprehensive ${keyword} structure and organization`,
+        description: `Improve content structure and organization`,
+        recommendation: 'Add more sections and subsections'
+      });
     }
     
-    contentGaps.push(`Practical examples and case studies for ${keyword}`);
-    contentGaps.push(`Advanced techniques and best practices for ${keyword}`);
+    contentGaps.push({
+      topic: `Practical examples and case studies for ${keyword}`,
+      description: `Real-world applications and examples`,
+      recommendation: 'Include case studies'
+    });
+    
+    contentGaps.push({
+      topic: `Advanced techniques and best practices for ${keyword}`,
+      description: `Expert-level tips and advanced strategies`,
+      recommendation: 'Add advanced techniques section'
+    });
 
     console.log('🔍 Generated content gaps:', contentGaps.length);
 
@@ -340,3 +361,69 @@ export const analyzeKeywordSerp = async (
     return mockData;
   }
 };
+
+export const searchKeywords = async (params: SerpSearchParams): Promise<any[]> => {
+  try {
+    console.log('🔍 Searching keywords with params:', params);
+    
+    // Try to get API key
+    let apiKey: string | null = null;
+    try {
+      apiKey = await getApiKey('serp');
+    } catch (error) {
+      console.warn('⚠️ Failed to get API key for keyword search:', error);
+    }
+
+    if (!apiKey) {
+      console.log('📝 No API key available, returning mock search results');
+      // Return mock search results
+      return [
+        { title: `Best ${params.query} Guide`, link: `https://example.com/${params.query}` },
+        { title: `How to Use ${params.query}`, link: `https://example.com/how-to-${params.query}` },
+        { title: `${params.query} Tutorial`, link: `https://example.com/${params.query}-tutorial` },
+        { title: `Advanced ${params.query}`, link: `https://example.com/advanced-${params.query}` },
+        { title: `${params.query} Tips and Tricks`, link: `https://example.com/${params.query}-tips` }
+      ];
+    }
+
+    // Make API call through edge function
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: {
+        endpoint: 'search',
+        params: {
+          q: params.query,
+          num: params.limit || 10,
+          gl: 'us',
+          hl: 'en'
+        },
+        apiKey
+      }
+    });
+
+    if (error) {
+      console.error('❌ Error in searchKeywords:', error);
+      throw new Error(`Search error: ${error.message}`);
+    }
+
+    if (!data || !data.organic_results) {
+      console.warn('⚠️ No search results returned');
+      return [];
+    }
+
+    // Return the organic results
+    return data.organic_results || [];
+
+  } catch (error) {
+    console.error('💥 Error in searchKeywords:', error);
+    
+    // Return mock data as fallback
+    return [
+      { title: `Best ${params.query} Guide`, link: `https://example.com/${params.query}` },
+      { title: `How to Use ${params.query}`, link: `https://example.com/how-to-${params.query}` },
+      { title: `${params.query} Tutorial`, link: `https://example.com/${params.query}-tutorial` }
+    ];
+  }
+};
+
+// Export the types and interfaces needed by other modules
+export type { SerpAnalysisResult, PeopleAlsoAskQuestion, SerpSearchParams };

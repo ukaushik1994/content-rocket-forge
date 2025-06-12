@@ -88,17 +88,17 @@ export const KeywordSelectionStep = () => {
         // Test the API key comprehensively
         const testResult = await testSerpApiKeyComprehensive(apiKey);
         
-        if (testResult.directApi.success || testResult.edgeFunction.success) {
+        if (testResult.edgeFunction.success) {
           setApiKeyStatus({
             status: 'working',
             message: 'SERP API is working correctly',
-            details: testResult.directApi.success ? 'Direct API connection verified' : 'Edge function connection verified'
+            details: 'Edge function connection verified'
           });
         } else {
           setApiKeyStatus({
             status: 'invalid',
             message: 'SERP API key is not working',
-            details: testResult.directApi.error || testResult.edgeFunction.error || 'Unknown error'
+            details: testResult.edgeFunction.error || 'Unknown error'
           });
         }
       } catch (error) {
