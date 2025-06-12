@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { aiAgentService } from './aiAgentService';
 import { platformContextService, PlatformContext } from './platformContextService';
@@ -9,13 +8,15 @@ import { intelligentWorkflowService, type IntelligentInsights } from './intellig
 import { smartSuggestionEngine, type SmartSuggestion, type SuggestionContext } from './smartSuggestionEngine';
 
 export interface EnhancedAIResponse {
-  content: string;
-  functionCalls: any[];
-  context: any;
+  userResponse: string;
+  functions: any[];
   suggestions: SmartSuggestion[];
   insights: IntelligentInsights;
   workflowGuidance: string;
   predictiveActions: string[];
+  content: string;
+  functionCalls: any[];
+  context: any;
 }
 
 class EnhancedAIAgentService {
@@ -126,9 +127,8 @@ Respond with enhanced intelligence that anticipates user needs and provides stra
       const predictiveActions = this.generatePredictiveActions(intelligentInsights, workflowContext);
 
       return {
-        content: analysis.userResponse,
-        functionCalls: analysis.functions || [],
-        context: analysis,
+        userResponse: analysis.userResponse,
+        functions: analysis.functions || [],
         suggestions: smartSuggestions,
         insights: intelligentInsights,
         workflowGuidance: analysis.workflowGuidance || '',
@@ -320,9 +320,8 @@ Respond with enhanced intelligence that anticipates user needs and provides stra
     }
 
     return {
-      content: `I understand you're asking about "${message}". ${contextualHelp}I'm here to provide intelligent assistance with workflow optimization, predictive insights, and strategic guidance. Could you be more specific about what you'd like to accomplish?`,
-      functionCalls: [],
-      context: {},
+      userResponse: `I understand you're asking about "${message}". ${contextualHelp}I'm here to provide intelligent assistance with workflow optimization, predictive insights, and strategic guidance. Could you be more specific about what you'd like to accomplish?`,
+      functions: [],
       suggestions: smartSuggestionEngine.generateQuickActions({
         userMessage: message,
         platformContext: context,

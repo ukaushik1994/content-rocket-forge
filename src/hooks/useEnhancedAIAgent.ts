@@ -1,8 +1,9 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { aiAgentService, type AgentResponse, type MessageContext } from '@/services/aiAgentService';
 import { conversationService, type Conversation, type ConversationMessage } from '@/services/conversationService';
 import { enhancedAiAgentService } from '@/services/enhancedAiAgentService';
+import { type SmartSuggestion } from '@/services/smartSuggestionEngine';
+import { type IntelligentInsights } from '@/services/intelligentWorkflowService';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -11,6 +12,8 @@ export interface EnhancedMessage extends ConversationMessage {
   functionCalls?: any[];
   attachments?: any[];
   isStreaming?: boolean;
+  suggestions?: SmartSuggestion[];
+  insights?: IntelligentInsights;
 }
 
 export const useEnhancedAIAgent = () => {
@@ -163,7 +166,7 @@ export const useEnhancedAIAgent = () => {
       // Save user message to database
       await conversationService.saveMessage(conversation.id, 'user', content);
 
-      // Add agent response to UI
+      // Add agent response to UI with enhanced data
       const agentMessage: EnhancedMessage = {
         id: (Date.now() + 1).toString(),
         conversation_id: conversation.id,
@@ -171,10 +174,11 @@ export const useEnhancedAIAgent = () => {
         content: response.content,
         functionCalls: response.functionCalls,
         attachments: response.attachments,
+        suggestions: intelligentResponse.suggestions,
+        insights: intelligentResponse.insights,
         status: 'completed',
         created_at: new Date().toISOString()
       };
-      setMessages(prev => [...prev, agentMessage]);
 
       // Save agent message to database
       await conversationService.saveMessage(
