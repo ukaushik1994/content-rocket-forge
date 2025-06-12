@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { toast } from 'sonner';
-import NavItems from './NavItems';
+import { navItems } from './NavItems';
 
 const Navbar = () => {
   const location = useLocation();
@@ -57,7 +57,22 @@ const Navbar = () => {
           </Button>
 
           <nav className="hidden lg:flex items-center space-x-1">
-            <NavItems />
+            {navItems.map((item) => (
+              <Link key={item.href} to={item.href}>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent/50",
+                    location.pathname === item.href 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.title}
+                </Button>
+              </Link>
+            ))}
           </nav>
         </div>
 
@@ -131,7 +146,22 @@ const Navbar = () => {
             </div>
 
             <nav className="flex flex-col space-y-4">
-              <NavItems />
+              {navItems.map((item) => (
+                <Link key={item.href} to={item.href} onClick={() => setShowMobileMenu(false)}>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50",
+                      location.pathname === item.href 
+                        ? "bg-accent text-accent-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Button>
+                </Link>
+              ))}
               
               {/* Mobile menu buttons - keep text versions for better usability on mobile */}
               <div className="flex gap-2 pt-2">
