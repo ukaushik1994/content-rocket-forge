@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -50,6 +51,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
+      console.log('User profile fetched:', data);
+      
       // Ensure role is properly typed
       const profile: UserProfile = {
         ...data,
@@ -71,20 +74,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log('Setting up auth state listener...');
+    
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event, newSession) => {
+        console.log('Auth state changed:', event, 'Session:', !!newSession);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
           // Fetch user profile data
+          console.log('Fetching profile for authenticated user...');
           setTimeout(async () => {
             const profile = await fetchUserProfile(newSession.user.id);
+            console.log('Profile set:', profile);
             setUserProfile(profile);
             setLoading(false);
           }, 0);
         } else {
+          console.log('No user session, clearing profile...');
           setUserProfile(null);
           setLoading(false);
         }
@@ -92,21 +101,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Then check for existing session
+    console.log('Checking for existing session...');
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      console.log('Existing session found:', !!currentSession);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
+        console.log('Fetching profile for existing session...');
         const profile = await fetchUserProfile(currentSession.user.id);
+        console.log('Profile from existing session:', profile);
         setUserProfile(profile);
       }
       setLoading(false);
     });
 
     return () => {
+      console.log('Cleaning up auth subscription...');
       subscription.unsubscribe();
     };
   }, []);
+
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log('Auth state update:', { 
+      loading, 
+      hasUser: !!user, 
+      hasProfile: !!userProfile, 
+      userRole: userProfile?.role 
+    });
+  }, [loading, user, userProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
