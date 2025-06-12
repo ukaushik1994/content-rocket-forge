@@ -1,5 +1,5 @@
 
-import { SerpAnalysisResult, PeopleAlsoAskQuestion, SerpSearchParams } from '@/types/serp';
+import { SerpAnalysisResult, PeopleAlsoAskQuestion, SerpSearchParams, FeaturedSnippet } from '@/types/serp';
 import { supabase } from '@/integrations/supabase/client';
 import { getApiKey } from '@/services/apiKeyService';
 import { serpResultsCache } from '@/utils/cacheUtils';
@@ -13,6 +13,7 @@ const generateMockSerpData = (keyword: string): SerpAnalysisResult => {
   console.log('📝 Generating mock SERP data for keyword:', keyword);
   
   return {
+    keyword,
     keywords: [
       `${keyword} guide`,
       `best ${keyword}`,
@@ -37,6 +38,14 @@ const generateMockSerpData = (keyword: string): SerpAnalysisResult => {
       { question: `Why is ${keyword} important?`, source: 'mock', answer: `${keyword} is important for many reasons in today's context.` },
       { question: `When should you use ${keyword}?`, source: 'mock', answer: `${keyword} should be used in specific situations and contexts.` },
       { question: `Where can I learn more about ${keyword}?`, source: 'mock', answer: `You can learn more about ${keyword} from various sources.` }
+    ],
+    featuredSnippets: [
+      {
+        type: 'paragraph',
+        content: `${keyword} is an essential concept that helps businesses and individuals achieve their goals through strategic implementation.`,
+        source: 'example.com',
+        title: `What is ${keyword}?`
+      }
     ],
     entities: [
       { name: keyword, type: 'primary_topic', importance: 1 },
@@ -86,14 +95,41 @@ const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult 
     
     console.log('🔗 Found related searches:', relatedSearches.length);
 
-    // Extract People Also Ask questions
-    const peopleAlsoAsk: PeopleAlsoAskQuestion[] = (data.people_also_ask || []).map((item: any) => ({
-      question: item.question || item.title || 'Unknown question',
+    // Extract People Also Ask questions from related_questions
+    const peopleAlsoAsk: PeopleAlsoAskQuestion[] = (data.related_questions || []).map((item: any) => ({
+      question: item.question || 'Unknown question',
       source: item.link || 'Unknown source',
       answer: item.snippet || item.answer || undefined
     })).filter((item: any) => item.question && item.question !== 'Unknown question');
     
-    console.log('❓ Found People Also Ask:', peopleAlsoAsk.length);
+    console.log('❓ Found People Also Ask from related_questions:', peopleAlsoAsk.length);
+
+    // Extract featured snippets from various sources
+    const featuredSnippets: FeaturedSnippet[] = [];
+    
+    // Check for answer box
+    if (data.answer_box) {
+      featuredSnippets.push({
+        type: 'paragraph',
+        content: data.answer_box.answer || data.answer_box.snippet || '',
+        source: data.answer_box.link || 'Unknown source',
+        title: data.answer_box.title || 'Featured Snippet'
+      });
+    }
+    
+    // Check for featured snippet in organic results
+    organicResults.forEach((result: any) => {
+      if (result.rich_snippet || result.snippet_highlighted_words) {
+        featuredSnippets.push({
+          type: 'paragraph',
+          content: result.snippet || '',
+          source: result.link || '',
+          title: result.title || 'Organic Result Snippet'
+        });
+      }
+    });
+    
+    console.log('📝 Found featured snippets:', featuredSnippets.length);
 
     // Extract headings from organic results
     const headings: { text: string; level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'; subtext?: string; type?: string; }[] = [];
@@ -230,9 +266,11 @@ const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult 
     console.log('🔍 Generated content gaps:', contentGaps.length);
 
     const result: SerpAnalysisResult = {
+      keyword,
       keywords: Array.from(keywords).slice(0, 20), // Limit to top 20
       headings: headings.slice(0, 15), // Limit to top 15
       peopleAlsoAsk,
+      featuredSnippets,
       entities,
       contentGaps,
       topResults,
@@ -241,9 +279,11 @@ const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult 
     };
 
     console.log('✅ Successfully processed SERP data:', {
+      keyword: result.keyword,
       keywords: result.keywords.length,
       headings: result.headings.length,
       peopleAlsoAsk: result.peopleAlsoAsk.length,
+      featuredSnippets: result.featuredSnippets?.length || 0,
       entities: result.entities.length,
       contentGaps: result.contentGaps.length,
       topResults: result.topResults.length,

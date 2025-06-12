@@ -3,6 +3,8 @@ export interface SerpSearchParams {
   query: string;
   country?: string;
   num?: number;
+  limit?: number;
+  refresh?: boolean;
 }
 
 export interface KnowledgeGraph {
