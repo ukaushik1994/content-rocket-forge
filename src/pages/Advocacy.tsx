@@ -3,13 +3,14 @@ import React, { useState } from 'react';
 import { AdvocacyDashboard } from '@/components/advocacy/AdvocacyDashboard';
 import { ContentTemplates } from '@/components/advocacy/ContentTemplates';
 import { Leaderboard } from '@/components/advocacy/Leaderboard';
+import { AnalyticsInsights } from '@/components/advocacy/AnalyticsInsights';
 import { AdvocacyOnboarding } from '@/components/advocacy/AdvocacyOnboarding';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/layout/Navbar';
-import { Megaphone, Trophy, FileText, Target, TrendingUp, Users, Zap, Star } from 'lucide-react';
+import { Megaphone, Trophy, FileText, Target, TrendingUp, Users, Zap, Star, BarChart } from 'lucide-react';
 
 const Advocacy = () => {
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -109,7 +110,7 @@ const Advocacy = () => {
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="dashboard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/50">
+            <TabsList className="grid w-full grid-cols-5 h-12 bg-muted/50">
               <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-background">
                 <Target className="h-4 w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
@@ -117,6 +118,10 @@ const Advocacy = () => {
               <TabsTrigger value="templates" className="flex items-center gap-2 data-[state=active]:bg-background">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Content Hub</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2 data-[state=active]:bg-background">
+                <BarChart className="h-4 w-4" />
+                <span className="hidden sm:inline">Analytics</span>
               </TabsTrigger>
               <TabsTrigger value="leaderboard" className="flex items-center gap-2 data-[state=active]:bg-background">
                 <Trophy className="h-4 w-4" />
@@ -134,6 +139,10 @@ const Advocacy = () => {
 
             <TabsContent value="templates" className="space-y-6">
               <ContentTemplates />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <AnalyticsInsights />
             </TabsContent>
 
             <TabsContent value="leaderboard" className="space-y-6">
