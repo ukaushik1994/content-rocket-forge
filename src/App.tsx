@@ -13,16 +13,12 @@ import ContentApproval from "./pages/ContentApproval";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
-import Advocacy from "./pages/Advocacy";
-import EmployeeAdvocacy from "./pages/EmployeeAdvocacy";
-import AdminAdvocacy from "./pages/AdminAdvocacy";
 import NotFound from "./pages/NotFound";
 import { ContentProvider } from "./contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -38,89 +34,15 @@ const App = () => (
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 
-                {/* Employee-only routes */}
-                <Route 
-                  path="/employee-advocacy" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['employee']}>
-                      <EmployeeAdvocacy />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                
-                {/* Admin-only routes */}
-                <Route 
-                  path="/" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <Index />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/drafts" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <Drafts />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/content-builder" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <ContentBuilder />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/content-repurposing" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <ContentRepurposing />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/content-approval" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <ContentApproval />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/solutions" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <Solutions />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/settings" 
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/analytics" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <Analytics />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/advocacy" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
-                      <AdminAdvocacy />
-                    </RoleProtectedRoute>
-                  } 
-                />
+                {/* Protected routes */}
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
+                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
+                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
+                <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
