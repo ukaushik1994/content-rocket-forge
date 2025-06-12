@@ -585,26 +585,35 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          company_id: string | null
           created_at: string
+          department: string | null
           first_name: string | null
           id: string
           last_name: string | null
+          role: string
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
+          department?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
+          role?: string
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
+          department?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -727,6 +736,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       migrate_repurposed_content: {
         Args: Record<PropertyKey, never>
         Returns: undefined
