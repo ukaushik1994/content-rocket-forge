@@ -3,8 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Share2, Heart, MessageCircle, Zap, Trophy, Users, Calendar } from 'lucide-react';
+import { TrendingUp, Share2, Heart, MessageCircle, Zap, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { GamificationSystem } from './GamificationSystem';
+import { StreakTracker } from './StreakTracker';
 
 export const AdvocacyDashboard = () => {
   const recentPosts = [
@@ -53,16 +55,9 @@ export const AdvocacyDashboard = () => {
     }
   ];
 
-  const achievements = [
-    { name: "First Share", icon: Share2, unlocked: true },
-    { name: "Social Star", icon: TrendingUp, unlocked: true },
-    { name: "Team Player", icon: Users, unlocked: false },
-    { name: "Champion", icon: Trophy, unlocked: false }
-  ];
-
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Performance Overview */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
@@ -94,42 +89,33 @@ export const AdvocacyDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Achievements */}
+        {/* Streak Tracker */}
+        <StreakTracker />
+
+        {/* Quick Actions */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Achievements
+              <Zap className="h-5 w-5" />
+              Quick Actions
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {achievements.map((achievement, index) => (
-                <motion.div
-                  key={achievement.name}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`p-3 rounded-lg text-center ${
-                    achievement.unlocked 
-                      ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-500/30' 
-                      : 'bg-white/5 border border-white/10'
-                  }`}
-                >
-                  <achievement.icon className={`h-6 w-6 mx-auto mb-1 ${
-                    achievement.unlocked ? 'text-yellow-400' : 'text-white/40'
-                  }`} />
-                  <div className={`text-xs ${
-                    achievement.unlocked ? 'text-yellow-300' : 'text-white/60'
-                  }`}>
-                    {achievement.name}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+          <CardContent className="space-y-3">
+            <Button className="w-full bg-gradient-to-r from-neon-purple to-neon-blue">
+              Share Now
+            </Button>
+            <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+              Browse Templates
+            </Button>
+            <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+              Schedule Post
+            </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Gamification System */}
+      <GamificationSystem />
 
       {/* Suggested Content */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
