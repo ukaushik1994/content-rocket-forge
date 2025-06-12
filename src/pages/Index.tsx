@@ -2,35 +2,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
-import { EnhancedStatCard } from '@/components/dashboard/EnhancedStatCard';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { WelcomeSection } from '@/components/dashboard/WelcomeSection';
-import { EnhancedQuickActionsGrid } from '@/components/dashboard/EnhancedQuickActionsGrid';
-import { EnhancedPerformanceChart } from '@/components/dashboard/EnhancedPerformanceChart';
+import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
+import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
+import { 
+  FileText, 
+  Search, 
+  BarChart3, 
+  Fingerprint, 
+  Activity, 
+  Target, 
+  Clock, 
+  Users
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDashboardData } from '@/hooks/dashboard/useDashboardData';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
-import { RefreshCcw, Activity, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
-  const { metrics, loading, error, refreshData } = useDashboardData();
   
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
-
-  const handleRefresh = () => {
-    refreshData();
-    toast.success('Dashboard data refreshed');
-  };
   
   // Animation variants
   const containerVariants = {
@@ -58,6 +58,7 @@ const Index = () => {
     }
   };
 
+  // Enhanced animation variants for performance section
   const performanceVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -65,6 +66,20 @@ const Index = () => {
       transition: { 
         staggerChildren: 0.12,
         delayChildren: 0.3
+      }
+    }
+  };
+
+  const chartVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { 
+        type: 'spring',
+        stiffness: 70,
+        damping: 15,
+        delay: 0.4
       }
     }
   };
@@ -81,23 +96,6 @@ const Index = () => {
       }
     })
   };
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <p className="text-destructive">Error loading dashboard: {error}</p>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCcw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
-          </div>
-        </main>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -123,28 +121,18 @@ const Index = () => {
               <WelcomeSection setFeedbackOpen={setFeedbackOpen} navigate={navigate} />
             </motion.div>
             
-            {/* Quick Actions */}
+            {/* Quick Actions - Moved Above Performance Overview */}
             <motion.div variants={itemVariants} className="pt-2"> 
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium">Quick Actions</h2>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  className="h-8 px-2"
-                >
-                  <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
-              <EnhancedQuickActionsGrid />
+              <h2 className="text-lg font-medium mb-4">Quick Actions</h2>
+              <QuickActionsGrid navigate={navigate} />
             </motion.div>
             
-            {/* Performance Overview */}
+            {/* Performance Overview - With stat cards ABOVE the chart */}
             <motion.div 
               variants={performanceVariants} 
               className="relative"
             >
+              {/* Section header with enhanced styling */}
               <motion.div 
                 variants={fadeInVariants}
                 className="mb-5 flex items-center justify-between"
@@ -176,77 +164,89 @@ const Index = () => {
                 </motion.div>
               </motion.div>
               
-              {/* Stat cards grid */}
+              {/* Stat cards grid ABOVE the chart with staggered animations */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <motion.div variants={statCardVariants} custom={0}>
-                  <EnhancedStatCard 
+                  <StatCard 
                     title="Total Projects" 
-                    value={metrics.totalProjects} 
+                    value="12" 
                     description="2 active workflows" 
                     icon="FileText"
-                    trend={metrics.trends.projects}
-                    loading={loading}
+                    trend={{
+                      value: 33,
+                      positive: true
+                    }}
                   />
                 </motion.div>
                 
                 <motion.div variants={statCardVariants} custom={1}>
-                  <EnhancedStatCard 
+                  <StatCard 
                     title="Keywords Analyzed" 
-                    value={metrics.keywordsAnalyzed} 
+                    value="284" 
                     description="Last 30 days" 
                     icon="Search"
-                    trend={metrics.trends.keywords}
-                    loading={loading}
+                    trend={{
+                      value: 12,
+                      positive: true
+                    }}
                   />
                 </motion.div>
                 
                 <motion.div variants={statCardVariants} custom={2}>
-                  <EnhancedStatCard 
+                  <StatCard 
                     title="Average SEO Score" 
-                    value={`${metrics.averageSeoScore}/100`} 
+                    value="78/100" 
                     description="Across all content" 
                     icon="BarChart3"
-                    trend={metrics.trends.seoScore}
-                    loading={loading}
+                    trend={{
+                      value: 5,
+                      positive: true
+                    }}
                   />
                 </motion.div>
                 
                 <motion.div variants={statCardVariants} custom={3}>
-                  <EnhancedStatCard 
+                  <StatCard 
                     title="Conversions" 
-                    value={`${metrics.conversions}%`} 
+                    value="5.4%" 
                     description="From content links" 
                     icon="Fingerprint"
-                    trend={metrics.trends.conversions}
-                    loading={loading}
+                    trend={{
+                      value: 2,
+                      positive: false
+                    }}
                   />
                 </motion.div>
               </div>
               
-              {/* Performance chart */}
-              <EnhancedPerformanceChart />
+              {/* Performance chart with enhanced styling */}
+              <PerformanceChart />
               
-              {/* Additional stat cards */}
+              {/* Additional stat cards in a row below the chart */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <motion.div variants={statCardVariants} custom={4}>
-                  <EnhancedStatCard 
+                  <StatCard 
                     title="Content Created" 
-                    value={metrics.contentCreated} 
+                    value="37" 
                     description="8 published this month" 
                     icon="FileText"
-                    trend={metrics.trends.content}
-                    loading={loading}
+                    trend={{
+                      value: 18,
+                      positive: true
+                    }}
                   />
                 </motion.div>
                 
                 <motion.div variants={statCardVariants} custom={5}>
-                  <EnhancedStatCard 
+                  <StatCard 
                     title="Audience Growth" 
-                    value={`${metrics.audienceGrowth}%`} 
+                    value="14.2%" 
                     description="New visitors" 
                     icon="Users"
-                    trend={metrics.trends.audience}
-                    loading={loading}
+                    trend={{
+                      value: 3.5,
+                      positive: true
+                    }}
                   />
                 </motion.div>
               </div>

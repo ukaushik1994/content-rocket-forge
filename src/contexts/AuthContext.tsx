@@ -1,17 +1,32 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+type UserRole = 'employee' | 'admin';
+
+type UserProfile = {
+  id: string;
+  role: UserRole;
+  department?: string;
+  company_id?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+};
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   loading: boolean;
+  isAdmin: boolean;
+  isEmployee: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (data: { firstName?: string; lastName?: string; avatarUrl?: string }) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,28 +34,103 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      console.log('Fetching user profile for:', userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      console.log('User profile fetched:', data);
+      
+      // Ensure role is properly typed
+      const profile: UserProfile = {
+        ...data,
+        role: data.role as UserRole
+      };
+
+      return profile;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      const profile = await fetchUserProfile(user.id);
+      setUserProfile(profile);
+    }
+  };
+
   useEffect(() => {
+    console.log('Setting up auth state listener...');
+    
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      async (event, newSession) => {
+        console.log('Auth state changed:', event, 'Session:', !!newSession);
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          // Fetch user profile data
+          console.log('Fetching profile for authenticated user...');
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(newSession.user.id);
+            console.log('Profile set:', profile);
+            setUserProfile(profile);
+            setLoading(false);
+          }, 0);
+        } else {
+          console.log('No user session, clearing profile...');
+          setUserProfile(null);
+          setLoading(false);
+        }
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    console.log('Checking for existing session...');
+    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      console.log('Existing session found:', !!currentSession);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        console.log('Fetching profile for existing session...');
+        const profile = await fetchUserProfile(currentSession.user.id);
+        console.log('Profile from existing session:', profile);
+        setUserProfile(profile);
+      }
       setLoading(false);
     });
 
     return () => {
+      console.log('Cleaning up auth subscription...');
       subscription.unsubscribe();
     };
   }, []);
+
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log('Auth state update:', { 
+      loading, 
+      hasUser: !!user, 
+      hasProfile: !!userProfile, 
+      userRole: userProfile?.role 
+    });
+  }, [loading, user, userProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -112,6 +202,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (profileError) throw profileError;
 
+      // Refresh the profile data
+      await refreshProfile();
+
       toast.success('Profile updated successfully');
     } catch (error: any) {
       toast.error(`Profile update failed: ${error.message}`);
@@ -119,16 +212,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const isAdmin = userProfile?.role === 'admin';
+  const isEmployee = userProfile?.role === 'employee';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
+        userProfile,
         loading,
+        isAdmin,
+        isEmployee,
         signIn,
         signUp,
         signOut,
         updateProfile,
+        refreshProfile,
       }}
     >
       {children}
