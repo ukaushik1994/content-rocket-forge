@@ -143,17 +143,22 @@ export const useEnhancedAIAgent = () => {
       };
       setMessages(prev => [...prev, userMessage]);
 
-      // Get enhanced context
+      // Get enhanced context with platform intelligence
       const enhancedContext = await enhancedAiAgentService.getEnhancedContext(currentContextRef.current);
       
-      const messageContext: MessageContext = {
-        conversationHistory: messages,
-        currentContext: enhancedContext,
-        userPreferences: {}
-      };
+      console.log('Enhanced context:', enhancedContext);
 
-      // Process message with AI
-      const response = await aiAgentService.processMessage(content, messageContext);
+      // Process message with intelligence
+      const intelligentResponse = await enhancedAiAgentService.processMessageWithIntelligence(content, enhancedContext);
+      
+      console.log('Intelligent response:', intelligentResponse);
+
+      // Create response object
+      const response: AgentResponse = {
+        content: intelligentResponse.userResponse || "I'll help you with that.",
+        functionCalls: intelligentResponse.functions || [],
+        context: intelligentResponse
+      };
 
       // Save user message to database
       await conversationService.saveMessage(conversation.id, 'user', content);
@@ -202,7 +207,7 @@ export const useEnhancedAIAgent = () => {
         id: (Date.now() + 2).toString(),
         conversation_id: currentConversation?.id || '',
         type: 'agent',
-        content: `I apologize, but I encountered an error: ${errorMsg}. Please try again.`,
+        content: `I apologize, but I encountered an error: ${errorMsg}. Please try again with more specific information.`,
         status: 'error',
         created_at: new Date().toISOString()
       };
