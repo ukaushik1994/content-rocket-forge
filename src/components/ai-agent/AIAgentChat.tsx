@@ -1,11 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Minimize2, Maximize2, FileText, Loader2, Bot, User } from 'lucide-react';
+import { Send, Minimize2, Bot, User, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { aiAgentService } from '@/services/aiAgentService';
 import { toast } from 'sonner';
@@ -305,7 +304,7 @@ export const AIAgentChat = () => {
           >
             <Button
               onClick={() => setIsExpanded(true)}
-              className="rounded-full w-14 h-14 shadow-lg"
+              className="rounded-full w-14 h-14 shadow-lg bg-primary hover:bg-primary/90"
               size="lg"
             >
               <Bot className="h-6 w-6" />
