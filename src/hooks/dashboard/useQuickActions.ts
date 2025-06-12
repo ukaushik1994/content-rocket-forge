@@ -1,11 +1,9 @@
 
 import { useNavigate } from 'react-router-dom';
-import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
 
 export const useQuickActions = () => {
   const navigate = useNavigate();
-  const { addContent } = useContent();
 
   const handleNewContent = () => {
     navigate('/content-builder');

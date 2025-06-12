@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/dashboard/useDashboardData';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Activity, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
