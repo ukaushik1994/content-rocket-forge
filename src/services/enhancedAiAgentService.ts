@@ -11,6 +11,11 @@ interface EnhancedContext {
 }
 
 class EnhancedAIAgentService {
+  constructor() {
+    // Automatically register navigation function when service is created
+    this.addNavigationFunction();
+  }
+
   async getEnhancedContext(basicContext: any): Promise<EnhancedContext> {
     const enhanced: EnhancedContext = {
       ...basicContext,
@@ -54,10 +59,13 @@ class EnhancedAIAgentService {
 
   private async getDashboardData() {
     try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return { error: 'User not authenticated' };
+
       const { data: contentCount } = await supabase
         .from('content_items')
         .select('id', { count: 'exact' })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('user_id', user.data.user.id);
 
       return {
         contentCount: contentCount?.length || 0,
@@ -99,10 +107,13 @@ class EnhancedAIAgentService {
 
   private async getSolutionsData() {
     try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return { error: 'User not authenticated' };
+
       const { data: solutions } = await supabase
         .from('solutions')
         .select('*')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('user_id', user.data.user.id)
         .order('created_at', { ascending: false });
 
       return {

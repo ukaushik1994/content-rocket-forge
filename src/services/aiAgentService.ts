@@ -86,6 +86,11 @@ class AIAgentService {
     // Platform Functions
     this.availableFunctions.set('getRepositoryInfo', this.getRepositoryInfo.bind(this));
     this.availableFunctions.set('executeWorkflow', this.executeWorkflow.bind(this));
+
+    // Conversation Functions
+    this.availableFunctions.set('createConversation', this.createConversation.bind(this));
+    this.availableFunctions.set('getConversations', this.getConversations.bind(this));
+    this.availableFunctions.set('saveMessage', this.saveMessage.bind(this));
   }
 
   private async loadRepositoryContext() {
@@ -132,7 +137,7 @@ class AIAgentService {
       return response;
     } catch (error) {
       console.error('Error processing message:', error);
-      throw new Error('Failed to process message');
+      throw new Error('Failed to process message. Please try again.');
     }
   }
 
@@ -210,93 +215,237 @@ Respond with a JSON object containing:
     }
   }
 
-  // Function implementations
+  // Fixed function implementations with proper error handling
   private async createContent(params: any) {
-    const { data, error } = await supabase
-      .from('content_items')
-      .insert({
-        title: params.title,
-        content: params.content,
-        status: 'draft',
-        user_id: (await supabase.auth.getUser()).data.user?.id
-      })
-      .select()
-      .single();
+    try {
+      if (!params.title) {
+        throw new Error('Title is required');
+      }
 
-    if (error) throw error;
-    return { success: true, content: data, notification: 'Content created successfully!' };
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('content_items')
+        .insert({
+          title: params.title,
+          content: params.content || '',
+          status: 'draft',
+          user_id: user.data.user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, content: data, notification: 'Content created successfully!' };
+    } catch (error: any) {
+      console.error('Error creating content:', error);
+      throw new Error(`Failed to create content: ${error.message}`);
+    }
+  }
+
+  private async createConversation(params: any) {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('ai_conversations')
+        .insert({
+          title: params.title || 'New Conversation',
+          user_id: user.data.user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, conversation: data };
+    } catch (error: any) {
+      console.error('Error creating conversation:', error);
+      throw new Error(`Failed to create conversation: ${error.message}`);
+    }
+  }
+
+  private async getConversations(params: any) {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('ai_conversations')
+        .select('*')
+        .eq('user_id', user.data.user.id)
+        .order('updated_at', { ascending: false })
+        .limit(params.limit || 20);
+
+      if (error) throw error;
+      return { success: true, conversations: data };
+    } catch (error: any) {
+      console.error('Error fetching conversations:', error);
+      throw new Error(`Failed to fetch conversations: ${error.message}`);
+    }
+  }
+
+  private async saveMessage(params: any) {
+    try {
+      if (!params.conversationId || !params.content || !params.type) {
+        throw new Error('Missing required parameters');
+      }
+
+      const { data, error } = await supabase
+        .from('ai_messages')
+        .insert({
+          conversation_id: params.conversationId,
+          type: params.type,
+          content: params.content,
+          function_calls: params.functionCalls || null,
+          attachments: params.attachments || null,
+          status: params.status || 'completed'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, message: data };
+    } catch (error: any) {
+      console.error('Error saving message:', error);
+      throw new Error(`Failed to save message: ${error.message}`);
+    }
   }
 
   private async analyzeKeyword(params: any) {
-    const serpData = await analyzeKeywordSerp(params.keyword);
-    return { success: true, data: serpData, notification: 'Keyword analysis completed!' };
+    try {
+      if (!params.keyword) {
+        throw new Error('Keyword is required');
+      }
+      const serpData = await analyzeKeywordSerp(params.keyword);
+      return { success: true, data: serpData, notification: 'Keyword analysis completed!' };
+    } catch (error: any) {
+      throw new Error(`Failed to analyze keyword: ${error.message}`);
+    }
   }
 
   private async analyzeSERP(params: any) {
-    const serpData = await analyzeKeywordSerp(params.keyword, params.forceRefresh);
-    return { success: true, data: serpData, notification: 'SERP analysis completed!' };
+    try {
+      if (!params.keyword) {
+        throw new Error('Keyword is required');
+      }
+      const serpData = await analyzeKeywordSerp(params.keyword, params.forceRefresh);
+      return { success: true, data: serpData, notification: 'SERP analysis completed!' };
+    } catch (error: any) {
+      throw new Error(`Failed to analyze SERP: ${error.message}`);
+    }
   }
 
   private async listContent(params: any) {
-    const { data, error } = await supabase
-      .from('content_items')
-      .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-      .order('created_at', { ascending: false })
-      .limit(params.limit || 10);
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: `Found ${data.length} content items` };
+      const { data, error } = await supabase
+        .from('content_items')
+        .select('*')
+        .eq('user_id', user.data.user.id)
+        .order('created_at', { ascending: false })
+        .limit(params.limit || 10);
+
+      if (error) throw error;
+      return { success: true, data, notification: `Found ${data.length} content items` };
+    } catch (error: any) {
+      throw new Error(`Failed to list content: ${error.message}`);
+    }
   }
 
   private async getAnalytics(params: any) {
-    const { data, error } = await supabase
-      .from('content_analytics')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(params.limit || 10);
+    try {
+      const { data, error } = await supabase
+        .from('content_analytics')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(params.limit || 10);
 
-    if (error) throw error;
-    return { success: true, data, notification: 'Analytics data retrieved' };
+      if (error) throw error;
+      return { success: true, data, notification: 'Analytics data retrieved' };
+    } catch (error: any) {
+      throw new Error(`Failed to get analytics: ${error.message}`);
+    }
   }
 
   private async createSolution(params: any) {
-    const { data, error } = await supabase
-      .from('solutions')
-      .insert({
-        name: params.name,
-        features: params.features || [],
-        use_cases: params.useCases || [],
-        user_id: (await supabase.auth.getUser()).data.user?.id
-      })
-      .select()
-      .single();
+    try {
+      if (!params.name) {
+        throw new Error('Solution name is required');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: 'Solution created successfully!' };
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('solutions')
+        .insert({
+          name: params.name,
+          features: params.features || [],
+          use_cases: params.useCases || [],
+          user_id: user.data.user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data, notification: 'Solution created successfully!' };
+    } catch (error: any) {
+      throw new Error(`Failed to create solution: ${error.message}`);
+    }
   }
 
   private async listSolutions(params: any) {
-    const { data, error } = await supabase
-      .from('solutions')
-      .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-      .order('created_at', { ascending: false });
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: `Found ${data.length} solutions` };
+      const { data, error } = await supabase
+        .from('solutions')
+        .select('*')
+        .eq('user_id', user.data.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return { success: true, data, notification: `Found ${data.length} solutions` };
+    } catch (error: any) {
+      throw new Error(`Failed to list solutions: ${error.message}`);
+    }
   }
 
   private async startApprovalWorkflow(params: any) {
-    const { data, error } = await supabase
-      .from('content_items')
-      .update({ approval_status: 'pending_review' })
-      .eq('id', params.contentId)
-      .select()
-      .single();
+    try {
+      if (!params.contentId) {
+        throw new Error('Content ID is required');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: 'Approval workflow started!' };
+      const { data, error } = await supabase
+        .from('content_items')
+        .update({ approval_status: 'pending_review' })
+        .eq('id', params.contentId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data, notification: 'Approval workflow started!' };
+    } catch (error: any) {
+      throw new Error(`Failed to start approval workflow: ${error.message}`);
+    }
   }
 
   private async getRepositoryInfo(params: any) {
@@ -308,170 +457,240 @@ Respond with a JSON object containing:
   }
 
   private async generateOutline(params: any) {
-    const systemPrompt = `Generate a detailed content outline for the topic: "${params.topic}"
-    
-    Consider:
-    - Target audience: ${params.audience || 'general'}
-    - Content type: ${params.type || 'blog post'}
-    - SEO focus: ${params.seoFocus || 'medium'}
-    
-    Return a structured outline with headings and subheadings.`;
+    try {
+      if (!params.topic) {
+        throw new Error('Topic is required');
+      }
 
-    const response = await sendChatRequest('openai', {
-      messages: [{ role: 'system', content: systemPrompt }],
-      temperature: 0.4
-    });
+      const systemPrompt = `Generate a detailed content outline for the topic: "${params.topic}"
+      
+      Consider:
+      - Target audience: ${params.audience || 'general'}
+      - Content type: ${params.type || 'blog post'}
+      - SEO focus: ${params.seoFocus || 'medium'}
+      
+      Return a structured outline with headings and subheadings.`;
 
-    return { 
-      success: true, 
-      data: { outline: response.choices[0].message.content },
-      notification: 'Outline generated successfully!' 
-    };
+      const response = await sendChatRequest('openai', {
+        messages: [{ role: 'system', content: systemPrompt }],
+        temperature: 0.4
+      });
+
+      return { 
+        success: true, 
+        data: { outline: response.choices[0].message.content },
+        notification: 'Outline generated successfully!' 
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to generate outline: ${error.message}`);
+    }
   }
 
   private async optimizeContent(params: any) {
-    const systemPrompt = `Optimize the following content for SEO and readability:
-    
-    Title: ${params.title}
-    Content: ${params.content}
-    Target keyword: ${params.keyword || 'not specified'}
-    
-    Provide specific optimization suggestions.`;
+    try {
+      if (!params.content) {
+        throw new Error('Content is required');
+      }
 
-    const response = await sendChatRequest('openai', {
-      messages: [{ role: 'system', content: systemPrompt }],
-      temperature: 0.3
-    });
+      const systemPrompt = `Optimize the following content for SEO and readability:
+      
+      Title: ${params.title || 'No title provided'}
+      Content: ${params.content}
+      Target keyword: ${params.keyword || 'not specified'}
+      
+      Provide specific optimization suggestions.`;
 
-    return { 
-      success: true, 
-      data: { suggestions: response.choices[0].message.content },
-      notification: 'Content optimization completed!' 
-    };
+      const response = await sendChatRequest('openai', {
+        messages: [{ role: 'system', content: systemPrompt }],
+        temperature: 0.3
+      });
+
+      return { 
+        success: true, 
+        data: { suggestions: response.choices[0].message.content },
+        notification: 'Content optimization completed!' 
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to optimize content: ${error.message}`);
+    }
   }
 
   private async updateContent(params: any) {
-    const { data, error } = await supabase
-      .from('content_items')
-      .update({
-        title: params.title,
-        content: params.content,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
-      .select()
-      .single();
+    try {
+      if (!params.id) {
+        throw new Error('Content ID is required');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: 'Content updated successfully!' };
+      const { data, error } = await supabase
+        .from('content_items')
+        .update({
+          title: params.title,
+          content: params.content,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', params.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data, notification: 'Content updated successfully!' };
+    } catch (error: any) {
+      throw new Error(`Failed to update content: ${error.message}`);
+    }
   }
 
   private async deleteContent(params: any) {
-    const { error } = await supabase
-      .from('content_items')
-      .delete()
-      .eq('id', params.id);
+    try {
+      if (!params.id) {
+        throw new Error('Content ID is required');
+      }
 
-    if (error) throw error;
-    return { success: true, notification: 'Content deleted successfully!' };
+      const { error } = await supabase
+        .from('content_items')
+        .delete()
+        .eq('id', params.id);
+
+      if (error) throw error;
+      return { success: true, notification: 'Content deleted successfully!' };
+    } catch (error: any) {
+      throw new Error(`Failed to delete content: ${error.message}`);
+    }
   }
 
   private async publishContent(params: any) {
-    const { data, error } = await supabase
-      .from('content_items')
-      .update({ 
-        status: 'published',
-        published_url: params.url 
-      })
-      .eq('id', params.id)
-      .select()
-      .single();
+    try {
+      if (!params.id) {
+        throw new Error('Content ID is required');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: 'Content published successfully!' };
+      const { data, error } = await supabase
+        .from('content_items')
+        .update({ 
+          status: 'published',
+          published_url: params.url 
+        })
+        .eq('id', params.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data, notification: 'Content published successfully!' };
+    } catch (error: any) {
+      throw new Error(`Failed to publish content: ${error.message}`);
+    }
   }
 
   private async getCompetitorAnalysis(params: any) {
-    // This would integrate with SERP analysis to get competitor data
-    const serpData = await analyzeKeywordSerp(params.keyword);
-    
-    const competitors = serpData?.topResults?.slice(0, 5).map(result => ({
-      title: result.title,
-      url: result.link,
-      position: result.position,
-      snippet: result.snippet
-    })) || [];
+    try {
+      if (!params.keyword) {
+        throw new Error('Keyword is required');
+      }
 
-    return { 
-      success: true, 
-      data: { competitors, keyword: params.keyword },
-      notification: 'Competitor analysis completed!' 
-    };
+      const serpData = await analyzeKeywordSerp(params.keyword);
+      
+      const competitors = serpData?.topResults?.slice(0, 5).map(result => ({
+        title: result.title,
+        url: result.link,
+        position: result.position,
+        snippet: result.snippet
+      })) || [];
+
+      return { 
+        success: true, 
+        data: { competitors, keyword: params.keyword },
+        notification: 'Competitor analysis completed!' 
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to analyze competitors: ${error.message}`);
+    }
   }
 
   private async reviewContent(params: any) {
-    const { data, error } = await supabase
-      .from('content_approvals')
-      .insert({
-        content_id: params.contentId,
-        reviewer_id: (await supabase.auth.getUser()).data.user?.id,
-        status: params.decision,
-        comments: params.comments
-      })
-      .select()
-      .single();
+    try {
+      if (!params.contentId || !params.decision) {
+        throw new Error('Content ID and decision are required');
+      }
 
-    if (error) throw error;
-    return { success: true, data, notification: 'Content review submitted!' };
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase
+        .from('content_approvals')
+        .insert({
+          content_id: params.contentId,
+          reviewer_id: user.data.user.id,
+          status: params.decision,
+          comments: params.comments
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data, notification: 'Content review submitted!' };
+    } catch (error: any) {
+      throw new Error(`Failed to review content: ${error.message}`);
+    }
   }
 
   private async getPerformanceReport(params: any) {
-    const { data, error } = await supabase
-      .from('content_analytics')
-      .select('*')
-      .gte('created_at', params.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('content_analytics')
+        .select('*')
+        .gte('created_at', params.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    
-    // Safely access analytics data properties
-    const report = {
-      totalViews: data.reduce((sum, item) => {
-        const analyticsData = item.analytics_data as AnalyticsData | null;
-        return sum + (analyticsData?.views || 0);
-      }, 0),
-      totalClicks: data.reduce((sum, item) => {
-        const analyticsData = item.analytics_data as AnalyticsData | null;
-        return sum + (analyticsData?.clicks || 0);
-      }, 0),
-      averagePosition: data.reduce((sum, item) => {
-        const analyticsData = item.analytics_data as AnalyticsData | null;
-        return sum + (analyticsData?.position || 0);
-      }, 0) / (data.length || 1),
-      contentCount: data.length
-    };
+      if (error) throw error;
+      
+      const report = {
+        totalViews: data.reduce((sum, item) => {
+          const analyticsData = item.analytics_data as AnalyticsData | null;
+          return sum + (analyticsData?.views || 0);
+        }, 0),
+        totalClicks: data.reduce((sum, item) => {
+          const analyticsData = item.analytics_data as AnalyticsData | null;
+          return sum + (analyticsData?.clicks || 0);
+        }, 0),
+        averagePosition: data.reduce((sum, item) => {
+          const analyticsData = item.analytics_data as AnalyticsData | null;
+          return sum + (analyticsData?.position || 0);
+        }, 0) / (data.length || 1),
+        contentCount: data.length
+      };
 
-    return { success: true, data: report, notification: 'Performance report generated!' };
+      return { success: true, data: report, notification: 'Performance report generated!' };
+    } catch (error: any) {
+      throw new Error(`Failed to generate performance report: ${error.message}`);
+    }
   }
 
   private async executeWorkflow(params: any) {
-    // Generic workflow executor - would be expanded based on specific workflow types
-    const workflow = params.workflow;
-    const steps = workflow.steps || [];
-    
-    const results = [];
-    for (const step of steps) {
-      if (this.availableFunctions.has(step.action)) {
-        const result = await this.executeFunction(step.action, step.parameters);
-        results.push(result);
+    try {
+      if (!params.workflow) {
+        throw new Error('Workflow is required');
       }
-    }
 
-    return { 
-      success: true, 
-      data: { workflow: workflow.name, results },
-      notification: `Workflow "${workflow.name}" executed successfully!` 
-    };
+      const workflow = params.workflow;
+      const steps = workflow.steps || [];
+      
+      const results = [];
+      for (const step of steps) {
+        if (this.availableFunctions.has(step.action)) {
+          const result = await this.executeFunction(step.action, step.parameters);
+          results.push(result);
+        }
+      }
+
+      return { 
+        success: true, 
+        data: { workflow: workflow.name, results },
+        notification: `Workflow "${workflow.name}" executed successfully!` 
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to execute workflow: ${error.message}`);
+    }
   }
 }
 
