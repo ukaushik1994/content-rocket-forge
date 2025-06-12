@@ -234,7 +234,7 @@ export const AdvocacyOnboarding: React.FC<AdvocacyOnboardingProps> = ({ onComple
             >
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-neon-purple to-neon-blue rounded-full mb-4">
-                  <steps[currentStep].icon className="h-8 w-8 text-white" />
+                  {React.createElement(steps[currentStep].icon, { className: "h-8 w-8 text-white" })}
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">
                   {steps[currentStep].title}
