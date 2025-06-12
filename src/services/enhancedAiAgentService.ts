@@ -132,7 +132,10 @@ Respond with enhanced intelligence that anticipates user needs and provides stra
         suggestions: smartSuggestions,
         insights: intelligentInsights,
         workflowGuidance: analysis.workflowGuidance || '',
-        predictiveActions
+        predictiveActions,
+        content: analysis.userResponse, // For backward compatibility
+        functionCalls: analysis.functions || [], // For backward compatibility
+        context: analysis // For backward compatibility
       };
     } catch (error) {
       console.error('Error in intelligent processing:', error);
@@ -319,8 +322,10 @@ Respond with enhanced intelligence that anticipates user needs and provides stra
       contextualHelp += `Productivity score: ${insights.productivityScore}/100. `;
     }
 
+    const userResponse = `I understand you're asking about "${message}". ${contextualHelp}I'm here to provide intelligent assistance with workflow optimization, predictive insights, and strategic guidance. Could you be more specific about what you'd like to accomplish?`;
+
     return {
-      userResponse: `I understand you're asking about "${message}". ${contextualHelp}I'm here to provide intelligent assistance with workflow optimization, predictive insights, and strategic guidance. Could you be more specific about what you'd like to accomplish?`,
+      userResponse,
       functions: [],
       suggestions: smartSuggestionEngine.generateQuickActions({
         userMessage: message,
@@ -331,7 +336,10 @@ Respond with enhanced intelligence that anticipates user needs and provides stra
       }),
       insights,
       workflowGuidance: contextualHelp,
-      predictiveActions: this.generatePredictiveActions(insights, workflowContext)
+      predictiveActions: this.generatePredictiveActions(insights, workflowContext),
+      content: userResponse, // For backward compatibility
+      functionCalls: [], // For backward compatibility
+      context: {} // For backward compatibility
     };
   }
 
