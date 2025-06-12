@@ -82,7 +82,12 @@ class ConversationService {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data;
+      
+      // Type cast the data to ensure proper typing
+      return data.map(msg => ({
+        ...msg,
+        type: msg.type as 'user' | 'agent'
+      }));
     } catch (error: any) {
       console.error('Error fetching messages:', error);
       throw new Error(`Failed to fetch messages: ${error.message}`);
@@ -112,7 +117,12 @@ class ConversationService {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Type cast the returned data
+      return {
+        ...data,
+        type: data.type as 'user' | 'agent'
+      };
     } catch (error: any) {
       console.error('Error saving message:', error);
       throw new Error(`Failed to save message: ${error.message}`);

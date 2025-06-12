@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, FileText, Upload, Plus, Trash2, MessageSquare, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -101,6 +102,10 @@ const AIAssistant = () => {
     if (files && files.length > 0) {
       toast.info('File upload functionality coming soon!');
     }
+  };
+
+  const handleCreateNewConversation = async () => {
+    await createNewConversation();
   };
 
   const quickActions = [
@@ -436,14 +441,13 @@ const AIAssistant = () => {
               <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                 <div className="flex items-center justify-between">
                   <CardTitle>Conversation History</CardTitle>
-                  <Button onClick={createNewConversation} size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600">
+                  <Button onClick={handleCreateNewConversation} size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600">
                     <Plus className="h-4 w-4 mr-2" />
                     New Chat
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                {/* ... keep existing code (conversation history implementation) */}
                 <div className="space-y-4">
                   {conversations.map((conv) => (
                     <div
