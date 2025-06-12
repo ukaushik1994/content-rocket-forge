@@ -29,9 +29,9 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   if (!allowedRoles.includes(userProfile.role)) {
-    // Redirect based on user role
+    // Redirect based on user role to appropriate page
     if (userProfile.role === 'employee') {
-      return <Navigate to="/advocacy" replace />;
+      return <Navigate to="/employee-advocacy" replace />;
     } else if (userProfile.role === 'admin') {
       return <Navigate to="/" replace />;
     }

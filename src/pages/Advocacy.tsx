@@ -18,7 +18,8 @@ const Advocacy = () => {
   if (userProfile?.role === 'employee') {
     return <Navigate to="/employee-advocacy" replace />;
   } else if (userProfile?.role === 'admin') {
-    return <Navigate to="/advocacy" replace />;
+    // Admin users should see the AdminAdvocacy component, not redirect
+    return <Navigate to="/admin-advocacy" replace />;
   }
 
   // If no role is determined, redirect to auth
