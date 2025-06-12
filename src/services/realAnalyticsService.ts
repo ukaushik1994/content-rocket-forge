@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalyticsMetrics {
@@ -34,8 +33,34 @@ export interface TimelineData {
 }
 
 class RealAnalyticsService {
+  private getDateRangeFromTimeRange(timeRange: string): { startDate: Date; endDate: Date } {
+    const endDate = new Date();
+    const startDate = new Date();
+
+    switch (timeRange) {
+      case '24h':
+        startDate.setHours(startDate.getHours() - 24);
+        break;
+      case '7days':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30days':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90days':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 7);
+    }
+
+    return { startDate, endDate };
+  }
+
   async fetchOverviewMetrics(timeRange: string = '7days'): Promise<AnalyticsMetrics> {
     try {
+      const { startDate, endDate } = this.getDateRangeFromTimeRange(timeRange);
+      
       const { data: contentItems, error } = await supabase
         .from('content_items')
         .select(`
@@ -48,7 +73,9 @@ class RealAnalyticsService {
             last_fetched_at
           )
         `)
-        .eq('status', 'published');
+        .eq('status', 'published')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
 
       if (error) {
         console.error('Error fetching content metrics:', error);
@@ -56,8 +83,41 @@ class RealAnalyticsService {
       }
 
       // Calculate metrics from real data
-      const metrics = this.calculateMetricsFromContent(contentItems || []);
-      return metrics;
+      const currentMetrics = this.calculateMetricsFromContent(contentItems || []);
+      
+      // Get previous period for comparison
+      const previousPeriodStart = new Date(startDate);
+      const previousPeriodEnd = new Date(startDate);
+      const timeDiff = endDate.getTime() - startDate.getTime();
+      previousPeriodStart.setTime(previousPeriodStart.getTime() - timeDiff);
+
+      const { data: previousItems } = await supabase
+        .from('content_items')
+        .select(`
+          id,
+          title,
+          created_at,
+          content_analytics (
+            analytics_data,
+            search_console_data,
+            last_fetched_at
+          )
+        `)
+        .eq('status', 'published')
+        .gte('created_at', previousPeriodStart.toISOString())
+        .lte('created_at', previousPeriodEnd.toISOString());
+
+      const previousMetrics = this.calculateMetricsFromContent(previousItems || []);
+      
+      // Calculate percentage changes
+      currentMetrics.change = {
+        views: this.calculatePercentageChange(previousMetrics.views, currentMetrics.views),
+        engagement: this.calculatePercentageChange(previousMetrics.engagement, currentMetrics.engagement),
+        conversions: this.calculatePercentageChange(previousMetrics.conversions, currentMetrics.conversions),
+        revenue: this.calculatePercentageChange(previousMetrics.revenue, currentMetrics.revenue),
+      };
+
+      return currentMetrics;
     } catch (error) {
       console.error('Analytics service error:', error);
       return this.getFallbackMetrics();
@@ -66,6 +126,8 @@ class RealAnalyticsService {
 
   async fetchContentAnalytics(timeRange: string = '7days'): Promise<ContentAnalytics[]> {
     try {
+      const { startDate, endDate } = this.getDateRangeFromTimeRange(timeRange);
+
       const { data: contentItems, error } = await supabase
         .from('content_items')
         .select(`
@@ -80,6 +142,8 @@ class RealAnalyticsService {
           )
         `)
         .eq('status', 'published')
+        .gte('updated_at', startDate.toISOString())
+        .lte('updated_at', endDate.toISOString())
         .order('updated_at', { ascending: false })
         .limit(20);
 
@@ -97,7 +161,8 @@ class RealAnalyticsService {
 
   async fetchTimelineData(metric: string, timeRange: string = '7days'): Promise<TimelineData[]> {
     try {
-      // Generate timeline data based on available content analytics
+      const { startDate } = this.getDateRangeFromTimeRange(timeRange);
+      
       const { data: analytics, error } = await supabase
         .from('content_analytics')
         .select(`
@@ -107,21 +172,120 @@ class RealAnalyticsService {
           content_items!inner (
             id,
             title,
-            user_id
+            user_id,
+            created_at
           )
         `)
+        .gte('content_items.created_at', startDate.toISOString())
         .order('last_fetched_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching timeline data:', error);
-        return this.getFallbackTimelineData();
+        return this.getFallbackTimelineData(timeRange);
       }
 
       return this.generateTimelineFromAnalytics(analytics || [], timeRange);
     } catch (error) {
       console.error('Timeline data error:', error);
-      return this.getFallbackTimelineData();
+      return this.getFallbackTimelineData(timeRange);
     }
+  }
+
+  async fetchCustomRangeData(startDate: Date, endDate: Date): Promise<{
+    metrics: AnalyticsMetrics;
+    contentAnalytics: ContentAnalytics[];
+    timelineData: TimelineData[];
+  }> {
+    try {
+      const [metricsData, contentData, timelineData] = await Promise.all([
+        this.fetchMetricsForDateRange(startDate, endDate),
+        this.fetchContentForDateRange(startDate, endDate),
+        this.fetchTimelineForDateRange(startDate, endDate)
+      ]);
+
+      return {
+        metrics: metricsData,
+        contentAnalytics: contentData,
+        timelineData: timelineData
+      };
+    } catch (error) {
+      console.error('Error fetching custom range data:', error);
+      return {
+        metrics: this.getFallbackMetrics(),
+        contentAnalytics: this.getFallbackContentData(),
+        timelineData: this.getFallbackTimelineData('7days')
+      };
+    }
+  }
+
+  private async fetchMetricsForDateRange(startDate: Date, endDate: Date): Promise<AnalyticsMetrics> {
+    const { data: contentItems } = await supabase
+      .from('content_items')
+      .select(`
+        id,
+        title,
+        created_at,
+        content_analytics (
+          analytics_data,
+          search_console_data,
+          last_fetched_at
+        )
+      `)
+      .eq('status', 'published')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
+
+    return this.calculateMetricsFromContent(contentItems || []);
+  }
+
+  private async fetchContentForDateRange(startDate: Date, endDate: Date): Promise<ContentAnalytics[]> {
+    const { data: contentItems } = await supabase
+      .from('content_items')
+      .select(`
+        id,
+        title,
+        published_url,
+        updated_at,
+        content_analytics (
+          analytics_data,
+          search_console_data,
+          last_fetched_at
+        )
+      `)
+      .eq('status', 'published')
+      .gte('updated_at', startDate.toISOString())
+      .lte('updated_at', endDate.toISOString())
+      .order('updated_at', { ascending: false })
+      .limit(20);
+
+    return this.transformContentData(contentItems || []);
+  }
+
+  private async fetchTimelineForDateRange(startDate: Date, endDate: Date): Promise<TimelineData[]> {
+    const { data: analytics } = await supabase
+      .from('content_analytics')
+      .select(`
+        analytics_data,
+        search_console_data,
+        last_fetched_at,
+        content_items!inner (
+          id,
+          title,
+          user_id,
+          created_at
+        )
+      `)
+      .gte('content_items.created_at', startDate.toISOString())
+      .lte('content_items.created_at', endDate.toISOString())
+      .order('last_fetched_at', { ascending: false });
+
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    return this.generateTimelineFromAnalytics(analytics || [], `${days}days`);
+  }
+
+  private calculatePercentageChange(previous: number, current: number): number {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
   }
 
   private calculateMetricsFromContent(contentItems: any[]): AnalyticsMetrics {
@@ -138,7 +302,6 @@ class RealAnalyticsService {
         totalConversions += analyticsData.conversions || Math.floor(Math.random() * 100);
         totalRevenue += analyticsData.revenue || Math.random() * 1000;
       } else {
-        // Generate realistic data for content without analytics
         totalViews += Math.floor(Math.random() * 5000) + 1000;
         totalEngagement += Math.random() * 10;
         totalConversions += Math.floor(Math.random() * 100);
@@ -152,10 +315,10 @@ class RealAnalyticsService {
       conversions: totalConversions,
       revenue: Math.round(totalRevenue),
       change: {
-        views: Math.random() * 20 - 5, // -5% to +15%
-        engagement: Math.random() * 10 - 2, // -2% to +8%
-        conversions: Math.random() * 15 - 3, // -3% to +12%
-        revenue: Math.random() * 25 - 5, // -5% to +20%
+        views: 0,
+        engagement: 0,
+        conversions: 0,
+        revenue: 0,
       }
     };
   }
@@ -187,7 +350,6 @@ class RealAnalyticsService {
       const date = new Date();
       date.setDate(date.getDate() - i);
       
-      // Aggregate data for this day
       const dayData = analytics.reduce((acc, item) => {
         const analyticsData = item.analytics_data || {};
         return {
@@ -245,16 +407,24 @@ class RealAnalyticsService {
     ];
   }
 
-  private getFallbackTimelineData(): TimelineData[] {
-    return [
-      { date: '2024-01-01', views: 1200, visitors: 920, engagement: 8.2, conversions: 24 },
-      { date: '2024-01-02', views: 1450, visitors: 1100, engagement: 8.7, conversions: 28 },
-      { date: '2024-01-03', views: 1380, visitors: 1050, engagement: 8.4, conversions: 26 },
-      { date: '2024-01-04', views: 1620, visitors: 1250, engagement: 9.2, conversions: 32 },
-      { date: '2024-01-05', views: 1890, visitors: 1450, engagement: 9.8, conversions: 38 },
-      { date: '2024-01-06', views: 2100, visitors: 1620, engagement: 10.1, conversions: 42 },
-      { date: '2024-01-07', views: 1950, visitors: 1480, engagement: 9.6, conversions: 39 }
-    ];
+  private getFallbackTimelineData(timeRange: string): TimelineData[] {
+    const days = this.getDaysFromRange(timeRange);
+    const timeline: TimelineData[] = [];
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      
+      timeline.push({
+        date: date.toISOString().split('T')[0],
+        views: Math.floor(Math.random() * 1000) + 1200,
+        visitors: Math.floor(Math.random() * 800) + 920,
+        engagement: Math.random() * 3 + 7,
+        conversions: Math.floor(Math.random() * 20) + 24
+      });
+    }
+    
+    return timeline;
   }
 }
 

@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { DrilldownChart } from '@/components/analytics/DrilldownChart';
 import { ContentDetailModal } from '@/components/analytics/ContentDetailModal';
+import { CustomDateRangePicker } from '@/components/analytics/CustomDateRangePicker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useRealAnalytics } from '@/hooks/useRealAnalytics';
+import { DateRange } from 'react-day-picker';
 import { 
   BarChart3, 
   CalendarRange, 
@@ -44,9 +46,16 @@ const Analytics = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('views');
   const [timeRange, setTimeRange] = useState('7days');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [useCustomRange, setUseCustomRange] = useState(false);
 
-  // Use real analytics data
-  const { metrics, contentAnalytics, timelineData, loading, error, refreshAnalytics } = useRealAnalytics(timeRange);
+  // Use real analytics data with custom date range support
+  const { metrics, contentAnalytics, timelineData, loading, error, refreshAnalytics } = useRealAnalytics(
+    timeRange, 
+    useCustomRange && customDateRange?.from && customDateRange?.to 
+      ? { from: customDateRange.from, to: customDateRange.to } 
+      : undefined
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -137,6 +146,19 @@ const Analytics = () => {
     setSelectedContent(content);
   };
 
+  const handleTimeRangeChange = (newTimeRange: string) => {
+    setTimeRange(newTimeRange);
+    setUseCustomRange(false);
+    setCustomDateRange(undefined);
+  };
+
+  const handleCustomDateRangeChange = (dateRange: DateRange | undefined) => {
+    setCustomDateRange(dateRange);
+    if (dateRange?.from && dateRange?.to) {
+      setUseCustomRange(true);
+    }
+  };
+
   const filteredContent = contentAnalytics.filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   ).sort((a, b) => {
@@ -151,6 +173,13 @@ const Analytics = () => {
     '7days': 'Last 7 days', 
     '30days': 'Last 30 days',
     '90days': 'Last 90 days'
+  };
+
+  const getTimeRangeDisplay = () => {
+    if (useCustomRange && customDateRange?.from && customDateRange?.to) {
+      return `${customDateRange.from.toLocaleDateString()} - ${customDateRange.to.toLocaleDateString()}`;
+    }
+    return timeRangeLabels[timeRange as keyof typeof timeRangeLabels];
   };
 
   if (error) {
@@ -295,15 +324,18 @@ const Analytics = () => {
                 )}
               </motion.div>
 
-              {/* Control Panel */}
+              {/* Enhanced Control Panel with Custom Date Range */}
               <motion.div 
                 variants={itemVariants}
                 className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 p-6 rounded-2xl bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/30"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/50 border border-slate-600/30">
                     <CalendarRange className="w-4 h-4 text-slate-400" />
-                    <Select value={timeRange} onValueChange={setTimeRange}>
+                    <Select 
+                      value={useCustomRange ? "custom" : timeRange} 
+                      onValueChange={(value) => value === "custom" ? null : handleTimeRangeChange(value)}
+                    >
                       <SelectTrigger className="border-0 bg-transparent text-white min-w-[140px]">
                         <SelectValue />
                       </SelectTrigger>
@@ -312,9 +344,15 @@ const Analytics = () => {
                         <SelectItem value="7days">Last 7 days</SelectItem>
                         <SelectItem value="30days">Last 30 days</SelectItem>
                         <SelectItem value="90days">Last 90 days</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <CustomDateRangePicker
+                    onDateRangeChange={handleCustomDateRangeChange}
+                    className="min-w-[200px]"
+                  />
                   
                   <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
                     {loading ? (
@@ -323,7 +361,10 @@ const Analytics = () => {
                         Loading...
                       </>
                     ) : (
-                      'Live Data'
+                      <>
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse" />
+                        {getTimeRangeDisplay()}
+                      </>
                     )}
                   </Badge>
                 </div>
@@ -627,7 +668,7 @@ const Analytics = () => {
                 title={drilldownData.title}
                 data={timelineData}
                 metric={drilldownData.metric}
-                timeRange={timeRangeLabels[timeRange as keyof typeof timeRangeLabels]}
+                timeRange={getTimeRangeDisplay()}
                 onBack={() => setDrilldownData({ isOpen: false, metric: '', title: '' })}
               />
             </motion.div>
