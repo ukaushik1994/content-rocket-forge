@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, TrendingUp, Users, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BarChart3, TrendingUp, Users, Eye, Bot, Sparkles, MessageSquare, Zap } from 'lucide-react';
 
 const Analytics = () => {
   const pageVariants = {
@@ -98,7 +99,7 @@ const Analytics = () => {
           </Card>
         </motion.div>
 
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="mb-8">
           <Card className="shadow-neon border-0 card-glass">
             <CardHeader>
               <CardTitle className="text-gradient">Analytics Dashboard</CardTitle>
@@ -108,6 +109,81 @@ const Analytics = () => {
                 Detailed analytics features coming soon. This page will show comprehensive 
                 content performance metrics, user engagement data, and conversion tracking.
               </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* New AI Assistant Section */}
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-neon border-0 card-glass overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-neon-purple/10 to-neon-blue/10 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-neon animate-pulse-glow">
+                  <Bot className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-gradient text-xl">AI Analytics Assistant</CardTitle>
+                  <p className="text-sm text-muted-foreground">Get intelligent insights and recommendations</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <Sparkles className="h-5 w-5 text-neon-blue" />
+                    <span className="font-semibold text-gradient">Smart Insights</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Discover hidden patterns in your analytics data with AI-powered analysis
+                  </p>
+                </motion.div>
+
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <TrendingUp className="h-5 w-5 text-neon-purple" />
+                    <span className="font-semibold text-gradient">Trend Predictions</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Get forecasts on content performance and user engagement trends
+                  </p>
+                </motion.div>
+
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <Zap className="h-5 w-5 text-neon-green" />
+                    <span className="font-semibold text-gradient">Auto Recommendations</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Receive personalized suggestions to improve your content strategy
+                  </p>
+                </motion.div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  className="flex-1 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-purple-600 hover:to-blue-600 shadow-neon hover:shadow-neon-strong transition-all"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Chat with AI Assistant
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 glass-panel border-white/20 hover:bg-white/10"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
