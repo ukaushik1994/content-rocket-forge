@@ -9,71 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ai_conversations: {
-        Row: {
-          created_at: string
-          id: string
-          title: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          title?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          title?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      ai_messages: {
-        Row: {
-          attachments: Json | null
-          content: string
-          conversation_id: string
-          created_at: string
-          function_calls: Json | null
-          id: string
-          status: string
-          type: string
-        }
-        Insert: {
-          attachments?: Json | null
-          content: string
-          conversation_id: string
-          created_at?: string
-          function_calls?: Json | null
-          id?: string
-          status?: string
-          type: string
-        }
-        Update: {
-          attachments?: Json | null
-          content?: string
-          conversation_id?: string
-          created_at?: string
-          function_calls?: Json | null
-          id?: string
-          status?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "ai_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       api_keys: {
         Row: {
           created_at: string
@@ -650,35 +585,26 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          company_id: string | null
           created_at: string
-          department: string | null
           first_name: string | null
           id: string
           last_name: string | null
-          role: string
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
-          company_id?: string | null
           created_at?: string
-          department?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
-          role?: string
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
-          company_id?: string | null
           created_at?: string
-          department?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
-          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -801,14 +727,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_role: {
-        Args: { user_id: string }
-        Returns: string
-      }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
       migrate_repurposed_content: {
         Args: Record<PropertyKey, never>
         Returns: undefined

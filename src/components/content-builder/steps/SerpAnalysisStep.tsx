@@ -10,8 +10,6 @@ import { SerpApiDiagnostics } from './serp-analysis/SerpApiDiagnostics';
 import { SerpAnalysisResult } from '@/types/serp';
 import { getApiKey } from '@/services/apiKeyService';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { testSerpApiKeyComprehensive } from '@/utils/apiKeyTestUtils';
-import { toast } from 'sonner';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
@@ -20,11 +18,10 @@ export const SerpAnalysisStep = () => {
   const [showApiSetup, setShowApiSetup] = useState(false);
   const [apiKeySource, setApiKeySource] = useState<'settings' | 'none'>('none');
   const [isCheckingKey, setIsCheckingKey] = useState(true);
-  const [keyTestResult, setKeyTestResult] = useState<any>(null);
   
-  // Check if API key exists and test it
+  // Check if API key exists using the unified service
   useEffect(() => {
-    const checkAndTestApiKey = async () => {
+    const checkApiKey = async () => {
       try {
         setIsCheckingKey(true);
         console.log('🔑 Checking for SERP API key...');
@@ -32,27 +29,9 @@ export const SerpAnalysisStep = () => {
         // Check unified API key service
         const settingsApiKey = await getApiKey('serp');
         if (settingsApiKey) {
-          console.log('✅ SERP API key found in settings, testing functionality...');
+          console.log('✅ SERP API key found in settings');
           setApiKeyExists(true);
           setApiKeySource('settings');
-          
-          // Test the API key functionality
-          try {
-            const testResult = await testSerpApiKeyComprehensive(settingsApiKey);
-            setKeyTestResult(testResult);
-            
-            if (testResult.edgeFunction.success) {
-              console.log('✅ API key test successful');
-              toast.success('SERP API key is working correctly');
-            } else {
-              console.warn('⚠️ API key test failed:', testResult.edgeFunction.error);
-              toast.warning(`API key issue: ${testResult.edgeFunction.error}`);
-            }
-          } catch (testError) {
-            console.error('❌ Error testing API key:', testError);
-            toast.error('Failed to test API key functionality');
-          }
-          
           return;
         }
         
@@ -75,7 +54,7 @@ export const SerpAnalysisStep = () => {
       setShowApiSetup(true);
     }
     
-    checkAndTestApiKey();
+    checkApiKey();
   }, []);
   
   // Get selection statistics
@@ -84,19 +63,13 @@ export const SerpAnalysisStep = () => {
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
-      console.log('🔄 Reanalyzing keyword:', mainKeyword);
       await analyzeKeyword(mainKeyword);
     }
   };
   
   // Handle continuing with selected items
   const handleContinueWithSelections = () => {
-    if (totalSelected === 0) {
-      toast.warning('Please select at least one item before continuing');
-      return;
-    }
-    
-    console.log('✅ Continuing with', totalSelected, 'selected items');
+    if (totalSelected === 0) return;
     
     // Mark the step as completed
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
@@ -120,33 +93,21 @@ export const SerpAnalysisStep = () => {
   
   // Handle SERP data changes from the panel component
   const handleSerpDataChange = (data: SerpAnalysisResult | null) => {
-    if (data) {
-      console.log('📊 Updating SERP data:', {
-        isMockData: data.isMockData,
-        itemCounts: {
-          keywords: data.keywords?.length || 0,
-          headings: data.headings?.length || 0,
-          questions: data.peopleAlsoAsk?.length || 0,
-          entities: data.entities?.length || 0
-        }
-      });
+    if (data && !serpData) {
       dispatch({ type: 'SET_SERP_DATA', payload: data });
     }
   };
   
-  // Loading state
+  // If API setup is explicitly requested or no API key exists and no data is available
   if (isCheckingKey) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-muted-foreground">Checking API configuration...</p>
-        </div>
+        <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
       </div>
     );
   }
   
-  // Show API setup if explicitly requested or if no key exists and no data is available
+  // If API setup is explicitly requested or no API key exists and no data is available
   if ((showApiSetup || (!apiKeyExists && !serpData)) && !isAnalyzing) {
     return (
       <div className="space-y-6">
@@ -154,9 +115,7 @@ export const SerpAnalysisStep = () => {
           <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
           <p className="text-muted-foreground">
             {apiKeySource === 'settings' 
-              ? keyTestResult?.edgeFunction.success 
-                ? 'Your API key is working correctly'
-                : 'Your API key needs attention'
+              ? 'Using API key from settings'
               : 'To see real search data, you need to add your SERP API key'}
           </p>
         </div>
@@ -222,8 +181,8 @@ export const SerpAnalysisStep = () => {
               handleToggleSelection={handleToggleSelection}
             />
             
-            {/* Show diagnostics when there are issues */}
-            {(!apiKeyExists || serpData?.isMockData || keyTestResult?.edgeFunction.success === false) && (
+            {/* Add diagnostics panel for debugging when using mock data */}
+            {(!apiKeyExists || serpData?.isMockData) && (
               <SerpApiDiagnostics />
             )}
           </div>

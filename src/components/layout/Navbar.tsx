@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings, Bot } from 'lucide-react';
+import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -31,12 +30,6 @@ const Navbar = () => {
     } catch (error) {
       console.error('Sign out error:', error);
     }
-  };
-
-  const handleAIAssistantClick = () => {
-    console.log('🤖 Navbar: AI Assistant button clicked - navigating to page');
-    navigate('/ai-assistant');
-    toast.info('Opening AI Assistant...');
   };
   
   const userFullName = user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}` : user?.email || 'User';
@@ -69,18 +62,7 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* AI Assistant button - now navigates to page */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full overflow-hidden border border-border bg-primary/10 hover:bg-primary/20 transition-all duration-200 hover:scale-105"
-            onClick={handleAIAssistantClick}
-            title="AI Assistant"
-          >
-            <Bot className="h-4 w-4 text-primary" />
-          </Button>
-
-          {/* Settings button */}
+          {/* Settings button as icon */}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -91,7 +73,18 @@ const Navbar = () => {
             <Settings className="h-4 w-4" />
           </Button>
 
-          {/* User profile dropdown */}
+          {/* Feedback button as icon */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full overflow-hidden border border-border"
+            onClick={() => document.dispatchEvent(new CustomEvent('open-feedback'))}
+            title="Feedback"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+          </Button>
+
+          {/* User profile dropdown - keeping as is */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full overflow-hidden border border-border">
@@ -140,23 +133,11 @@ const Navbar = () => {
             <nav className="flex flex-col space-y-4">
               <NavItems />
               
-              {/* Mobile menu buttons */}
+              {/* Mobile menu buttons - keep text versions for better usability on mobile */}
               <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1 items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20" 
-                  onClick={() => {
-                    console.log('🤖 Mobile: AI Assistant button clicked');
-                    handleAIAssistantClick();
-                    setShowMobileMenu(false);
-                  }}
-                >
-                  <Bot className="h-4 w-4 text-primary" />
-                  AI Assistant
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1 items-center justify-center gap-2"
+                  className="flex-1 items-center justify-center gap-2" 
                   onClick={() => {
                     navigate('/settings');
                     setShowMobileMenu(false);
@@ -165,19 +146,18 @@ const Navbar = () => {
                   <Settings className="h-4 w-4" />
                   Settings
                 </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 items-center justify-center gap-2"
+                  onClick={() => {
+                    document.dispatchEvent(new CustomEvent('open-feedback'));
+                    setShowMobileMenu(false);
+                  }}
+                >
+                  <MessageSquarePlus className="h-4 w-4" />
+                  Feedback
+                </Button>
               </div>
-              
-              <Button 
-                variant="outline" 
-                className="flex items-center justify-center gap-2"
-                onClick={() => {
-                  document.dispatchEvent(new CustomEvent('open-feedback'));
-                  setShowMobileMenu(false);
-                }}
-              >
-                <MessageSquarePlus className="h-4 w-4" />
-                Feedback
-              </Button>
               
               <Button variant="ghost" className="flex items-center justify-start gap-3 px-4 py-2 w-full rounded-md hover:bg-accent/50" onClick={handleSignOut}>
                 <LogOut className="h-5 w-5" />

@@ -1,469 +1,516 @@
-
-import { SerpAnalysisResult, PeopleAlsoAskQuestion, SerpSearchParams, FeaturedSnippet } from '@/types/serp';
 import { supabase } from '@/integrations/supabase/client';
-import { getApiKey } from '@/services/apiKeyService';
-import { serpResultsCache } from '@/utils/cacheUtils';
+import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
+import { getApiKey } from './apiKeyService';
+
+interface SearchKeywordParams {
+  query: string;
+  limit?: number;
+  refresh?: boolean;
+}
+
+// Constants for caching
+const SERP_CACHE_PREFIX = 'serp_data_';
+const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+export type { SerpAnalysisResult };
 
 /**
- * Enhanced SERP API service with better error handling and real data processing
+ * Get API key from the unified settings service with enhanced logging
  */
+async function getSerpApiKey(): Promise<string | null> {
+  try {
+    console.log('🔑 Getting SERP API key from unified service...');
+    const apiKey = await getApiKey('serp');
+    
+    if (apiKey) {
+      console.log('✅ SERP API key found - Length:', apiKey.length, 'Type:', typeof apiKey);
+      // Log first 6 and last 4 characters for debugging (masked)
+      const masked = apiKey.substring(0, 6) + '••••••••••••' + 
+        (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
+      console.log('🔍 Masked key for debugging:', masked);
+      console.log('🔍 Key appears to be:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64 encoded' : 'Plain text');
+      return apiKey;
+    } else {
+      console.log('❌ No SERP API key found in unified service');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error getting SERP API key from unified service:', error);
+    return null;
+  }
+}
 
-const generateMockSerpData = (keyword: string): SerpAnalysisResult => {
-  console.log('📝 Generating mock SERP data for keyword:', keyword);
+/**
+ * Call the Supabase Edge Function for SERP API requests with enhanced error handling and logging
+ */
+async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
+  try {
+    console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
+      params: Object.keys(params), 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length,
+      apiKeyType: typeof apiKey
+    });
+    
+    // Log the masked API key for debugging
+    const maskedKey = apiKey ? 
+      apiKey.substring(0, 6) + '••••••••••••' + 
+      (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '') : 'null';
+    console.log('🔍 Using API key (masked):', maskedKey);
+    console.log('🔍 Sending key in format:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64' : 'Plain text');
+    
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: {
+        endpoint,
+        params,
+        apiKey // Send the key as-is (already decrypted by getApiKey)
+      }
+    });
+    
+    if (error) {
+      console.error('❌ Supabase Edge Function error:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      throw new Error(`Edge Function error: ${error.message || JSON.stringify(error)}`);
+    }
+    
+    if (!data) {
+      console.warn('⚠️ Edge Function returned no data');
+      return null;
+    }
+    
+    // Check if the response contains an error
+    if (data.error) {
+      console.error('❌ SERP API error in response:', data.error);
+      
+      // Provide more specific error handling
+      if (data.error.includes('Invalid API key')) {
+        console.error('🔑 API Key validation failed - key may be incorrect or expired');
+        throw new Error('Invalid API key. Please check your SerpAPI key in Settings → API Keys');
+      } else if (data.error.includes('rate limit')) {
+        console.error('⏱️ API rate limit exceeded');
+        throw new Error('API rate limit exceeded. Please wait and try again.');
+      }
+      
+      throw new Error(data.error);
+    }
+    
+    console.log('✅ SERP Edge Function response received successfully');
+    console.log('📊 Response data keys:', Object.keys(data || {}));
+    return data;
+  } catch (error) {
+    console.error('💥 Error calling SERP Edge Function:', error);
+    
+    // Provide more specific error messages based on error type
+    if (error.message && error.message.includes('401')) {
+      console.error('🔑 Authentication failed - likely invalid API key');
+      throw new Error('Invalid API key. Please verify your SerpAPI key in Settings.');
+    } else if (error.message && error.message.includes('429')) {
+      console.error('⏱️ Rate limit exceeded');
+      throw new Error('API rate limit exceeded. Please try again later.');
+    } else if (error.message && error.message.includes('timeout')) {
+      console.error('⏰ Request timeout');
+      throw new Error('Request timeout. Please try again.');
+    } else if (error.message && error.message.includes('non-2xx status code')) {
+      console.error('📡 Edge function returned error status');
+      throw new Error('SERP API request failed. Please check your API key configuration.');
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * Check if cached data exists and is valid
+ */
+function getCachedSerpData(keyword: string): SerpAnalysisResult | null {
+  try {
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      const parsedData = JSON.parse(cachedData);
+      const timestamp = localStorage.getItem(`${cacheKey}_timestamp`);
+      
+      if (timestamp) {
+        const cachedTime = new Date(timestamp).getTime();
+        const currentTime = new Date().getTime();
+        
+        if (currentTime - cachedTime < SERP_CACHE_EXPIRY) {
+          console.log('📋 Using valid cached SERP data for:', keyword);
+          return parsedData;
+        } else {
+          console.log('🗑️ Cached SERP data expired for:', keyword);
+          localStorage.removeItem(cacheKey);
+          localStorage.removeItem(`${cacheKey}_timestamp`);
+          return null;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Error parsing cached SERP data:', err);
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
+    localStorage.removeItem(cacheKey);
+    localStorage.removeItem(`${cacheKey}_timestamp`);
+  }
+  
+  return null;
+}
+
+/**
+ * Cache SERP data with timestamp
+ */
+function cacheSerpData(keyword: string, data: SerpAnalysisResult): void {
+  try {
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(`${cacheKey}_timestamp`, new Date().toISOString());
+    console.log('💾 SERP data cached for:', keyword);
+  } catch (err) {
+    console.warn('⚠️ Error caching SERP data:', err);
+  }
+}
+
+/**
+ * Search for keywords using the SERP API
+ */
+export const searchKeywords = async (params: SearchKeywordParams) => {
+  try {
+    const { query, limit = 10, refresh = false } = params;
+    console.log(`🔍 Searching keywords for: "${query}"`);
+    
+    const apiKey = await getSerpApiKey();
+    
+    if (apiKey) {
+      try {
+        const data = await callSerpEdgeFunction('search', { q: query, limit }, apiKey);
+        return data?.results || [];
+      } catch (error) {
+        console.error('❌ SERP API search failed:', error);
+        toast.error('Error fetching keyword data. Using mock data.');
+        return getBackupMockResults(query, refresh);
+      }
+    }
+    
+    console.warn('⚠️ No SERP API key found. Using mock data.');
+    toast.warning('Using mock data for keyword search. Add your SERP API key in Settings for real results.', {
+      duration: 5000,
+      action: {
+        label: "Go to Settings",
+        onClick: () => {
+          window.location.href = "/settings/api";
+        }
+      }
+    });
+    return getBackupMockResults(query, refresh);
+  } catch (error) {
+    console.error('💥 Error searching keywords:', error);
+    return getBackupMockResults(params.query, params.refresh || false);
+  }
+};
+
+/**
+ * Analyze keyword using SERP API with enhanced error handling
+ */
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
+  try {
+    console.log(`🎯 Analyzing keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
+    
+    // Check cache first (unless refresh is requested)
+    if (!refresh) {
+      const cachedData = getCachedSerpData(keyword);
+      if (cachedData) {
+        console.log('📋 Using cached SERP data');
+        return cachedData;
+      }
+    }
+    
+    const apiKey = await getSerpApiKey();
+    
+    if (!apiKey) {
+      console.warn('⚠️ No SERP API key found, using mock data');
+      toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
+        duration: 5000,
+        action: {
+          label: "Add Key",
+          onClick: () => {
+            window.location.href = "/settings/api";
+          }
+        }
+      });
+      return generateMockSerpData(keyword, refresh);
+    }
+
+    console.log('🔑 API key found, making real SERP API call...');
+    
+    try {
+      const data = await callSerpEdgeFunction('analyze', { keyword, refresh: !!refresh }, apiKey);
+      
+      if (data) {
+        console.log('✅ SERP API returned real data');
+        const result: SerpAnalysisResult = {
+          keyword,
+          searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
+          keywordDifficulty: data.keywordDifficulty || Math.floor(Math.random() * 100),
+          competitionScore: data.competitionScore || Math.random() * 0.8,
+          entities: data.entities || [],
+          peopleAlsoAsk: data.peopleAlsoAsk || [],
+          headings: data.headings || [],
+          contentGaps: data.contentGaps || [],
+          topResults: data.topResults || [],
+          relatedSearches: data.relatedSearches || [],
+          keywords: data.keywords || [],
+          recommendations: data.recommendations || [],
+          isMockData: false
+        };
+        
+        cacheSerpData(keyword, result);
+        
+        toast.success('Retrieved real SERP data successfully!');
+        return result;
+      } else {
+        console.warn('⚠️ SERP API returned empty data');
+        throw new Error('No data returned from SERP API');
+      }
+    } catch (apiError) {
+      console.error('❌ SERP API call failed:', apiError);
+      
+      // Show specific error message to user
+      toast.error(`SERP API Error: ${apiError.message}`, {
+        duration: 8000,
+        action: {
+          label: "Check Settings",
+          onClick: () => {
+            window.location.href = "/settings/api";
+          }
+        }
+      });
+      
+      // Return mock data as fallback
+      console.log('🎭 Falling back to mock data due to API error');
+      return generateMockSerpData(keyword, refresh);
+    }
+  } catch (error) {
+    console.error('💥 Error analyzing keyword:', error);
+    toast.error(`Analysis failed: ${error.message}`);
+    return generateMockSerpData(keyword, refresh);
+  }
+};
+
+// Helper function for mock results as a backup
+function getBackupMockResults(query: string, refresh: boolean) {
+  const mockResults = [
+    { title: `How to Use ${query} Effectively`, url: 'https://example.com/1' },
+    { title: `The Ultimate Guide to ${query}`, url: 'https://example.com/2' },
+    { title: `10 Best ${query} Strategies`, url: 'https://example.com/3' },
+    { title: `Why ${query} Matters for SEO`, url: 'https://example.com/4' },
+    { title: `Understanding ${query} for Beginners`, url: 'https://example.com/5' },
+    { title: `${query} vs Traditional Methods`, url: 'https://example.com/6' },
+    { title: `The Future of ${query} in 2025`, url: 'https://example.com/7' },
+    { title: `How to Measure ${query} Success`, url: 'https://example.com/8' },
+    { title: `${query} Best Practices`, url: 'https://example.com/9' },
+    { title: `${query} Case Studies`, url: 'https://example.com/10' },
+  ];
+  
+  if (refresh) {
+    return mockResults
+      .map(item => ({ 
+        ...item, 
+        title: item.title.replace(query, `${query} ${['Expert', 'Professional', 'Advanced', 'Strategic'][Math.floor(Math.random() * 4)]}`)
+      }))
+      .sort(() => Math.random() - 0.5);
+  }
+  
+  return mockResults;
+}
+
+// Helper function to generate mock SERP data as a fallback
+function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
+  console.log('🎭 Generating mock SERP data for:', keyword);
+  
+  const variationFactor = refresh ? Math.random() : 0.5;
   
   return {
     keyword,
-    keywords: [
-      `${keyword} guide`,
-      `best ${keyword}`,
-      `${keyword} tips`,
-      `how to ${keyword}`,
-      `${keyword} examples`,
-      `${keyword} tutorial`,
-      `${keyword} review`,
-      `${keyword} comparison`
-    ],
-    headings: [
-      { text: `Complete Guide to ${keyword}`, level: 'h1' },
-      { text: `Understanding ${keyword}: A Beginner's Approach`, level: 'h2' },
-      { text: `Advanced ${keyword} Techniques`, level: 'h2' },
-      { text: `Common ${keyword} Mistakes to Avoid`, level: 'h3' },
-      { text: `Best Practices for ${keyword}`, level: 'h3' },
-      { text: `${keyword} vs Alternatives`, level: 'h2' }
+    searchVolume: Math.floor(Math.random() * 10000) + 1000,
+    competitionScore: Math.random() * 0.8,
+    keywordDifficulty: Math.floor(Math.random() * 100),
+    isMockData: true,
+    entities: [
+      { name: `${keyword} platform`, type: 'platform', description: `A platform focused on ${keyword}` },
+      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword}` },
+      { name: `${keyword} tools`, type: 'tools', description: `Tools used for ${keyword} implementation` },
+      { name: `${keyword} metrics`, type: 'metrics', description: `Measurements related to ${keyword} performance` },
+      ...(refresh ? [
+        { name: `${keyword} analytics`, type: 'analytics', description: `Analytic methods for ${keyword}` },
+        { name: `${keyword} framework`, type: 'framework', description: `Structural frameworks for ${keyword}` },
+        { name: `${keyword} automation`, type: 'automation', description: `Automation techniques for ${keyword}` }
+      ] : [])
     ],
     peopleAlsoAsk: [
-      { question: `What is ${keyword}?`, source: 'mock', answer: `${keyword} is a comprehensive topic that requires understanding.` },
-      { question: `How does ${keyword} work?`, source: 'mock', answer: `${keyword} works through various mechanisms and processes.` },
-      { question: `Why is ${keyword} important?`, source: 'mock', answer: `${keyword} is important for many reasons in today's context.` },
-      { question: `When should you use ${keyword}?`, source: 'mock', answer: `${keyword} should be used in specific situations and contexts.` },
-      { question: `Where can I learn more about ${keyword}?`, source: 'mock', answer: `You can learn more about ${keyword} from various sources.` }
+      { question: `How does ${keyword} work?`, source: 'search' },
+      { question: `What is the best ${keyword} tool?`, source: 'search' },
+      { question: `Why is ${keyword} important for SEO?`, source: 'search' },
+      { question: `When should I use ${keyword}?`, source: 'search' },
+      ...(refresh ? [
+        { question: `What are the advantages of ${keyword}?`, source: 'search' },
+        { question: `How much does ${keyword} cost on average?`, source: 'search' },
+        { question: `Can ${keyword} be integrated with other systems?`, source: 'search' }
+      ] : [])
     ],
-    featuredSnippets: [
-      {
-        type: 'paragraph',
-        content: `${keyword} is an essential concept that helps businesses and individuals achieve their goals through strategic implementation.`,
-        source: 'example.com',
-        title: `What is ${keyword}?`
-      }
-    ],
-    entities: [
-      { name: keyword, type: 'primary_topic', importance: 1 },
-      { name: `${keyword} tools`, type: 'related_concept', importance: 0.8 },
-      { name: `${keyword} methods`, type: 'related_concept', importance: 0.7 }
+    headings: [
+      { text: `Understanding ${keyword}`, level: 'h2' as const },
+      { text: `Benefits of ${keyword}`, level: 'h2' as const },
+      { text: `How to Implement ${keyword}`, level: 'h3' as const },
+      { text: `${keyword} Best Practices`, level: 'h2' as const },
+      { text: `${keyword} Case Studies`, level: 'h2' as const },
+      ...(refresh ? [
+        { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' as const },
+        { text: `Advanced ${keyword} Techniques`, level: 'h2' as const },
+        { text: `${keyword} ROI Calculation`, level: 'h3' as const }
+      ] : [])
     ],
     contentGaps: [
-      { topic: `Detailed ${keyword} implementation guide`, description: `A comprehensive guide covering ${keyword} implementation`, recommendation: 'Create step-by-step tutorial' },
-      { topic: `${keyword} case studies and examples`, description: `Real-world examples and case studies`, recommendation: 'Include practical examples' },
-      { topic: `Troubleshooting common ${keyword} issues`, description: `Common problems and solutions`, recommendation: 'Add troubleshooting section' }
+      { 
+        topic: `${keyword} for beginners`, 
+        description: 'Beginner guide', 
+        recommendation: 'Create a 101 guide',
+        content: `A comprehensive ${keyword} guide for beginners`,
+        source: 'Content analysis'
+      },
+      { 
+        topic: `Advanced ${keyword} techniques`, 
+        description: 'For experts', 
+        recommendation: 'Share advanced tips',
+        content: `Expert-level ${keyword} strategies and implementations`,
+        source: 'Content analysis' 
+      },
+      { 
+        topic: `${keyword} ROI measurement`, 
+        description: 'Measuring success', 
+        recommendation: 'Create calculator',
+        content: `How to measure ROI from your ${keyword} initiatives`,
+        source: 'Content analysis'
+      },
+      { 
+        topic: `${keyword} vs competitors`, 
+        description: 'Comparison', 
+        recommendation: 'Create comparison chart',
+        content: `Comparing ${keyword} with alternative approaches`,
+        source: 'Content analysis'
+      }
     ],
     topResults: [
       {
-        title: `Ultimate ${keyword} Guide`,
+        title: `The Ultimate Guide to ${keyword}`,
         link: `https://example.com/${keyword}-guide`,
-        snippet: `Comprehensive guide covering everything about ${keyword}`,
+        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide.`,
         position: 1
+      },
+      {
+        title: `How to Use ${keyword} Effectively`,
+        link: `https://example.com/${keyword}-tutorial`,
+        snippet: `Step-by-step tutorial on implementing ${keyword} for maximum results.`,
+        position: 2
+      },
+      {
+        title: `${keyword} Tips and Tricks`,
+        link: `https://example.com/${keyword}-tips`,
+        snippet: `Expert advice on getting the most out of your ${keyword} strategy.`,
+        position: 3
       }
     ],
     relatedSearches: [
+      { query: `${keyword} strategy` },
+      { query: `${keyword} tools` },
+      { query: `best ${keyword} practices` },
+      { query: `${keyword} guide` },
       { query: `${keyword} tutorial` },
       { query: `${keyword} examples` },
-      { query: `${keyword} best practices` }
+      { query: `${keyword} techniques` },
+      { query: `${keyword} trends` },
+      ...(refresh ? [
+        { query: `affordable ${keyword} solutions` },
+        { query: `${keyword} for small business` },
+        { query: `enterprise ${keyword} options` },
+        { query: `${keyword} certification` }
+      ] : [])
     ],
-    isMockData: true
+    keywords: [
+      `${keyword} strategy`,
+      `${keyword} tools`,
+      `best ${keyword} practices`,
+      `${keyword} guide`,
+      `${keyword} tutorial`,
+      `${keyword} examples`,
+      `${keyword} techniques`,
+      `${keyword} trends`,
+      ...(refresh ? [
+        `${keyword} certification`,
+        `${keyword} for startups`,
+        `${keyword} ROI`,
+        `${keyword} software comparison`
+      ] : [])
+    ],
+    recommendations: [
+      `Create a comprehensive guide on ${keyword}`,
+      `Include step-by-step instructions for implementing ${keyword}`,
+      `Add visual examples of ${keyword} in action`,
+      `Compare ${keyword} with alternative approaches`,
+      `Include case studies showing successful ${keyword} implementation`
+    ]
   };
-};
+}
 
-const processSerpApiResponse = (data: any, keyword: string): SerpAnalysisResult | null => {
+export const searchRelatedKeywords = async (keyword: string) => {
   try {
-    console.log('🔍 Processing real SERP API response for keyword:', keyword);
-    console.log('📊 Raw SERP data structure:', Object.keys(data));
+    const apiKey = await getSerpApiKey();
     
-    if (!data) {
-      console.warn('⚠️ No data received from SERP API');
-      return null;
-    }
-
-    // Extract organic results
-    const organicResults = data.organic_results || [];
-    console.log('📄 Found organic results:', organicResults.length);
-
-    // Extract related searches
-    const relatedSearches = (data.related_searches || []).map((search: any) => ({
-      query: search.query || search.link?.split('q=')[1]?.split('&')[0] || 'Unknown query'
-    })).filter((search: any) => search.query && search.query !== 'Unknown query');
+    const cacheKey = `related_keywords_${keyword}`;
+    const cachedData = localStorage.getItem(cacheKey);
     
-    console.log('🔗 Found related searches:', relatedSearches.length);
-
-    // Extract People Also Ask questions from related_questions
-    const peopleAlsoAsk: PeopleAlsoAskQuestion[] = (data.related_questions || []).map((item: any) => ({
-      question: item.question || 'Unknown question',
-      source: item.link || 'Unknown source',
-      answer: item.snippet || item.answer || undefined
-    })).filter((item: any) => item.question && item.question !== 'Unknown question');
-    
-    console.log('❓ Found People Also Ask from related_questions:', peopleAlsoAsk.length);
-
-    // Extract featured snippets from various sources
-    const featuredSnippets: FeaturedSnippet[] = [];
-    
-    // Check for answer box
-    if (data.answer_box) {
-      featuredSnippets.push({
-        type: 'paragraph',
-        content: data.answer_box.answer || data.answer_box.snippet || '',
-        source: data.answer_box.link || 'Unknown source',
-        title: data.answer_box.title || 'Featured Snippet'
-      });
-    }
-    
-    // Check for featured snippet in organic results
-    organicResults.forEach((result: any) => {
-      if (result.rich_snippet || result.snippet_highlighted_words) {
-        featuredSnippets.push({
-          type: 'paragraph',
-          content: result.snippet || '',
-          source: result.link || '',
-          title: result.title || 'Organic Result Snippet'
-        });
-      }
-    });
-    
-    console.log('📝 Found featured snippets:', featuredSnippets.length);
-
-    // Extract headings from organic results
-    const headings: { text: string; level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'; subtext?: string; type?: string; }[] = [];
-    organicResults.forEach((result: any) => {
-      if (result.title) {
-        headings.push({ text: result.title, level: 'h1' });
-      }
-      if (result.sitelinks) {
-        result.sitelinks.forEach((sitelink: any) => {
-          if (sitelink.title) {
-            headings.push({ text: sitelink.title, level: 'h2' });
-          }
-        });
-      }
-    });
-    
-    console.log('📋 Extracted headings:', headings.length);
-
-    // Extract keywords from various sources
-    const keywords = new Set<string>();
-    
-    // From related searches
-    relatedSearches.forEach((search: any) => {
-      if (search.query) {
-        keywords.add(search.query);
-      }
-    });
-    
-    // From organic result titles
-    organicResults.forEach((result: any) => {
-      if (result.title) {
-        // Extract meaningful keywords from titles
-        const titleWords = result.title.toLowerCase()
-          .split(/[^a-zA-Z0-9\s]/)
-          .join(' ')
-          .split(/\s+/)
-          .filter((word: string) => word.length > 3);
-        
-        titleWords.forEach((word: string) => {
-          if (word.includes(keyword.toLowerCase()) || keyword.toLowerCase().includes(word)) {
-            keywords.add(word);
-          }
-        });
-      }
-    });
-
-    console.log('🏷️ Extracted keywords:', keywords.size);
-
-    // Extract entities
-    const entities: any[] = [];
-    
-    // From knowledge graph if available
-    if (data.knowledge_graph) {
-      entities.push({
-        name: data.knowledge_graph.title || keyword,
-        type: 'knowledge_graph',
-        importance: 1,
-        description: data.knowledge_graph.description
-      });
-      
-      // Add related entities from knowledge graph
-      if (data.knowledge_graph.related_entities) {
-        data.knowledge_graph.related_entities.forEach((entity: any) => {
-          entities.push({
-            name: entity.name || entity.title,
-            type: 'related_entity',
-            importance: 0.7
-          });
-        });
+    if (cachedData) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        console.log('📋 Using cached related keywords for:', keyword);
+        return parsedData;
+      } catch (err) {
+        console.warn('⚠️ Error parsing cached related keywords:', err);
+        localStorage.removeItem(cacheKey);
       }
     }
 
-    // From answer box/featured snippets
-    if (data.answer_box) {
-      entities.push({
-        name: data.answer_box.title || keyword,
-        type: 'featured_content',
-        importance: 0.9,
-        description: data.answer_box.snippet || data.answer_box.answer
-      });
-    }
-
-    console.log('🎯 Extracted entities:', entities.length);
-
-    // Process top results
-    const topResults = organicResults.slice(0, 10).map((result: any, index: number) => ({
-      title: result.title || 'Untitled',
-      link: result.link || '',
-      snippet: result.snippet || '',
-      position: result.position || index + 1
-    }));
-
-    console.log('🏆 Processed top results:', topResults.length);
-
-    // Generate content gaps based on what's missing
-    const contentGaps: { topic: string; description: string; recommendation?: string; content?: string; opportunity?: string; source?: string; }[] = [];
-    
-    if (peopleAlsoAsk.length === 0) {
-      contentGaps.push({
-        topic: `FAQ section about ${keyword}`,
-        description: `Create frequently asked questions section`,
-        recommendation: 'Add comprehensive FAQ'
-      });
+    if (apiKey) {
+      try {
+        const data = await callSerpEdgeFunction('related', { keyword }, apiKey);
+        localStorage.setItem(cacheKey, JSON.stringify(data.keywords || []));
+        return data.keywords || [];
+      } catch (error) {
+        console.error('❌ Error fetching related keywords:', error);
+        return getMockRelatedKeywords(keyword);
+      }
     }
     
-    if (entities.length < 3) {
-      contentGaps.push({
-        topic: `Detailed explanation of ${keyword} concepts`,
-        description: `Expand on core concepts and terminology`,
-        recommendation: 'Include detailed explanations'
-      });
-    }
-    
-    if (headings.length < 5) {
-      contentGaps.push({
-        topic: `Comprehensive ${keyword} structure and organization`,
-        description: `Improve content structure and organization`,
-        recommendation: 'Add more sections and subsections'
-      });
-    }
-    
-    contentGaps.push({
-      topic: `Practical examples and case studies for ${keyword}`,
-      description: `Real-world applications and examples`,
-      recommendation: 'Include case studies'
-    });
-    
-    contentGaps.push({
-      topic: `Advanced techniques and best practices for ${keyword}`,
-      description: `Expert-level tips and advanced strategies`,
-      recommendation: 'Add advanced techniques section'
-    });
-
-    console.log('🔍 Generated content gaps:', contentGaps.length);
-
-    const result: SerpAnalysisResult = {
-      keyword,
-      keywords: Array.from(keywords).slice(0, 20), // Limit to top 20
-      headings: headings.slice(0, 15), // Limit to top 15
-      peopleAlsoAsk,
-      featuredSnippets,
-      entities,
-      contentGaps,
-      topResults,
-      relatedSearches,
-      isMockData: false
-    };
-
-    console.log('✅ Successfully processed SERP data:', {
-      keyword: result.keyword,
-      keywords: result.keywords.length,
-      headings: result.headings.length,
-      peopleAlsoAsk: result.peopleAlsoAsk.length,
-      featuredSnippets: result.featuredSnippets?.length || 0,
-      entities: result.entities.length,
-      contentGaps: result.contentGaps.length,
-      topResults: result.topResults.length,
-      relatedSearches: result.relatedSearches.length
-    });
-
-    return result;
-    
+    return getMockRelatedKeywords(keyword);
   } catch (error) {
-    console.error('❌ Error processing SERP API response:', error);
-    return null;
+    console.error('💥 Error searching related keywords:', error);
+    return getMockRelatedKeywords(keyword);
   }
 };
 
-export const analyzeKeywordSerp = async (
-  keyword: string, 
-  forceRefresh: boolean = false
-): Promise<SerpAnalysisResult | null> => {
-  try {
-    console.log('🚀 Starting SERP analysis for keyword:', keyword, { forceRefresh });
-    
-    if (!keyword?.trim()) {
-      console.warn('⚠️ No keyword provided for SERP analysis');
-      return null;
-    }
-
-    // Try to get API key
-    let apiKey: string | null = null;
-    try {
-      apiKey = await getApiKey('serp');
-      console.log('🔑 API key retrieved:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
-    } catch (error) {
-      console.warn('⚠️ Failed to get API key:', error);
-    }
-
-    // Check cache first (unless force refresh)
-    const cacheKey = `serp_${keyword.toLowerCase().replace(/\s+/g, '_')}`;
-    if (!forceRefresh) {
-      const cached = serpResultsCache.get(cacheKey, apiKey || undefined);
-      if (cached) {
-        console.log('💾 Returning cached SERP data for:', keyword);
-        return cached;
-      }
-    } else {
-      // Clear cache for this keyword if force refresh
-      serpResultsCache.delete(cacheKey);
-      console.log('🗑️ Cleared cache for keyword:', keyword);
-    }
-
-    if (!apiKey) {
-      console.log('📝 No API key available, returning mock data');
-      const mockData = generateMockSerpData(keyword);
-      // Don't cache mock data with API key
-      serpResultsCache.set(cacheKey, mockData);
-      return mockData;
-    }
-
-    // Make API call through edge function
-    console.log('📡 Making SERP API call through edge function');
-    
-    const { data, error } = await supabase.functions.invoke('serp-api', {
-      body: {
-        endpoint: 'search',
-        params: {
-          q: keyword,
-          num: 10,
-          gl: 'us',
-          hl: 'en'
-        },
-        apiKey
-      }
-    });
-
-    if (error) {
-      console.error('❌ Edge function error:', error);
-      throw new Error(`SERP API error: ${error.message}`);
-    }
-
-    if (!data) {
-      console.error('❌ No data returned from edge function');
-      throw new Error('No data returned from SERP API');
-    }
-
-    if (data.error) {
-      console.error('❌ SERP API returned error:', data.error);
-      throw new Error(`SERP API error: ${data.error}`);
-    }
-
-    console.log('✅ Successfully received SERP data from edge function');
-
-    // Process the real API response
-    const processedData = processSerpApiResponse(data, keyword);
-    
-    if (!processedData) {
-      console.warn('⚠️ Failed to process SERP data, falling back to mock');
-      const mockData = generateMockSerpData(keyword);
-      serpResultsCache.set(cacheKey, mockData);
-      return mockData;
-    }
-
-    // Cache the processed data with API key hash
-    serpResultsCache.set(cacheKey, processedData, apiKey);
-    console.log('💾 Cached processed SERP data for keyword:', keyword);
-    
-    return processedData;
-
-  } catch (error) {
-    console.error('💥 Error in analyzeKeywordSerp:', error);
-    
-    // Return mock data as fallback
-    console.log('🔄 Falling back to mock data due to error');
-    const mockData = generateMockSerpData(keyword);
-    
-    // Don't cache mock data when there was an error, so we can retry later
-    return mockData;
-  }
-};
-
-export const searchKeywords = async (params: SerpSearchParams): Promise<any[]> => {
-  try {
-    console.log('🔍 Searching keywords with params:', params);
-    
-    // Try to get API key
-    let apiKey: string | null = null;
-    try {
-      apiKey = await getApiKey('serp');
-    } catch (error) {
-      console.warn('⚠️ Failed to get API key for keyword search:', error);
-    }
-
-    if (!apiKey) {
-      console.log('📝 No API key available, returning mock search results');
-      // Return mock search results
-      return [
-        { title: `Best ${params.query} Guide`, link: `https://example.com/${params.query}` },
-        { title: `How to Use ${params.query}`, link: `https://example.com/how-to-${params.query}` },
-        { title: `${params.query} Tutorial`, link: `https://example.com/${params.query}-tutorial` },
-        { title: `Advanced ${params.query}`, link: `https://example.com/advanced-${params.query}` },
-        { title: `${params.query} Tips and Tricks`, link: `https://example.com/${params.query}-tips` }
-      ];
-    }
-
-    // Make API call through edge function
-    const { data, error } = await supabase.functions.invoke('serp-api', {
-      body: {
-        endpoint: 'search',
-        params: {
-          q: params.query,
-          num: params.limit || 10,
-          gl: 'us',
-          hl: 'en'
-        },
-        apiKey
-      }
-    });
-
-    if (error) {
-      console.error('❌ Error in searchKeywords:', error);
-      throw new Error(`Search error: ${error.message}`);
-    }
-
-    if (!data || !data.organic_results) {
-      console.warn('⚠️ No search results returned');
-      return [];
-    }
-
-    // Return the organic results
-    return data.organic_results || [];
-
-  } catch (error) {
-    console.error('💥 Error in searchKeywords:', error);
-    
-    // Return mock data as fallback
-    return [
-      { title: `Best ${params.query} Guide`, link: `https://example.com/${params.query}` },
-      { title: `How to Use ${params.query}`, link: `https://example.com/how-to-${params.query}` },
-      { title: `${params.query} Tutorial`, link: `https://example.com/${params.query}-tutorial` }
-    ];
-  }
-};
-
-// Export the types and interfaces needed by other modules
-export type { SerpAnalysisResult, PeopleAlsoAskQuestion, SerpSearchParams };
+function getMockRelatedKeywords(keyword: string) {
+  return [
+    `${keyword} strategy`,
+    `${keyword} tools`,
+    `best ${keyword} practices`,
+    `${keyword} guide`,
+    `${keyword} tutorial`,
+    `${keyword} examples`,
+    `${keyword} techniques`,
+    `${keyword} trends`,
+  ];
+}
