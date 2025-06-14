@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,17 +54,14 @@ const Auth = () => {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleDemoAccess = () => {
     setIsLoading(true);
-    try {
-      await signIn('demo@example.com', 'demo123456');
-      toast.success('Logged in with demo account!');
+    toast.success('Accessing demo environment!');
+    // Simulate a brief loading period then navigate directly
+    setTimeout(() => {
       navigate('/');
-    } catch (error: any) {
-      toast.error(`Demo login failed: ${error.message}`);
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   return (
@@ -222,7 +218,7 @@ const Auth = () => {
               
               <Button 
                 variant="outline" 
-                onClick={handleDemoLogin} 
+                onClick={handleDemoAccess} 
                 className="w-full"
                 disabled={isLoading}
               >
