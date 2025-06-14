@@ -9,6 +9,10 @@ import Index from "./pages/Index";
 import ContentBuilder from "./pages/ContentBuilder";
 import Settings from "./pages/Settings";
 import AIAssistant from "./pages/AIAssistant";
+import Analytics from "./pages/Analytics";
+import Solutions from "./pages/Solutions";
+import Drafts from "./pages/Drafts";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +28,10 @@ const App = () => (
               <Route path="/content-builder" element={<ContentBuilder />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/ai-assistant" element={<AIAssistant />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/solutions" element={<Solutions />} />
+              <Route path="/drafts" element={<Drafts />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

@@ -1,96 +1,154 @@
 
-import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/layout/Navbar';
-import { DraftsHeader } from '@/components/drafts/DraftsHeader';
-import { DraftsList } from '@/components/drafts/DraftsList';
-import { DraftDetailView } from '@/components/drafts/DraftDetailView';
-import { useContent } from '@/contexts/content';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { toast } from 'sonner';
+import Navbar from '@/components/layout/Navbar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { FileText, Plus, Calendar, Edit } from 'lucide-react';
 
 const Drafts = () => {
-  const {
-    contentItems,
-    refreshContent,
-    loading
-  } = useContent();
-  const [selectedDraft, setSelectedDraft] = useState<any | null>(null);
-  const [detailViewOpen, setDetailViewOpen] = useState(false);
-
-  // Refresh content when component mounts
-  useEffect(() => {
-    // Force refresh of content items when the page loads
-    refreshContent();
-    console.log('[Drafts] Component mounted, refreshing content...');
-    console.log('[Drafts] Content items at load:', contentItems.length);
-
-    // Check if we're coming from the content builder
-    const contentDraftSaved = sessionStorage.getItem('content_draft_saved');
-    const saveTimestamp = sessionStorage.getItem('content_save_timestamp');
-    
-    console.log('[Drafts] contentDraftSaved flag:', contentDraftSaved);
-    console.log('[Drafts] saveTimestamp:', saveTimestamp);
-    
-    if (contentDraftSaved === 'true') {
-      console.log('[Drafts] Content draft saved, refreshing content...');
-      
-      // Show a loading toast while we refresh
-      const toastId = toast.loading('Loading your new draft...');
-      
-      // Double-check with a slight delay to ensure DB operations have completed
-      setTimeout(async () => {
-        console.log('[Drafts] Refreshing content after timeout');
-        await refreshContent();
-        console.log('[Drafts] Content items after refresh:', contentItems.length);
-        toast.success('Draft loaded successfully', { id: toastId });
-      }, 1000);
-    }
-
-    // Clear any session storage flags that might have been set by ContentBuilder
-    return () => {
-      sessionStorage.removeItem('content_draft_saved');
-      sessionStorage.removeItem('from_content_builder');
-      sessionStorage.removeItem('content_save_timestamp');
-      console.log('[Drafts] Cleanup: session storage flags cleared');
-    };
-  }, [refreshContent, contentItems.length]);
-
-  const handleOpenDetailView = (draft: any) => {
-    setSelectedDraft(draft);
-    setDetailViewOpen(true);
+  const pageVariants = {
+    initial: { opacity: 0 },
+    animate: { 
+      opacity: 1,
+      transition: { duration: 0.5, staggerChildren: 0.1 }
+    },
+    exit: { opacity: 0, transition: { duration: 0.3 } }
   };
 
+  const itemVariants = {
+    initial: { y: 20, opacity: 0 },
+    animate: { 
+      y: 0, 
+      opacity: 1,
+      transition: { type: "spring", stiffness: 100, damping: 15 }
+    }
+  };
+
+  const mockDrafts = [
+    {
+      id: 1,
+      title: "10 Content Marketing Strategies for 2024",
+      excerpt: "Discover the latest trends and tactics that will drive engagement...",
+      lastModified: "2024-01-15",
+      wordCount: 1200
+    },
+    {
+      id: 2,
+      title: "The Future of AI in Content Creation",
+      excerpt: "Exploring how artificial intelligence is transforming the way we create...",
+      lastModified: "2024-01-14",
+      wordCount: 800
+    },
+    {
+      id: 3,
+      title: "SEO Best Practices Guide",
+      excerpt: "A comprehensive guide to optimizing your content for search engines...",
+      lastModified: "2024-01-13",
+      wordCount: 2100
+    }
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+    <motion.div 
+      className="min-h-screen flex flex-col bg-background futuristic-grid"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
       <Helmet>
-        <title>Content Drafts | Content Platform</title>
+        <title>Drafts | ContentRocketForge</title>
+        <meta name="description" content="Manage your content drafts and work in progress" />
       </Helmet>
       
       <Navbar />
       
-      {/* Background elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50"></div>
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neon-blue/10 rounded-full filter blur-3xl opacity-40"></div>
-        <div className="absolute bottom-40 left-1/2 w-64 h-64 bg-neon-purple/10 rounded-full filter blur-3xl opacity-30"></div>
-        <div className="futuristic-grid absolute inset-0 opacity-10"></div>
-      </div>
-      
-      <main className="flex-1 container py-8 z-10 relative">
-        <div className="glass-panel p-8 rounded-xl border border-white/10 animate-fade-in">
-          <DraftsHeader />
-          <DraftsList 
-            onOpenDetailView={handleOpenDetailView}
-          />
-        </div>
-        
-        <DraftDetailView 
-          open={detailViewOpen} 
-          onClose={() => setDetailViewOpen(false)} 
-          draft={selectedDraft} 
-        />
+      <main className="flex-1 container py-8 max-w-7xl">
+        <motion.div variants={itemVariants} className="mb-8">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold mb-4 text-gradient animate-pulse-glow">
+              Drafts
+            </h1>
+            <p className="text-muted-foreground text-xl max-w-3xl mx-auto">
+              Manage your work in progress and continue where you left off
+            </p>
+          </div>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="mb-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-semibold text-gradient">Your Drafts</h2>
+            <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-purple-600 hover:to-blue-600 shadow-neon">
+              <Plus className="h-4 w-4 mr-2" />
+              New Draft
+            </Button>
+          </div>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="space-y-6">
+          {mockDrafts.map((draft, idx) => (
+            <motion.div
+              key={draft.id}
+              variants={itemVariants}
+              whileHover={{ scale: 1.01, y: -2 }}
+              className="cursor-pointer"
+            >
+              <Card className="shadow-neon border-0 card-glass hover:shadow-neon-strong transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-neon">
+                          <FileText className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gradient">{draft.title}</h3>
+                      </div>
+                      <p className="text-muted-foreground mb-4">{draft.excerpt}</p>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Modified {draft.lastModified}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <FileText className="h-4 w-4" />
+                          <span>{draft.wordCount} words</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="glass-panel border-white/20 hover:bg-white/10">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {mockDrafts.length === 0 && (
+          <motion.div variants={itemVariants}>
+            <Card className="shadow-neon border-0 card-glass">
+              <CardContent className="p-12 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center shadow-neon animate-float">
+                  <FileText className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4 text-gradient">No drafts yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Start creating content and your drafts will appear here for easy access and editing.
+                </p>
+                <Button className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-purple-600 hover:to-blue-600 shadow-neon">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Draft
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </main>
-    </div>
+    </motion.div>
   );
 };
 
