@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
@@ -5,235 +6,352 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Network, Plus, Target, BarChart3, Users, TrendingUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Network, Plus, Target, BarChart3, Users, TrendingUp, Search, Filter, Calendar, Edit, Eye, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TopicClusters = () => {
-  const [clusterName, setClusterName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCluster, setSelectedCluster] = useState(null);
+
+  const metrics = {
+    totalClusters: 12,
+    publishedPages: 34,
+    monthlyTraffic: "156K",
+    averageRanking: 8.5
+  };
 
   const sampleClusters = [
     {
       id: 1,
       name: "Content Marketing",
-      pillarPage: "Ultimate Guide to Content Marketing",
-      subTopics: [
+      mainKeyword: "content marketing strategy",
+      status: "Published",
+      completion: 85,
+      subTopics: 8,
+      keywordVolume: "45,000",
+      difficulty: 65,
+      monthlyTraffic: "32K",
+      lastUpdated: "2 days ago",
+      pillarPage: "Ultimate Guide to Content Marketing 2024",
+      subTopicsList: [
         "Content Strategy Planning",
         "Content Creation Tools",
         "Content Distribution",
-        "Content Performance Metrics",
-        "Video Content Marketing",
-        "Blog Content Optimization"
-      ],
-      keywords: 156,
-      difficulty: "Medium",
-      traffic: "45,000"
+        "Content Performance Metrics"
+      ]
     },
     {
       id: 2,
       name: "SEO Optimization",
+      mainKeyword: "SEO optimization techniques",
+      status: "In Progress",
+      completion: 60,
+      subTopics: 12,
+      keywordVolume: "67,000",
+      difficulty: 78,
+      monthlyTraffic: "28K",
+      lastUpdated: "1 day ago",
       pillarPage: "Complete SEO Guide for 2024",
-      subTopics: [
+      subTopicsList: [
         "Keyword Research",
         "On-Page SEO",
         "Technical SEO",
-        "Link Building",
-        "Local SEO",
-        "SEO Tools"
-      ],
-      keywords: 203,
-      difficulty: "High",
-      traffic: "67,000"
+        "Link Building"
+      ]
     },
     {
       id: 3,
       name: "Social Media Marketing",
-      pillarPage: "Social Media Marketing Mastery",
-      subTopics: [
+      mainKeyword: "social media marketing strategy",
+      status: "Draft",
+      completion: 25,
+      subTopics: 6,
+      keywordVolume: "23,000",
+      difficulty: 45,
+      monthlyTraffic: "12K",
+      lastUpdated: "5 days ago",
+      pillarPage: "Social Media Marketing Mastery Guide",
+      subTopicsList: [
         "Instagram Marketing",
         "LinkedIn Strategy",
-        "Facebook Advertising",
-        "Twitter Engagement",
-        "TikTok Content",
-        "Social Analytics"
-      ],
-      keywords: 89,
-      difficulty: "Low",
-      traffic: "23,000"
+        "Facebook Advertising"
+      ]
+    },
+    {
+      id: 4,
+      name: "Email Marketing",
+      mainKeyword: "email marketing best practices",
+      status: "Published",
+      completion: 100,
+      subTopics: 10,
+      keywordVolume: "34,000",
+      difficulty: 55,
+      monthlyTraffic: "41K",
+      lastUpdated: "1 week ago",
+      pillarPage: "Email Marketing Complete Guide",
+      subTopicsList: [
+        "Email Automation",
+        "List Building",
+        "Email Design",
+        "A/B Testing"
+      ]
     }
   ];
 
-  const handleCreateCluster = () => {
-    if (!clusterName.trim()) {
-      toast.error("Please enter a cluster name");
-      return;
+  const bestPractices = [
+    {
+      icon: Network,
+      title: "Pillar-Hub Structure",
+      description: "Create comprehensive pillar pages with supporting cluster content that links back to the main topic."
+    },
+    {
+      icon: Target,
+      title: "Strategic Interlinking",
+      description: "Build internal links between cluster content and pillar pages to boost topical authority."
+    },
+    {
+      icon: BarChart3,
+      title: "Comprehensive Coverage",
+      description: "Cover all aspects of your topic cluster to become the go-to resource in your niche."
     }
-    toast.success("Topic cluster created successfully!");
-    setClusterName('');
+  ];
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Published':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Draft':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getDifficultyColor = (difficulty) => {
+    if (difficulty < 40) return 'text-green-600';
+    if (difficulty < 70) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const handleCreateCluster = () => {
+    toast.success("Create cluster dialog would open here");
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Helmet>
         <title>Topic Clusters | Research Platform</title>
       </Helmet>
       
       <Navbar />
       
-      {/* Background elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50"></div>
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neon-blue/10 rounded-full filter blur-3xl opacity-40"></div>
-        <div className="absolute bottom-40 left-1/2 w-64 h-64 bg-neon-purple/10 rounded-full filter blur-3xl opacity-30"></div>
-        <div className="futuristic-grid absolute inset-0 opacity-10"></div>
-      </div>
-      
-      <main className="flex-1 container py-8 z-10 relative">
+      <main className="flex-1 container py-8">
         <div className="space-y-8">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-gradient">Topic Clusters</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Organize your content into strategic topic clusters for better SEO and user experience
-            </p>
-          </div>
-
-          {/* Create New Cluster */}
-          <Card className="glass-panel border-white/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-neon-blue" />
-                Create New Topic Cluster
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <Input
-                  placeholder="Enter cluster topic (e.g., Content Marketing)"
-                  value={clusterName}
-                  onChange={(e) => setClusterName(e.target.value)}
-                  className="bg-glass border-white/10"
-                  onKeyPress={(e) => e.key === 'Enter' && handleCreateCluster()}
-                />
-                <Button onClick={handleCreateCluster}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Cluster
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Existing Clusters */}
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Your Topic Clusters</h2>
-            <div className="grid gap-6">
-              {sampleClusters.map((cluster) => (
-                <Card 
-                  key={cluster.id}
-                  className={`glass-panel border-white/10 cursor-pointer transition-all hover:border-neon-blue/30 ${
-                    selectedCluster === cluster.id ? 'border-neon-blue' : ''
-                  }`}
-                  onClick={() => setSelectedCluster(selectedCluster === cluster.id ? null : cluster.id)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Network className="h-6 w-6 text-neon-blue" />
-                          <h3 className="text-xl font-semibold text-white">{cluster.name}</h3>
-                          <Badge variant={cluster.difficulty === 'Low' ? 'default' : cluster.difficulty === 'Medium' ? 'secondary' : 'destructive'}>
-                            {cluster.difficulty}
-                          </Badge>
-                        </div>
-                        <p className="text-muted-foreground mb-3">
-                          Pillar Page: {cluster.pillarPage}
-                        </p>
-                      </div>
-                    </div>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Topic Clusters</h1>
+                <p className="text-gray-600 mt-2">Organize your content into strategic topic clusters for better SEO performance</p>
+              </div>
+              <Button onClick={handleCreateCluster} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Cluster
+              </Button>
+            </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-neon-blue">{cluster.keywords}</div>
-                        <div className="text-sm text-muted-foreground">Keywords</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-neon-purple">{cluster.subTopics.length}</div>
-                        <div className="text-sm text-muted-foreground">Sub-topics</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-neon-green">{cluster.traffic}</div>
-                        <div className="text-sm text-muted-foreground">Monthly Traffic</div>
-                      </div>
+            {/* Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Clusters</p>
+                      <p className="text-2xl font-bold text-gray-900">{metrics.totalClusters}</p>
                     </div>
+                    <Network className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Published Pages</p>
+                      <p className="text-2xl font-bold text-gray-900">{metrics.publishedPages}</p>
+                    </div>
+                    <Globe className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Monthly Traffic</p>
+                      <p className="text-2xl font-bold text-gray-900">{metrics.monthlyTraffic}</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Avg. Ranking</p>
+                      <p className="text-2xl font-bold text-gray-900">{metrics.averageRanking}</p>
+                    </div>
+                    <BarChart3 className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                    {selectedCluster === cluster.id && (
-                      <div className="space-y-4 border-t border-white/10 pt-4">
-                        <h4 className="font-semibold text-white flex items-center gap-2">
-                          <Target className="h-4 w-4" />
-                          Sub-topics in this cluster:
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {cluster.subTopics.map((topic, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-glass rounded-lg border border-white/10">
-                              <span className="text-white text-sm">{topic}</span>
-                              <Button size="sm" variant="outline">
-                                Edit
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <BarChart3 className="h-4 w-4 mr-2" />
-                            View Analytics
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Sub-topic
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Users className="h-4 w-4 mr-2" />
-                            Content Calendar
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+            {/* Search and Filters */}
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search clusters..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white border-gray-200"
+                />
+              </div>
+              <Button variant="outline" className="border-gray-200">
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
             </div>
           </div>
 
-          {/* Cluster Opportunities */}
-          <Card className="glass-panel border-white/10">
+          {/* Clusters Grid */}
+          <div className="grid gap-6">
+            {sampleClusters.map((cluster) => (
+              <Card key={cluster.id} className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-semibold text-gray-900">{cluster.name}</h3>
+                          <Badge className={`${getStatusColor(cluster.status)} border`}>
+                            {cluster.status}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-600 text-sm">Main keyword: <span className="font-medium">{cluster.mainKeyword}</span></p>
+                        <p className="text-gray-500 text-xs mt-1">Last updated {cluster.lastUpdated}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Completion</span>
+                        <span className="font-medium">{cluster.completion}%</span>
+                      </div>
+                      <Progress value={cluster.completion} className="h-2" />
+                    </div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-gray-900">{cluster.subTopics}</div>
+                        <div className="text-xs text-gray-500">Sub-topics</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600">{cluster.keywordVolume}</div>
+                        <div className="text-xs text-gray-500">Monthly Volume</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-bold ${getDifficultyColor(cluster.difficulty)}`}>{cluster.difficulty}</div>
+                        <div className="text-xs text-gray-500">Difficulty</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-green-600">{cluster.monthlyTraffic}</div>
+                        <div className="text-xs text-gray-500">Traffic</div>
+                      </div>
+                    </div>
+
+                    {/* Pillar Page */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">Pillar Page:</p>
+                      <p className="font-medium text-gray-900">{cluster.pillarPage}</p>
+                    </div>
+
+                    {/* Sub-topics Preview */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-700">Sub-topics:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {cluster.subTopicsList.map((topic, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {topic}
+                          </Badge>
+                        ))}
+                        {cluster.subTopics > cluster.subTopicsList.length && (
+                          <Badge variant="outline" className="text-xs">
+                            +{cluster.subTopics - cluster.subTopicsList.length} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2 border-t border-gray-100">
+                      <Button size="sm" variant="outline">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Analytics
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Content
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Schedule
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Best Practices Section */}
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-neon-green" />
-                Cluster Opportunities
+                <Target className="h-5 w-5 text-blue-600" />
+                Topic Cluster Best Practices
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-6 bg-glass rounded-lg border border-white/10">
-                    <Target className="h-8 w-8 text-neon-blue mx-auto mb-2" />
-                    <h4 className="font-semibold text-white mb-1">Email Marketing</h4>
-                    <p className="text-sm text-muted-foreground mb-2">High opportunity cluster</p>
-                    <Badge variant="default">156 keywords available</Badge>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {bestPractices.map((practice, index) => (
+                  <div key={index} className="text-center space-y-3">
+                    <div className="flex justify-center">
+                      <practice.icon className="h-12 w-12 text-blue-600" />
+                    </div>
+                    <h4 className="font-semibold text-gray-900">{practice.title}</h4>
+                    <p className="text-sm text-gray-600">{practice.description}</p>
                   </div>
-                  <div className="text-center p-6 bg-glass rounded-lg border border-white/10">
-                    <Users className="h-8 w-8 text-neon-purple mx-auto mb-2" />
-                    <h4 className="font-semibold text-white mb-1">Influencer Marketing</h4>
-                    <p className="text-sm text-muted-foreground mb-2">Medium opportunity cluster</p>
-                    <Badge variant="secondary">89 keywords available</Badge>
-                  </div>
-                  <div className="text-center p-6 bg-glass rounded-lg border border-white/10">
-                    <BarChart3 className="h-8 w-8 text-neon-green mx-auto mb-2" />
-                    <h4 className="font-semibold text-white mb-1">Marketing Analytics</h4>
-                    <p className="text-sm text-muted-foreground mb-2">Low competition cluster</p>
-                    <Badge variant="default">203 keywords available</Badge>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
