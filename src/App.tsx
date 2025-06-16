@@ -13,6 +13,10 @@ import ContentApproval from "./pages/ContentApproval";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
+import ContentStrategy from "./pages/research/ContentStrategy";
+import KeywordResearch from "./pages/research/KeywordResearch";
+import AnswerThePeople from "./pages/research/AnswerThePeople";
+import TopicClusters from "./pages/research/TopicClusters";
 import NotFound from "./pages/NotFound";
 import { ContentProvider } from "./contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -43,6 +47,12 @@ const App = () => (
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                
+                {/* Research routes */}
+                <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
+                <Route path="/research/keyword-research" element={<ProtectedRoute><KeywordResearch /></ProtectedRoute>} />
+                <Route path="/research/answer-the-people" element={<ProtectedRoute><AnswerThePeople /></ProtectedRoute>} />
+                <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
