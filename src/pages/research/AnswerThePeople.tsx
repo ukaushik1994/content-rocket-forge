@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
@@ -16,7 +15,7 @@ const AnswerThePeople = () => {
   const [loading, setLoading] = useState(false);
 
   // Sample data matching the reference
-  const questionsData = {
+  const sampleQuestionsData = {
     questions: [
       {
         id: 1,
@@ -161,7 +160,7 @@ const AnswerThePeople = () => {
     setLoading(true);
     // Simulate API call
     setTimeout(() => {
-      setQuestionsData(questionsData);
+      setQuestionsData(sampleQuestionsData);
       setLoading(false);
       toast.success("Questions generated successfully!");
     }, 1500);
