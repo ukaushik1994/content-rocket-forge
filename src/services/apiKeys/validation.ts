@@ -42,6 +42,11 @@ export const validateApiKeyFormat = (service: string, key: string): boolean => {
 };
 
 /**
+ * Alternative name for backward compatibility
+ */
+export const validateProviderKeyFormat = validateApiKeyFormat;
+
+/**
  * Enhanced API key type detection
  */
 export const detectApiKeyType = async (key: string): Promise<string | null> => {
