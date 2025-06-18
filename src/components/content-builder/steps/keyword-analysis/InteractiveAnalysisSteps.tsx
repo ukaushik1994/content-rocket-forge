@@ -189,7 +189,7 @@ export const InteractiveAnalysisSteps: React.FC<InteractiveAnalysisStepsProps> =
 
         <div className="flex-shrink-0">
           {isCompleted && (
-            <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
               Done
             </Badge>
           )}
@@ -286,7 +286,7 @@ export const InteractiveAnalysisSteps: React.FC<InteractiveAnalysisStepsProps> =
             SERP Analysis for "{keyword}"
           </CardTitle>
           {serpData && (
-            <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
               Analysis Complete
             </Badge>
           )}

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 
@@ -10,7 +9,7 @@ export const createSerpActions = (
     if (!keyword.trim()) return;
 
     dispatch({
-      type: 'SET_ANALYZING',
+      type: 'SET_IS_ANALYZING',
       payload: true
     });
 
@@ -139,7 +138,7 @@ export const createSerpActions = (
       });
     } finally {
       dispatch({
-        type: 'SET_ANALYZING',
+        type: 'SET_IS_ANALYZING',
         payload: false
       });
     }
