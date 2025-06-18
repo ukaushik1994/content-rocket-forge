@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
-import { InteractiveAnalysisSteps, SerpSelectionSteps } from './keyword-analysis';
+import { InteractiveAnalysisSteps } from './keyword-analysis/InteractiveAnalysisSteps';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -41,8 +41,6 @@ interface ApiKeysStatus {
   };
 }
 
-type AnalysisPhase = 'initial' | 'metrics' | 'selection' | 'complete';
-
 export const KeywordSelectionStep = () => {
   const {
     state,
@@ -65,7 +63,6 @@ export const KeywordSelectionStep = () => {
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
   const [hasSearched, setHasSearched] = useState(false);
-  const [analysisPhase, setAnalysisPhase] = useState<AnalysisPhase>('initial');
   const [apiKeysStatus, setApiKeysStatus] = useState<ApiKeysStatus>({
     serpApi: { configured: false, working: false },
     serpstack: { configured: false, working: false }
@@ -89,19 +86,6 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
-
-  // Update analysis phase based on data availability
-  useEffect(() => {
-    if (!hasSearched) {
-      setAnalysisPhase('initial');
-    } else if (isAnalyzing) {
-      setAnalysisPhase('initial');
-    } else if (serpData && !totalSelected) {
-      setAnalysisPhase('metrics');
-    } else if (totalSelected > 0) {
-      setAnalysisPhase('selection');
-    }
-  }, [hasSearched, isAnalyzing, serpData, totalSelected]);
   
   // Handle status updates from the EnhancedSerpStatus component
   const handleStatusChange = (status: ApiKeysStatus) => {
@@ -110,7 +94,6 @@ export const KeywordSelectionStep = () => {
   
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
-    setAnalysisPhase('initial');
 
     // Set the main keyword
     dispatch({
@@ -167,18 +150,27 @@ export const KeywordSelectionStep = () => {
     });
   };
   
-  const handleStartSelection = () => {
-    setAnalysisPhase('selection');
+  // Function to handle adding content from SERP items
+  const handleAddToContent = (content: string, type: string) => {
+    handleToggleSelection(type, content);
   };
   
-  const handleCompleteSelection = () => {
-    setAnalysisPhase('complete');
+  // Handle continuing with selected items
+  const handleContinueWithSelections = () => {
+    if (totalSelected === 0) return;
     
     // Mark the step as completed
     dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
     
     // Generate outline from selections
     generateOutlineFromSelections();
+  };
+  
+  // Handle reanalyzing the current keyword
+  const handleReanalyze = async () => {
+    if (mainKeyword) {
+      await analyzeKeyword(mainKeyword);
+    }
   };
   
   // Check if we have structured SERP data with metrics
@@ -227,8 +219,8 @@ export const KeywordSelectionStep = () => {
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {analysisPhase === 'initial' && !hasSearched && (
+        <AnimatePresence>
+          {!hasSearched && (
             <motion.div 
               className="flex flex-col items-center justify-center py-16 text-center"
               initial={{ opacity: 1 }}
@@ -246,40 +238,24 @@ export const KeywordSelectionStep = () => {
             </motion.div>
           )}
           
-          {analysisPhase === 'metrics' && hasStructuredData && (
+          {hasSearched && (
             <motion.div 
               className="space-y-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              key="metrics-phase"
+              key="results-state"
             >
-              <InteractiveAnalysisSteps
-                keyword={mainKeyword}
-                metrics={serpData.metrics}
-                serpBlocks={serpData.serp_blocks}
-                relatedKeywords={serpData.related_keywords || []}
-                isLoading={isAnalyzing}
-              />
+              {/* Show structured analysis if we have the new data format */}
+              {hasStructuredData && (
+                <InteractiveAnalysisSteps
+                  keyword={mainKeyword}
+                  metrics={serpData.metrics}
+                  serpBlocks={serpData.serp_blocks}
+                  relatedKeywords={serpData.related_keywords || []}
+                  isLoading={isAnalyzing}
+                />
+              )}
               
-              <div className="flex justify-center">
-                <Button 
-                  onClick={handleStartSelection}
-                  className="gap-2 bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
-                >
-                  Start Content Selection
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-          
-          {analysisPhase === 'selection' && (
-            <motion.div 
-              className="space-y-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              key="selection-phase"
-            >
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left column - Keyword selections */}
                 <div className="lg:col-span-1 space-y-6">
@@ -298,40 +274,16 @@ export const KeywordSelectionStep = () => {
                   />
                 </div>
                 
-                {/* Right column - Step-by-step SERP Selection */}
+                {/* Right column - SERP Analysis */}
                 <div className="lg:col-span-2">
-                  <SerpSelectionSteps
+                  <SerpAnalysisPanel 
                     serpData={serpData}
-                    serpSelections={serpSelections}
-                    handleToggleSelection={handleToggleSelection}
-                    onComplete={handleCompleteSelection}
+                    isLoading={isAnalyzing}
+                    mainKeyword={mainKeyword}
+                    onAddToContent={handleAddToContent}
                   />
                 </div>
               </div>
-            </motion.div>
-          )}
-          
-          {analysisPhase === 'complete' && (
-            <motion.div 
-              className="text-center py-16"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              key="complete-phase"
-            >
-              <div className="rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 p-6 mb-4 mx-auto w-fit">
-                <Sparkles className="h-8 w-8 text-green-500" />
-              </div>
-              <h3 className="text-xl font-medium mb-2">Analysis Complete!</h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                You've selected {totalSelected} content opportunities. Your outline has been generated and you're ready to move to the next step.
-              </p>
-              <Button 
-                onClick={() => dispatch({ type: 'SET_CURRENT_STEP', payload: 1 })}
-                className="gap-2 bg-gradient-to-r from-green-500 to-blue-500"
-              >
-                Continue to Content Planning
-                <ChevronRight className="h-4 w-4" />
-              </Button>
             </motion.div>
           )}
         </AnimatePresence>
