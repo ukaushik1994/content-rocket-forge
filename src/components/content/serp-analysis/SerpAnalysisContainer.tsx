@@ -1,13 +1,9 @@
-
 import React, { useState } from 'react';
 import { Search, HelpCircle, FileText, Tag, Heading, Brain, Target, TrendingUp, DollarSign, BarChart3, Newspaper, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { SerpAnalysisResult } from '@/types/serp';
 import {
-  SerpSectionHeader,
-  SerpKeywordsSection,
   SerpQuestionsSection,
   SerpEntitiesSection,
   SerpHeadingsSection,
@@ -19,6 +15,10 @@ import { SerpMetricsSection } from './SerpMetricsSection';
 import { SerpContentGapsSection } from './SerpContentGapsSection';
 import { SerpTopStoriesSection } from './SerpTopStoriesSection';
 import { SerpMultimediaSection } from './SerpMultimediaSection';
+import { EnhancedSerpSectionHeader } from './enhanced/EnhancedSerpSectionHeader';
+import { EnhancedSerpKeywordsSection } from './enhanced/EnhancedSerpKeywordsSection';
+import { FloatingSelectionToolbar } from './enhanced/FloatingSelectionToolbar';
+import { SelectionPreviewPanel } from './enhanced/SelectionPreviewPanel';
 
 export interface SerpAnalysisContainerProps {
   serpData: SerpAnalysisResult | null;
@@ -37,7 +37,10 @@ export function SerpAnalysisContainer({
   onRetry = () => {},
   onSerpDataChange = () => {}
 }: SerpAnalysisContainerProps) {
-  const [expandedSections, setExpandedSections] = useState(new Set<string>(['metrics', 'keywords'])); // Default expand metrics and keywords
+  const [expandedSections, setExpandedSections] = useState(new Set<string>(['metrics', 'keywords']));
+  const [selectedItems, setSelectedItems] = useState(new Set<string>());
+  const [showPreviewPanel, setShowPreviewPanel] = useState(false);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
   const toggleSection = (sectionId: string) => {
     const newExpandedSections = new Set(expandedSections);
@@ -49,7 +52,56 @@ export function SerpAnalysisContainer({
     setExpandedSections(newExpandedSections);
   };
 
-  // Add debugging for data display issues
+  const handleToggleSelection = (content: string, type: string) => {
+    const key = `${type}:${content}`;
+    const newSelectedItems = new Set(selectedItems);
+    
+    if (newSelectedItems.has(key)) {
+      newSelectedItems.delete(key);
+    } else {
+      newSelectedItems.add(key);
+    }
+    
+    setSelectedItems(newSelectedItems);
+  };
+
+  const handleLoadMore = async (sectionId: string) => {
+    setLoadingStates(prev => ({ ...prev, [sectionId]: true }));
+    
+    // Simulate API call - replace with actual implementation
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setLoadingStates(prev => ({ ...prev, [sectionId]: false }));
+  };
+
+  const handleRefreshSection = async (sectionId: string) => {
+    setLoadingStates(prev => ({ ...prev, [sectionId]: true }));
+    
+    // Simulate refresh - replace with actual implementation
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    setLoadingStates(prev => ({ ...prev, [sectionId]: false }));
+  };
+
+  const getSelectedItemsArray = () => {
+    return Array.from(selectedItems).map(key => {
+      const [type, ...contentParts] = key.split(':');
+      const content = contentParts.join(':');
+      return { content, type, source: 'SerpAPI' };
+    });
+  };
+
+  const handleAddAllSelected = () => {
+    getSelectedItemsArray().forEach(item => {
+      onAddToContent(item.content, item.type);
+    });
+    setSelectedItems(new Set());
+  };
+
+  const handleClearSelected = () => {
+    setSelectedItems(new Set());
+  };
+
   React.useEffect(() => {
     if (serpData) {
       console.log('🔍 SERP Data Debug:', {
@@ -104,40 +156,10 @@ export function SerpAnalysisContainer({
       title: 'SEO Metrics',
       icon: BarChart3,
       description: 'Volume, competition, and opportunity analysis',
-      count: 4, // Always show 4 metrics
+      count: 4,
       variant: 'indigo' as const,
       component: (expanded: boolean) => (
         <SerpMetricsSection
-          serpData={serpData}
-          expanded={expanded}
-          onAddToContent={onAddToContent}
-        />
-      )
-    },
-    {
-      id: 'content-gaps',
-      title: 'Content Gaps',
-      icon: Target,
-      description: 'Opportunities competitors are missing',
-      count: serpData?.contentGaps?.length || 0,
-      variant: 'rose' as const,
-      component: (expanded: boolean) => (
-        <SerpContentGapsSection
-          serpData={serpData}
-          expanded={expanded}
-          onAddToContent={onAddToContent}
-        />
-      )
-    },
-    {
-      id: 'paid-ads',
-      title: 'Paid Ads',
-      icon: DollarSign,
-      description: 'Commercial competition analysis',
-      count: serpData?.commercialSignals?.hasAds ? 2 : 0,
-      variant: 'green' as const,
-      component: (expanded: boolean) => (
-        <SerpPaidAdsSection
           serpData={serpData}
           expanded={expanded}
           onAddToContent={onAddToContent}
@@ -151,8 +173,29 @@ export function SerpAnalysisContainer({
       description: 'Related keywords and search terms',
       count: serpData?.keywords?.length || 0,
       variant: 'blue' as const,
+      hasMore: true,
       component: (expanded: boolean) => (
-        <SerpKeywordsSection
+        <EnhancedSerpKeywordsSection
+          serpData={serpData}
+          expanded={expanded}
+          onAddToContent={onAddToContent}
+          onToggleSelection={handleToggleSelection}
+          selectedItems={selectedItems}
+          onLoadMore={() => handleLoadMore('keywords')}
+          isLoading={loadingStates.keywords}
+        />
+      )
+    },
+    {
+      id: 'content-gaps',
+      title: 'Content Gaps',
+      icon: Target,
+      description: 'Opportunities competitors are missing',
+      count: serpData?.contentGaps?.length || 0,
+      variant: 'rose' as const,
+      hasMore: true,
+      component: (expanded: boolean) => (
+        <SerpContentGapsSection
           serpData={serpData}
           expanded={expanded}
           onAddToContent={onAddToContent}
@@ -166,6 +209,7 @@ export function SerpAnalysisContainer({
       description: 'People also ask questions',
       count: serpData?.peopleAlsoAsk?.length || 0,
       variant: 'amber' as const,
+      hasMore: true,
       component: (expanded: boolean) => (
         <SerpQuestionsSection
           serpData={serpData}
@@ -266,8 +310,15 @@ export function SerpAnalysisContainer({
     }
   ];
 
+  const getSelectedCountForSection = (sectionId: string) => {
+    return Array.from(selectedItems).filter(key => 
+      key.startsWith(`${sectionId}:`) || 
+      (sectionId === 'keywords' && key.startsWith('keyword:'))
+    ).length;
+  };
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 relative">
       <div className="px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -276,29 +327,77 @@ export function SerpAnalysisContainer({
               SERP Analysis: <span className="text-neon-purple">{mainKeyword}</span>
             </h3>
           </div>
-          {serpData?.isMockData && (
-            <div className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded">
-              Using mock data
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {serpData?.isMockData && (
+              <div className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded">
+                Using mock data
+              </div>
+            )}
+            {selectedItems.size > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPreviewPanel(true)}
+                className="border-neon-purple/30 text-neon-purple hover:bg-neon-purple/10"
+              >
+                Preview ({selectedItems.size})
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="bg-black/20 border border-white/10 backdrop-blur-lg rounded-lg overflow-hidden">
         {sections.map((section) => (
           <div key={section.id} className="border-b border-white/5 last:border-b-0">
-            <SerpSectionHeader
+            <EnhancedSerpSectionHeader
               title={section.title}
               expanded={expandedSections.has(section.id)}
               onToggle={() => toggleSection(section.id)}
               variant={section.variant}
               description={section.description}
               count={section.count}
+              isLoading={loadingStates[section.id]}
+              hasMore={section.hasMore}
+              onLoadMore={() => handleLoadMore(section.id)}
+              onRefresh={() => handleRefreshSection(section.id)}
+              apiSource="SerpAPI"
+              dataFreshness={serpData?.isMockData ? 'cached' : 'fresh'}
+              selectedCount={getSelectedCountForSection(section.id)}
             />
             {section.component(expandedSections.has(section.id))}
           </div>
         ))}
       </div>
+
+      {/* Floating Toolbar */}
+      <FloatingSelectionToolbar
+        selectedCount={selectedItems.size}
+        onAddAllSelected={handleAddAllSelected}
+        onClearSelected={handleClearSelected}
+        onPreviewSelected={() => setShowPreviewPanel(true)}
+        onExportSelected={() => console.log('Export selected')}
+        onClose={() => setSelectedItems(new Set())}
+        isVisible={selectedItems.size > 0}
+      />
+
+      {/* Preview Panel */}
+      <SelectionPreviewPanel
+        selections={getSelectedItemsArray()}
+        isOpen={showPreviewPanel}
+        onClose={() => setShowPreviewPanel(false)}
+        onRemoveItem={(content, type) => {
+          const key = `${type}:${content}`;
+          const newSelectedItems = new Set(selectedItems);
+          newSelectedItems.delete(key);
+          setSelectedItems(newSelectedItems);
+        }}
+        onGenerateOutline={() => {
+          handleAddAllSelected();
+          setShowPreviewPanel(false);
+          // Navigate to outline generation
+        }}
+      />
     </div>
   );
 }
