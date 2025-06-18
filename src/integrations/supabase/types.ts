@@ -740,6 +740,33 @@ export type Database = {
           },
         ]
       }
+      serp_cache: {
+        Row: {
+          created_at: string | null
+          geo: string | null
+          id: string
+          keyword: string
+          payload: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          geo?: string | null
+          id?: string
+          keyword: string
+          payload: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          geo?: string | null
+          id?: string
+          keyword?: string
+          payload?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       solutions: {
         Row: {
           category: string | null
