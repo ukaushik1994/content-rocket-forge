@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, CheckCircle, Circle, Search, MessageSquare, Hash, Newspaper, Image, Video, Brain } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Circle, Search, MessageSquare, Hash, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SerpSelection } from '@/contexts/content-builder/types';
 
@@ -182,12 +182,14 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
           
           isSelected = serpSelections.some(s => s.content === content && s.selected);
           
+          const cardClasses = `cursor-pointer transition-all duration-200 hover:shadow-md ${
+            isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
+          }`;
+          
           return (
             <Card 
               key={index} 
-              className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
-              }`}
+              className={cardClasses}
               onClick={() => handleToggleSelection(type, content)}
             >
               <CardContent className="p-4">
@@ -237,16 +239,19 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
               const isCurrent = index === currentStep;
               const selectedCount = getSelectedCount(step.id);
               
+              let stepClasses = 'flex items-center gap-2 px-3 py-2 rounded-full text-sm ';
+              if (isCurrent) {
+                stepClasses += 'bg-primary text-primary-foreground';
+              } else if (isCompleted) {
+                stepClasses += 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+              } else {
+                stepClasses += 'bg-muted text-muted-foreground';
+              }
+              
               return (
                 <div 
                   key={step.id}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
-                    isCurrent 
-                      ? 'bg-primary text-primary-foreground' 
-                      : isCompleted 
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                        : 'bg-muted text-muted-foreground'
-                  }`}
+                  className={stepClasses}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{step.title}</span>
