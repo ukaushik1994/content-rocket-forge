@@ -2,50 +2,65 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Test Serpstack API key
+ * Test Serpstack API key using the secure api-proxy edge function
  */
 export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
   try {
-    console.log('🧪 Testing Serpstack API key');
+    console.log('🧪 Testing Serpstack API key via api-proxy');
     
-    // Make a minimal test request to Serpstack API
-    const testUrl = 'https://api.serpstack.com/search';
-    const params = new URLSearchParams({
-      access_key: apiKey,
-      query: 'test',
-      type: 'web',
-      num: '1'
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        service: 'serpstack',
+        endpoint: 'test',
+        apiKey: apiKey
+      }),
     });
-    
-    const response = await fetch(`${testUrl}?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; ContentBuilder/1.0)',
-      }
-    });
-    
-    console.log('📊 Serpstack API response status:', response.status);
-    
-    if (!response.ok) {
-      console.error('❌ Serpstack API error response:', response.status);
+
+    if (error) {
+      console.error('❌ Serpstack API test failed:', error);
       return false;
     }
-    
-    const data = await response.json();
-    console.log('✅ Serpstack API test successful');
-    
-    // Check if we got valid search results (Serpstack wraps results in success field)
-    if (data.success && (data.organic_results || data.search_information)) {
+
+    if (data?.success) {
+      console.log('✅ Serpstack API test successful');
       return true;
-    } else if (data.error) {
-      console.error('❌ Serpstack API error:', data.error);
+    }
+
+    return false;
+  } catch (error: any) {
+    console.error('💥 Serpstack API test exception:', error);
+    return false;
+  }
+};
+
+/**
+ * Test SerpAPI key using the secure api-proxy edge function
+ */
+export const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    console.log('🧪 Testing SerpAPI key via api-proxy');
+    
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        service: 'serp',
+        endpoint: 'test',
+        apiKey: apiKey
+      }),
+    });
+
+    if (error) {
+      console.error('❌ SerpAPI test failed:', error);
       return false;
     }
-    
+
+    if (data?.success) {
+      console.log('✅ SerpAPI test successful');
+      return true;
+    }
+
     return false;
-    
   } catch (error: any) {
-    console.error('💥 Serpstack API connection test failed:', error);
+    console.error('💥 SerpAPI test exception:', error);
     return false;
   }
 };
@@ -175,55 +190,6 @@ export const testApiKey = async (serviceKey: string, apiKey: string): Promise<bo
     }
   } catch (error) {
     console.error(`Error testing ${serviceKey} API key:`, error);
-    return false;
-  }
-};
-
-/**
- * Test SerpAPI key (existing function)
- */
-const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
-  try {
-    console.log('🧪 Testing SerpAPI key');
-    
-    // Make a minimal test request to SerpAPI
-    const testUrl = 'https://serpapi.com/search';
-    const params = new URLSearchParams({
-      api_key: apiKey,
-      engine: 'google',
-      q: 'test',
-      num: '1'
-    });
-    
-    const response = await fetch(`${testUrl}?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; ContentBuilder/1.0)',
-      }
-    });
-    
-    console.log('📊 SerpAPI response status:', response.status);
-    
-    if (!response.ok) {
-      console.error('❌ SerpAPI error response:', response.status);
-      return false;
-    }
-    
-    const data = await response.json();
-    console.log('✅ SerpAPI test successful');
-    
-    // Check if we got valid search results
-    if (data.organic_results || data.search_metadata) {
-      return true;
-    } else if (data.error) {
-      console.error('❌ SerpAPI error:', data.error);
-      return false;
-    }
-    
-    return false;
-    
-  } catch (error: any) {
-    console.error('💥 SerpAPI connection test failed:', error);
     return false;
   }
 };

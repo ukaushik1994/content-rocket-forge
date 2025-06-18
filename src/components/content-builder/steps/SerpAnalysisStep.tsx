@@ -12,6 +12,9 @@ import { EnhancedSerpStatus } from '../serp/EnhancedSerpStatus';
 import { SerpAnalysisResult } from '@/types/serp';
 import { getApiKey } from '@/services/apiKeyService';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, AlertTriangle, Settings } from 'lucide-react';
 
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
@@ -24,12 +27,12 @@ export const SerpAnalysisStep = () => {
   const [isCheckingKeys, setIsCheckingKeys] = useState(true);
   const [useEnhancedMode, setUseEnhancedMode] = useState(false);
   
-  // Check if API keys exist
+  // Check if API keys exist and test them immediately
   useEffect(() => {
     const checkApiKeys = async () => {
       try {
         setIsCheckingKeys(true);
-        console.log('🔑 Checking for SERP API keys...');
+        console.log('🔑 Checking and testing SERP API keys...');
         
         // Check both API keys
         const serpApiKey = await getApiKey('serp');
@@ -42,8 +45,7 @@ export const SerpAnalysisStep = () => {
         
         setApiKeysStatus(newStatus);
         
-        // Enable enhanced mode if we have the keyword-serp function available
-        // and at least one API key is configured
+        // Enable enhanced mode if we have at least one API key configured
         if ((serpApiKey || serpstackKey) && mainKeyword) {
           setUseEnhancedMode(true);
         }
@@ -116,6 +118,21 @@ export const SerpAnalysisStep = () => {
     }
   };
   
+  // Get overall API status for quick display
+  const getOverallApiStatus = () => {
+    const { serpApi, serpstack } = apiKeysStatus;
+    
+    if (serpApi.working && serpstack.working) {
+      return { status: 'excellent', label: 'Both APIs Ready', color: 'bg-green-600', icon: CheckCircle };
+    } else if (serpApi.working || serpstack.working) {
+      return { status: 'partial', label: 'One API Ready', color: 'bg-yellow-600', icon: AlertTriangle };
+    } else if (serpApi.configured || serpstack.configured) {
+      return { status: 'configured', label: 'APIs Configured', color: 'bg-blue-600', icon: AlertTriangle };
+    } else {
+      return { status: 'none', label: 'Setup Required', color: 'bg-red-600', icon: Settings };
+    }
+  };
+  
   // Loading state
   if (isCheckingKeys) {
     return (
@@ -139,7 +156,7 @@ export const SerpAnalysisStep = () => {
           </p>
         </div>
         
-        {/* Enhanced Status Component */}
+        {/* Enhanced Status Component - Always show at the top */}
         <EnhancedSerpStatus onStatusChange={handleStatusChange} />
         
         <Tabs defaultValue="setup" className="w-full">
@@ -172,61 +189,107 @@ export const SerpAnalysisStep = () => {
     );
   }
   
-  // Show enhanced mode if available, otherwise fallback to regular mode
-  if (useEnhancedMode && hasWorkingApis) {
-    return (
-      <div className="space-y-6">
-        {/* Enhanced Status at the top */}
-        <EnhancedSerpStatus onStatusChange={handleStatusChange} />
-        
-        {/* Enhanced SERP Integration */}
-        <EnhancedSerpIntegration />
-      </div>
-    );
-  }
+  const overallStatus = getOverallApiStatus();
+  const StatusIcon = overallStatus.icon;
   
-  // Regular SERP analysis mode
   return (
     <div className="space-y-6">
-      {/* Show status even in regular mode */}
-      <EnhancedSerpStatus onStatusChange={handleStatusChange} />
-      
-      <SerpAnalysisHeader
-        mainKeyword={mainKeyword}
-        isAnalyzing={isAnalyzing}
-        totalSelected={totalSelected}
-        handleReanalyze={handleReanalyze}
-        handleContinueWithSelections={handleContinueWithSelections}
-      />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
-        <div className="lg:col-span-3">
-          <SerpAnalysisPanel 
-            serpData={serpData}
-            isLoading={isAnalyzing}
-            mainKeyword={mainKeyword}
-            onAddToContent={handleAddToContent}
-            onRetry={handleReanalyze}
-            onSerpDataChange={handleSerpDataChange}
-          />
-        </div>
-        
-        <div className="lg:col-span-1 relative h-full">
-          <div className="space-y-4">
-            <SelectedItemsSidebar 
-              serpSelections={serpSelections}
-              totalSelected={totalSelected}
-              selectedCounts={selectedCounts}
-              handleToggleSelection={handleToggleSelection}
-            />
-            
-            {/* Add diagnostics panel for debugging */}
-            {(!hasWorkingApis || serpData?.isMockData) && (
-              <SerpApiDiagnostics />
-            )}
+      {/* Always show enhanced status at the top of the analysis step */}
+      <Card className="border-neon-purple/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <StatusIcon className="h-5 w-5 mr-2 text-neon-purple" />
+              SERP API Status
+            </div>
+            <Badge className={`${overallStatus.color} hover:${overallStatus.color}/80`}>
+              {overallStatus.label}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-2 rounded bg-white/5">
+              <span className="text-sm">SerpAPI</span>
+              <div className="flex items-center">
+                {apiKeysStatus.serpApi.working ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : apiKeysStatus.serpApi.configured ? (
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                ) : (
+                  <Settings className="h-4 w-4 text-red-500" />
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded bg-white/5">
+              <span className="text-sm">Serpstack</span>
+              <div className="flex items-center">
+                {apiKeysStatus.serpstack.working ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : apiKeysStatus.serpstack.configured ? (
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                ) : (
+                  <Settings className="h-4 w-4 text-red-500" />
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+          {!hasWorkingApis && (
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => setShowApiSetup(true)}
+                className="text-sm text-neon-purple hover:text-neon-blue underline"
+              >
+                Configure API Keys
+              </button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Show enhanced mode if available, otherwise fallback to regular mode */}
+      {useEnhancedMode && hasWorkingApis ? (
+        <EnhancedSerpIntegration />
+      ) : (
+        <>
+          <SerpAnalysisHeader
+            mainKeyword={mainKeyword}
+            isAnalyzing={isAnalyzing}
+            totalSelected={totalSelected}
+            handleReanalyze={handleReanalyze}
+            handleContinueWithSelections={handleContinueWithSelections}
+          />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
+            <div className="lg:col-span-3">
+              <SerpAnalysisPanel 
+                serpData={serpData}
+                isLoading={isAnalyzing}
+                mainKeyword={mainKeyword}
+                onAddToContent={handleAddToContent}
+                onRetry={handleReanalyze}
+                onSerpDataChange={handleSerpDataChange}
+              />
+            </div>
+            
+            <div className="lg:col-span-1 relative h-full">
+              <div className="space-y-4">
+                <SelectedItemsSidebar 
+                  serpSelections={serpSelections}
+                  totalSelected={totalSelected}
+                  selectedCounts={selectedCounts}
+                  handleToggleSelection={handleToggleSelection}
+                />
+                
+                {/* Add diagnostics panel for debugging when needed */}
+                {(!hasWorkingApis || serpData?.isMockData) && (
+                  <SerpApiDiagnostics />
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
