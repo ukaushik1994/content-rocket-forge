@@ -6,13 +6,22 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
   try {
-    console.log('🧪 Testing Serpstack API key via api-proxy');
+    console.log('🧪 Testing Serpstack API key via api-proxy', {
+      keyLength: apiKey?.length || 0,
+      keyType: typeof apiKey,
+      hasKey: !!apiKey
+    });
     
+    if (!apiKey || apiKey.trim() === '') {
+      console.error('❌ No Serpstack API key provided');
+      return false;
+    }
+
     const { data, error } = await supabase.functions.invoke('api-proxy', {
       body: JSON.stringify({
         service: 'serpstack',
         endpoint: 'test',
-        apiKey: apiKey
+        apiKey: apiKey.trim()
       }),
     });
 
@@ -21,12 +30,15 @@ export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
       return false;
     }
 
+    console.log('📊 Serpstack API test response:', data);
+
     if (data?.success) {
       console.log('✅ Serpstack API test successful');
       return true;
+    } else {
+      console.error('❌ Serpstack API test returned failure:', data);
+      return false;
     }
-
-    return false;
   } catch (error: any) {
     console.error('💥 Serpstack API test exception:', error);
     return false;
@@ -38,13 +50,22 @@ export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
  */
 export const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
   try {
-    console.log('🧪 Testing SerpAPI key via api-proxy');
+    console.log('🧪 Testing SerpAPI key via api-proxy', {
+      keyLength: apiKey?.length || 0,
+      keyType: typeof apiKey,
+      hasKey: !!apiKey
+    });
     
+    if (!apiKey || apiKey.trim() === '') {
+      console.error('❌ No SerpAPI key provided');
+      return false;
+    }
+
     const { data, error } = await supabase.functions.invoke('api-proxy', {
       body: JSON.stringify({
         service: 'serp',
         endpoint: 'test',
-        apiKey: apiKey
+        apiKey: apiKey.trim()
       }),
     });
 
@@ -53,12 +74,15 @@ export const testSerpApiKey = async (apiKey: string): Promise<boolean> => {
       return false;
     }
 
+    console.log('📊 SerpAPI test response:', data);
+
     if (data?.success) {
       console.log('✅ SerpAPI test successful');
       return true;
+    } else {
+      console.error('❌ SerpAPI test returned failure:', data);
+      return false;
     }
-
-    return false;
   } catch (error: any) {
     console.error('💥 SerpAPI test exception:', error);
     return false;
@@ -72,11 +96,16 @@ export const testOpenAIApiKey = async (apiKey: string): Promise<boolean> => {
   try {
     console.log('🧪 Testing OpenAI API key');
     
+    if (!apiKey || apiKey.trim() === '') {
+      console.error('❌ No OpenAI API key provided');
+      return false;
+    }
+    
     const { data, error } = await supabase.functions.invoke('api-proxy', {
       body: JSON.stringify({
         service: 'openai',
         endpoint: 'test',
-        apiKey: apiKey
+        apiKey: apiKey.trim()
       }),
     });
 
@@ -104,11 +133,16 @@ export const testAnthropicApiKey = async (apiKey: string): Promise<boolean> => {
   try {
     console.log('🧪 Testing Anthropic API key');
     
+    if (!apiKey || apiKey.trim() === '') {
+      console.error('❌ No Anthropic API key provided');
+      return false;
+    }
+    
     const { data, error } = await supabase.functions.invoke('api-proxy', {
       body: JSON.stringify({
         service: 'anthropic',
         endpoint: 'test',
-        apiKey: apiKey
+        apiKey: apiKey.trim()
       }),
     });
 
@@ -136,11 +170,16 @@ export const testGeminiApiKey = async (apiKey: string): Promise<boolean> => {
   try {
     console.log('🧪 Testing Gemini API key');
     
+    if (!apiKey || apiKey.trim() === '') {
+      console.error('❌ No Gemini API key provided');
+      return false;
+    }
+    
     const { data, error } = await supabase.functions.invoke('api-proxy', {
       body: JSON.stringify({
         service: 'gemini',
         endpoint: 'test',
-        apiKey: apiKey
+        apiKey: apiKey.trim()
       }),
     });
 
@@ -165,9 +204,17 @@ export const testGeminiApiKey = async (apiKey: string): Promise<boolean> => {
  * Enhanced API key testing that supports multiple SERP providers
  */
 export const testApiKey = async (serviceKey: string, apiKey: string): Promise<boolean> => {
-  if (!apiKey) return false;
+  if (!apiKey || apiKey.trim() === '') {
+    console.warn(`No API key provided for ${serviceKey}`);
+    return false;
+  }
   
   try {
+    console.log(`🔍 Testing ${serviceKey} API key`, {
+      keyLength: apiKey.length,
+      keyType: typeof apiKey
+    });
+
     switch (serviceKey) {
       case 'serp':
         return await testSerpApiKey(apiKey);

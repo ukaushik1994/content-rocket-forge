@@ -42,32 +42,43 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
 
   const checkApiStatus = async () => {
     setIsLoading(true);
+    console.log('🔍 Starting comprehensive API status check');
     
     try {
       // Check SerpAPI
+      console.log('🔍 Checking SerpAPI key');
       const serpApiKey = await getApiKey('serp');
       let serpApiWorking = false;
       
       if (serpApiKey) {
+        console.log('✅ SerpAPI key found in database, testing...');
         setStatus(prev => ({
           ...prev,
-          serpApi: { ...prev.serpApi, testing: true }
+          serpApi: { ...prev.serpApi, configured: true, testing: true }
         }));
         
         serpApiWorking = await testApiKey('serp', serpApiKey);
+        console.log('📊 SerpAPI test result:', serpApiWorking);
+      } else {
+        console.log('❌ No SerpAPI key found in database');
       }
       
       // Check Serpstack
+      console.log('🔍 Checking Serpstack key');
       const serpstackKey = await getApiKey('serpstack');
       let serpstackWorking = false;
       
       if (serpstackKey) {
+        console.log('✅ Serpstack key found in database, testing...');
         setStatus(prev => ({
           ...prev,
-          serpstack: { ...prev.serpstack, testing: true }
+          serpstack: { ...prev.serpstack, configured: true, testing: true }
         }));
         
         serpstackWorking = await testApiKey('serpstack', serpstackKey);
+        console.log('📊 Serpstack test result:', serpstackWorking);
+      } else {
+        console.log('❌ No Serpstack key found in database');
       }
       
       const newStatus = {
@@ -83,11 +94,12 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
         }
       };
       
+      console.log('📊 Final API status:', newStatus);
       setStatus(newStatus);
       onStatusChange?.(newStatus);
       
     } catch (error) {
-      console.error('Error checking SERP API status:', error);
+      console.error('💥 Error checking SERP API status:', error);
       toast.error('Failed to check SERP API status');
     } finally {
       setIsLoading(false);
@@ -203,7 +215,7 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
         </div>
 
         {/* Setup Actions */}
-        {(!status.serpApi.configured || !status.serpstack.configured) && (
+        {(!status.serpApi.configured && !status.serpstack.configured) && (
           <div className="flex items-center justify-between p-3 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
             <div className="text-sm">
               <p className="font-medium">Setup Required</p>
@@ -221,6 +233,26 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
             </Button>
           </div>
         )}
+
+        {/* Configuration Issues Warning */}
+        {(status.serpApi.configured && !status.serpApi.working) || (status.serpstack.configured && !status.serpstack.working) ? (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-600/10 border border-yellow-600/20">
+            <div className="text-sm">
+              <p className="font-medium">Configuration Issues Detected</p>
+              <p className="text-muted-foreground">
+                Some API keys are configured but not working. Please check your Settings.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/settings?tab=api'}
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              Fix Issues
+            </Button>
+          </div>
+        ) : null}
 
         {/* Data Quality Indicator */}
         <div className="text-xs text-muted-foreground">

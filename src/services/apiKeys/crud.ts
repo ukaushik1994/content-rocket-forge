@@ -14,9 +14,12 @@ import { ApiKeyType } from "./types";
  */
 export async function saveApiKey(service: string, key: string): Promise<boolean> {
   try {
-    if (!key.trim()) {
+    if (!key || !key.trim()) {
       throw new Error('API key cannot be empty');
     }
+    
+    // Clean the key
+    const cleanKey = key.trim();
     
     // Get the current user ID
     const { data: { user } } = await supabase.auth.getUser();
@@ -28,9 +31,14 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
     const userId = user.id;
     
     // Make sure the key is valid before saving
-    if (key === 'SERP_API_KEY' || key === 'OPENAI_API_KEY') {
+    if (cleanKey === 'SERP_API_KEY' || cleanKey === 'OPENAI_API_KEY' || cleanKey === 'SERPSTACK_KEY') {
       throw new Error(`It looks like you're trying to save a placeholder value. Please enter a valid API key.`);
     }
+
+    console.log(`💾 Saving ${service} API key for user ${userId}`, {
+      keyLength: cleanKey.length,
+      keyType: typeof cleanKey
+    });
 
     const { data: existingKey, error: fetchError } = await supabase
       .from('api_keys')
@@ -43,7 +51,7 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
       throw fetchError;
     }
 
-    const encrypted_key = encryptKey(key);
+    const encrypted_key = encryptKey(cleanKey);
     
     if (!encrypted_key) {
       throw new Error(`Failed to encrypt the ${service} API key`);
@@ -51,6 +59,7 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
 
     if (existingKey) {
       // Update existing key
+      console.log(`🔄 Updating existing ${service} API key`);
       const { error } = await supabase
         .from('api_keys')
         .update({ 
@@ -66,6 +75,7 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
       }
     } else {
       // Insert new key
+      console.log(`➕ Inserting new ${service} API key`);
       const { error } = await supabase
         .from('api_keys')
         .insert({ 
@@ -81,9 +91,10 @@ export async function saveApiKey(service: string, key: string): Promise<boolean>
       }
     }
 
+    console.log(`✅ ${service} API key saved successfully`);
     return true;
   } catch (error: any) {
-    console.error('Error saving API key:', error);
+    console.error(`Error saving ${service} API key:`, error);
     toast.error(error.message || `Error saving ${service} API key`);
     return false;
   }
@@ -105,6 +116,7 @@ export async function getApiKey(service: string): Promise<string | null> {
     }
     
     const userId = user.id;
+    console.log(`🔍 Retrieving ${service} API key for user ${userId}`);
 
     const { data, error } = await supabase
       .from('api_keys')
@@ -120,16 +132,22 @@ export async function getApiKey(service: string): Promise<string | null> {
     }
     
     if (!data || !data.encrypted_key) {
+      console.log(`No ${service} API key found in database`);
       return null;
     }
     
     const decryptedKey = decryptKey(data.encrypted_key);
     
     // Validate decrypted key
-    if (!decryptedKey || decryptedKey === 'SERP_API_KEY' || decryptedKey === 'OPENAI_API_KEY') {
+    if (!decryptedKey || decryptedKey === 'SERP_API_KEY' || decryptedKey === 'OPENAI_API_KEY' || decryptedKey === 'SERPSTACK_KEY') {
       console.error(`Invalid ${service} API key retrieved from database`);
       return null;
     }
+    
+    console.log(`✅ ${service} API key retrieved successfully`, {
+      keyLength: decryptedKey.length,
+      keyType: typeof decryptedKey
+    });
     
     return decryptedKey;
   } catch (error) {
@@ -165,6 +183,7 @@ export async function deleteApiKey(service: string): Promise<boolean> {
       throw error;
     }
     
+    console.log(`🗑️ ${service} API key deleted successfully`);
     return true;
   } catch (error: any) {
     console.error('Error deleting API key:', error);
