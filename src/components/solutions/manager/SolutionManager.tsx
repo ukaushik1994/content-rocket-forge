@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Solution } from '@/contexts/content-builder/types';
 import { useSolutionsData } from '../hooks/useSolutionsData';
-import { SolutionFormDialog } from './SolutionFormDialog';
+import { EnhancedSolutionFormDialog } from './EnhancedSolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
 import { useSolutionForm } from './hooks/useSolutionForm';
 import { useDeleteSolution } from './hooks/useDeleteSolution';
@@ -132,7 +131,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       )}
       
       {/* Add/Edit Dialog */}
-      <SolutionFormDialog
+      <EnhancedSolutionFormDialog
         open={solutionForm.isDialogOpen}
         onOpenChange={solutionForm.setIsDialogOpen}
         onSubmit={solutionForm.handleSubmitForm}
