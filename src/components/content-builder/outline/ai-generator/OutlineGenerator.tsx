@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
@@ -19,8 +18,7 @@ export function OutlineGenerator() {
     selectedKeywords,
     serpSelections,
     contentTitle,
-    additionalInstructions,
-    outline
+    additionalInstructions
   } = state;
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -78,7 +76,7 @@ export function OutlineGenerator() {
         customInstructions
       );
       
-      console.log("AI Generation prompt:", outlinePrompt);
+      console.info("AI Generation prompt:", outlinePrompt);
       
       // Make sure the selected provider has a key configured
       const hasApiKey = await getApiKey(aiProvider);
@@ -210,38 +208,19 @@ export function OutlineGenerator() {
   };
   
   const processOutlineResult = (outlineText: string) => {
-    console.log("Processing outline result:", outlineText);
-    
     // Parse the outline into an array of strings (one per line)
     const outlineArray = outlineText
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line.match(/^\d+\.\s/) || line.match(/^[IVX]+\.\s/) || line.match(/^-\s/) || line.match(/^\*\s/)) // Include different numbering formats
-      .map(line => line.replace(/^\d+\.\s/, '').replace(/^[IVX]+\.\s/, '').replace(/^-\s/, '').replace(/^\*\s/, '')); // Remove numbering
-    
-    console.log("Parsed outline array:", outlineArray);
+      .filter(line => line.match(/^\d+\.\s/) || line.match(/^[IVX]+\.\s/)) // Only include numbered lines
+      .map(line => line.replace(/^\d+\.\s/, '').replace(/^[IVX]+\.\s/, '')); // Remove numbering
     
     if (outlineArray.length === 0) {
-      // Fallback: try to split by lines and take non-empty lines
-      const fallbackArray = outlineText
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0 && !line.match(/^(create|generate|outline)/i))
-        .slice(0, 10); // Limit to 10 sections max
-      
-      if (fallbackArray.length > 0) {
-        console.log("Using fallback parsing:", fallbackArray);
-        dispatch({ type: 'SET_OUTLINE', payload: fallbackArray });
-        toast.success(`AI outline generated with ${fallbackArray.length} sections`);
-        return;
-      }
-      
       toast.error("Could not parse the generated outline. Please try again.");
       return;
     }
     
     // Update the outline in state
-    console.log("Dispatching SET_OUTLINE with:", outlineArray);
     dispatch({ type: 'SET_OUTLINE', payload: outlineArray });
     
     // Set a title if none exists
@@ -251,7 +230,7 @@ export function OutlineGenerator() {
     }
     
     // Mark the outline step as completed
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 3 });
     
     toast.success(`AI outline generated with ${outlineArray.length} sections`);
   };
@@ -274,11 +253,6 @@ export function OutlineGenerator() {
             <p className="text-sm text-white/70">
               Generate a structured outline based on your research
             </p>
-            {outline.length > 0 && (
-              <p className="text-xs text-green-400">
-                ✓ Current outline has {outline.length} sections
-              </p>
-            )}
           </div>
         </div>
         
