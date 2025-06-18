@@ -282,7 +282,7 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-full bg-white/10 ${STEPS[currentStep].color}`}>
-                  <STEPS[currentStep].icon className="h-5 w-5" />
+                  {React.createElement(STEPS[currentStep].icon, { className: "h-5 w-5" })}
                 </div>
                 <div>
                   <CardTitle className="text-lg">{STEPS[currentStep].title}</CardTitle>
