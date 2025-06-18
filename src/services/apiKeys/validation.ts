@@ -1,4 +1,5 @@
-import { testOpenAIApiKey, testAnthropicApiKey, testGeminiApiKey } from './testing';
+
+import { testApiKey } from './testing';
 
 /**
  * Detect API key type based on patterns and format
@@ -37,6 +38,28 @@ export const detectApiKeyType = async (apiKey: string): Promise<string | null> =
   }
   
   return null;
+};
+
+/**
+ * Validate provider API key format
+ */
+export const validateProviderKeyFormat = (provider: string, key: string): boolean => {
+  switch (provider) {
+    case 'openai':
+      return key.startsWith('sk-') && key.length >= 40;
+    case 'anthropic':
+      return key.startsWith('sk-ant-') && key.length >= 40;
+    case 'gemini':
+      return key.startsWith('AIzaSy') && key.length >= 35;
+    case 'serp':
+      return validateSerpApiKey(key);
+    case 'serpstack':
+      return validateSerpstackApiKey(key);
+    case 'stripe':
+      return key.startsWith('sk_') || key.startsWith('pk_');
+    default:
+      return key.length >= 16; // Basic validation for other providers
+  }
 };
 
 /**

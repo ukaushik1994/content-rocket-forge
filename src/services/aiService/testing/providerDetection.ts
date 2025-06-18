@@ -32,6 +32,8 @@ export function getProviderKeyFormatError(provider: string): string {
       return 'Mistral API keys must be at least 32 alphanumeric characters';
     case 'serp':
       return 'SERP API keys must be at least 16 alphanumeric characters with optional dashes and underscores';
+    case 'serpstack':
+      return 'Serpstack API keys must be 32-character alphanumeric strings';
     default:
       return `Invalid ${provider} API key format`;
   }

@@ -1,8 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
 
-import { testOpenAIApiKey } from './openai';
-import { testAnthropicApiKey } from './anthropic';
-import { testGeminiApiKey } from './gemini';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Test Serpstack API key
@@ -49,6 +46,102 @@ export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
     
   } catch (error: any) {
     console.error('💥 Serpstack API connection test failed:', error);
+    return false;
+  }
+};
+
+/**
+ * Test OpenAI API key
+ */
+export const testOpenAIApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    console.log('🧪 Testing OpenAI API key');
+    
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        service: 'openai',
+        endpoint: 'test',
+        apiKey: apiKey
+      }),
+    });
+
+    if (error) {
+      console.error('❌ OpenAI API test failed:', error);
+      return false;
+    }
+
+    if (data?.success) {
+      console.log('✅ OpenAI API test successful');
+      return true;
+    }
+
+    return false;
+  } catch (error: any) {
+    console.error('💥 OpenAI API test exception:', error);
+    return false;
+  }
+};
+
+/**
+ * Test Anthropic API key
+ */
+export const testAnthropicApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    console.log('🧪 Testing Anthropic API key');
+    
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        service: 'anthropic',
+        endpoint: 'test',
+        apiKey: apiKey
+      }),
+    });
+
+    if (error) {
+      console.error('❌ Anthropic API test failed:', error);
+      return false;
+    }
+
+    if (data?.success) {
+      console.log('✅ Anthropic API test successful');
+      return true;
+    }
+
+    return false;
+  } catch (error: any) {
+    console.error('💥 Anthropic API test exception:', error);
+    return false;
+  }
+};
+
+/**
+ * Test Gemini API key
+ */
+export const testGeminiApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    console.log('🧪 Testing Gemini API key');
+    
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: JSON.stringify({
+        service: 'gemini',
+        endpoint: 'test',
+        apiKey: apiKey
+      }),
+    });
+
+    if (error) {
+      console.error('❌ Gemini API test failed:', error);
+      return false;
+    }
+
+    if (data?.success) {
+      console.log('✅ Gemini API test successful');
+      return true;
+    }
+
+    return false;
+  } catch (error: any) {
+    console.error('💥 Gemini API test exception:', error);
     return false;
   }
 };
