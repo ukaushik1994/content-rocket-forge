@@ -129,7 +129,7 @@ export const ResourcesTab: React.FC<ResourcesTabProps> = ({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label html For="resource-title">Title *</Label>
+              <Label htmlFor="resource-title">Title *</Label>
               <Input
                 id="resource-title"
                 placeholder="e.g., Getting Started Guide"
