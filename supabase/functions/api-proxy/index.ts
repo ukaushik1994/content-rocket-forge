@@ -1,8 +1,10 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // We'll still use these as fallbacks if available
 const SERP_API_KEY = Deno.env.get("SERP_API_KEY");
+const SERPSTACK_KEY = Deno.env.get("SERPSTACK_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
@@ -160,6 +162,41 @@ async function handleApiKeyTest(service: string, apiKey: string) {
         );
       } else {
         throw new Error(data.error || 'Invalid SERP API key');
+      }
+    } else if (service === 'serpstack') {
+      // For Serpstack API, test with their search endpoint
+      const url = new URL('https://api.serpstack.com/search');
+      url.searchParams.append('access_key', apiKey);
+      url.searchParams.append('query', 'test');
+      url.searchParams.append('type', 'web');
+      url.searchParams.append('num', '1');
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; ContentBuilder/1.0)',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Serpstack API error response:', response.status, errorText);
+        throw new Error(`Serpstack API error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Check if we got valid search results (Serpstack wraps results in success field)
+      if (data.success && (data.organic_results || data.search_information)) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'Serpstack API connection successful' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else if (data.error) {
+        console.error('❌ Serpstack API error:', data.error);
+        throw new Error(`Serpstack API error: ${data.error.info || data.error}`);
+      } else {
+        throw new Error('Serpstack API returned unexpected response format');
       }
     } else if (service === 'openai') {
       // For OpenAI, validate format and make a simple test call
