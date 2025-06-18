@@ -6,15 +6,14 @@ import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
-import { Search, ChevronRight, Sparkles, Loader2, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
-import { getApiKey } from '@/services/apiKeyService';
-import { testSerpApiKeyComprehensive } from '@/utils/apiKeyTestUtils';
+import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -31,10 +30,15 @@ const mockClusters: ContentCluster[] = [{
   keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
 }];
 
-interface ApiKeyStatus {
-  status: 'checking' | 'working' | 'invalid' | 'not-found';
-  message: string;
-  details?: string;
+interface ApiKeysStatus {
+  serpApi: {
+    configured: boolean;
+    working: boolean;
+  };
+  serpstack: {
+    configured: boolean;
+    working: boolean;
+  };
 }
 
 export const KeywordSelectionStep = () => {
@@ -59,60 +63,11 @@ export const KeywordSelectionStep = () => {
   const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
   const [activeTab, setActiveTab] = useState('research');
   const [hasSearched, setHasSearched] = useState(false);
-  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>({
-    status: 'checking',
-    message: 'Checking SERP API configuration...'
+  const [apiKeysStatus, setApiKeysStatus] = useState<ApiKeysStatus>({
+    serpApi: { configured: false, working: false },
+    serpstack: { configured: false, working: false }
   });
-  
-  // Check API key status on component mount
-  useEffect(() => {
-    const checkApiKeyStatus = async () => {
-      try {
-        setApiKeyStatus({
-          status: 'checking',
-          message: 'Checking SERP API key...'
-        });
-
-        // Check if API key exists
-        const apiKey = await getApiKey('serp');
-        
-        if (!apiKey) {
-          setApiKeyStatus({
-            status: 'not-found',
-            message: 'No SERP API key configured',
-            details: 'Add your SerpAPI key in Settings to get real data'
-          });
-          return;
-        }
-
-        // Test the API key comprehensively
-        const testResult = await testSerpApiKeyComprehensive(apiKey);
-        
-        if (testResult.directApi.success || testResult.edgeFunction.success) {
-          setApiKeyStatus({
-            status: 'working',
-            message: 'SERP API is working correctly',
-            details: testResult.directApi.success ? 'Direct API connection verified' : 'Edge function connection verified'
-          });
-        } else {
-          setApiKeyStatus({
-            status: 'invalid',
-            message: 'SERP API key is not working',
-            details: testResult.directApi.error || testResult.edgeFunction.error || 'Unknown error'
-          });
-        }
-      } catch (error) {
-        console.error('Error checking API key status:', error);
-        setApiKeyStatus({
-          status: 'invalid',
-          message: 'Error checking SERP API status',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    };
-
-    checkApiKeyStatus();
-  }, []);
+  const [useEnhancedMode, setUseEnhancedMode] = useState(false);
   
   // Get selection statistics for the SERP data
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -132,6 +87,16 @@ export const KeywordSelectionStep = () => {
       });
     }
   }, [mainKeyword, selectedKeywords, dispatch]);
+  
+  // Handle status updates from the EnhancedSerpStatus component
+  const handleStatusChange = (status: ApiKeysStatus) => {
+    setApiKeysStatus(status);
+    
+    // Enable enhanced mode if we have working APIs
+    if ((status.serpApi.working || status.serpstack.working) && mainKeyword) {
+      setUseEnhancedMode(true);
+    }
+  };
   
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
     setSuggestions(searchSuggestions);
@@ -207,11 +172,6 @@ export const KeywordSelectionStep = () => {
     generateOutlineFromSelections();
   };
   
-  // Helper function to get items by type
-  const getItemsByType = (type: string) => {
-    return serpSelections.filter(item => item.type === type);
-  };
-  
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
     if (mainKeyword) {
@@ -219,36 +179,9 @@ export const KeywordSelectionStep = () => {
     }
   };
   
-  // Function to get status icon and styling
-  const getStatusIcon = (status: ApiKeyStatus['status']) => {
-    switch (status) {
-      case 'working':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'invalid':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'not-found':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'checking':
-        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
-    }
-  };
-
-  const getStatusColor = (status: ApiKeyStatus['status']) => {
-    switch (status) {
-      case 'working':
-        return 'text-green-500';
-      case 'invalid':
-        return 'text-red-500';
-      case 'not-found':
-        return 'text-yellow-500';
-      case 'checking':
-        return 'text-blue-500';
-    }
-  };
-  
   return (
     <div className="space-y-8">
-      {/* Header with animation and API status */}
+      {/* Header with enhanced API status */}
       <motion.div 
         className="relative overflow-hidden rounded-lg glass-panel border border-white/10 p-5"
         initial={{ opacity: 0, y: -20 }}
@@ -257,51 +190,19 @@ export const KeywordSelectionStep = () => {
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary animate-pulse" />
               <h3 className="text-lg font-semibold">Selection & Analysis</h3>
             </div>
-            
-            {/* SERP API Status Indicator */}
-            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-              {getStatusIcon(apiKeyStatus.status)}
-              <span className={`text-xs font-medium ${getStatusColor(apiKeyStatus.status)}`}>
-                {apiKeyStatus.status === 'working' && 'SERP API Ready'}
-                {apiKeyStatus.status === 'invalid' && 'API Key Invalid'}
-                {apiKeyStatus.status === 'not-found' && 'No API Key'}
-                {apiKeyStatus.status === 'checking' && 'Checking...'}
-              </span>
-            </div>
           </div>
           
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground mb-4">
             Enter your main keyword below to analyze search trends and discover content opportunities
           </p>
           
-          {/* Status Details */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">{apiKeyStatus.message}</span>
-            {apiKeyStatus.details && apiKeyStatus.status !== 'checking' && (
-              <>
-                <span className="text-muted-foreground">•</span>
-                <span className={`${getStatusColor(apiKeyStatus.status)} font-medium`}>
-                  {apiKeyStatus.details}
-                </span>
-              </>
-            )}
-            {apiKeyStatus.status === 'not-found' && (
-              <>
-                <span className="text-muted-foreground">•</span>
-                <button 
-                  onClick={() => window.location.href = '/settings/api'}
-                  className="text-primary hover:text-primary/80 underline font-medium"
-                >
-                  Add API Key
-                </button>
-              </>
-            )}
-          </div>
+          {/* Enhanced SERP Status Display */}
+          <EnhancedSerpStatus onStatusChange={handleStatusChange} />
         </div>
       </motion.div>
       
