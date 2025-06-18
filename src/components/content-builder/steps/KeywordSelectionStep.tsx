@@ -4,6 +4,8 @@ import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
 import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
+import { ClusterSelection } from '../keyword/ClusterSelection';
+import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
 import { Search, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +14,21 @@ import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
-import { InteractiveAnalysisSteps } from './keyword-analysis/InteractiveAnalysisSteps';
+
+// Mock data for clusters until we integrate with backend
+const mockClusters: ContentCluster[] = [{
+  id: '1',
+  name: 'SEO Optimization',
+  keywords: ['seo strategy', 'keyword research', 'backlink building', 'content optimization']
+}, {
+  id: '2',
+  name: 'Content Marketing',
+  keywords: ['blog strategy', 'content planning', 'editorial calendar', 'content distribution']
+}, {
+  id: '3',
+  name: 'Social Media',
+  keywords: ['social media marketing', 'engagement strategies', 'social analytics', 'platform optimization']
+}];
 
 interface ApiKeysStatus {
   serpApi: {
@@ -30,25 +46,28 @@ export const KeywordSelectionStep = () => {
     state,
     dispatch,
     analyzeKeyword,
+    addContentFromSerp,
     generateOutlineFromSelections
   } = useContentBuilder();
   
   const {
     mainKeyword,
     selectedKeywords,
+    selectedCluster,
     serpData,
     serpSelections,
     isAnalyzing
   } = state;
   
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState('analysis');
+  const [clusters, setClusters] = useState<ContentCluster[]>(mockClusters);
+  const [activeTab, setActiveTab] = useState('research');
   const [hasSearched, setHasSearched] = useState(false);
   const [apiKeysStatus, setApiKeysStatus] = useState<ApiKeysStatus>({
     serpApi: { configured: false, working: false },
     serpstack: { configured: false, working: false }
   });
-  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [useEnhancedMode, setUseEnhancedMode] = useState(false);
   
   // Get selection statistics for the SERP data
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -72,6 +91,11 @@ export const KeywordSelectionStep = () => {
   // Handle status updates from the EnhancedSerpStatus component
   const handleStatusChange = (status: ApiKeysStatus) => {
     setApiKeysStatus(status);
+    
+    // Enable enhanced mode if we have working APIs
+    if ((status.serpApi.working || status.serpstack.working) && mainKeyword) {
+      setUseEnhancedMode(true);
+    }
   };
   
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
@@ -91,9 +115,8 @@ export const KeywordSelectionStep = () => {
       });
     }
 
-    // Start interactive analysis
+    // Automatically start SERP analysis when a keyword is entered
     setHasSearched(true);
-    setActiveTab('analysis');
     await analyzeKeyword(keyword);
   };
   
@@ -111,6 +134,21 @@ export const KeywordSelectionStep = () => {
     });
   };
   
+  const handleSelectCluster = (cluster: ContentCluster) => {
+    dispatch({
+      type: 'SELECT_CLUSTER',
+      payload: cluster
+    });
+  };
+  
+  const handleClearCluster = () => {
+    dispatch({
+      type: 'SELECT_CLUSTER',
+      payload: null
+    });
+  };
+  
+  // Helper function to toggle selection state
   const handleToggleSelection = (type: string, content: string) => {
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
@@ -118,12 +156,12 @@ export const KeywordSelectionStep = () => {
     });
   };
   
-  const handleAnalysisComplete = (data: any) => {
-    setAnalysisData(data);
-    // Switch to SERP features tab once analysis is complete
-    setActiveTab('features');
+  // Function to handle adding content from SERP items
+  const handleAddToContent = (content: string, type: string) => {
+    handleToggleSelection(type, content);
   };
-
+  
+  // Handle continuing with selected items
   const handleContinueWithSelections = () => {
     if (totalSelected === 0) return;
     
@@ -133,33 +171,13 @@ export const KeywordSelectionStep = () => {
     // Generate outline from selections
     generateOutlineFromSelections();
   };
-
-  const renderTabNavigation = () => (
-    <div className="flex space-x-1 bg-muted/30 p-1 rounded-lg">
-      <Button
-        variant={activeTab === 'analysis' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => setActiveTab('analysis')}
-        className="flex-1"
-      >
-        Analysis
-      </Button>
-      <Button
-        variant={activeTab === 'features' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => setActiveTab('features')}
-        disabled={!analysisData && !serpData}
-        className="flex-1"
-      >
-        SERP Features
-        {totalSelected > 0 && (
-          <span className="ml-2 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
-            {totalSelected}
-          </span>
-        )}
-      </Button>
-    </div>
-  );
+  
+  // Handle reanalyzing the current keyword
+  const handleReanalyze = async () => {
+    if (mainKeyword) {
+      await analyzeKeyword(mainKeyword);
+    }
+  };
   
   return (
     <div className="space-y-8">
@@ -175,12 +193,12 @@ export const KeywordSelectionStep = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <h3 className="text-lg font-semibold">Interactive SERP Analysis</h3>
+              <h3 className="text-lg font-semibold">Selection & Analysis</h3>
             </div>
           </div>
           
           <p className="text-sm text-muted-foreground mb-4">
-            Enter your main keyword below to start the step-by-step SERP analysis process
+            Enter your main keyword below to analyze search trends and discover content opportunities
           </p>
           
           {/* Enhanced SERP Status Display */}
@@ -197,7 +215,7 @@ export const KeywordSelectionStep = () => {
               Main Keyword
             </Label>
             <div className="text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
-              Start with keyword research
+              Power your content with the right keywords
             </div>
           </div>
           <div className="backdrop-blur-sm bg-white/5 rounded-lg p-0.5 border border-white/10 shadow-inner">
@@ -216,10 +234,10 @@ export const KeywordSelectionStep = () => {
               <div className="rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-6 mb-4">
                 <Sparkles className="h-8 w-8 text-neon-purple" />
               </div>
-              <h3 className="text-xl font-medium mb-2">Ready for Interactive Analysis</h3>
+              <h3 className="text-xl font-medium mb-2">Search to analyze your keyword</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Enter your main keyword above to start the step-by-step SERP analysis. 
-                Watch as we analyze search volume, competition, and SERP features in real-time.
+                Enter your main keyword above to see search insights, 
+                related keywords, and content suggestions from top-ranking pages
               </p>
             </motion.div>
           )}
@@ -232,7 +250,7 @@ export const KeywordSelectionStep = () => {
               key="results-state"
             >
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left column - Keywords and selections */}
+                {/* Left column - Keyword selections */}
                 <div className="lg:col-span-1 space-y-6">
                   {/* Selected Keywords */}
                   <div className="animate-fade-in">
@@ -242,75 +260,23 @@ export const KeywordSelectionStep = () => {
                     />
                   </div>
                   
-                  {/* Selected Items Sidebar - only show when we have selections */}
-                  {totalSelected > 0 && (
-                    <SelectedItemsSidebar 
-                      serpSelections={serpSelections}
-                      totalSelected={totalSelected}
-                      selectedCounts={selectedCounts}
-                      handleToggleSelection={handleToggleSelection}
-                    />
-                  )}
+                  {/* Selected Items Sidebar */}
+                  <SelectedItemsSidebar 
+                    serpSelections={serpSelections}
+                    totalSelected={totalSelected}
+                    selectedCounts={selectedCounts}
+                    handleToggleSelection={handleToggleSelection}
+                  />
                 </div>
                 
-                {/* Right column - Analysis content */}
-                <div className="lg:col-span-2 space-y-4">
-                  {/* Tab Navigation */}
-                  {renderTabNavigation()}
-                  
-                  {/* Tab Content */}
-                  <AnimatePresence mode="wait">
-                    {activeTab === 'analysis' && (
-                      <motion.div
-                        key="analysis"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <InteractiveAnalysisSteps
-                          keyword={mainKeyword}
-                          onAnalysisComplete={handleAnalysisComplete}
-                          serpData={serpData}
-                          isAnalyzing={isAnalyzing}
-                        />
-                      </motion.div>
-                    )}
-                    
-                    {activeTab === 'features' && (analysisData || serpData) && (
-                      <motion.div
-                        key="features"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <SerpAnalysisPanel 
-                          serpData={analysisData || serpData}
-                          isLoading={false}
-                          mainKeyword={mainKeyword}
-                          onAddToContent={(content, type) => handleToggleSelection(type, content)}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  
-                  {/* Continue Button */}
-                  {totalSelected > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex justify-end pt-4"
-                    >
-                      <Button
-                        onClick={handleContinueWithSelections}
-                        className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300 shadow-lg"
-                      >
-                        Continue with {totalSelected} selections
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  )}
+                {/* Right column - SERP Analysis */}
+                <div className="lg:col-span-2">
+                  <SerpAnalysisPanel 
+                    serpData={serpData}
+                    isLoading={isAnalyzing}
+                    mainKeyword={mainKeyword}
+                    onAddToContent={handleAddToContent}
+                  />
                 </div>
               </div>
             </motion.div>

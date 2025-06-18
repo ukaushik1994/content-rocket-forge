@@ -1,42 +1,55 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { handleCorsPreflightRequest } from "../shared/cors.ts";
+import { createErrorResponse, createSuccessResponse } from "../shared/errors.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
 
-// Initialize Supabase client for database operations
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const SERPAPI_KEY = Deno.env.get("SERP_API_KEY");
+const SERPSTACK_KEY = Deno.env.get("SERPSTACK_KEY");
 
-const SERPAPI_KEY = Deno.env.get('SERP_API_KEY');
-const SERPSTACK_KEY = Deno.env.get('SERPSTACK_KEY');
+// Type definitions for API responses
+interface VolumeResponse {
+  search_volume?: number;
+  related_queries?: Array<{ title: string; volume?: number }>;
+}
+
+interface SerpResponse {
+  organic_results?: any[];
+  ads?: any[];
+  related_questions?: any[];
+  images_results?: any[];
+  video_results?: any[];
+  inline_videos?: any[];
+  news_results?: any[];
+  top_stories?: any[];
+  knowledge_graph?: any;
+  search_information?: {
+    total_results?: number;
+  };
+  request?: {
+    processed_timestamp?: string;
+  };
+}
 
 serve(async (req) => {
-  console.log('🚀 Enhanced SERP analysis function called');
-  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest();
   }
 
   try {
     const { keyword, geo = "US", forceRefresh = false } = await req.json();
     
     if (!keyword) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Keyword is required" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return createErrorResponse("Keyword is required", 400, 'keyword-serp', 'missing-keyword');
     }
 
-    console.log(`🔍 Starting enhanced SERP analysis for keyword: "${keyword}" in geo: "${geo}"`);
+    console.log(`Enhanced SERP analysis for keyword: "${keyword}" in geo: "${geo}"`);
 
     // 1. Check cache first (unless force refresh is requested)
     if (!forceRefresh) {
@@ -52,188 +65,177 @@ serve(async (req) => {
         const cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
         
         if (cacheAge < cacheExpiry) {
-          console.log(`✅ Using cached data for ${keyword} (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
-          return new Response(
-            JSON.stringify({ success: true, data: cached.payload, cached: true }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          console.log(`Using cached data for ${keyword} (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
+          return createSuccessResponse(cached.payload);
         } else {
-          console.log(`⏰ Cache expired for ${keyword}, fetching fresh data`);
+          console.log(`Cache expired for ${keyword}, fetching fresh data`);
         }
       }
     }
 
-    // 2. Prepare API calls - exactly one per service
-    const apiCalls = [];
-    let searchVolume = 0;
-    let relatedKeywords = [];
-    let serpData = {
-      organic_results: [],
-      ads: [],
-      related_questions: [],
-      news_results: [],
-      images_results: [],
-      video_results: [],
-      knowledge_graph: null,
-      total_results: 0,
-      processed_timestamp: new Date().toISOString()
-    };
-
-    // SerpApi Google Trends call (for search volume and related keywords)
+    // 2. Prepare API calls
+    const calls = [];
+    
+    // SerpApi Google Trends call (if key available)
     if (SERPAPI_KEY) {
-      console.log('📊 Fetching search volume data from SerpApi...');
-      const trendsUrl = new URL("https://serpapi.com/search");
-      trendsUrl.searchParams.set("engine", "google_trends");
-      trendsUrl.searchParams.set("data_type", "search_volume");
-      trendsUrl.searchParams.set("q", keyword);
-      trendsUrl.searchParams.set("geo", geo);
-      trendsUrl.searchParams.set("date", "today 12-m");
-      trendsUrl.searchParams.set("api_key", SERPAPI_KEY);
+      const volumeURL = new URL("https://serpapi.com/search");
+      volumeURL.searchParams.set("engine", "google_trends");
+      volumeURL.searchParams.set("data_type", "search_volume");
+      volumeURL.searchParams.set("q", keyword);
+      volumeURL.searchParams.set("geo", geo);
+      volumeURL.searchParams.set("date", "today 12-m");
+      volumeURL.searchParams.set("api_key", SERPAPI_KEY);
       
-      apiCalls.push(
-        fetch(trendsUrl.toString())
-          .then(async (response) => {
-            if (response.ok) {
-              const data = await response.json();
-              searchVolume = data.search_volume || 0;
-              relatedKeywords = (data.related_queries || []).map((q: any) => q.title || q).filter(Boolean);
-              console.log(`✅ SerpApi: Found search volume ${searchVolume} and ${relatedKeywords.length} related keywords`);
-            } else {
-              console.warn(`⚠️ SerpApi request failed: ${response.status}`);
-            }
-          })
-          .catch(error => {
-            console.error("❌ SerpApi error:", error);
-          })
-      );
+      calls.push(fetch(volumeURL.toString()));
     } else {
-      console.log('⚠️ No SERPAPI_KEY found, skipping search volume analysis');
+      calls.push(Promise.resolve(null));
     }
 
-    // Serpstack SERP call (for organic results, ads, and SERP features)
+    // Serpstack SERP call (if key available)
     if (SERPSTACK_KEY) {
-      console.log('🔍 Fetching SERP data from Serpstack...');
-      const serpUrl = new URL("https://api.serpstack.com/search");
-      serpUrl.searchParams.set("access_key", SERPSTACK_KEY);
-      serpUrl.searchParams.set("query", keyword);
-      serpUrl.searchParams.set("type", "web");
-      serpUrl.searchParams.set("location", geo === "US" ? "United States" : geo);
+      const serpURL = new URL("https://api.serpstack.com/search");
+      serpURL.searchParams.set("access_key", SERPSTACK_KEY);
+      serpURL.searchParams.set("query", keyword);
+      serpURL.searchParams.set("type", "web");
+      serpURL.searchParams.set("location", geo === "US" ? "United States" : geo);
       
-      apiCalls.push(
-        fetch(serpUrl.toString())
-          .then(async (response) => {
-            if (response.ok) {
-              const data = await response.json();
-              if (data.success !== false) {
-                serpData = {
-                  organic_results: data.organic_results || [],
-                  ads: data.ads || [],
-                  related_questions: data.related_questions || [],
-                  news_results: data.news_results || data.top_stories || [],
-                  images_results: data.images_results || [],
-                  video_results: data.video_results || data.inline_videos || [],
-                  knowledge_graph: data.knowledge_graph || null,
-                  total_results: data.search_information?.total_results || 0,
-                  processed_timestamp: data.request?.processed_timestamp || new Date().toISOString()
-                };
-                console.log(`✅ Serpstack: Found ${serpData.organic_results.length} organic results, ${serpData.ads.length} ads`);
-              } else {
-                console.warn(`⚠️ Serpstack API error:`, data.error);
-              }
-            } else {
-              console.warn(`⚠️ Serpstack request failed: ${response.status}`);
-            }
-          })
-          .catch(error => {
-            console.error("❌ Serpstack error:", error);
-          })
-      );
+      calls.push(fetch(serpURL.toString()));
     } else {
-      console.log('⚠️ No SERPSTACK_KEY found, skipping SERP features analysis');
+      calls.push(Promise.resolve(null));
     }
 
-    // 3. Execute all API calls in parallel
-    await Promise.all(apiCalls);
+    // 3. Execute API calls in parallel
+    const [volumeResponse, serpResponse] = await Promise.all(calls);
+    
+    let volumeData: VolumeResponse = {};
+    let serpData: SerpResponse = {};
+    
+    // Process volume data
+    if (volumeResponse && volumeResponse.ok) {
+      try {
+        volumeData = await volumeResponse.json();
+        console.log("SerpApi volume data retrieved successfully");
+      } catch (error) {
+        console.error("Error parsing SerpApi response:", error);
+      }
+    }
+    
+    // Process SERP data
+    if (serpResponse && serpResponse.ok) {
+      try {
+        const serpResponseData = await serpResponse.json();
+        serpData = serpResponseData.success ? serpResponseData : {};
+        console.log("Serpstack SERP data retrieved successfully");
+      } catch (error) {
+        console.error("Error parsing Serpstack response:", error);
+      }
+    }
 
     // 4. Calculate derived metrics
-    const adsFilled = serpData.ads.length;
+    const adsFilled = serpData.ads?.length ?? 0;
     const competitionPct = Math.min(adsFilled / 10.0, 1.0); // Max 10 ad slots
+    const searchVolume = volumeData.search_volume ?? 0;
     
     // SEO Difficulty: higher competition and volume = harder
     const seoDifficulty = searchVolume > 0 
-      ? Math.round((competitionPct * 100 / Math.log10(searchVolume + 10)) * 100) / 100
+      ? +(competitionPct * 100 / Math.log10(searchVolume + 10)).toFixed(2)
       : 0;
     
-    // Opportunity Score: lower competition + higher volume = better opportunity  
+    // Opportunity Score: lower competition + higher volume = better opportunity
     const opportunityScore = searchVolume > 0
-      ? Math.round(((1 - competitionPct) * Math.log10(searchVolume + 10) * 10) * 100) / 100
+      ? +((1 - competitionPct) * Math.log10(searchVolume + 10) * 10).toFixed(2)
       : 0;
 
-    console.log(`📈 Calculated metrics - Competition: ${competitionPct}, SEO Difficulty: ${seoDifficulty}, Opportunity: ${opportunityScore}`);
+    // 5. Generate strategic insights
+    const generateInsights = (volume: number, competition: number, difficulty: number, opportunity: number) => {
+      const insights = [];
+      
+      if (volume === 0) {
+        insights.push("Long-tail keyword with niche traffic potential");
+      } else if (volume < 500) {
+        insights.push("Modest but targeted search volume");
+      } else {
+        insights.push("High-interest keyword with substantial search volume");
+      }
+      
+      if (difficulty < 30) {
+        insights.push("Low difficulty - quick win opportunity");
+      } else if (difficulty < 60) {
+        insights.push("Moderate difficulty - requires solid content strategy");
+      } else {
+        insights.push("High difficulty - competitive landscape");
+      }
+      
+      if (competition < 0.3) {
+        insights.push("Low ad competition - organic opportunity");
+      } else {
+        insights.push("Crowded ad space - consider long-tail variations");
+      }
+      
+      if (opportunity > 50) {
+        insights.push("Recommended: Publish content now for quick wins");
+      } else {
+        insights.push("Consider for future content calendar");
+      }
+      
+      return insights;
+    };
 
-    // 5. Assemble structured response
-    const analysisResult = {
+    // 6. Assemble comprehensive payload
+    const payload = {
       keyword,
       geo,
       metrics: {
         search_volume: searchVolume,
         competition_pct: competitionPct,
-        result_count: serpData.total_results,
+        result_count: serpData.search_information?.total_results ?? 0,
         seo_difficulty: seoDifficulty,
         opportunity_score: opportunityScore
       },
       serp_blocks: {
-        organic: serpData.organic_results,
-        ads: serpData.ads,
-        people_also_ask: serpData.related_questions,
-        top_stories: serpData.news_results,
-        images: serpData.images_results,
-        videos: serpData.video_results,
-        knowledge_graph: serpData.knowledge_graph
+        organic: serpData.organic_results ?? [],
+        ads: serpData.ads ?? [],
+        people_also_ask: serpData.related_questions ?? [],
+        top_stories: serpData.top_stories ?? serpData.news_results ?? [],
+        images: serpData.images_results ?? [],
+        videos: serpData.video_results ?? serpData.inline_videos ?? [],
+        knowledge_graph: serpData.knowledge_graph ?? null
       },
-      related_keywords: relatedKeywords,
-      timestamp: serpData.processed_timestamp,
+      related_keywords: volumeData.related_queries ?? [],
+      insights: generateInsights(searchVolume, competitionPct, seoDifficulty, opportunityScore),
+      timestamp: serpData.request?.processed_timestamp ?? new Date().toISOString(),
       data_sources: {
-        serpapi_available: !!SERPAPI_KEY,
-        serpstack_available: !!SERPSTACK_KEY,
-        search_volume_fetched: searchVolume > 0,
-        serp_features_fetched: serpData.organic_results.length > 0
+        volume_api: !!SERPAPI_KEY && volumeResponse?.ok,
+        serp_api: !!SERPSTACK_KEY && serpResponse?.ok,
+        is_cached: false
       }
     };
 
-    // 6. Cache the result with 24-hour TTL
+    // 7. Cache the result
     try {
       await supabase
         .from("serp_cache")
         .upsert({
           keyword,
           geo,
-          payload: analysisResult,
+          payload,
           updated_at: new Date().toISOString()
         });
-      console.log(`💾 Cached SERP analysis for ${keyword}`);
+      console.log(`Cached SERP data for ${keyword}`);
     } catch (cacheError) {
-      console.error("❌ Error caching SERP data:", cacheError);
+      console.error("Error caching SERP data:", cacheError);
       // Don't fail the request if caching fails
     }
 
-    console.log('🎉 SERP analysis completed successfully');
-    return new Response(
-      JSON.stringify({ success: true, data: analysisResult, cached: false }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse(payload);
     
   } catch (error: any) {
-    console.error("💥 Error in keyword-serp function:", error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: `SERP analysis failed: ${error.message}` 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+    console.error("Error in keyword-serp function:", error);
+    return createErrorResponse(
+      `SERP analysis failed: ${error.message}`, 
+      500, 
+      'keyword-serp', 
+      'analysis-failed'
     );
   }
 });
