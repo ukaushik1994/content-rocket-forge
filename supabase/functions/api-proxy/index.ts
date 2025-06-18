@@ -156,14 +156,15 @@ async function testSerpstackApi(apiKey: string) {
       lastChars: '...' + apiKey.substring(apiKey.length - 4)
     });
     
-    // Use HTTPS instead of HTTP and add proper parameters for Serpstack
-    const testUrl = `https://api.serpstack.com/search?access_key=${encodeURIComponent(apiKey)}&query=test&num=1&gl=us&hl=en`;
-    console.log('📡 Making request to Serpstack API');
+    // Fix the Serpstack API endpoint - use correct base URL without www
+    const testUrl = `https://api.serpstack.com/search?access_key=${encodeURIComponent(apiKey)}&query=test&num=1`;
+    console.log('📡 Making request to Serpstack API:', testUrl.replace(apiKey, '[REDACTED]'));
     
     const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
-        'User-Agent': 'Serpstack-API-Test/1.0'
+        'User-Agent': 'ContentRocketForge-API-Test/1.0',
+        'Accept': 'application/json'
       }
     });
     
@@ -172,9 +173,27 @@ async function testSerpstackApi(apiKey: string) {
     console.log('📊 Serpstack response status:', response.status);
     console.log('📊 Serpstack response data:', JSON.stringify(data, null, 2));
     
-    if (response.ok && data.success !== false) {
-      // Check if we have organic results or valid response structure
-      if (data.organic_results || data.search_metadata || data.search_information) {
+    // Handle successful responses
+    if (response.ok) {
+      // Check for API errors in successful HTTP responses
+      if (data.success === false && data.error) {
+        console.error('❌ Serpstack API error in response:', data.error);
+        const errorMessage = data.error.info || data.error.message || JSON.stringify(data.error);
+        
+        // Provide specific error messages for common issues
+        if (data.error.code === 101 || data.error.type === 'invalid_access_key') {
+          throw new Error('Invalid Serpstack API key. Please check your API key and try again.');
+        } else if (data.error.code === 102) {
+          throw new Error('Serpstack API key is inactive. Please activate your API key.');
+        } else if (data.error.code === 103) {
+          throw new Error('Serpstack API usage limit reached. Please upgrade your plan.');
+        } else {
+          throw new Error(`Serpstack API error: ${errorMessage}`);
+        }
+      }
+      
+      // Check for valid response structure
+      if (data.search_metadata || data.search_information || data.organic_results || data.success !== false) {
         console.log('✅ Serpstack API test successful');
         return new Response(
           JSON.stringify({ 
@@ -183,30 +202,37 @@ async function testSerpstackApi(apiKey: string) {
             provider: 'Serpstack',
             data: {
               totalResults: data.search_information?.total_results || 0,
-              organicCount: data.organic_results?.length || 0
+              organicCount: data.organic_results?.length || 0,
+              hasMetadata: !!data.search_metadata
             }
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      } else if (data.error) {
-        console.error('❌ Serpstack API error:', data.error);
-        const errorMessage = data.error.info || data.error.message || JSON.stringify(data.error);
-        throw new Error(`Serpstack API error: ${errorMessage}`);
       } else {
         console.log('⚠️ Serpstack API responded but with unexpected format:', data);
-        throw new Error('Serpstack API responded with unexpected format - please check your API key');
+        throw new Error('Serpstack API responded with unexpected format - please verify your API key');
       }
     } else {
-      console.error('❌ Serpstack API error response:', data);
-      const errorMessage = data.error?.info || data.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+      // Handle HTTP error responses
+      console.error('❌ Serpstack HTTP error response:', response.status, response.statusText);
+      const errorMessage = data?.error?.info || data?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(`Serpstack API error: ${errorMessage}`);
     }
   } catch (error: any) {
     console.error('💥 Serpstack API test exception:', error);
+    
+    // Provide user-friendly error messages
+    let userMessage = error.message;
+    if (error.message.includes('fetch')) {
+      userMessage = 'Network error connecting to Serpstack API. Please check your internet connection.';
+    } else if (error.message.includes('JSON')) {
+      userMessage = 'Invalid response from Serpstack API. Please try again.';
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Serpstack API test failed' 
+        error: userMessage
       }),
       { 
         status: 400, 

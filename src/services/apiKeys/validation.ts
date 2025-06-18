@@ -1,92 +1,133 @@
 
+// API key validation utilities
+
 import { testApiKey } from './testing';
 
 /**
- * Detect API key type based on patterns and format
+ * Validate API key format for different services
  */
-export const detectApiKeyType = async (apiKey: string): Promise<string | null> => {
-  if (!apiKey) return null;
-  
-  // SerpAPI patterns
-  if (apiKey.match(/^[a-f0-9]{64}$/)) {
-    return 'serp';
+export const validateApiKeyFormat = (service: string, key: string): boolean => {
+  if (!key || key.trim() === '') {
+    return false;
   }
-  
-  // Serpstack patterns (typically access keys)
-  if (apiKey.match(/^[a-f0-9]{32}$/) || apiKey.match(/^[A-Za-z0-9]{32}$/)) {
-    return 'serpstack';
+
+  const cleanKey = key.trim();
+
+  switch (service) {
+    case 'serp':
+      // SerpAPI keys are typically 64 character alphanumeric strings
+      return /^[a-f0-9]{64}$/.test(cleanKey);
+    
+    case 'serpstack':
+      // Serpstack keys are typically 32 character alphanumeric strings
+      // Being more flexible to accept various formats
+      return cleanKey.length >= 16 && /^[a-zA-Z0-9]+$/.test(cleanKey);
+    
+    case 'openai':
+      // OpenAI keys start with sk- followed by alphanumeric characters
+      return cleanKey.startsWith('sk-') && cleanKey.length > 20;
+    
+    case 'anthropic':
+      // Anthropic keys start with sk-ant-
+      return cleanKey.startsWith('sk-ant-') && cleanKey.length > 20;
+    
+    case 'gemini':
+      // Gemini keys are typically 39-character alphanumeric strings
+      return cleanKey.length >= 20 && /^[a-zA-Z0-9_-]+$/.test(cleanKey);
+    
+    default:
+      // For unknown services, accept any non-empty string
+      return cleanKey.length > 0;
   }
-  
-  // OpenAI patterns
-  if (apiKey.startsWith('sk-') && apiKey.length >= 40) {
+};
+
+/**
+ * Enhanced API key type detection
+ */
+export const detectApiKeyType = async (key: string): Promise<string | null> => {
+  if (!key || key.trim() === '') {
+    return null;
+  }
+
+  const cleanKey = key.trim();
+
+  // Check OpenAI format
+  if (cleanKey.startsWith('sk-') && !cleanKey.startsWith('sk-ant-')) {
     return 'openai';
   }
-  
-  // Anthropic patterns
-  if (apiKey.startsWith('sk-ant-') && apiKey.length >= 40) {
+
+  // Check Anthropic format
+  if (cleanKey.startsWith('sk-ant-')) {
     return 'anthropic';
   }
-  
-  // Google/Gemini patterns
-  if (apiKey.startsWith('AIza') && apiKey.length >= 35) {
+
+  // Check SerpAPI format (64 char hex)
+  if (/^[a-f0-9]{64}$/.test(cleanKey)) {
+    return 'serp';
+  }
+
+  // Check Serpstack format (flexible alphanumeric)
+  if (cleanKey.length >= 16 && cleanKey.length <= 64 && /^[a-zA-Z0-9]+$/.test(cleanKey)) {
+    // Try to test it as Serpstack
+    try {
+      const isSerpstack = await testApiKey('serpstack', cleanKey);
+      if (isSerpstack) {
+        return 'serpstack';
+      }
+    } catch (error) {
+      console.log('Failed to test as Serpstack:', error);
+    }
+  }
+
+  // Check Gemini format
+  if (cleanKey.length >= 20 && /^[a-zA-Z0-9_-]+$/.test(cleanKey)) {
     return 'gemini';
   }
-  
-  // Stripe patterns
-  if (apiKey.startsWith('sk_') || apiKey.startsWith('pk_')) {
-    return 'stripe';
-  }
-  
+
   return null;
 };
 
 /**
- * Validate provider API key format
+ * Get user-friendly error messages for API key validation
  */
-export const validateProviderKeyFormat = (provider: string, key: string): boolean => {
-  switch (provider) {
-    case 'openai':
-      return key.startsWith('sk-') && key.length >= 40;
-    case 'anthropic':
-      return key.startsWith('sk-ant-') && key.length >= 40;
-    case 'gemini':
-      return key.startsWith('AIzaSy') && key.length >= 35;
-    case 'serp':
-      return validateSerpApiKey(key);
-    case 'serpstack':
-      return validateSerpstackApiKey(key);
-    case 'stripe':
-      return key.startsWith('sk_') || key.startsWith('pk_');
-    default:
-      return key.length >= 16; // Basic validation for other providers
+export const getApiKeyValidationError = (service: string, key: string): string | null => {
+  if (!key || key.trim() === '') {
+    return `Please enter a valid ${service.toUpperCase()} API key`;
   }
-};
 
-/**
- * Validate Serpstack API key format
- */
-export const validateSerpstackApiKey = (apiKey: string): boolean => {
-  const serpstackPatterns = [
-    /^[a-f0-9]{32}$/, // 32-character hex string
-    /^[A-Za-z0-9]{32}$/, // 32-character alphanumeric
-    /^[A-Za-z0-9_-]{32,}$/, // Base64-like string (32+ chars)
-  ];
-  
-  return serpstackPatterns.some(pattern => pattern.test(apiKey));
-};
+  const cleanKey = key.trim();
 
-/**
- * Enhanced SERP API key validation for both providers
- */
-export const validateSerpApiKey = (apiKey: string): boolean => {
-  // SerpAPI key patterns (more permissive to match real SerpAPI keys)
-  const serpApiPatterns = [
-    /^[a-f0-9]{64}$/, // 64-character hex string (most common)
-    /^[a-f0-9]{32}$/, // 32-character hex string
-    /^[A-Za-z0-9_-]{32,}$/, // Base64-like string (32+ chars)
-    /^[A-Za-z0-9]{20,}$/, // 20+ character alphanumeric
-    /^[A-Za-z0-9_.-]{16,}$/ // 16+ chars with common special characters
-  ];
-  
-  return serpApiPatterns.some(pattern => pattern.test(apiKey));
+  switch (service) {
+    case 'serp':
+      if (!validateApiKeyFormat(service, cleanKey)) {
+        return 'SerpAPI keys should be 64-character hexadecimal strings';
+      }
+      break;
+    
+    case 'serpstack':
+      if (!validateApiKeyFormat(service, cleanKey)) {
+        return 'Serpstack API keys should be alphanumeric strings (16+ characters)';
+      }
+      break;
+    
+    case 'openai':
+      if (!validateApiKeyFormat(service, cleanKey)) {
+        return 'OpenAI API keys should start with "sk-" followed by additional characters';
+      }
+      break;
+    
+    case 'anthropic':
+      if (!validateApiKeyFormat(service, cleanKey)) {
+        return 'Anthropic API keys should start with "sk-ant-" followed by additional characters';
+      }
+      break;
+    
+    case 'gemini':
+      if (!validateApiKeyFormat(service, cleanKey)) {
+        return 'Gemini API keys should be alphanumeric strings (20+ characters)';
+      }
+      break;
+  }
+
+  return null;
 };

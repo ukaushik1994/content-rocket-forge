@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -26,7 +27,7 @@ export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
     });
 
     if (error) {
-      console.error('❌ Serpstack API test failed:', error);
+      console.error('❌ Serpstack API test failed with Supabase error:', error);
       return false;
     }
 
@@ -36,7 +37,7 @@ export const testSerpstackApiKey = async (apiKey: string): Promise<boolean> => {
       console.log('✅ Serpstack API test successful');
       return true;
     } else {
-      console.error('❌ Serpstack API test returned failure:', data);
+      console.error('❌ Serpstack API test returned failure:', data?.error || 'Unknown error');
       return false;
     }
   } catch (error: any) {
