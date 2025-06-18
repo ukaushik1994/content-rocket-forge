@@ -101,13 +101,19 @@ export const getCachedSerpData = async (
     const cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
 
     if (cacheAge < cacheExpiry) {
-      return {
-        ...data.payload,
-        data_sources: {
-          ...data.payload.data_sources,
-          is_cached: true
-        }
-      } as EnhancedSerpResult;
+      // Safely parse the payload as EnhancedSerpResult
+      const payload = data.payload as any;
+      
+      // Ensure payload is an object and has the required structure
+      if (payload && typeof payload === 'object' && payload.data_sources) {
+        return {
+          ...payload,
+          data_sources: {
+            ...payload.data_sources,
+            is_cached: true
+          }
+        } as EnhancedSerpResult;
+      }
     }
 
     return null;
