@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Edit2, Save, Plus, Trash2 } from 'lucide-react';
+import { Edit2, Save, Plus, Trash2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { OutlineSection } from '@/contexts/content-builder/types';
 
@@ -23,6 +23,12 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
   const [editableOutline, setEditableOutline] = useState<string[]>(outline);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Update editable outline when outline prop changes
+  useEffect(() => {
+    console.log('OutlineTable: outline prop changed:', outline);
+    setEditableOutline(outline);
+  }, [outline]);
 
   const handleEdit = (index: number, value: string) => {
     const newOutline = [...editableOutline];
@@ -57,10 +63,24 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
     toast.success("Outline saved successfully");
   };
 
+  const handleCancelEditing = () => {
+    setEditableOutline(outline); // Reset to original
+    setIsEditing(false);
+    setEditingIndex(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Content Outline</h3>
+        <div className="flex items-center gap-2">
+          <FileText className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-medium">Content Outline</h3>
+          {editableOutline.length > 0 && (
+            <span className="text-sm text-muted-foreground">
+              ({editableOutline.length} sections)
+            </span>
+          )}
+        </div>
         <div className="space-x-2">
           {isEditing ? (
             <>
@@ -70,6 +90,13 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
                 onClick={handleAddSection}
               >
                 <Plus className="h-4 w-4 mr-1" /> Add Section
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancelEditing}
+              >
+                Cancel
               </Button>
               <Button 
                 variant="default" 
@@ -84,6 +111,7 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
               variant="outline" 
               size="sm" 
               onClick={handleStartEditing}
+              disabled={editableOutline.length === 0}
             >
               <Edit2 className="h-4 w-4 mr-1" /> Edit Outline
             </Button>
@@ -114,6 +142,10 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
                         onBlur={() => setEditingIndex(null)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') setEditingIndex(null);
+                          if (e.key === 'Escape') {
+                            setEditingIndex(null);
+                            setEditableOutline(outline); // Reset to original
+                          }
                         }}
                       />
                     ) : (
@@ -140,10 +172,14 @@ export const OutlineTable: React.FC<OutlineTableProps> = ({ outline, onSave }) =
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isEditing ? 3 : 2} className="text-center text-muted-foreground py-6">
-                  No outline sections yet. {isEditing && "Click 'Add Section' to create one."}
+                <TableCell colSpan={isEditing ? 3 : 2} className="text-center text-muted-foreground py-8">
+                  <div className="space-y-2">
+                    <FileText className="h-8 w-8 text-muted-foreground mx-auto" />
+                    <p>No outline sections yet.</p>
+                    <p className="text-sm">Use the AI Outline Generator to create one automatically.</p>
+                  </div>
                 </TableCell>
-              </TableRow>
+              )}
             )}
           </TableBody>
         </Table>

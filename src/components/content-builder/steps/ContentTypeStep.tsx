@@ -283,7 +283,156 @@ export const ContentTypeStep = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enhanced Company & Brand Info Section with Solutions */}
+      {/* Content Type Selection */}
+      <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">Select Content Type</h3>
+              <p className="text-sm text-white/70 mb-4">Choose the type of content you want to create</p>
+            </div>
+            
+            <RadioGroup 
+              value={contentType} 
+              onValueChange={handleSelectContentType}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              {contentTypes.map((type) => (
+                <Label
+                  key={type.value}
+                  htmlFor={type.value}
+                  className="cursor-pointer"
+                >
+                  <Card className={`p-4 border transition-all hover:border-neon-blue/50 ${
+                    contentType === type.value 
+                      ? 'border-neon-blue bg-neon-blue/10' 
+                      : 'border-white/10 bg-white/5'
+                  }`}>
+                    <CardContent className="p-0">
+                      <div className="flex items-start gap-3">
+                        <RadioGroupItem value={type.value} id={type.value} className="mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <type.icon className="h-5 w-5 text-neon-blue" />
+                            <span className="font-medium text-white">{type.label}</span>
+                          </div>
+                          <p className="text-xs text-white/70">{type.description}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Label>
+              ))}
+            </RadioGroup>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Solutions Selection - Always Visible */}
+      <Card className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 border border-white/10">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Select Solution</h3>
+                <p className="text-sm text-white/70">Choose a solution to create content for</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleNavigateToSolutions}
+                className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs"
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Manage Solutions
+              </Button>
+            </div>
+            
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : solutions.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {solutions.map((solution) => (
+                  <DropdownMenu key={solution.id}>
+                    <DropdownMenuTrigger asChild>
+                      <Card 
+                        className={`cursor-pointer transition-all hover:scale-105 hover:border-neon-blue/50 ${
+                          selectedSolution?.id === solution.id 
+                            ? 'border-neon-blue bg-neon-blue/10' 
+                            : 'border-white/20 bg-white/5'
+                        }`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex flex-col items-center gap-3">
+                            <Avatar className="h-12 w-12 rounded-lg border border-white/20">
+                              {solution.logoUrl ? (
+                                <AvatarImage 
+                                  src={solution.logoUrl} 
+                                  alt={solution.name}
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <AvatarFallback className="rounded-lg bg-white/10 text-white font-medium text-sm">
+                                  {getInitials(solution.name)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="text-center">
+                              <h4 className="font-medium text-white text-sm">{solution.name}</h4>
+                              <p className="text-xs text-white/60 mt-1">{solution.category}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      className="w-56 bg-background/95 backdrop-blur-sm border-white/20"
+                      align="center"
+                      side="bottom"
+                    >
+                      <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground border-b border-white/10">
+                        Select content type for {solution.name}
+                      </div>
+                      {contentTypes.map((type) => (
+                        <DropdownMenuItem
+                          key={type.value}
+                          onClick={() => handleSelectContentTypeFromSolution(type.value, solution)}
+                          className="flex items-center gap-3 py-2 cursor-pointer hover:bg-white/10"
+                        >
+                          <type.icon className="h-4 w-4" />
+                          <div className="flex-1">
+                            <div className="font-medium">{type.label}</div>
+                            <div className="text-xs text-muted-foreground">{type.description}</div>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Building2 className="h-12 w-12 text-white/30 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-white mb-2">No Solutions Found</h4>
+                <p className="text-sm text-white/70 mb-4">
+                  Create your first solution to get started with targeted content creation.
+                </p>
+                <Button 
+                  onClick={handleNavigateToSolutions}
+                  className="bg-neon-blue hover:bg-neon-blue/90"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Add Solutions
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Company & Brand Info Section - Only if data exists */}
       {(companyInfo || brandGuidelines) && !dataLoading && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
