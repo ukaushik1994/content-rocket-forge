@@ -315,17 +315,15 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
 
         <div className="flex gap-2">
           {currentStep < STEPS.length - 1 ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="gap-2"
-              >
-                {STEPS[currentStep].optional ? 'Skip' : 'Next'}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="gap-2"
+            >
+              {STEPS[currentStep].optional ? 'Skip' : 'Next'}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           ) : (
             <Button
               onClick={handleComplete}
