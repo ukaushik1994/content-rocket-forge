@@ -13,12 +13,12 @@ const SERPAPI_KEY = Deno.env.get("SERP_API_KEY");
 const SERPSTACK_KEY = Deno.env.get("SERPSTACK_KEY");
 
 // Type definitions for API responses
-interface VolumeResponse {
+interface SerpApiTrendsResponse {
   search_volume?: number;
   related_queries?: Array<{ title: string; volume?: number }>;
 }
 
-interface SerpResponse {
+interface SerpstackResponse {
   organic_results?: any[];
   ads?: any[];
   related_questions?: any[];
@@ -49,7 +49,7 @@ serve(async (req) => {
       return createErrorResponse("Keyword is required", 400, 'keyword-serp', 'missing-keyword');
     }
 
-    console.log(`Enhanced SERP analysis for keyword: "${keyword}" in geo: "${geo}"`);
+    console.log(`SERP analysis for keyword: "${keyword}" in geo: "${geo}"`);
 
     // 1. Check cache first (unless force refresh is requested)
     if (!forceRefresh) {
@@ -73,25 +73,25 @@ serve(async (req) => {
       }
     }
 
-    // 2. Prepare API calls
+    // 2. Prepare API calls - exactly one per service
     const calls = [];
     
-    // SerpApi Google Trends call (if key available)
+    // SerpApi Google Trends call for search volume and related keywords
     if (SERPAPI_KEY) {
-      const volumeURL = new URL("https://serpapi.com/search");
-      volumeURL.searchParams.set("engine", "google_trends");
-      volumeURL.searchParams.set("data_type", "search_volume");
-      volumeURL.searchParams.set("q", keyword);
-      volumeURL.searchParams.set("geo", geo);
-      volumeURL.searchParams.set("date", "today 12-m");
-      volumeURL.searchParams.set("api_key", SERPAPI_KEY);
+      const trendsURL = new URL("https://serpapi.com/search");
+      trendsURL.searchParams.set("engine", "google_trends");
+      trendsURL.searchParams.set("data_type", "search_volume");
+      trendsURL.searchParams.set("q", keyword);
+      trendsURL.searchParams.set("geo", geo);
+      trendsURL.searchParams.set("date", "today 12-m");
+      trendsURL.searchParams.set("api_key", SERPAPI_KEY);
       
-      calls.push(fetch(volumeURL.toString()));
+      calls.push(fetch(trendsURL.toString()));
     } else {
       calls.push(Promise.resolve(null));
     }
 
-    // Serpstack SERP call (if key available)
+    // Serpstack web SERP call for all SERP features
     if (SERPSTACK_KEY) {
       const serpURL = new URL("https://api.serpstack.com/search");
       serpURL.searchParams.set("access_key", SERPSTACK_KEY);
@@ -105,22 +105,22 @@ serve(async (req) => {
     }
 
     // 3. Execute API calls in parallel
-    const [volumeResponse, serpResponse] = await Promise.all(calls);
+    const [trendsResponse, serpResponse] = await Promise.all(calls);
     
-    let volumeData: VolumeResponse = {};
-    let serpData: SerpResponse = {};
+    let trendsData: SerpApiTrendsResponse = {};
+    let serpData: SerpstackResponse = {};
     
-    // Process volume data
-    if (volumeResponse && volumeResponse.ok) {
+    // Process SerpApi trends data
+    if (trendsResponse && trendsResponse.ok) {
       try {
-        volumeData = await volumeResponse.json();
-        console.log("SerpApi volume data retrieved successfully");
+        trendsData = await trendsResponse.json();
+        console.log("SerpApi trends data retrieved successfully");
       } catch (error) {
         console.error("Error parsing SerpApi response:", error);
       }
     }
     
-    // Process SERP data
+    // Process Serpstack SERP data
     if (serpResponse && serpResponse.ok) {
       try {
         const serpResponseData = await serpResponse.json();
@@ -131,87 +131,53 @@ serve(async (req) => {
       }
     }
 
-    // 4. Calculate derived metrics
-    const adsFilled = serpData.ads?.length ?? 0;
-    const competitionPct = Math.min(adsFilled / 10.0, 1.0); // Max 10 ad slots
-    const searchVolume = volumeData.search_volume ?? 0;
+    // 4. Extract data according to specifications
+    const search_volume = trendsData.search_volume ?? 0;
+    const related_keywords = trendsData.related_queries?.map(q => q.title) ?? [];
     
-    // SEO Difficulty: higher competition and volume = harder
-    const seoDifficulty = searchVolume > 0 
-      ? +(competitionPct * 100 / Math.log10(searchVolume + 10)).toFixed(2)
+    const organic_results = serpData.organic_results ?? [];
+    const ads = serpData.ads ?? [];
+    const related_questions = serpData.related_questions ?? [];
+    const news_results = serpData.news_results ?? serpData.top_stories ?? [];
+    const images_results = serpData.images_results ?? [];
+    const video_results = serpData.video_results ?? serpData.inline_videos ?? [];
+    const knowledge_graph = serpData.knowledge_graph ?? null;
+    const total_results = serpData.search_information?.total_results ?? 0;
+    const timestamp = serpData.request?.processed_timestamp ?? new Date().toISOString();
+
+    // 5. Calculate derived metrics
+    const competition_pct = Math.min(ads.length / 10.0, 1.0); // Max 10 ad slots
+    const seo_difficulty = search_volume > 0 
+      ? Math.round((competition_pct * 100) / Math.log10(search_volume + 10) * 100) / 100
       : 0;
-    
-    // Opportunity Score: lower competition + higher volume = better opportunity
-    const opportunityScore = searchVolume > 0
-      ? +((1 - competitionPct) * Math.log10(searchVolume + 10) * 10).toFixed(2)
+    const opportunity = search_volume > 0
+      ? Math.round((1 - competition_pct) * Math.log10(search_volume + 10) * 10 * 100) / 100
       : 0;
 
-    // 5. Generate strategic insights
-    const generateInsights = (volume: number, competition: number, difficulty: number, opportunity: number) => {
-      const insights = [];
-      
-      if (volume === 0) {
-        insights.push("Long-tail keyword with niche traffic potential");
-      } else if (volume < 500) {
-        insights.push("Modest but targeted search volume");
-      } else {
-        insights.push("High-interest keyword with substantial search volume");
-      }
-      
-      if (difficulty < 30) {
-        insights.push("Low difficulty - quick win opportunity");
-      } else if (difficulty < 60) {
-        insights.push("Moderate difficulty - requires solid content strategy");
-      } else {
-        insights.push("High difficulty - competitive landscape");
-      }
-      
-      if (competition < 0.3) {
-        insights.push("Low ad competition - organic opportunity");
-      } else {
-        insights.push("Crowded ad space - consider long-tail variations");
-      }
-      
-      if (opportunity > 50) {
-        insights.push("Recommended: Publish content now for quick wins");
-      } else {
-        insights.push("Consider for future content calendar");
-      }
-      
-      return insights;
-    };
-
-    // 6. Assemble comprehensive payload
+    // 6. Assemble exact JSON response structure
     const payload = {
       keyword,
-      geo,
       metrics: {
-        search_volume: searchVolume,
-        competition_pct: competitionPct,
-        result_count: serpData.search_information?.total_results ?? 0,
-        seo_difficulty: seoDifficulty,
-        opportunity_score: opportunityScore
+        search_volume,
+        competition_pct,
+        result_count: total_results,
+        seo_difficulty,
+        opportunity
       },
       serp_blocks: {
-        organic: serpData.organic_results ?? [],
-        ads: serpData.ads ?? [],
-        people_also_ask: serpData.related_questions ?? [],
-        top_stories: serpData.top_stories ?? serpData.news_results ?? [],
-        images: serpData.images_results ?? [],
-        videos: serpData.video_results ?? serpData.inline_videos ?? [],
-        knowledge_graph: serpData.knowledge_graph ?? null
+        organic: organic_results,
+        ads,
+        people_also_ask: related_questions,
+        top_stories: news_results,
+        images: images_results,
+        videos: video_results,
+        knowledge_graph
       },
-      related_keywords: volumeData.related_queries ?? [],
-      insights: generateInsights(searchVolume, competitionPct, seoDifficulty, opportunityScore),
-      timestamp: serpData.request?.processed_timestamp ?? new Date().toISOString(),
-      data_sources: {
-        volume_api: !!SERPAPI_KEY && volumeResponse?.ok,
-        serp_api: !!SERPSTACK_KEY && serpResponse?.ok,
-        is_cached: false
-      }
+      related_keywords,
+      timestamp
     };
 
-    // 7. Cache the result
+    // 7. Cache the result with 24-hour TTL
     try {
       await supabase
         .from("serp_cache")

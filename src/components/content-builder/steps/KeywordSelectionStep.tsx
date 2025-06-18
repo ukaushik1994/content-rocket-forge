@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -6,7 +5,7 @@ import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { ClusterSelection } from '../keyword/ClusterSelection';
 import { ContentCluster } from '@/contexts/content-builder/types/cluster-types';
-import { Search, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, Loader2, TrendingUp } from 'lucide-react';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
+import { InteractiveAnalysisSteps } from './keyword-analysis/InteractiveAnalysisSteps';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{
@@ -67,7 +67,6 @@ export const KeywordSelectionStep = () => {
     serpApi: { configured: false, working: false },
     serpstack: { configured: false, working: false }
   });
-  const [useEnhancedMode, setUseEnhancedMode] = useState(false);
   
   // Get selection statistics for the SERP data
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -91,11 +90,6 @@ export const KeywordSelectionStep = () => {
   // Handle status updates from the EnhancedSerpStatus component
   const handleStatusChange = (status: ApiKeysStatus) => {
     setApiKeysStatus(status);
-    
-    // Enable enhanced mode if we have working APIs
-    if ((status.serpApi.working || status.serpstack.working) && mainKeyword) {
-      setUseEnhancedMode(true);
-    }
   };
   
   const handleKeywordSearch = async (keyword: string, searchSuggestions: string[]) => {
@@ -179,6 +173,9 @@ export const KeywordSelectionStep = () => {
     }
   };
   
+  // Check if we have structured SERP data with metrics
+  const hasStructuredData = serpData && serpData.metrics && serpData.serp_blocks;
+  
   return (
     <div className="space-y-8">
       {/* Header with enhanced API status */}
@@ -193,7 +190,7 @@ export const KeywordSelectionStep = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <h3 className="text-lg font-semibold">Selection & Analysis</h3>
+              <h3 className="text-lg font-semibold">Keyword Research & Analysis</h3>
             </div>
           </div>
           
@@ -201,7 +198,6 @@ export const KeywordSelectionStep = () => {
             Enter your main keyword below to analyze search trends and discover content opportunities
           </p>
           
-          {/* Enhanced SERP Status Display */}
           <EnhancedSerpStatus onStatusChange={handleStatusChange} />
         </div>
       </motion.div>
@@ -232,12 +228,12 @@ export const KeywordSelectionStep = () => {
               key="initial-state"
             >
               <div className="rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-6 mb-4">
-                <Sparkles className="h-8 w-8 text-neon-purple" />
+                <TrendingUp className="h-8 w-8 text-neon-purple" />
               </div>
-              <h3 className="text-xl font-medium mb-2">Search to analyze your keyword</h3>
+              <h3 className="text-xl font-medium mb-2">Start your keyword analysis</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Enter your main keyword above to see search insights, 
-                related keywords, and content suggestions from top-ranking pages
+                Enter your main keyword above to get comprehensive search metrics, 
+                SERP analysis, and content opportunities from top-ranking pages
               </p>
             </motion.div>
           )}
@@ -249,10 +245,20 @@ export const KeywordSelectionStep = () => {
               animate={{ opacity: 1 }}
               key="results-state"
             >
+              {/* Show structured analysis if we have the new data format */}
+              {hasStructuredData && (
+                <InteractiveAnalysisSteps
+                  keyword={mainKeyword}
+                  metrics={serpData.metrics}
+                  serpBlocks={serpData.serp_blocks}
+                  relatedKeywords={serpData.related_keywords || []}
+                  isLoading={isAnalyzing}
+                />
+              )}
+              
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left column - Keyword selections */}
                 <div className="lg:col-span-1 space-y-6">
-                  {/* Selected Keywords */}
                   <div className="animate-fade-in">
                     <SelectedKeywords 
                       keywords={selectedKeywords} 
@@ -260,7 +266,6 @@ export const KeywordSelectionStep = () => {
                     />
                   </div>
                   
-                  {/* Selected Items Sidebar */}
                   <SelectedItemsSidebar 
                     serpSelections={serpSelections}
                     totalSelected={totalSelected}

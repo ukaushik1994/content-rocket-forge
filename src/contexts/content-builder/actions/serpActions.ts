@@ -1,73 +1,79 @@
+
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
-const processEnhancedSerpSelections = (serpData: any): SerpSelection[] => {
+// Process the new structured SERP response format
+const processStructuredSerpSelections = (serpData: any): SerpSelection[] => {
   const selections: SerpSelection[] = [];
   
-  // Knowledge Graph entities
-  if (serpData.knowledgeGraph) {
-    const kg = serpData.knowledgeGraph;
+  if (!serpData || !serpData.serp_blocks) {
+    return selections;
+  }
+
+  const { serp_blocks, related_keywords } = serpData;
+  
+  // Knowledge Graph
+  if (serp_blocks.knowledge_graph) {
+    const kg = serp_blocks.knowledge_graph;
     selections.push({
       type: 'knowledgeEntity',
-      content: kg.title,
+      content: kg.title || 'Knowledge Graph Entity',
       selected: false,
       source: 'knowledge_graph',
       metadata: { type: kg.type, description: kg.description }
     });
-    
-    // Related entities from knowledge graph
-    if (kg.relatedEntities) {
-      kg.relatedEntities.forEach((entity: any) => {
-        selections.push({
-          type: 'relatedEntity',
-          content: entity.name,
-          selected: false,
-          source: 'knowledge_graph',
-          metadata: { link: entity.link }
-        });
-      });
-    }
   }
   
-  // Featured snippets
-  if (serpData.featuredSnippets) {
-    serpData.featuredSnippets.forEach((snippet: any) => {
+  // Organic Results - extract headings and content
+  if (serp_blocks.organic) {
+    serp_blocks.organic.slice(0, 5).forEach((result: any, index: number) => {
       selections.push({
-        type: 'featuredSnippet',
-        content: snippet.content,
+        type: 'heading',
+        content: result.title,
         selected: false,
-        source: 'featured_snippets',
-        metadata: { type: snippet.type, title: snippet.title, source: snippet.source }
+        source: 'organic_results',
+        metadata: { position: index + 1, url: result.link, snippet: result.snippet }
       });
     });
   }
   
-  // Local business data
-  if (serpData.localResults) {
-    serpData.localResults.forEach((business: any) => {
+  // People Also Ask questions
+  if (serp_blocks.people_also_ask) {
+    serp_blocks.people_also_ask.slice(0, 4).forEach((question: any) => {
       selections.push({
-        type: 'localBusiness',
-        content: `${business.name} - ${business.address}`,
+        type: 'question',
+        content: question.question || question.title,
         selected: false,
-        source: 'local_results',
-        metadata: { rating: business.rating, reviews: business.reviews }
+        source: 'people_also_ask',
+        metadata: { answer: question.answer }
       });
     });
   }
   
-  // Multimedia opportunities
-  if (serpData.multimediaOpportunities) {
-    serpData.multimediaOpportunities.forEach((opportunity: any) => {
-      opportunity.suggestions.forEach((suggestion: any) => {
-        selections.push({
-          type: `multimedia_${opportunity.type}`,
-          content: suggestion.title,
-          selected: false,
-          source: 'multimedia',
-          metadata: { mediaType: opportunity.type, source: suggestion.source }
-        });
+  // Related Keywords
+  if (related_keywords) {
+    related_keywords.slice(0, 8).forEach((keyword: string) => {
+      selections.push({
+        type: 'relatedKeyword',
+        content: keyword,
+        selected: false,
+        source: 'related_queries',
+        metadata: {}
+      });
+    });
+  }
+  
+  // Top Stories/News
+  if (serp_blocks.top_stories) {
+    serp_blocks.top_stories.slice(0, 3).forEach((story: any) => {
+      selections.push({
+        type: 'topStory',
+        content: story.title,
+        selected: false,
+        source: 'top_stories',
+        metadata: { url: story.link, source: story.source }
       });
     });
   }
@@ -89,7 +95,7 @@ export const createSerpActions = (
       // Make API call to analyze keyword
       const serpData = await analyzeKeywordSerp(keyword, forceRefresh);
       
-      // Update SERP data in state - will be null if no data is found
+      // Update SERP data in state
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
@@ -97,24 +103,29 @@ export const createSerpActions = (
       } else {
         console.log("SERP data successfully retrieved:", serpData);
         
-        // Process enhanced SERP selections
-        const enhancedSelections = processEnhancedSerpSelections(serpData);
-        console.log("Enhanced SERP selections processed:", enhancedSelections.length);
+        // Process structured SERP selections from new format
+        const structuredSelections = processStructuredSerpSelections(serpData);
+        console.log("Structured SERP selections processed:", structuredSelections.length);
+        
+        // Clear existing selections and add new ones
+        structuredSelections.forEach(selection => {
+          dispatch({ 
+            type: 'TOGGLE_SERP_SELECTION', 
+            payload: { type: selection.type, content: selection.content }
+          });
+        });
         
         if (serpData.isMockData) {
           toast.warning("Using mock search data. Add your SERP API key for real results.");
         } else {
-          toast.success("Search data analysis completed successfully with real data.");
+          toast.success(`Analysis complete! Found ${structuredSelections.length} content opportunities.`);
         }
       }
     } catch (error) {
       console.error('Error analyzing keyword:', error);
-      // Set serpData to null to display the NoDataFound component
       dispatch({ type: 'SET_SERP_DATA', payload: null });
-      // Handle error
       toast.error("Failed to analyze keyword. Please check your API key and try again.");
     } finally {
-      // End loading
       dispatch({ type: 'SET_IS_ANALYZING', payload: false });
     }
   };
@@ -138,8 +149,8 @@ export const createSerpActions = (
     // Group items by type
     const headings = selectedItems.filter(item => item.type === 'heading').map(item => item.content);
     const questions = selectedItems.filter(item => item.type === 'question').map(item => item.content);
-    const contentGaps = selectedItems.filter(item => item.type === 'contentGap').map(item => item.content);
-    const entities = selectedItems.filter(item => item.type === 'entity').map(item => item.content);
+    const relatedKeywords = selectedItems.filter(item => item.type === 'relatedKeyword').map(item => item.content);
+    const topStories = selectedItems.filter(item => item.type === 'topStory').map(item => item.content);
     
     // Create outline sections based on selected items
     let outlineSections = [];
@@ -152,42 +163,27 @@ export const createSerpActions = (
       outlineSections = [...outlineSections, ...headings];
     }
     
-    // Add content gaps as unique sections
-    if (contentGaps.length > 0) {
-      contentGaps.forEach(gap => {
-        if (!outlineSections.includes(gap)) {
-          outlineSections.push(gap);
-        }
-      });
-    }
-    
     // Add questions as sections or a FAQ section
     if (questions.length > 0) {
       if (questions.length <= 2) {
-        // If only 1-2 questions, add them directly
         questions.forEach(question => {
           if (!outlineSections.includes(question)) {
             outlineSections.push(question);
           }
         });
       } else {
-        // If more than 2 questions, create a FAQ section
         outlineSections.push("Frequently Asked Questions");
       }
     }
     
-    // Add entities if they're not already included
-    if (entities.length > 0) {
-      // Check if we need a separate section for entities or if they're already covered
-      const entitySectionNeeded = entities.some(entity => 
-        !outlineSections.some(section => 
-          section.toLowerCase().includes(entity.toLowerCase())
-        )
-      );
-      
-      if (entitySectionNeeded) {
-        outlineSections.push("Key Concepts and Definitions");
-      }
+    // Add top stories if selected
+    if (topStories.length > 0) {
+      outlineSections.push("Latest News and Trends");
+    }
+    
+    // Add related topics if we have related keywords
+    if (relatedKeywords.length > 0) {
+      outlineSections.push("Related Topics and Considerations");
     }
     
     // Always add conclusion
