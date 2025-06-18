@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -30,7 +29,7 @@ serve(async (req) => {
     });
 
     // Validate that we have an API key
-    if (!apiKey) {
+    if (!apiKey || apiKey.trim() === '') {
       console.error('❌ No API key provided by user');
       return new Response(
         JSON.stringify({ 
@@ -157,34 +156,49 @@ async function testSerpstackApi(apiKey: string) {
       lastChars: '...' + apiKey.substring(apiKey.length - 4)
     });
     
-    const testUrl = `http://api.serpstack.com/search?access_key=${apiKey}&query=test&num=1`;
+    // Use HTTPS instead of HTTP and add proper parameters for Serpstack
+    const testUrl = `https://api.serpstack.com/search?access_key=${encodeURIComponent(apiKey)}&query=test&num=1&gl=us&hl=en`;
     console.log('📡 Making request to Serpstack API');
     
-    const response = await fetch(testUrl);
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Serpstack-API-Test/1.0'
+      }
+    });
+    
     const data = await response.json();
     
     console.log('📊 Serpstack response status:', response.status);
-    console.log('📊 Serpstack response data keys:', Object.keys(data));
+    console.log('📊 Serpstack response data:', JSON.stringify(data, null, 2));
     
-    if (response.ok && !data.error) {
+    if (response.ok && data.success !== false) {
       // Check if we have organic results or valid response structure
-      if (data.organic_results || data.search_metadata) {
+      if (data.organic_results || data.search_metadata || data.search_information) {
         console.log('✅ Serpstack API test successful');
         return new Response(
           JSON.stringify({ 
             success: true, 
             message: 'Serpstack API connection successful',
-            provider: 'Serpstack'
+            provider: 'Serpstack',
+            data: {
+              totalResults: data.search_information?.total_results || 0,
+              organicCount: data.organic_results?.length || 0
+            }
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else if (data.error) {
+        console.error('❌ Serpstack API error:', data.error);
+        const errorMessage = data.error.info || data.error.message || JSON.stringify(data.error);
+        throw new Error(`Serpstack API error: ${errorMessage}`);
       } else {
         console.log('⚠️ Serpstack API responded but with unexpected format:', data);
-        throw new Error('Serpstack API responded with unexpected format');
+        throw new Error('Serpstack API responded with unexpected format - please check your API key');
       }
     } else {
-      console.error('❌ Serpstack API error:', data);
-      const errorMessage = data.error?.info || data.error || 'Serpstack API test failed';
+      console.error('❌ Serpstack API error response:', data);
+      const errorMessage = data.error?.info || data.error?.message || `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(`Serpstack API error: ${errorMessage}`);
     }
   } catch (error: any) {
