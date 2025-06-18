@@ -10,7 +10,8 @@ import {
   Activity, 
   Settings,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Database
 } from 'lucide-react';
 
 interface SerpApiDiagnosticsProps {
@@ -32,6 +33,18 @@ export function SerpApiDiagnostics({
 
   const getOverallStatus = () => {
     if (!displayData) return { status: 'error', label: 'No Data', color: 'destructive' };
+    
+    // Check for enhanced SERP data
+    if (displayData.data_sources) {
+      const { volume_api, serp_api } = displayData.data_sources;
+      if (volume_api && serp_api) {
+        return { status: 'enhanced', label: 'Enhanced Mode', color: 'default' };
+      } else if (volume_api || serp_api) {
+        return { status: 'partial', label: 'Partial Enhanced', color: 'secondary' };
+      }
+    }
+    
+    // Regular SERP data checks
     if (displayData.isMockData) return { status: 'warning', label: 'Mock Data', color: 'secondary' };
     
     const hasQuestions = (displayData.peopleAlsoAsk?.length || 0) > 0;
@@ -60,12 +73,12 @@ export function SerpApiDiagnostics({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Microscope className="h-5 w-5" />
-            SERP Diagnostics
+            Enhanced SERP Diagnostics
           </CardTitle>
           <Badge variant={status.color as any} className="flex items-center gap-1">
+            {status.status === 'enhanced' && <Database className="h-3 w-3" />}
             {status.status === 'success' && <CheckCircle className="h-3 w-3" />}
-            {status.status === 'warning' && <AlertTriangle className="h-3 w-3" />}
-            {status.status === 'error' && <AlertTriangle className="h-3 w-3" />}
+            {(status.status === 'warning' || status.status === 'error') && <AlertTriangle className="h-3 w-3" />}
             {status.label}
           </Badge>
         </div>
@@ -108,22 +121,44 @@ export function SerpApiDiagnostics({
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Source:</span>
-                        <Badge variant={displayData.isMockData ? 'secondary' : 'default'}>
-                          {displayData.isMockData ? 'Mock' : 'Real API'}
+                        <span>Mode:</span>
+                        <Badge variant={displayData.data_sources ? 'default' : 'secondary'}>
+                          {displayData.data_sources ? 'Enhanced' : 'Standard'}
                         </Badge>
                       </div>
+                      
+                      {displayData.data_sources && (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span>Volume API:</span>
+                            <Badge variant={displayData.data_sources.volume_api ? 'default' : 'secondary'}>
+                              {displayData.data_sources.volume_api ? 'Connected' : 'Offline'}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>SERP API:</span>
+                            <Badge variant={displayData.data_sources.serp_api ? 'default' : 'secondary'}>
+                              {displayData.data_sources.serp_api ? 'Connected' : 'Offline'}
+                            </Badge>
+                          </div>
+                        </>
+                      )}
+                      
+                      <div className="flex justify-between text-sm">
+                        <span>Source:</span>
+                        <Badge variant={displayData.isMockData || displayData.data_sources?.is_cached ? 'secondary' : 'default'}>
+                          {displayData.isMockData ? 'Mock' : 
+                           displayData.data_sources?.is_cached ? 'Cached' : 'Live'}
+                        </Badge>
+                      </div>
+                      
                       <div className="flex justify-between text-sm">
                         <span>Organic Results:</span>
-                        <span>{displayData.topResults?.length || 0}</span>
+                        <span>{displayData.topResults?.length || displayData.serp_blocks?.organic?.length || 0}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Questions:</span>
-                        <span>{displayData.peopleAlsoAsk?.length || 0}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Snippets:</span>
-                        <span>{displayData.featuredSnippets?.length || 0}</span>
+                        <span>{displayData.peopleAlsoAsk?.length || displayData.serp_blocks?.people_also_ask?.length || 0}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Entities:</span>
@@ -137,9 +172,26 @@ export function SerpApiDiagnostics({
                       <CardTitle className="text-sm">Quality Metrics</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
+                      {displayData.metrics && (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span>Search Volume:</span>
+                            <span>{displayData.metrics.search_volume?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>SEO Difficulty:</span>
+                            <span>{displayData.metrics.seo_difficulty || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Opportunity Score:</span>
+                            <span>{displayData.metrics.opportunity_score || 'N/A'}</span>
+                          </div>
+                        </>
+                      )}
+                      
                       <div className="flex justify-between text-sm">
                         <span>Minimum Results:</span>
-                        {(displayData.topResults?.length || 0) >= 3 ? (
+                        {((displayData.topResults?.length || displayData.serp_blocks?.organic?.length) || 0) >= 3 ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />
                         ) : (
                           <AlertTriangle className="h-4 w-4 text-yellow-500" />
@@ -147,15 +199,7 @@ export function SerpApiDiagnostics({
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Has Questions:</span>
-                        {(displayData.peopleAlsoAsk?.length || 0) > 0 ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        )}
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Has Snippets:</span>
-                        {(displayData.featuredSnippets?.length || 0) > 0 ? (
+                        {((displayData.peopleAlsoAsk?.length || displayData.serp_blocks?.people_also_ask?.length) || 0) > 0 ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />
                         ) : (
                           <AlertTriangle className="h-4 w-4 text-yellow-500" />

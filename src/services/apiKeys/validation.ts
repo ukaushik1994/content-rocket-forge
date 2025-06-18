@@ -1,128 +1,69 @@
+import { testOpenAIApiKey, testAnthropicApiKey, testGeminiApiKey } from './testing';
 
 /**
- * Helper functions to check if an API key matches expected patterns for various AI providers
+ * Detect API key type based on patterns and format
  */
-
-/**
- * Check if the provided key appears to be a valid OpenAI API key format
- */
-export function isOpenAIKeyFormat(key: string): boolean {
-  return /^sk-[a-zA-Z0-9]{32,}$/.test(key);
-}
-
-/**
- * Check if the provided key appears to be a valid Anthropic API key format
- */
-export function isAnthropicKeyFormat(key: string): boolean {
-  return /^sk-ant-[a-zA-Z0-9]{32,}$/.test(key);
-}
-
-/**
- * Check if the provided key appears to be a valid Gemini API key format
- */
-export function isGeminiKeyFormat(key: string): boolean {
-  return /^AIzaSy[a-zA-Z0-9-_]{32,}$/.test(key);
-}
-
-/**
- * Check if the provided key appears to be a valid Mistral API key format
- */
-export function isMistralKeyFormat(key: string): boolean {
-  return /^[a-zA-Z0-9]{32,}$/.test(key);
-}
-
-/**
- * Check if the provided key appears to be a valid SERP API key format
- * Most SERP API providers use simple alphanumeric strings
- */
-export function isSerpApiKeyFormat(key: string): boolean {
-  // Most SERP API keys are alphanumeric and at least 16 characters
-  // This is a general format check - adjust based on the specific provider
-  return /^[a-zA-Z0-9_-]{16,}$/.test(key);
-}
-
-/**
- * Check if the provided key appears to be a valid Google Analytics credential
- * Can be either an API key or service account JSON
- */
-export function isGoogleAnalyticsKeyFormat(key: string): boolean {
-  // First, check if it's a service account JSON (most common for GA)
-  try {
-    const parsed = JSON.parse(key);
-    if (parsed.type === 'service_account' && 
-        parsed.private_key && 
-        parsed.client_email && 
-        parsed.project_id &&
-        parsed.private_key_id &&
-        parsed.client_id) {
-      return true;
-    }
-  } catch (e) {
-    // Not JSON, check if it's an API key format
+export const detectApiKeyType = async (apiKey: string): Promise<string | null> => {
+  if (!apiKey) return null;
+  
+  // SerpAPI patterns
+  if (apiKey.match(/^[a-f0-9]{64}$/)) {
+    return 'serp';
   }
   
-  // Check if it's a Google API key format (starts with AIza and is around 39 characters)
-  return /^AIza[a-zA-Z0-9-_]{35}$/.test(key);
-}
-
-/**
- * Check if the provided key appears to be a valid Google Search Console credential
- * Can be either an API key or service account JSON
- */
-export function isGoogleSearchConsoleKeyFormat(key: string): boolean {
-  // First, check if it's a service account JSON (most common for GSC)
-  try {
-    const parsed = JSON.parse(key);
-    if (parsed.type === 'service_account' && 
-        parsed.private_key && 
-        parsed.client_email && 
-        parsed.project_id &&
-        parsed.private_key_id &&
-        parsed.client_id) {
-      return true;
-    }
-  } catch (e) {
-    // Not JSON, check if it's an API key format
+  // Serpstack patterns (typically access keys)
+  if (apiKey.match(/^[a-f0-9]{32}$/) || apiKey.match(/^[A-Za-z0-9]{32}$/)) {
+    return 'serpstack';
   }
   
-  // Check if it's a Google API key format (starts with AIza and is around 39 characters)
-  return /^AIza[a-zA-Z0-9-_]{35}$/.test(key);
-}
-
-/**
- * Attempts to detect what type of API key this is based on its format
- */
-export function detectApiKeyType(key: string): string | null {
-  if (isOpenAIKeyFormat(key)) return 'openai';
-  if (isAnthropicKeyFormat(key)) return 'anthropic';
-  if (isGeminiKeyFormat(key)) return 'gemini';
-  if (isGoogleAnalyticsKeyFormat(key)) return 'google-analytics';
-  if (isGoogleSearchConsoleKeyFormat(key)) return 'google-search-console';
-  if (isMistralKeyFormat(key)) return 'mistral';
-  if (isSerpApiKeyFormat(key)) return 'serp';
+  // OpenAI patterns
+  if (apiKey.startsWith('sk-') && apiKey.length >= 40) {
+    return 'openai';
+  }
+  
+  // Anthropic patterns
+  if (apiKey.startsWith('sk-ant-') && apiKey.length >= 40) {
+    return 'anthropic';
+  }
+  
+  // Google/Gemini patterns
+  if (apiKey.startsWith('AIza') && apiKey.length >= 35) {
+    return 'gemini';
+  }
+  
+  // Stripe patterns
+  if (apiKey.startsWith('sk_') || apiKey.startsWith('pk_')) {
+    return 'stripe';
+  }
+  
   return null;
-}
+};
 
 /**
- * Validate that a key for a specific provider appears to be in the correct format
+ * Validate Serpstack API key format
  */
-export function validateProviderKeyFormat(provider: string, key: string): boolean {
-  switch (provider) {
-    case 'openai':
-      return isOpenAIKeyFormat(key);
-    case 'anthropic':
-      return isAnthropicKeyFormat(key);
-    case 'gemini':
-      return isGeminiKeyFormat(key);
-    case 'mistral':
-      return isMistralKeyFormat(key);
-    case 'serp':
-      return isSerpApiKeyFormat(key);
-    case 'google-analytics':
-      return isGoogleAnalyticsKeyFormat(key);
-    case 'google-search-console':
-      return isGoogleSearchConsoleKeyFormat(key);
-    default:
-      return true; // For other providers we don't have format validation
-  }
-}
+export const validateSerpstackApiKey = (apiKey: string): boolean => {
+  const serpstackPatterns = [
+    /^[a-f0-9]{32}$/, // 32-character hex string
+    /^[A-Za-z0-9]{32}$/, // 32-character alphanumeric
+    /^[A-Za-z0-9_-]{32,}$/, // Base64-like string (32+ chars)
+  ];
+  
+  return serpstackPatterns.some(pattern => pattern.test(apiKey));
+};
+
+/**
+ * Enhanced SERP API key validation for both providers
+ */
+export const validateSerpApiKey = (apiKey: string): boolean => {
+  // SerpAPI key patterns (more permissive to match real SerpAPI keys)
+  const serpApiPatterns = [
+    /^[a-f0-9]{64}$/, // 64-character hex string (most common)
+    /^[a-f0-9]{32}$/, // 32-character hex string
+    /^[A-Za-z0-9_-]{32,}$/, // Base64-like string (32+ chars)
+    /^[A-Za-z0-9]{20,}$/, // 20+ character alphanumeric
+    /^[A-Za-z0-9_.-]{16,}$/ // 16+ chars with common special characters
+  ];
+  
+  return serpApiPatterns.some(pattern => pattern.test(apiKey));
+};

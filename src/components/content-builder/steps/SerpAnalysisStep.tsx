@@ -7,6 +7,8 @@ import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
 import { SerpApiDiagnostics } from './serp-analysis/SerpApiDiagnostics';
+import { EnhancedSerpIntegration } from './serp-analysis/EnhancedSerpIntegration';
+import { EnhancedSerpStatus } from '../serp/EnhancedSerpStatus';
 import { SerpAnalysisResult } from '@/types/serp';
 import { getApiKey } from '@/services/apiKeyService';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -14,37 +16,43 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 export const SerpAnalysisStep = () => {
   const { state, dispatch, analyzeKeyword, generateOutlineFromSelections } = useContentBuilder();
   const { mainKeyword, serpData, isAnalyzing, serpSelections } = state;
-  const [apiKeyExists, setApiKeyExists] = useState(false);
+  const [apiKeysStatus, setApiKeysStatus] = useState({
+    serpApi: { configured: false, working: false },
+    serpstack: { configured: false, working: false }
+  });
   const [showApiSetup, setShowApiSetup] = useState(false);
-  const [apiKeySource, setApiKeySource] = useState<'settings' | 'none'>('none');
-  const [isCheckingKey, setIsCheckingKey] = useState(true);
+  const [isCheckingKeys, setIsCheckingKeys] = useState(true);
+  const [useEnhancedMode, setUseEnhancedMode] = useState(false);
   
-  // Check if API key exists using the unified service
+  // Check if API keys exist
   useEffect(() => {
-    const checkApiKey = async () => {
+    const checkApiKeys = async () => {
       try {
-        setIsCheckingKey(true);
-        console.log('🔑 Checking for SERP API key...');
+        setIsCheckingKeys(true);
+        console.log('🔑 Checking for SERP API keys...');
         
-        // Check unified API key service
-        const settingsApiKey = await getApiKey('serp');
-        if (settingsApiKey) {
-          console.log('✅ SERP API key found in settings');
-          setApiKeyExists(true);
-          setApiKeySource('settings');
-          return;
+        // Check both API keys
+        const serpApiKey = await getApiKey('serp');
+        const serpstackKey = await getApiKey('serpstack');
+        
+        const newStatus = {
+          serpApi: { configured: !!serpApiKey, working: false },
+          serpstack: { configured: !!serpstackKey, working: false }
+        };
+        
+        setApiKeysStatus(newStatus);
+        
+        // Enable enhanced mode if we have the keyword-serp function available
+        // and at least one API key is configured
+        if ((serpApiKey || serpstackKey) && mainKeyword) {
+          setUseEnhancedMode(true);
         }
         
-        // No API key found
-        console.log('❌ No SERP API key found');
-        setApiKeyExists(false);
-        setApiKeySource('none');
+        console.log('✅ API keys status checked:', newStatus);
       } catch (error) {
-        console.error('Error checking API key:', error);
-        setApiKeyExists(false);
-        setApiKeySource('none');
+        console.error('Error checking API keys:', error);
       } finally {
-        setIsCheckingKey(false);
+        setIsCheckingKeys(false);
       }
     };
     
@@ -54,8 +62,18 @@ export const SerpAnalysisStep = () => {
       setShowApiSetup(true);
     }
     
-    checkApiKey();
-  }, []);
+    checkApiKeys();
+  }, [mainKeyword]);
+  
+  // Handle status updates from the status component
+  const handleStatusChange = (status: any) => {
+    setApiKeysStatus(status);
+    
+    // Enable enhanced mode if we have working APIs
+    if ((status.serpApi.working || status.serpstack.working) && mainKeyword) {
+      setUseEnhancedMode(true);
+    }
+  };
   
   // Get selection statistics
   const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
@@ -98,8 +116,8 @@ export const SerpAnalysisStep = () => {
     }
   };
   
-  // If API setup is explicitly requested or no API key exists and no data is available
-  if (isCheckingKey) {
+  // Loading state
+  if (isCheckingKeys) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
@@ -107,18 +125,22 @@ export const SerpAnalysisStep = () => {
     );
   }
   
-  // If API setup is explicitly requested or no API key exists and no data is available
-  if ((showApiSetup || (!apiKeyExists && !serpData)) && !isAnalyzing) {
+  // Show API setup if explicitly requested or no working APIs and no data
+  const hasWorkingApis = apiKeysStatus.serpApi.working || apiKeysStatus.serpstack.working;
+  const hasConfiguredApis = apiKeysStatus.serpApi.configured || apiKeysStatus.serpstack.configured;
+  
+  if ((showApiSetup || (!hasConfiguredApis && !serpData)) && !isAnalyzing) {
     return (
       <div className="space-y-6">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold mb-2">Set Up SERP API Access</h2>
+          <h2 className="text-xl font-semibold mb-2">Set Up Enhanced SERP Analysis</h2>
           <p className="text-muted-foreground">
-            {apiKeySource === 'settings' 
-              ? 'Using API key from settings'
-              : 'To see real search data, you need to add your SERP API key'}
+            Configure your SERP API keys for comprehensive search data analysis
           </p>
         </div>
+        
+        {/* Enhanced Status Component */}
+        <EnhancedSerpStatus onStatusChange={handleStatusChange} />
         
         <Tabs defaultValue="setup" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -137,7 +159,7 @@ export const SerpAnalysisStep = () => {
         
         <div className="text-center mt-4">
           <p className="text-sm text-muted-foreground">
-            Don&apos;t want to add an API key now?
+            Don&apos;t want to add API keys now?
           </p>
           <button 
             onClick={handleReanalyze}
@@ -150,8 +172,25 @@ export const SerpAnalysisStep = () => {
     );
   }
   
+  // Show enhanced mode if available, otherwise fallback to regular mode
+  if (useEnhancedMode && hasWorkingApis) {
+    return (
+      <div className="space-y-6">
+        {/* Enhanced Status at the top */}
+        <EnhancedSerpStatus onStatusChange={handleStatusChange} />
+        
+        {/* Enhanced SERP Integration */}
+        <EnhancedSerpIntegration />
+      </div>
+    );
+  }
+  
+  // Regular SERP analysis mode
   return (
     <div className="space-y-6">
+      {/* Show status even in regular mode */}
+      <EnhancedSerpStatus onStatusChange={handleStatusChange} />
+      
       <SerpAnalysisHeader
         mainKeyword={mainKeyword}
         isAnalyzing={isAnalyzing}
@@ -181,8 +220,8 @@ export const SerpAnalysisStep = () => {
               handleToggleSelection={handleToggleSelection}
             />
             
-            {/* Add diagnostics panel for debugging when using mock data */}
-            {(!apiKeyExists || serpData?.isMockData) && (
+            {/* Add diagnostics panel for debugging */}
+            {(!hasWorkingApis || serpData?.isMockData) && (
               <SerpApiDiagnostics />
             )}
           </div>

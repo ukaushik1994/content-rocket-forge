@@ -1,3 +1,4 @@
+
 import { LucideIcon } from 'lucide-react';
 
 export interface ApiProvider {
@@ -62,6 +63,16 @@ export const API_PROVIDERS: ApiProvider[] = [
     icon: Search,
     link: 'https://serpapi.com/manage-api-key',
     required: true,
+    category: 'SEO & Analytics'
+  },
+  {
+    id: 'serpstack',
+    name: 'Serpstack',
+    description: 'Alternative SERP data provider for comprehensive search analysis',
+    serviceKey: 'serpstack',
+    icon: Search,
+    link: 'https://serpstack.com/dashboard',
+    required: false,
     category: 'SEO & Analytics'
   },
   {
