@@ -141,9 +141,10 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
     const data = getCurrentStepData();
     
     if (!data.length) {
+      const StepIcon = step.icon;
       return (
         <div className="text-center py-8 text-muted-foreground">
-          <step.icon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <StepIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p>No {step.title.toLowerCase()} available for this keyword</p>
         </div>
       );
@@ -182,9 +183,9 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
           
           isSelected = serpSelections.some(s => s.content === content && s.selected);
           
-          const cardClasses = `cursor-pointer transition-all duration-200 hover:shadow-md ${
-            isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
-          }`;
+          const cardClasses = isSelected 
+            ? 'cursor-pointer transition-all duration-200 hover:shadow-md ring-2 ring-primary bg-primary/5'
+            : 'cursor-pointer transition-all duration-200 hover:shadow-md hover:bg-muted/50';
           
           return (
             <Card 
@@ -222,7 +223,6 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Step Progress */}
       <Card className="glass-panel">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between mb-2">
@@ -270,7 +270,6 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Current Step Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
@@ -306,7 +305,6 @@ export const SerpSelectionSteps: React.FC<SerpSelectionStepsProps> = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation */}
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
