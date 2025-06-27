@@ -22,7 +22,8 @@ import {
   CreditCard, 
   BarChart3,
   TrendingUp,
-  Binary
+  Binary,
+  Server
 } from 'lucide-react';
 
 export const API_PROVIDERS: ApiProvider[] = [
@@ -63,6 +64,16 @@ export const API_PROVIDERS: ApiProvider[] = [
     serviceKey: 'mistral',
     icon: Binary,
     link: 'https://console.mistral.ai/api-keys/',
+    required: false,
+    category: 'AI Services'
+  },
+  {
+    id: 'lmstudio',
+    name: 'LM Studio',
+    description: 'Local AI models running on your machine',
+    serviceKey: 'lmstudio',
+    icon: Server,
+    link: 'https://lmstudio.ai/',
     required: false,
     category: 'AI Services'
   },
