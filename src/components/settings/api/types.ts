@@ -21,9 +21,7 @@ import {
   Phone, 
   CreditCard, 
   BarChart3,
-  TrendingUp,
-  Binary,
-  Server
+  TrendingUp 
 } from 'lucide-react';
 
 export const API_PROVIDERS: ApiProvider[] = [
@@ -54,26 +52,6 @@ export const API_PROVIDERS: ApiProvider[] = [
     serviceKey: 'gemini',
     icon: Brain,
     link: 'https://aistudio.google.com/app/apikey',
-    required: false,
-    category: 'AI Services'
-  },
-  {
-    id: 'mistral',
-    name: 'Mistral AI',
-    description: 'European AI provider with advanced language models',
-    serviceKey: 'mistral',
-    icon: Binary,
-    link: 'https://console.mistral.ai/api-keys/',
-    required: false,
-    category: 'AI Services'
-  },
-  {
-    id: 'lmstudio',
-    name: 'LM Studio',
-    description: 'Local AI models running on your machine',
-    serviceKey: 'lmstudio',
-    icon: Server,
-    link: 'https://lmstudio.ai/',
     required: false,
     category: 'AI Services'
   },

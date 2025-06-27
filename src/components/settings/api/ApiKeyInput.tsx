@@ -6,10 +6,9 @@ import {
   getApiKey, 
   testApiKey, 
   deleteApiKey,
-  detectApiKeyType,
-  type ApiProvider 
+  detectApiKeyType 
 } from "@/services/apiKeyService";
-import { ApiProvider as ApiProviderType } from './types';
+import { ApiProvider } from './types';
 import { ApiKeyCard } from './ApiKeyCard';
 import { ApiKeyHeader } from './ApiKeyHeader';
 import { ApiKeyStatus } from './ApiKeyStatus';
@@ -18,7 +17,7 @@ import { ApiKeyActions } from './ApiKeyActions';
 import { ApiKeyLoading } from './ApiKeyLoading';
 
 interface ApiKeyInputProps {
-  provider: ApiProviderType;
+  provider: ApiProvider;
 }
 
 export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
@@ -40,7 +39,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         setError(null);
         console.log(`🔍 Fetching ${provider.name} API key from database`);
         
-        const key = await getApiKey(provider.serviceKey as ApiProvider);
+        const key = await getApiKey(provider.serviceKey);
         
         if (key) {
           console.log(`✅ ${provider.name} API key found in database`);
@@ -51,7 +50,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
           // Test the key immediately when loading
           console.log(`🧪 Testing ${provider.name} API key on load`);
           try {
-            const success = await testApiKey(provider.serviceKey as ApiProvider, key);
+            const success = await testApiKey(provider.serviceKey, key);
             setTestSuccessful(success);
             if (success) {
               console.log(`✅ ${provider.name} API key verified successfully`);
@@ -88,7 +87,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       setError(null);
       console.log(`💾 Saving ${provider.name} API key`);
 
-      const success = await saveApiKey(provider.serviceKey as ApiProvider, apiKey);
+      const success = await saveApiKey(provider.serviceKey, apiKey);
       
       if (success) {
         setKeyExists(true);
@@ -99,7 +98,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
         console.log(`🧪 Testing ${provider.name} API key after save`);
         try {
           setIsTesting(true);
-          const testSuccess = await testApiKey(provider.serviceKey as ApiProvider, apiKey);
+          const testSuccess = await testApiKey(provider.serviceKey, apiKey);
           setTestSuccessful(testSuccess);
           
           if (testSuccess) {
@@ -137,7 +136,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       console.log(`🧪 Testing ${provider.name} API key connection`);
       
       // Always use the current value in the input field for testing
-      const success = await testApiKey(provider.serviceKey as ApiProvider, apiKey);
+      const success = await testApiKey(provider.serviceKey, apiKey);
       setTestSuccessful(success);
       
       if (success) {
@@ -164,7 +163,7 @@ export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
       setError(null);
       console.log(`🗑️ Deleting ${provider.name} API key`);
       
-      const success = await deleteApiKey(provider.serviceKey as ApiProvider);
+      const success = await deleteApiKey(provider.serviceKey);
       
       if (success) {
         setApiKey("");

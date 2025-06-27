@@ -10,7 +10,6 @@ import { AiProviderSelector } from './AiProviderSelector';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 import { AiProvider } from '@/services/aiService/types';
-import { ApiProvider } from '@/services/apiKeyService';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -80,7 +79,7 @@ export function OutlineGenerator() {
       console.info("AI Generation prompt:", outlinePrompt);
       
       // Make sure the selected provider has a key configured
-      const hasApiKey = await getApiKey(aiProvider as ApiProvider);
+      const hasApiKey = await getApiKey(aiProvider);
       if (!hasApiKey) {
         toast.error(`No API key configured for ${aiProvider}. Please add your API key in Settings.`);
         setIsGenerating(false);
