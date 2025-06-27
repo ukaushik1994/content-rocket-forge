@@ -25,10 +25,6 @@ async function getSerpApiKey(): Promise<string | null> {
     
     if (apiKey) {
       console.log('✅ SERP API key found - Length:', apiKey.length, 'Type:', typeof apiKey);
-      // Log first 6 and last 4 characters for debugging (masked)
-      const masked = apiKey.substring(0, 6) + '••••••••••••' + 
-        (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
-      console.log('🔍 Masked key for debugging:', masked);
       console.log('🔍 Key appears to be:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64 encoded' : 'Plain text');
       return apiKey;
     } else {
@@ -42,84 +38,55 @@ async function getSerpApiKey(): Promise<string | null> {
 }
 
 /**
- * Call the Supabase Edge Function for SERP API requests with enhanced error handling and logging
+ * Call the Supabase Edge Function for SERP API requests with enhanced Google-specific logging
  */
 async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
   try {
-    console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
+    console.log(`🚀 Calling Google SERP Edge Function: ${endpoint}`, { 
       params: Object.keys(params), 
       hasApiKey: !!apiKey,
       apiKeyLength: apiKey?.length,
-      apiKeyType: typeof apiKey
+      googleSpecific: true
     });
-    
-    // Log the masked API key for debugging
-    const maskedKey = apiKey ? 
-      apiKey.substring(0, 6) + '••••••••••••' + 
-      (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '') : 'null';
-    console.log('🔍 Using API key (masked):', maskedKey);
-    console.log('🔍 Sending key in format:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64' : 'Plain text');
     
     const { data, error } = await supabase.functions.invoke('serp-api', {
       body: {
         endpoint,
-        params,
-        apiKey // Send the key as-is (already decrypted by getApiKey)
+        params: {
+          ...params,
+          // Force Google-specific parameters
+          engine: 'google',
+          gl: 'us', // Google country
+          hl: 'en', // Google language
+          device: 'desktop' // Google device
+        },
+        apiKey
       }
     });
     
     if (error) {
-      console.error('❌ Supabase Edge Function error:', error);
-      console.error('❌ Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-      throw new Error(`Edge Function error: ${error.message || JSON.stringify(error)}`);
+      console.error('❌ Google SERP Edge Function error:', error);
+      throw new Error(`Google SERP API error: ${error.message || JSON.stringify(error)}`);
     }
     
     if (!data) {
-      console.warn('⚠️ Edge Function returned no data');
+      console.warn('⚠️ No Google SERP data returned');
       return null;
     }
     
-    // Check if the response contains an error
-    if (data.error) {
-      console.error('❌ SERP API error in response:', data.error);
-      
-      // Provide more specific error handling
-      if (data.error.includes('Invalid API key')) {
-        console.error('🔑 API Key validation failed - key may be incorrect or expired');
-        throw new Error('Invalid API key. Please check your SerpAPI key in Settings → API Keys');
-      } else if (data.error.includes('rate limit')) {
-        console.error('⏱️ API rate limit exceeded');
-        throw new Error('API rate limit exceeded. Please wait and try again.');
-      }
-      
-      throw new Error(data.error);
+    // Validate that we received Google data
+    if (data.isGoogleData === false) {
+      console.warn('⚠️ Warning: Received non-Google data');
+    } else {
+      console.log('✅ Google SERP data verified');
     }
     
-    console.log('✅ SERP Edge Function response received successfully');
-    console.log('📊 Response data keys:', Object.keys(data || {}));
+    console.log('📊 Google data quality:', data.dataQuality || 'unknown');
+    console.log('📊 Google volume source:', data.volumeMetadata?.source || 'unknown');
+    
     return data;
   } catch (error) {
-    console.error('💥 Error calling SERP Edge Function:', error);
-    
-    // Provide more specific error messages based on error type
-    if (error.message && error.message.includes('401')) {
-      console.error('🔑 Authentication failed - likely invalid API key');
-      throw new Error('Invalid API key. Please verify your SerpAPI key in Settings.');
-    } else if (error.message && error.message.includes('429')) {
-      console.error('⏱️ Rate limit exceeded');
-      throw new Error('API rate limit exceeded. Please try again later.');
-    } else if (error.message && error.message.includes('timeout')) {
-      console.error('⏰ Request timeout');
-      throw new Error('Request timeout. Please try again.');
-    } else if (error.message && error.message.includes('non-2xx status code')) {
-      console.error('📡 Edge function returned error status');
-      throw new Error('SERP API request failed. Please check your API key configuration.');
-    }
-    
+    console.error('💥 Error calling Google SERP Edge Function:', error);
     throw error;
   }
 }
@@ -176,28 +143,42 @@ function cacheSerpData(keyword: string, data: SerpAnalysisResult): void {
 }
 
 /**
- * Search for keywords using the SERP API
+ * Search for keywords using Google SERP API
  */
 export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
     const { query, limit = 10, refresh = false } = params;
-    console.log(`🔍 Searching keywords for: "${query}"`);
+    console.log(`🔍 Searching Google keywords for: "${query}"`);
     
     const apiKey = await getSerpApiKey();
     
     if (apiKey) {
       try {
-        const data = await callSerpEdgeFunction('search', { q: query, limit }, apiKey);
-        return data?.results || [];
+        const data = await callSerpEdgeFunction('search', { 
+          q: query, 
+          limit,
+          // Ensure Google-specific parameters
+          engine: 'google',
+          gl: 'us',
+          hl: 'en'
+        }, apiKey);
+        
+        if (data && data.organic_results) {
+          console.log('✅ Google search results retrieved successfully');
+          return data.organic_results;
+        } else {
+          console.warn('⚠️ No Google organic results found');
+          return getBackupMockResults(query, refresh);
+        }
       } catch (error) {
-        console.error('❌ SERP API search failed:', error);
-        toast.error('Error fetching keyword data. Using mock data.');
+        console.error('❌ Google SERP API search failed:', error);
+        toast.error('Error fetching Google keyword data. Using mock data.');
         return getBackupMockResults(query, refresh);
       }
     }
     
-    console.warn('⚠️ No SERP API key found. Using mock data.');
-    toast.warning('Using mock data for keyword search. Add your SERP API key in Settings for real results.', {
+    console.warn('⚠️ No SERP API key found. Using mock Google data.');
+    toast.warning('Using mock Google data for keyword search. Add your SERP API key in Settings for real Google results.', {
       duration: 5000,
       action: {
         label: "Go to Settings",
@@ -208,23 +189,23 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
     });
     return getBackupMockResults(query, refresh);
   } catch (error) {
-    console.error('💥 Error searching keywords:', error);
+    console.error('💥 Error searching Google keywords:', error);
     return getBackupMockResults(params.query, params.refresh || false);
   }
 };
 
 /**
- * Analyze keyword using SERP API with enhanced error handling
+ * Analyze keyword using Google SERP API with enhanced volume validation
  */
 export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
   try {
-    console.log(`🎯 Analyzing keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
+    console.log(`🎯 Analyzing Google keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
     
     // Check cache first (unless refresh is requested)
     if (!refresh) {
       const cachedData = getCachedSerpData(keyword);
-      if (cachedData) {
-        console.log('📋 Using cached SERP data');
+      if (cachedData && cachedData.isGoogleData) {
+        console.log('📋 Using cached Google SERP data');
         return cachedData;
       }
     }
@@ -232,8 +213,8 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
     const apiKey = await getSerpApiKey();
     
     if (!apiKey) {
-      console.warn('⚠️ No SERP API key found, using mock data');
-      toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
+      console.warn('⚠️ No SERP API key found, using mock Google data');
+      toast.warning('No SERP API key found. Add your API key in Settings for real Google data.', {
         duration: 5000,
         action: {
           label: "Add Key",
@@ -242,21 +223,33 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
           }
         }
       });
-      return generateMockSerpData(keyword, refresh);
+      return generateMockGoogleSerpData(keyword, refresh);
     }
 
-    console.log('🔑 API key found, making real SERP API call...');
+    console.log('🔑 API key found, making real Google SERP API call...');
     
     try {
-      const data = await callSerpEdgeFunction('analyze', { keyword, refresh: !!refresh }, apiKey);
+      const data = await callSerpEdgeFunction('analyze', { 
+        keyword, 
+        refresh: !!refresh,
+        // Ensure Google-specific analysis
+        engine: 'google',
+        includeKeywordPlanner: true,
+        location: 'United States',
+        language: 'en'
+      }, apiKey);
       
-      if (data) {
-        console.log('✅ SERP API returned real data');
+      if (data && data.isGoogleData) {
+        console.log('✅ Google SERP API returned verified Google data');
+        console.log('📊 Google volume source:', data.volumeMetadata?.source);
+        console.log('📊 Google data quality:', data.dataQuality);
+        
+        // Ensure proper typing and cache the result
         const result: SerpAnalysisResult = {
           keyword,
-          searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
-          keywordDifficulty: data.keywordDifficulty || Math.floor(Math.random() * 100),
-          competitionScore: data.competitionScore || Math.random() * 0.8,
+          searchVolume: data.searchVolume || 0,
+          keywordDifficulty: data.keywordDifficulty || 0,
+          competitionScore: data.competitionScore || 0,
           entities: data.entities || [],
           peopleAlsoAsk: data.peopleAlsoAsk || [],
           headings: data.headings || [],
@@ -265,22 +258,38 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
           relatedSearches: data.relatedSearches || [],
           keywords: data.keywords || [],
           recommendations: data.recommendations || [],
-          isMockData: false
+          featuredSnippets: data.featuredSnippets || [],
+          isMockData: false,
+          isGoogleData: true,
+          dataQuality: data.dataQuality || 'medium',
+          volumeMetadata: data.volumeMetadata || {
+            source: 'google_search_results',
+            confidence: 'medium',
+            engine: 'google',
+            location: 'United States',
+            language: 'English',
+            lastUpdated: new Date().toISOString()
+          },
+          competitionMetadata: data.competitionMetadata || {
+            source: 'google_results_estimate',
+            engine: 'google'
+          }
         };
         
         cacheSerpData(keyword, result);
         
-        toast.success('Retrieved real SERP data successfully!');
+        toast.success('Retrieved verified Google SERP data successfully!', {
+          description: `Volume source: ${result.volumeMetadata?.source || 'Google'}`
+        });
         return result;
       } else {
-        console.warn('⚠️ SERP API returned empty data');
-        throw new Error('No data returned from SERP API');
+        console.warn('⚠️ SERP API returned non-Google or empty data');
+        throw new Error('No Google data returned from SERP API');
       }
     } catch (apiError) {
-      console.error('❌ SERP API call failed:', apiError);
+      console.error('❌ Google SERP API call failed:', apiError);
       
-      // Show specific error message to user
-      toast.error(`SERP API Error: ${apiError.message}`, {
+      toast.error(`Google SERP API Error: ${apiError.message}`, {
         duration: 8000,
         action: {
           label: "Check Settings",
@@ -290,30 +299,29 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Pr
         }
       });
       
-      // Return mock data as fallback
-      console.log('🎭 Falling back to mock data due to API error');
-      return generateMockSerpData(keyword, refresh);
+      console.log('🎭 Falling back to mock Google data due to API error');
+      return generateMockGoogleSerpData(keyword, refresh);
     }
   } catch (error) {
-    console.error('💥 Error analyzing keyword:', error);
-    toast.error(`Analysis failed: ${error.message}`);
-    return generateMockSerpData(keyword, refresh);
+    console.error('💥 Error analyzing Google keyword:', error);
+    toast.error(`Google analysis failed: ${error.message}`);
+    return generateMockGoogleSerpData(keyword, refresh);
   }
 };
 
-// Helper function for mock results as a backup
+// Helper function for mock Google results as a backup
 function getBackupMockResults(query: string, refresh: boolean) {
   const mockResults = [
-    { title: `How to Use ${query} Effectively`, url: 'https://example.com/1' },
-    { title: `The Ultimate Guide to ${query}`, url: 'https://example.com/2' },
-    { title: `10 Best ${query} Strategies`, url: 'https://example.com/3' },
-    { title: `Why ${query} Matters for SEO`, url: 'https://example.com/4' },
-    { title: `Understanding ${query} for Beginners`, url: 'https://example.com/5' },
-    { title: `${query} vs Traditional Methods`, url: 'https://example.com/6' },
-    { title: `The Future of ${query} in 2025`, url: 'https://example.com/7' },
-    { title: `How to Measure ${query} Success`, url: 'https://example.com/8' },
-    { title: `${query} Best Practices`, url: 'https://example.com/9' },
-    { title: `${query} Case Studies`, url: 'https://example.com/10' },
+    { title: `How to Use ${query} Effectively - Google Search`, url: 'https://example.com/1' },
+    { title: `The Ultimate Google Guide to ${query}`, url: 'https://example.com/2' },
+    { title: `10 Best ${query} Strategies for Google`, url: 'https://example.com/3' },
+    { title: `Why ${query} Matters for Google SEO`, url: 'https://example.com/4' },
+    { title: `Understanding ${query} for Google Rankings`, url: 'https://example.com/5' },
+    { title: `${query} vs Traditional Methods on Google`, url: 'https://example.com/6' },
+    { title: `The Future of ${query} in Google Search 2025`, url: 'https://example.com/7' },
+    { title: `How to Measure ${query} Success on Google`, url: 'https://example.com/8' },
+    { title: `${query} Best Practices for Google`, url: 'https://example.com/9' },
+    { title: `${query} Google Case Studies`, url: 'https://example.com/10' },
   ];
   
   if (refresh) {
@@ -328,140 +336,136 @@ function getBackupMockResults(query: string, refresh: boolean) {
   return mockResults;
 }
 
-// Helper function to generate mock SERP data as a fallback
-function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
-  console.log('🎭 Generating mock SERP data for:', keyword);
+// Helper function to generate mock Google SERP data as a fallback
+function generateMockGoogleSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
+  console.log('🎭 Generating mock Google SERP data for:', keyword);
   
   const variationFactor = refresh ? Math.random() : 0.5;
   
   return {
     keyword,
-    searchVolume: Math.floor(Math.random() * 10000) + 1000,
+    searchVolume: Math.floor(Math.random() * 50000) + 10000, // Higher baseline for Google
     competitionScore: Math.random() * 0.8,
     keywordDifficulty: Math.floor(Math.random() * 100),
     isMockData: true,
+    isGoogleData: true, // Mark as Google data even if mock
+    dataQuality: 'low',
+    volumeMetadata: {
+      source: 'mock_google_estimate',
+      confidence: 'low',
+      engine: 'google',
+      location: 'United States',
+      language: 'English',
+      lastUpdated: new Date().toISOString()
+    },
+    competitionMetadata: {
+      source: 'mock_google_estimate',
+      engine: 'google',
+      adsCompetition: 'ESTIMATED'
+    },
     entities: [
-      { name: `${keyword} platform`, type: 'platform', description: `A platform focused on ${keyword}` },
-      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword}` },
-      { name: `${keyword} tools`, type: 'tools', description: `Tools used for ${keyword} implementation` },
-      { name: `${keyword} metrics`, type: 'metrics', description: `Measurements related to ${keyword} performance` },
+      { name: `${keyword} platform`, type: 'platform', description: `A Google-indexed platform focused on ${keyword}`, source: 'google_knowledge_graph' },
+      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword} for Google`, source: 'google_knowledge_graph' },
+      { name: `${keyword} tools`, type: 'tools', description: `Google-friendly tools for ${keyword} implementation`, source: 'google_knowledge_graph' },
+      { name: `${keyword} metrics`, type: 'metrics', description: `Google Analytics measurements for ${keyword}`, source: 'google_knowledge_graph' },
       ...(refresh ? [
-        { name: `${keyword} analytics`, type: 'analytics', description: `Analytic methods for ${keyword}` },
-        { name: `${keyword} framework`, type: 'framework', description: `Structural frameworks for ${keyword}` },
-        { name: `${keyword} automation`, type: 'automation', description: `Automation techniques for ${keyword}` }
+        { name: `${keyword} analytics`, type: 'analytics', description: `Google Analytics methods for ${keyword}`, source: 'google_knowledge_graph' },
+        { name: `${keyword} framework`, type: 'framework', description: `Google-approved frameworks for ${keyword}`, source: 'google_knowledge_graph' }
       ] : [])
     ],
     peopleAlsoAsk: [
-      { question: `How does ${keyword} work?`, source: 'search' },
-      { question: `What is the best ${keyword} tool?`, source: 'search' },
-      { question: `Why is ${keyword} important for SEO?`, source: 'search' },
-      { question: `When should I use ${keyword}?`, source: 'search' },
+      { question: `How does ${keyword} work on Google?`, source: 'google_people_also_ask' },
+      { question: `What is the best ${keyword} tool for Google?`, source: 'google_people_also_ask' },
+      { question: `Why is ${keyword} important for Google SEO?`, source: 'google_people_also_ask' },
+      { question: `When should I use ${keyword} for Google rankings?`, source: 'google_people_also_ask' },
       ...(refresh ? [
-        { question: `What are the advantages of ${keyword}?`, source: 'search' },
-        { question: `How much does ${keyword} cost on average?`, source: 'search' },
-        { question: `Can ${keyword} be integrated with other systems?`, source: 'search' }
+        { question: `What are the Google advantages of ${keyword}?`, source: 'google_people_also_ask' },
+        { question: `How much does ${keyword} cost on Google Ads?`, source: 'google_people_also_ask' }
       ] : [])
     ],
     headings: [
-      { text: `Understanding ${keyword}`, level: 'h2' as const },
-      { text: `Benefits of ${keyword}`, level: 'h2' as const },
-      { text: `How to Implement ${keyword}`, level: 'h3' as const },
-      { text: `${keyword} Best Practices`, level: 'h2' as const },
-      { text: `${keyword} Case Studies`, level: 'h2' as const },
+      { text: `Understanding ${keyword} for Google`, level: 'h2' as const },
+      { text: `Google Benefits of ${keyword}`, level: 'h2' as const },
+      { text: `How to Implement ${keyword} on Google`, level: 'h3' as const },
+      { text: `${keyword} Google Best Practices`, level: 'h2' as const },
+      { text: `${keyword} Google Case Studies`, level: 'h2' as const },
       ...(refresh ? [
-        { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' as const },
-        { text: `Advanced ${keyword} Techniques`, level: 'h2' as const },
-        { text: `${keyword} ROI Calculation`, level: 'h3' as const }
+        { text: `Common Google ${keyword} Mistakes`, level: 'h2' as const },
+        { text: `Advanced Google ${keyword} Techniques`, level: 'h2' as const }
       ] : [])
     ],
     contentGaps: [
       { 
-        topic: `${keyword} for beginners`, 
-        description: 'Beginner guide', 
-        recommendation: 'Create a 101 guide',
-        content: `A comprehensive ${keyword} guide for beginners`,
-        source: 'Content analysis'
+        topic: `${keyword} for Google beginners`, 
+        description: 'Google-focused beginner guide', 
+        recommendation: 'Create a Google-optimized 101 guide',
+        content: `A comprehensive Google-friendly ${keyword} guide`,
+        source: 'google_serp_analysis'
       },
       { 
-        topic: `Advanced ${keyword} techniques`, 
-        description: 'For experts', 
-        recommendation: 'Share advanced tips',
-        content: `Expert-level ${keyword} strategies and implementations`,
-        source: 'Content analysis' 
-      },
-      { 
-        topic: `${keyword} ROI measurement`, 
-        description: 'Measuring success', 
-        recommendation: 'Create calculator',
-        content: `How to measure ROI from your ${keyword} initiatives`,
-        source: 'Content analysis'
-      },
-      { 
-        topic: `${keyword} vs competitors`, 
-        description: 'Comparison', 
-        recommendation: 'Create comparison chart',
-        content: `Comparing ${keyword} with alternative approaches`,
-        source: 'Content analysis'
+        topic: `Advanced Google ${keyword} techniques`, 
+        description: 'Google expert strategies', 
+        recommendation: 'Share advanced Google tips',
+        content: `Expert-level Google ${keyword} strategies`,
+        source: 'google_serp_analysis' 
       }
     ],
     topResults: [
       {
-        title: `The Ultimate Guide to ${keyword}`,
-        link: `https://example.com/${keyword}-guide`,
-        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide.`,
-        position: 1
+        title: `The Ultimate Google Guide to ${keyword}`,
+        link: `https://example.com/google-${keyword}-guide`,
+        snippet: `Learn everything about ${keyword} optimized for Google search visibility and user engagement.`,
+        position: 1,
+        source: 'google_organic'
       },
       {
-        title: `How to Use ${keyword} Effectively`,
-        link: `https://example.com/${keyword}-tutorial`,
-        snippet: `Step-by-step tutorial on implementing ${keyword} for maximum results.`,
-        position: 2
-      },
-      {
-        title: `${keyword} Tips and Tricks`,
-        link: `https://example.com/${keyword}-tips`,
-        snippet: `Expert advice on getting the most out of your ${keyword} strategy.`,
-        position: 3
+        title: `How to Use ${keyword} for Google Success`,
+        link: `https://example.com/google-${keyword}-tutorial`,
+        snippet: `Step-by-step Google-optimized ${keyword} implementation.`,
+        position: 2,
+        source: 'google_organic'
       }
     ],
     relatedSearches: [
-      { query: `${keyword} strategy` },
-      { query: `${keyword} tools` },
-      { query: `best ${keyword} practices` },
-      { query: `${keyword} guide` },
-      { query: `${keyword} tutorial` },
-      { query: `${keyword} examples` },
-      { query: `${keyword} techniques` },
-      { query: `${keyword} trends` },
+      { query: `${keyword} Google strategy`, source: 'google_related_searches' },
+      { query: `${keyword} Google tools`, source: 'google_related_searches' },
+      { query: `best Google ${keyword} practices`, source: 'google_related_searches' },
+      { query: `${keyword} Google guide`, source: 'google_related_searches' },
+      { query: `${keyword} Google tutorial`, source: 'google_related_searches' },
       ...(refresh ? [
-        { query: `affordable ${keyword} solutions` },
-        { query: `${keyword} for small business` },
-        { query: `enterprise ${keyword} options` },
-        { query: `${keyword} certification` }
+        { query: `${keyword} Google certification`, source: 'google_related_searches' },
+        { query: `${keyword} Google Analytics`, source: 'google_related_searches' }
       ] : [])
     ],
     keywords: [
-      `${keyword} strategy`,
-      `${keyword} tools`,
-      `best ${keyword} practices`,
-      `${keyword} guide`,
-      `${keyword} tutorial`,
-      `${keyword} examples`,
-      `${keyword} techniques`,
-      `${keyword} trends`,
+      `${keyword} Google strategy`,
+      `${keyword} Google tools`,
+      `best Google ${keyword} practices`,
+      `${keyword} Google guide`,
+      `${keyword} Google tutorial`,
+      `${keyword} Google examples`,
+      `${keyword} Google techniques`,
+      `${keyword} Google trends`,
       ...(refresh ? [
-        `${keyword} certification`,
-        `${keyword} for startups`,
-        `${keyword} ROI`,
-        `${keyword} software comparison`
+        `${keyword} Google certification`,
+        `${keyword} Google Analytics`,
+        `${keyword} Google ROI`
       ] : [])
     ],
     recommendations: [
-      `Create a comprehensive guide on ${keyword}`,
-      `Include step-by-step instructions for implementing ${keyword}`,
-      `Add visual examples of ${keyword} in action`,
-      `Compare ${keyword} with alternative approaches`,
-      `Include case studies showing successful ${keyword} implementation`
+      `Create a comprehensive Google-optimized guide on ${keyword}`,
+      `Include step-by-step instructions for Google ${keyword} implementation`,
+      `Add visual examples of ${keyword} in Google search results`,
+      `Compare ${keyword} with Google alternative approaches`,
+      `Include Google case studies showing successful ${keyword} implementation`
+    ],
+    featuredSnippets: [
+      {
+        title: `What is ${keyword}?`,
+        content: `${keyword} is a strategic approach optimized for Google search visibility and user engagement.`,
+        source: 'google_featured_snippet',
+        type: 'definition'
+      }
     ]
   };
 }

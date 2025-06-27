@@ -1,4 +1,3 @@
-
 export interface SerpSearchParams {
   query: string;
   country?: string;
@@ -64,60 +63,71 @@ export interface CommercialSignals {
   commercialIntent: 'high' | 'medium' | 'low' | 'unknown';
 }
 
+export interface VolumeMetadata {
+  source: 'google_keyword_planner' | 'google_search_results_estimate' | 'mock_google_estimate' | 'serpstack_estimate';
+  confidence: 'high' | 'medium' | 'low';
+  engine: 'google' | 'bing' | 'yahoo' | 'mixed';
+  location?: string;
+  language?: string;
+  lastUpdated: string;
+}
+
+export interface CompetitionMetadata {
+  source: 'google_ads_competition' | 'google_results_estimate' | 'serpstack_estimate' | 'mock_google_estimate';
+  engine: 'google' | 'bing' | 'yahoo' | 'mixed';
+  adsCompetition?: 'LOW' | 'MEDIUM' | 'HIGH' | 'ESTIMATED';
+}
+
 export interface SerpAnalysisResult {
   keyword: string;
   searchVolume?: number;
   competitionScore?: number;
   keywordDifficulty?: number;
+  entities?: Array<{
+    name: string;
+    type: string;
+    description?: string;
+    source?: string;
+  }>;
+  peopleAlsoAsk?: Array<{
+    question: string;
+    answer?: string;
+    source?: string;
+    position?: number;
+  }>;
+  headings?: Array<{
+    text: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  }>;
+  contentGaps?: Array<{
+    topic: string;
+    description: string;
+    recommendation: string;
+    content: string;
+    source: string;
+  }>;
   topResults?: Array<{
     title: string;
     link: string;
     snippet: string;
     position: number;
+    source?: string;
   }>;
   relatedSearches?: Array<{
     query: string;
-    volume?: number;
-  }>;
-  peopleAlsoAsk?: PeopleAlsoAskQuestion[];
-  featuredSnippets?: FeaturedSnippet[];
-  keywords?: string[];
-  recommendations?: string[];
-  isMockData?: boolean;
-  
-  // Enhanced fields for SERP analysis with updated types
-  entities?: Array<{
-    name: string;
-    type?: string;
-    importance?: number;
-    description?: string;
-    source?: 'organic_results' | 'knowledge_graph';
-  }>;
-  headings?: Array<{
-    text: string;
-    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    subtext?: string;
-    type?: string;
-  }>;
-  contentGaps?: Array<{
-    topic: string;
-    description: string;
-    recommendation?: string;
-    content?: string;
-    opportunity?: string;
     source?: string;
   }>;
-  
-  // New enhanced fields
-  knowledgeGraph?: KnowledgeGraph | null;
-  localResults?: LocalResult[];
-  multimediaOpportunities?: MultimediaOpportunity[];
-  commercialSignals?: CommercialSignals;
-  
-  // Debug information
-  debugInfo?: {
-    rawDataStructure?: Record<string, any>;
-    extractionErrors?: string[];
-    dataPresence?: Record<string, boolean>;
-  };
+  keywords?: string[];
+  recommendations?: string[];
+  featuredSnippets?: Array<{
+    title: string;
+    content: string;
+    source: string;
+    type?: string;
+  }>;
+  isMockData?: boolean;
+  isGoogleData?: boolean;
+  dataQuality?: 'high' | 'medium' | 'low';
+  volumeMetadata?: VolumeMetadata;
+  competitionMetadata?: CompetitionMetadata;
 }
