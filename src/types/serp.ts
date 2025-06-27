@@ -1,3 +1,4 @@
+
 export interface SerpSearchParams {
   query: string;
   country?: string;
@@ -98,6 +99,7 @@ export interface SerpAnalysisResult {
   headings?: Array<{
     text: string;
     level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+    subtext?: string;
   }>;
   contentGaps?: Array<{
     topic: string;
@@ -116,6 +118,7 @@ export interface SerpAnalysisResult {
   relatedSearches?: Array<{
     query: string;
     source?: string;
+    volume?: number;
   }>;
   keywords?: string[];
   recommendations?: string[];
@@ -124,7 +127,17 @@ export interface SerpAnalysisResult {
     content: string;
     source: string;
     type?: string;
+    metadata?: {
+      word_type?: string;
+      syllables?: string;
+      definitions?: string[];
+      examples?: string[];
+      pronunciation_audio?: string;
+    };
   }>;
+  knowledgeGraph?: KnowledgeGraph;
+  multimediaOpportunities?: MultimediaOpportunity[];
+  commercialSignals?: CommercialSignals;
   isMockData?: boolean;
   isGoogleData?: boolean;
   dataQuality?: 'high' | 'medium' | 'low';
