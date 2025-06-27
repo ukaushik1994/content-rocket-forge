@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export type ApiProvider = 'serp' | 'serpstack' | 'openai' | 'anthropic' | 'gemini' | 'mistral';
+export type ApiProvider = 'serp' | 'serpstack' | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio';
 
 const API_KEY_MAPPING: Record<ApiProvider, string> = {
   serp: 'SERP_API_KEY',
@@ -9,7 +9,8 @@ const API_KEY_MAPPING: Record<ApiProvider, string> = {
   openai: 'OPENAI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   gemini: 'GEMINI_API_KEY',
-  mistral: 'MISTRAL_API_KEY'
+  mistral: 'MISTRAL_API_KEY',
+  lmstudio: 'LMSTUDIO_API_KEY'
 };
 
 /**
