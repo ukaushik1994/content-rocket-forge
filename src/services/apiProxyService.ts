@@ -4,6 +4,7 @@ import { getApiKey } from './apiKeyService';
 import { toast } from 'sonner';
 
 export type SerpProvider = 'serp' | 'serpstack';
+export type ApiProvider = 'serp' | 'serpstack' | 'openai' | 'anthropic' | 'gemini';
 
 interface ApiProxyParams {
   service: string;
@@ -14,7 +15,7 @@ interface ApiProxyParams {
 /**
  * Call the unified API proxy service with any provider
  */
-export async function callApiProxy(provider: SerpProvider, endpoint: string, params?: any) {
+export async function callApiProxy(provider: ApiProvider, endpoint: string, params?: any) {
   try {
     console.log(`🚀 Calling API Proxy: ${provider} - ${endpoint}`);
     
