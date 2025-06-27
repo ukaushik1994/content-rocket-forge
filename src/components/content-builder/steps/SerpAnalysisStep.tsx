@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
@@ -141,6 +140,10 @@ export const SerpAnalysisStep = () => {
       
       dispatch({ type: 'SET_SERP_DATA', payload: convertedData });
     }
+  };
+
+  const handleRegularSerpDataChange = (data: SerpAnalysisResult) => {
+    dispatch({ type: 'SET_SERP_DATA', payload: data });
   };
 
   const getOverallApiStatus = () => {
@@ -292,7 +295,7 @@ export const SerpAnalysisStep = () => {
                   mainKeyword={mainKeyword}
                   onAddToContent={handleAddToContent}
                   onRetry={handleReanalyze}
-                  onSerpDataChange={handleSerpDataChange}
+                  onSerpDataChange={handleRegularSerpDataChange}
                 />
               </div>
             </>
