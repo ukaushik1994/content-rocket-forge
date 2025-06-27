@@ -98,12 +98,9 @@ async function handleSerpstackApi(endpoint: string, apiKey: string, params?: any
   
   if (endpoint === 'test') {
     return await testSerpstackApi(apiKey);
-  } else if (endpoint === 'analyze') {
-    return await analyzeSerpstackKeyword(apiKey, params);
-  } else if (endpoint === 'search') {
-    return await searchSerpstack(apiKey, params);
   }
   
+  // Handle other Serpstack endpoints here
   return new Response(
     JSON.stringify({ success: false, error: 'Serpstack endpoint not implemented' }),
     { 
@@ -111,143 +108,6 @@ async function handleSerpstackApi(endpoint: string, apiKey: string, params?: any
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     }
   );
-}
-
-async function analyzeSerpstackKeyword(apiKey: string, params: any) {
-  try {
-    console.log('🎯 Analyzing keyword with Serpstack:', params.keyword);
-    
-    const searchParams = new URLSearchParams({
-      access_key: apiKey,
-      query: params.keyword,
-      num: '10',
-      gl: 'us',
-      hl: 'en'
-    });
-
-    const response = await fetch(`https://api.serpstack.com/search?${searchParams}`);
-    const data = await response.json();
-    
-    if (!response.ok || data.success === false) {
-      throw new Error(data.error?.info || 'Serpstack API request failed');
-    }
-
-    // Transform Serpstack data to match our expected format
-    const transformedData = transformSerpstackData(data, params.keyword);
-    
-    return new Response(
-      JSON.stringify(transformedData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error: any) {
-    console.error('💥 Serpstack analyze error:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Serpstack analysis failed' 
-      }),
-      { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-}
-
-async function searchSerpstack(apiKey: string, params: any) {
-  try {
-    console.log('🔍 Searching with Serpstack:', params.q);
-    
-    const searchParams = new URLSearchParams({
-      access_key: apiKey,
-      query: params.q || params.keyword,
-      num: (params.limit || 10).toString(),
-      gl: 'us',
-      hl: 'en'
-    });
-
-    const response = await fetch(`https://api.serpstack.com/search?${searchParams}`);
-    const data = await response.json();
-    
-    if (!response.ok || data.success === false) {
-      throw new Error(data.error?.info || 'Serpstack API request failed');
-    }
-
-    return new Response(
-      JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error: any) {
-    console.error('💥 Serpstack search error:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Serpstack search failed' 
-      }),
-      { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-}
-
-function transformSerpstackData(data: any, keyword: string) {
-  console.log('🔄 Transforming Serpstack data for keyword:', keyword);
-  
-  // Estimate search volume based on total results (Serpstack doesn't provide volume directly)
-  const totalResults = data.search_information?.total_results || 0;
-  const estimatedVolume = Math.floor(totalResults / 10000); // Rough estimation
-  
-  // Extract organic results
-  const organicResults = data.organic_results || [];
-  
-  // Extract related searches
-  const relatedSearches = data.related_searches || [];
-  
-  return {
-    keyword,
-    searchVolume: estimatedVolume,
-    competitionScore: Math.min(organicResults.length / 10, 0.9),
-    keywordDifficulty: Math.min(Math.floor((organicResults.length / 10) * 100 + Math.random() * 20), 100),
-    volumeMetadata: {
-      source: 'serpstack_estimate',
-      confidence: 'low',
-      engine: 'google',
-      location: 'United States',
-      language: 'English',
-      lastUpdated: new Date().toISOString()
-    },
-    competitionMetadata: {
-      source: 'serpstack_estimate',
-      engine: 'google'
-    },
-    isMockData: false,
-    isGoogleData: true,
-    dataQuality: 'low',
-    entities: [],
-    peopleAlsoAsk: [],
-    headings: [],
-    contentGaps: [],
-    topResults: organicResults.slice(0, 5).map((result: any, index: number) => ({
-      title: result.title || '',
-      link: result.url || '',
-      snippet: result.snippet || '',
-      position: result.position || index + 1,
-      source: 'serpstack_organic'
-    })),
-    relatedSearches: relatedSearches.map((search: any) => ({
-      query: search.query || '',
-      source: 'serpstack_related_searches'
-    })),
-    keywords: relatedSearches.map((s: any) => s.query).filter(Boolean),
-    recommendations: [
-      'Data sourced from Serpstack API with estimated metrics',
-      'Consider using SerpAPI for more accurate search volume data',
-      'Serpstack provides good organic results and competitor analysis'
-    ],
-    featuredSnippets: []
-  };
 }
 
 async function testSerpApi(apiKey: string) {

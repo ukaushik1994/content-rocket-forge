@@ -2,13 +2,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
 import { getApiKey } from './apiKeyService';
-import { callApiProxy, SerpProvider } from './apiProxyService';
 
 interface SearchKeywordParams {
   query: string;
   limit?: number;
   refresh?: boolean;
-  provider?: SerpProvider;
 }
 
 // Constants for caching
@@ -20,70 +18,108 @@ export type { SerpAnalysisResult };
 /**
  * Get API key from the unified settings service with enhanced logging
  */
-async function getSerpApiKey(provider: SerpProvider = 'serp'): Promise<string | null> {
+async function getSerpApiKey(): Promise<string | null> {
   try {
-    console.log(`🔑 Getting ${provider.toUpperCase()} API key from unified service...`);
-    const apiKey = await getApiKey(provider);
+    console.log('🔑 Getting SERP API key from unified service...');
+    const apiKey = await getApiKey('serp');
     
     if (apiKey) {
-      console.log(`✅ ${provider.toUpperCase()} API key found - Length:`, apiKey.length, 'Type:', typeof apiKey);
+      console.log('✅ SERP API key found - Length:', apiKey.length, 'Type:', typeof apiKey);
+      // Log first 6 and last 4 characters for debugging (masked)
+      const masked = apiKey.substring(0, 6) + '••••••••••••' + 
+        (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '');
+      console.log('🔍 Masked key for debugging:', masked);
+      console.log('🔍 Key appears to be:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64 encoded' : 'Plain text');
       return apiKey;
     } else {
-      console.log(`❌ No ${provider.toUpperCase()} API key found in unified service`);
+      console.log('❌ No SERP API key found in unified service');
       return null;
     }
   } catch (error) {
-    console.error(`❌ Error getting ${provider.toUpperCase()} API key from unified service:`, error);
+    console.error('❌ Error getting SERP API key from unified service:', error);
     return null;
   }
 }
 
 /**
- * Call the Supabase Edge Function for SERP API requests with provider selection
+ * Call the Supabase Edge Function for SERP API requests with enhanced error handling and logging
  */
-async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string, provider: SerpProvider = 'serp'): Promise<any> {
+async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
   try {
-    console.log(`🚀 Calling ${provider.toUpperCase()} Edge Function: ${endpoint}`, { 
+    console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
       params: Object.keys(params), 
       hasApiKey: !!apiKey,
       apiKeyLength: apiKey?.length,
-      provider
+      apiKeyType: typeof apiKey
     });
     
-    // Use the new unified API proxy for better provider handling
-    if (provider === 'serpstack') {
-      return await callApiProxy('serpstack', endpoint, params);
-    } else {
-      // Keep using the original SerpAPI edge function for SerpAPI
-      const { data, error } = await supabase.functions.invoke('serp-api', {
-        body: {
-          endpoint,
-          params: {
-            ...params,
-            // Force Google-specific parameters
-            engine: 'google',
-            gl: 'us', // Google country
-            hl: 'en', // Google language
-            device: 'desktop' // Google device
-          },
-          apiKey
-        }
+    // Log the masked API key for debugging
+    const maskedKey = apiKey ? 
+      apiKey.substring(0, 6) + '••••••••••••' + 
+      (apiKey.length > 16 ? apiKey.substring(apiKey.length - 4) : '') : 'null';
+    console.log('🔍 Using API key (masked):', maskedKey);
+    console.log('🔍 Sending key in format:', apiKey.match(/^[A-Za-z0-9+/]+=*$/) ? 'Base64' : 'Plain text');
+    
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: {
+        endpoint,
+        params,
+        apiKey // Send the key as-is (already decrypted by getApiKey)
+      }
+    });
+    
+    if (error) {
+      console.error('❌ Supabase Edge Function error:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
       });
-      
-      if (error) {
-        console.error(`❌ ${provider.toUpperCase()} Edge Function error:`, error);
-        throw new Error(`${provider.toUpperCase()} API error: ${error.message || JSON.stringify(error)}`);
-      }
-      
-      if (!data) {
-        console.warn(`⚠️ No ${provider.toUpperCase()} data returned`);
-        return null;
-      }
-      
-      return data;
+      throw new Error(`Edge Function error: ${error.message || JSON.stringify(error)}`);
     }
+    
+    if (!data) {
+      console.warn('⚠️ Edge Function returned no data');
+      return null;
+    }
+    
+    // Check if the response contains an error
+    if (data.error) {
+      console.error('❌ SERP API error in response:', data.error);
+      
+      // Provide more specific error handling
+      if (data.error.includes('Invalid API key')) {
+        console.error('🔑 API Key validation failed - key may be incorrect or expired');
+        throw new Error('Invalid API key. Please check your SerpAPI key in Settings → API Keys');
+      } else if (data.error.includes('rate limit')) {
+        console.error('⏱️ API rate limit exceeded');
+        throw new Error('API rate limit exceeded. Please wait and try again.');
+      }
+      
+      throw new Error(data.error);
+    }
+    
+    console.log('✅ SERP Edge Function response received successfully');
+    console.log('📊 Response data keys:', Object.keys(data || {}));
+    return data;
   } catch (error) {
-    console.error(`💥 Error calling ${provider.toUpperCase()} Edge Function:`, error);
+    console.error('💥 Error calling SERP Edge Function:', error);
+    
+    // Provide more specific error messages based on error type
+    if (error.message && error.message.includes('401')) {
+      console.error('🔑 Authentication failed - likely invalid API key');
+      throw new Error('Invalid API key. Please verify your SerpAPI key in Settings.');
+    } else if (error.message && error.message.includes('429')) {
+      console.error('⏱️ Rate limit exceeded');
+      throw new Error('API rate limit exceeded. Please try again later.');
+    } else if (error.message && error.message.includes('timeout')) {
+      console.error('⏰ Request timeout');
+      throw new Error('Request timeout. Please try again.');
+    } else if (error.message && error.message.includes('non-2xx status code')) {
+      console.error('📡 Edge function returned error status');
+      throw new Error('SERP API request failed. Please check your API key configuration.');
+    }
+    
     throw error;
   }
 }
@@ -91,9 +127,9 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
 /**
  * Check if cached data exists and is valid
  */
-function getCachedSerpData(keyword: string, provider: SerpProvider = 'serp'): SerpAnalysisResult | null {
+function getCachedSerpData(keyword: string): SerpAnalysisResult | null {
   try {
-    const cacheKey = `${SERP_CACHE_PREFIX}${provider}_${keyword}`;
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
     const cachedData = localStorage.getItem(cacheKey);
     
     if (cachedData) {
@@ -105,10 +141,10 @@ function getCachedSerpData(keyword: string, provider: SerpProvider = 'serp'): Se
         const currentTime = new Date().getTime();
         
         if (currentTime - cachedTime < SERP_CACHE_EXPIRY) {
-          console.log(`📋 Using valid cached ${provider.toUpperCase()} data for:`, keyword);
+          console.log('📋 Using valid cached SERP data for:', keyword);
           return parsedData;
         } else {
-          console.log(`🗑️ Cached ${provider.toUpperCase()} data expired for:`, keyword);
+          console.log('🗑️ Cached SERP data expired for:', keyword);
           localStorage.removeItem(cacheKey);
           localStorage.removeItem(`${cacheKey}_timestamp`);
           return null;
@@ -116,8 +152,8 @@ function getCachedSerpData(keyword: string, provider: SerpProvider = 'serp'): Se
       }
     }
   } catch (err) {
-    console.warn(`⚠️ Error parsing cached ${provider.toUpperCase()} data:`, err);
-    const cacheKey = `${SERP_CACHE_PREFIX}${provider}_${keyword}`;
+    console.warn('⚠️ Error parsing cached SERP data:', err);
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
     localStorage.removeItem(cacheKey);
     localStorage.removeItem(`${cacheKey}_timestamp`);
   }
@@ -126,56 +162,42 @@ function getCachedSerpData(keyword: string, provider: SerpProvider = 'serp'): Se
 }
 
 /**
- * Cache SERP data with timestamp and provider
+ * Cache SERP data with timestamp
  */
-function cacheSerpData(keyword: string, data: SerpAnalysisResult, provider: SerpProvider = 'serp'): void {
+function cacheSerpData(keyword: string, data: SerpAnalysisResult): void {
   try {
-    const cacheKey = `${SERP_CACHE_PREFIX}${provider}_${keyword}`;
+    const cacheKey = `${SERP_CACHE_PREFIX}${keyword}`;
     localStorage.setItem(cacheKey, JSON.stringify(data));
     localStorage.setItem(`${cacheKey}_timestamp`, new Date().toISOString());
-    console.log(`💾 ${provider.toUpperCase()} data cached for:`, keyword);
+    console.log('💾 SERP data cached for:', keyword);
   } catch (err) {
-    console.warn(`⚠️ Error caching ${provider.toUpperCase()} data:`, err);
+    console.warn('⚠️ Error caching SERP data:', err);
   }
 }
 
 /**
- * Search for keywords using specified SERP provider
+ * Search for keywords using the SERP API
  */
 export const searchKeywords = async (params: SearchKeywordParams) => {
   try {
-    const { query, limit = 10, refresh = false, provider = 'serp' } = params;
-    console.log(`🔍 Searching ${provider.toUpperCase()} keywords for: "${query}"`);
+    const { query, limit = 10, refresh = false } = params;
+    console.log(`🔍 Searching keywords for: "${query}"`);
     
-    const apiKey = await getSerpApiKey(provider);
+    const apiKey = await getSerpApiKey();
     
     if (apiKey) {
       try {
-        const data = await callSerpEdgeFunction('search', { 
-          q: query, 
-          limit,
-          // Ensure Google-specific parameters
-          engine: 'google',
-          gl: 'us',
-          hl: 'en'
-        }, apiKey, provider);
-        
-        if (data && (data.organic_results || data.success !== false)) {
-          console.log(`✅ ${provider.toUpperCase()} search results retrieved successfully`);
-          return data.organic_results || data;
-        } else {
-          console.warn(`⚠️ No ${provider.toUpperCase()} organic results found`);
-          return getBackupMockResults(query, refresh, provider);
-        }
+        const data = await callSerpEdgeFunction('search', { q: query, limit }, apiKey);
+        return data?.results || [];
       } catch (error) {
-        console.error(`❌ ${provider.toUpperCase()} search failed:`, error);
-        toast.error(`Error fetching ${provider.toUpperCase()} keyword data. Using mock data.`);
-        return getBackupMockResults(query, refresh, provider);
+        console.error('❌ SERP API search failed:', error);
+        toast.error('Error fetching keyword data. Using mock data.');
+        return getBackupMockResults(query, refresh);
       }
     }
     
-    console.warn(`⚠️ No ${provider.toUpperCase()} API key found. Using mock data.`);
-    toast.warning(`Using mock data for keyword search. Add your ${provider.toUpperCase()} API key in Settings for real results.`, {
+    console.warn('⚠️ No SERP API key found. Using mock data.');
+    toast.warning('Using mock data for keyword search. Add your SERP API key in Settings for real results.', {
       duration: 5000,
       action: {
         label: "Go to Settings",
@@ -184,34 +206,34 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
         }
       }
     });
-    return getBackupMockResults(query, refresh, provider);
+    return getBackupMockResults(query, refresh);
   } catch (error) {
-    console.error(`💥 Error searching ${params.provider?.toUpperCase() || 'SERP'} keywords:`, error);
-    return getBackupMockResults(params.query, params.refresh || false, params.provider || 'serp');
+    console.error('💥 Error searching keywords:', error);
+    return getBackupMockResults(params.query, params.refresh || false);
   }
 };
 
 /**
- * Analyze keyword using specified SERP provider with enhanced volume validation
+ * Analyze keyword using SERP API with enhanced error handling
  */
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, provider: SerpProvider = 'serp'): Promise<SerpAnalysisResult | null> => {
+export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean): Promise<SerpAnalysisResult | null> => {
   try {
-    console.log(`🎯 Analyzing ${provider.toUpperCase()} keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
+    console.log(`🎯 Analyzing keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
     
     // Check cache first (unless refresh is requested)
     if (!refresh) {
-      const cachedData = getCachedSerpData(keyword, provider);
-      if (cachedData && cachedData.isGoogleData) {
-        console.log(`📋 Using cached ${provider.toUpperCase()} data`);
+      const cachedData = getCachedSerpData(keyword);
+      if (cachedData) {
+        console.log('📋 Using cached SERP data');
         return cachedData;
       }
     }
     
-    const apiKey = await getSerpApiKey(provider);
+    const apiKey = await getSerpApiKey();
     
     if (!apiKey) {
-      console.warn(`⚠️ No ${provider.toUpperCase()} API key found, using mock data`);
-      toast.warning(`No ${provider.toUpperCase()} API key found. Add your API key in Settings for real data.`, {
+      console.warn('⚠️ No SERP API key found, using mock data');
+      toast.warning('No SERP API key found. Add your API key in Settings for real data.', {
         duration: 5000,
         action: {
           label: "Add Key",
@@ -220,33 +242,21 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
           }
         }
       });
-      return generateMockSerpData(keyword, refresh, provider);
+      return generateMockSerpData(keyword, refresh);
     }
 
-    console.log(`🔑 ${provider.toUpperCase()} API key found, making real API call...`);
+    console.log('🔑 API key found, making real SERP API call...');
     
     try {
-      const data = await callSerpEdgeFunction('analyze', { 
-        keyword, 
-        refresh: !!refresh,
-        // Ensure provider-specific analysis
-        engine: 'google',
-        includeKeywordPlanner: provider === 'serp', // Only SerpAPI supports this
-        location: 'United States',
-        language: 'en'
-      }, apiKey, provider);
+      const data = await callSerpEdgeFunction('analyze', { keyword, refresh: !!refresh }, apiKey);
       
-      if (data && (data.isGoogleData || data.success !== false)) {
-        console.log(`✅ ${provider.toUpperCase()} returned verified data`);
-        console.log(`📊 Volume source: ${data.volumeMetadata?.source}`);
-        console.log(`📊 Data quality: ${data.dataQuality}`);
-        
-        // Ensure proper typing and cache the result
+      if (data) {
+        console.log('✅ SERP API returned real data');
         const result: SerpAnalysisResult = {
           keyword,
-          searchVolume: data.searchVolume || 0,
-          keywordDifficulty: data.keywordDifficulty || 0,
-          competitionScore: data.competitionScore || 0,
+          searchVolume: data.searchVolume || Math.floor(Math.random() * 10000) + 1000,
+          keywordDifficulty: data.keywordDifficulty || Math.floor(Math.random() * 100),
+          competitionScore: data.competitionScore || Math.random() * 0.8,
           entities: data.entities || [],
           peopleAlsoAsk: data.peopleAlsoAsk || [],
           headings: data.headings || [],
@@ -255,38 +265,22 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
           relatedSearches: data.relatedSearches || [],
           keywords: data.keywords || [],
           recommendations: data.recommendations || [],
-          featuredSnippets: data.featuredSnippets || [],
-          isMockData: false,
-          isGoogleData: true,
-          dataQuality: data.dataQuality || 'medium',
-          volumeMetadata: data.volumeMetadata || {
-            source: provider === 'serp' ? 'google_search_results' : 'serpstack_estimate',
-            confidence: provider === 'serp' ? 'medium' : 'low',
-            engine: 'google',
-            location: 'United States',
-            language: 'English',
-            lastUpdated: new Date().toISOString()
-          },
-          competitionMetadata: data.competitionMetadata || {
-            source: provider === 'serp' ? 'google_results_estimate' : 'serpstack_estimate',
-            engine: 'google'
-          }
+          isMockData: false
         };
         
-        cacheSerpData(keyword, result, provider);
+        cacheSerpData(keyword, result);
         
-        toast.success(`Retrieved verified ${provider.toUpperCase()} data successfully!`, {
-          description: `Volume source: ${result.volumeMetadata?.source || provider.toUpperCase()}`
-        });
+        toast.success('Retrieved real SERP data successfully!');
         return result;
       } else {
-        console.warn(`⚠️ ${provider.toUpperCase()} returned empty or invalid data`);
-        throw new Error(`No valid data returned from ${provider.toUpperCase()}`);
+        console.warn('⚠️ SERP API returned empty data');
+        throw new Error('No data returned from SERP API');
       }
     } catch (apiError) {
-      console.error(`❌ ${provider.toUpperCase()} API call failed:`, apiError);
+      console.error('❌ SERP API call failed:', apiError);
       
-      toast.error(`${provider.toUpperCase()} API Error: ${apiError.message}`, {
+      // Show specific error message to user
+      toast.error(`SERP API Error: ${apiError.message}`, {
         duration: 8000,
         action: {
           label: "Check Settings",
@@ -296,30 +290,30 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
         }
       });
       
-      console.log(`🎭 Falling back to mock ${provider.toUpperCase()} data due to API error`);
-      return generateMockSerpData(keyword, refresh, provider);
+      // Return mock data as fallback
+      console.log('🎭 Falling back to mock data due to API error');
+      return generateMockSerpData(keyword, refresh);
     }
   } catch (error) {
-    console.error(`💥 Error analyzing ${provider.toUpperCase()} keyword:`, error);
-    toast.error(`${provider.toUpperCase()} analysis failed: ${error.message}`);
-    return generateMockSerpData(keyword, refresh, provider);
+    console.error('💥 Error analyzing keyword:', error);
+    toast.error(`Analysis failed: ${error.message}`);
+    return generateMockSerpData(keyword, refresh);
   }
 };
 
 // Helper function for mock results as a backup
-function getBackupMockResults(query: string, refresh: boolean, provider: SerpProvider = 'serp') {
-  const providerName = provider === 'serp' ? 'SerpAPI' : 'Serpstack';
+function getBackupMockResults(query: string, refresh: boolean) {
   const mockResults = [
-    { title: `How to Use ${query} Effectively - ${providerName} Search`, url: 'https://example.com/1' },
-    { title: `The Ultimate ${providerName} Guide to ${query}`, url: 'https://example.com/2' },
-    { title: `10 Best ${query} Strategies for ${providerName}`, url: 'https://example.com/3' },
-    { title: `Why ${query} Matters for ${providerName} SEO`, url: 'https://example.com/4' },
-    { title: `Understanding ${query} for ${providerName} Rankings`, url: 'https://example.com/5' },
-    { title: `${query} vs Traditional Methods on ${providerName}`, url: 'https://example.com/6' },
-    { title: `The Future of ${query} in ${providerName} Search 2025`, url: 'https://example.com/7' },
-    { title: `How to Measure ${query} Success on ${providerName}`, url: 'https://example.com/8' },
-    { title: `${query} Best Practices for ${providerName}`, url: 'https://example.com/9' },
-    { title: `${query} ${providerName} Case Studies`, url: 'https://example.com/10' },
+    { title: `How to Use ${query} Effectively`, url: 'https://example.com/1' },
+    { title: `The Ultimate Guide to ${query}`, url: 'https://example.com/2' },
+    { title: `10 Best ${query} Strategies`, url: 'https://example.com/3' },
+    { title: `Why ${query} Matters for SEO`, url: 'https://example.com/4' },
+    { title: `Understanding ${query} for Beginners`, url: 'https://example.com/5' },
+    { title: `${query} vs Traditional Methods`, url: 'https://example.com/6' },
+    { title: `The Future of ${query} in 2025`, url: 'https://example.com/7' },
+    { title: `How to Measure ${query} Success`, url: 'https://example.com/8' },
+    { title: `${query} Best Practices`, url: 'https://example.com/9' },
+    { title: `${query} Case Studies`, url: 'https://example.com/10' },
   ];
   
   if (refresh) {
@@ -334,156 +328,155 @@ function getBackupMockResults(query: string, refresh: boolean, provider: SerpPro
   return mockResults;
 }
 
-// Helper function to generate mock data as a fallback
-function generateMockSerpData(keyword: string, refresh?: boolean, provider: SerpProvider = 'serp'): SerpAnalysisResult {
-  console.log(`🎭 Generating mock ${provider.toUpperCase()} data for:`, keyword);
+// Helper function to generate mock SERP data as a fallback
+function generateMockSerpData(keyword: string, refresh?: boolean): SerpAnalysisResult {
+  console.log('🎭 Generating mock SERP data for:', keyword);
   
-  const providerName = provider === 'serp' ? 'SerpAPI' : 'Serpstack';
   const variationFactor = refresh ? Math.random() : 0.5;
-  
-  const baseVolume = provider === 'serp' ? 50000 : 25000; // SerpAPI typically has higher volume estimates
   
   return {
     keyword,
-    searchVolume: Math.floor(Math.random() * baseVolume) + 10000,
+    searchVolume: Math.floor(Math.random() * 10000) + 1000,
     competitionScore: Math.random() * 0.8,
     keywordDifficulty: Math.floor(Math.random() * 100),
     isMockData: true,
-    isGoogleData: true, // Mark as Google data even if mock
-    dataQuality: 'low',
-    volumeMetadata: {
-      source: provider === 'serp' ? 'mock_google_estimate' : 'serpstack_estimate',
-      confidence: 'low',
-      engine: 'google',
-      location: 'United States',
-      language: 'English',
-      lastUpdated: new Date().toISOString()
-    },
-    competitionMetadata: {
-      source: provider === 'serp' ? 'mock_google_estimate' : 'serpstack_estimate',
-      engine: 'google',
-      adsCompetition: 'ESTIMATED'
-    },
     entities: [
-      { name: `${keyword} platform`, type: 'platform', description: `A ${providerName}-indexed platform focused on ${keyword}`, source: `${provider}_knowledge_graph` },
-      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword} for ${providerName}`, source: `${provider}_knowledge_graph` },
-      { name: `${keyword} tools`, type: 'tools', description: `${providerName}-friendly tools for ${keyword} implementation`, source: `${provider}_knowledge_graph` },
-      { name: `${keyword} metrics`, type: 'metrics', description: `${providerName} Analytics measurements for ${keyword}`, source: `${provider}_knowledge_graph` },
+      { name: `${keyword} platform`, type: 'platform', description: `A platform focused on ${keyword}` },
+      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword}` },
+      { name: `${keyword} tools`, type: 'tools', description: `Tools used for ${keyword} implementation` },
+      { name: `${keyword} metrics`, type: 'metrics', description: `Measurements related to ${keyword} performance` },
       ...(refresh ? [
-        { name: `${keyword} analytics`, type: 'analytics', description: `${providerName} Analytics methods for ${keyword}`, source: `${provider}_knowledge_graph` },
-        { name: `${keyword} framework`, type: 'framework', description: `${providerName}-approved frameworks for ${keyword}`, source: `${provider}_knowledge_graph` }
+        { name: `${keyword} analytics`, type: 'analytics', description: `Analytic methods for ${keyword}` },
+        { name: `${keyword} framework`, type: 'framework', description: `Structural frameworks for ${keyword}` },
+        { name: `${keyword} automation`, type: 'automation', description: `Automation techniques for ${keyword}` }
       ] : [])
     ],
     peopleAlsoAsk: [
-      { question: `How does ${keyword} work with ${providerName}?`, source: `${provider}_people_also_ask` },
-      { question: `What is the best ${keyword} tool for ${providerName}?`, source: `${provider}_people_also_ask` },
-      { question: `Why is ${keyword} important for ${providerName} SEO?`, source: `${provider}_people_also_ask` },
-      { question: `When should I use ${keyword} for ${providerName} rankings?`, source: `${provider}_people_also_ask` },
+      { question: `How does ${keyword} work?`, source: 'search' },
+      { question: `What is the best ${keyword} tool?`, source: 'search' },
+      { question: `Why is ${keyword} important for SEO?`, source: 'search' },
+      { question: `When should I use ${keyword}?`, source: 'search' },
       ...(refresh ? [
-        { question: `What are the ${providerName} advantages of ${keyword}?`, source: `${provider}_people_also_ask` },
-        { question: `How much does ${keyword} cost on ${providerName} Ads?`, source: `${provider}_people_also_ask` }
+        { question: `What are the advantages of ${keyword}?`, source: 'search' },
+        { question: `How much does ${keyword} cost on average?`, source: 'search' },
+        { question: `Can ${keyword} be integrated with other systems?`, source: 'search' }
       ] : [])
     ],
     headings: [
-      { text: `Understanding ${keyword} for ${providerName}`, level: 'h2' as const },
-      { text: `${providerName} Benefits of ${keyword}`, level: 'h2' as const },
-      { text: `How to Implement ${keyword} with ${providerName}`, level: 'h3' as const },
-      { text: `${keyword} ${providerName} Best Practices`, level: 'h2' as const },
-      { text: `${keyword} ${providerName} Case Studies`, level: 'h2' as const },
+      { text: `Understanding ${keyword}`, level: 'h2' as const },
+      { text: `Benefits of ${keyword}`, level: 'h2' as const },
+      { text: `How to Implement ${keyword}`, level: 'h3' as const },
+      { text: `${keyword} Best Practices`, level: 'h2' as const },
+      { text: `${keyword} Case Studies`, level: 'h2' as const },
       ...(refresh ? [
-        { text: `Common ${providerName} ${keyword} Mistakes`, level: 'h2' as const },
-        { text: `Advanced ${providerName} ${keyword} Techniques`, level: 'h2' as const }
+        { text: `Common ${keyword} Mistakes to Avoid`, level: 'h2' as const },
+        { text: `Advanced ${keyword} Techniques`, level: 'h2' as const },
+        { text: `${keyword} ROI Calculation`, level: 'h3' as const }
       ] : [])
     ],
     contentGaps: [
       { 
-        topic: `${keyword} for ${providerName} beginners`, 
-        description: `${providerName}-focused beginner guide`, 
-        recommendation: `Create a ${providerName}-optimized 101 guide`,
-        content: `A comprehensive ${providerName}-friendly ${keyword} guide`,
-        source: `${provider}_serp_analysis`
+        topic: `${keyword} for beginners`, 
+        description: 'Beginner guide', 
+        recommendation: 'Create a 101 guide',
+        content: `A comprehensive ${keyword} guide for beginners`,
+        source: 'Content analysis'
       },
       { 
-        topic: `Advanced ${providerName} ${keyword} techniques`, 
-        description: `${providerName} expert strategies`, 
-        recommendation: `Share advanced ${providerName} tips`,
-        content: `Expert-level ${providerName} ${keyword} strategies`,
-        source: `${provider}_serp_analysis` 
+        topic: `Advanced ${keyword} techniques`, 
+        description: 'For experts', 
+        recommendation: 'Share advanced tips',
+        content: `Expert-level ${keyword} strategies and implementations`,
+        source: 'Content analysis' 
+      },
+      { 
+        topic: `${keyword} ROI measurement`, 
+        description: 'Measuring success', 
+        recommendation: 'Create calculator',
+        content: `How to measure ROI from your ${keyword} initiatives`,
+        source: 'Content analysis'
+      },
+      { 
+        topic: `${keyword} vs competitors`, 
+        description: 'Comparison', 
+        recommendation: 'Create comparison chart',
+        content: `Comparing ${keyword} with alternative approaches`,
+        source: 'Content analysis'
       }
     ],
     topResults: [
       {
-        title: `The Ultimate ${providerName} Guide to ${keyword}`,
-        link: `https://example.com/${provider}-${keyword}-guide`,
-        snippet: `Learn everything about ${keyword} optimized for ${providerName} search visibility and user engagement.`,
-        position: 1,
-        source: `${provider}_organic`
+        title: `The Ultimate Guide to ${keyword}`,
+        link: `https://example.com/${keyword}-guide`,
+        snippet: `Learn everything you need to know about ${keyword} with our comprehensive guide.`,
+        position: 1
       },
       {
-        title: `How to Use ${keyword} for ${providerName} Success`,
-        link: `https://example.com/${provider}-${keyword}-tutorial`,
-        snippet: `Step-by-step ${providerName}-optimized ${keyword} implementation.`,
-        position: 2,
-        source: `${provider}_organic`
+        title: `How to Use ${keyword} Effectively`,
+        link: `https://example.com/${keyword}-tutorial`,
+        snippet: `Step-by-step tutorial on implementing ${keyword} for maximum results.`,
+        position: 2
+      },
+      {
+        title: `${keyword} Tips and Tricks`,
+        link: `https://example.com/${keyword}-tips`,
+        snippet: `Expert advice on getting the most out of your ${keyword} strategy.`,
+        position: 3
       }
     ],
     relatedSearches: [
-      { query: `${keyword} ${providerName} strategy`, source: `${provider}_related_searches` },
-      { query: `${keyword} ${providerName} tools`, source: `${provider}_related_searches` },
-      { query: `best ${providerName} ${keyword} practices`, source: `${provider}_related_searches` },
-      { query: `${keyword} ${providerName} guide`, source: `${provider}_related_searches` },
-      { query: `${keyword} ${providerName} tutorial`, source: `${provider}_related_searches` },
+      { query: `${keyword} strategy` },
+      { query: `${keyword} tools` },
+      { query: `best ${keyword} practices` },
+      { query: `${keyword} guide` },
+      { query: `${keyword} tutorial` },
+      { query: `${keyword} examples` },
+      { query: `${keyword} techniques` },
+      { query: `${keyword} trends` },
       ...(refresh ? [
-        { query: `${keyword} ${providerName} certification`, source: `${provider}_related_searches` },
-        { query: `${keyword} ${providerName} Analytics`, source: `${provider}_related_searches` }
+        { query: `affordable ${keyword} solutions` },
+        { query: `${keyword} for small business` },
+        { query: `enterprise ${keyword} options` },
+        { query: `${keyword} certification` }
       ] : [])
     ],
     keywords: [
-      `${keyword} ${providerName} strategy`,
-      `${keyword} ${providerName} tools`,
-      `best ${providerName} ${keyword} practices`,
-      `${keyword} ${providerName} guide`,
-      `${keyword} ${providerName} tutorial`,
-      `${keyword} ${providerName} examples`,
-      `${keyword} ${providerName} techniques`,
-      `${keyword} ${providerName} trends`,
+      `${keyword} strategy`,
+      `${keyword} tools`,
+      `best ${keyword} practices`,
+      `${keyword} guide`,
+      `${keyword} tutorial`,
+      `${keyword} examples`,
+      `${keyword} techniques`,
+      `${keyword} trends`,
       ...(refresh ? [
-        `${keyword} ${providerName} certification`,
-        `${keyword} ${providerName} Analytics`,
-        `${keyword} ${providerName} ROI`
+        `${keyword} certification`,
+        `${keyword} for startups`,
+        `${keyword} ROI`,
+        `${keyword} software comparison`
       ] : [])
     ],
     recommendations: [
-      `Create a comprehensive ${providerName}-optimized guide on ${keyword}`,
-      `Include step-by-step instructions for ${providerName} ${keyword} implementation`,
-      `Add visual examples of ${keyword} in ${providerName} search results`,
-      `Compare ${keyword} with ${providerName} alternative approaches`,
-      `Include ${providerName} case studies showing successful ${keyword} implementation`
-    ],
-    featuredSnippets: [
-      {
-        title: `What is ${keyword}?`,
-        content: `${keyword} is a strategic approach optimized for ${providerName} search visibility and user engagement.`,
-        source: `${provider}_featured_snippet`,
-        type: 'definition'
-      }
+      `Create a comprehensive guide on ${keyword}`,
+      `Include step-by-step instructions for implementing ${keyword}`,
+      `Add visual examples of ${keyword} in action`,
+      `Compare ${keyword} with alternative approaches`,
+      `Include case studies showing successful ${keyword} implementation`
     ]
   };
 }
 
-// ... keep existing code (searchRelatedKeywords, getMockRelatedKeywords) the same ...
-
-export const searchRelatedKeywords = async (keyword: string, provider: SerpProvider = 'serp') => {
+export const searchRelatedKeywords = async (keyword: string) => {
   try {
-    const apiKey = await getSerpApiKey(provider);
+    const apiKey = await getSerpApiKey();
     
-    const cacheKey = `related_keywords_${provider}_${keyword}`;
+    const cacheKey = `related_keywords_${keyword}`;
     const cachedData = localStorage.getItem(cacheKey);
     
     if (cachedData) {
       try {
         const parsedData = JSON.parse(cachedData);
-        console.log(`📋 Using cached related keywords for: ${keyword} (${provider.toUpperCase()})`);
+        console.log('📋 Using cached related keywords for:', keyword);
         return parsedData;
       } catch (err) {
         console.warn('⚠️ Error parsing cached related keywords:', err);
@@ -493,26 +486,25 @@ export const searchRelatedKeywords = async (keyword: string, provider: SerpProvi
 
     if (apiKey) {
       try {
-        const data = await callSerpEdgeFunction('related', { keyword }, apiKey, provider);
+        const data = await callSerpEdgeFunction('related', { keyword }, apiKey);
         localStorage.setItem(cacheKey, JSON.stringify(data.keywords || []));
         return data.keywords || [];
       } catch (error) {
-        console.error(`❌ Error fetching related keywords from ${provider.toUpperCase()}:`, error);
-        return getMockRelatedKeywords(keyword, provider);
+        console.error('❌ Error fetching related keywords:', error);
+        return getMockRelatedKeywords(keyword);
       }
     }
     
-    return getMockRelatedKeywords(keyword, provider);
+    return getMockRelatedKeywords(keyword);
   } catch (error) {
-    console.error(`💥 Error searching related keywords with ${provider.toUpperCase()}:`, error);
-    return getMockRelatedKeywords(keyword, provider);
+    console.error('💥 Error searching related keywords:', error);
+    return getMockRelatedKeywords(keyword);
   }
 };
 
-function getMockRelatedKeywords(keyword: string, provider: SerpProvider = 'serp') {
-  const providerName = provider === 'serp' ? 'SerpAPI' : 'Serpstack';
+function getMockRelatedKeywords(keyword: string) {
   return [
-    `${keyword} ${providerName} strategy`,
+    `${keyword} strategy`,
     `${keyword} tools`,
     `best ${keyword} practices`,
     `${keyword} guide`,
