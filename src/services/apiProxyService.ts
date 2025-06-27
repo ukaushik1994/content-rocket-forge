@@ -1,114 +1,124 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { getApiKey } from "./apiKeys";
+import { supabase } from '@/integrations/supabase/client';
+import { getApiKey } from './apiKeyService';
+import { toast } from 'sonner';
 
-export type ApiProxyParams = {
-  service: 'serp' | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'google-analytics' | 'google-search-console';
+export type SerpProvider = 'serp' | 'serpstack';
+
+interface ApiProxyParams {
+  service: string;
   endpoint: string;
-  params?: Record<string, any>;
-};
-
-/**
- * Get the appropriate proxy function name for a service
- */
-function getProxyFunction(service: string): string {
-  if (['openai', 'anthropic', 'gemini', 'mistral'].includes(service)) {
-    return 'ai-proxy';
-  } else if (service === 'serp') {
-    return 'serp-proxy';
-  } else if (['google-analytics', 'google-search-console'].includes(service)) {
-    return 'google-proxy';
-  } else {
-    // Fallback to legacy api-proxy for unknown services
-    return 'api-proxy';
-  }
+  params?: any;
 }
 
 /**
- * Prepare request body for the specific proxy function
+ * Call the unified API proxy service with any provider
  */
-function prepareRequestBody(config: ApiProxyParams, apiKey: string | null): any {
-  const proxyFunction = getProxyFunction(config.service);
-  
-  if (proxyFunction === 'ai-proxy') {
-    return {
-      service: config.service,
-      endpoint: config.endpoint,
-      params: config.params,
-      apiKey
-    };
-  } else if (proxyFunction === 'serp-proxy') {
-    return {
-      endpoint: config.endpoint,
-      params: config.params,
-      apiKey
-    };
-  } else if (proxyFunction === 'google-proxy') {
-    return {
-      service: config.service,
-      endpoint: config.endpoint,
-      apiKey
-    };
-  } else {
-    // Legacy format for api-proxy
-    return {
-      ...config,
-      apiKey,
-      hasApiKey: !!apiKey
-    };
-  }
-}
-
-export async function callApiProxy<T>(config: ApiProxyParams): Promise<T | null> {
+export async function callApiProxy(provider: SerpProvider, endpoint: string, params?: any) {
   try {
-    // Get the actual API key for this service
-    const apiKey = await getApiKey(config.service);
-    const hasApiKey = !!apiKey;
+    console.log(`🚀 Calling API Proxy: ${provider} - ${endpoint}`);
     
-    // If no API key is configured, log a helpful message
-    if (!hasApiKey) {
-      console.warn(`${config.service.toUpperCase()} API key not configured. Please configure your API key in Settings.`);
-      
-      // Only show toast for non-initial API calls (to avoid spamming the user)
-      if (config.service === 'serp' && config.endpoint === 'search') {
-        toast.warning(`${config.service.toUpperCase()} API key not configured. Configure your API keys in Settings.`);
-      }
-      return null;
+    const apiKey = await getApiKey(provider);
+    
+    if (!apiKey) {
+      throw new Error(`No ${provider.toUpperCase()} API key found. Please configure it in Settings.`);
     }
-    
-    // Determine which proxy function to use
-    const proxyFunction = getProxyFunction(config.service);
-    const requestBody = prepareRequestBody(config, apiKey);
-    
-    console.log(`Calling ${proxyFunction} for ${config.service} - ${config.endpoint}`);
-    
-    // Call the appropriate API proxy function
-    const { data, error } = await supabase.functions.invoke(proxyFunction, {
-      body: JSON.stringify(requestBody),
+
+    const { data, error } = await supabase.functions.invoke('api-proxy', {
+      body: {
+        service: provider,
+        endpoint,
+        apiKey,
+        params
+      }
     });
     
     if (error) {
-      console.error(`Error calling ${config.service} API:`, error);
-      
-      // Only show toast for non-"API key not configured" errors
-      if (!error.message.includes('API key not configured')) {
-        toast.error(`API error: ${error.message || 'Unknown error'}`);
-      } else {
-        // For API key configuration errors, show a more helpful message
-        console.warn(`${config.service.toUpperCase()} API key not configured. Configure your API keys in Settings.`);
-        toast.warning(`${config.service.toUpperCase()} API key not configured. Configure your API keys in Settings.`);
-      }
+      console.error(`❌ API Proxy error for ${provider}:`, error);
+      throw new Error(`${provider.toUpperCase()} API error: ${error.message || JSON.stringify(error)}`);
+    }
+    
+    if (!data) {
+      console.warn(`⚠️ No data returned from ${provider}`);
       return null;
     }
     
-    // Return the data from the API proxy
-    return data as T;
-  } catch (error: any) {
-    console.error(`Error calling ${config.service} API:`, error);
+    if (!data.success && data.error) {
+      throw new Error(data.error);
+    }
     
-    // For all service errors, notify user
-    toast.error(`API error: ${error.message || 'Unknown error'}`);
-    return null;
+    console.log(`✅ ${provider.toUpperCase()} API call successful`);
+    return data;
+  } catch (error) {
+    console.error(`💥 Error calling ${provider} API:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Test API connection for a specific provider
+ */
+export async function testApiConnection(provider: SerpProvider) {
+  try {
+    const result = await callApiProxy(provider, 'test');
+    
+    if (result && result.success) {
+      toast.success(`${result.provider} connection successful!`);
+      return true;
+    } else {
+      toast.error(`${provider.toUpperCase()} connection failed`);
+      return false;
+    }
+  } catch (error: any) {
+    console.error(`${provider.toUpperCase()} test failed:`, error);
+    toast.error(`${provider.toUpperCase()} test failed: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * Analyze keyword with specific provider
+ */
+export async function analyzeKeywordWithProvider(provider: SerpProvider, keyword: string) {
+  try {
+    console.log(`🎯 Analyzing keyword "${keyword}" with ${provider.toUpperCase()}`);
+    
+    const result = await callApiProxy(provider, 'analyze', { keyword });
+    
+    if (result) {
+      toast.success(`${provider.toUpperCase()} analysis completed for "${keyword}"`);
+      return result;
+    } else {
+      throw new Error(`No data returned from ${provider.toUpperCase()}`);
+    }
+  } catch (error: any) {
+    console.error(`${provider.toUpperCase()} analysis failed:`, error);
+    toast.error(`${provider.toUpperCase()} analysis failed: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Search with specific provider
+ */
+export async function searchWithProvider(provider: SerpProvider, query: string, limit = 10) {
+  try {
+    console.log(`🔍 Searching "${query}" with ${provider.toUpperCase()}`);
+    
+    const result = await callApiProxy(provider, 'search', { 
+      q: query, 
+      keyword: query,
+      limit 
+    });
+    
+    if (result) {
+      return result;
+    } else {
+      throw new Error(`No search results from ${provider.toUpperCase()}`);
+    }
+  } catch (error: any) {
+    console.error(`${provider.toUpperCase()} search failed:`, error);
+    toast.error(`${provider.toUpperCase()} search failed: ${error.message}`);
+    throw error;
   }
 }
