@@ -4,6 +4,8 @@ import { getApiKey } from './apiKeyService';
 import { toast } from 'sonner';
 
 export type SerpProvider = 'serp' | 'serpstack';
+export type AIProvider = 'openai' | 'anthropic' | 'gemini';
+export type AllProviders = SerpProvider | AIProvider;
 
 interface ApiProxyParams {
   service: string;
@@ -14,7 +16,7 @@ interface ApiProxyParams {
 /**
  * Call the unified API proxy service with any provider
  */
-export async function callApiProxy(provider: SerpProvider, endpoint: string, params?: any) {
+export async function callApiProxy(provider: AllProviders, endpoint: string, params?: any) {
   try {
     console.log(`🚀 Calling API Proxy: ${provider} - ${endpoint}`);
     
@@ -58,12 +60,12 @@ export async function callApiProxy(provider: SerpProvider, endpoint: string, par
 /**
  * Test API connection for a specific provider
  */
-export async function testApiConnection(provider: SerpProvider) {
+export async function testApiConnection(provider: AllProviders) {
   try {
     const result = await callApiProxy(provider, 'test');
     
     if (result && result.success) {
-      toast.success(`${result.provider} connection successful!`);
+      toast.success(`${result.provider || provider.toUpperCase()} connection successful!`);
       return true;
     } else {
       toast.error(`${provider.toUpperCase()} connection failed`);

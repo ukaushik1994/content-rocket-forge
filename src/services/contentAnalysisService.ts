@@ -1,4 +1,3 @@
-
 import { analyzeKeywordSerp } from './serpApiService';
 import { callApiProxy } from './apiProxyService';
 import { toast } from 'sonner';
@@ -22,20 +21,13 @@ export async function analyzeContent(content: string, targetKeywords: string[] =
     const serpAnalysis = await analyzeKeywordSerp(targetKeywords[0] || '');
     
     // Then get AI analysis for readability and quality score
-    const aiAnalysis = await callApiProxy<{
-      analysis: string;
-      score: number;
-    }>({
-      service: 'openai',
-      endpoint: 'analyze',
-      params: { content }
-    });
+    const aiAnalysis = await callApiProxy('openai', 'analyze', { content });
     
     return {
       seoScore: Math.round((serpAnalysis.competitionScore || 0.5) * 100),
       keywords: serpAnalysis.keywords || [],
       recommendations: serpAnalysis.recommendations || [],
-      readabilityScore: aiAnalysis?.score ? Math.round(aiAnalysis.score * 10) : undefined,
+      readabilityScore: aiAnalysis?.data?.score ? Math.round(aiAnalysis.data.score * 10) : undefined,
       competitionScore: serpAnalysis.competitionScore,
       serp: serpAnalysis,
       searchVolume: serpAnalysis.searchVolume,
