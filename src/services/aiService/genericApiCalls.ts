@@ -1,17 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { getApiKey, ApiProvider } from "../apiKeys/crud";
+import { getApiKey } from "../apiKeys/crud";
 import { AiApiParams, AiProvider } from "./types";
 import { getFallbackConfig, notifyProviderFallback } from "./providerFallback";
-
-/**
- * Check if a provider string is a valid ApiProvider
- */
-function isValidApiProvider(provider: string): provider is ApiProvider {
-  const validProviders: ApiProvider[] = ['serp', 'serpstack', 'openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
-  return validProviders.includes(provider as ApiProvider);
-}
 
 /**
  * Low-level function to make a custom AI API call with fallback support
@@ -23,13 +15,8 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
     console.log(`Calling AI API with provider: ${config.provider}`);
     
     // Get the API key if not provided in the config
-    let apiKey = config.apiKey;
-    let hasApiKey = !!apiKey;
-    
-    if (!hasApiKey && isValidApiProvider(config.provider)) {
-      apiKey = await getApiKey(config.provider as ApiProvider);
-      hasApiKey = !!apiKey;
-    }
+    const apiKey = config.apiKey || await getApiKey(config.provider);
+    const hasApiKey = !!apiKey;
     
     if (!hasApiKey) {
       console.warn(`${config.provider.toUpperCase()} API key not configured. Please configure your API key in Settings.`);
@@ -37,7 +24,7 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
       // Get fallback configuration and check if we should try fallback
       const { enabled, fallbackProviders } = getFallbackConfig();
       
-      if (enabled && isValidApiProvider(config.provider) && fallbackProviders.length > 0) {
+      if (enabled && config.provider && fallbackProviders.length > 0) {
         // Try fallback providers
         return await handleGenericProviderError(
           config.provider as AiProvider, 
@@ -90,7 +77,7 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
       // Handle error with fallback
       const { enabled, fallbackProviders } = getFallbackConfig();
       
-      if (enabled && isValidApiProvider(config.provider) && fallbackProviders.length > 0) {
+      if (enabled && config.provider && fallbackProviders.length > 0) {
         return await handleGenericProviderError(config.provider as AiProvider, error, config);
       } else {
         console.error(`Error calling ${config.provider} API:`, error);
@@ -101,7 +88,7 @@ export async function callAiApi<T>(config: AiApiParams): Promise<T | null> {
     
     return data as T;
   } catch (error: any) {
-    if (isValidApiProvider(config.provider)) {
+    if (config.provider) {
       return await handleGenericProviderError(config.provider as AiProvider, error, config);
     } else {
       console.error(`Error calling AI API:`, error);
@@ -132,16 +119,14 @@ async function handleGenericProviderError<T>(
   // Try fallback providers
   for (const fallbackProvider of fallbackProviders) {
     console.log(`Attempting fallback to: ${fallbackProvider}`);
-    if (isValidApiProvider(fallbackProvider)) {
-      const fallbackApiKey = await getApiKey(fallbackProvider);
-      
-      if (fallbackApiKey) {
-        notifyProviderFallback(provider, fallbackProvider);
-        return callAiApi<T>({
-          ...config,
-          provider: fallbackProvider
-        });
-      }
+    const fallbackApiKey = await getApiKey(fallbackProvider);
+    
+    if (fallbackApiKey) {
+      notifyProviderFallback(provider, fallbackProvider);
+      return callAiApi<T>({
+        ...config,
+        provider: fallbackProvider
+      });
     }
   }
   
