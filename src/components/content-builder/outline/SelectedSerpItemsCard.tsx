@@ -3,27 +3,61 @@ import React from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Tag, HelpCircle, Heading, FileSearch, FileText } from 'lucide-react';
+import { CheckCircle, Tag, HelpCircle, Heading, FileSearch, FileText, Users, Star } from 'lucide-react';
 
 export function SelectedSerpItemsCard() {
   const { state } = useContentBuilder();
   const { serpSelections } = state;
   
-  // Filter selected items from SERP analysis
+  // Filter only selected items from SERP analysis
   const selectedItems = serpSelections.filter(item => item.selected);
   
   if (selectedItems.length === 0) {
     return null;
   }
   
-  // Group selected items by type
+  // Group selected items by type - handle all possible types
   const itemsByType = {
-    keyword: selectedItems.filter(item => item.type === 'keyword'),
-    question: selectedItems.filter(item => item.type === 'question'),
-    entity: selectedItems.filter(item => item.type === 'entity'),
-    heading: selectedItems.filter(item => item.type === 'heading'),
-    contentGap: selectedItems.filter(item => item.type === 'contentGap'),
-    topRank: selectedItems.filter(item => item.type === 'topRank')
+    keyword: selectedItems.filter(item => 
+      item.type === 'keyword' || 
+      item.type === 'keywords' || 
+      item.type === 'relatedSearch' ||
+      item.type === 'relatedKeyword'
+    ),
+    question: selectedItems.filter(item => 
+      item.type === 'question' || 
+      item.type === 'questions' ||
+      item.type === 'peopleAlsoAsk'
+    ),
+    entity: selectedItems.filter(item => 
+      item.type === 'entity' || 
+      item.type === 'entities' ||
+      item.type === 'knowledgeEntity'
+    ),
+    heading: selectedItems.filter(item => 
+      item.type === 'heading' || 
+      item.type === 'headings'
+    ),
+    contentGap: selectedItems.filter(item => 
+      item.type === 'contentGap' || 
+      item.type === 'contentGaps'
+    ),
+    topRank: selectedItems.filter(item => 
+      item.type === 'topRank' || 
+      item.type === 'competitor' ||
+      item.type === 'topStories' ||
+      item.type === 'topStory'
+    ),
+    snippet: selectedItems.filter(item => 
+      item.type === 'snippet' || 
+      item.type === 'featuredSnippet' ||
+      item.type === 'featuredSnippets'
+    ),
+    multimedia: selectedItems.filter(item => 
+      item.type === 'multimedia' || 
+      item.type === 'image' ||
+      item.type === 'video'
+    )
   };
   
   // Get counts for each type
@@ -33,7 +67,9 @@ export function SelectedSerpItemsCard() {
     entity: itemsByType.entity.length,
     heading: itemsByType.heading.length,
     contentGap: itemsByType.contentGap.length,
-    topRank: itemsByType.topRank.length
+    topRank: itemsByType.topRank.length,
+    snippet: itemsByType.snippet.length,
+    multimedia: itemsByType.multimedia.length
   };
 
   return (
@@ -93,7 +129,7 @@ export function SelectedSerpItemsCard() {
               <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
-                    <Tag className="h-3.5 w-3.5 text-indigo-400" />
+                    <Users className="h-3.5 w-3.5 text-indigo-400" />
                     Entities ({counts.entity})
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -131,7 +167,7 @@ export function SelectedSerpItemsCard() {
               <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
-                    <FileSearch className="h-3.5 w-3.5 text-rose-400" />
+                    <Star className="h-3.5 w-3.5 text-rose-400" />
                     Content Gaps ({counts.contentGap})
                   </p>
                   <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto space-y-1">
@@ -145,16 +181,54 @@ export function SelectedSerpItemsCard() {
               </Card>
             )}
 
-            {/* Top Ranks Section */}
+            {/* Snippets Section */}
+            {counts.snippet > 0 && (
+              <Card className="bg-white/5 border border-white/10">
+                <CardContent className="p-3">
+                  <p className="text-xs font-medium mb-2 flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 text-amber-400" />
+                    Snippets ({counts.snippet})
+                  </p>
+                  <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto space-y-1">
+                    {itemsByType.snippet.map((item, i) => (
+                      <div key={i} className="pb-1 border-b border-white/5 last:border-0 last:pb-0">
+                        {item.content}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Top Ranks/Stories Section */}
             {counts.topRank > 0 && (
               <Card className="bg-white/5 border border-white/10">
                 <CardContent className="p-3">
                   <p className="text-xs font-medium mb-2 flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5 text-green-400" />
-                    Top Ranks ({counts.topRank})
+                    <FileSearch className="h-3.5 w-3.5 text-green-400" />
+                    Top Content ({counts.topRank})
                   </p>
                   <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto space-y-1">
                     {itemsByType.topRank.map((item, i) => (
+                      <div key={i} className="pb-1 border-b border-white/5 last:border-0 last:pb-0">
+                        {item.content}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Multimedia Section */}
+            {counts.multimedia > 0 && (
+              <Card className="bg-white/5 border border-white/10">
+                <CardContent className="p-3">
+                  <p className="text-xs font-medium mb-2 flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 text-cyan-400" />
+                    Multimedia ({counts.multimedia})
+                  </p>
+                  <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto space-y-1">
+                    {itemsByType.multimedia.map((item, i) => (
                       <div key={i} className="pb-1 border-b border-white/5 last:border-0 last:pb-0">
                         {item.content}
                       </div>

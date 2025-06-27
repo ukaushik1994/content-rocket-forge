@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,11 +30,13 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   keyword,
   onDataUpdate
 }) => {
-  const { dispatch } = useContentBuilder();
+  const { state, dispatch } = useContentBuilder();
   const [data, setData] = useState<EnhancedSerpResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['keywords', 'questions']));
-  const [selectedItems, setSelectedItems] = useState<Map<string, any>>(new Map());
+
+  // Get selected count from context
+  const selectedCount = state.serpSelections.filter(item => item.selected).length;
 
   const sectionConfigs = [
     {
@@ -139,43 +140,24 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   };
 
   const selectItem = (sectionKey: string, item: any) => {
-    const itemKey = `${sectionKey}-${item.content}`;
-    const newSelected = new Map(selectedItems);
-    
-    if (newSelected.has(itemKey)) {
-      newSelected.delete(itemKey);
-    } else {
-      newSelected.set(itemKey, { ...item, section: sectionKey });
-    }
-    
-    setSelectedItems(newSelected);
-    
-    // Update content builder context
+    // Use the context dispatch to handle selection
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
-      payload: { type: item.type, content: item.content }
+      payload: { type: item.type || sectionKey, content: item.content }
     });
   };
 
   const selectAllInSection = (sectionKey: string, items: any[]) => {
-    const newSelected = new Map(selectedItems);
-    
+    // Use the context dispatch for all items
     items.forEach(item => {
-      const itemKey = `${sectionKey}-${item.content}`;
-      newSelected.set(itemKey, { ...item, section: sectionKey });
-      
-      // Update content builder context
       dispatch({
         type: 'TOGGLE_SERP_SELECTION',
-        payload: { type: item.type, content: item.content }
+        payload: { type: item.type || sectionKey, content: item.content }
       });
     });
-    
-    setSelectedItems(newSelected);
   };
 
   const generateContent = () => {
-    const selectedCount = selectedItems.size;
     if (selectedCount === 0) {
       toast.error('Please select at least one item to generate content');
       return;
@@ -186,6 +168,16 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
     dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
     
     toast.success(`Generated outline with ${selectedCount} selected SERP items`);
+  };
+
+  // Helper function to check if an item is selected
+  const isItemSelected = (sectionKey: string, item: any): boolean => {
+    const itemType = item.type || sectionKey;
+    return state.serpSelections.some(
+      selection => selection.type === itemType && 
+                   selection.content === item.content && 
+                   selection.selected
+    );
   };
 
   if (isLoading && !data) {
@@ -260,16 +252,16 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
               <Progress value={data.keywordDifficulty} className="mt-1" />
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-500">{selectedItems.size}</p>
+              <p className="text-2xl font-bold text-green-500">{selectedCount}</p>
               <p className="text-sm text-muted-foreground">Items Selected</p>
             </div>
           </div>
           
-          {selectedItems.size > 0 && (
+          {selectedCount > 0 && (
             <div className="flex justify-center">
               <Button onClick={generateContent} className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4" />
-                <span>Generate Content from {selectedItems.size} Selected Items</span>
+                <span>Generate Content from {selectedCount} Selected Items</span>
               </Button>
             </div>
           )}
@@ -282,7 +274,7 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
           const sectionData = getSerpSection(data, config.key);
           const itemsWithSelection = sectionData.map(item => ({
             ...item,
-            selected: selectedItems.has(`${config.key}-${item.content}`)
+            selected: isItemSelected(config.key, item)
           }));
           
           return (

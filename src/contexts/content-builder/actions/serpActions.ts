@@ -18,7 +18,7 @@ const processStructuredSerpSelections = (serpData: any): SerpSelection[] => {
   if (serp_blocks.knowledge_graph) {
     const kg = serp_blocks.knowledge_graph;
     selections.push({
-      type: 'knowledgeEntity',
+      type: 'entity',
       content: kg.title || 'Knowledge Graph Entity',
       selected: false,
       source: 'knowledge_graph',
@@ -56,7 +56,7 @@ const processStructuredSerpSelections = (serpData: any): SerpSelection[] => {
   if (related_keywords) {
     related_keywords.slice(0, 8).forEach((keyword: string) => {
       selections.push({
-        type: 'relatedKeyword',
+        type: 'keyword',
         content: keyword,
         selected: false,
         source: 'related_queries',
@@ -107,12 +107,25 @@ export const createSerpActions = (
         const structuredSelections = processStructuredSerpSelections(serpData);
         console.log("Structured SERP selections processed:", structuredSelections.length);
         
-        // Clear existing selections and add new ones
+        // Add new selections to context without removing existing ones
+        // Only add if they don't already exist
         structuredSelections.forEach(selection => {
-          dispatch({ 
-            type: 'TOGGLE_SERP_SELECTION', 
-            payload: { type: selection.type, content: selection.content }
-          });
+          const existingItem = state.serpSelections.find(
+            item => item.type === selection.type && item.content === selection.content
+          );
+          
+          if (!existingItem) {
+            // Add as unselected initially - user will select what they want
+            dispatch({ 
+              type: 'TOGGLE_SERP_SELECTION', 
+              payload: { type: selection.type, content: selection.content }
+            });
+            // Then immediately deselect it so it's available but not selected
+            dispatch({ 
+              type: 'TOGGLE_SERP_SELECTION', 
+              payload: { type: selection.type, content: selection.content }
+            });
+          }
         });
         
         if (serpData.isMockData) {
@@ -138,19 +151,20 @@ export const createSerpActions = (
   };
   
   const generateOutlineFromSelections = () => {
-    if (!state.serpSelections.some(item => item.selected)) {
+    const selectedItems = state.serpSelections.filter(item => item.selected);
+    
+    if (selectedItems.length === 0) {
       toast.error("Please select at least one item to generate an outline");
       return;
     }
     
     // Create a more structured outline from selected items
-    const selectedItems = state.serpSelections.filter(item => item.selected);
-    
     // Group items by type
     const headings = selectedItems.filter(item => item.type === 'heading').map(item => item.content);
     const questions = selectedItems.filter(item => item.type === 'question').map(item => item.content);
-    const relatedKeywords = selectedItems.filter(item => item.type === 'relatedKeyword').map(item => item.content);
+    const keywords = selectedItems.filter(item => item.type === 'keyword').map(item => item.content);
     const topStories = selectedItems.filter(item => item.type === 'topStory').map(item => item.content);
+    const contentGaps = selectedItems.filter(item => item.type === 'contentGap').map(item => item.content);
     
     // Create outline sections based on selected items
     let outlineSections = [];
@@ -161,6 +175,15 @@ export const createSerpActions = (
     // Add headings as main structure if available
     if (headings.length > 0) {
       outlineSections = [...outlineSections, ...headings];
+    }
+    
+    // Add content gaps as sections
+    if (contentGaps.length > 0) {
+      contentGaps.forEach(gap => {
+        if (!outlineSections.includes(gap)) {
+          outlineSections.push(gap);
+        }
+      });
     }
     
     // Add questions as sections or a FAQ section
@@ -181,8 +204,8 @@ export const createSerpActions = (
       outlineSections.push("Latest News and Trends");
     }
     
-    // Add related topics if we have related keywords
-    if (relatedKeywords.length > 0) {
+    // Add related topics if we have keywords
+    if (keywords.length > 0) {
       outlineSections.push("Related Topics and Considerations");
     }
     

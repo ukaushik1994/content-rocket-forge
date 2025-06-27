@@ -1,4 +1,3 @@
-
 import { ContentBuilderState, ContentBuilderAction } from './types/index';
 import { OutlineSection } from './types/outline-types';
 
@@ -76,9 +75,12 @@ export const contentBuilderReducer = (
     case 'TOGGLE_SERP_SELECTION': {
       const { type, content } = action.payload;
       
-      // Check if this item already exists in serpSelections
+      // Create a unique key for the item
+      const itemKey = `${type}-${content}`;
+      
+      // Find existing item in serpSelections
       const existingItemIndex = state.serpSelections.findIndex(
-        item => item.type === type && item.content === content
+        item => `${item.type}-${item.content}` === itemKey
       );
       
       let updatedSelections;
@@ -90,11 +92,6 @@ export const contentBuilderReducer = (
           ...updatedSelections[existingItemIndex],
           selected: !updatedSelections[existingItemIndex].selected
         };
-        
-        // If deselected, remove it from the list
-        if (!updatedSelections[existingItemIndex].selected) {
-          updatedSelections = updatedSelections.filter((_, i) => i !== existingItemIndex);
-        }
       } else {
         // Item doesn't exist, add it as selected
         updatedSelections = [
