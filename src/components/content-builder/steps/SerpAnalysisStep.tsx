@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { SerpAnalysisHeader } from '@/components/content-builder/serp/SerpAnalysisHeader';
 import { SerpAnalysisPanel } from '@/components/content-builder/serp/SerpAnalysisPanel';
-import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
-import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { SerpApiKeySetup } from '../serp/SerpApiKeySetup';
 import { SerpApiDiagnostics } from './serp-analysis/SerpApiDiagnostics';
 import { EnhancedSerpIntegration } from './serp-analysis/EnhancedSerpIntegration';
@@ -77,8 +75,8 @@ export const SerpAnalysisStep = () => {
     }
   };
   
-  // Get selection statistics
-  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
+  // Get total selected count for display
+  const totalSelected = serpSelections.filter(s => s.selected).length;
   
   // Handle reanalyzing the current keyword
   const handleReanalyze = async () => {
@@ -260,34 +258,22 @@ export const SerpAnalysisStep = () => {
             handleContinueWithSelections={handleContinueWithSelections}
           />
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[calc(100vh-220px)]">
-            <div className="lg:col-span-3">
-              <SerpAnalysisPanel 
-                serpData={serpData}
-                isLoading={isAnalyzing}
-                mainKeyword={mainKeyword}
-                onAddToContent={handleAddToContent}
-                onRetry={handleReanalyze}
-                onSerpDataChange={handleSerpDataChange}
-              />
-            </div>
-            
-            <div className="lg:col-span-1 relative h-full">
-              <div className="space-y-4">
-                <SelectedItemsSidebar 
-                  serpSelections={serpSelections}
-                  totalSelected={totalSelected}
-                  selectedCounts={selectedCounts}
-                  handleToggleSelection={handleToggleSelection}
-                />
-                
-                {/* Add diagnostics panel for debugging when needed */}
-                {(!hasWorkingApis || serpData?.isMockData) && (
-                  <SerpApiDiagnostics />
-                )}
-              </div>
-            </div>
+          {/* Updated to single column layout - removed left sidebar */}
+          <div className="w-full">
+            <SerpAnalysisPanel 
+              serpData={serpData}
+              isLoading={isAnalyzing}
+              mainKeyword={mainKeyword}
+              onAddToContent={handleAddToContent}
+              onRetry={handleReanalyze}
+              onSerpDataChange={handleSerpDataChange}
+            />
           </div>
+          
+          {/* Add diagnostics panel for debugging when needed */}
+          {(!hasWorkingApis || serpData?.isMockData) && (
+            <SerpApiDiagnostics />
+          )}
         </>
       )}
     </div>
