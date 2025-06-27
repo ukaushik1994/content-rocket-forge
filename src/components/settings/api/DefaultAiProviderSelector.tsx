@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -10,10 +9,12 @@ import { getUserPreference, saveUserPreference } from '@/services/userPreference
 import { getApiKey } from '@/services/apiKeyService';
 import { testApiKey } from '@/services/apiKeys/testing';
 import { toast } from 'sonner';
+import { AiProvider } from '@/services/aiService/types';
+import { ApiProvider } from '@/services/apiKeyService';
 
 interface DefaultAiProviderSelectorProps {
-  defaultAiProvider?: 'openai' | 'anthropic' | 'gemini' | 'mistral';
-  onDefaultAiProviderChange: (provider: 'openai' | 'anthropic' | 'gemini' | 'mistral') => void;
+  defaultAiProvider?: AiProvider;
+  onDefaultAiProviderChange: (provider: AiProvider) => void;
 }
 
 export function DefaultAiProviderSelector({ 
@@ -42,7 +43,7 @@ export function DefaultAiProviderSelector({
   const checkProviderStatus = async () => {
     setCheckingStatus(true);
     
-    const providers = ['openai', 'anthropic', 'gemini', 'mistral'];
+    const providers: AiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral'];
     const statusResults: Record<string, boolean> = {
       openai: false,
       anthropic: false,
@@ -52,10 +53,10 @@ export function DefaultAiProviderSelector({
     
     for (const provider of providers) {
       try {
-        const apiKey = await getApiKey(provider);
+        const apiKey = await getApiKey(provider as ApiProvider);
         if (apiKey) {
           try {
-            const testResult = await testApiKey(provider, apiKey);
+            const testResult = await testApiKey(provider as ApiProvider, apiKey);
             statusResults[provider] = testResult;
           } catch (error) {
             console.error(`Error testing ${provider} API key:`, error);
@@ -134,7 +135,7 @@ export function DefaultAiProviderSelector({
       <CardContent>
         <RadioGroup
           value={defaultAiProvider}
-          onValueChange={(value) => onDefaultAiProviderChange(value as 'openai' | 'anthropic' | 'gemini' | 'mistral')}
+          onValueChange={(value) => onDefaultAiProviderChange(value as AiProvider)}
           className="flex flex-col sm:flex-row gap-4 flex-wrap"
         >
           <div className="flex items-center space-x-2">
