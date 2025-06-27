@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { getUserPreference } from "@/services/userPreferencesService";
 import { AiProvider } from "./types";
@@ -17,14 +16,13 @@ export function getFallbackConfig() {
     'anthropic': ['openai', 'gemini', 'mistral', 'lmstudio'],
     'gemini': ['openai', 'anthropic', 'mistral', 'lmstudio'],
     'mistral': ['openai', 'anthropic', 'gemini', 'lmstudio'],
-    'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral'],
-    'other': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
+    'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral']
   };
   
   return {
     enabled: fallbackEnabled,
     defaultProvider,
-    fallbackProviders: fallbackProviders[defaultProvider] || []
+    fallbackProviders: fallbackProviders[defaultProvider] || ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
   };
 }
 

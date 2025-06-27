@@ -6,9 +6,6 @@ import { toast } from 'sonner';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { Badge } from '@/components/ui/badge';
 import { Info } from 'lucide-react';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
-import { SelectedItemsSidebar } from '../steps/serp-analysis/SelectedItemsSidebar';
-import { SerpSelectionStats } from '../steps/serp-analysis/SerpSelectionStats';
 
 interface SerpAnalysisPanelProps {
   serpData: SerpAnalysisResult | null;
@@ -27,23 +24,9 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
     isLoading: externalLoading
   } = props;
   
-  const { state, dispatch } = useContentBuilder();
-  const { serpSelections } = state;
-  
   const [isLocalLoading, setIsLocalLoading] = React.useState(false);
   const [dataSource, setDataSource] = React.useState<'real' | 'mock' | 'loading' | null>(null);
   const isLoading = externalLoading || isLocalLoading;
-
-  // Get selection statistics
-  const { selectedCounts, totalSelected } = SerpSelectionStats({ serpSelections });
-  
-  // Helper function to toggle selection state
-  const handleToggleSelection = (type: string, content: string) => {
-    dispatch({
-      type: 'TOGGLE_SERP_SELECTION',
-      payload: { type, content }
-    });
-  };
 
   // If we have a mainKeyword but no serpData, try to fetch it automatically
   React.useEffect(() => {
@@ -88,38 +71,25 @@ export function SerpAnalysisPanel(props: SerpAnalysisPanelProps) {
     fetchSerpData();
   }, [mainKeyword, serpData, isLoading, onSerpDataChange]);
   
-  // Pass all props to the core component with layout that includes right sidebar
+  // Pass all props to the core component with optional data source indicator
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[400px]">
-      {/* Main SERP Analysis Panel */}
-      <div className="lg:col-span-3 relative">
-        {dataSource && !isLoading && (
-          <div className="absolute top-4 right-4 z-10">
-            <Badge 
-              variant={dataSource === 'real' ? 'default' : 'secondary'}
-              className={`flex items-center gap-1 ${
-                dataSource === 'real' 
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-yellow-600 hover:bg-yellow-700'
-              }`}
-            >
-              <Info className="h-3 w-3" />
-              {dataSource === 'real' ? 'Real Data' : 'Mock Data'}
-            </Badge>
-          </div>
-        )}
-        <CoreSerpAnalysisPanel {...props} isLoading={isLoading} />
-      </div>
-      
-      {/* Right Sidebar - Selected Items */}
-      <div className="lg:col-span-1">
-        <SelectedItemsSidebar 
-          serpSelections={serpSelections}
-          totalSelected={totalSelected}
-          selectedCounts={selectedCounts}
-          handleToggleSelection={handleToggleSelection}
-        />
-      </div>
+    <div className="relative">
+      {dataSource && !isLoading && (
+        <div className="absolute top-4 right-4 z-10">
+          <Badge 
+            variant={dataSource === 'real' ? 'default' : 'secondary'}
+            className={`flex items-center gap-1 ${
+              dataSource === 'real' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-yellow-600 hover:bg-yellow-700'
+            }`}
+          >
+            <Info className="h-3 w-3" />
+            {dataSource === 'real' ? 'Real Data' : 'Mock Data'}
+          </Badge>
+        </div>
+      )}
+      <CoreSerpAnalysisPanel {...props} isLoading={isLoading} />
     </div>
   );
 }

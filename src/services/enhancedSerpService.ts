@@ -1,148 +1,228 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-
-export interface EnhancedSerpMetrics {
-  search_volume: number;
-  competition_pct: number;
-  result_count: number;
-  seo_difficulty: number;
-  opportunity_score: number;
-}
-
-export interface SerpBlock {
-  organic: any[];
-  ads: any[];
-  people_also_ask: any[];
-  top_stories: any[];
-  images: any[];
-  videos: any[];
-  knowledge_graph: any | null;
-}
 
 export interface EnhancedSerpResult {
   keyword: string;
-  geo: string;
-  metrics: EnhancedSerpMetrics;
-  serp_blocks: SerpBlock;
-  related_keywords: Array<{ title: string; volume?: number }>;
+  searchVolume: number;
+  keywordDifficulty: number;
+  competitionScore: number;
+  
+  // 9 Main SERP Sections
+  keywords: string[];
+  contentGaps: Array<{
+    topic: string;
+    description: string;
+    opportunity: string;
+    source: string;
+  }>;
+  questions: Array<{
+    question: string;
+    answer?: string;
+    source: string;
+  }>;
+  featuredSnippets: Array<{
+    type: string;
+    content: string;
+    source: string;
+    title: string;
+  }>;
+  topStories: Array<{
+    title: string;
+    source: string;
+    date: string;
+    url: string;
+  }>;
+  multimedia: {
+    images: Array<{
+      title: string;
+      source: string;
+      thumbnail?: string;
+    }>;
+    videos: Array<{
+      title: string;
+      source: string;
+      duration?: string;
+      thumbnail?: string;
+    }>;
+  };
+  entities: Array<{
+    name: string;
+    type: string;
+    description?: string;
+    source: string;
+  }>;
+  headings: Array<{
+    text: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+    source: string;
+    subtext?: string;
+  }>;
+  knowledgeGraph: {
+    title?: string;
+    type?: string;
+    description?: string;
+    attributes: Record<string, any>;
+    relatedEntities: Array<{
+      name: string;
+      link?: string;
+    }>;
+  };
+  
+  // Additional properties expected by components
+  metrics: {
+    search_volume: number;
+    seo_difficulty: number;
+    opportunity_score: number;
+    competition_pct: number;
+    result_count: number;
+  };
+  
+  serp_blocks: {
+    organic: Array<{
+      title: string;
+      link: string;
+      snippet?: string;
+    }>;
+    ads: Array<{
+      title: string;
+      link: string;
+      description: string;
+    }>;
+    people_also_ask: Array<{
+      question: string;
+      answer?: string;
+    }>;
+    images: Array<{
+      title: string;
+      thumbnail?: string;
+    }>;
+    videos: Array<{
+      title: string;
+      link: string;
+      description?: string;
+      duration?: string;
+    }>;
+    knowledge_graph?: {
+      title?: string;
+      description?: string;
+      attributes?: Record<string, any>;
+    };
+  };
+  
   insights: string[];
-  timestamp: string;
   data_sources: {
+    is_cached: boolean;
     volume_api: boolean;
     serp_api: boolean;
-    is_cached: boolean;
   };
+  related_keywords: Array<{
+    title: string;
+    volume?: number;
+  }>;
+  
+  // Metadata
+  dataQuality: string;
+  isMockData: boolean;
+  recommendations: string[];
 }
 
 /**
- * Analyze keyword using the enhanced SERP service
+ * Analyze keyword using enhanced SERP API with comprehensive data extraction
  */
-export const analyzeKeywordEnhanced = async (
-  keyword: string, 
-  geo: string = 'US',
+export async function analyzeKeywordEnhanced(
+  keyword: string,
+  location: string = 'us',
   forceRefresh: boolean = false
-): Promise<EnhancedSerpResult | null> => {
+): Promise<EnhancedSerpResult | null> {
   try {
-    console.log(`🚀 Enhanced SERP analysis for: "${keyword}" in ${geo}`);
+    console.log(`🔍 Enhanced SERP analysis for keyword: ${keyword}`);
     
-    const { data, error } = await supabase.functions.invoke('keyword-serp', {
-      body: {
-        keyword,
-        geo,
-        forceRefresh
+    // Check cache first (if not forcing refresh)
+    if (!forceRefresh) {
+      const { data: cachedData } = await supabase
+        .from('serp_cache')
+        .select('payload, created_at')
+        .eq('keyword', keyword)
+        .eq('geo', location)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24h cache
+        .maybeSingle();
+      
+      if (cachedData && cachedData.payload) {
+        console.log('✅ Using cached enhanced SERP data');
+        return cachedData.payload as unknown as EnhancedSerpResult;
       }
-    });
-
-    if (error) {
-      console.error('❌ Enhanced SERP API error:', error);
-      throw new Error(`Enhanced SERP API error: ${error.message || JSON.stringify(error)}`);
     }
-
-    if (!data) {
-      console.warn('⚠️ No data returned from enhanced SERP API');
+    
+    // Make API call to enhanced SERP function
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: JSON.stringify({
+        endpoint: 'analyze',
+        params: {
+          keyword,
+          location,
+          num: 10,
+          device: 'desktop'
+        }
+      })
+    });
+    
+    if (error) {
+      console.error('Enhanced SERP API error:', error);
       return null;
     }
-
-    console.log('✅ Enhanced SERP data retrieved successfully');
-    console.log('📊 Data sources:', data.data_sources);
-    console.log('📈 Metrics:', data.metrics);
     
+    if (!data) {
+      console.warn('No data received from enhanced SERP API');
+      return null;
+    }
+    
+    // Cache the result
+    await supabase
+      .from('serp_cache')
+      .upsert({
+        keyword,
+        geo: location,
+        payload: data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    
+    console.log('✅ Enhanced SERP analysis complete');
     return data as EnhancedSerpResult;
     
   } catch (error) {
-    console.error('💥 Error in enhanced SERP analysis:', error);
-    toast.error(`Enhanced SERP analysis failed: ${error.message}`);
+    console.error('Error in enhanced SERP analysis:', error);
     return null;
   }
-};
+}
 
 /**
- * Get cached SERP data for a keyword
+ * Get section-specific data from enhanced SERP result
  */
-export const getCachedSerpData = async (
-  keyword: string,
-  geo: string = 'US'
-): Promise<EnhancedSerpResult | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('serp_cache')
-      .select('*')
-      .eq('keyword', keyword)
-      .eq('geo', geo)
-      .single();
-
-    if (error || !data) {
-      return null;
-    }
-
-    // Check if cache is still valid (24 hours)
-    const cacheAge = Date.now() - new Date(data.updated_at).getTime();
-    const cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
-
-    if (cacheAge < cacheExpiry) {
-      // Safely parse the payload as EnhancedSerpResult
-      const payload = data.payload as any;
-      
-      // Ensure payload is an object and has the required structure
-      if (payload && typeof payload === 'object' && payload.data_sources) {
-        return {
-          ...payload,
-          data_sources: {
-            ...payload.data_sources,
-            is_cached: true
-          }
-        } as EnhancedSerpResult;
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error getting cached SERP data:', error);
-    return null;
+export function getSerpSection(data: EnhancedSerpResult, section: string): any[] {
+  switch (section) {
+    case 'keywords':
+      return data.keywords.map(keyword => ({ content: keyword, type: 'keyword' }));
+    case 'contentGaps':
+      return data.contentGaps.map(gap => ({ content: gap.topic, type: 'contentGap', metadata: gap }));
+    case 'questions':
+      return data.questions.map(q => ({ content: q.question, type: 'question', metadata: q }));
+    case 'featuredSnippets':
+      return data.featuredSnippets.map(snippet => ({ content: snippet.title, type: 'snippet', metadata: snippet }));
+    case 'topStories':
+      return data.topStories.map(story => ({ content: story.title, type: 'topStory', metadata: story }));
+    case 'multimedia':
+      return [
+        ...data.multimedia.images.map(img => ({ content: img.title, type: 'image', metadata: img })),
+        ...data.multimedia.videos.map(video => ({ content: video.title, type: 'video', metadata: video }))
+      ];
+    case 'entities':
+      return data.entities.map(entity => ({ content: entity.name, type: 'entity', metadata: entity }));
+    case 'headings':
+      return data.headings.map(heading => ({ content: heading.text, type: 'heading', metadata: heading }));
+    case 'knowledgeGraph':
+      return data.knowledgeGraph.title ? [{ content: data.knowledgeGraph.title, type: 'knowledgeEntity', metadata: data.knowledgeGraph }] : [];
+    default:
+      return [];
   }
-};
-
-/**
- * Clear cache for a specific keyword
- */
-export const clearSerpCache = async (keyword: string, geo: string = 'US'): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('serp_cache')
-      .delete()
-      .eq('keyword', keyword)
-      .eq('geo', geo);
-
-    if (error) {
-      console.error('Error clearing SERP cache:', error);
-      return false;
-    }
-
-    console.log(`Cache cleared for ${keyword} in ${geo}`);
-    return true;
-  } catch (error) {
-    console.error('Error clearing SERP cache:', error);
-    return false;
-  }
-};
+}

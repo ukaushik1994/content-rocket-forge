@@ -1,5 +1,4 @@
-
-import { validateProviderKeyFormat } from "@/services/apiKeys/validation";
+import { validateApiKeyFormat } from "@/services/apiKeys/validation";
 
 /**
  * Detect if a key matches a specific provider's format
@@ -8,7 +7,7 @@ import { validateProviderKeyFormat } from "@/services/apiKeys/validation";
  * @returns Boolean indicating if the key matches the provider's format
  */
 export function isValidProviderKeyFormat(provider: string, key: string): boolean {
-  return validateProviderKeyFormat(provider, key);
+  return validateApiKeyFormat(provider, key);
 }
 
 /**
