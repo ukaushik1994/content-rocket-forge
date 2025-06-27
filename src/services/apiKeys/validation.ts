@@ -48,7 +48,7 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
 /**
  * Validate API key format for a specific provider
  */
-export function validateApiKeyFormat(provider: ApiProvider, apiKey: string): boolean {
+export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: string): boolean {
   if (!apiKey) return false;
   
   switch (provider) {
