@@ -104,9 +104,41 @@ export const SerpAnalysisStep = () => {
     handleToggleSelection(type, content);
   };
 
-  const handleSerpDataChange = (data: SerpAnalysisResult | null) => {
+  const handleSerpDataChange = (data: EnhancedSerpResult | null) => {
     if (data && !serpData) {
-      dispatch({ type: 'SET_SERP_DATA', payload: data });
+      // Convert EnhancedSerpResult to SerpAnalysisResult for backward compatibility
+      const convertedData = {
+        keyword: data.keyword,
+        searchVolume: data.searchVolume,
+        keywordDifficulty: data.keywordDifficulty,
+        competitionScore: data.competitionScore,
+        entities: data.entities,
+        peopleAlsoAsk: data.questions.map(q => ({
+          question: q.question,
+          source: q.source
+        })),
+        headings: data.headings.map(h => ({
+          text: h.text,
+          level: h.level,
+          subtext: h.subtext
+        })),
+        contentGaps: data.contentGaps,
+        topResults: data.serp_blocks.organic.slice(0, 10).map((result, index) => ({
+          title: result.title,
+          link: result.link,
+          snippet: result.snippet || '',
+          position: index + 1
+        })),
+        relatedSearches: data.related_keywords.map(kw => ({
+          query: kw.title,
+          volume: kw.volume
+        })),
+        keywords: data.keywords,
+        recommendations: data.recommendations,
+        isMockData: data.isMockData
+      };
+      
+      dispatch({ type: 'SET_SERP_DATA', payload: convertedData });
     }
   };
 

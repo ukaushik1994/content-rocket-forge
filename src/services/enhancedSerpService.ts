@@ -53,8 +53,9 @@ export interface EnhancedSerpResult {
   }>;
   headings: Array<{
     text: string;
-    level: string;
+    level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     source: string;
+    subtext?: string;
   }>;
   knowledgeGraph: {
     title?: string;
@@ -66,6 +67,58 @@ export interface EnhancedSerpResult {
       link?: string;
     }>;
   };
+  
+  // Additional properties expected by components
+  metrics: {
+    search_volume: number;
+    seo_difficulty: number;
+    opportunity_score: number;
+    competition_pct: number;
+    result_count: number;
+  };
+  
+  serp_blocks: {
+    organic: Array<{
+      title: string;
+      link: string;
+      snippet?: string;
+    }>;
+    ads: Array<{
+      title: string;
+      link: string;
+      description: string;
+    }>;
+    people_also_ask: Array<{
+      question: string;
+      answer?: string;
+    }>;
+    images: Array<{
+      title: string;
+      thumbnail?: string;
+    }>;
+    videos: Array<{
+      title: string;
+      link: string;
+      description?: string;
+      duration?: string;
+    }>;
+    knowledge_graph?: {
+      title?: string;
+      description?: string;
+      attributes?: Record<string, any>;
+    };
+  };
+  
+  insights: string[];
+  data_sources: {
+    is_cached: boolean;
+    volume_api: boolean;
+    serp_api: boolean;
+  };
+  related_keywords: Array<{
+    title: string;
+    volume?: number;
+  }>;
   
   // Metadata
   dataQuality: string;
@@ -94,9 +147,9 @@ export async function analyzeKeywordEnhanced(
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24h cache
         .maybeSingle();
       
-      if (cachedData) {
+      if (cachedData && cachedData.payload) {
         console.log('✅ Using cached enhanced SERP data');
-        return cachedData.payload as EnhancedSerpResult;
+        return cachedData.payload as unknown as EnhancedSerpResult;
       }
     }
     
