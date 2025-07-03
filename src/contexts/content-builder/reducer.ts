@@ -72,38 +72,56 @@ export const contentBuilderReducer = (
         isAnalyzing: action.payload
       };
       
+    case 'ADD_SERP_SELECTION': {
+      const newSelection = action.payload;
+      
+      // Check if item already exists
+      const existingItemIndex = state.serpSelections.findIndex(
+        item => item.type === newSelection.type && item.content === newSelection.content
+      );
+      
+      if (existingItemIndex >= 0) {
+        // Item already exists, don't add duplicate
+        return state;
+      }
+      
+      // Add new selection
+      return {
+        ...state,
+        serpSelections: [...state.serpSelections, newSelection]
+      };
+    }
+
     case 'TOGGLE_SERP_SELECTION': {
       const { type, content } = action.payload;
       
-      // Create a unique key for the item
-      const itemKey = `${type}-${content}`;
-      
       // Find existing item in serpSelections
       const existingItemIndex = state.serpSelections.findIndex(
-        item => `${item.type}-${item.content}` === itemKey
+        item => item.type === type && item.content === content
       );
-      
-      let updatedSelections;
       
       if (existingItemIndex >= 0) {
         // Item exists, toggle its selection state
-        updatedSelections = [...state.serpSelections];
+        const updatedSelections = [...state.serpSelections];
         updatedSelections[existingItemIndex] = {
           ...updatedSelections[existingItemIndex],
           selected: !updatedSelections[existingItemIndex].selected
         };
+        
+        return {
+          ...state,
+          serpSelections: updatedSelections
+        };
       } else {
         // Item doesn't exist, add it as selected
-        updatedSelections = [
-          ...state.serpSelections,
-          { type, content, selected: true }
-        ];
+        return {
+          ...state,
+          serpSelections: [
+            ...state.serpSelections,
+            { type, content, selected: true, source: 'manual', metadata: {} }
+          ]
+        };
       }
-      
-      return {
-        ...state,
-        serpSelections: updatedSelections
-      };
     }
       
     case 'SET_OUTLINE':

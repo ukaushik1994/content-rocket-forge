@@ -115,8 +115,24 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
     try {
       const result = await analyzeKeywordEnhanced(keyword, 'us', forceRefresh);
       if (result) {
+        console.log('📊 Enhanced SERP result received:', result);
         setData(result);
         onDataUpdate?.(result);
+        
+        // Add all available selections to context using the transformer
+        import('@/services/serpDataTransformer').then(({ transformSerpData, extractAllSelections }) => {
+          const normalizedData = transformSerpData(result);
+          const allSelections = extractAllSelections(normalizedData);
+          
+          console.log(`📋 Adding ${allSelections.length} selections to context`);
+          allSelections.forEach(selection => {
+            dispatch({
+              type: 'ADD_SERP_SELECTION',
+              payload: selection
+            });
+          });
+        });
+        
         toast.success('SERP analysis completed successfully');
       } else {
         toast.error('Failed to analyze keyword. Please check your API keys.');
@@ -140,6 +156,7 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   };
 
   const selectItem = (sectionKey: string, item: any) => {
+    console.log('📌 Selecting item:', { sectionKey, item });
     // Use the context dispatch to handle selection
     dispatch({
       type: 'TOGGLE_SERP_SELECTION',
@@ -148,6 +165,7 @@ export const EnhancedSerpAnalysis: React.FC<EnhancedSerpAnalysisProps> = ({
   };
 
   const selectAllInSection = (sectionKey: string, items: any[]) => {
+    console.log('📌 Selecting all items in section:', sectionKey, items.length);
     // Use the context dispatch for all items
     items.forEach(item => {
       dispatch({

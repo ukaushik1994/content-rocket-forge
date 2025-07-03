@@ -4,81 +4,30 @@ import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
-// Process the new structured SERP response format
+import { transformSerpData, extractAllSelections } from '@/services/serpDataTransformer';
+
+// Process any SERP response format using the unified transformer
 const processStructuredSerpSelections = (serpData: any): SerpSelection[] => {
-  const selections: SerpSelection[] = [];
-  
-  if (!serpData || !serpData.serp_blocks) {
-    return selections;
+  if (!serpData) {
+    console.warn('No SERP data provided for processing');
+    return [];
   }
 
-  const { serp_blocks, related_keywords } = serpData;
+  console.log('🔄 Processing SERP data for selections:', serpData);
   
-  // Knowledge Graph
-  if (serp_blocks.knowledge_graph) {
-    const kg = serp_blocks.knowledge_graph;
-    selections.push({
-      type: 'entity',
-      content: kg.title || 'Knowledge Graph Entity',
-      selected: false,
-      source: 'knowledge_graph',
-      metadata: { type: kg.type, description: kg.description }
-    });
+  try {
+    // Use the unified transformer to normalize the data
+    const normalizedData = transformSerpData(serpData);
+    
+    // Extract all selections from the normalized data
+    const allSelections = extractAllSelections(normalizedData);
+    
+    console.log(`✅ Processed ${allSelections.length} selections from SERP data`);
+    return allSelections;
+  } catch (error) {
+    console.error('❌ Error processing SERP selections:', error);
+    return [];
   }
-  
-  // Organic Results - extract headings and content
-  if (serp_blocks.organic) {
-    serp_blocks.organic.slice(0, 5).forEach((result: any, index: number) => {
-      selections.push({
-        type: 'heading',
-        content: result.title,
-        selected: false,
-        source: 'organic_results',
-        metadata: { position: index + 1, url: result.link, snippet: result.snippet }
-      });
-    });
-  }
-  
-  // People Also Ask questions
-  if (serp_blocks.people_also_ask) {
-    serp_blocks.people_also_ask.slice(0, 4).forEach((question: any) => {
-      selections.push({
-        type: 'question',
-        content: question.question || question.title,
-        selected: false,
-        source: 'people_also_ask',
-        metadata: { answer: question.answer }
-      });
-    });
-  }
-  
-  // Related Keywords
-  if (related_keywords) {
-    related_keywords.slice(0, 8).forEach((keyword: string) => {
-      selections.push({
-        type: 'keyword',
-        content: keyword,
-        selected: false,
-        source: 'related_queries',
-        metadata: {}
-      });
-    });
-  }
-  
-  // Top Stories/News
-  if (serp_blocks.top_stories) {
-    serp_blocks.top_stories.slice(0, 3).forEach((story: any) => {
-      selections.push({
-        type: 'topStory',
-        content: story.title,
-        selected: false,
-        source: 'top_stories',
-        metadata: { url: story.link, source: story.source }
-      });
-    });
-  }
-  
-  return selections;
 };
 
 export const createSerpActions = (
@@ -103,27 +52,21 @@ export const createSerpActions = (
       } else {
         console.log("SERP data successfully retrieved:", serpData);
         
-        // Process structured SERP selections from new format
+        // Process SERP selections using the unified transformer
         const structuredSelections = processStructuredSerpSelections(serpData);
-        console.log("Structured SERP selections processed:", structuredSelections.length);
+        console.log("Processed SERP selections:", structuredSelections.length);
         
-        // Add new selections to context without removing existing ones
-        // Only add if they don't already exist
+        // Add new selections to context (they start as unselected)
         structuredSelections.forEach(selection => {
           const existingItem = state.serpSelections.find(
             item => item.type === selection.type && item.content === selection.content
           );
           
           if (!existingItem) {
-            // Add as unselected initially - user will select what they want
+            // Add the selection as available but not selected
             dispatch({ 
-              type: 'TOGGLE_SERP_SELECTION', 
-              payload: { type: selection.type, content: selection.content }
-            });
-            // Then immediately deselect it so it's available but not selected
-            dispatch({ 
-              type: 'TOGGLE_SERP_SELECTION', 
-              payload: { type: selection.type, content: selection.content }
+              type: 'ADD_SERP_SELECTION', 
+              payload: selection
             });
           }
         });
