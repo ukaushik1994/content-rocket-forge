@@ -8,6 +8,7 @@ import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { saveContentToDraft } from './writing/ContentGenerationService';
+import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
 
@@ -45,6 +46,9 @@ export const ContentWritingStep = () => {
     handleWordCountChange
   } = useWritingStep();
   
+  // Title generation hook
+  const { generateTitleSuggestions } = useTitleSuggestions();
+  
   // New state for advanced content generation
   const [writingStyle, setWritingStyle] = useState('Conversational');
   const [expertiseLevel, setExpertiseLevel] = useState('Beginner');
@@ -75,6 +79,12 @@ export const ContentWritingStep = () => {
       return;
     }
     
+    // Auto-generate title if none exists
+    if (!state.contentTitle || state.contentTitle.includes('Complete Guide')) {
+      console.log('Auto-generating unique title before content generation');
+      await generateTitleSuggestions();
+    }
+    
     // Convert outline to a formatted string for the prompt
     const outlineText = Array.isArray(state.outline) 
       ? state.outline.map((item, index) => {
@@ -93,7 +103,7 @@ export const ContentWritingStep = () => {
     // Create advanced generation config
     const config: ContentGenerationConfig = {
       mainKeyword,
-      title: state.contentTitle || `Complete Guide to ${mainKeyword}`,
+      title: state.contentTitle || `${mainKeyword}: Professional Guide and Best Practices`,
       outline: outlineText,
       secondaryKeywords: secondaryKeywordsStr,
       writingStyle,
@@ -155,6 +165,7 @@ export const ContentWritingStep = () => {
         onManualSave={handleManualSave}
         wordCountLimit={wordCountLimit}
         onWordCountChange={handleWordCountChange}
+        onGenerateTitle={generateTitleSuggestions}
       />
       
       {/* Display content title */}

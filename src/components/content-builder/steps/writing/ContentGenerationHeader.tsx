@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { Input } from '@/components/ui/input';
+import { TitleGenerationButton } from './TitleGenerationButton';
 import { 
   Sparkles, 
   ListTodo, 
@@ -28,6 +29,7 @@ interface ContentGenerationHeaderProps {
   onManualSave?: () => void;
   wordCountLimit?: number;
   onWordCountChange?: (count: number) => void;
+  onGenerateTitle?: () => void;
 }
 
 export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = ({
@@ -42,7 +44,8 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   hasUnsavedChanges,
   onManualSave,
   wordCountLimit,
-  onWordCountChange
+  onWordCountChange,
+  onGenerateTitle
 }) => {
   const [wordCountInput, setWordCountInput] = useState(wordCountLimit?.toString() || '1500');
   
@@ -80,6 +83,8 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
             <ListTodo className="h-4 w-4" />
           </Toggle>
         </div>
+        
+        <TitleGenerationButton />
         
         <form onSubmit={handleWordCountSubmit} className="flex items-center gap-2 ml-2 bg-slate-900/30 border border-white/10 rounded-md p-1">
           <Hash className="h-3 w-3 text-white/50 ml-1" />

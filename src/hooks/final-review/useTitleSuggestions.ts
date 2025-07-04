@@ -22,7 +22,8 @@ export const useTitleSuggestions = () => {
     selectedKeywords, 
     metaTitle, 
     contentTitle,
-    serpSelections
+    serpSelections,
+    outline
   } = state;
   
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
@@ -49,11 +50,17 @@ export const useTitleSuggestions = () => {
         ? `${content || ''}\n\n${serpSelectedContent}`
         : content || "Your content will be about " + mainKeyword;
       
+      // Convert outline to string array for title generation
+      const outlineStrings = Array.isArray(outline) 
+        ? outline.map(item => typeof item === 'string' ? item : (item as any).title || String(item))
+        : [];
+      
       // Call the generateTitleSuggestions function from utils with enhanced context
       const suggestions = await generateTitleSuggestions(
         contextContent, 
         mainKeyword, 
-        selectedKeywords
+        selectedKeywords,
+        outlineStrings
       );
       
       // Shuffle the suggestions to ensure different ordering each time

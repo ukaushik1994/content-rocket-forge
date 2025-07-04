@@ -4,12 +4,24 @@
  */
 
 /**
- * Generate compelling title suggestions based on content and keywords
+ * Generate compelling title suggestions based on content, outline, and keywords using AI
  */
-export const generateTitleSuggestions = async (content: string, mainKeyword: string, selectedKeywords: string[]) => {
-  console.log("[documentAnalysis] Generating title suggestions for:", mainKeyword);
+export const generateTitleSuggestions = async (
+  content: string, 
+  mainKeyword: string, 
+  selectedKeywords: string[],
+  outline?: string[]
+) => {
+  console.log("[documentAnalysis] Generating AI-powered title suggestions for:", mainKeyword);
   
-  // Analyze first 500 words of content to extract themes (increased from 300 for better context)
+  // Use AI to generate titles if possible, otherwise fallback to template approach
+  const aiTitles = await generateAITitles(content, mainKeyword, selectedKeywords, outline);
+  if (aiTitles && aiTitles.length > 0) {
+    return aiTitles;
+  }
+  
+  // Fallback to template-based generation
+  console.log("[documentAnalysis] Falling back to template-based title generation");
   const firstWords = content.split(/\s+/).slice(0, 500).join(' ');
   
   // Get the current year for more relevant titles
@@ -166,3 +178,82 @@ export const generateTitleSuggestions = async (content: string, mainKeyword: str
   console.log("[documentAnalysis] Generated title suggestions:", shuffledTitles);
   return shuffledTitles;
 };
+
+/**
+ * Generate unique titles using AI based on content and outline
+ */
+async function generateAITitles(
+  content: string, 
+  mainKeyword: string, 
+  selectedKeywords: string[],
+  outline?: string[]
+): Promise<string[] | null> {
+  try {
+    // Dynamic import to avoid circular dependencies
+    const { sendChatRequest } = await import('@/services/aiService');
+    
+    // Create outline context
+    const outlineText = outline && outline.length > 0 
+      ? outline.map((item, i) => `${i + 1}. ${item}`).join('\n')
+      : 'No outline provided';
+    
+    // Extract content themes from first 300 words
+    const contentPreview = content.split(/\s+/).slice(0, 300).join(' ');
+    const secondaryKeywords = selectedKeywords.filter(kw => kw !== mainKeyword).slice(0, 5);
+    
+    const prompt = `Generate 15 unique, compelling SEO-optimized titles for content about "${mainKeyword}".
+
+CONTENT CONTEXT:
+- Main keyword: ${mainKeyword}
+- Secondary keywords: ${secondaryKeywords.join(', ') || 'None'}
+- Content outline:
+${outlineText}
+- Content preview: ${contentPreview.substring(0, 200)}...
+
+REQUIREMENTS:
+1. Each title must be unique and creative
+2. Naturally incorporate the main keyword "${mainKeyword}"
+3. Make titles specific to the outline structure provided
+4. Mix different title formats (how-to, listicle, guide, etc.)
+5. Target 50-60 characters for SEO optimization
+6. Make titles compelling and click-worthy
+7. Avoid generic phrases like "Complete Guide" unless truly comprehensive
+8. Base titles on the actual outline content structure
+
+TITLE FORMATS TO USE:
+- How-to guides (if outline supports it)
+- Numbered lists (if outline has multiple points)
+- Question-based titles (if addressing specific problems)
+- Benefit-driven titles
+- Year-specific titles (${new Date().getFullYear()})
+- Comparison titles (if relevant)
+- Problem-solving titles
+- Actionable titles
+
+Return ONLY the 15 titles, one per line, without numbering or formatting.`;
+
+    const response = await sendChatRequest('openai', {
+      messages: [
+        { role: 'system', content: 'You are an expert SEO copywriter specializing in creating compelling, unique titles that drive clicks while maintaining search optimization.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.8,
+      maxTokens: 800
+    });
+
+    if (response?.choices?.[0]?.message?.content) {
+      const titles = response.choices[0].message.content
+        .split('\n')
+        .map(title => title.trim())
+        .filter(title => title.length > 0 && !title.match(/^\d+\./)) // Remove numbered prefixes
+        .slice(0, 15);
+      
+      console.log("[documentAnalysis] Generated AI titles:", titles);
+      return titles;
+    }
+  } catch (error) {
+    console.error("[documentAnalysis] Error generating AI titles:", error);
+  }
+  
+  return null;
+}
