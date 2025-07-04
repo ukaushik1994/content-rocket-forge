@@ -14,6 +14,7 @@ import { SerpSelectionStats } from './serp-analysis/SerpSelectionStats';
 import { SelectedItemsSidebar } from './serp-analysis/SelectedItemsSidebar';
 import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
 import { InteractiveAnalysisSteps } from './keyword-analysis/InteractiveAnalysisSteps';
+import { NoDataAvailable } from './NoDataAvailable';
 
 // Mock data for clusters until we integrate with backend
 const mockClusters: ContentCluster[] = [{

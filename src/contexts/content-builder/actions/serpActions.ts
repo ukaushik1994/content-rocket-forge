@@ -48,7 +48,9 @@ export const createSerpActions = (
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
-        toast.warning("No search data could be retrieved. Please add your SERP API key in Settings.");
+        toast.warning("No SERP data available. Add your API key in Settings to get keyword insights, FAQs, and content opportunities.");
+        console.log("❌ No SERP data returned - showing 'No Data Available' state");
+        return; // Exit early to prevent further processing
       } else {
         console.log("SERP data successfully retrieved:", serpData);
         
@@ -72,9 +74,9 @@ export const createSerpActions = (
         });
         
         if (serpData.isMockData) {
-          toast.warning("Using mock search data. Add your SERP API key for real results.");
+          toast.warning("Using limited mock data. Add your SERP API key for comprehensive real insights.");
         } else {
-          toast.success(`Analysis complete! Found ${structuredSelections.length} content opportunities.`);
+          toast.success(`Analysis complete! Found ${structuredSelections.length} content opportunities from real SERP data.`);
         }
       }
     } catch (error) {

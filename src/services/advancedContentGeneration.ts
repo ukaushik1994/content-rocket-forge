@@ -161,22 +161,52 @@ ENGAGEMENT REQUIREMENTS:
 - Apply ${expertise.explanationDepth.toLowerCase()}
 `;
 
-  // Add SERP insights
-  if (serpData.questions.length > 0) {
-    prompt += `\n\nUSER QUESTIONS TO ADDRESS:
-These questions are frequently asked about this topic. Integrate answers naturally:
+  // Add SERP insights - only include if user actually selected items
+  const totalSelections = Object.values(serpData).reduce((sum, arr) => sum + arr.length, 0);
+  
+  if (totalSelections > 0) {
+    prompt += `\n\nIMPORTANT: INTEGRATE SELECTED USER INSIGHTS:
+You MUST incorporate the following user-selected insights into your content:`;
+
+    if (serpData.questions.length > 0) {
+      prompt += `\n\nSELECTED QUESTIONS TO ANSWER:
+These are specifically chosen questions that MUST be addressed in your content:
 ${serpData.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
-  }
+    }
 
-  if (serpData.entities.length > 0) {
-    prompt += `\n\nKEY CONCEPTS TO EXPLAIN:
-${serpData.entities.map(e => `- ${e} (explain appropriately for ${expertise.level} level)`).join('\n')}`;
-  }
+    if (serpData.headings.length > 0) {
+      prompt += `\n\nSELECTED HEADINGS TO INCLUDE:
+Use these as section headings or incorporate these topics:
+${serpData.headings.map(h => `- ${h}`).join('\n')}`;
+    }
 
-  if (serpData.contentGaps.length > 0) {
-    prompt += `\n\nUNIQUE ANGLES TO COVER:
-Address these gaps that competitors miss:
+    if (serpData.contentGaps.length > 0) {
+      prompt += `\n\nSELECTED CONTENT GAPS TO ADDRESS:
+These are unique angles competitors miss - make sure to cover them:
 ${serpData.contentGaps.map(gap => `- ${gap}`).join('\n')}`;
+    }
+
+    if (serpData.entities.length > 0) {
+      prompt += `\n\nSELECTED KEY CONCEPTS:
+Explain these concepts appropriately for ${expertise.level} level:
+${serpData.entities.map(e => `- ${e}`).join('\n')}`;
+    }
+
+    if (serpData.keywords.length > 0) {
+      prompt += `\n\nSELECTED KEYWORDS TO INTEGRATE:
+Naturally incorporate these keywords throughout the content:
+${serpData.keywords.join(', ')}`;
+    }
+
+    if (serpData.snippets.length > 0) {
+      prompt += `\n\nSELECTED SNIPPETS FOR REFERENCE:
+Use these for inspiration and context:
+${serpData.snippets.map(s => `- ${s}`).join('\n')}`;
+    }
+
+    prompt += `\n\nCRITICAL: Failure to incorporate these selected insights will result in content that doesn't meet user expectations. Each selected item represents specific value the user wants included.`;
+  } else {
+    prompt += `\n\nNOTE: No specific SERP insights were selected. Create comprehensive content based on the keyword and outline provided.`;
   }
 
   // Add optional elements
@@ -217,12 +247,19 @@ CRITICAL: The content must be exactly ${config.targetLength} words (±50). Count
 function organizeSerpSelections(serpSelections: SerpSelection[]) {
   const selectedItems = serpSelections.filter(item => item.selected);
   
-  return {
+  console.log(`📊 Organizing ${selectedItems.length} selected SERP items for content generation:`, selectedItems);
+  
+  const organized = {
     questions: selectedItems.filter(item => item.type === 'question').map(item => item.content),
     entities: selectedItems.filter(item => item.type === 'entity').map(item => item.content),
     contentGaps: selectedItems.filter(item => item.type === 'contentGap').map(item => item.content),
     keywords: selectedItems.filter(item => item.type === 'keyword').map(item => item.content),
     headings: selectedItems.filter(item => item.type === 'heading').map(item => item.content),
-    competitors: selectedItems.filter(item => item.type === 'competitor').map(item => item.content)
+    competitors: selectedItems.filter(item => item.type === 'competitor').map(item => item.content),
+    topStories: selectedItems.filter(item => item.type === 'topStory').map(item => item.content),
+    snippets: selectedItems.filter(item => item.type === 'snippet').map(item => item.content)
   };
+  
+  console.log('📋 Organized SERP selections:', organized);
+  return organized;
 }

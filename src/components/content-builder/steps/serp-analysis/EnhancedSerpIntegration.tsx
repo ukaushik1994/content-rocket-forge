@@ -7,12 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedSerpDashboard } from '@/components/content-builder/serp/EnhancedSerpDashboard';
 import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { EnhancedSerpResult } from '@/services/enhancedSerpService';
+import { NoDataAvailable } from '../NoDataAvailable';
 import { Zap, Database, TrendingUp } from 'lucide-react';
 
 export const EnhancedSerpIntegration: React.FC = () => {
   const { state, dispatch } = useContentBuilder();
-  const { mainKeyword } = state;
+  const { mainKeyword, serpData } = state;
   const [enhancedData, setEnhancedData] = useState<EnhancedSerpResult | null>(null);
+  const [showManualInput, setShowManualInput] = useState(false);
 
   const handleEnhancedDataUpdate = (data: EnhancedSerpResult) => {
     setEnhancedData(data);
@@ -52,11 +54,15 @@ export const EnhancedSerpIntegration: React.FC = () => {
   };
 
   const handleContinueToOutline = () => {
-    if (enhancedData) {
+    if (enhancedData || showManualInput) {
       // Mark step as completed and move to outline
       dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
       dispatch({ type: 'SET_CURRENT_STEP', payload: 3 });
     }
+  };
+
+  const handleManualInput = () => {
+    setShowManualInput(true);
   };
 
   return (
@@ -82,7 +88,7 @@ export const EnhancedSerpIntegration: React.FC = () => {
               <TrendingUp className="h-3 w-3" />
               Real-time Metrics
             </Badge>
-            {enhancedData && (
+            {(enhancedData || showManualInput) && (
               <Button onClick={handleContinueToOutline} className="ml-auto">
                 Continue to Outline →
               </Button>
@@ -91,13 +97,37 @@ export const EnhancedSerpIntegration: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Dashboard */}
-      {mainKeyword && (
+      {/* Enhanced Dashboard or No Data */}
+      {mainKeyword && !serpData && !showManualInput && (
+        <NoDataAvailable 
+          keyword={mainKeyword}
+          onManualInput={handleManualInput}
+        />
+      )}
+      
+      {mainKeyword && serpData && (
         <EnhancedSerpDashboard
           keyword={mainKeyword}
           geo="US"
           onDataUpdate={handleEnhancedDataUpdate}
         />
+      )}
+      
+      {showManualInput && (
+        <Card className="glass-panel">
+          <CardHeader>
+            <CardTitle>Manual Content Planning</CardTitle>
+            <CardDescription>
+              Proceeding without SERP data. You can manually create your content outline and strategy.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              While SERP data provides valuable insights, you can still create high-quality content by manually planning your outline, 
+              selecting target keywords, and structuring your content based on your expertise and research.
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Integration Status */}

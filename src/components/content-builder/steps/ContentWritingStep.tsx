@@ -79,8 +79,10 @@ export const ContentWritingStep = () => {
       return;
     }
     
-    // Auto-generate title if none exists
-    if (!state.contentTitle || state.contentTitle.includes('Complete Guide')) {
+    // Auto-generate title if none exists or if it's a generic default
+    if (!state.contentTitle || 
+        state.contentTitle.includes('Complete Guide') || 
+        state.contentTitle === `${mainKeyword}: Professional Guide and Best Practices`) {
       console.log('Auto-generating unique title before content generation');
       await generateTitleSuggestions();
     }
@@ -101,9 +103,12 @@ export const ContentWritingStep = () => {
     const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
     
     // Create advanced generation config
+    // Use the current title or generate a simple one from keyword
+    const finalTitle = state.contentTitle || `${mainKeyword}: Expert Guide and Strategies`;
+
     const config: ContentGenerationConfig = {
       mainKeyword,
-      title: state.contentTitle || `${mainKeyword}: Professional Guide and Best Practices`,
+      title: finalTitle,
       outline: outlineText,
       secondaryKeywords: secondaryKeywordsStr,
       writingStyle,
@@ -117,6 +122,12 @@ export const ContentWritingStep = () => {
       includeCaseStudies,
       includeFAQs
     };
+    
+    console.log('📝 Content generation config:', {
+      title: finalTitle,
+      serpSelectionsCount: state.serpSelections?.length || 0,
+      selectedItems: state.serpSelections?.filter(item => item.selected).length || 0
+    });
     
     setIsGenerating(true);
     

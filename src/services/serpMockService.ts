@@ -196,7 +196,7 @@ function generateMockPeopleAlsoAsk(keyword: string, hash: number): any[] {
     result.push({
       question: questions[questionIndex],
       answer: generateAnswer(questions[questionIndex], keyword),
-      source: `https://example.com/${keyword.toLowerCase().replace(/\s+/g, '-')}/faq${i + 1}`
+      source: 'people_also_ask'
     });
   }
   

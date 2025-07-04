@@ -165,17 +165,18 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
           return data.organic_results || data;
         } else {
           console.warn(`⚠️ No ${provider.toUpperCase()} organic results found`);
-          return getBackupMockResults(query, refresh, provider);
+          toast.warning(`No ${provider.toUpperCase()} data available for "${query}". Please add your API key in Settings.`);
+          return null;
         }
       } catch (error) {
         console.error(`❌ ${provider.toUpperCase()} search failed:`, error);
-        toast.error(`Error fetching ${provider.toUpperCase()} keyword data. Using mock data.`);
-        return getBackupMockResults(query, refresh, provider);
+        toast.error(`${provider.toUpperCase()} API Error. Please check your API key in Settings.`);
+        return null;
       }
     }
     
-    console.warn(`⚠️ No ${provider.toUpperCase()} API key found. Using mock data.`);
-    toast.warning(`Using mock data for keyword search. Add your ${provider.toUpperCase()} API key in Settings for real results.`, {
+    console.warn(`⚠️ No ${provider.toUpperCase()} API key found.`);
+    toast.warning(`Add your ${provider.toUpperCase()} API key in Settings to get real keyword data.`, {
       duration: 5000,
       action: {
         label: "Go to Settings",
@@ -184,10 +185,10 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
         }
       }
     });
-    return getBackupMockResults(query, refresh, provider);
+    return null;
   } catch (error) {
     console.error(`💥 Error searching ${params.provider?.toUpperCase() || 'SERP'} keywords:`, error);
-    return getBackupMockResults(params.query, params.refresh || false, params.provider || 'serp');
+    return null;
   }
 };
 
@@ -210,8 +211,8 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
     const apiKey = await getSerpApiKey(provider);
     
     if (!apiKey) {
-      console.warn(`⚠️ No ${provider.toUpperCase()} API key found, using mock data`);
-      toast.warning(`No ${provider.toUpperCase()} API key found. Add your API key in Settings for real data.`, {
+      console.warn(`⚠️ No ${provider.toUpperCase()} API key found`);
+      toast.warning(`Add your ${provider.toUpperCase()} API key in Settings to get real SERP analysis.`, {
         duration: 5000,
         action: {
           label: "Add Key",
@@ -220,7 +221,7 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
           }
         }
       });
-      return generateMockSerpData(keyword, refresh, provider);
+      return null;
     }
 
     console.log(`🔑 ${provider.toUpperCase()} API key found, making real API call...`);
@@ -296,179 +297,27 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
         }
       });
       
-      console.log(`🎭 Falling back to mock ${provider.toUpperCase()} data due to API error`);
-      return generateMockSerpData(keyword, refresh, provider);
+      console.log(`🚫 No real ${provider.toUpperCase()} data available due to API error`);
+      return null;
     }
   } catch (error) {
     console.error(`💥 Error analyzing ${provider.toUpperCase()} keyword:`, error);
     toast.error(`${provider.toUpperCase()} analysis failed: ${error.message}`);
-    return generateMockSerpData(keyword, refresh, provider);
+    return null;
   }
 };
 
-// Helper function for mock results as a backup
+// Real API failed - return null instead of contaminated mock data
 function getBackupMockResults(query: string, refresh: boolean, provider: SerpProvider = 'serp') {
-  const providerName = provider === 'serp' ? 'SerpAPI' : 'Serpstack';
-  const mockResults = [
-    { title: `How to Use ${query} Effectively - ${providerName} Search`, url: 'https://example.com/1' },
-    { title: `The Ultimate ${providerName} Guide to ${query}`, url: 'https://example.com/2' },
-    { title: `10 Best ${query} Strategies for ${providerName}`, url: 'https://example.com/3' },
-    { title: `Why ${query} Matters for ${providerName} SEO`, url: 'https://example.com/4' },
-    { title: `Understanding ${query} for ${providerName} Rankings`, url: 'https://example.com/5' },
-    { title: `${query} vs Traditional Methods on ${providerName}`, url: 'https://example.com/6' },
-    { title: `The Future of ${query} in ${providerName} Search 2025`, url: 'https://example.com/7' },
-    { title: `How to Measure ${query} Success on ${providerName}`, url: 'https://example.com/8' },
-    { title: `${query} Best Practices for ${providerName}`, url: 'https://example.com/9' },
-    { title: `${query} ${providerName} Case Studies`, url: 'https://example.com/10' },
-  ];
-  
-  if (refresh) {
-    return mockResults
-      .map(item => ({ 
-        ...item, 
-        title: item.title.replace(query, `${query} ${['Expert', 'Professional', 'Advanced', 'Strategic'][Math.floor(Math.random() * 4)]}`)
-      }))
-      .sort(() => Math.random() - 0.5);
-  }
-  
-  return mockResults;
+  console.warn(`🚫 No real ${provider.toUpperCase()} data available for "${query}"`);
+  return null; // Force "No Data Available" instead of contaminated mock data
 }
 
-// Helper function to generate mock data as a fallback
-function generateMockSerpData(keyword: string, refresh?: boolean, provider: SerpProvider = 'serp'): SerpAnalysisResult {
-  console.log(`🎭 Generating mock ${provider.toUpperCase()} data for:`, keyword);
-  
-  const providerName = provider === 'serp' ? 'SerpAPI' : 'Serpstack';
-  const variationFactor = refresh ? Math.random() : 0.5;
-  
-  const baseVolume = provider === 'serp' ? 50000 : 25000; // SerpAPI typically has higher volume estimates
-  
-  return {
-    keyword,
-    searchVolume: Math.floor(Math.random() * baseVolume) + 10000,
-    competitionScore: Math.random() * 0.8,
-    keywordDifficulty: Math.floor(Math.random() * 100),
-    isMockData: true,
-    isGoogleData: true, // Mark as Google data even if mock
-    dataQuality: 'low',
-    volumeMetadata: {
-      source: provider === 'serp' ? 'mock_google_estimate' : 'serpstack_estimate',
-      confidence: 'low',
-      engine: 'google',
-      location: 'United States',
-      language: 'English',
-      lastUpdated: new Date().toISOString()
-    },
-    competitionMetadata: {
-      source: provider === 'serp' ? 'mock_google_estimate' : 'serpstack_estimate',
-      engine: 'google',
-      adsCompetition: 'ESTIMATED'
-    },
-    entities: [
-      { name: `${keyword} platform`, type: 'platform', description: `A ${providerName}-indexed platform focused on ${keyword}`, source: `${provider}_knowledge_graph` },
-      { name: `${keyword} strategy`, type: 'strategy', description: `Strategic approaches to ${keyword} for ${providerName}`, source: `${provider}_knowledge_graph` },
-      { name: `${keyword} tools`, type: 'tools', description: `${providerName}-friendly tools for ${keyword} implementation`, source: `${provider}_knowledge_graph` },
-      { name: `${keyword} metrics`, type: 'metrics', description: `${providerName} Analytics measurements for ${keyword}`, source: `${provider}_knowledge_graph` },
-      ...(refresh ? [
-        { name: `${keyword} analytics`, type: 'analytics', description: `${providerName} Analytics methods for ${keyword}`, source: `${provider}_knowledge_graph` },
-        { name: `${keyword} framework`, type: 'framework', description: `${providerName}-approved frameworks for ${keyword}`, source: `${provider}_knowledge_graph` }
-      ] : [])
-    ],
-    peopleAlsoAsk: [
-      { question: `How does ${keyword} work with ${providerName}?`, source: `${provider}_people_also_ask` },
-      { question: `What is the best ${keyword} tool for ${providerName}?`, source: `${provider}_people_also_ask` },
-      { question: `Why is ${keyword} important for ${providerName} SEO?`, source: `${provider}_people_also_ask` },
-      { question: `When should I use ${keyword} for ${providerName} rankings?`, source: `${provider}_people_also_ask` },
-      ...(refresh ? [
-        { question: `What are the ${providerName} advantages of ${keyword}?`, source: `${provider}_people_also_ask` },
-        { question: `How much does ${keyword} cost on ${providerName} Ads?`, source: `${provider}_people_also_ask` }
-      ] : [])
-    ],
-    headings: [
-      { text: `Understanding ${keyword} for ${providerName}`, level: 'h2' as const },
-      { text: `${providerName} Benefits of ${keyword}`, level: 'h2' as const },
-      { text: `How to Implement ${keyword} with ${providerName}`, level: 'h3' as const },
-      { text: `${keyword} ${providerName} Best Practices`, level: 'h2' as const },
-      { text: `${keyword} ${providerName} Case Studies`, level: 'h2' as const },
-      ...(refresh ? [
-        { text: `Common ${providerName} ${keyword} Mistakes`, level: 'h2' as const },
-        { text: `Advanced ${providerName} ${keyword} Techniques`, level: 'h2' as const }
-      ] : [])
-    ],
-    contentGaps: [
-      { 
-        topic: `${keyword} for ${providerName} beginners`, 
-        description: `${providerName}-focused beginner guide`, 
-        recommendation: `Create a ${providerName}-optimized 101 guide`,
-        content: `A comprehensive ${providerName}-friendly ${keyword} guide`,
-        source: `${provider}_serp_analysis`
-      },
-      { 
-        topic: `Advanced ${providerName} ${keyword} techniques`, 
-        description: `${providerName} expert strategies`, 
-        recommendation: `Share advanced ${providerName} tips`,
-        content: `Expert-level ${providerName} ${keyword} strategies`,
-        source: `${provider}_serp_analysis` 
-      }
-    ],
-    topResults: [
-      {
-        title: `The Ultimate ${providerName} Guide to ${keyword}`,
-        link: `https://example.com/${provider}-${keyword}-guide`,
-        snippet: `Learn everything about ${keyword} optimized for ${providerName} search visibility and user engagement.`,
-        position: 1,
-        source: `${provider}_organic`
-      },
-      {
-        title: `How to Use ${keyword} for ${providerName} Success`,
-        link: `https://example.com/${provider}-${keyword}-tutorial`,
-        snippet: `Step-by-step ${providerName}-optimized ${keyword} implementation.`,
-        position: 2,
-        source: `${provider}_organic`
-      }
-    ],
-    relatedSearches: [
-      { query: `${keyword} ${providerName} strategy`, source: `${provider}_related_searches` },
-      { query: `${keyword} ${providerName} tools`, source: `${provider}_related_searches` },
-      { query: `best ${providerName} ${keyword} practices`, source: `${provider}_related_searches` },
-      { query: `${keyword} ${providerName} guide`, source: `${provider}_related_searches` },
-      { query: `${keyword} ${providerName} tutorial`, source: `${provider}_related_searches` },
-      ...(refresh ? [
-        { query: `${keyword} ${providerName} certification`, source: `${provider}_related_searches` },
-        { query: `${keyword} ${providerName} Analytics`, source: `${provider}_related_searches` }
-      ] : [])
-    ],
-    keywords: [
-      `${keyword} ${providerName} strategy`,
-      `${keyword} ${providerName} tools`,
-      `best ${providerName} ${keyword} practices`,
-      `${keyword} ${providerName} guide`,
-      `${keyword} ${providerName} tutorial`,
-      `${keyword} ${providerName} examples`,
-      `${keyword} ${providerName} techniques`,
-      `${keyword} ${providerName} trends`,
-      ...(refresh ? [
-        `${keyword} ${providerName} certification`,
-        `${keyword} ${providerName} Analytics`,
-        `${keyword} ${providerName} ROI`
-      ] : [])
-    ],
-    recommendations: [
-      `Create a comprehensive ${providerName}-optimized guide on ${keyword}`,
-      `Include step-by-step instructions for ${providerName} ${keyword} implementation`,
-      `Add visual examples of ${keyword} in ${providerName} search results`,
-      `Compare ${keyword} with ${providerName} alternative approaches`,
-      `Include ${providerName} case studies showing successful ${keyword} implementation`
-    ],
-    featuredSnippets: [
-      {
-        title: `What is ${keyword}?`,
-        content: `${keyword} is a strategic approach optimized for ${providerName} search visibility and user engagement.`,
-        source: `${provider}_featured_snippet`,
-        type: 'definition'
-      }
-    ]
-  };
+// No mock data - return null to show "No Data Available"
+function generateMockSerpData(keyword: string, refresh?: boolean, provider: SerpProvider = 'serp'): SerpAnalysisResult | null {
+  console.warn(`🚫 Refusing to generate contaminated mock data for "${keyword}"`);
+  console.log(`💡 Add your ${provider.toUpperCase()} API key in Settings to get real data`);
+  return null; // Force proper error handling instead of showing contaminated data
 }
 
 // ... keep existing code (searchRelatedKeywords, getMockRelatedKeywords) the same ...
@@ -498,21 +347,22 @@ export const searchRelatedKeywords = async (keyword: string, provider: SerpProvi
         return data.keywords || [];
       } catch (error) {
         console.error(`❌ Error fetching related keywords from ${provider.toUpperCase()}:`, error);
-        return getMockRelatedKeywords(keyword, provider);
+        return [];
       }
     }
     
-    return getMockRelatedKeywords(keyword, provider);
+    console.warn(`⚠️ No ${provider.toUpperCase()} API key found for related keywords`);
+    return [];
   } catch (error) {
     console.error(`💥 Error searching related keywords with ${provider.toUpperCase()}:`, error);
-    return getMockRelatedKeywords(keyword, provider);
+    return [];
   }
 };
 
 function getMockRelatedKeywords(keyword: string, provider: SerpProvider = 'serp') {
-  const providerName = provider === 'serp' ? 'SerpAPI' : 'Serpstack';
+  // Return clean keywords without provider contamination
   return [
-    `${keyword} ${providerName} strategy`,
+    `${keyword} strategy`,
     `${keyword} tools`,
     `best ${keyword} practices`,
     `${keyword} guide`,
