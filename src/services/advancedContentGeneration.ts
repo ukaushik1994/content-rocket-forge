@@ -1,4 +1,4 @@
-import { getAiService } from './aiService';
+import { sendChatRequest } from './aiService/aiService';
 import { SerpSelection } from '@/contexts/content-builder/types';
 
 export interface ContentGenerationConfig {
@@ -35,12 +35,6 @@ export async function generateAdvancedContent(
       hasSecondaryKeywords: !!config.secondaryKeywords
     });
 
-    // Get the AI service
-    const aiService = getAiService(aiProvider);
-    if (!aiService) {
-      throw new Error(`AI provider "${aiProvider}" not configured`);
-    }
-
     // Build the comprehensive prompt using selected SERP items
     const prompt = buildAdvancedContentPrompt(config);
     
@@ -52,13 +46,41 @@ export async function generateAdvancedContent(
       hasInstructions: prompt.includes('Additional Instructions')
     });
 
-    // Generate content using AI
-    const generatedContent = await aiService.generateContent(prompt);
+    // Enhanced system prompt
+    const systemPrompt = `You are an expert content writer specializing in creating comprehensive, SEO-optimized articles that genuinely help readers. Your content is:
+
+1. HELPFUL FIRST: Always prioritize providing real value to readers over SEO optimization
+2. ACCURATE: Base content on factual information and best practices
+3. COMPREHENSIVE: Cover topics thoroughly while remaining focused
+4. ACTIONABLE: Provide concrete steps and practical advice readers can implement
+5. ENGAGING: Use clear, conversational language that keeps readers interested
+6. WELL-STRUCTURED: Follow logical flow with proper headings and formatting
+
+When incorporating research data:
+- Answer user questions directly and thoroughly
+- Explain concepts and entities clearly for all knowledge levels
+- Address content gaps that competitors miss
+- Use keywords naturally without keyword stuffing
+- Structure content based on proven heading patterns
+
+Always start with the title as an H1 heading and follow the provided outline structure. Focus on creating content that readers will find genuinely useful and that search engines will recognize as high-quality.`;
+
+    // Generate content using AI service
+    const chatResponse = await sendChatRequest(aiProvider as any, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      maxTokens: 4000
+    });
     
-    if (!generatedContent) {
+    if (!chatResponse?.choices?.[0]?.message?.content) {
       console.error('❌ AI service returned empty content');
       return null;
     }
+
+    const generatedContent = chatResponse.choices[0].message.content;
 
     console.log('✅ Content generated successfully:', {
       contentLength: generatedContent.length,
@@ -241,20 +263,4 @@ ${additionalInstructions}
 Generate the complete article now:`;
 
   return prompt;
-}
-
-import { OpenAiService } from './ai/openaiService';
-import { AiService } from './ai/aiService';
-
-/**
- * Get the AI service based on the provider
- */
-export function getAiService(provider: string): AiService | null {
-  switch (provider) {
-    case 'openai':
-      return new OpenAiService();
-    default:
-      console.warn(`AI provider "${provider}" not supported`);
-      return null;
-  }
 }
