@@ -1,8 +1,5 @@
-
-import { sendChatRequest } from '@/services/aiService';
-import { AiProvider } from '@/services/aiService/types';
-import { SerpSelection, Solution } from '@/contexts/content-builder/types';
-import { WritingStyle, ExpertiseLevel, WRITING_STYLES, EXPERTISE_LEVELS } from './contentQualityService';
+import { getAiService } from './aiService';
+import { SerpSelection } from '@/contexts/content-builder/types';
 
 export interface ContentGenerationConfig {
   mainKeyword: string;
@@ -14,252 +11,250 @@ export interface ContentGenerationConfig {
   targetLength: number;
   contentType: 'how-to' | 'listicle' | 'comprehensive' | 'general';
   serpSelections: SerpSelection[];
-  selectedSolution?: Solution;
-  additionalInstructions?: string;
+  selectedSolution: any;
+  additionalInstructions: string;
   includeStats: boolean;
   includeCaseStudies: boolean;
   includeFAQs: boolean;
 }
 
-export interface ContentTemplate {
-  type: string;
-  structure: string;
-  elements: string[];
-  hooks: string[];
-}
-
-export const CONTENT_TEMPLATES: Record<string, ContentTemplate> = {
-  'how-to': {
-    type: 'How-To Guide',
-    structure: 'Introduction → Prerequisites → Step-by-step process → Tips & best practices → Conclusion with next steps',
-    elements: ['Clear numbered steps', 'Visual cues', 'Troubleshooting tips', 'Time estimates', 'Tools needed'],
-    hooks: ['Start with the end result', 'Address common pain points', 'Promise specific outcomes']
-  },
-  'listicle': {
-    type: 'Listicle',
-    structure: 'Compelling intro → Numbered/bulleted items → Brief explanations → Summary with key takeaways',
-    elements: ['Scannable format', 'Consistent item structure', 'Supporting data', 'Visual breaks'],
-    hooks: ['Use specific numbers', 'Promise valuable insights', 'Address reader curiosity']
-  },
-  'comprehensive': {
-    type: 'Comprehensive Guide',
-    structure: 'Executive summary → Detailed sections → Examples → FAQs → Resources → Conclusion',
-    elements: ['Table of contents', 'In-depth analysis', 'Multiple examples', 'External resources', 'Glossary'],
-    hooks: ['Position as ultimate resource', 'Highlight comprehensive coverage', 'Appeal to thorough understanding']
-  },
-  'general': {
-    type: 'General Article',
-    structure: 'Hook introduction → Main points with supporting evidence → Practical applications → Conclusion',
-    elements: ['Clear headings', 'Supporting evidence', 'Practical examples', 'Smooth transitions'],
-    hooks: ['Ask compelling questions', 'Share surprising statistics', 'Tell relevant stories']
-  }
-};
-
 /**
- * Generate high-quality content using advanced prompting and templates
+ * Generate advanced content using selected SERP items and AI
  */
 export async function generateAdvancedContent(
   config: ContentGenerationConfig,
-  provider: AiProvider = 'openai'
+  aiProvider: string = 'openai'
 ): Promise<string | null> {
   try {
-    const template = CONTENT_TEMPLATES[config.contentType] || CONTENT_TEMPLATES.general;
-    const style = WRITING_STYLES.find(s => s.name === config.writingStyle) || WRITING_STYLES[0];
-    const expertise = EXPERTISE_LEVELS.find(e => e.level === config.expertiseLevel) || EXPERTISE_LEVELS[1];
-    
-    const systemPrompt = createAdvancedSystemPrompt(style, expertise, template);
-    const userPrompt = createAdvancedUserPrompt(config, template, style, expertise);
-    
-    console.log('Generating advanced content with enhanced prompts');
-    
-    const response = await sendChatRequest(provider, {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.7,
-      maxTokens: Math.min(4000, Math.max(2000, config.targetLength * 2))
+    console.log('🚀 Starting advanced content generation with config:', {
+      keyword: config.mainKeyword,
+      title: config.title,
+      serpSelectionsCount: config.serpSelections.length,
+      selectedItemsCount: config.serpSelections.filter(item => item.selected).length,
+      hasOutline: !!config.outline,
+      hasSecondaryKeywords: !!config.secondaryKeywords
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
-      throw new Error('No response from AI service');
+    // Get the AI service
+    const aiService = getAiService(aiProvider);
+    if (!aiService) {
+      throw new Error(`AI provider "${aiProvider}" not configured`);
     }
 
-    return response.choices[0].message.content;
+    // Build the comprehensive prompt using selected SERP items
+    const prompt = buildAdvancedContentPrompt(config);
     
+    console.log('📝 Generated content prompt length:', prompt.length);
+    console.log('🎯 Key prompt elements included:', {
+      hasSerpSelections: prompt.includes('Selected SERP Items'),
+      hasOutline: prompt.includes('Content Outline'),
+      hasSecondaryKeywords: prompt.includes('Secondary Keywords'),
+      hasInstructions: prompt.includes('Additional Instructions')
+    });
+
+    // Generate content using AI
+    const generatedContent = await aiService.generateContent(prompt);
+    
+    if (!generatedContent) {
+      console.error('❌ AI service returned empty content');
+      return null;
+    }
+
+    console.log('✅ Content generated successfully:', {
+      contentLength: generatedContent.length,
+      wordCount: generatedContent.split(/\s+/).length,
+      hasHeadings: generatedContent.includes('#'),
+      containsKeyword: generatedContent.toLowerCase().includes(config.mainKeyword.toLowerCase())
+    });
+
+    return generatedContent;
+
   } catch (error) {
-    console.error('Error in advanced content generation:', error);
-    return null;
+    console.error('💥 Advanced content generation failed:', error);
+    throw error;
   }
 }
 
-function createAdvancedSystemPrompt(
-  style: WritingStyle, 
-  expertise: ExpertiseLevel, 
-  template: ContentTemplate
-): string {
-  return `You are an expert content writer specializing in creating ${template.type.toLowerCase()} content. Your writing follows these specific guidelines:
+/**
+ * Build comprehensive content generation prompt using selected SERP items
+ */
+function buildAdvancedContentPrompt(config: ContentGenerationConfig): string {
+  const {
+    mainKeyword,
+    title,
+    outline,
+    secondaryKeywords,
+    serpSelections,
+    writingStyle,
+    expertiseLevel,
+    targetLength,
+    contentType,
+    selectedSolution,
+    additionalInstructions,
+    includeStats,
+    includeCaseStudies,
+    includeFAQs
+  } = config;
 
-WRITING STYLE: ${style.name}
-- Tone: ${style.tone}
-- Vocabulary: ${style.vocabulary}  
-- Sentence Structure: ${style.sentenceLength}
-- Perspective: ${style.perspective}
+  // Filter selected SERP items by type for strategic integration
+  const selectedItems = serpSelections.filter(item => item.selected);
+  const selectedQuestions = selectedItems.filter(item => item.type === 'question' || item.type === 'peopleAlsoAsk');
+  const selectedHeadings = selectedItems.filter(item => item.type === 'heading');
+  const selectedContentGaps = selectedItems.filter(item => item.type === 'contentGap');
+  const selectedKeywords = selectedItems.filter(item => item.type === 'keyword' || item.type === 'relatedSearch');
+  const selectedEntities = selectedItems.filter(item => item.type === 'entity');
 
-TARGET AUDIENCE: ${expertise.level} Level
-- Vocabulary Complexity: ${expertise.vocabularyComplexity}
-- Explanation Depth: ${expertise.explanationDepth}
-- Technical Details: ${expertise.technicalDetails}
+  console.log('🎯 SERP selections breakdown:', {
+    totalSelected: selectedItems.length,
+    questions: selectedQuestions.length,
+    headings: selectedHeadings.length,
+    contentGaps: selectedContentGaps.length,
+    keywords: selectedKeywords.length,
+    entities: selectedEntities.length
+  });
 
-CONTENT TYPE: ${template.type}
-- Structure: ${template.structure}
-- Required Elements: ${template.elements.join(', ')}
-- Engagement Hooks: ${template.hooks.join(', ')}
+  let prompt = `You are an expert content writer creating comprehensive, engaging content. 
 
-QUALITY STANDARDS:
-1. CLARITY: Use clear, precise language appropriate for the target audience
-2. ENGAGEMENT: Include hooks, stories, and interactive elements
-3. STRUCTURE: Follow logical flow with proper headings and transitions
-4. VALUE: Provide actionable insights and practical takeaways
-5. CREDIBILITY: Support claims with data and examples when requested
-6. SEO: Optimize for search while maintaining readability
-7. BRAND VOICE: Maintain consistency with specified writing style
+**Content Requirements:**
+- Main Topic: ${mainKeyword}
+- Title: ${title}
+- Writing Style: ${writingStyle}
+- Expertise Level: ${expertiseLevel}
+- Target Length: ${targetLength} words
+- Content Type: ${contentType}
 
-Always prioritize reader value and engagement over keyword density. Write content that genuinely helps readers achieve their goals.`;
-}
-
-function createAdvancedUserPrompt(
-  config: ContentGenerationConfig,
-  template: ContentTemplate,
-  style: WritingStyle,
-  expertise: ExpertiseLevel
-): string {
-  const serpData = organizeSerpSelections(config.serpSelections);
-  
-  let prompt = `Create a ${template.type.toLowerCase()} titled: "${config.title}"
-
-CONTENT SPECIFICATIONS:
-- Primary Keyword: ${config.mainKeyword}
-- Secondary Keywords: ${config.secondaryKeywords || 'None specified'}
-- Target Length: ${config.targetLength} words (±50 words)
-- Writing Style: ${style.name} (${style.description})
-- Audience Level: ${expertise.level} (${expertise.description})
-
-STRUCTURE REQUIREMENTS:
-Follow this ${template.type} structure: ${template.structure}
-
-Required elements to include:
-${template.elements.map(element => `- ${element}`).join('\n')}
-
-CONTENT OUTLINE TO FOLLOW:
-${config.outline}
-
-ENGAGEMENT REQUIREMENTS:
-- Start with one of these hooks: ${template.hooks.join(' OR ')}
-- Use ${style.perspective} perspective throughout
-- Maintain ${style.tone.toLowerCase()} tone
-- Apply ${expertise.explanationDepth.toLowerCase()}
 `;
 
-  // Add SERP insights - only include if user actually selected items
-  const totalSelections = Object.values(serpData).reduce((sum, arr) => sum + arr.length, 0);
-  
-  if (totalSelections > 0) {
-    prompt += `\n\nIMPORTANT: INTEGRATE SELECTED USER INSIGHTS:
-You MUST incorporate the following user-selected insights into your content:`;
+  // Add SERP-driven content requirements
+  if (selectedItems.length > 0) {
+    prompt += `**Strategic SERP Integration:**
+You must strategically incorporate the following selected SERP elements to create comprehensive, competitive content:
 
-    if (serpData.questions.length > 0) {
-      prompt += `\n\nSELECTED QUESTIONS TO ANSWER:
-These are specifically chosen questions that MUST be addressed in your content:
-${serpData.questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+`;
+
+    // Add selected questions as must-answer sections
+    if (selectedQuestions.length > 0) {
+      prompt += `**Must Answer These Questions (as dedicated sections):**
+${selectedQuestions.map((item, index) => `${index + 1}. ${item.content}`).join('\n')}
+
+`;
     }
 
-    if (serpData.headings.length > 0) {
-      prompt += `\n\nSELECTED HEADINGS TO INCLUDE:
-Use these as section headings or incorporate these topics:
-${serpData.headings.map(h => `- ${h}`).join('\n')}`;
+    // Add selected headings as structural guidance
+    if (selectedHeadings.length > 0) {
+      prompt += `**Incorporate These Proven Headings:**
+${selectedHeadings.map((item, index) => `${index + 1}. ${item.content}`).join('\n')}
+
+`;
     }
 
-    if (serpData.contentGaps.length > 0) {
-      prompt += `\n\nSELECTED CONTENT GAPS TO ADDRESS:
-These are unique angles competitors miss - make sure to cover them:
-${serpData.contentGaps.map(gap => `- ${gap}`).join('\n')}`;
+    // Add content gaps as unique angles
+    if (selectedContentGaps.length > 0) {
+      prompt += `**Address These Content Gaps (Competitive Advantage):**
+${selectedContentGaps.map((item, index) => `${index + 1}. ${item.content}`).join('\n')}
+
+`;
     }
 
-    if (serpData.entities.length > 0) {
-      prompt += `\n\nSELECTED KEY CONCEPTS:
-Explain these concepts appropriately for ${expertise.level} level:
-${serpData.entities.map(e => `- ${e}`).join('\n')}`;
+    // Add selected keywords for natural integration
+    if (selectedKeywords.length > 0) {
+      prompt += `**Naturally Integrate These Keywords:**
+${selectedKeywords.map(item => item.content).join(', ')}
+
+`;
     }
 
-    if (serpData.keywords.length > 0) {
-      prompt += `\n\nSELECTED KEYWORDS TO INTEGRATE:
-Naturally incorporate these keywords throughout the content:
-${serpData.keywords.join(', ')}`;
+    // Add entities for topic depth
+    if (selectedEntities.length > 0) {
+      prompt += `**Cover These Related Topics:**
+${selectedEntities.map(item => item.content).join(', ')}
+
+`;
     }
-
-    if (serpData.snippets.length > 0) {
-      prompt += `\n\nSELECTED SNIPPETS FOR REFERENCE:
-Use these for inspiration and context:
-${serpData.snippets.map(s => `- ${s}`).join('\n')}`;
-    }
-
-    prompt += `\n\nCRITICAL: Failure to incorporate these selected insights will result in content that doesn't meet user expectations. Each selected item represents specific value the user wants included.`;
-  } else {
-    prompt += `\n\nNOTE: No specific SERP insights were selected. Create comprehensive content based on the keyword and outline provided.`;
   }
 
-  // Add optional elements
-  if (config.includeStats) {
-    prompt += `\n\nSTATISTICS: Include relevant statistics and data points to support key claims.`;
+  // Add outline structure
+  if (outline && outline.trim()) {
+    prompt += `**Content Outline Structure:**
+${outline}
+
+`;
   }
 
-  if (config.includeCaseStudies) {
-    prompt += `\n\nCASE STUDIES: Include at least one relevant case study or real-world example.`;
+  // Add secondary keywords
+  if (secondaryKeywords) {
+    prompt += `**Secondary Keywords to Include:**
+${secondaryKeywords}
+
+`;
   }
 
-  if (config.includeFAQs && template.type === 'Comprehensive Guide') {
-    prompt += `\n\nFAQ SECTION: Include a FAQ section addressing common questions about ${config.mainKeyword}.`;
+  // Add solution integration
+  if (selectedSolution) {
+    prompt += `**Solution Integration:**
+Incorporate information about: ${selectedSolution.name}
+${selectedSolution.description}
+
+`;
   }
 
-  if (config.selectedSolution) {
-    prompt += `\n\nSOLUTION HIGHLIGHT: Naturally mention "${config.selectedSolution.name}" and its key benefits: ${config.selectedSolution.features.slice(0, 3).join(', ')}.`;
+  // Add content enhancement requirements
+  const enhancements = [];
+  if (includeStats) enhancements.push('relevant statistics and data points');
+  if (includeCaseStudies) enhancements.push('case studies or real-world examples');
+  if (includeFAQs) enhancements.push('a comprehensive FAQ section');
+
+  if (enhancements.length > 0) {
+    prompt += `**Content Enhancements:**
+Include ${enhancements.join(', ')} throughout the content.
+
+`;
   }
 
-  if (config.additionalInstructions) {
-    prompt += `\n\nADDITIONAL INSTRUCTIONS:
-${config.additionalInstructions}`;
+  // Add additional instructions
+  if (additionalInstructions) {
+    prompt += `**Additional Instructions:**
+${additionalInstructions}
+
+`;
   }
 
-  prompt += `\n\nFORMATTING REQUIREMENTS:
-- Use proper Markdown formatting with H1 for title, H2/H3 for sections
-- Create scannable content with bullet points and numbered lists
-- Keep paragraphs to 2-3 sentences for readability
-- Include internal linking opportunities where natural
-- End with a compelling call-to-action or next steps
-- Ensure content flows logically from introduction to conclusion
+  // Add content generation instructions
+  prompt += `**Content Generation Instructions:**
 
-CRITICAL: The content must be exactly ${config.targetLength} words (±50). Count carefully and adjust as needed.`;
+1. **Structure**: Create a comprehensive article with clear headings (H1, H2, H3) and logical flow
+2. **SERP Integration**: Strategically use ALL selected SERP elements to create content that addresses gaps in current top-ranking pages
+3. **Keyword Integration**: Naturally incorporate the main keyword and secondary keywords throughout the content
+4. **Quality**: Write engaging, informative content that provides real value to readers
+5. **Length**: Aim for approximately ${targetLength} words with substantial, meaningful content
+6. **Expertise**: Write at the ${expertiseLevel} level with appropriate depth and complexity
+7. **Style**: Use a ${writingStyle} tone throughout the content
+
+**Important Notes:**
+- Each selected question should become a dedicated section with comprehensive answers
+- Use selected headings as inspiration for your section structure
+- Address content gaps to provide unique value not found in competing content
+- Include actionable advice and practical information
+- Use markdown formatting for proper structure
+- Ensure the content flows naturally and reads cohesively
+
+Generate the complete article now:`;
 
   return prompt;
 }
 
-function organizeSerpSelections(serpSelections: SerpSelection[]) {
-  const selectedItems = serpSelections.filter(item => item.selected);
-  
-  console.log(`📊 Organizing ${selectedItems.length} selected SERP items for content generation:`, selectedItems);
-  
-  const organized = {
-    questions: selectedItems.filter(item => item.type === 'question').map(item => item.content),
-    entities: selectedItems.filter(item => item.type === 'entity').map(item => item.content),
-    contentGaps: selectedItems.filter(item => item.type === 'contentGap').map(item => item.content),
-    keywords: selectedItems.filter(item => item.type === 'keyword').map(item => item.content),
-    headings: selectedItems.filter(item => item.type === 'heading').map(item => item.content),
-    competitors: selectedItems.filter(item => item.type === 'competitor').map(item => item.content),
-    topStories: selectedItems.filter(item => item.type === 'topStory').map(item => item.content),
-    snippets: selectedItems.filter(item => item.type === 'snippet').map(item => item.content)
-  };
-  
-  console.log('📋 Organized SERP selections:', organized);
-  return organized;
+import { OpenAiService } from './ai/openaiService';
+import { AiService } from './ai/aiService';
+
+/**
+ * Get the AI service based on the provider
+ */
+export function getAiService(provider: string): AiService | null {
+  switch (provider) {
+    case 'openai':
+      return new OpenAiService();
+    default:
+      console.warn(`AI provider "${provider}" not supported`);
+      return null;
+  }
 }

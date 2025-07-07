@@ -1,14 +1,14 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SerpAnalysisResult, SerpSearchParams } from '@/types/serp';
 import { toast } from 'sonner';
 import { getApiKey } from './apiKeyService';
-import { callApiProxy, SerpProvider } from './apiProxyService';
 
 interface SearchKeywordParams {
   query: string;
   limit?: number;
   refresh?: boolean;
-  provider?: SerpProvider;
+  provider?: 'serp' | 'serpstack';
 }
 
 // Constants for caching
@@ -18,85 +18,64 @@ const SERP_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 export type { SerpAnalysisResult };
 
 /**
- * Get API key from the unified settings service with enhanced logging
+ * Clear all contaminated cache data
  */
-async function getSerpApiKey(provider: SerpProvider = 'serp'): Promise<string | null> {
+function clearContaminatedCache(): void {
   try {
-    console.log(`🔑 Getting ${provider.toUpperCase()} API key from unified service...`);
-    const apiKey = await getApiKey(provider);
-    
-    if (apiKey) {
-      console.log(`✅ ${provider.toUpperCase()} API key found - Length:`, apiKey.length, 'Type:', typeof apiKey);
-      return apiKey;
-    } else {
-      console.log(`❌ No ${provider.toUpperCase()} API key found in unified service`);
-      return null;
-    }
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(SERP_CACHE_PREFIX)) {
+        const data = localStorage.getItem(key);
+        if (data && (data.includes('SerpAPI') || data.includes('serpapi') || data.includes('Serpstack'))) {
+          console.log('🗑️ Removing contaminated cache:', key);
+          localStorage.removeItem(key);
+          localStorage.removeItem(`${key}_timestamp`);
+        }
+      }
+    });
   } catch (error) {
-    console.error(`❌ Error getting ${provider.toUpperCase()} API key from unified service:`, error);
-    return null;
+    console.warn('⚠️ Error clearing contaminated cache:', error);
   }
 }
 
 /**
- * Call the Supabase Edge Function for SERP API requests with provider selection
+ * Get API key from the unified settings service
  */
-async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string, provider: SerpProvider = 'serp'): Promise<any> {
+async function getSerpApiKey(provider: 'serp' | 'serpstack' = 'serp'): Promise<string | null> {
   try {
-    console.log(`🚀 Calling ${provider.toUpperCase()} Edge Function: ${endpoint}`, { 
-      params: Object.keys(params), 
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length,
-      provider
-    });
+    console.log(`🔑 Getting ${provider.toUpperCase()} API key...`);
+    const apiKey = await getApiKey(provider);
     
-    // Use the new unified API proxy for better provider handling
-    if (provider === 'serpstack') {
-      return await callApiProxy('serpstack', endpoint, params);
+    if (apiKey) {
+      console.log(`✅ ${provider.toUpperCase()} API key found`);
+      return apiKey;
     } else {
-      // Keep using the original SerpAPI edge function for SerpAPI
-      const { data, error } = await supabase.functions.invoke('serp-api', {
-        body: {
-          endpoint,
-          params: {
-            ...params,
-            // Force Google-specific parameters
-            engine: 'google',
-            gl: 'us', // Google country
-            hl: 'en', // Google language
-            device: 'desktop' // Google device
-          },
-          apiKey
-        }
-      });
-      
-      if (error) {
-        console.error(`❌ ${provider.toUpperCase()} Edge Function error:`, error);
-        throw new Error(`${provider.toUpperCase()} API error: ${error.message || JSON.stringify(error)}`);
-      }
-      
-      if (!data) {
-        console.warn(`⚠️ No ${provider.toUpperCase()} data returned`);
-        return null;
-      }
-      
-      return data;
+      console.log(`❌ No ${provider.toUpperCase()} API key found`);
+      return null;
     }
   } catch (error) {
-    console.error(`💥 Error calling ${provider.toUpperCase()} Edge Function:`, error);
-    throw error;
+    console.error(`❌ Error getting ${provider.toUpperCase()} API key:`, error);
+    return null;
   }
 }
 
 /**
  * Check if cached data exists and is valid
  */
-function getCachedSerpData(keyword: string, provider: SerpProvider = 'serp'): SerpAnalysisResult | null {
+function getCachedSerpData(keyword: string, provider: 'serp' | 'serpstack' = 'serp'): SerpAnalysisResult | null {
   try {
     const cacheKey = `${SERP_CACHE_PREFIX}${provider}_${keyword}`;
     const cachedData = localStorage.getItem(cacheKey);
     
     if (cachedData) {
+      // Check for contamination
+      if (cachedData.includes('SerpAPI') || cachedData.includes('serpapi') || cachedData.includes('Serpstack')) {
+        console.log('🗑️ Removing contaminated cached data for:', keyword);
+        localStorage.removeItem(cacheKey);
+        localStorage.removeItem(`${cacheKey}_timestamp`);
+        return null;
+      }
+      
       const parsedData = JSON.parse(cachedData);
       const timestamp = localStorage.getItem(`${cacheKey}_timestamp`);
       
@@ -128,76 +107,118 @@ function getCachedSerpData(keyword: string, provider: SerpProvider = 'serp'): Se
 /**
  * Cache SERP data with timestamp and provider
  */
-function cacheSerpData(keyword: string, data: SerpAnalysisResult, provider: SerpProvider = 'serp'): void {
+function cacheSerpData(keyword: string, data: SerpAnalysisResult, provider: 'serp' | 'serpstack' = 'serp'): void {
   try {
+    // Validate data is clean before caching
+    const dataString = JSON.stringify(data);
+    if (dataString.includes('SerpAPI') || dataString.includes('serpapi') || dataString.includes('Serpstack')) {
+      console.warn('⚠️ Refusing to cache contaminated data for:', keyword);
+      return;
+    }
+    
     const cacheKey = `${SERP_CACHE_PREFIX}${provider}_${keyword}`;
-    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(cacheKey, dataString);
     localStorage.setItem(`${cacheKey}_timestamp`, new Date().toISOString());
-    console.log(`💾 ${provider.toUpperCase()} data cached for:`, keyword);
+    console.log(`💾 Clean ${provider.toUpperCase()} data cached for:`, keyword);
   } catch (err) {
     console.warn(`⚠️ Error caching ${provider.toUpperCase()} data:`, err);
   }
 }
 
 /**
- * Search for keywords using specified SERP provider
+ * Call the Supabase Edge Function for SERP API requests
  */
-export const searchKeywords = async (params: SearchKeywordParams) => {
+async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
   try {
-    const { query, limit = 10, refresh = false, provider = 'serp' } = params;
-    console.log(`🔍 Searching ${provider.toUpperCase()} keywords for: "${query}"`);
+    console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
+      params: Object.keys(params), 
+      hasApiKey: !!apiKey
+    });
     
-    const apiKey = await getSerpApiKey(provider);
-    
-    if (apiKey) {
-      try {
-        const data = await callSerpEdgeFunction('search', { 
-          q: query, 
-          limit,
-          // Ensure Google-specific parameters
+    const { data, error } = await supabase.functions.invoke('serp-api', {
+      body: {
+        endpoint,
+        params: {
+          ...params,
           engine: 'google',
           gl: 'us',
-          hl: 'en'
-        }, apiKey, provider);
-        
-        if (data && (data.organic_results || data.success !== false)) {
-          console.log(`✅ ${provider.toUpperCase()} search results retrieved successfully`);
-          return data.organic_results || data;
-        } else {
-          console.warn(`⚠️ No ${provider.toUpperCase()} organic results found`);
-          toast.warning(`No ${provider.toUpperCase()} data available for "${query}". Please add your API key in Settings.`);
-          return null;
-        }
-      } catch (error) {
-        console.error(`❌ ${provider.toUpperCase()} search failed:`, error);
-        toast.error(`${provider.toUpperCase()} API Error. Please check your API key in Settings.`);
-        return null;
-      }
-    }
-    
-    console.warn(`⚠️ No ${provider.toUpperCase()} API key found.`);
-    toast.warning(`Add your ${provider.toUpperCase()} API key in Settings to get real keyword data.`, {
-      duration: 5000,
-      action: {
-        label: "Go to Settings",
-        onClick: () => {
-          window.location.href = "/settings/api";
-        }
+          hl: 'en',
+          device: 'desktop'
+        },
+        apiKey
       }
     });
-    return null;
+    
+    if (error) {
+      console.error('❌ SERP Edge Function error:', error);
+      throw new Error(`SERP API error: ${error.message || JSON.stringify(error)}`);
+    }
+    
+    if (!data) {
+      console.warn('⚠️ No SERP data returned');
+      return null;
+    }
+    
+    // Validate data is clean
+    const dataString = JSON.stringify(data);
+    if (dataString.includes('SerpAPI') || dataString.includes('serpapi') || dataString.includes('Serpstack')) {
+      console.warn('⚠️ Received contaminated data from edge function');
+      // Clean the data before returning
+      return cleanContaminatedData(data);
+    }
+    
+    return data;
   } catch (error) {
-    console.error(`💥 Error searching ${params.provider?.toUpperCase() || 'SERP'} keywords:`, error);
-    return null;
+    console.error('💥 Error calling SERP Edge Function:', error);
+    throw error;
   }
-};
+}
 
 /**
- * Analyze keyword using specified SERP provider with enhanced volume validation
+ * Clean contaminated data by removing provider references
  */
-export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, provider: SerpProvider = 'serp'): Promise<SerpAnalysisResult | null> => {
+function cleanContaminatedData(data: any): any {
+  if (!data) return data;
+  
+  const cleanString = (str: string): string => {
+    if (typeof str !== 'string') return str;
+    return str
+      .replace(/\b(serp\s*api|serpapi|serpstack)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+  
+  const cleanObject = (obj: any): any => {
+    if (Array.isArray(obj)) {
+      return obj.map(cleanObject);
+    } else if (obj && typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        cleaned[key] = cleanObject(value);
+      }
+      return cleaned;
+    } else if (typeof obj === 'string') {
+      return cleanString(obj);
+    }
+    return obj;
+  };
+  
+  return cleanObject(data);
+}
+
+/**
+ * Analyze keyword using SERP API with clean data validation
+ */
+export const analyzeKeywordSerp = async (
+  keyword: string, 
+  refresh?: boolean, 
+  provider: 'serp' | 'serpstack' = 'serp'
+): Promise<SerpAnalysisResult | null> => {
   try {
     console.log(`🎯 Analyzing ${provider.toUpperCase()} keyword: "${keyword}"${refresh ? ' (refresh requested)' : ''}`);
+    
+    // Clear any contaminated cache first
+    clearContaminatedCache();
     
     // Check cache first (unless refresh is requested)
     if (!refresh) {
@@ -228,19 +249,16 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
     
     try {
       const data = await callSerpEdgeFunction('analyze', { 
+        q: keyword,
         keyword, 
         refresh: !!refresh,
-        // Ensure provider-specific analysis
         engine: 'google',
-        includeKeywordPlanner: provider === 'serp', // Only SerpAPI supports this
         location: 'United States',
         language: 'en'
-      }, apiKey, provider);
+      }, apiKey);
       
-      if (data && (data.isGoogleData || data.success !== false)) {
-        console.log(`✅ ${provider.toUpperCase()} returned verified data`);
-        console.log(`📊 Volume source: ${data.volumeMetadata?.source}`);
-        console.log(`📊 Data quality: ${data.dataQuality}`);
+      if (data && data.isGoogleData) {
+        console.log(`✅ ${provider.toUpperCase()} returned clean verified data`);
         
         // Ensure proper typing and cache the result
         const result: SerpAnalysisResult = {
@@ -259,26 +277,14 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
           featuredSnippets: data.featuredSnippets || [],
           isMockData: false,
           isGoogleData: true,
-          dataQuality: data.dataQuality || 'medium',
-          volumeMetadata: data.volumeMetadata || {
-            source: provider === 'serp' ? 'google_search_results' : 'serpstack_estimate',
-            confidence: provider === 'serp' ? 'medium' : 'low',
-            engine: 'google',
-            location: 'United States',
-            language: 'English',
-            lastUpdated: new Date().toISOString()
-          },
-          competitionMetadata: data.competitionMetadata || {
-            source: provider === 'serp' ? 'google_results_estimate' : 'serpstack_estimate',
-            engine: 'google'
-          }
+          dataQuality: data.dataQuality || 'high',
+          volumeMetadata: data.volumeMetadata,
+          competitionMetadata: data.competitionMetadata
         };
         
         cacheSerpData(keyword, result, provider);
         
-        toast.success(`Retrieved verified ${provider.toUpperCase()} data successfully!`, {
-          description: `Volume source: ${result.volumeMetadata?.source || provider.toUpperCase()}`
-        });
+        toast.success(`Retrieved clean ${provider.toUpperCase()} data successfully!`);
         return result;
       } else {
         console.warn(`⚠️ ${provider.toUpperCase()} returned empty or invalid data`);
@@ -297,7 +303,6 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
         }
       });
       
-      console.log(`🚫 No real ${provider.toUpperCase()} data available due to API error`);
       return null;
     }
   } catch (error) {
@@ -307,29 +312,67 @@ export const analyzeKeywordSerp = async (keyword: string, refresh?: boolean, pro
   }
 };
 
-// Real API failed - return null instead of contaminated mock data
-function getBackupMockResults(query: string, refresh: boolean, provider: SerpProvider = 'serp') {
-  console.warn(`🚫 No real ${provider.toUpperCase()} data available for "${query}"`);
-  return null; // Force "No Data Available" instead of contaminated mock data
-}
+/**
+ * Search for keywords - returns null if no real data available
+ */
+export const searchKeywords = async (params: SearchKeywordParams) => {
+  try {
+    const { query, limit = 10, refresh = false, provider = 'serp' } = params;
+    console.log(`🔍 Searching ${provider.toUpperCase()} keywords for: "${query}"`);
+    
+    const apiKey = await getSerpApiKey(provider);
+    
+    if (apiKey) {
+      try {
+        const data = await callSerpEdgeFunction('search', { 
+          q: query, 
+          limit,
+          engine: 'google',
+          gl: 'us',
+          hl: 'en'
+        }, apiKey);
+        
+        if (data && (data.organic_results || data.success !== false)) {
+          console.log(`✅ ${provider.toUpperCase()} search results retrieved successfully`);
+          return data.organic_results || data;
+        } else {
+          console.warn(`⚠️ No ${provider.toUpperCase()} organic results found`);
+          return null;
+        }
+      } catch (error) {
+        console.error(`❌ ${provider.toUpperCase()} search failed:`, error);
+        return null;
+      }
+    }
+    
+    console.warn(`⚠️ No ${provider.toUpperCase()} API key found.`);
+    toast.warning(`Add your ${provider.toUpperCase()} API key in Settings to get real keyword data.`, {
+      duration: 5000,
+      action: {
+        label: "Go to Settings",
+        onClick: () => {
+          window.location.href = "/settings/api";
+        }
+      }
+    });
+    return null;
+  } catch (error) {
+    console.error(`💥 Error searching ${params.provider?.toUpperCase() || 'SERP'} keywords:`, error);
+    return null;
+  }
+};
 
-// No mock data - return null to show "No Data Available"
-function generateMockSerpData(keyword: string, refresh?: boolean, provider: SerpProvider = 'serp'): SerpAnalysisResult | null {
-  console.warn(`🚫 Refusing to generate contaminated mock data for "${keyword}"`);
-  console.log(`💡 Add your ${provider.toUpperCase()} API key in Settings to get real data`);
-  return null; // Force proper error handling instead of showing contaminated data
-}
-
-// ... keep existing code (searchRelatedKeywords, getMockRelatedKeywords) the same ...
-
-export const searchRelatedKeywords = async (keyword: string, provider: SerpProvider = 'serp') => {
+/**
+ * Search related keywords - returns empty array if no real data available
+ */
+export const searchRelatedKeywords = async (keyword: string, provider: 'serp' | 'serpstack' = 'serp') => {
   try {
     const apiKey = await getSerpApiKey(provider);
     
     const cacheKey = `related_keywords_${provider}_${keyword}`;
     const cachedData = localStorage.getItem(cacheKey);
     
-    if (cachedData) {
+    if (cachedData && !cachedData.includes('SerpAPI') && !cachedData.includes('serpapi')) {
       try {
         const parsedData = JSON.parse(cachedData);
         console.log(`📋 Using cached related keywords for: ${keyword} (${provider.toUpperCase()})`);
@@ -342,9 +385,10 @@ export const searchRelatedKeywords = async (keyword: string, provider: SerpProvi
 
     if (apiKey) {
       try {
-        const data = await callSerpEdgeFunction('related', { keyword }, apiKey, provider);
-        localStorage.setItem(cacheKey, JSON.stringify(data.keywords || []));
-        return data.keywords || [];
+        const data = await callSerpEdgeFunction('related', { keyword }, apiKey);
+        const cleanKeywords = data.keywords || [];
+        localStorage.setItem(cacheKey, JSON.stringify(cleanKeywords));
+        return cleanKeywords;
       } catch (error) {
         console.error(`❌ Error fetching related keywords from ${provider.toUpperCase()}:`, error);
         return [];
@@ -358,17 +402,3 @@ export const searchRelatedKeywords = async (keyword: string, provider: SerpProvi
     return [];
   }
 };
-
-function getMockRelatedKeywords(keyword: string, provider: SerpProvider = 'serp') {
-  // Return clean keywords without provider contamination
-  return [
-    `${keyword} strategy`,
-    `${keyword} tools`,
-    `best ${keyword} practices`,
-    `${keyword} guide`,
-    `${keyword} tutorial`,
-    `${keyword} examples`,
-    `${keyword} techniques`,
-    `${keyword} trends`,
-  ];
-}
