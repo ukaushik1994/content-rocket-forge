@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
@@ -180,10 +181,18 @@ export const KeywordResearchAndContentStrategyStep = () => {
         </div>
       </motion.div>
 
-      {/* Main Content - Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Main Content - Two Column Layout with Professional Alignment */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Left Column - Keyword Research & Content Config */}
-        <div className="space-y-8">
+        <div className="space-y-6">
+          {/* Column Header */}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-lg">
+              <Search className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-holographic">Research & Configuration</h3>
+          </div>
+
           {/* Keyword Search Section */}
           <motion.div 
             className="space-y-4"
@@ -192,17 +201,14 @@ export const KeywordResearchAndContentStrategyStep = () => {
             transition={{ delay: 0.5 }}
           >
             <div className="flex justify-between items-center">
-              <Label htmlFor="main-keyword" className="text-lg font-semibold flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-lg">
-                  <Search className="h-5 w-5 text-primary" />
-                </div>
+              <Label htmlFor="main-keyword" className="text-base font-medium flex items-center gap-2">
                 <span className="text-holographic">Primary Keyword</span>
               </Label>
               <motion.div 
-                className="px-4 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-full border border-white/20 backdrop-blur-sm"
+                className="px-3 py-1 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-full border border-white/20 backdrop-blur-sm"
                 whileHover={{ scale: 1.05 }}
               >
-                <span className="text-sm text-gray-300 font-medium">🚀 Powered by AI</span>
+                <span className="text-xs text-gray-300 font-medium">🚀 AI Powered</span>
               </motion.div>
             </div>
             
@@ -236,22 +242,22 @@ export const KeywordResearchAndContentStrategyStep = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <Card className="glass-card card-3d overflow-hidden">
+              <Card className="glass-card card-3d overflow-hidden min-h-[140px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5" />
                 
-                <CardHeader className="relative z-10">
+                <CardHeader className="relative z-10 pb-3">
                   <CardTitle className="flex items-center justify-between">
                     <motion.div 
                       className="flex items-center gap-3"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                     >
-                      <div className="p-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-white/20 neon-glow">
-                        <BarChart3 className="h-6 w-6 text-green-400" />
+                      <div className="p-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg backdrop-blur-sm border border-white/20 neon-glow">
+                        <BarChart3 className="h-5 w-5 text-green-400" />
                       </div>
                       <div>
-                        <span className="text-xl text-holographic">SERP Intelligence</span>
-                        <p className="text-sm text-gray-400 font-normal">Advanced competitive analysis</p>
+                        <span className="text-lg text-holographic">SERP Intelligence</span>
+                        <p className="text-xs text-gray-400 font-normal">Advanced competitive analysis</p>
                       </div>
                     </motion.div>
                     
@@ -267,9 +273,9 @@ export const KeywordResearchAndContentStrategyStep = () => {
                   </CardTitle>
                 </CardHeader>
                 
-                <CardContent className="relative z-10">
-                  <div className="text-center py-4">
-                    <p className="text-gray-400 mb-2">
+                <CardContent className="relative z-10 pt-0">
+                  <div className="text-center py-2">
+                    <p className="text-sm text-gray-400 mb-3">
                       {selectedCount > 0 
                         ? `${selectedCount} items selected for outline generation`
                         : "Click 'Explore Data' to select SERP insights"
@@ -279,6 +285,7 @@ export const KeywordResearchAndContentStrategyStep = () => {
                       <Button
                         onClick={handleGenerateOutline}
                         disabled={isGeneratingOutline}
+                        size="sm"
                         className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/80 hover:to-blue-500/80"
                       >
                         {isGeneratingOutline ? (
@@ -306,14 +313,16 @@ export const KeywordResearchAndContentStrategyStep = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-blue-400" />
-                  Content Configuration
+            <Card className="glass-card min-h-[200px]">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg">
+                    <Settings className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <span className="text-holographic">Content Configuration</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <ContentTypeStep />
               </CardContent>
             </Card>
@@ -322,10 +331,13 @@ export const KeywordResearchAndContentStrategyStep = () => {
 
         {/* Right Column - Outline Creation */}
         <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-5 w-5 text-purple-400" />
-            <h3 className="text-lg font-medium">Content Outline</h3>
-            <p className="text-sm text-muted-foreground ml-2">
+          {/* Column Header */}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg">
+              <FileText className="h-5 w-5 text-purple-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-holographic">Content Outline</h3>
+            <p className="text-sm text-muted-foreground ml-auto">
               Create and edit your content structure
             </p>
           </div>
@@ -335,6 +347,7 @@ export const KeywordResearchAndContentStrategyStep = () => {
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7 }}
+            className="min-h-[140px]"
           >
             <AIOutlineGenerator />
           </motion.div>
@@ -344,8 +357,9 @@ export const KeywordResearchAndContentStrategyStep = () => {
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.8 }}
+            className="min-h-[200px]"
           >
-            <Card>
+            <Card className="glass-card">
               <CardContent className="pt-6">
                 <OutlineTable 
                   outline={outline} 
