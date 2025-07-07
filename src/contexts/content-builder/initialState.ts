@@ -5,7 +5,8 @@ export const initialState: ContentBuilderState = {
   // Navigation
   activeStep: 0,
   steps: [
-    { id: 0, name: 'Keyword Research & Content Strategy', description: 'Research keywords, configure content, and create outlines', completed: false, visited: true },
+    { id: 0, name: 'Keyword Selection', description: 'Choose your target keywords', completed: false, visited: true },
+    { id: 1, name: 'Content Type & Outline', description: 'Select content type and create outline', completed: false, visited: false },
     { id: 2, name: 'SERP Analysis', description: 'Analyze search results', completed: false, visited: false },
     { id: 3, name: 'Content Writing', description: 'Write your content', completed: false, visited: false },
     { id: 4, name: 'Optimize & Review', description: 'Optimize and review your content', completed: false, visited: false, analyzed: false }

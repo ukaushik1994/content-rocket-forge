@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 // Step components
-import { KeywordResearchAndContentStrategyStep } from './steps/KeywordResearchAndContentStrategyStep';
+import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
+import { ContentTypeAndOutlineStep } from './steps/ContentTypeAndOutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
 import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
@@ -77,7 +78,7 @@ export const ContentBuilder = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
     
-    if (hasUnsavedChanges && currentStepId === 3) { // Writing step
+    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
       setPendingNavigation(activeStep + 1);
       setShowUnsavedDialog(true);
     } else {
@@ -87,7 +88,7 @@ export const ContentBuilder = () => {
   
   // Handle previous step navigation
   const handlePrevStep = () => {
-    if (hasUnsavedChanges && currentStepId === 3) { // Writing step
+    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
       setPendingNavigation(activeStep - 1);
       setShowUnsavedDialog(true);
     } else {
@@ -164,11 +165,12 @@ export const ContentBuilder = () => {
     const stepID = steps[activeStep].id;
     
     switch (stepID) {
-      case 0: return <KeywordResearchAndContentStrategyStep />;
+      case 0: return <KeywordSelectionStep />;
+      case 1: return <ContentTypeAndOutlineStep />;
       case 2: return <SerpAnalysisStep />;
       case 3: return <ContentWritingStep />;
       case 4: return <OptimizeAndReviewStep />;
-      default: return <KeywordResearchAndContentStrategyStep />;
+      default: return <KeywordSelectionStep />;
     }
   };
   
@@ -196,12 +198,12 @@ export const ContentBuilder = () => {
         steps={steps} 
         activeStep={activeStep} 
         navigateToStep={(step) => {
-        if (hasUnsavedChanges && currentStepId === 3) {
-          setPendingNavigation(step);
-          setShowUnsavedDialog(true);
-        } else {
-          navigateToStep(step);
-        }
+          if (hasUnsavedChanges && currentStepId === 3) {
+            setPendingNavigation(step);
+            setShowUnsavedDialog(true);
+          } else {
+            navigateToStep(step);
+          }
         }} 
       />
       
