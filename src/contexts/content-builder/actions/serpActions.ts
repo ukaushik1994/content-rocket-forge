@@ -4,9 +4,8 @@ import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { transformSerpData, extractAllSelections } from '@/services/serpDataTransformer';
-import { SerpDataValidator } from '@/services/serpDataValidator';
 
-// Process SERP response format using the unified transformer with enhanced validation
+// Process SERP response format using the unified transformer with clean data validation
 const processStructuredSerpSelections = (serpData: any): SerpSelection[] => {
   if (!serpData) {
     console.warn('No SERP data provided for processing');
@@ -16,26 +15,59 @@ const processStructuredSerpSelections = (serpData: any): SerpSelection[] => {
   console.log('🔄 Processing SERP data for selections:', serpData);
   
   try {
-    // First validate and normalize the data
-    const validatedData = SerpDataValidator.validateAndNormalize(serpData);
-    if (!validatedData) {
-      console.error('❌ SERP data validation failed');
-      return [];
+    // Validate data is clean before processing
+    const dataString = JSON.stringify(serpData);
+    if (dataString.includes('SerpAPI') || dataString.includes('serpapi') || dataString.includes('Serpstack')) {
+      console.warn('⚠️ Contaminated SERP data detected, cleaning before processing');
+      // Clean the data
+      serpData = cleanContaminatedSerpData(serpData);
     }
 
     // Use the unified transformer to normalize the data
-    const normalizedData = transformSerpData(validatedData);
+    const normalizedData = transformSerpData(serpData);
     
     // Extract all selections from the normalized data
     const allSelections = extractAllSelections(normalizedData);
     
-    console.log(`✅ Processed ${allSelections.length} clean selections from validated SERP data`);
+    console.log(`✅ Processed ${allSelections.length} clean selections from SERP data`);
     return allSelections;
   } catch (error) {
     console.error('❌ Error processing SERP selections:', error);
     return [];
   }
 };
+
+/**
+ * Clean contaminated SERP data by removing provider references
+ */
+function cleanContaminatedSerpData(data: any): any {
+  if (!data) return data;
+  
+  const cleanString = (str: string): string => {
+    if (typeof str !== 'string') return str;
+    return str
+      .replace(/\b(serp\s*api|serpapi|serpstack)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+  
+  const cleanObject = (obj: any): any => {
+    if (Array.isArray(obj)) {
+      return obj.map(cleanObject);
+    } else if (obj && typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        cleaned[key] = cleanObject(value);
+      }
+      return cleaned;
+    } else if (typeof obj === 'string') {
+      return cleanString(obj);
+    }
+    return obj;
+  };
+  
+  return cleanObject(data);
+}
 
 export const createSerpActions = (
   state: ContentBuilderState, 
@@ -53,8 +85,10 @@ export const createSerpActions = (
       // Make API call to analyze keyword
       const serpData = await analyzeKeywordSerp(keyword, forceRefresh);
       
+      // Update SERP data in state
+      dispatch({ type: 'SET_SERP_DATA', payload: serpData });
+      
       if (!serpData) {
-        dispatch({ type: 'SET_SERP_DATA', payload: null });
         toast.info("No SERP data available. Add your API key in Settings to get keyword insights, FAQs, and content opportunities.", {
           duration: 6000,
           action: {
@@ -65,54 +99,42 @@ export const createSerpActions = (
           }
         });
         console.log("❌ No SERP data returned - showing 'No Data Available' state");
-        return;
-      }
-
-      // Validate and normalize the SERP data before storing
-      const validatedSerpData = SerpDataValidator.validateAndNormalize(serpData);
-      if (!validatedSerpData) {
-        console.error('❌ SERP data validation failed');
-        dispatch({ type: 'SET_SERP_DATA', payload: null });
-        toast.error("Invalid SERP data received. Please try again.");
-        return;
-      }
-
-      // Update SERP data in state with validated data
-      dispatch({ type: 'SET_SERP_DATA', payload: validatedSerpData });
-      
-      console.log("✅ SERP data successfully validated and stored:", {
-        keyword: validatedSerpData.keyword,
-        hasQuestions: validatedSerpData.peopleAlsoAsk?.length > 0,
-        hasHeadings: validatedSerpData.headings?.length > 0,
-        hasContentGaps: validatedSerpData.contentGaps?.length > 0,
-        hasKeywords: validatedSerpData.keywords?.length > 0
-      });
-      
-      // Process SERP selections using the validated data
-      const structuredSelections = processStructuredSerpSelections(validatedSerpData);
-      console.log("✅ Processed clean SERP selections:", structuredSelections.length);
-      
-      // Add new selections to context (they start as unselected)
-      structuredSelections.forEach(selection => {
-        const existingItem = state.serpSelections.find(
-          item => item.type === selection.type && item.content === selection.content
-        );
+        return; // Exit early to prevent further processing
+      } else {
+        console.log("✅ SERP data successfully retrieved:", {
+          keyword: serpData.keyword,
+          hasQuestions: serpData.peopleAlsoAsk?.length > 0,
+          hasHeadings: serpData.headings?.length > 0,
+          hasContentGaps: serpData.contentGaps?.length > 0,
+          hasKeywords: serpData.keywords?.length > 0
+        });
         
-        if (!existingItem) {
-          // Add the selection as available but not selected
-          dispatch({ 
-            type: 'ADD_SERP_SELECTION', 
-            payload: selection
+        // Process SERP selections using the unified transformer
+        const structuredSelections = processStructuredSerpSelections(serpData);
+        console.log("✅ Processed clean SERP selections:", structuredSelections.length);
+        
+        // Add new selections to context (they start as unselected)
+        structuredSelections.forEach(selection => {
+          const existingItem = state.serpSelections.find(
+            item => item.type === selection.type && item.content === selection.content
+          );
+          
+          if (!existingItem) {
+            // Add the selection as available but not selected
+            dispatch({ 
+              type: 'ADD_SERP_SELECTION', 
+              payload: selection
+            });
+          }
+        });
+        
+        if (serpData.isMockData) {
+          toast.warning("Using limited mock data. Add your SERP API key for comprehensive real insights.");
+        } else {
+          toast.success(`Analysis complete! Found ${structuredSelections.length} content opportunities from real SERP data.`, {
+            description: `${serpData.peopleAlsoAsk?.length || 0} questions, ${serpData.headings?.length || 0} headings, ${serpData.contentGaps?.length || 0} content gaps identified`
           });
         }
-      });
-      
-      if (validatedSerpData.isMockData) {
-        toast.warning("Using limited mock data. Add your SERP API key for comprehensive real insights.");
-      } else {
-        toast.success(`Analysis complete! Found ${structuredSelections.length} content opportunities from real SERP data.`, {
-          description: `${validatedSerpData.peopleAlsoAsk?.length || 0} questions, ${validatedSerpData.headings?.length || 0} headings, ${validatedSerpData.contentGaps?.length || 0} content gaps identified`
-        });
       }
     } catch (error) {
       console.error('❌ Error analyzing keyword:', error);
