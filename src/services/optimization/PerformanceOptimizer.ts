@@ -30,7 +30,7 @@ export interface PerformancePrediction {
 }
 
 export interface OptimizationRecommendation {
-  category: 'traffic' | 'engagement' | 'conversion' | 'retention';
+  category: 'traffic' | 'engagement' | 'conversion' | 'retention' | 'seo';
   priority: number;
   title: string;
   description: string;
