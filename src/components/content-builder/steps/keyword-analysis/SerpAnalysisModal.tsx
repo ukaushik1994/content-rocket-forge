@@ -42,8 +42,8 @@ export function SerpAnalysisModal({
   
   const tabs = [
     { id: 'metrics', label: 'Metrics', icon: TrendingUp, count: null, color: 'from-blue-500 to-cyan-500' },
-    { id: 'questions', label: 'Questions', icon: HelpCircle, count: serpData.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
-    { id: 'headings', label: 'Headings', icon: Heading, count: serpData.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
+    { id: 'questions', label: 'FAQ Questions', icon: HelpCircle, count: serpData.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
+    { id: 'headings', label: 'SERP Headings', icon: Heading, count: serpData.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
     { id: 'gaps', label: 'Content Gaps', icon: Star, count: serpData.contentGaps?.length || 0, color: 'from-orange-500 to-red-500' },
     { id: 'keywords', label: 'Keywords', icon: Tag, count: serpData.keywords?.length || 0, color: 'from-indigo-500 to-purple-500' }
   ];

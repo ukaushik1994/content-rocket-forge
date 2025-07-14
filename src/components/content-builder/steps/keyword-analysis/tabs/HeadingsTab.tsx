@@ -58,10 +58,10 @@ export function HeadingsTab({ headings, serpSelections, onToggleSelection }: Hea
           </div>
           <div>
             <h3 className="text-lg font-medium bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              Competitor Headings
+              SERP Result Headings
             </h3>
             <p className="text-sm text-gray-400">
-              Select proven headings from top-ranking content
+              Proven headings from top-ranking pages in search results
             </p>
           </div>
         </div>

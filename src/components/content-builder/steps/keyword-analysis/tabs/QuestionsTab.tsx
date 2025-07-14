@@ -60,10 +60,10 @@ export function QuestionsTab({ questions, serpSelections, onToggleSelection }: Q
           </div>
           <div>
             <h3 className="text-lg font-medium bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              People Also Ask
+              FAQ Questions
             </h3>
             <p className="text-sm text-gray-400">
-              Select questions to address in your content
+              Frequently asked questions perfect for FAQ sections
             </p>
           </div>
         </div>
