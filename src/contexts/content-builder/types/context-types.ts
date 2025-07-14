@@ -26,6 +26,7 @@ export interface ContentBuilderContextType {
   analyzeKeyword: (keyword: string) => Promise<void>;
   addContentFromSerp: (content: string, type: string) => void;
   generateOutlineFromSelections: () => void;
+  addSerpSelections: (selections: Array<{ type: string; content: string; metadata?: any }>) => void;
   
   // Content Actions
   setContentTitle: (title: string) => void;

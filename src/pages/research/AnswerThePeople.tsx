@@ -6,13 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, MessageCircle, HelpCircle, TrendingUp, Search, Plus, Download, FileText, Target, Lightbulb, Eye, Filter } from 'lucide-react';
+import { Users, MessageCircle, HelpCircle, TrendingUp, Search, Plus, Download, FileText, Target, Lightbulb, Eye, Filter, Brain, Zap, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { analyzeAnswerThePeople, exportQuestionsForContentBuilder, type AnswerThePeopleResult, type QuestionData } from '@/services/answerThePeopleService';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useNavigate } from 'react-router-dom';
 
 const AnswerThePeople = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [questionsData, setQuestionsData] = useState(null);
+  const [questionsData, setQuestionsData] = useState<AnswerThePeopleResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState('All');
+  
+  const contentBuilder = useContentBuilder();
+  const navigate = useNavigate();
 
   // Sample data matching the reference
   const sampleQuestionsData = {
@@ -151,19 +159,35 @@ const AnswerThePeople = () => {
     ]
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchTerm.trim()) {
       toast.error("Please enter a keyword to find questions");
       return;
     }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setQuestionsData(sampleQuestionsData);
+    try {
+      const result = await analyzeAnswerThePeople(searchTerm.trim());
+      setQuestionsData(result);
+      
+      if (result.isRealData) {
+        toast.success(`Found ${result.questions.length} questions with real SERP data!`, {
+          description: `${result.totalOpportunities} high-opportunity questions identified`
+        });
+      } else {
+        toast.warning("Using limited data. Add your SERP API key in Settings for comprehensive insights.", {
+          action: {
+            label: "Add API Key",
+            onClick: () => navigate("/settings/api")
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error("Failed to analyze questions. Please try again.");
+    } finally {
       setLoading(false);
-      toast.success("Questions generated successfully!");
-    }, 1500);
+    }
   };
 
   const getDifficultyColor = (difficulty) => {
@@ -188,6 +212,83 @@ const AnswerThePeople = () => {
     if (difficulty < 40) return 'bg-neon-green';
     if (difficulty < 60) return 'bg-orange-500';
     return 'bg-red-500';
+  };
+
+  const handleQuestionSelect = (questionId: string) => {
+    const newSelected = new Set(selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    setSelectedQuestions(newSelected);
+  };
+
+  const handleCreateContentFromQuestions = () => {
+    if (selectedQuestions.size === 0) {
+      toast.error("Please select at least one question to create content");
+      return;
+    }
+
+    const selectedQuestionsData = questionsData?.questions.filter(q => selectedQuestions.has(q.id)) || [];
+    const serpSelections = exportQuestionsForContentBuilder(selectedQuestionsData);
+    
+    // Add selections to Content Builder context
+    contentBuilder.addSerpSelections(serpSelections);
+    
+    toast.success(`Added ${selectedQuestions.size} questions to Content Builder`);
+    navigate('/content/builder');
+  };
+
+  const handleExportData = () => {
+    if (!questionsData) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = {
+      keyword: questionsData.keyword,
+      questions: questionsData.questions,
+      prepositions: questionsData.prepositions,
+      comparisons: questionsData.comparisons,
+      exportedAt: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `answer-the-people-${questionsData.keyword}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Data exported successfully!");
+  };
+
+  const getFilteredQuestions = () => {
+    if (!questionsData) return [];
+    if (activeFilter === 'All') return questionsData.questions;
+    return questionsData.questions.filter(q => q.type.toLowerCase() === activeFilter.toLowerCase());
+  };
+
+  const getIntentColor = (intent: string) => {
+    switch (intent) {
+      case 'commercial': return 'bg-neon-blue/20 text-neon-blue border-neon-blue/30';
+      case 'transactional': return 'bg-neon-green/20 text-neon-green border-neon-green/30';
+      case 'navigational': return 'bg-neon-purple/20 text-neon-purple border-neon-purple/30';
+      default: return 'bg-blue-500/20 text-blue-400 border-blue-400/30';
+    }
+  };
+
+  const getFunnelStageColor = (stage: string) => {
+    switch (stage) {
+      case 'awareness': return 'bg-gray-500/20 text-gray-300 border-gray-400/30';
+      case 'consideration': return 'bg-orange-500/20 text-orange-300 border-orange-400/30';
+      case 'decision': return 'bg-green-500/20 text-green-300 border-green-400/30';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-400/30';
+    }
   };
 
   return (
@@ -218,13 +319,22 @@ const AnswerThePeople = () => {
                 </p>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" className="border-white/20">
+                <Button 
+                  variant="outline" 
+                  className="border-white/20"
+                  onClick={handleExportData}
+                  disabled={!questionsData}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
-                <Button className="bg-neon-blue hover:bg-neon-blue/90">
+                <Button 
+                  className="bg-neon-blue hover:bg-neon-blue/90"
+                  onClick={handleCreateContentFromQuestions}
+                  disabled={selectedQuestions.size === 0}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Content
+                  Create Content ({selectedQuestions.size})
                 </Button>
               </div>
             </div>
@@ -254,11 +364,44 @@ const AnswerThePeople = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-muted-foreground">Trending searches:</span>
                     {['content marketing', 'seo strategies', 'email marketing', 'social media marketing'].map((trend) => (
-                      <Badge key={trend} variant="outline" className="cursor-pointer hover:bg-neon-blue/20">
+                      <Badge 
+                        key={trend} 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-neon-blue/20"
+                        onClick={() => {
+                          setSearchTerm(trend);
+                          handleSearch();
+                        }}
+                      >
                         {trend}
                       </Badge>
                     ))}
                   </div>
+                  
+                  {questionsData && (
+                    <div className="flex items-center gap-4 pt-2 border-t border-white/10">
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-neon-blue" />
+                        <span className="text-sm text-muted-foreground">
+                          Data Quality: <span className={questionsData.dataQuality === 'high' ? 'text-neon-green' : 'text-orange-400'}>
+                            {questionsData.dataQuality}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4 text-neon-green" />
+                        <span className="text-sm text-muted-foreground">
+                          High Opportunities: <span className="text-neon-green">{questionsData.totalOpportunities}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-neon-purple" />
+                        <span className="text-sm text-muted-foreground">
+                          {questionsData.isRealData ? 'Real SERP Data' : 'Limited Data'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -286,32 +429,63 @@ const AnswerThePeople = () => {
                     <span className="text-sm text-muted-foreground">Discover questions your audience is asking about this topic</span>
                     <div className="flex gap-1">
                       {['All', 'What', 'How', 'Why', 'When', 'Where', 'Which', 'Who'].map((filter) => (
-                        <Button key={filter} size="sm" variant={filter === 'All' ? 'default' : 'outline'} className="text-xs">
+                        <Button 
+                          key={filter} 
+                          size="sm" 
+                          variant={filter === activeFilter ? 'default' : 'outline'} 
+                          className="text-xs"
+                          onClick={() => setActiveFilter(filter)}
+                        >
                           {filter}
+                          {filter !== 'All' && questionsData && (
+                            <span className="ml-1 text-xs opacity-70">
+                              ({questionsData.questions.filter(q => q.type.toLowerCase() === filter.toLowerCase()).length})
+                            </span>
+                          )}
                         </Button>
                       ))}
-                      <Button size="sm" variant="outline">
-                        <Filter className="h-3 w-3 mr-1" />
-                        More Filters
-                      </Button>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {questionsData.questions.map((item) => (
-                    <Card key={item.id} className="glass-panel border-white/10 hover:border-neon-blue/30 transition-all">
+                  {getFilteredQuestions().map((item) => (
+                    <Card 
+                      key={item.id} 
+                      className={`glass-panel border-white/10 hover:border-neon-blue/30 transition-all cursor-pointer ${
+                        selectedQuestions.has(item.id) ? 'border-neon-blue/50 bg-neon-blue/5' : ''
+                      }`}
+                      onClick={() => handleQuestionSelect(item.id)}
+                    >
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedQuestions.has(item.id)}
+                            onChange={() => handleQuestionSelect(item.id)}
+                            className="mt-1 rounded border-white/20 bg-transparent"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-3">
                               <Badge variant="outline" className="text-xs uppercase bg-neon-blue/20 border-neon-blue/30">
                                 {item.type}
                               </Badge>
-                              <h3 className="text-white font-medium">{item.question}</h3>
+                              <Badge variant="outline" className={`text-xs ${getIntentColor(item.intent)}`}>
+                                {item.intent}
+                              </Badge>
+                              <Badge variant="outline" className={`text-xs ${getFunnelStageColor(item.funnelStage)}`}>
+                                {item.funnelStage}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-400/30">
+                                {item.contentType}
+                              </Badge>
                             </div>
                             
-                            <div className="flex items-center gap-4 text-sm">
+                            <h3 className="text-white font-medium mb-3">{item.question}</h3>
+                            
+                            <div className="flex items-center gap-4 text-sm mb-2">
                               <span className="text-muted-foreground">
                                 <TrendingUp className="h-3 w-3 inline mr-1" />
                                 {item.searchVolume.toLocaleString()} searches/mo
@@ -322,33 +496,29 @@ const AnswerThePeople = () => {
                               <Badge className={`text-xs ${getOpportunityColor(item.opportunity)}`}>
                                 {item.opportunity} Opportunity
                               </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                Competition: {item.competitionLevel}%
+                              </span>
                             </div>
 
-                            <div className="flex items-center gap-4 mt-2">
+                            <div className="flex items-center gap-4 text-xs">
                               {item.hasHighSearchIntent && (
-                                <div className="flex items-center gap-1 text-xs text-neon-blue">
+                                <div className="flex items-center gap-1 text-neon-blue">
                                   <div className="w-2 h-2 bg-neon-blue rounded-full"></div>
-                                  This question has high search intent
+                                  High search intent
                                 </div>
                               )}
                               {item.hasFeaturedSnippet && (
-                                <div className="flex items-center gap-1 text-xs text-neon-green">
+                                <div className="flex items-center gap-1 text-neon-green">
                                   <div className="w-2 h-2 bg-neon-green rounded-full"></div>
-                                  This question has a featured snippet opportunity
+                                  Featured snippet opportunity
                                 </div>
                               )}
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                Source: {item.source}
+                              </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" className="border-white/20">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View SERP
-                            </Button>
-                            <Button size="sm" className="bg-neon-blue hover:bg-neon-blue/90">
-                              <Plus className="h-4 w-4 mr-2" />
-                              Create Content
-                            </Button>
                           </div>
                         </div>
                       </CardContent>

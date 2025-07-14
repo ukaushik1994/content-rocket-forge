@@ -253,9 +253,33 @@ export const createSerpActions = (
     });
   };
   
+  const addSerpSelections = (selections: Array<{ type: string; content: string; metadata?: any }>) => {
+    selections.forEach(selection => {
+      const serpSelection = {
+        id: `import-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: selection.type,
+        content: selection.content,
+        selected: false, // Import as unselected so user can choose
+        metadata: selection.metadata
+      };
+      
+      // Check if it already exists
+      const exists = state.serpSelections.find(
+        item => item.type === selection.type && item.content === selection.content
+      );
+      
+      if (!exists) {
+        dispatch({ type: 'ADD_SERP_SELECTION', payload: serpSelection });
+      }
+    });
+    
+    console.log(`✅ Added ${selections.length} selections to Content Builder`);
+  };
+
   return {
     analyzeKeyword,
     addContentFromSerp,
     generateOutlineFromSelections,
+    addSerpSelections,
   };
 };
