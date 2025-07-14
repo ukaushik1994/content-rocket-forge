@@ -139,16 +139,16 @@ export class KeywordClusteringService {
     topic: string,
     provider: AiProvider = 'openai'
   ): Promise<KeywordWithMetrics[]> {
+    const keywordGaps = competitorKeywords.filter(kw => 
+      !yourKeywords.some(yk => 
+        yk.toLowerCase().includes(kw.toLowerCase()) || 
+        kw.toLowerCase().includes(yk.toLowerCase())
+      )
+    );
+
+    if (keywordGaps.length === 0) return [];
+
     try {
-      const keywordGaps = competitorKeywords.filter(kw => 
-        !yourKeywords.some(yk => 
-          yk.toLowerCase().includes(kw.toLowerCase()) || 
-          kw.toLowerCase().includes(yk.toLowerCase())
-        )
-      );
-
-      if (keywordGaps.length === 0) return [];
-
       const prompt = this.createGapAnalysisPrompt(keywordGaps, topic);
       
       const response = await sendChatRequest(provider, {
