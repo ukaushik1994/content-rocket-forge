@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 // Step components
-import { ContentStrategyStep } from './steps/ContentStrategyStep';
+import { EnhancedContentStrategyStep } from './steps/EnhancedContentStrategyStep';
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeAndOutlineStep } from './steps/ContentTypeAndOutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
@@ -186,13 +185,13 @@ export const ContentBuilder = () => {
     const stepID = steps[activeStep].id;
     
     switch (stepID) {
-      case 0: return <ContentStrategyStep />;
+      case 0: return <EnhancedContentStrategyStep />;
       case 1: return <KeywordSelectionStep />;
       case 2: return <ContentTypeAndOutlineStep />;
       case 3: return <SerpAnalysisStep />;
       case 4: return <ContentWritingStep />;
       case 5: return <OptimizeAndReviewStep />;
-      default: return <ContentStrategyStep />;
+      default: return <EnhancedContentStrategyStep />;
     }
   };
   
