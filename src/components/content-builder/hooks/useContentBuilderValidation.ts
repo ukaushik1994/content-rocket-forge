@@ -26,16 +26,14 @@ export const useContentBuilderValidation = () => {
   };
   
   const canProceedToStep = (stepIndex: number): boolean => {
-    // Can always go to the strategy studio (step 0)
-    if (stepIndex === 0) return true;
+    // Can always go to the strategy studio (step 0) or keyword selection (step 1)
+    if (stepIndex === 0 || stepIndex === 1) return true;
     
-    // For content creation steps, strategy must be completed first
-    if (stepIndex > 0 && !validateStep(0)) return false;
-    
-    // For other steps, check if all previous steps are valid
-    for (let i = 1; i < stepIndex; i++) {
-      if (!validateStep(i)) return false;
+    // For content creation steps (2+), both strategy and keywords must be completed
+    if (stepIndex >= 2) {
+      return validateStep(0) && validateStep(1);
     }
+    
     return true;
   };
   

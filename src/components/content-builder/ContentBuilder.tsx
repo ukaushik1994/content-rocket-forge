@@ -53,13 +53,16 @@ export const ContentBuilder = () => {
 
   // Calculate progress percentage
   const strategyStep = steps.find(step => step.id === 0);
-  const contentSteps = steps.filter(step => step.id !== 0 && step.id !== 3); // Filter out strategy and SERP Analysis
+  const keywordStep = steps.find(step => step.id === 1);
+  const contentSteps = steps.filter(step => step.id >= 2 && step.id !== 3); // Filter out strategy, keywords, and SERP Analysis
   const completedContentSteps = contentSteps.filter(step => step.completed).length;
   
-  // If strategy isn't complete, show strategy progress
-  const progressPercentage = !strategyStep?.completed 
-    ? (strategyStep?.completed ? 100 : 0)
-    : Math.round((completedContentSteps / contentSteps.length) * 100);
+  // Progressive progress calculation
+  const progressPercentage = (() => {
+    if (!strategyStep?.completed) return 0;
+    if (!keywordStep?.completed) return 33;
+    return 33 + Math.round((completedContentSteps / contentSteps.length) * 67);
+  })();
   
   // Check current step status
   const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
@@ -245,6 +248,10 @@ export const ContentBuilder = () => {
                 <div className="p-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500">
                   <Sparkles className="h-4 w-4 text-white" />
                 </div>
+              ) : activeStep === 1 ? (
+                <div className="p-1 rounded-full bg-gradient-to-r from-green-400 to-emerald-500">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
               ) : (
                 <Sparkles className="h-5 w-5 text-primary animate-pulse" />
               )}
@@ -252,9 +259,13 @@ export const ContentBuilder = () => {
                 "text-lg font-semibold bg-clip-text text-transparent",
                 activeStep === 0 
                   ? "bg-gradient-to-r from-amber-400 to-orange-500"
-                  : "bg-gradient-to-r from-neon-purple to-neon-blue"
+                  : activeStep === 1
+                    ? "bg-gradient-to-r from-green-400 to-emerald-500"
+                    : "bg-gradient-to-r from-neon-purple to-neon-blue"
               )}>
-                {activeStep === 0 ? 'Strategy Studio' : steps[activeStep].name}
+                {activeStep === 0 ? 'Strategy Studio' : 
+                 activeStep === 1 ? 'Keyword Research' : 
+                 steps[activeStep].name}
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -268,11 +279,15 @@ export const ContentBuilder = () => {
                 "text-xs px-3 py-1 rounded-full border",
                 activeStep === 0
                   ? "text-amber-300 bg-amber-950/30 border-amber-800/30"
-                  : "text-muted-foreground bg-white/5 border-white/10"
+                  : activeStep === 1
+                    ? "text-green-300 bg-green-950/30 border-green-800/30"
+                    : "text-muted-foreground bg-white/5 border-white/10"
               )}>
                 {activeStep === 0 
                   ? 'Foundation Phase'
-                  : `Step ${stepInfo.current} of ${stepInfo.total}`
+                  : activeStep === 1
+                    ? 'Research Phase'
+                    : `Step ${stepInfo.current} of ${stepInfo.total}`
                 }
               </div>
             </div>
