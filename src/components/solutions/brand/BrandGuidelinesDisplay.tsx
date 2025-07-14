@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BrandGuidelines } from '@/contexts/content-builder/types/company-types';
@@ -53,7 +54,7 @@ export const BrandGuidelinesDisplay: React.FC<BrandGuidelinesDisplayProps> = ({
       y: 0, 
       opacity: 1,
       transition: {
-        type: "spring" as const,
+        type: "spring",
         stiffness: 100,
         damping: 15
       }

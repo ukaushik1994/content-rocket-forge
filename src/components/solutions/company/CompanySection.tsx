@@ -40,7 +40,7 @@ export const CompanySection: React.FC<CompanySectionProps> = ({
       y: 0, 
       opacity: 1,
       transition: {
-        type: "spring" as const,
+        type: "spring",
         stiffness: 100,
         damping: 15
       }

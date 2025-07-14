@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -45,11 +44,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     hidden: { x: -320 },
     visible: { 
       x: 0,
-      transition: { 
-        type: "spring" as const, 
-        stiffness: 300, 
-        damping: 30 
-      }
+      transition: { type: 'spring', stiffness: 300, damping: 30 }
     }
   };
 
@@ -58,11 +53,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     visible: { 
       opacity: 1, 
       x: 0,
-      transition: { 
-        type: "spring" as const, 
-        stiffness: 400, 
-        damping: 25 
-      }
+      transition: { type: 'spring', stiffness: 400, damping: 25 }
     }
   };
 

@@ -205,12 +205,6 @@ export const contentBuilderReducer = (
         seoImprovements: [...state.seoImprovements, action.payload]
       };
       
-    case 'SET_SEO_IMPROVEMENTS':
-      return {
-        ...state,
-        seoImprovements: action.payload
-      };
-      
     case 'APPLY_SEO_IMPROVEMENT':
       return {
         ...state,
@@ -273,12 +267,6 @@ export const contentBuilderReducer = (
       return {
         ...state,
         additionalInstructions: action.payload
-      };
-
-    case 'SET_CONTENT_STRATEGY':
-      return {
-        ...state,
-        contentStrategy: action.payload
       };
       
     default:

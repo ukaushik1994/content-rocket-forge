@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LineChart, BarChart } from '@/components/ui/chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +42,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
       y: 0,
       scale: 1,
       transition: { 
-        type: 'spring' as const, 
+        type: 'spring', 
         stiffness: 120, 
         damping: 20,
         duration: 0.6
@@ -57,7 +58,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
       transition: {
         duration: 3,
         repeat: Infinity,
-        ease: "easeInOut" as const
+        ease: "easeInOut"
       }
     }
   };
@@ -72,7 +73,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
       transition: {
         duration: 2,
         repeat: Infinity,
-        ease: "easeInOut" as const
+        ease: "easeInOut"
       }
     }
   };
@@ -164,7 +165,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
           <motion.div 
             className="flex items-center px-4 py-2 rounded-xl bg-white/5 text-xs font-medium text-muted-foreground border border-white/10 backdrop-blur-sm"
             whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-            transition={{ type: "spring" as const, stiffness: 400, damping: 10 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <Zap className="h-3 w-3 mr-2 text-primary" />
             Live Data
@@ -217,7 +218,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
                     boxShadow: "0 20px 40px -10px rgba(155, 135, 245, 0.3)",
                     scale: 1.02
                   }}
-                  transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-primary/20 to-transparent rounded-full -translate-y-8 translate-x-8" />
                   <div className="relative">
@@ -240,7 +241,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
                     boxShadow: "0 20px 40px -10px rgba(155, 135, 245, 0.3)",
                     scale: 1.02
                   }}
-                  transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-accent/20 to-transparent rounded-full -translate-y-8 translate-x-8" />
                   <div className="relative">
@@ -276,7 +277,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
                     boxShadow: "0 20px 40px -10px rgba(217, 70, 239, 0.3)",
                     scale: 1.02
                   }}
-                  transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-destructive/20 to-transparent rounded-full -translate-y-8 translate-x-8" />
                   <div className="relative">
@@ -299,7 +300,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
                     boxShadow: "0 20px 40px -10px rgba(155, 135, 245, 0.3)",
                     scale: 1.02
                   }}
-                  transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-chart-2/20 to-transparent rounded-full -translate-y-8 translate-x-8" />
                   <div className="relative">
@@ -337,7 +338,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
                     boxShadow: "0 20px 40px -10px rgba(155, 135, 245, 0.3)",
                     scale: 1.02
                   }}
-                  transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-primary/20 to-transparent rounded-full -translate-y-8 translate-x-8" />
                   <div className="relative">
@@ -358,7 +359,7 @@ export function PerformanceChart({ className, timeRange = '7days' }: Performance
                     boxShadow: "0 20px 40px -10px rgba(155, 135, 245, 0.3)",
                     scale: 1.02
                   }}
-                  transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-accent/20 to-transparent rounded-full -translate-y-8 translate-x-8" />
                   <div className="relative">

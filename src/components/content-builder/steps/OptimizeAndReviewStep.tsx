@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
@@ -9,7 +10,6 @@ import { FinalReviewQuickActions } from '../final-review/FinalReviewQuickActions
 import { SaveAndExportPanel } from '../final-review/SaveAndExportPanel';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 import { useChecklistItems } from '../final-review/hooks/useChecklistItems';
-import { EATDashboard } from '../eat/EATDashboard';
 import { toast } from 'sonner';
 import { 
   generateContentWithTemplate, 
@@ -137,19 +137,6 @@ export const OptimizeAndReviewStep = () => {
       toast.error("Failed to repurpose content");
     }
   };
-
-  // Handler for E-A-T recommendation implementation
-  const handleEATRecommendation = (recommendation: string) => {
-    // Add the recommendation as additional instructions for future content generation
-    const currentInstructions = state.additionalInstructions || '';
-    const newInstructions = currentInstructions 
-      ? `${currentInstructions}\n\nE-A-T Improvement: ${recommendation}`
-      : `E-A-T Improvement: ${recommendation}`;
-    
-    dispatch({ type: 'SET_ADDITIONAL_INSTRUCTIONS', payload: newInstructions });
-    
-    toast.success("E-A-T recommendation added to content improvement notes");
-  };
   
   // Wrapper functions to convert Promise<string | null> to Promise<void>
   const handleSaveToDraftWrapper = async () => {
@@ -204,12 +191,6 @@ export const OptimizeAndReviewStep = () => {
             Technical
           </TabsTrigger>
           <TabsTrigger 
-            value="eat"
-            className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
-          >
-            E-A-T Analysis
-          </TabsTrigger>
-          <TabsTrigger 
             value="repurpose"
             className="data-[state=active]:shadow-none data-[state=active]:border-primary data-[state=active]:border-b-2 rounded-none"
           >
@@ -240,20 +221,6 @@ export const OptimizeAndReviewStep = () => {
             metaTitle={state.metaTitle}
             metaDescription={state.metaDescription}
             serpData={serpData}
-          />
-        </TabsContent>
-        
-        <TabsContent value="eat">
-          <EATDashboard
-            content={state.content || ''}
-            title={state.contentTitle || state.mainKeyword || 'Content'}
-            topic={state.mainKeyword || 'general'}
-            authorInfo={{
-              name: 'Content Author', // This could be dynamically set
-              credentials: [], // This could come from user profile
-              bio: '' // This could come from user profile
-            }}
-            onImplementRecommendation={handleEATRecommendation}
           />
         </TabsContent>
         

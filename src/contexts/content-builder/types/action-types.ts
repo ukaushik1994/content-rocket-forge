@@ -9,7 +9,6 @@ import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { OutlineSection } from './outline-types';
 import { DocumentStructure } from './document-types';
-import { ContentStrategy } from './content-strategy-types';
 
 // Content Builder Actions
 export type ContentBuilderAction =
@@ -46,5 +45,4 @@ export type ContentBuilderAction =
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
-  | { type: 'SET_CONTENT_STRATEGY'; payload: ContentStrategy };
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };

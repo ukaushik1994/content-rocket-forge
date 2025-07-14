@@ -49,8 +49,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
 
     setIsAnalyzing(true);
     try {
-      // Run quality analysis - fix the parameter order
-      const qualityResult = await analyzeContentQuality(content, title, writingStyle, expertiseLevel, true, aiProvider);
+      // Run quality analysis
+      const qualityResult = await analyzeContentQuality(content, title, writingStyle, expertiseLevel, aiProvider);
       if (qualityResult) {
         setMetrics(qualityResult);
         toast.success('Quality analysis completed');
@@ -302,7 +302,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
             </TabsContent>
 
             <TabsContent value="recommendations" className="space-y-3 mt-3">
-              {metrics && metrics.recommendations.length > 0 ? (
+              {metrics.recommendations.length > 0 ? (
                 <div className="space-y-3">
                   {['critical', 'major', 'minor'].map((type) => {
                     const categoryRecs = categorizeRecommendations(metrics.recommendations)[type as keyof ReturnType<typeof categorizeRecommendations>];

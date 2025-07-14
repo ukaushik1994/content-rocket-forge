@@ -3,13 +3,11 @@ import { motion } from 'framer-motion';
 import { Search, Filter, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-
 interface HeroSectionProps {
   solutionCount: number;
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }
-
 export const HeroSection: React.FC<HeroSectionProps> = ({
   solutionCount,
   searchTerm,
@@ -28,7 +26,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       }
     }
   };
-
   const itemVariants = {
     hidden: {
       y: 20,
@@ -38,13 +35,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       y: 0,
       opacity: 1,
       transition: {
-        type: "spring" as const,
+        type: "spring",
         stiffness: 100,
         damping: 15
       }
     }
   };
-
   return <motion.div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-neon-purple/20 via-background to-neon-blue/10 p-8 mb-8 border border-white/10" initial="hidden" animate="visible" variants={containerVariants}>
       {/* Enhanced background elements */}
       <div className="absolute inset-0 futuristic-grid opacity-10 z-0" />

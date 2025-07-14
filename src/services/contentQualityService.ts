@@ -2,7 +2,6 @@
 import { ContentItemType } from '@/contexts/content/types';
 import { sendChatRequest } from '@/services/aiService';
 import { AiProvider } from '@/services/aiService/types';
-import { EATAnalyzer, EATAnalysisResult } from '@/services/eatOptimization/EATAnalyzer';
 
 export interface ContentQualityMetrics {
   overallScore: number; // 0-100
@@ -11,15 +10,13 @@ export interface ContentQualityMetrics {
   seoScore: number;
   structureScore: number;
   brandVoiceScore: number;
-  eatScore: number; // New E-A-T score
   recommendations: QualityRecommendation[];
-  eatAnalysis?: EATAnalysisResult; // Detailed E-A-T analysis
 }
 
 export interface QualityRecommendation {
   id: string;
   type: 'critical' | 'major' | 'minor';
-  category: 'readability' | 'engagement' | 'seo' | 'structure' | 'brand' | 'eat'; // Added E-A-T category
+  category: 'readability' | 'engagement' | 'seo' | 'structure' | 'brand';
   title: string;
   description: string;
   impact: 'high' | 'medium' | 'low';
@@ -118,24 +115,23 @@ export const EXPERTISE_LEVELS: ExpertiseLevel[] = [
 ];
 
 /**
- * Enhanced content quality analysis with E-A-T integration
+ * Analyze content quality using AI
  */
 export async function analyzeContentQuality(
   content: string,
   title: string,
   targetStyle: string,
   expertiseLevel: string,
-  includeEAT: boolean = true,
   provider: AiProvider = 'openai'
 ): Promise<ContentQualityMetrics | null> {
   try {
-    const analysisPrompt = createQualityAnalysisPrompt(content, title, targetStyle, expertiseLevel, includeEAT);
+    const analysisPrompt = createQualityAnalysisPrompt(content, title, targetStyle, expertiseLevel);
     
     const response = await sendChatRequest(provider, {
       messages: [
         {
           role: 'system',
-          content: `You are an expert content quality analyst with deep knowledge of Google's E-A-T guidelines. Analyze content for readability, engagement, SEO, structure, brand voice compliance, and expertise/authority/trustworthiness. Provide detailed, actionable feedback in JSON format.`
+          content: `You are an expert content quality analyst. Analyze content for readability, engagement, SEO, structure, and brand voice compliance. Provide detailed, actionable feedback in JSON format.`
         },
         {
           role: 'user',
@@ -143,56 +139,14 @@ export async function analyzeContentQuality(
         }
       ],
       temperature: 0.3,
-      maxTokens: 3000
+      maxTokens: 2000
     });
 
     if (!response?.choices?.[0]?.message?.content) {
       throw new Error('No response from AI service');
     }
 
-    const baseMetrics = parseQualityAnalysisResponse(response.choices[0].message.content);
-    
-    // Add detailed E-A-T analysis if requested
-    if (includeEAT) {
-      try {
-        const eatAnalysis = await EATAnalyzer.analyzeContent(content, title, title.split(' ')[0] || 'general');
-        baseMetrics.eatAnalysis = eatAnalysis;
-        baseMetrics.eatScore = eatAnalysis.score.overall;
-        
-        // Add E-A-T recommendations to the main recommendations
-        const eatRecommendations: QualityRecommendation[] = eatAnalysis.overallRecommendations.map((rec, index) => ({
-          id: `eat_${index}`,
-          type: 'major' as const,
-          category: 'eat' as const,
-          title: rec,
-          description: `E-A-T improvement: ${rec}`,
-          impact: 'high' as const,
-          effort: 'medium' as const,
-          autoFixable: false
-        }));
-        
-        baseMetrics.recommendations = [...baseMetrics.recommendations, ...eatRecommendations];
-      } catch (eatError) {
-        console.error('E-A-T analysis failed:', eatError);
-        baseMetrics.eatScore = 50; // Default score if E-A-T analysis fails
-      }
-    } else {
-      baseMetrics.eatScore = 50; // Default score when E-A-T is not analyzed
-    }
-    
-    // Recalculate overall score to include E-A-T
-    if (includeEAT) {
-      baseMetrics.overallScore = Math.round(
-        (baseMetrics.readabilityScore * 0.15 +
-         baseMetrics.engagementScore * 0.2 +
-         baseMetrics.seoScore * 0.2 +
-         baseMetrics.structureScore * 0.15 +
-         baseMetrics.brandVoiceScore * 0.1 +
-         baseMetrics.eatScore * 0.2) // E-A-T gets 20% weight
-      );
-    }
-
-    return baseMetrics;
+    return parseQualityAnalysisResponse(response.choices[0].message.content);
     
   } catch (error) {
     console.error('Error in content quality analysis:', error);
@@ -204,8 +158,7 @@ function createQualityAnalysisPrompt(
   content: string, 
   title: string, 
   targetStyle: string, 
-  expertiseLevel: string,
-  includeEAT: boolean
+  expertiseLevel: string
 ): string {
   const wordCount = content.split(/\s+/).length;
   
@@ -217,7 +170,6 @@ Content: ${content}
 Target Style: ${targetStyle}
 Target Expertise: ${expertiseLevel}
 Word Count: ${wordCount}
-Include E-A-T Analysis: ${includeEAT}
 
 ANALYSIS CRITERIA:
 
@@ -251,14 +203,6 @@ ANALYSIS CRITERIA:
    - Professional quality
    - Audience alignment
 
-${includeEAT ? `
-6. E-A-T PRELIMINARY ASSESSMENT (0-100):
-   - Expertise demonstration
-   - Authority signals present
-   - Trustworthiness indicators
-   - Source quality and citations
-` : ''}
-
 Respond in this JSON format:
 {
   "overallScore": 85,
@@ -267,7 +211,6 @@ Respond in this JSON format:
   "seoScore": 75,
   "structureScore": 85,
   "brandVoiceScore": 88,
-  ${includeEAT ? '"eatScore": 75,' : '"eatScore": 50,'}
   "recommendations": [
     {
       "id": "readability_1",
@@ -299,11 +242,10 @@ function parseQualityAnalysisResponse(analysisText: string): ContentQualityMetri
       seoScore: Math.max(0, Math.min(100, parsed.seoScore || 50)),
       structureScore: Math.max(0, Math.min(100, parsed.structureScore || 50)),
       brandVoiceScore: Math.max(0, Math.min(100, parsed.brandVoiceScore || 50)),
-      eatScore: Math.max(0, Math.min(100, parsed.eatScore || 50)),
       recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.map((rec: any, index: number) => ({
         id: rec.id || `rec_${index}`,
         type: ['critical', 'major', 'minor'].includes(rec.type) ? rec.type : 'minor',
-        category: ['readability', 'engagement', 'seo', 'structure', 'brand', 'eat'].includes(rec.category) ? rec.category : 'readability',
+        category: ['readability', 'engagement', 'seo', 'structure', 'brand'].includes(rec.category) ? rec.category : 'readability',
         title: rec.title || 'Improvement needed',
         description: rec.description || 'No description provided',
         impact: ['high', 'medium', 'low'].includes(rec.impact) ? rec.impact : 'medium',
@@ -320,7 +262,6 @@ function parseQualityAnalysisResponse(analysisText: string): ContentQualityMetri
       seoScore: 50,
       structureScore: 50,
       brandVoiceScore: 50,
-      eatScore: 50,
       recommendations: []
     };
   }

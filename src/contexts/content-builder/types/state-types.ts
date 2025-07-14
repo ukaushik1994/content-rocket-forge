@@ -12,7 +12,6 @@ import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { DocumentStructure } from './document-types';
 import { ComprehensiveSerpData } from '@/types/serp-metrics';
-import { ContentStrategy } from './content-strategy-types';
 
 // Content Builder State
 export interface ContentBuilderState {
@@ -74,7 +73,4 @@ export interface ContentBuilderState {
 
   // Additional Instructions
   additionalInstructions: string;
-
-  // Content Strategy
-  contentStrategy: ContentStrategy | null;
 }

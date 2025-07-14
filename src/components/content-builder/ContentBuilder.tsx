@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
@@ -5,10 +6,8 @@ import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
-import { cn } from '@/lib/utils';
 
 // Step components
-import { EnhancedContentStrategyStep } from './steps/EnhancedContentStrategyStep';
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeAndOutlineStep } from './steps/ContentTypeAndOutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
@@ -52,17 +51,9 @@ export const ContentBuilder = () => {
   }, [addSerpSelections]);
 
   // Calculate progress percentage
-  const strategyStep = steps.find(step => step.id === 0);
-  const keywordStep = steps.find(step => step.id === 1);
-  const contentSteps = steps.filter(step => step.id >= 2 && step.id !== 3); // Filter out strategy, keywords, and SERP Analysis
-  const completedContentSteps = contentSteps.filter(step => step.completed).length;
-  
-  // Progressive progress calculation
-  const progressPercentage = (() => {
-    if (!strategyStep?.completed) return 0;
-    if (!keywordStep?.completed) return 33;
-    return 33 + Math.round((completedContentSteps / contentSteps.length) * 67);
-  })();
+  const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
+  const completedVisibleSteps = visibleSteps.filter(step => step.completed);
+  const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
   // Check current step status
   const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
@@ -107,7 +98,7 @@ export const ContentBuilder = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
     
-    if (hasUnsavedChanges && currentStepId === 4) { // Writing step (now id 4)
+    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
       setPendingNavigation(activeStep + 1);
       setShowUnsavedDialog(true);
     } else {
@@ -117,7 +108,7 @@ export const ContentBuilder = () => {
   
   // Handle previous step navigation
   const handlePrevStep = () => {
-    if (hasUnsavedChanges && currentStepId === 4) { // Writing step (now id 4)
+    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
       setPendingNavigation(activeStep - 1);
       setShowUnsavedDialog(true);
     } else {
@@ -165,7 +156,7 @@ export const ContentBuilder = () => {
 
   // Display API key status warning when needed
   useEffect(() => {
-    if (apiKeyStatus === 'not-found' && (activeStep === 1 || currentStepId === 3)) {
+    if (apiKeyStatus === 'not-found' && (activeStep === 0 || currentStepId === 2)) {
       toast.warning(
         "No SERP API key found. Please add your API key in Settings to see real data.",
         {
@@ -178,7 +169,7 @@ export const ContentBuilder = () => {
           }
         }
       );
-    } else if (apiKeyStatus === 'error' && (activeStep === 1 || currentStepId === 3)) {
+    } else if (apiKeyStatus === 'error' && (activeStep === 0 || currentStepId === 2)) {
       toast.error(
         "Error checking for SERP API key. You'll see mock data instead.",
         {
@@ -194,13 +185,12 @@ export const ContentBuilder = () => {
     const stepID = steps[activeStep].id;
     
     switch (stepID) {
-      case 0: return <EnhancedContentStrategyStep />;
-      case 1: return <KeywordSelectionStep />;
-      case 2: return <ContentTypeAndOutlineStep />;
-      case 3: return <SerpAnalysisStep />;
-      case 4: return <ContentWritingStep />;
-      case 5: return <OptimizeAndReviewStep />;
-      default: return <EnhancedContentStrategyStep />;
+      case 0: return <KeywordSelectionStep />;
+      case 1: return <ContentTypeAndOutlineStep />;
+      case 2: return <SerpAnalysisStep />;
+      case 3: return <ContentWritingStep />;
+      case 4: return <OptimizeAndReviewStep />;
+      default: return <KeywordSelectionStep />;
     }
   };
   
@@ -208,7 +198,6 @@ export const ContentBuilder = () => {
   const getVisibleStepInfo = () => {
     // Calculate the visible step number (excluding the SERP Analysis step)
     const currentStepID = steps[activeStep].id;
-    const visibleSteps = steps.filter(step => step.id !== 3); // Exclude SERP Analysis step
     const visibleStepNumber = visibleSteps.findIndex(step => step.id === currentStepID) + 1;
     
     return {
@@ -220,7 +209,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 4;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -229,7 +218,7 @@ export const ContentBuilder = () => {
         steps={steps} 
         activeStep={activeStep} 
         navigateToStep={(step) => {
-          if (hasUnsavedChanges && currentStepId === 4) {
+          if (hasUnsavedChanges && currentStepId === 3) {
             setPendingNavigation(step);
             setShowUnsavedDialog(true);
           } else {
@@ -244,28 +233,9 @@ export const ContentBuilder = () => {
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/40 px-6 py-3">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              {activeStep === 0 ? (
-                <div className="p-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-              ) : activeStep === 1 ? (
-                <div className="p-1 rounded-full bg-gradient-to-r from-green-400 to-emerald-500">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-              ) : (
-                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              )}
-              <h1 className={cn(
-                "text-lg font-semibold bg-clip-text text-transparent",
-                activeStep === 0 
-                  ? "bg-gradient-to-r from-amber-400 to-orange-500"
-                  : activeStep === 1
-                    ? "bg-gradient-to-r from-green-400 to-emerald-500"
-                    : "bg-gradient-to-r from-neon-purple to-neon-blue"
-              )}>
-                {activeStep === 0 ? 'Strategy Studio' : 
-                 activeStep === 1 ? 'Keyword Research' : 
-                 steps[activeStep].name}
+              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+                {steps[activeStep].name}
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -275,20 +245,8 @@ export const ContentBuilder = () => {
                   <span>Using mock data</span>
                 </div>
               )}
-              <div className={cn(
-                "text-xs px-3 py-1 rounded-full border",
-                activeStep === 0
-                  ? "text-amber-300 bg-amber-950/30 border-amber-800/30"
-                  : activeStep === 1
-                    ? "text-green-300 bg-green-950/30 border-green-800/30"
-                    : "text-muted-foreground bg-white/5 border-white/10"
-              )}>
-                {activeStep === 0 
-                  ? 'Foundation Phase'
-                  : activeStep === 1
-                    ? 'Research Phase'
-                    : `Step ${stepInfo.current} of ${stepInfo.total}`
-                }
+              <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                Step {stepInfo.current} of {stepInfo.total}
               </div>
             </div>
           </div>
