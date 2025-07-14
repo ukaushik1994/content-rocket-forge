@@ -15,6 +15,8 @@ export interface QuestionData {
   contentType: 'blog' | 'faq' | 'video' | 'infographic' | 'guide';
   competitionLevel: number;
   source: string;
+  faqScore: number; // 0-100 score indicating FAQ suitability
+  isFaqRecommended: boolean; // Quick boolean for FAQ filtering
 }
 
 export interface PrepositionData {
@@ -125,12 +127,77 @@ function determineFunnelStage(text: string, intent: string): 'awareness' | 'cons
 function recommendContentType(question: string, intent: string, type: string): QuestionData['contentType'] {
   const lowerQuestion = question.toLowerCase();
   
-  if (type === 'how') return 'guide';
-  if (lowerQuestion.includes('vs') || lowerQuestion.includes('compare')) return 'infographic';
-  if (intent === 'commercial') return 'blog';
-  if (type === 'what' && lowerQuestion.includes('is')) return 'faq';
+  // FAQ identification logic - enhanced for better FAQ detection
+  const faqIndicators = [
+    'what is', 'what are', 'what does', 'what do',
+    'how long', 'how much', 'how many', 'how often',
+    'why is', 'why do', 'why does', 'why should',
+    'when is', 'when do', 'when should',
+    'where is', 'where can', 'where do',
+    'who is', 'who can', 'who should',
+    'which is', 'which are', 'which should',
+    'can i', 'can you', 'can we',
+    'will it', 'will you', 'will this',
+    'should i', 'should you', 'should we',
+    'is it', 'are there', 'do i need'
+  ];
+  
+  const isFaqCandidate = faqIndicators.some(indicator => 
+    lowerQuestion.startsWith(indicator) || lowerQuestion.includes(` ${indicator} `)
+  );
+  
+  // Additional FAQ signals
+  const hasSimpleAnswer = question.length < 80; // Shorter questions often have concise FAQ answers
+  const isDefinitional = lowerQuestion.includes('definition') || lowerQuestion.includes('meaning');
+  const isBasicQuestion = intent === 'informational' && (type === 'what' || type === 'why' || type === 'when');
+  
+  if (isFaqCandidate || isDefinitional || (isBasicQuestion && hasSimpleAnswer)) {
+    return 'faq';
+  }
+  
+  // Other content type logic
+  if (type === 'how' && !lowerQuestion.includes('to choose') && !lowerQuestion.includes('to compare')) return 'guide';
+  if (lowerQuestion.includes('vs') || lowerQuestion.includes('compare') || lowerQuestion.includes('difference')) return 'infographic';
+  if (intent === 'commercial' && !isFaqCandidate) return 'blog';
+  if (type === 'how' && (lowerQuestion.includes('step') || lowerQuestion.includes('tutorial'))) return 'guide';
   
   return 'blog'; // default
+}
+
+/**
+ * Calculate FAQ score based on question characteristics
+ */
+function calculateFaqScore(question: string, intent: string, type: string, searchVolume: number): number {
+  let score = 0;
+  const lowerQuestion = question.toLowerCase();
+  
+  // Base score for question types that work well as FAQs
+  if (['what', 'why', 'when', 'who', 'where'].includes(type)) score += 30;
+  if (['how', 'which', 'can', 'will', 'should'].includes(type)) score += 20;
+  
+  // Content indicators
+  if (lowerQuestion.includes('what is') || lowerQuestion.includes('what are')) score += 25;
+  if (lowerQuestion.includes('how long') || lowerQuestion.includes('how much')) score += 20;
+  if (lowerQuestion.includes('definition') || lowerQuestion.includes('meaning')) score += 30;
+  
+  // Intent bonus
+  if (intent === 'informational') score += 15;
+  if (intent === 'navigational') score += 10;
+  
+  // Length consideration (FAQs work better for concise questions)
+  if (question.length < 50) score += 15;
+  else if (question.length < 80) score += 10;
+  else if (question.length > 120) score -= 10;
+  
+  // Search volume consideration
+  if (searchVolume > 1000) score += 10;
+  if (searchVolume > 5000) score += 5;
+  
+  // Complexity indicators (reduce FAQ score for complex topics)
+  const complexityIndicators = ['strategy', 'implementation', 'advanced', 'comprehensive', 'detailed analysis'];
+  if (complexityIndicators.some(indicator => lowerQuestion.includes(indicator))) score -= 15;
+  
+  return Math.max(0, Math.min(100, score));
 }
 
 /**
@@ -178,14 +245,15 @@ function processQuestionsFromSerp(serpData: SerpAnalysisResult, keyword: string)
   }
 
   return serpData.peopleAlsoAsk.map((item, index) => {
+    // Estimate search volume based on position and main keyword volume
+    const baseVolume = serpData.searchVolume || 1000;
+    const estimatedVolume = Math.floor(baseVolume * (0.1 + (Math.random() * 0.4)) * (5 - index) / 5);
+    
     const questionType = extractQuestionType(item.question);
     const intent = determineIntent(item.question);
     const funnelStage = determineFunnelStage(item.question, intent);
     const contentType = recommendContentType(item.question, intent, questionType);
-    
-    // Estimate search volume based on position and main keyword volume
-    const baseVolume = serpData.searchVolume || 1000;
-    const estimatedVolume = Math.floor(baseVolume * (0.1 + (Math.random() * 0.4)) * (5 - index) / 5);
+    const faqScore = calculateFaqScore(item.question, intent, questionType, estimatedVolume);
     
     const competition = Math.floor(Math.random() * 100);
     const difficulty = calculateDifficulty(estimatedVolume, competition);
@@ -205,7 +273,9 @@ function processQuestionsFromSerp(serpData: SerpAnalysisResult, keyword: string)
       funnelStage,
       contentType,
       competitionLevel: competition,
-      source: item.source || 'Google SERP'
+      source: item.source || 'Google SERP',
+      faqScore,
+      isFaqRecommended: faqScore >= 60 // Threshold for FAQ recommendation
     };
   });
 }
@@ -364,7 +434,9 @@ function createFallbackData(keyword: string): AnswerThePeopleResult {
         funnelStage: 'awareness',
         contentType: 'faq',
         competitionLevel: 45,
-        source: 'Fallback Data'
+        source: 'Fallback Data',
+        faqScore: 75,
+        isFaqRecommended: true
       },
       {
         id: 'fallback-2',
@@ -379,7 +451,9 @@ function createFallbackData(keyword: string): AnswerThePeopleResult {
         funnelStage: 'consideration',
         contentType: 'guide',
         competitionLevel: 52,
-        source: 'Fallback Data'
+        source: 'Fallback Data',
+        faqScore: 45,
+        isFaqRecommended: false
       }
     ],
     prepositions: [
@@ -430,7 +504,66 @@ export function exportQuestionsForContentBuilder(questions: QuestionData[]): Arr
       intent: q.intent,
       funnelStage: q.funnelStage,
       contentType: q.contentType,
-      source: q.source
+      source: q.source,
+      faqScore: q.faqScore,
+      isFaqRecommended: q.isFaqRecommended
     }
   }));
+}
+
+/**
+ * Export FAQ questions specifically for Content Builder
+ */
+export function exportFaqQuestionsForContentBuilder(questions: QuestionData[]): Array<{
+  type: string;
+  content: string;
+  metadata: any;
+}> {
+  const faqQuestions = questions.filter(q => q.isFaqRecommended);
+  
+  return faqQuestions.map(q => ({
+    type: 'faq',
+    content: q.question,
+    metadata: {
+      searchVolume: q.searchVolume,
+      difficulty: q.difficulty,
+      opportunity: q.opportunity,
+      intent: q.intent,
+      funnelStage: q.funnelStage,
+      contentType: 'faq',
+      source: q.source,
+      faqScore: q.faqScore,
+      isFaqRecommended: true,
+      suggestedAnswerLength: q.question.length < 50 ? 'short' : 'medium',
+      priority: q.opportunity === 'High' ? 'high' : q.opportunity === 'Medium' ? 'medium' : 'low'
+    }
+  }));
+}
+
+/**
+ * Get FAQ statistics from questions data
+ */
+export function getFaqStatistics(questions: QuestionData[]): {
+  totalFaqs: number;
+  highOpportunityFaqs: number;
+  averageFaqScore: number;
+  faqsByType: Record<string, number>;
+} {
+  const faqQuestions = questions.filter(q => q.isFaqRecommended);
+  
+  const faqsByType = faqQuestions.reduce((acc, q) => {
+    acc[q.type] = (acc[q.type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const averageFaqScore = faqQuestions.length > 0 
+    ? faqQuestions.reduce((sum, q) => sum + q.faqScore, 0) / faqQuestions.length 
+    : 0;
+  
+  return {
+    totalFaqs: faqQuestions.length,
+    highOpportunityFaqs: faqQuestions.filter(q => q.opportunity === 'High').length,
+    averageFaqScore: Math.round(averageFaqScore),
+    faqsByType
+  };
 }

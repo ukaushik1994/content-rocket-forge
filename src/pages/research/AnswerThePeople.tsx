@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, MessageCircle, HelpCircle, TrendingUp, Search, Plus, Download, FileText, Target, Lightbulb, Eye, Filter, Brain, Zap, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
-import { analyzeAnswerThePeople, exportQuestionsForContentBuilder, type AnswerThePeopleResult, type QuestionData } from '@/services/answerThePeopleService';
+import { analyzeAnswerThePeople, exportQuestionsForContentBuilder, exportFaqQuestionsForContentBuilder, getFaqStatistics, type AnswerThePeopleResult, type QuestionData } from '@/services/answerThePeopleService';
 import { useNavigate } from 'react-router-dom';
 
 const AnswerThePeople = () => {
@@ -17,6 +17,7 @@ const AnswerThePeople = () => {
   const [loading, setLoading] = useState(false);
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState('All');
+  const [showFaqOnly, setShowFaqOnly] = useState(false);
   
   const navigate = useNavigate();
 
@@ -267,8 +268,43 @@ const AnswerThePeople = () => {
 
   const getFilteredQuestions = () => {
     if (!questionsData) return [];
-    if (activeFilter === 'All') return questionsData.questions;
-    return questionsData.questions.filter(q => q.type.toLowerCase() === activeFilter.toLowerCase());
+    
+    let filtered = questionsData.questions;
+    
+    // Apply FAQ filter first
+    if (showFaqOnly) {
+      filtered = filtered.filter(q => q.isFaqRecommended);
+    }
+    
+    // Then apply type filter
+    if (activeFilter !== 'All') {
+      filtered = filtered.filter(q => q.type.toLowerCase() === activeFilter.toLowerCase());
+    }
+    
+    return filtered;
+  };
+  
+  const handleExtractFaqs = () => {
+    if (!questionsData) {
+      toast.error("No data available to extract FAQs");
+      return;
+    }
+
+    const faqQuestions = questionsData.questions.filter(q => q.isFaqRecommended);
+    
+    if (faqQuestions.length === 0) {
+      toast.error("No FAQ-suitable questions found");
+      return;
+    }
+
+    // Store FAQ questions in localStorage to pass to Content Builder
+    const faqsForBuilder = exportFaqQuestionsForContentBuilder(faqQuestions);
+    localStorage.setItem('pendingSerpSelections', JSON.stringify(faqsForBuilder));
+    
+    toast.success(`Extracted ${faqQuestions.length} FAQ questions for content creation`, {
+      description: "Navigate to Content Builder to create your FAQ page"
+    });
+    navigate('/content/builder');
   };
 
   const getIntentColor = (intent: string) => {
@@ -325,6 +361,15 @@ const AnswerThePeople = () => {
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-neon-purple/50 text-neon-purple hover:bg-neon-purple/10"
+                  onClick={handleExtractFaqs}
+                  disabled={!questionsData || questionsData.questions.filter(q => q.isFaqRecommended).length === 0}
+                >
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Extract FAQ ({questionsData?.questions.filter(q => q.isFaqRecommended).length || 0})
                 </Button>
                 <Button 
                   className="bg-neon-blue hover:bg-neon-blue/90"
@@ -393,6 +438,12 @@ const AnswerThePeople = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
+                        <HelpCircle className="h-4 w-4 text-neon-purple" />
+                        <span className="text-sm text-muted-foreground">
+                          FAQ Questions: <span className="text-neon-purple">{questionsData.questions.filter(q => q.isFaqRecommended).length}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <Zap className="h-4 w-4 text-neon-purple" />
                         <span className="text-sm text-muted-foreground">
                           {questionsData.isRealData ? 'Real SERP Data' : 'Limited Data'}
@@ -410,7 +461,7 @@ const AnswerThePeople = () => {
             <Tabs defaultValue="questions" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 bg-glass border border-white/10">
                 <TabsTrigger value="questions" className="data-[state=active]:bg-neon-blue data-[state=active]:text-white">
-                  Questions ({questionsData.questions.length})
+                  Questions ({questionsData.questions.length}) • FAQ ({questionsData.questions.filter(q => q.isFaqRecommended).length})
                 </TabsTrigger>
                 <TabsTrigger value="prepositions" className="data-[state=active]:bg-neon-blue data-[state=active]:text-white">
                   Prepositions ({questionsData.prepositions.length})
@@ -421,10 +472,28 @@ const AnswerThePeople = () => {
               </TabsList>
 
               <TabsContent value="questions" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-white">Questions people ask about "content marketing"</h2>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Discover questions your audience is asking about this topic</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-white">
+                      Questions people ask about "{questionsData.keyword}"
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={showFaqOnly ? 'default' : 'outline'}
+                        className={`text-xs ${showFaqOnly ? 'bg-neon-purple hover:bg-neon-purple/90' : 'border-neon-purple/50 text-neon-purple hover:bg-neon-purple/10'}`}
+                        onClick={() => setShowFaqOnly(!showFaqOnly)}
+                      >
+                        <HelpCircle className="h-3 w-3 mr-1" />
+                        FAQ Only ({questionsData.questions.filter(q => q.isFaqRecommended).length})
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {showFaqOnly ? 'FAQ-suitable questions for your knowledge base' : 'Discover questions your audience is asking about this topic'}
+                    </span>
                     <div className="flex gap-1">
                       {['All', 'What', 'How', 'Why', 'When', 'Where', 'Which', 'Who'].map((filter) => (
                         <Button 
@@ -437,7 +506,10 @@ const AnswerThePeople = () => {
                           {filter}
                           {filter !== 'All' && questionsData && (
                             <span className="ml-1 text-xs opacity-70">
-                              ({questionsData.questions.filter(q => q.type.toLowerCase() === filter.toLowerCase()).length})
+                              ({questionsData.questions.filter(q => 
+                                q.type.toLowerCase() === filter.toLowerCase() && 
+                                (!showFaqOnly || q.isFaqRecommended)
+                              ).length})
                             </span>
                           )}
                         </Button>
@@ -476,9 +548,18 @@ const AnswerThePeople = () => {
                               <Badge variant="outline" className={`text-xs ${getFunnelStageColor(item.funnelStage)}`}>
                                 {item.funnelStage}
                               </Badge>
-                              <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-300 border-purple-400/30">
+                              <Badge variant="outline" className={`text-xs ${
+                                item.contentType === 'faq' 
+                                  ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' 
+                                  : 'bg-purple-500/20 text-purple-300 border-purple-400/30'
+                              }`}>
                                 {item.contentType}
                               </Badge>
+                              {item.isFaqRecommended && (
+                                <Badge variant="outline" className="text-xs bg-neon-purple/30 text-neon-purple border-neon-purple/50">
+                                  FAQ Score: {item.faqScore}
+                                </Badge>
+                              )}
                             </div>
                             
                             <h3 className="text-white font-medium mb-3">{item.question}</h3>
