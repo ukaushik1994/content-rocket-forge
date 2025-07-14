@@ -140,16 +140,16 @@ export class KeywordClusteringService {
     provider: AiProvider = 'openai'
   ): Promise<KeywordWithMetrics[]> {
     try {
-      const gaps = competitorKeywords.filter(kw => 
+      const keywordGaps = competitorKeywords.filter(kw => 
         !yourKeywords.some(yk => 
           yk.toLowerCase().includes(kw.toLowerCase()) || 
           kw.toLowerCase().includes(yk.toLowerCase())
         )
       );
 
-      if (gaps.length === 0) return [];
+      if (keywordGaps.length === 0) return [];
 
-      const prompt = this.createGapAnalysisPrompt(gaps, topic);
+      const prompt = this.createGapAnalysisPrompt(keywordGaps, topic);
       
       const response = await sendChatRequest(provider, {
         messages: [
@@ -176,7 +176,7 @@ export class KeywordClusteringService {
       
     } catch (error) {
       console.error('Error analyzing competitor gaps:', error);
-      return this.createFallbackGaps(gaps);
+      return this.createFallbackGaps(keywordGaps);
     }
   }
 
@@ -237,10 +237,10 @@ Return JSON format:
 }`;
   }
 
-  private createGapAnalysisPrompt(gaps: string[], topic: string): string {
+  private createGapAnalysisPrompt(keywordGaps: string[], topic: string): string {
     return `Analyze these competitor keywords for "${topic}" to identify valuable opportunities:
 
-Competitor Keywords: ${gaps.join(', ')}
+Competitor Keywords: ${keywordGaps.join(', ')}
 
 Evaluate each keyword for:
 1. Business relevance and value
@@ -440,8 +440,8 @@ Return JSON format:
     );
   }
 
-  private createFallbackGaps(gaps: string[]): KeywordWithMetrics[] {
-    return gaps.slice(0, 10).map(gap => ({
+  private createFallbackGaps(keywordGaps: string[]): KeywordWithMetrics[] {
+    return keywordGaps.slice(0, 10).map(gap => ({
       keyword: gap,
       searchVolume: Math.floor(Math.random() * 1000) + 100,
       difficulty: Math.floor(Math.random() * 80) + 20,

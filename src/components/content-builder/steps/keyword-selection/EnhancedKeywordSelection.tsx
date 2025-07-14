@@ -53,7 +53,7 @@ export const EnhancedKeywordSelection: React.FC<EnhancedKeywordSelectionProps> =
       const [clusterResults, intentResults, longTailResults] = await Promise.all([
         keywordClusteringService.clusterKeywords(
           allKeywords,
-          contentStrategy?.primaryGoal || mainKeyword,
+          contentStrategy?.businessObjectives || mainKeyword,
           { maxClusters: 4, minClusterSize: 2 }
         ),
         searchIntentAnalyzer.batchAnalyzeIntent(
@@ -62,7 +62,7 @@ export const EnhancedKeywordSelection: React.FC<EnhancedKeywordSelectionProps> =
         ),
         keywordClusteringService.findLongTailOpportunities(
           allKeywords.slice(0, 3), // Use top 3 for long-tail discovery
-          contentStrategy?.primaryGoal || mainKeyword
+          contentStrategy?.businessObjectives || mainKeyword
         )
       ]);
 
@@ -339,7 +339,7 @@ export const EnhancedKeywordSelection: React.FC<EnhancedKeywordSelectionProps> =
                           <span className={getDifficultyColor(suggestion.difficulty)}>
                             Difficulty: {suggestion.difficulty}
                           </span>
-                          <Badge className={getIntentColor(suggestion.intent)} size="sm">
+                          <Badge className={getIntentColor(suggestion.intent)}>
                             {suggestion.intent}
                           </Badge>
                         </div>
