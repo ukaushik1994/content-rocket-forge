@@ -17,6 +17,7 @@ import ContentStrategy from "./pages/research/ContentStrategy";
 import KeywordResearch from "./pages/research/KeywordResearch";
 import AnswerThePeople from "./pages/research/AnswerThePeople";
 import TopicClusters from "./pages/research/TopicClusters";
+import AIChat from "./pages/AIChat";
 import NotFound from "./pages/NotFound";
 import { ContentProvider } from "./contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -47,6 +48,9 @@ const App = () => (
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                
+                {/* AI Chat route */}
+                <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
                 
                 {/* Research routes */}
                 <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
