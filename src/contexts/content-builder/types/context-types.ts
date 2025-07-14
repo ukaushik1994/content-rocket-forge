@@ -8,6 +8,7 @@ import { ContentBuilderAction } from './action-types';
 import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
 import { Solution } from './solution-types';
 import { OutlineSection } from './outline-types';
+import { ContentStrategy } from './content-strategy-types';
 
 // Context Type
 export interface ContentBuilderContextType {
@@ -16,6 +17,7 @@ export interface ContentBuilderContextType {
   
   // Navigation Actions
   navigateToStep: (step: number) => void;
+  markStepCompleted: (step: number) => void;
   
   // Keyword Actions
   setMainKeyword: (keyword: string) => void;
@@ -51,4 +53,7 @@ export interface ContentBuilderContextType {
   saveContentToDraft: (options: SaveContentParams) => Promise<string | null>;
   saveContentToPublished: (options: SaveContentParams) => Promise<string | null>;
   setAdditionalInstructions: (instructions: string) => void;
+
+  // Content Strategy Actions
+  setContentStrategy: (strategy: ContentStrategy) => void;
 }

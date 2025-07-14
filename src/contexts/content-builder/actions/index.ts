@@ -1,5 +1,5 @@
 
-import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from '../types/index';
+import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType, ContentStrategy } from '../types/index';
 import { createKeywordActions } from './keywordActions';
 import { createContentActions } from './contentActions';
 import { createSerpActions } from './serpActions';
@@ -30,7 +30,12 @@ export const createContentBuilderActions = (
     ...serpActions,
     ...navigationActions,
     ...publishActions,
-    ...seoActions
+    ...seoActions,
+
+    // Content Strategy Actions
+    setContentStrategy: (strategy: ContentStrategy) => {
+      dispatch({ type: 'SET_CONTENT_STRATEGY', payload: strategy });
+    },
   };
 };
 

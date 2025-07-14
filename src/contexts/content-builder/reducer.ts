@@ -274,6 +274,12 @@ export const contentBuilderReducer = (
         ...state,
         additionalInstructions: action.payload
       };
+
+    case 'SET_CONTENT_STRATEGY':
+      return {
+        ...state,
+        contentStrategy: action.payload
+      };
       
     default:
       return state;

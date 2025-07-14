@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 // Step components
+import { ContentStrategyStep } from './steps/ContentStrategyStep';
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
 import { ContentTypeAndOutlineStep } from './steps/ContentTypeAndOutlineStep';
 import { ContentWritingStep } from './steps/ContentWritingStep';
@@ -51,7 +52,7 @@ export const ContentBuilder = () => {
   }, [addSerpSelections]);
 
   // Calculate progress percentage
-  const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
+  const visibleSteps = steps.filter(step => step.id !== 3); // Exclude SERP Analysis step
   const completedVisibleSteps = visibleSteps.filter(step => step.completed);
   const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
   
@@ -98,7 +99,7 @@ export const ContentBuilder = () => {
     console.log("Attempting to navigate to next step from", currentStepId);
     console.log("Current step complete:", currentStepComplete);
     
-    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
+    if (hasUnsavedChanges && currentStepId === 4) { // Writing step (now id 4)
       setPendingNavigation(activeStep + 1);
       setShowUnsavedDialog(true);
     } else {
@@ -108,7 +109,7 @@ export const ContentBuilder = () => {
   
   // Handle previous step navigation
   const handlePrevStep = () => {
-    if (hasUnsavedChanges && currentStepId === 3) { // Writing step (now id 3)
+    if (hasUnsavedChanges && currentStepId === 4) { // Writing step (now id 4)
       setPendingNavigation(activeStep - 1);
       setShowUnsavedDialog(true);
     } else {
@@ -156,7 +157,7 @@ export const ContentBuilder = () => {
 
   // Display API key status warning when needed
   useEffect(() => {
-    if (apiKeyStatus === 'not-found' && (activeStep === 0 || currentStepId === 2)) {
+    if (apiKeyStatus === 'not-found' && (activeStep === 1 || currentStepId === 3)) {
       toast.warning(
         "No SERP API key found. Please add your API key in Settings to see real data.",
         {
@@ -169,7 +170,7 @@ export const ContentBuilder = () => {
           }
         }
       );
-    } else if (apiKeyStatus === 'error' && (activeStep === 0 || currentStepId === 2)) {
+    } else if (apiKeyStatus === 'error' && (activeStep === 1 || currentStepId === 3)) {
       toast.error(
         "Error checking for SERP API key. You'll see mock data instead.",
         {
@@ -185,12 +186,13 @@ export const ContentBuilder = () => {
     const stepID = steps[activeStep].id;
     
     switch (stepID) {
-      case 0: return <KeywordSelectionStep />;
-      case 1: return <ContentTypeAndOutlineStep />;
-      case 2: return <SerpAnalysisStep />;
-      case 3: return <ContentWritingStep />;
-      case 4: return <OptimizeAndReviewStep />;
-      default: return <KeywordSelectionStep />;
+      case 0: return <ContentStrategyStep />;
+      case 1: return <KeywordSelectionStep />;
+      case 2: return <ContentTypeAndOutlineStep />;
+      case 3: return <SerpAnalysisStep />;
+      case 4: return <ContentWritingStep />;
+      case 5: return <OptimizeAndReviewStep />;
+      default: return <ContentStrategyStep />;
     }
   };
   
@@ -209,7 +211,7 @@ export const ContentBuilder = () => {
   const stepInfo = getVisibleStepInfo();
   
   // Check if we're on the final step
-  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 4;
+  const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 5;
   
   return (
     <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
@@ -218,7 +220,7 @@ export const ContentBuilder = () => {
         steps={steps} 
         activeStep={activeStep} 
         navigateToStep={(step) => {
-          if (hasUnsavedChanges && currentStepId === 3) {
+          if (hasUnsavedChanges && currentStepId === 4) {
             setPendingNavigation(step);
             setShowUnsavedDialog(true);
           } else {

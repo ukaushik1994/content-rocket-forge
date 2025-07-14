@@ -47,7 +47,24 @@ export const createNavigationActions = (
     }, 100);
   };
   
+  const markStepCompleted = (step: number) => {
+    if (step < 0 || step >= state.steps.length) {
+      console.warn('Invalid step number:', step);
+      return;
+    }
+    
+    dispatch({ type: 'MARK_STEP_COMPLETED', payload: step });
+    
+    // Auto-save after marking step as completed
+    setTimeout(() => {
+      const newState = { ...state };
+      newState.steps[step].completed = true;
+      saveStateToStorage(newState);
+    }, 100);
+  };
+
   return {
-    navigateToStep
+    navigateToStep,
+    markStepCompleted
   };
 };
