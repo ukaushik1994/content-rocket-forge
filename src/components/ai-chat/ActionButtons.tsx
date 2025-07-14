@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       x: 0, 
       scale: 1,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 300,
         damping: 25
       }
