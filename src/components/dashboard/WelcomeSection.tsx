@@ -27,14 +27,14 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
     }} />
       
       {/* Animated particles */}
-      <motion.div className="absolute inset-0 z-0 overflow-hidden" initial={{
+      <motion.div initial={{
       opacity: 0
     }} animate={{
       opacity: 0.6
     }} transition={{
       delay: 0.5,
       duration: 1
-    }}>
+    }} className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
         {[...Array(5)].map((_, i) => <motion.div key={i} className="absolute rounded-full bg-neon-blue/20 blur-md" style={{
         width: Math.random() * 100 + 50,
         height: Math.random() * 100 + 50,
