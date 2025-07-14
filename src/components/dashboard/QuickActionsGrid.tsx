@@ -42,7 +42,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, rotate: 5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200 } }
       },
       iconBg: "bg-gradient-to-br from-neon-purple/40 to-neon-blue/30",
       glowColor: "shadow-[0_0_20px_rgb(155,135,245,0.3)]"
@@ -60,7 +60,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, rotate: -5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.05 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.05 } }
       },
       iconBg: "bg-gradient-to-br from-blue-400/40 to-cyan-500/30",
       glowColor: "shadow-[0_0_20px_rgb(59,130,246,0.3)]"
@@ -78,7 +78,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, rotate: 180, transition: { duration: 0.5 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.1 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.1 } }
       },
       iconBg: "bg-gradient-to-br from-indigo-400/40 to-violet-500/30",
       glowColor: "shadow-[0_0_20px_rgb(99,102,241,0.3)]"
@@ -96,7 +96,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, y: -5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.15 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.15 } }
       },
       iconBg: "bg-gradient-to-br from-green-400/40 to-emerald-500/30",
       glowColor: "shadow-[0_0_20px_rgb(34,197,94,0.3)]"
@@ -114,7 +114,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, y: -5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.2 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.2 } }
       },
       iconBg: "bg-gradient-to-br from-neon-pink/40 to-neon-blue/30",
       glowColor: "shadow-[0_0_20px_rgb(217,70,239,0.3)]"
@@ -132,7 +132,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, rotate: -5, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.25 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.25 } }
       },
       iconBg: "bg-gradient-to-br from-amber-400/40 to-orange-500/30",
       glowColor: "shadow-[0_0_20px_rgb(245,158,11,0.3)]"
@@ -150,7 +150,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, y: -3, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.3 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.3 } }
       },
       iconBg: "bg-gradient-to-br from-cyan-400/40 to-teal-500/30",
       glowColor: "shadow-[0_0_20px_rgb(6,182,212,0.3)]"
@@ -168,7 +168,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, rotate: 10, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.35 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.35 } }
       },
       iconBg: "bg-gradient-to-br from-rose-400/40 to-pink-500/30",
       glowColor: "shadow-[0_0_20px_rgb(244,63,94,0.3)]"
@@ -186,7 +186,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, y: -3, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.4 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.4 } }
       },
       iconBg: "bg-gradient-to-br from-purple-400/40 to-fuchsia-500/30",
       glowColor: "shadow-[0_0_20px_rgb(168,85,247,0.3)]"
@@ -204,7 +204,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, rotate: -3, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.45 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.45 } }
       },
       iconBg: "bg-gradient-to-br from-emerald-400/40 to-green-500/30",
       glowColor: "shadow-[0_0_20px_rgb(16,185,129,0.3)]"
@@ -222,7 +222,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { scale: 1.2, y: -2, transition: { duration: 0.3 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.5 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.5 } }
       },
       iconBg: "bg-gradient-to-br from-blue-300/40 to-sky-500/30",
       glowColor: "shadow-[0_0_20px_rgb(147,197,253,0.3)]"
@@ -240,7 +240,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
         hover: { rotate: 90, scale: 1.2, transition: { duration: 0.5 } },
         tap: { scale: 0.9, transition: { duration: 0.1 } },
         initial: { opacity: 0, y: -15 },
-        animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, delay: 0.55 } }
+        animate: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, delay: 0.55 } }
       },
       iconBg: "bg-gradient-to-br from-slate-400/40 to-zinc-500/30",
       glowColor: "shadow-[0_0_20px_rgb(148,163,184,0.3)]"
@@ -257,7 +257,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({ navigate }) 
           transition={{ 
             delay: action.delay, 
             duration: 0.6,
-            type: "spring",
+            type: "spring" as const,
             stiffness: 100,
             damping: 20
           }}
