@@ -49,8 +49,8 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
 
     setIsAnalyzing(true);
     try {
-      // Run quality analysis - fix the boolean parameter issue
-      const qualityResult = await analyzeContentQuality(content, title, writingStyle, expertiseLevel, aiProvider, true);
+      // Run quality analysis - fix the parameter order
+      const qualityResult = await analyzeContentQuality(content, title, writingStyle, expertiseLevel, true, aiProvider);
       if (qualityResult) {
         setMetrics(qualityResult);
         toast.success('Quality analysis completed');
