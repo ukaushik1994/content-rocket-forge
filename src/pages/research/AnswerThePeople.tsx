@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, MessageCircle, HelpCircle, TrendingUp, Search, Plus, Download, FileText, Target, Lightbulb, Eye, Filter, Brain, Zap, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { analyzeAnswerThePeople, exportQuestionsForContentBuilder, type AnswerThePeopleResult, type QuestionData } from '@/services/answerThePeopleService';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useNavigate } from 'react-router-dom';
 
 const AnswerThePeople = () => {
@@ -19,7 +18,6 @@ const AnswerThePeople = () => {
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState('All');
   
-  const contentBuilder = useContentBuilder();
   const navigate = useNavigate();
 
   // Sample data matching the reference
@@ -231,12 +229,12 @@ const AnswerThePeople = () => {
     }
 
     const selectedQuestionsData = questionsData?.questions.filter(q => selectedQuestions.has(q.id)) || [];
-    const serpSelections = exportQuestionsForContentBuilder(selectedQuestionsData);
     
-    // Add selections to Content Builder context
-    contentBuilder.addSerpSelections(serpSelections);
+    // Store selected questions in localStorage to pass to Content Builder
+    const questionsForBuilder = exportQuestionsForContentBuilder(selectedQuestionsData);
+    localStorage.setItem('pendingSerpSelections', JSON.stringify(questionsForBuilder));
     
-    toast.success(`Added ${selectedQuestions.size} questions to Content Builder`);
+    toast.success(`Selected ${selectedQuestions.size} questions for content creation`);
     navigate('/content/builder');
   };
 

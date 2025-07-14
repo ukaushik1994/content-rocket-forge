@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { getApiKey } from '@/services/apiKeyService';
 
 export const ContentBuilder = () => {
-  const { state, navigateToStep } = useContentBuilder();
+  const { state, navigateToStep, addSerpSelections } = useContentBuilder();
   const { activeStep, steps, content } = state;
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<number | null>(null);
@@ -29,6 +29,26 @@ export const ContentBuilder = () => {
     const hasDraft = localStorage.getItem('content_builder_draft') !== null;
     setHasUnsavedChanges(hasDraft);
   }, [content]);
+
+  // Check for pending SERP selections from Answer the People
+  useEffect(() => {
+    const pendingSelections = localStorage.getItem('pendingSerpSelections');
+    if (pendingSelections) {
+      try {
+        const selections = JSON.parse(pendingSelections);
+        if (Array.isArray(selections) && selections.length > 0) {
+          addSerpSelections(selections);
+          localStorage.removeItem('pendingSerpSelections');
+          toast.success(`Imported ${selections.length} questions from Answer the People`, {
+            description: "Questions have been added to your SERP selections"
+          });
+        }
+      } catch (error) {
+        console.error('Error processing pending SERP selections:', error);
+        localStorage.removeItem('pendingSerpSelections');
+      }
+    }
+  }, [addSerpSelections]);
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step
