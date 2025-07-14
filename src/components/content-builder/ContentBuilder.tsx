@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { cn } from '@/lib/utils';
 
 // Step components
 import { EnhancedContentStrategyStep } from './steps/EnhancedContentStrategyStep';
@@ -51,9 +52,14 @@ export const ContentBuilder = () => {
   }, [addSerpSelections]);
 
   // Calculate progress percentage
-  const visibleSteps = steps.filter(step => step.id !== 3); // Exclude SERP Analysis step
-  const completedVisibleSteps = visibleSteps.filter(step => step.completed);
-  const progressPercentage = completedVisibleSteps.length / visibleSteps.length * 100;
+  const strategyStep = steps.find(step => step.id === 0);
+  const contentSteps = steps.filter(step => step.id !== 0 && step.id !== 3); // Filter out strategy and SERP Analysis
+  const completedContentSteps = contentSteps.filter(step => step.completed).length;
+  
+  // If strategy isn't complete, show strategy progress
+  const progressPercentage = !strategyStep?.completed 
+    ? (strategyStep?.completed ? 100 : 0)
+    : Math.round((completedContentSteps / contentSteps.length) * 100);
   
   // Check current step status
   const currentStepComplete = steps[activeStep] ? steps[activeStep].completed : false;
@@ -199,6 +205,7 @@ export const ContentBuilder = () => {
   const getVisibleStepInfo = () => {
     // Calculate the visible step number (excluding the SERP Analysis step)
     const currentStepID = steps[activeStep].id;
+    const visibleSteps = steps.filter(step => step.id !== 3); // Exclude SERP Analysis step
     const visibleStepNumber = visibleSteps.findIndex(step => step.id === currentStepID) + 1;
     
     return {
@@ -234,9 +241,20 @@ export const ContentBuilder = () => {
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/40 px-6 py-3">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
-                {steps[activeStep].name}
+              {activeStep === 0 ? (
+                <div className="p-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
+              ) : (
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              )}
+              <h1 className={cn(
+                "text-lg font-semibold bg-clip-text text-transparent",
+                activeStep === 0 
+                  ? "bg-gradient-to-r from-amber-400 to-orange-500"
+                  : "bg-gradient-to-r from-neon-purple to-neon-blue"
+              )}>
+                {activeStep === 0 ? 'Strategy Studio' : steps[activeStep].name}
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -246,8 +264,16 @@ export const ContentBuilder = () => {
                   <span>Using mock data</span>
                 </div>
               )}
-              <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
-                Step {stepInfo.current} of {stepInfo.total}
+              <div className={cn(
+                "text-xs px-3 py-1 rounded-full border",
+                activeStep === 0
+                  ? "text-amber-300 bg-amber-950/30 border-amber-800/30"
+                  : "text-muted-foreground bg-white/5 border-white/10"
+              )}>
+                {activeStep === 0 
+                  ? 'Foundation Phase'
+                  : `Step ${stepInfo.current} of ${stepInfo.total}`
+                }
               </div>
             </div>
           </div>

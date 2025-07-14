@@ -6,17 +6,19 @@ export const useContentBuilderValidation = () => {
   
   const validateStep = (stepIndex: number): boolean => {
     switch (stepIndex) {
-      case 0: // Keyword Selection
+      case 0: // Strategy Studio
+        return !!(state.contentStrategy);
+      case 1: // Keyword Selection
         return !!(state.mainKeyword && state.selectedKeywords.length > 0);
-      case 1: // Content Type Selection
+      case 2: // Content Type Selection
         return !!(state.contentType && state.contentFormat && state.contentIntent);
-      case 2: // SERP Analysis
+      case 3: // SERP Analysis
         return !!(state.serpData && state.serpSelections.some(item => item.selected));
-      case 3: // Outline
+      case 4: // Outline
         return !!(state.outline && state.outline.length > 0);
-      case 4: // Content Generation
+      case 5: // Content Generation
         return !!(state.content && state.content.trim().length > 0);
-      case 5: // Final Review
+      case 6: // Final Review
         return !!(state.content && state.steps[5]?.completed);
       default:
         return false;
@@ -24,11 +26,14 @@ export const useContentBuilderValidation = () => {
   };
   
   const canProceedToStep = (stepIndex: number): boolean => {
-    // Can always go to the first step
+    // Can always go to the strategy studio (step 0)
     if (stepIndex === 0) return true;
     
+    // For content creation steps, strategy must be completed first
+    if (stepIndex > 0 && !validateStep(0)) return false;
+    
     // For other steps, check if all previous steps are valid
-    for (let i = 0; i < stepIndex; i++) {
+    for (let i = 1; i < stepIndex; i++) {
       if (!validateStep(i)) return false;
     }
     return true;
