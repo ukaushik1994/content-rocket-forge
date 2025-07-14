@@ -7,7 +7,8 @@ import { AIOutlineGenerator } from '../outline/AIOutlineGenerator';
 import { SelectedSerpItemsCard } from '../outline/SelectedSerpItemsCard';
 import { OutlineTable } from '../outline/OutlineTable';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Settings } from 'lucide-react';
+import { FileText, Settings, Zap } from 'lucide-react';
+import { SolutionSelector } from './SolutionSelector';
 
 export const ContentTypeAndOutlineStep = () => {
   const { state, dispatch } = useContentBuilder();
@@ -38,6 +39,21 @@ export const ContentTypeAndOutlineStep = () => {
         </CardHeader>
         <CardContent>
           <ContentTypeStep />
+        </CardContent>
+      </Card>
+
+      <Separator className="bg-white/10" />
+
+      {/* Solution Selector Section */}
+      <Card className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 border border-white/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-purple-400" />
+            Solution Selection
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SolutionSelector />
         </CardContent>
       </Card>
 
