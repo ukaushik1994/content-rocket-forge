@@ -46,7 +46,7 @@ const Index = () => {
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { type: 'spring', stiffness: 100 }
+      transition: { type: 'spring' as const, stiffness: 100 }
     }
   };
 
@@ -76,7 +76,7 @@ const Index = () => {
       opacity: 1, 
       scale: 1,
       transition: { 
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 70,
         damping: 15,
         delay: 0.4
@@ -90,7 +90,7 @@ const Index = () => {
       opacity: 1,
       y: 0,
       transition: { 
-        type: 'spring', 
+        type: 'spring' as const, 
         stiffness: 80, 
         delay: 0.5 + (custom * 0.1)
       }
@@ -146,7 +146,7 @@ const Index = () => {
                   <motion.div 
                     className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20"
                     whileHover={{ scale: 1.1, backgroundColor: "rgba(155, 135, 245, 0.3)" }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    transition={{ type: "spring" as const, stiffness: 400, damping: 10 }}
                   >
                     <Activity className="h-4 w-4 text-primary" />
                   </motion.div>
