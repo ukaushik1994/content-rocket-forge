@@ -1,16 +1,33 @@
 
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { contentBuilderReducer } from './reducer';
 import { initialState } from './initialState';
 import { createContentBuilderActions } from './actions';
 import { ContentBuilderContextType, ContentBuilderState, ContentBuilderAction } from './types/index';
+import { loadStateFromStorage, autoSaveState, hasSavedState } from './utils/persistence';
 
 // Create the context
 const ContentBuilderContext = createContext<ContentBuilderContextType | undefined>(undefined);
 
 // Provider component
 export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(contentBuilderReducer, initialState);
+  // Initialize state with saved data if available
+  const getInitialState = (): ContentBuilderState => {
+    if (hasSavedState()) {
+      const savedState = loadStateFromStorage();
+      if (savedState) {
+        return { ...initialState, ...savedState };
+      }
+    }
+    return initialState;
+  };
+
+  const [state, dispatch] = useReducer(contentBuilderReducer, getInitialState());
+  
+  // Auto-save state changes
+  useEffect(() => {
+    autoSaveState(state);
+  }, [state]);
   
   // Create actions
   const actions = createContentBuilderActions(state, dispatch);

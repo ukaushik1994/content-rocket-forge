@@ -205,6 +205,12 @@ export const contentBuilderReducer = (
         seoImprovements: [...state.seoImprovements, action.payload]
       };
       
+    case 'SET_SEO_IMPROVEMENTS':
+      return {
+        ...state,
+        seoImprovements: action.payload
+      };
+      
     case 'APPLY_SEO_IMPROVEMENT':
       return {
         ...state,

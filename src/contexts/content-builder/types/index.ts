@@ -14,3 +14,5 @@ export * from './state-types';
 export * from './action-types';
 export * from './context-types';
 export * from './cluster-types';
+export * from './strategy-types';
+export * from './advanced-serp-types';
