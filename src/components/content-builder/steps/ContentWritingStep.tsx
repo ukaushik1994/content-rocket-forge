@@ -5,12 +5,13 @@ import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
+import { LiveOptimizationPanel } from '../optimization/LiveOptimizationPanel';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { saveContentToDraft } from './writing/ContentGenerationService';
 import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, Zap } from 'lucide-react';
 
 export const ContentWritingStep = () => {
   const {
@@ -48,6 +49,9 @@ export const ContentWritingStep = () => {
   
   // Title generation hook
   const { generateTitleSuggestions } = useTitleSuggestions();
+  
+  // New state for live optimization
+  const [showLiveOptimization, setShowLiveOptimization] = useState(false);
   
   // New state for advanced content generation
   const [writingStyle, setWritingStyle] = useState('Conversational');
@@ -161,6 +165,10 @@ export const ContentWritingStep = () => {
     );
   };
 
+  const handleOptimizationToggle = () => {
+    setShowLiveOptimization(!showLiveOptimization);
+  };
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       <ContentGenerationHeader
@@ -190,9 +198,26 @@ export const ContentWritingStep = () => {
             <span className="text-muted-foreground text-base">No title set</span>
           )}
         </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleOptimizationToggle}
+          className="gap-2"
+        >
+          <Zap className="h-4 w-4" />
+          {showLiveOptimization ? 'Hide' : 'Show'} Live Optimization
+        </Button>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
+      <div className={`grid gap-6 flex-1 ${
+        showLiveOptimization 
+          ? showOutline 
+            ? 'grid-cols-1 lg:grid-cols-6' 
+            : 'grid-cols-1 lg:grid-cols-4'
+          : showOutline 
+            ? 'grid-cols-1 lg:grid-cols-4' 
+            : 'grid-cols-1'
+      }`}>
         {showOutline && (
           <div className="lg:col-span-1 space-y-4 h-full">
             <ContentSidebar
@@ -204,7 +229,15 @@ export const ContentWritingStep = () => {
           </div>
         )}
         
-        <div className={`${showOutline ? 'lg:col-span-3' : 'lg:col-span-4'} h-full flex flex-col`}>
+        <div className={`h-full flex flex-col ${
+          showLiveOptimization 
+            ? showOutline 
+              ? 'lg:col-span-3' 
+              : 'lg:col-span-2'
+            : showOutline 
+              ? 'lg:col-span-3' 
+              : 'lg:col-span-1'
+        }`}>
           <div className="flex items-center gap-2 mb-4">
             <FileText className="h-4 w-4" />
             <span className="font-medium">Content Editor</span>
@@ -233,6 +266,21 @@ export const ContentWritingStep = () => {
             )}
           </div>
         </div>
+
+        {showLiveOptimization && (
+          <div className="lg:col-span-2 h-full">
+            <LiveOptimizationPanel
+              content={content}
+              title={state.contentTitle || mainKeyword}
+              keywords={[mainKeyword, ...(secondaryKeywords || [])]}
+              targetAudience="general"
+              onContentUpdate={handleContentChange}
+              onSuggestionApplied={(suggestion) => {
+                console.log('Applied suggestion:', suggestion.title);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <SaveContentDialog
