@@ -39,6 +39,8 @@ export interface GlossaryBuilderState {
   activeMode: 'domain' | 'topic' | 'manual';
   suggestedTerms: string[];
   exportFormat: 'markdown' | 'json' | 'csv';
+  currentStep: number;
+  stepProgress: Record<number, boolean>;
 }
 
 export type GlossaryBuilderAction =
@@ -55,7 +57,9 @@ export type GlossaryBuilderAction =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_ACTIVE_MODE'; payload: 'domain' | 'topic' | 'manual' }
   | { type: 'SET_SUGGESTED_TERMS'; payload: string[] }
-  | { type: 'SET_EXPORT_FORMAT'; payload: 'markdown' | 'json' | 'csv' };
+  | { type: 'SET_EXPORT_FORMAT'; payload: 'markdown' | 'json' | 'csv' }
+  | { type: 'SET_CURRENT_STEP'; payload: number }
+  | { type: 'MARK_STEP_COMPLETE'; payload: number };
 
 export interface GlossaryBuilderContextType {
   state: GlossaryBuilderState;
