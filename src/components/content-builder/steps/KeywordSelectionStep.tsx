@@ -8,7 +8,7 @@ import { SelectedKeywords } from '../keyword/SelectedKeywords';
 import { Search, ChevronRight, Sparkles, Loader2, TrendingUp, BarChart3, Eye, Settings, Zap, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
-import { NoDataAvailable } from './NoDataAvailable';
+import { InlineSerpAnalysis } from './keyword-analysis/InlineSerpAnalysis';
 import { SerpAnalysisModal } from './keyword-analysis/SerpAnalysisModal';
 import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal';
 import { SelectionSummaryCard } from './keyword-analysis/SelectionSummaryCard';
@@ -490,9 +490,11 @@ export const KeywordSelectionStep = () => {
                             </motion.div>
                           </div>
                           
-                          <NoDataAvailable 
+                          <InlineSerpAnalysis
+                            serpData={serpData}
+                            serpSelections={serpSelections}
+                            onToggleSelection={handleToggleSelection}
                             keyword={mainKeyword}
-                            onManualInput={() => {}}
                           />
                         </div>
                       </div>
