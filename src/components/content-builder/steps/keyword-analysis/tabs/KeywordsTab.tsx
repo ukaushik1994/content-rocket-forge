@@ -69,7 +69,7 @@ export function KeywordsTab({ keywords, relatedSearches, serpSelections, onToggl
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Tag className="h-5 w-5 text-blue-500" />
-              Primary Keywords
+              Secondary Keywords
               <Badge variant="outline">{keywords.length}</Badge>
             </CardTitle>
           </CardHeader>
