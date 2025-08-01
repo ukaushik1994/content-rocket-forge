@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
@@ -94,8 +93,8 @@ const TopicClusters = () => {
     try {
       console.log(`🔍 Starting SERP analysis for: ${keyword}`);
       
-      // Use the content builder's analyze function
-      await analyzeKeyword(keyword, true);
+      // Use the content builder's analyze function (with only 1 argument)
+      await analyzeKeyword(keyword);
       
       // Also get the raw SERP data for our display
       const data = await analyzeKeywordSerp(keyword, true);
