@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
@@ -29,7 +30,6 @@ import { toast } from 'sonner';
 import { TopicClusterCard } from '@/components/research/topic-clusters/TopicClusterCard';
 import { CreateClusterModal } from '@/components/research/topic-clusters/CreateClusterModal';
 import { SerpAnalysisPanel } from '@/components/research/topic-clusters/SerpAnalysisPanel';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 
 const TopicClusters = () => {
@@ -39,7 +39,6 @@ const TopicClusters = () => {
   const [serpData, setSerpData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const { analyzeKeyword } = useContentBuilder();
 
   // Mock clusters data - in production this would come from your database
   const [clusters] = useState([
@@ -93,10 +92,7 @@ const TopicClusters = () => {
     try {
       console.log(`🔍 Starting SERP analysis for: ${keyword}`);
       
-      // Use the content builder's analyze function (with only 1 argument)
-      await analyzeKeyword(keyword);
-      
-      // Also get the raw SERP data for our display
+      // Get the SERP data directly from the service
       const data = await analyzeKeywordSerp(keyword, true);
       setSerpData(data);
       
@@ -107,6 +103,14 @@ const TopicClusters = () => {
       toast.error('Failed to analyze keyword. Please try again.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Store SERP selections for content builder integration
+  const handleStoreForContentBuilder = (selections: any[]) => {
+    if (selections.length > 0) {
+      localStorage.setItem('pendingSerpSelections', JSON.stringify(selections));
+      toast.success(`Stored ${selections.length} SERP items for content creation`);
     }
   };
 
@@ -363,6 +367,7 @@ const TopicClusters = () => {
                         keyword={selectedKeyword}
                         serpData={serpData}
                         isLoading={isAnalyzing}
+                        onStoreSelections={handleStoreForContentBuilder}
                       />
                     </motion.div>
                   ) : (
