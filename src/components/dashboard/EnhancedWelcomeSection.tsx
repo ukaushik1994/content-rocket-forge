@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { RocketIcon, MessageCircle, Sparkles, BarChart3, Search, Zap, ArrowRight } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
+import { TourTrigger } from '@/components/tour/TourTrigger';
 
 interface EnhancedWelcomeSectionProps {
   setFeedbackOpen: (open: boolean) => void;
@@ -101,7 +101,6 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.3 }}
                   className="space-y-5"
                 >
-                  {/* Compact title design */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="p-2 rounded-lg bg-gradient-to-r from-neon-purple/30 to-neon-blue/30 border border-white/20">
@@ -199,10 +198,12 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       Analytics
                     </span>
                   </Button>
+                  
+                  <TourTrigger variant="outline" size="lg" className="border-neon-blue/30 hover:border-neon-blue/60 bg-white/5 hover:bg-neon-blue/10 text-neon-blue hover:text-white px-6 py-3 rounded-lg font-semibold backdrop-blur-xl" />
                 </motion.div>
               </div>
 
-              {/* Right visual element - bigger animation */}
+              {/* Right visual element */}
               <motion.div 
                 className="relative flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -216,32 +217,31 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       key={i}
                       className="absolute inset-0 rounded-full border border-white/10"
                       style={{
-                        width: 200 + i * 60,
-                        height: 200 + i * 60,
-                        left: -(i * 30),
-                        top: -(i * 30)
+                        width: 240 + i * 80,
+                        height: 240 + i * 80,
+                        left: -(i * 40),
+                        top: -(i * 40)
                       }}
                       animate={{
                         rotate: [0, 360],
                         opacity: [0.2, 0.5, 0.2]
                       }}
                       transition={{
-                        duration: 15 + i * 8,
+                        duration: 20 + i * 10,
                         repeat: Infinity,
                         ease: "linear"
                       }}
                     />
                   ))}
                   
-                  {/* Larger center orb */}
                   <motion.div 
-                    className="relative w-48 h-48 rounded-full bg-gradient-to-br from-neon-purple/30 via-neon-blue/20 to-neon-pink/30 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl"
+                    className="relative w-60 h-60 rounded-full bg-gradient-to-br from-neon-purple/30 via-neon-blue/20 to-neon-pink/30 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl"
                     animate={{
-                      y: [0, -12, 0],
+                      y: [0, -15, 0],
                       boxShadow: [
-                        "0 0 40px rgba(155, 135, 245, 0.4)",
-                        "0 0 60px rgba(155, 135, 245, 0.6)",
-                        "0 0 40px rgba(155, 135, 245, 0.4)"
+                        "0 0 60px rgba(155, 135, 245, 0.4)",
+                        "0 0 80px rgba(155, 135, 245, 0.6)",
+                        "0 0 60px rgba(155, 135, 245, 0.4)"
                       ]
                     }}
                     transition={{
@@ -255,7 +255,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                     >
-                      <Sparkles className="h-16 w-16 text-white" />
+                      <Sparkles className="h-20 w-20 text-white" />
                     </motion.div>
                   </motion.div>
                 </div>
