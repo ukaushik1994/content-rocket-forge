@@ -141,8 +141,8 @@ export const ContentWritingStep = () => {
         
         <div className="max-w-5xl mx-auto">
           <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-8">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <FileText className="h-5 w-5 text-primary" />
                 </div>
@@ -160,7 +160,7 @@ export const ContentWritingStep = () => {
               />
               
               {autoSaveTimestamp && (
-                <div className="mt-4 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
+                <div className="mt-6 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
                   Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
                 </div>
               )}
