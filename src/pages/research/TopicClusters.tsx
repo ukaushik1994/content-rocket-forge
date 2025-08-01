@@ -1,555 +1,311 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import Navbar from '@/components/layout/Navbar';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search,
-  Plus,
-  Target,
-  TrendingUp,
-  Users,
-  Globe,
-  Sparkles,
-  Brain,
-  BarChart3,
-  Lightbulb,
-  HelpCircle,
-  Tag,
-  ExternalLink,
-  Copy,
-  CheckCircle,
-  Loader2,
-  RefreshCw,
-  Zap,
-  FileText,
-  ArrowRight,
-  Settings
-} from 'lucide-react';
+import { Network, Plus, Target, BarChart3, Users, TrendingUp, Search, Filter, Calendar, Eye, Edit, Lightbulb, BookOpen, Zap } from 'lucide-react';
 import { toast } from 'sonner';
-import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
-import { ClusterAnalysisCard } from '@/components/research/topic-clusters/ClusterAnalysisCard';
-import { SerpIntegrationPanel } from '@/components/research/topic-clusters/SerpIntegrationPanel';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
-import { SerpAnalysisResult } from '@/types/serp';
-import { TopicCluster } from '@/contexts/content-builder/types/cluster-types';
 
-export default function TopicClusters() {
-  const [clusters, setClusters] = useState<TopicCluster[]>([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedCluster, setSelectedCluster] = useState<TopicCluster | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isCreatingCluster, setIsCreatingCluster] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+const TopicClusters = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
-  // Sample clusters for demo
-  useEffect(() => {
-    const sampleClusters: TopicCluster[] = [
-      {
-        id: '1',
-        name: 'Digital Marketing Fundamentals',
-        mainKeyword: 'digital marketing',
-        keywords: ['SEO', 'social media marketing', 'content marketing', 'email marketing', 'PPC'],
-        searchVolume: 12000,
-        difficulty: 'Hard',
-        competition: 0.75,
-        opportunity: 85,
-        contentIdeas: ['Beginner\'s guide to digital marketing', 'Digital marketing trends 2024', 'ROI measurement in digital marketing'],
-        subTopics: [
-          { title: 'SEO Basics', searchVolume: 5000, difficulty: 'Medium', contentGap: false },
-          { title: 'Social Media Strategy', searchVolume: 8000, difficulty: 'Easy', contentGap: true },
-          { title: 'Content Marketing ROI', searchVolume: 3000, difficulty: 'Hard', contentGap: true }
-        ],
-        createdAt: new Date(),
-        status: 'draft'
-      },
-      {
-        id: '2',
-        name: 'AI Content Creation',
-        mainKeyword: 'AI content writing',
-        keywords: ['AI writing tools', 'automated content', 'GPT content', 'AI copywriting', 'content automation'],
-        searchVolume: 8500,
-        difficulty: 'Medium',
-        competition: 0.68,
-        opportunity: 92,
-        contentIdeas: ['Best AI writing tools comparison', 'How to use AI for content creation', 'AI vs human content writers'],
-        subTopics: [
-          { title: 'AI Writing Tools', searchVolume: 4500, difficulty: 'Easy', contentGap: false },
-          { title: 'Content Automation', searchVolume: 2800, difficulty: 'Medium', contentGap: true }
-        ],
-        createdAt: new Date(),
-        status: 'ready'
-      }
-    ];
-    setClusters(sampleClusters);
-  }, []);
+  // Enhanced sample data matching the reference
+  const clusterData = [
+    {
+      id: 1,
+      title: "Content Marketing Strategy",
+      mainKeyword: "content marketing",
+      status: "In Progress",
+      completion: 75,
+      subTopicsCount: 12,
+      keywordVolume: "45K",
+      difficulty: "Medium",
+      lastUpdated: "2 days ago",
+      pillarPage: "Ultimate Guide to Content Marketing",
+      description: "Comprehensive content marketing strategies and best practices"
+    },
+    {
+      id: 2,
+      title: "SEO Optimization Techniques",
+      mainKeyword: "SEO optimization",
+      status: "Published",
+      completion: 100,
+      subTopicsCount: 18,
+      keywordVolume: "67K",
+      difficulty: "High",
+      lastUpdated: "1 week ago",
+      pillarPage: "Complete SEO Guide for 2024",
+      description: "Advanced SEO techniques and optimization strategies"
+    },
+    {
+      id: 3,
+      title: "Social Media Marketing",
+      mainKeyword: "social media marketing",
+      status: "Draft",
+      completion: 30,
+      subTopicsCount: 8,
+      keywordVolume: "23K",
+      difficulty: "Low",
+      lastUpdated: "3 days ago",
+      pillarPage: "Social Media Marketing Mastery",
+      description: "Complete social media marketing strategies across platforms"
+    },
+    {
+      id: 4,
+      title: "Email Marketing Automation",
+      mainKeyword: "email marketing",
+      status: "In Progress",
+      completion: 60,
+      subTopicsCount: 15,
+      keywordVolume: "34K",
+      difficulty: "Medium",
+      lastUpdated: "1 day ago",
+      pillarPage: "Email Marketing Automation Guide",
+      description: "Advanced email marketing automation and personalization"
+    }
+  ];
 
-  const analyzeKeyword = async (keyword: string) => {
-    if (!keyword.trim()) return;
-    
-    setIsAnalyzing(true);
-    try {
-      const data = await analyzeKeywordSerp(keyword);
-      if (data && selectedCluster) {
-        setSelectedCluster({
-          ...selectedCluster,
-          serpData: data
-        });
-        toast.success(`SERP analysis completed for "${keyword}"`);
-      }
-    } catch (error) {
-      toast.error('Failed to analyze SERP data');
-    } finally {
-      setIsAnalyzing(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Published': return 'bg-neon-green text-black';
+      case 'In Progress': return 'bg-neon-blue text-white';
+      case 'Draft': return 'bg-orange-500 text-white';
+      default: return 'bg-secondary text-secondary-foreground';
     }
   };
 
-  const createNewCluster = async () => {
-    if (!searchKeyword.trim()) {
-      toast.error('Please enter a keyword to create a cluster');
-      return;
-    }
-
-    setIsCreatingCluster(true);
-    try {
-      // Analyze the keyword first
-      const serpData = await analyzeKeywordSerp(searchKeyword);
-      
-      const newCluster: TopicCluster = {
-        id: Date.now().toString(),
-        name: `${searchKeyword} Cluster`,
-        mainKeyword: searchKeyword,
-        keywords: serpData?.keywords?.slice(0, 8) || [searchKeyword],
-        searchVolume: serpData?.searchVolume || 0,
-        difficulty: serpData?.keywordDifficulty && serpData.keywordDifficulty > 70 ? 'Hard' : 
-                   serpData?.keywordDifficulty && serpData.keywordDifficulty > 40 ? 'Medium' : 'Easy',
-        competition: serpData?.competitionScore || 0.5,
-        opportunity: Math.round(Math.random() * 40 + 60), // Random for demo
-        serpData: serpData,
-        contentIdeas: serpData?.contentGaps?.map(gap => gap.topic)?.slice(0, 5) || [],
-        subTopics: serpData?.contentGaps?.map(gap => ({
-          title: gap.topic,
-          searchVolume: Math.round(Math.random() * 5000 + 1000),
-          difficulty: 'Medium',
-          contentGap: true
-        })) || [],
-        createdAt: new Date(),
-        status: 'draft'
-      };
-
-      setClusters(prev => [newCluster, ...prev]);
-      setSelectedCluster(newCluster);
-      setSearchKeyword('');
-      toast.success(`Created cluster for "${searchKeyword}"`);
-    } catch (error) {
-      toast.error('Failed to create cluster');
-    } finally {
-      setIsCreatingCluster(false);
-    }
-  };
-
-  const getDifficultyColor = (difficulty: number | string) => {
-    if (typeof difficulty === 'string') {
-      switch (difficulty) {
-        case 'Hard': return 'text-red-500';
-        case 'Medium': return 'text-yellow-500';
-        case 'Easy': return 'text-green-500';
-        default: return 'text-gray-500';
-      }
-    }
-    if (difficulty >= 80) return 'text-red-500';
-    if (difficulty >= 60) return 'text-yellow-500';
-    return 'text-green-500';
-  };
-
-  const getOpportunityColor = (opportunity: number) => {
-    if (opportunity >= 80) return 'text-green-500';
-    if (opportunity >= 60) return 'text-yellow-500';
-    return 'text-red-500';
-  };
+  const filteredClusters = clusterData.filter(cluster => {
+    const matchesSearch = cluster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         cluster.mainKeyword.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || cluster.status.toLowerCase().replace(' ', '-') === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
-    <ContentBuilderProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800 text-white">
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-4">
-              Topic Clusters
-            </h1>
-            <p className="text-white/70 text-lg">
-              Discover content opportunities and build comprehensive topic clusters with real-time SERP analysis
-            </p>
-          </motion.div>
-
-          {/* Search & Create Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <Card className="bg-white/10 backdrop-blur-xl border-white/20">
-              <CardContent className="p-6">
-                <div className="flex gap-4 items-end">
-                  <div className="flex-1">
-                    <label className="text-sm font-medium mb-2 block">Search Keyword</label>
-                    <Input
-                      value={searchKeyword}
-                      onChange={(e) => setSearchKeyword(e.target.value)}
-                      placeholder="Enter a keyword to analyze and create cluster..."
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                      onKeyPress={(e) => e.key === 'Enter' && createNewCluster()}
-                    />
-                  </div>
-                  <Button
-                    onClick={createNewCluster}
-                    disabled={isCreatingCluster || !searchKeyword.trim()}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
-                    {isCreatingCluster ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Cluster
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Clusters List */}
-            <div className="lg:col-span-1">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-4"
-              >
-                <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
-                  <Target className="h-5 w-5 text-purple-400" />
-                  Your Clusters ({clusters.length})
-                </h2>
-                
-                <ScrollArea className="h-[600px]">
-                  <div className="space-y-3 pr-4">
-                    {clusters.map((cluster, index) => (
-                      <motion.div
-                        key={cluster.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <Card 
-                          className={`cursor-pointer transition-all hover:bg-white/20 ${
-                            selectedCluster?.id === cluster.id 
-                              ? 'bg-white/15 border-purple-400/50' 
-                              : 'bg-white/5 border-white/10'
-                          }`}
-                          onClick={() => setSelectedCluster(cluster)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between">
-                                <h3 className="font-medium text-white text-sm leading-tight">
-                                  {cluster.name}
-                                </h3>
-                                {selectedCluster?.id === cluster.id && (
-                                  <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-                                )}
-                              </div>
-                              
-                              <div className="text-xs text-white/60">
-                                <span className="font-medium">Main:</span> {cluster.mainKeyword}
-                              </div>
-                              
-                              <div className="flex items-center gap-2 text-xs">
-                                <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-xs px-2 py-1">
-                                  {cluster.keywords?.length || 0} keywords
-                                </Badge>
-                                <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1">
-                                  {cluster.contentIdeas?.length || 0} ideas
-                                </Badge>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                                  <span className="text-white/60">Difficulty:</span>
-                                  <span className={getDifficultyColor(cluster.difficulty)}>
-                                    {typeof cluster.difficulty === 'string' ? cluster.difficulty : `${cluster.difficulty}%`}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                  <span className="text-white/60">Opportunity:</span>
-                                  <span className={getOpportunityColor(cluster.opportunity)}>
-                                    {cluster.opportunity}%
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                    
-                    {clusters.length === 0 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-12"
-                      >
-                        <Target className="h-12 w-12 text-white/40 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-white/60 mb-2">No clusters yet</h3>
-                        <p className="text-white/40 text-sm">
-                          Create your first topic cluster by searching for a keyword above
-                        </p>
-                      </motion.div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </motion.div>
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+      <Helmet>
+        <title>Topic Clusters | Research Platform</title>
+      </Helmet>
+      
+      <Navbar />
+      
+      {/* Background elements */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50"></div>
+        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neon-blue/10 rounded-full filter blur-3xl opacity-40"></div>
+        <div className="absolute bottom-40 left-1/2 w-64 h-64 bg-neon-purple/10 rounded-full filter blur-3xl opacity-30"></div>
+        <div className="futuristic-grid absolute inset-0 opacity-10"></div>
+      </div>
+      
+      <main className="flex-1 container py-8 z-10 relative">
+        <div className="space-y-8">
+          {/* Enhanced Header */}
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-4xl font-bold text-gradient">Topic Clusters</h1>
+                <p className="text-xl text-muted-foreground mt-2">
+                  Organize your content into strategic topic clusters for better SEO
+                </p>
+              </div>
+              <Button className="bg-neon-blue hover:bg-neon-blue/90">
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Cluster
+              </Button>
             </div>
 
-            {/* Cluster Details */}
-            <div className="lg:col-span-2">
-              {selectedCluster ? (
-                <motion.div
-                  key={selectedCluster.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-6"
-                >
-                  {/* Cluster Overview */}
-                  <Card className="bg-white/10 backdrop-blur-xl border-white/20">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl text-white flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-purple-400" />
-                          {selectedCluster.name}
-                        </CardTitle>
-                        <Button
-                          onClick={() => analyzeKeyword(selectedCluster.mainKeyword)}
-                          disabled={isAnalyzing}
-                          variant="outline"
-                          size="sm"
-                          className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                        >
-                          {isAnalyzing ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Analyzing...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Refresh SERP
-                            </>
-                          )}
-                        </Button>
+            {/* Search and Filter Bar */}
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search clusters or keywords..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-glass border-white/10"
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-48 bg-glass border-white/10">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-white/10">
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Metrics Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="glass-panel border-white/10">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Clusters</p>
+                      <p className="text-3xl font-bold text-neon-blue">{clusterData.length}</p>
+                    </div>
+                    <Network className="h-8 w-8 text-neon-blue" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel border-white/10">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Keywords</p>
+                      <p className="text-3xl font-bold text-neon-green">169K</p>
+                    </div>
+                    <Target className="h-8 w-8 text-neon-green" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel border-white/10">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Avg. Completion</p>
+                      <p className="text-3xl font-bold text-neon-purple">66%</p>
+                    </div>
+                    <BarChart3 className="h-8 w-8 text-neon-purple" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Enhanced Cluster Cards */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Your Topic Clusters</h2>
+            <div className="grid gap-6">
+              {filteredClusters.map((cluster) => (
+                <Card key={cluster.id} className="glass-panel border-white/10 hover:border-neon-blue/30 transition-all">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      {/* Header Row */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-semibold text-white">{cluster.title}</h3>
+                            <Badge className={`${getStatusColor(cluster.status)} text-xs`}>
+                              {cluster.status}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground text-sm">{cluster.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" className="border-white/20">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-white/20">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                        </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="text-center p-4 bg-white/5 rounded-lg">
-                          <BarChart3 className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-yellow-400">
-                            {typeof selectedCluster.difficulty === 'string' ? selectedCluster.difficulty : `${selectedCluster.difficulty}%`}
-                          </div>
-                          <div className="text-sm text-white/60">Difficulty</div>
+
+                      {/* Main Keyword and Progress */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Main Keyword</p>
+                          <p className="text-lg font-semibold text-neon-blue">{cluster.mainKeyword}</p>
                         </div>
-                        <div className="text-center p-4 bg-white/5 rounded-lg">
-                          <TrendingUp className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-green-400">{selectedCluster.opportunity}%</div>
-                          <div className="text-sm text-white/60">Opportunity</div>
-                        </div>
-                        <div className="text-center p-4 bg-white/5 rounded-lg">
-                          <Tag className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-blue-400">{selectedCluster.keywords?.length || 0}</div>
-                          <div className="text-sm text-white/60">Keywords</div>
-                        </div>
-                      </div>
-
-                      <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="bg-white/10 border-white/20 grid grid-cols-4">
-                          <TabsTrigger value="overview" className="text-white data-[state=active]:bg-purple-600">
-                            Overview
-                          </TabsTrigger>
-                          <TabsTrigger value="serp" className="text-white data-[state=active]:bg-purple-600">
-                            SERP Analysis
-                          </TabsTrigger>
-                          <TabsTrigger value="content" className="text-white data-[state=active]:bg-purple-600">
-                            Content Ideas
-                          </TabsTrigger>
-                          <TabsTrigger value="analysis" className="text-white data-[state=active]:bg-purple-600">
-                            Deep Analysis
-                          </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="overview" className="mt-6 space-y-4">
-                          <div>
-                            <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                              <Tag className="h-4 w-4 text-blue-400" />
-                              Primary Keywords
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedCluster.keywords.map((keyword, index) => (
-                                <Badge 
-                                  key={index} 
-                                  className="bg-blue-500/20 text-blue-300 border-blue-500/30"
-                                >
-                                  {keyword}
-                                </Badge>
-                              ))}
-                            </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm text-muted-foreground">Completion</p>
+                            <p className="text-sm font-medium text-white">{cluster.completion}%</p>
                           </div>
-
-                          <div>
-                            <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                              <Lightbulb className="h-4 w-4 text-yellow-400" />
-                              Content Ideas ({selectedCluster.contentIdeas.length})
-                            </h4>
-                            <div className="space-y-2">
-                              {selectedCluster.contentIdeas.map((idea, index) => (
-                                <div 
-                                  key={index}
-                                  className="p-3 bg-white/5 rounded-lg border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-colors"
-                                >
-                                  <span className="text-white/90 text-sm">{idea}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white"
-                                  >
-                                    <ArrowRight className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </TabsContent>
-
-                        <TabsContent value="serp" className="mt-6">
-                          {selectedCluster.serpData ? (
-                            <SerpIntegrationPanel
-                              keyword={selectedCluster.mainKeyword}
-                              initialData={selectedCluster.serpData}
+                          <Progress value={cluster.completion} className="h-2 bg-gray-700">
+                            <div 
+                              className="h-full bg-gradient-to-r from-neon-blue to-neon-purple rounded-full transition-all"
+                              style={{ width: `${cluster.completion}%` }}
                             />
-                          ) : (
-                            <div className="text-center py-12">
-                              <Globe className="h-12 w-12 text-white/40 mx-auto mb-4" />
-                              <h3 className="text-lg font-medium text-white/60 mb-2">No SERP Data</h3>
-                              <p className="text-white/40 text-sm mb-4">
-                                Click "Refresh SERP" to analyze this keyword
-                              </p>
-                              <Button
-                                onClick={() => analyzeKeyword(selectedCluster.mainKeyword)}
-                                disabled={isAnalyzing}
-                                className="bg-gradient-to-r from-purple-600 to-blue-600"
-                              >
-                                {isAnalyzing ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Analyzing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Brain className="h-4 w-4 mr-2" />
-                                    Analyze SERP
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          )}
-                        </TabsContent>
+                          </Progress>
+                        </div>
+                      </div>
 
-                        <TabsContent value="content" className="mt-6">
-                          <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-white flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-green-400" />
-                                Content Creation
-                              </h4>
-                              <Button 
-                                className="bg-gradient-to-r from-green-600 to-emerald-600"
-                                onClick={() => {
-                                  // This would navigate to content builder with this cluster data
-                                  toast.success('Opening Content Builder with cluster data...');
-                                }}
-                              >
-                                <Zap className="h-4 w-4 mr-2" />
-                                Create Content
-                              </Button>
-                            </div>
-                            
-                            <div className="grid gap-4">
-                              {selectedCluster.contentIdeas.map((idea, index) => (
-                                <Card key={index} className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1">
-                                        <h5 className="font-medium text-white mb-1">{idea}</h5>
-                                        <p className="text-sm text-white/60">
-                                          Content pillar based on SERP analysis
-                                        </p>
-                                      </div>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                                      >
-                                        <ArrowRight className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        </TabsContent>
+                      {/* Metrics Row */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/10">
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Sub-topics</p>
+                          <p className="text-lg font-semibold text-white">{cluster.subTopicsCount}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Search Volume</p>
+                          <p className="text-lg font-semibold text-neon-green">{cluster.keywordVolume}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Difficulty</p>
+                          <Badge variant={cluster.difficulty === 'Low' ? 'default' : cluster.difficulty === 'Medium' ? 'secondary' : 'destructive'}>
+                            {cluster.difficulty}
+                          </Badge>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">Last Updated</p>
+                          <p className="text-sm text-white flex items-center justify-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {cluster.lastUpdated}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
 
-                        <TabsContent value="analysis" className="mt-6">
-                          <ClusterAnalysisCard 
-                            cluster={selectedCluster}
-                            serpData={selectedCluster.serpData}
-                          />
-                        </TabsContent>
-                      </Tabs>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-24"
-                >
-                  <Target className="h-16 w-16 text-white/40 mx-auto mb-6" />
-                  <h3 className="text-2xl font-medium text-white/60 mb-4">Select a Topic Cluster</h3>
-                  <p className="text-white/40 text-lg">
-                    Choose a cluster from the left to view detailed analysis and SERP data
+          {/* Best Practices Section */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Topic Cluster Best Practices</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="glass-panel border-white/10">
+                <CardContent className="p-6 text-center">
+                  <Lightbulb className="h-12 w-12 text-neon-blue mx-auto mb-4" />
+                  <h3 className="font-semibold text-white mb-2">Strategic Planning</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Plan your topic clusters around high-value keywords and user intent to maximize SEO impact.
                   </p>
-                </motion.div>
-              )}
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel border-white/10">
+                <CardContent className="p-6 text-center">
+                  <BookOpen className="h-12 w-12 text-neon-green mx-auto mb-4" />
+                  <h3 className="font-semibold text-white mb-2">Content Depth</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create comprehensive pillar pages with supporting content that covers all aspects of your topic.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="glass-panel border-white/10">
+                <CardContent className="p-6 text-center">
+                  <Zap className="h-12 w-12 text-neon-purple mx-auto mb-4" />
+                  <h3 className="font-semibold text-white mb-2">Internal Linking</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Build strong internal linking between cluster content to boost topical authority and rankings.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
-      </div>
-    </ContentBuilderProvider>
+      </main>
+    </div>
   );
-}
+};
+
+export default TopicClusters;
