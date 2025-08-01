@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
-import { sendChatRequest } from '@/services/aiService';
 import { toast } from 'sonner';
 
 interface MetaInformationCardProps {

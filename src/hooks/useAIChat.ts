@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { sendChatMessage, ChatMessage, ChatResponse } from '@/services/aiService';
+import { sendChatMessage, ChatMessage, ChatResponse, ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface ConversationMessage extends ChatMessage {
   id: string;
   timestamp: Date;
-  actions?: any[];
+  actions?: ContextualAction[];
 }
 
 export interface Conversation {
@@ -17,6 +17,9 @@ export interface Conversation {
   created_at: string;
   updated_at: string;
 }
+
+// Export ChatMessage for other components
+export type { ChatMessage };
 
 export const useAIChat = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -57,13 +60,23 @@ export const useAIChat = () => {
 
       if (error) throw error;
       
-      const formattedMessages: ConversationMessage[] = (data || []).map(msg => ({
-        id: msg.id,
-        role: msg.type as 'user' | 'assistant' | 'system',
-        content: msg.content,
-        timestamp: new Date(msg.created_at),
-        actions: msg.attachments?.actions
-      }));
+      const formattedMessages: ConversationMessage[] = (data || []).map(msg => {
+        let actions: ContextualAction[] = [];
+        
+        // Safely parse attachments
+        if (msg.attachments && typeof msg.attachments === 'object') {
+          const attachments = msg.attachments as { actions?: ContextualAction[] };
+          actions = attachments.actions || [];
+        }
+        
+        return {
+          id: msg.id,
+          role: msg.type as 'user' | 'assistant' | 'system',
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+          actions
+        };
+      });
       
       setMessages(formattedMessages);
     } catch (error) {
@@ -151,14 +164,14 @@ export const useAIChat = () => {
 
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Save assistant message to database
+        // Save assistant message to database with proper JSON serialization
         await supabase
           .from('ai_messages')
           .insert({
             conversation_id: activeConversation,
             type: 'assistant',
             content: response.message,
-            attachments: response.actions ? { actions: response.actions } : null
+            attachments: response.actions ? JSON.parse(JSON.stringify({ actions: response.actions })) : null
           });
 
         // Update conversation title if it's the first exchange

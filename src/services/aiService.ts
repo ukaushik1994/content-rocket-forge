@@ -62,6 +62,28 @@ export async function sendChatMessage(
 }
 
 /**
+ * Legacy function name for backward compatibility
+ */
+export async function sendChatRequest(
+  provider: string,
+  params: { messages: ChatMessage[] }
+): Promise<any> {
+  console.log('Using legacy sendChatRequest, redirecting to sendChatMessage');
+  const response = await sendChatMessage(params.messages);
+  
+  if (!response) return null;
+  
+  // Return in the expected format for legacy code
+  return {
+    choices: [{
+      message: {
+        content: response.message
+      }
+    }]
+  };
+}
+
+/**
  * Generate contextual actions based on AI response and context
  */
 function generateContextualActions(

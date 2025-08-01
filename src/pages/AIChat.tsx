@@ -8,6 +8,7 @@ import { ChatSidebar } from '@/components/ai-chat/ChatSidebar';
 import { useAIChat } from '@/hooks/useAIChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AIChat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
