@@ -75,6 +75,21 @@ export interface StrategyInsight {
   created_at: string;
 }
 
+// Helper function to convert Json to string array
+const jsonToStringArray = (jsonValue: any): string[] => {
+  if (!jsonValue) return [];
+  if (Array.isArray(jsonValue)) return jsonValue;
+  if (typeof jsonValue === 'string') {
+    try {
+      const parsed = JSON.parse(jsonValue);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 class ContentStrategyService {
   // Strategy operations
   async getStrategies(): Promise<ContentStrategy[]> {
@@ -84,7 +99,10 @@ class ContentStrategyService {
       .order('updated_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      content_pillars: jsonToStringArray(item.content_pillars)
+    }));
   }
 
   async getActiveStrategy(): Promise<ContentStrategy | null> {
@@ -95,7 +113,12 @@ class ContentStrategyService {
       .single();
     
     if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    if (!data) return null;
+    
+    return {
+      ...data,
+      content_pillars: jsonToStringArray(data.content_pillars)
+    };
   }
 
   async createStrategy(strategy: Partial<ContentStrategy>): Promise<ContentStrategy> {
@@ -108,26 +131,50 @@ class ContentStrategyService {
     const { data, error } = await supabase
       .from('content_strategies')
       .insert({
-        ...strategy,
+        user_id: strategy.user_id!,
+        name: strategy.name || 'Content Strategy',
+        monthly_traffic_goal: strategy.monthly_traffic_goal,
+        content_pieces_per_month: strategy.content_pieces_per_month,
+        timeline: strategy.timeline || '3 months',
+        main_keyword: strategy.main_keyword,
+        target_audience: strategy.target_audience,
+        brand_voice: strategy.brand_voice,
+        content_pillars: strategy.content_pillars || [],
         is_active: true
       })
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      content_pillars: jsonToStringArray(data.content_pillars)
+    };
   }
 
   async updateStrategy(id: string, updates: Partial<ContentStrategy>): Promise<ContentStrategy> {
     const { data, error } = await supabase
       .from('content_strategies')
-      .update(updates)
+      .update({
+        name: updates.name,
+        monthly_traffic_goal: updates.monthly_traffic_goal,
+        content_pieces_per_month: updates.content_pieces_per_month,
+        timeline: updates.timeline,
+        main_keyword: updates.main_keyword,
+        target_audience: updates.target_audience,
+        brand_voice: updates.brand_voice,
+        content_pillars: updates.content_pillars || [],
+        is_active: updates.is_active
+      })
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      content_pillars: jsonToStringArray(data.content_pillars)
+    };
   }
 
   // Calendar operations
@@ -138,30 +185,62 @@ class ContentStrategyService {
       .order('scheduled_date', { ascending: true });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      tags: jsonToStringArray(item.tags)
+    }));
   }
 
   async createCalendarItem(item: Partial<CalendarItem>): Promise<CalendarItem> {
     const { data, error } = await supabase
       .from('content_calendar')
-      .insert(item)
+      .insert({
+        user_id: item.user_id!,
+        strategy_id: item.strategy_id,
+        content_id: item.content_id,
+        title: item.title!,
+        content_type: item.content_type || 'blog',
+        status: item.status || 'planning',
+        scheduled_date: item.scheduled_date!,
+        assigned_to: item.assigned_to,
+        priority: item.priority || 'medium',
+        estimated_hours: item.estimated_hours || 2,
+        tags: item.tags || [],
+        notes: item.notes
+      })
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      tags: jsonToStringArray(data.tags)
+    };
   }
 
   async updateCalendarItem(id: string, updates: Partial<CalendarItem>): Promise<CalendarItem> {
     const { data, error } = await supabase
       .from('content_calendar')
-      .update(updates)
+      .update({
+        title: updates.title,
+        content_type: updates.content_type,
+        status: updates.status,
+        scheduled_date: updates.scheduled_date,
+        assigned_to: updates.assigned_to,
+        priority: updates.priority,
+        estimated_hours: updates.estimated_hours,
+        tags: updates.tags || [],
+        notes: updates.notes
+      })
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      tags: jsonToStringArray(data.tags)
+    };
   }
 
   async deleteCalendarItem(id: string): Promise<void> {
@@ -181,30 +260,69 @@ class ContentStrategyService {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      blockers: jsonToStringArray(item.blockers)
+    }));
   }
 
   async createPipelineItem(item: Partial<PipelineItem>): Promise<PipelineItem> {
     const { data, error } = await supabase
       .from('content_pipeline')
-      .insert(item)
+      .insert({
+        user_id: item.user_id!,
+        strategy_id: item.strategy_id,
+        content_id: item.content_id,
+        calendar_item_id: item.calendar_item_id,
+        title: item.title!,
+        stage: item.stage || 'idea',
+        content_type: item.content_type || 'blog',
+        target_keyword: item.target_keyword,
+        word_count: item.word_count,
+        seo_score: item.seo_score || 0,
+        progress_percentage: item.progress_percentage || 0,
+        due_date: item.due_date,
+        assigned_to: item.assigned_to,
+        priority: item.priority || 'medium',
+        blockers: item.blockers || [],
+        notes: item.notes
+      })
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      blockers: jsonToStringArray(data.blockers)
+    };
   }
 
   async updatePipelineItem(id: string, updates: Partial<PipelineItem>): Promise<PipelineItem> {
     const { data, error } = await supabase
       .from('content_pipeline')
-      .update(updates)
+      .update({
+        title: updates.title,
+        stage: updates.stage,
+        content_type: updates.content_type,
+        target_keyword: updates.target_keyword,
+        word_count: updates.word_count,
+        seo_score: updates.seo_score,
+        progress_percentage: updates.progress_percentage,
+        due_date: updates.due_date,
+        assigned_to: updates.assigned_to,
+        priority: updates.priority,
+        blockers: updates.blockers || [],
+        notes: updates.notes
+      })
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      blockers: jsonToStringArray(data.blockers)
+    };
   }
 
   async deletePipelineItem(id: string): Promise<void> {
@@ -230,7 +348,20 @@ class ContentStrategyService {
   async saveInsight(insight: Partial<StrategyInsight>): Promise<StrategyInsight> {
     const { data, error } = await supabase
       .from('strategy_insights')
-      .insert(insight)
+      .insert({
+        user_id: insight.user_id!,
+        strategy_id: insight.strategy_id,
+        keyword: insight.keyword!,
+        search_volume: insight.search_volume,
+        keyword_difficulty: insight.keyword_difficulty,
+        competition_score: insight.competition_score,
+        opportunity_score: insight.opportunity_score,
+        serp_data: insight.serp_data || {},
+        content_gaps: insight.content_gaps || [],
+        top_competitors: insight.top_competitors || [],
+        suggested_content: insight.suggested_content || [],
+        last_analyzed: insight.last_analyzed || new Date().toISOString()
+      })
       .select()
       .single();
     
@@ -241,23 +372,19 @@ class ContentStrategyService {
   // SERP Analysis
   async analyzeSERP(keyword: string, location = 'United States'): Promise<any> {
     try {
-      const response = await fetch('/api/serp-analysis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await supabase.functions.invoke('serp-analysis', {
+        body: {
           keyword,
           location,
           language: 'en'
-        }),
+        }
       });
       
-      if (!response.ok) {
+      if (response.error) {
         throw new Error('SERP analysis failed');
       }
       
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('SERP analysis error:', error);
       // Return mock data for development

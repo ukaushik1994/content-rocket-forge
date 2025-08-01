@@ -60,11 +60,11 @@ export const StrategyTabs = () => {
       </TabsContent>
 
       <TabsContent value="calendar">
-        <EditorialCalendar />
+        <EditorialCalendar goals={goals} />
       </TabsContent>
 
       <TabsContent value="pipeline">
-        <ContentPipeline />
+        <ContentPipeline goals={goals} />
       </TabsContent>
 
       <TabsContent value="roi">

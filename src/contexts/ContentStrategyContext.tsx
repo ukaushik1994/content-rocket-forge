@@ -91,8 +91,13 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   }, [user]);
 
   const createStrategy = async (strategy: Partial<ContentStrategy>) => {
+    if (!user) return;
+    
     try {
-      const newStrategy = await contentStrategyService.createStrategy(strategy);
+      const newStrategy = await contentStrategyService.createStrategy({
+        ...strategy,
+        user_id: user.id
+      });
       setCurrentStrategy(newStrategy);
       setStrategies(prev => [newStrategy, ...prev.map(s => ({ ...s, is_active: false }))]);
       toast.success('Content strategy created successfully');
@@ -117,9 +122,12 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   };
 
   const createCalendarItem = async (item: Partial<CalendarItem>) => {
+    if (!user) return;
+    
     try {
       const newItem = await contentStrategyService.createCalendarItem({
         ...item,
+        user_id: user.id,
         strategy_id: currentStrategy?.id
       });
       setCalendarItems(prev => [newItem, ...prev]);
@@ -153,9 +161,12 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   };
 
   const createPipelineItem = async (item: Partial<PipelineItem>) => {
+    if (!user) return;
+    
     try {
       const newItem = await contentStrategyService.createPipelineItem({
         ...item,
+        user_id: user.id,
         strategy_id: currentStrategy?.id
       });
       setPipelineItems(prev => [newItem, ...prev]);
@@ -193,9 +204,12 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   };
 
   const saveInsight = async (insight: Partial<StrategyInsight>) => {
+    if (!user) return;
+    
     try {
       const newInsight = await contentStrategyService.saveInsight({
         ...insight,
+        user_id: user.id,
         strategy_id: currentStrategy?.id
       });
       setInsights(prev => [newInsight, ...prev]);
