@@ -1,11 +1,12 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageBubble } from './MessageBubble';
 import { ActionButtons } from './ActionButtons';
-import { ChatMessage, ChatAction } from '@/hooks/useAIChat';
+import { ConversationMessage } from '@/hooks/useAIChat';
 
 interface MessageListProps {
-  messages: ChatMessage[];
+  messages: ConversationMessage[];
   isTyping: boolean;
   onAction: (action: string, data?: any) => void;
 }
@@ -57,12 +58,17 @@ export const MessageList: React.FC<MessageListProps> = ({
             className="space-y-4"
           >
             <MessageBubble 
-              message={message}
+              message={{
+                id: message.id,
+                type: message.role as 'user' | 'assistant',
+                content: message.content,
+                timestamp: message.timestamp
+              }}
               isLatest={index === messages.length - 1}
             />
             
             {/* Action Buttons for Assistant Messages */}
-            {message.type === 'assistant' && message.metadata?.actions && (
+            {message.role === 'assistant' && message.actions && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -71,7 +77,7 @@ export const MessageList: React.FC<MessageListProps> = ({
               >
                 <div className="max-w-xs sm:max-w-md">
                   <ActionButtons 
-                    actions={message.metadata.actions}
+                    actions={message.actions}
                     onAction={onAction}
                   />
                 </div>

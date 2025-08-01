@@ -1,22 +1,19 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ChatAction } from '@/hooks/useAIChat';
 import { 
   ArrowRight, 
-  ExternalLink, 
-  Play, 
-  Plus, 
-  Search,
-  FileText,
-  BarChart3,
-  Zap,
-  Grid3X3,
-  MessageSquare
+  FileText, 
+  Search, 
+  BarChart3, 
+  Target, 
+  ExternalLink 
 } from 'lucide-react';
+import { ContextualAction } from '@/services/aiService';
 
 interface ActionButtonsProps {
-  actions: ChatAction[];
+  actions: ContextualAction[];
   onAction: (action: string, data?: any) => void;
 }
 
@@ -28,11 +25,8 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     if (action.includes('keyword')) return Search;
     if (action.includes('content-builder')) return FileText;
     if (action.includes('analytics')) return BarChart3;
-    if (action.includes('repurpos')) return Zap;
-    if (action.includes('quick-actions')) return Grid3X3;
-    if (action.includes('navigate')) return ArrowRight;
-    if (action.includes('serp')) return BarChart3;
-    return Plus;
+    if (action.includes('strategy')) return Target;
+    return ArrowRight;
   };
 
   const getVariant = (variant?: string) => {
@@ -44,38 +38,14 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -10, scale: 0.95 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 25
-      }
-    }
-  };
+  if (actions.length === 0) return null;
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="flex flex-wrap gap-2"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="flex flex-wrap gap-2 mt-4"
     >
       {actions.map((action) => {
         const Icon = getIcon(action.action);
@@ -84,7 +54,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         return (
           <motion.div
             key={action.id}
-            variants={itemVariants}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -92,18 +61,11 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
               variant={getVariant(action.variant)}
               size="sm"
               onClick={() => onAction(action.action, action.data)}
-              className="
-                h-8 px-3 text-xs font-medium gap-1.5 
-                bg-gradient-to-r from-background/80 to-background/60 
-                border-white/20 hover:border-primary/40 
-                hover:from-primary/10 hover:to-primary/5
-                transition-all duration-200
-                backdrop-blur-sm
-              "
+              className="gap-2 text-xs"
             >
               <Icon className="h-3 w-3" />
               {action.label}
-              {isExternal && <ExternalLink className="h-2.5 w-2.5" />}
+              {isExternal && <ExternalLink className="h-3 w-3" />}
             </Button>
           </motion.div>
         );

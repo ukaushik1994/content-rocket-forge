@@ -1,17 +1,19 @@
+
 import React, { forwardRef, useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
 import { QuickActionsPanel } from './QuickActionsPanel';
-import { ChatMessage, ChatConversation } from '@/hooks/useAIChat';
+import { ConversationMessage } from '@/hooks/useAIChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatInterfaceProps {
-  messages: ChatMessage[];
+  messages: ConversationMessage[];
   isLoading: boolean;
   isTyping: boolean;
-  onSendMessage: (message: string, context?: any) => void;
+  onSendMessage: (message: string) => void;
   onClearConversation: () => void;
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
@@ -30,7 +32,7 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
 }, ref) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const { toast } = useToast();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -43,7 +45,6 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
   }, [activeConversation, messages.length]);
 
   const handleSendMessage = (message: string) => {
-    setInputValue('');
     setShowQuickActions(false);
     onSendMessage(message);
   };
@@ -52,11 +53,15 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
     if (action.startsWith('navigate:')) {
       const path = action.replace('navigate:', '');
       window.location.href = path;
-    } else if (action === 'show-quick-actions') {
-      setShowQuickActions(true);
     } else if (action.startsWith('send:')) {
       const message = action.replace('send:', '');
       handleSendMessage(message);
+    } else if (action === 'clear-conversation') {
+      onClearConversation();
+      toast({
+        title: "Conversation cleared",
+        description: "All messages have been removed from this conversation."
+      });
     }
   };
 
@@ -153,8 +158,6 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(({
             <MessageInput
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
-              value={inputValue}
-              onChange={setInputValue}
               placeholder={
                 messages.length === 0 
                   ? "Ask me anything about content creation, SEO, or marketing strategy..."

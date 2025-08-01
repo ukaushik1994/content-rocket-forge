@@ -1,40 +1,57 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, Mic, Square } from 'lucide-react';
+import { Send, Mic, MicOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface MessageInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
-  value: string;
-  onChange: (value: string) => void;
   placeholder?: string;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
   isLoading,
-  value,
-  onChange,
-  placeholder = "Type your message..."
+  placeholder = "Ask me anything about content creation, SEO, or marketing strategy..."
 }) => {
+  const [message, setMessage] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Auto-resize textarea
+  // Initialize speech recognition
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setMessage(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
     }
-  }, [value]);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (value.trim() && !isLoading) {
-      onSendMessage(value.trim());
+    if (message.trim() && !isLoading) {
+      onSendMessage(message.trim());
+      setMessage('');
+      textareaRef.current?.focus();
     }
   };
 
@@ -45,115 +62,72 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-  const handleVoiceInput = () => {
-    setIsRecording(!isRecording);
-    // TODO: Implement voice input functionality
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
   };
 
+  const hasVoiceSupport = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="relative"
-    >
-      <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-end gap-2 p-3 bg-gradient-to-r from-background/90 to-background/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg">
-          {/* Attachment Button */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-white/10 text-muted-foreground hover:text-foreground flex-shrink-0"
-            disabled={isLoading}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-
-          {/* Text Input */}
-          <div className="flex-1 relative">
-            <Textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="pr-20 min-h-[60px] resize-none bg-background/80 border-white/20 focus:border-primary/40"
+          disabled={isLoading}
+        />
+        
+        <div className="absolute bottom-2 right-2 flex gap-2">
+          {hasVoiceSupport && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleVoiceInput}
               disabled={isLoading}
-              className="
-                min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent 
-                focus:ring-0 focus:ring-offset-0 p-2 text-sm
-                placeholder:text-muted-foreground/70
-              "
-              style={{ height: 'auto' }}
-            />
-          </div>
-
-          {/* Voice Input Button */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleVoiceInput}
-            className={`
-              h-8 w-8 p-0 flex-shrink-0 transition-colors
-              ${isRecording 
-                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
-                : 'hover:bg-white/10 text-muted-foreground hover:text-foreground'
-              }
-            `}
-            disabled={isLoading}
-          >
-            {isRecording ? (
-              <Square className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-          </Button>
-
-          {/* Send Button */}
+              className={`p-2 h-8 w-8 ${isListening ? 'text-red-500' : 'text-muted-foreground'}`}
+            >
+              <motion.div
+                animate={isListening ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+                transition={{ duration: 0.5, repeat: isListening ? Infinity : 0 }}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </motion.div>
+            </Button>
+          )}
+          
           <Button
             type="submit"
             size="sm"
-            disabled={!value.trim() || isLoading}
-            className={`
-              h-8 w-8 p-0 flex-shrink-0 transition-all duration-200
-              ${value.trim() && !isLoading
-                ? 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25' 
-                : 'bg-muted text-muted-foreground cursor-not-allowed'
-              }
-            `}
+            disabled={!message.trim() || isLoading}
+            className="p-2 h-8 w-8"
           >
-            {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full"
-              />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            <Send className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Character count or hints */}
-        <div className="flex justify-between items-center mt-2 px-1">
-          <div className="text-xs text-muted-foreground">
-            {isRecording && (
-              <motion.span
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                className="flex items-center gap-1 text-red-400"
-              >
-                <div className="w-2 h-2 bg-red-400 rounded-full" />
-                Recording...
-              </motion.span>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Press <kbd className="px-1 py-0.5 bg-white/10 rounded text-xs">Enter</kbd> to send, <kbd className="px-1 py-0.5 bg-white/10 rounded text-xs">Shift+Enter</kbd> for new line
-          </div>
-        </div>
-      </form>
-    </motion.div>
+      </div>
+      
+      {isListening && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-sm text-muted-foreground text-center"
+        >
+          Listening... Speak now
+        </motion.div>
+      )}
+    </form>
   );
 };
