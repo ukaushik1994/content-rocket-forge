@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -68,48 +67,73 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
           ))}
         </div>
 
-        <div className="relative z-10 px-8 py-12 md:px-12 md:py-16">
-          <div className="max-w-4xl mx-auto">
+        <div className="relative z-10 px-6 py-16 md:px-16 md:py-24 lg:px-20 lg:py-28 xl:px-24 xl:py-32">
+          <div className="max-w-7xl mx-auto">
             {/* Status indicator */}
             <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-8"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-10 md:mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <motion.div 
-                className="w-2 h-2 rounded-full bg-green-400"
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-lg shadow-green-400/50"
+                animate={{ 
+                  opacity: [1, 0.5, 1],
+                  scale: [1, 1.2, 1]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
               />
-              <span className="text-sm font-medium text-white/90">AI System Online</span>
+              <span className="text-base font-semibold text-white/95 tracking-wide">AI System Online</span>
+              <div className="w-px h-4 bg-white/20" />
+              <span className="text-sm text-white/70">Ready to Create</span>
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
               {/* Left content */}
-              <div className="space-y-8">
+              <div className="space-y-10 lg:space-y-12">
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.3 }}
+                  className="space-y-6"
                 >
-                  <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-                    <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent">
+                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.9] tracking-tight">
+                    <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent block">
                       Content Rocket
                     </span>
-                    <br />
-                    <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent block mt-2">
                       Forge
                     </span>
                   </h1>
                   
-                  <p className="text-lg text-white/70 mt-4 leading-relaxed">
-                    Generate high-ranking, conversion-driven content by integrating 
-                    real-time SERP data, keyword clusters, and business solutions.
-                  </p>
+                  <div className="space-y-4">
+                    <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light max-w-2xl">
+                      Generate high-ranking, conversion-driven content by integrating 
+                      real-time SERP data, keyword clusters, and business solutions.
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-3">
+                      {['AI-Powered', 'SERP Integrated', 'SEO Optimized'].map((tag, index) => (
+                        <motion.span
+                          key={tag}
+                          className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 text-sm font-medium backdrop-blur-xl"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.6 + index * 0.1 }}
+                        >
+                          {tag}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
 
-                {/* Search-like interface */}
+                {/* Enhanced search-like interface */}
                 <motion.div
                   className="relative"
                   initial={{ opacity: 0, y: 30 }}
@@ -117,64 +141,69 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.5 }}
                 >
                   <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/50 to-neon-blue/50 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
-                    <div className="relative flex items-center gap-4 p-4 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300">
-                      <Search className="h-5 w-5 text-white/60" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-neon-purple/50 via-neon-blue/50 to-neon-pink/50 rounded-2xl blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-700" />
+                    <div className="relative flex items-center gap-4 p-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-500 hover:bg-white/15">
+                      <div className="flex-shrink-0">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-neon-purple/30 to-neon-blue/30 border border-white/20">
+                          <Search className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                       <input 
                         type="text" 
                         placeholder="What content would you like to create today?"
-                        className="flex-1 bg-transparent text-white placeholder:text-white/50 outline-none text-lg"
+                        className="flex-1 bg-transparent text-white placeholder:text-white/50 outline-none text-xl font-light"
                         readOnly
                         onClick={() => navigate('/content-builder')}
                       />
                       <motion.div
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neon-purple to-neon-blue text-white text-sm font-medium cursor-pointer"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-neon-purple to-neon-blue text-white text-base font-semibold cursor-pointer shadow-lg hover:shadow-xl hover:shadow-neon-purple/25 transition-all duration-300"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => navigate('/content-builder')}
                       >
-                        <Zap className="h-4 w-4" />
-                        Generate
+                        <Zap className="h-5 w-5" />
+                        Generate Now
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </motion.div>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* Action buttons */}
+                {/* Enhanced action buttons */}
                 <motion.div 
-                  className="flex flex-wrap gap-4"
+                  className="flex flex-col sm:flex-row gap-4 pt-4"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.7 }}
                 >
                   <Button 
                     size="lg"
-                    className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:shadow-lg hover:shadow-neon-purple/25 group relative overflow-hidden"
+                    className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:shadow-neon-purple/30 group relative overflow-hidden min-h-[60px]"
                     onClick={() => navigate('/content-builder')}
                   >
-                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                    <span className="relative flex items-center gap-2">
-                      <RocketIcon className="h-5 w-5" />
-                      New Content Project
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
+                    <span className="relative flex items-center gap-3">
+                      <RocketIcon className="h-6 w-6" />
+                      Start Creating Content
+                      <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>
                   
                   <Button 
                     variant="outline" 
                     size="lg"
-                    className="border-white/20 hover:border-white/30 bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-medium backdrop-blur-xl transition-all duration-300 group"
+                    className="border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/15 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-xl transition-all duration-300 group min-h-[60px] hover:shadow-lg"
                     onClick={() => navigate('/analytics')}
                   >
-                    <span className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      View Analytics
+                    <span className="flex items-center gap-3">
+                      <BarChart3 className="h-6 w-6" />
+                      View Performance
                     </span>
                   </Button>
                 </motion.div>
               </div>
 
-              {/* Right visual element */}
+              {/* Right visual element - enhanced */}
               <motion.div 
                 className="relative flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.8 }}
