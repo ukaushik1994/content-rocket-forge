@@ -195,7 +195,7 @@ export const GrandAppTour: React.FC = () => {
           </div>
 
           {/* Content with scroll */}
-          <div className="px-6 pb-4 max-h-80 overflow-y-auto custom-scrollbar">
+          <div className="px-6 pb-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-white/10">
             <div className="text-sm text-muted-foreground leading-relaxed">
               {currentTourStep.description}
             </div>
@@ -289,23 +289,6 @@ export const GrandAppTour: React.FC = () => {
           />
         )}
       </AnimatePresence>
-
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(155, 135, 245, 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(155, 135, 245, 0.7);
-        }
-      `}</style>
     </AnimatePresence>
   );
 };
