@@ -3,11 +3,9 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategySuggestions } from './tabs/StrategySuggestions';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
-import { TopicClustersTab } from './tabs/TopicClustersTab';
 import { EditorialCalendar } from './calendar/EditorialCalendar';
 import { ContentPipeline } from './pipeline/ContentPipeline';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
-import { ContentPerformance } from './performance/ContentPerformance';
 import { ROICalculator } from './performance/ROICalculator';
 
 interface StrategyTabsProps {
@@ -23,7 +21,7 @@ interface StrategyTabsProps {
 export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
   return (
     <Tabs defaultValue="dashboard" className="space-y-8">
-      <TabsList className="grid w-full grid-cols-8 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
+      <TabsList className="grid w-full grid-cols-6 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
         <TabsTrigger value="dashboard" className="h-14 text-sm font-medium">
           Dashboard
         </TabsTrigger>
@@ -33,17 +31,11 @@ export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
         <TabsTrigger value="gaps" className="h-14 text-sm font-medium">
           Content Gaps
         </TabsTrigger>
-        <TabsTrigger value="clusters" className="h-14 text-sm font-medium">
-          Topic Clusters
-        </TabsTrigger>
         <TabsTrigger value="calendar" className="h-14 text-sm font-medium">
           Calendar
         </TabsTrigger>
         <TabsTrigger value="pipeline" className="h-14 text-sm font-medium">
           Pipeline
-        </TabsTrigger>
-        <TabsTrigger value="performance" className="h-14 text-sm font-medium">
-          Performance
         </TabsTrigger>
         <TabsTrigger value="roi" className="h-14 text-sm font-medium">
           ROI
@@ -62,20 +54,12 @@ export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
         <ContentGapsTab serpMetrics={serpMetrics} goals={goals} />
       </TabsContent>
 
-      <TabsContent value="clusters">
-        <TopicClustersTab serpMetrics={serpMetrics} goals={goals} />
-      </TabsContent>
-
       <TabsContent value="calendar">
         <EditorialCalendar goals={goals} />
       </TabsContent>
 
       <TabsContent value="pipeline">
         <ContentPipeline goals={goals} />
-      </TabsContent>
-
-      <TabsContent value="performance">
-        <ContentPerformance goals={goals} />
       </TabsContent>
 
       <TabsContent value="roi">
