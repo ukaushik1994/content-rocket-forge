@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +11,7 @@ import { QuestionsTab } from './tabs/QuestionsTab';
 import { HeadingsTab } from './tabs/HeadingsTab';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { KeywordsTab } from './tabs/KeywordsTab';
-import { HelpCircle, Heading, Star, Tag, CheckCircle, Zap } from 'lucide-react';
+import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SerpAnalysisModalProps {
