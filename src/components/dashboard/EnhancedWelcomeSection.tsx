@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { RocketIcon, MessageCircle, Sparkles, BarChart3, Search, Zap, ArrowRight } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
@@ -14,6 +14,26 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
   setFeedbackOpen,
   navigate
 }) => {
+  const messages = [
+    "Generate high-ranking, conversion-driven content by integrating real-time SERP data and keyword optimization.",
+    "Transform your content strategy with AI-powered research and competitor analysis.",
+    "Create SEO-optimized articles that rank higher and convert better.",
+    "Streamline your workflow with intelligent content templates and automation.",
+    "Boost your search visibility with data-driven content optimization."
+  ];
+
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (!isHovered) {
+      const interval = setInterval(() => {
+        setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
+      }, 3500);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isHovered, messages.length]);
   return (
     <div className="relative">
       {/* Main hero container */}
@@ -118,10 +138,60 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                     <div className="h-1 w-16 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink rounded-full" />
                   </div>
                   
-                  <p className="text-base md:text-lg text-white/80 leading-relaxed font-light">
-                    Generate high-ranking, conversion-driven content by integrating 
-                    real-time SERP data and keyword optimization.
-                  </p>
+                  <div 
+                    className="relative h-16 md:h-20 overflow-hidden"
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.p 
+                        key={currentMessageIndex}
+                        className="absolute inset-0 text-base md:text-lg text-white/80 leading-relaxed font-light"
+                        initial={{ 
+                          rotateX: -90,
+                          opacity: 0,
+                          y: 20
+                        }}
+                        animate={{ 
+                          rotateX: 0,
+                          opacity: 1,
+                          y: 0
+                        }}
+                        exit={{ 
+                          rotateX: 90,
+                          opacity: 0,
+                          y: -20
+                        }}
+                        transition={{
+                          duration: 0.6,
+                          ease: "easeInOut"
+                        }}
+                        style={{
+                          transformStyle: "preserve-3d",
+                          transformOrigin: "center center"
+                        }}
+                      >
+                        {messages[currentMessageIndex]}
+                      </motion.p>
+                    </AnimatePresence>
+                    
+                    {/* Progress indicators */}
+                    <div className="absolute -bottom-4 left-0 flex space-x-2">
+                      {messages.map((_, index) => (
+                        <motion.div
+                          key={index}
+                          className={`h-1 rounded-full transition-all duration-300 ${
+                            index === currentMessageIndex 
+                              ? 'w-8 bg-gradient-to-r from-neon-purple to-neon-blue' 
+                              : 'w-2 bg-white/30'
+                          }`}
+                          onClick={() => setCurrentMessageIndex(index)}
+                          style={{ cursor: 'pointer' }}
+                          whileHover={{ scale: 1.2 }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   
                   <div className="flex flex-wrap gap-2">
                     {['AI-Powered', 'SERP Integrated', 'SEO Optimized'].map((tag, index) => (
