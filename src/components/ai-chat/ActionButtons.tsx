@@ -1,89 +1,89 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ContextualAction } from '@/services/aiService';
-import { ArrowRight, Zap, TrendingUp, FileText, Settings } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+interface ContextualAction {
+  id: string;
+  label: string;
+  action: string;
+  data?: any;
+  type?: 'button' | 'card';
+  variant?: 'primary' | 'secondary' | 'default';
+  description?: string;
+}
 
 interface ActionButtonsProps {
   actions: ContextualAction[];
-  onAction: (action: string, data?: any) => void;
+  onActionClick: (action: ContextualAction) => void;
 }
 
-export const ActionButtons: React.FC<ActionButtonsProps> = ({ actions, onAction }) => {
-  const getActionIcon = (actionId: string) => {
-    if (actionId.includes('keyword')) return TrendingUp;
-    if (actionId.includes('content')) return FileText;
-    if (actionId.includes('optimize')) return Zap;
-    if (actionId.includes('settings')) return Settings;
-    return ArrowRight;
-  };
+export const ActionButtons: React.FC<ActionButtonsProps> = ({ actions, onActionClick }) => {
+  if (!actions || actions.length === 0) return null;
 
-  const getActionColor = (variant?: string) => {
-    switch (variant) {
-      case 'primary':
-        return 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0';
-      case 'secondary':
-        return 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white border-0';
-      default:
-        return 'bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30';
-    }
+  const handleActionClick = (action: ContextualAction) => {
+    console.log('Action clicked:', action);
+    onActionClick(action);
   };
 
   return (
-    <div className="space-y-2">
-      {actions.map((action, index) => {
-        const IconComponent = getActionIcon(action.id);
-        
-        if (action.type === 'card') {
-          return (
-            <motion.div
-              key={action.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-            >
-              <Card 
-                className="p-4 cursor-pointer hover:bg-white/10 transition-colors bg-white/5 border-white/10"
-                onClick={() => onAction(action.action, action.data)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20">
-                    <IconComponent className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-white text-sm">{action.label}</h4>
-                    {action.description && (
-                      <p className="text-xs text-white/60 mt-1">{action.description}</p>
-                    )}
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-white/40" />
-                </div>
-              </Card>
-            </motion.div>
-          );
-        }
-
-        return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-white mb-4">Suggested Actions</h3>
+      <div className="grid gap-3">
+        {actions.map((action, index) => (
           <motion.div
             key={action.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.3 }}
-            className="inline-block"
+            transition={{ delay: index * 0.1 }}
           >
-            <Button
-              size="sm"
-              className={`mr-2 mb-2 ${getActionColor(action.variant)}`}
-              onClick={() => onAction(action.action, action.data)}
-            >
-              <IconComponent className="h-4 w-4 mr-2" />
-              {action.label}
-            </Button>
+            {action.type === 'card' ? (
+              <Card 
+                className="bg-white/5 border-white/10 hover:bg-white/10 transition-all cursor-pointer"
+                onClick={() => handleActionClick(action)}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-white flex items-center justify-between">
+                    {action.label}
+                    <ArrowRight className="h-4 w-4" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {action.description && (
+                    <p className="text-xs text-white/70">{action.description}</p>
+                  )}
+                  {action.data && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {Object.entries(action.data).map(([key, value]) => (
+                        <Badge key={key} variant="outline" className="text-xs">
+                          {String(value)}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Button
+                variant={action.variant === 'primary' ? 'default' : 'outline'}
+                className="w-full justify-between text-left"
+                onClick={() => handleActionClick(action)}
+              >
+                <span className="flex flex-col items-start">
+                  <span>{action.label}</span>
+                  {action.description && (
+                    <span className="text-xs opacity-70">{action.description}</span>
+                  )}
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </motion.div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 };

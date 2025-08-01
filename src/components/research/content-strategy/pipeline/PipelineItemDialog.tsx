@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PipelineItemDialogProps {
   open: boolean;
@@ -18,20 +18,29 @@ interface PipelineItemDialogProps {
   item?: any;
 }
 
-export const PipelineItemDialog = ({ open, onClose, onSave, item }: PipelineItemDialogProps) => {
+export const PipelineItemDialog: React.FC<PipelineItemDialogProps> = ({
+  open,
+  onClose,
+  onSave,
+  item
+}) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     stage: 'ideation',
     content_type: 'blog',
-    priority: 'medium',
     target_keyword: '',
     word_count: 0,
+    seo_score: 0,
     progress_percentage: 0,
     due_date: '',
     assigned_to: '',
+    priority: 'medium',
+    blockers: [] as string[],
     notes: ''
   });
-  const [loading, setLoading] = useState(false);
+  const [newBlocker, setNewBlocker] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -39,201 +48,280 @@ export const PipelineItemDialog = ({ open, onClose, onSave, item }: PipelineItem
         title: item.title || '',
         stage: item.stage || 'ideation',
         content_type: item.content_type || 'blog',
-        priority: item.priority || 'medium',
         target_keyword: item.target_keyword || '',
         word_count: item.word_count || 0,
+        seo_score: item.seo_score || 0,
         progress_percentage: item.progress_percentage || 0,
         due_date: item.due_date || '',
         assigned_to: item.assigned_to || '',
+        priority: item.priority || 'medium',
+        blockers: item.blockers || [],
         notes: item.notes || ''
       });
-    } else {
+    }
+  }, [item]);
+
+  const handleSave = async () => {
+    if (!formData.title.trim()) return;
+
+    setIsLoading(true);
+    try {
+      await onSave({
+        ...formData,
+        user_id: user?.id
+      });
+      onClose();
       setFormData({
         title: '',
         stage: 'ideation',
         content_type: 'blog',
-        priority: 'medium',
         target_keyword: '',
         word_count: 0,
+        seo_score: 0,
         progress_percentage: 0,
         due_date: '',
         assigned_to: '',
+        priority: 'medium',
+        blockers: [],
         notes: ''
       });
-    }
-  }, [item, open]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.title) return;
-    
-    setLoading(true);
-    try {
-      await onSave(formData);
-      onClose();
     } catch (error) {
       console.error('Error saving pipeline item:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const addBlocker = () => {
+    if (newBlocker.trim() && !formData.blockers.includes(newBlocker.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        blockers: [...prev.blockers, newBlocker.trim()]
+      }));
+      setNewBlocker('');
+    }
+  };
+
+  const removeBlocker = (blockerToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      blockers: prev.blockers.filter(blocker => blocker !== blockerToRemove)
+    }));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addBlocker();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-gray-900 border-white/10">
+      <DialogContent className="bg-gray-900 border-white/20 text-white max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white">
             {item ? 'Edit Pipeline Item' : 'Add Pipeline Item'}
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <div className="space-y-4">
+          <div>
             <Label htmlFor="title" className="text-white">Title</Label>
             <Input
               id="title"
+              placeholder="Enter content title..."
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Content title"
-              className="bg-gray-800 border-white/10 text-white"
-              required
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="stage" className="text-white">Stage</Label>
-              <select
-                id="stage"
+              <Select
                 value={formData.stage}
-                onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-md text-white"
+                onValueChange={(value) => setFormData(prev => ({ ...prev, stage: value }))}
               >
-                <option value="ideation">Ideation</option>
-                <option value="research">Research</option>
-                <option value="writing">Writing</option>
-                <option value="review">Review</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="published">Published</option>
-              </select>
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-white/20">
+                  <SelectItem value="ideation">Ideation</SelectItem>
+                  <SelectItem value="research">Research</SelectItem>
+                  <SelectItem value="writing">Writing</SelectItem>
+                  <SelectItem value="review">Review</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="content_type" className="text-white">Content Type</Label>
-              <select
-                id="content_type"
+              <Select
                 value={formData.content_type}
-                onChange={(e) => setFormData({ ...formData, content_type: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-md text-white"
+                onValueChange={(value) => setFormData(prev => ({ ...prev, content_type: value }))}
               >
-                <option value="blog">Blog Post</option>
-                <option value="social">Social Media</option>
-                <option value="video">Video</option>
-                <option value="email">Email</option>
-              </select>
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-white/20">
+                  <SelectItem value="blog">📝 Blog Post</SelectItem>
+                  <SelectItem value="social">📱 Social Media</SelectItem>
+                  <SelectItem value="video">🎬 Video</SelectItem>
+                  <SelectItem value="email">✉️ Email</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="target_keyword" className="text-white">Target Keyword</Label>
+            <Input
+              id="target_keyword"
+              placeholder="Enter target keyword..."
+              value={formData.target_keyword}
+              onChange={(e) => setFormData(prev => ({ ...prev, target_keyword: e.target.value }))}
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="priority" className="text-white">Priority</Label>
-              <select
-                id="priority"
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-md text-white"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
+            <div>
+              <Label htmlFor="word_count" className="text-white">Word Count</Label>
+              <Input
+                id="word_count"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={formData.word_count || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, word_count: parseInt(e.target.value) || 0 }))}
+                className="bg-white/10 border-white/20 text-white"
+              />
             </div>
 
-            <div className="space-y-2">
+            <div>
+              <Label htmlFor="seo_score" className="text-white">SEO Score</Label>
+              <Input
+                id="seo_score"
+                type="number"
+                min="0"
+                max="100"
+                placeholder="0"
+                value={formData.seo_score || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, seo_score: parseInt(e.target.value) || 0 }))}
+                className="bg-white/10 border-white/20 text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-white">Progress: {formData.progress_percentage}%</Label>
+            <Slider
+              value={[formData.progress_percentage]}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, progress_percentage: value[0] }))}
+              max={100}
+              step={5}
+              className="mt-2"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="due_date" className="text-white">Due Date</Label>
               <Input
                 id="due_date"
                 type="date"
                 value={formData.due_date}
-                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                className="bg-gray-800 border-white/10 text-white"
+                onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
+                className="bg-white/10 border-white/20 text-white"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="priority" className="text-white">Priority</Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
+              >
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-white/20">
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="target_keyword" className="text-white">Target Keyword</Label>
-              <Input
-                id="target_keyword"
-                value={formData.target_keyword}
-                onChange={(e) => setFormData({ ...formData, target_keyword: e.target.value })}
-                placeholder="Main keyword to target"
-                className="bg-gray-800 border-white/10 text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="word_count" className="text-white">Target Word Count</Label>
-              <Input
-                id="word_count"
-                type="number"
-                min="0"
-                value={formData.word_count}
-                onChange={(e) => setFormData({ ...formData, word_count: parseInt(e.target.value) || 0 })}
-                placeholder="0"
-                className="bg-gray-800 border-white/10 text-white"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="assigned_to" className="text-white">Assigned To</Label>
-              <Input
-                id="assigned_to"
-                value={formData.assigned_to}
-                onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                placeholder="Team member"
-                className="bg-gray-800 border-white/10 text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="progress_percentage" className="text-white">Progress (%)</Label>
-              <Input
-                id="progress_percentage"
-                type="number"
-                min="0"
-                max="100"
-                value={formData.progress_percentage}
-                onChange={(e) => setFormData({ ...formData, progress_percentage: parseInt(e.target.value) || 0 })}
-                className="bg-gray-800 border-white/10 text-white"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-white">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Additional notes or requirements"
-              className="bg-gray-800 border-white/10 text-white"
-              rows={3}
+          <div>
+            <Label htmlFor="assigned_to" className="text-white">Assigned To</Label>
+            <Input
+              id="assigned_to"
+              placeholder="Enter assignee name..."
+              value={formData.assigned_to}
+              onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : (item ? 'Update' : 'Create')}
-            </Button>
+          <div>
+            <Label htmlFor="blockers" className="text-white">Blockers</Label>
+            <div className="flex gap-2 mb-2">
+              <Input
+                placeholder="Add a blocker..."
+                value={newBlocker}
+                onChange={(e) => setNewBlocker(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+              />
+              <Button onClick={addBlocker} size="sm" variant="outline">
+                Add
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {formData.blockers.map((blocker, index) => (
+                <Badge key={index} variant="secondary" className="bg-red-500/20 text-red-400">
+                  {blocker}
+                  <button
+                    onClick={() => removeBlocker(blocker)}
+                    className="ml-1 hover:text-red-200"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
           </div>
-        </form>
+
+          <div>
+            <Label htmlFor="notes" className="text-white">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Add any notes or description..."
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/60 min-h-[80px]"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={!formData.title.trim() || isLoading}
+            className="bg-primary/20 hover:bg-primary/30"
+          >
+            {isLoading ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
