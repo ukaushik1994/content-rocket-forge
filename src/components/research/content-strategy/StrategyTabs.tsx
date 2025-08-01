@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategySuggestions } from './tabs/StrategySuggestions';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { TopicClustersTab } from './tabs/TopicClustersTab';
+import { EditorialCalendar } from './calendar/EditorialCalendar';
+import { ContentPipeline } from './pipeline/ContentPipeline';
 
 interface StrategyTabsProps {
   serpMetrics: any;
@@ -18,7 +20,7 @@ interface StrategyTabsProps {
 export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
   return (
     <Tabs defaultValue="strategies" className="space-y-8">
-      <TabsList className="grid w-full grid-cols-3 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
+      <TabsList className="grid w-full grid-cols-5 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
         <TabsTrigger value="strategies" className="h-14 text-base font-medium">
           Strategy Suggestions
         </TabsTrigger>
@@ -27,6 +29,12 @@ export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
         </TabsTrigger>
         <TabsTrigger value="clusters" className="h-14 text-base font-medium">
           Topic Clusters
+        </TabsTrigger>
+        <TabsTrigger value="calendar" className="h-14 text-base font-medium">
+          Editorial Calendar
+        </TabsTrigger>
+        <TabsTrigger value="pipeline" className="h-14 text-base font-medium">
+          Content Pipeline
         </TabsTrigger>
       </TabsList>
 
@@ -40,6 +48,14 @@ export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
 
       <TabsContent value="clusters">
         <TopicClustersTab serpMetrics={serpMetrics} goals={goals} />
+      </TabsContent>
+
+      <TabsContent value="calendar">
+        <EditorialCalendar goals={goals} />
+      </TabsContent>
+
+      <TabsContent value="pipeline">
+        <ContentPipeline goals={goals} />
       </TabsContent>
     </Tabs>
   );
