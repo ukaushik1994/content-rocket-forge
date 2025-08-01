@@ -1,9 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { EnhancedContentEditor } from '../editor/EnhancedContentEditor';
 import { SerpIntegrationPanel } from '../analysis/SerpIntegrationPanel';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
-import { ContentSidebar } from './writing/ContentSidebar';
 import { SaveContentDialog } from './writing/SaveContentDialog';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
@@ -140,21 +140,8 @@ export const ContentWritingStep = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 mt-8">
-          {showOutline && (
-            <div className="xl:col-span-1">
-              <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
-                <ContentSidebar
-                  outline={outline}
-                  selectedSolution={selectedSolution}
-                  additionalInstructions={additionalInstructions}
-                  handleInstructionsChange={handleInstructionsChange}
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className={`${showOutline ? 'xl:col-span-3' : 'xl:col-span-4'}`}>
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 mt-8">
+          <div className="xl:col-span-3">
             <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-6">
