@@ -5,7 +5,7 @@ import { AnimatedTourIcon } from './AnimatedTourIcon';
 
 interface TourStepCardProps {
   title: string;
-  description: string;
+  description: React.ReactNode;
   phase: string;
   icon: any;
   highlights?: string[];
@@ -47,7 +47,7 @@ export const TourStepCard: React.FC<TourStepCardProps> = ({
           </div>
         </div>
 
-        {/* Description */}
+        {/* Description - now properly handles ReactNode */}
         <div className="relative z-10 text-base text-muted-foreground leading-relaxed mb-6">
           {description}
         </div>
