@@ -11,7 +11,8 @@ import { QuestionsTab } from './tabs/QuestionsTab';
 import { HeadingsTab } from './tabs/HeadingsTab';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { KeywordsTab } from './tabs/KeywordsTab';
-import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap } from 'lucide-react';
+import { RelatedSearchesTab } from './tabs/RelatedSearchesTab';
+import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SerpAnalysisModalProps {
@@ -43,7 +44,8 @@ export function SerpAnalysisModal({
     { id: 'questions', label: 'FAQ Questions', icon: HelpCircle, count: serpData.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
     { id: 'headings', label: 'SERP Headings', icon: Heading, count: serpData.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
     { id: 'gaps', label: 'Content Gaps', icon: Star, count: serpData.contentGaps?.length || 0, color: 'from-orange-500 to-red-500' },
-    { id: 'keywords', label: 'Keywords', icon: Tag, count: serpData.keywords?.length || 0, color: 'from-indigo-500 to-purple-500' }
+    { id: 'keywords', label: 'Keywords', icon: Tag, count: serpData.keywords?.length || 0, color: 'from-indigo-500 to-purple-500' },
+    { id: 'related', label: 'Related Searches', icon: Search, count: serpData.relatedSearches?.length || 0, color: 'from-teal-500 to-cyan-500' }
   ];
 
   return (
@@ -93,7 +95,7 @@ export function SerpAnalysisModal({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden relative z-10">
-          <TabsList className="grid w-full grid-cols-4 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl">
             {tabs.map((tab, index) => (
               <TabsTrigger 
                 key={tab.id} 
@@ -164,6 +166,13 @@ export function SerpAnalysisModal({
                 <TabsContent value="keywords" className="mt-0">
                   <KeywordsTab 
                     keywords={serpData.keywords || []}
+                    serpSelections={serpSelections}
+                    onToggleSelection={onToggleSelection}
+                  />
+                </TabsContent>
+
+                <TabsContent value="related" className="mt-0">
+                  <RelatedSearchesTab 
                     relatedSearches={serpData.relatedSearches || []}
                     serpSelections={serpSelections}
                     onToggleSelection={onToggleSelection}
