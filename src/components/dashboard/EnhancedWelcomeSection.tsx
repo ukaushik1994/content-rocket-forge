@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { RocketIcon, MessageCircle, Sparkles, BarChart3, Search, Zap, ArrowRight } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
-import { EnhancedTourTrigger } from '@/components/tour/EnhancedTourTrigger';
+import { TourTrigger } from '@/components/tour/TourTrigger';
 
 interface EnhancedWelcomeSectionProps {
   setFeedbackOpen: (open: boolean) => void;
@@ -199,7 +199,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                     </span>
                   </Button>
                   
-                  <EnhancedTourTrigger variant="hero" size="lg" showAchievements />
+                  <TourTrigger variant="inline" size="lg" className="px-6 py-3 rounded-lg font-semibold" />
                 </motion.div>
               </div>
 
