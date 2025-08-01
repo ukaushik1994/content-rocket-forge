@@ -17,7 +17,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
   return (
     <div className="relative">
       {/* Main hero container */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border border-white/10 shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border border-white/10 shadow-2xl">
         {/* Animated background effects */}
         <div className="absolute inset-0">
           <motion.div 
@@ -68,11 +68,11 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
           ))}
         </div>
 
-        <div className="relative z-10 px-6 py-12 md:px-12 md:py-16 lg:px-16 lg:py-20">
-          <div className="max-w-6xl mx-auto">
+        <div className="relative z-10 px-6 py-8 md:px-10 md:py-12 lg:px-12 lg:py-14">
+          <div className="max-w-5xl mx-auto">
             {/* Status indicator */}
             <motion.div 
-              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-8"
+              className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -92,17 +92,17 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
               <span className="text-sm font-semibold text-white/95">AI System Online</span>
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
               {/* Left content */}
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.3 }}
-                  className="space-y-6"
+                  className="space-y-5"
                 >
                   {/* Compact title design */}
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="p-2 rounded-lg bg-gradient-to-r from-neon-purple/30 to-neon-blue/30 border border-white/20">
                         <RocketIcon className="h-4 w-4 text-white" />
@@ -110,16 +110,16 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       <span className="text-sm font-medium text-white/70 uppercase tracking-wide">Content Creation</span>
                     </div>
                     
-                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
                       <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
                         Content Rocket Forge
                       </span>
                     </h1>
                     
-                    <div className="h-1 w-20 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink rounded-full" />
+                    <div className="h-1 w-16 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink rounded-full" />
                   </div>
                   
-                  <p className="text-base md:text-lg text-white/80 leading-relaxed font-light max-w-lg">
+                  <p className="text-base md:text-lg text-white/80 leading-relaxed font-light">
                     Generate high-ranking, conversion-driven content by integrating 
                     real-time SERP data and keyword optimization.
                   </p>
@@ -147,7 +147,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.5 }}
                 >
                   <div className="relative group">
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-500">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-500">
                       <Search className="h-5 w-5 text-white/70" />
                       <input 
                         type="text" 
@@ -202,7 +202,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                 </motion.div>
               </div>
 
-              {/* Right visual element - more compact */}
+              {/* Right visual element - bigger animation */}
               <motion.div 
                 className="relative flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -210,38 +210,38 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                 transition={{ duration: 1, delay: 0.8 }}
               >
                 <div className="relative">
-                  {/* Simplified animated rings */}
-                  {[...Array(2)].map((_, i) => (
+                  {/* Larger animated rings */}
+                  {[...Array(3)].map((_, i) => (
                     <motion.div
                       key={i}
                       className="absolute inset-0 rounded-full border border-white/10"
                       style={{
-                        width: 120 + i * 30,
-                        height: 120 + i * 30,
-                        left: -(i * 15),
-                        top: -(i * 15)
+                        width: 200 + i * 60,
+                        height: 200 + i * 60,
+                        left: -(i * 30),
+                        top: -(i * 30)
                       }}
                       animate={{
                         rotate: [0, 360],
-                        opacity: [0.3, 0.6, 0.3]
+                        opacity: [0.2, 0.5, 0.2]
                       }}
                       transition={{
-                        duration: 15 + i * 5,
+                        duration: 15 + i * 8,
                         repeat: Infinity,
                         ease: "linear"
                       }}
                     />
                   ))}
                   
-                  {/* Compact center orb */}
+                  {/* Larger center orb */}
                   <motion.div 
-                    className="relative w-32 h-32 rounded-full bg-gradient-to-br from-neon-purple/30 via-neon-blue/20 to-neon-pink/30 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-xl"
+                    className="relative w-48 h-48 rounded-full bg-gradient-to-br from-neon-purple/30 via-neon-blue/20 to-neon-pink/30 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl"
                     animate={{
-                      y: [0, -8, 0],
+                      y: [0, -12, 0],
                       boxShadow: [
-                        "0 0 30px rgba(155, 135, 245, 0.3)",
-                        "0 0 40px rgba(155, 135, 245, 0.5)",
-                        "0 0 30px rgba(155, 135, 245, 0.3)"
+                        "0 0 40px rgba(155, 135, 245, 0.4)",
+                        "0 0 60px rgba(155, 135, 245, 0.6)",
+                        "0 0 40px rgba(155, 135, 245, 0.4)"
                       ]
                     }}
                     transition={{
@@ -255,7 +255,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                     >
-                      <Sparkles className="h-12 w-12 text-white" />
+                      <Sparkles className="h-16 w-16 text-white" />
                     </motion.div>
                   </motion.div>
                 </div>
