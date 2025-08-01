@@ -199,7 +199,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                     </span>
                   </Button>
                   
-                  <TourTrigger variant="outline" size="lg" className="border-neon-blue/30 hover:border-neon-blue/60 bg-white/5 hover:bg-neon-blue/10 text-neon-blue hover:text-white px-6 py-3 rounded-lg font-semibold backdrop-blur-xl" />
+                  <TourTrigger variant="inline" size="lg" className="px-6 py-3 rounded-lg font-semibold" />
                 </motion.div>
               </div>
 
