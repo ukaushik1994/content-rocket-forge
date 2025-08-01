@@ -68,11 +68,11 @@ export function CollapsibleRightSidebar({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 400, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed right-0 top-24 bottom-0 w-80 bg-background/60 backdrop-blur-xl border-l border-border/50 z-40 overflow-hidden"
+            className="fixed right-0 top-24 bottom-0 w-80 bg-background/60 backdrop-blur-xl border-l border-border/50 z-40"
           >
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="p-6 border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm">
+              <div className="p-6 border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/20">
@@ -94,7 +94,7 @@ export function CollapsibleRightSidebar({
                 </div>
               </div>
 
-              {/* Content */}
+              {/* Content - Scrollable area */}
               <div className="flex-1 overflow-y-auto">
                 <div className="p-6 space-y-8">
                   {/* Keywords Section */}
@@ -148,17 +148,14 @@ export function CollapsibleRightSidebar({
                       </h4>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg overflow-hidden">
-                      <div className="p-1">
-                        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
-                          <SelectionSummaryCard
-                            serpSelections={serpSelections}
-                            onOpenSelectionManager={onOpenSelectionManager}
-                            onGenerateOutline={onGenerateOutline}
-                            isGenerating={isGeneratingOutline}
-                          />
-                        </div>
-                      </div>
+                    {/* Remove the nested containers and scrolling */}
+                    <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg">
+                      <SelectionSummaryCard
+                        serpSelections={serpSelections}
+                        onOpenSelectionManager={onOpenSelectionManager}
+                        onGenerateOutline={onGenerateOutline}
+                        isGenerating={isGeneratingOutline}
+                      />
                     </div>
                   </motion.section>
                 </div>
