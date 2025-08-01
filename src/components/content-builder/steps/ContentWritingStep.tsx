@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { EnhancedContentEditor } from '../editor/EnhancedContentEditor';
 import { CollapsibleSerpSidebar } from './writing/CollapsibleSerpSidebar';
@@ -112,7 +111,7 @@ export const ContentWritingStep = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      <div className="relative z-10 w-full mx-auto px-6 pt-8 pb-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8 pb-12">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
             {state.contentTitle || 'Create Amazing Content'}
@@ -140,7 +139,7 @@ export const ContentWritingStep = () => {
           />
         </div>
         
-        <div className="w-full max-w-none mx-auto pr-96">
+        <div className="max-w-5xl mx-auto">
           <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
             <div className="p-8">
               <div className="flex items-center gap-3 mb-8">
