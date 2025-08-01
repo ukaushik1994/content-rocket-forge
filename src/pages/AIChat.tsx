@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Container } from '@/components/ui/Container';
 import Navbar from '@/components/layout/Navbar';
 import { ChatInterface } from '@/components/ai-chat/ChatInterface';
 import { ChatSidebar } from '@/components/ai-chat/ChatSidebar';
@@ -19,14 +18,10 @@ const AIChat = () => {
   const {
     conversations,
     activeConversation,
-    messages,
     isLoading,
-    isTyping,
     loadConversations,
-    loadMessages,
     createConversation,
     selectConversation,
-    sendMessage,
     deleteConversation
   } = useAIChat();
 
@@ -37,17 +32,10 @@ const AIChat = () => {
     }
   }, [user, loadConversations]);
 
-  // Load messages when active conversation changes
-  useEffect(() => {
-    if (activeConversation) {
-      loadMessages(activeConversation);
-    }
-  }, [activeConversation, loadMessages]);
-
   // Auto-create first conversation if none exist
   useEffect(() => {
     if (user && conversations.length === 0 && !activeConversation) {
-      createConversation("Welcome Chat");
+      createConversation("AI Assistant Chat");
     }
   }, [conversations.length, createConversation, activeConversation, user]);
 
@@ -62,9 +50,6 @@ const AIChat = () => {
         .eq('conversation_id', activeConversation);
 
       if (error) throw error;
-
-      // Reload messages to reflect the change
-      loadMessages(activeConversation);
       
       toast({
         title: "Conversation cleared",
@@ -153,10 +138,6 @@ const AIChat = () => {
         <div className="flex-1 flex flex-col min-w-0">
           <ChatInterface
             ref={chatRef}
-            messages={messages}
-            isLoading={isLoading}
-            isTyping={isTyping}
-            onSendMessage={sendMessage}
             onClearConversation={handleClearConversation}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             sidebarOpen={sidebarOpen}
