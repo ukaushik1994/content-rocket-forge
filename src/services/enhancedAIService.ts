@@ -145,8 +145,8 @@ class EnhancedAIService {
           title: 'Primary Keyword Selection',
           description: 'Let\'s start by identifying your primary keyword for optimization.',
           actions: [
-            { id: 'input-keyword', type: 'button', label: 'Enter Keyword', action: 'workflow:keyword-input' },
-            { id: 'suggest-keywords', type: 'button', label: 'Get Suggestions', action: 'workflow:keyword-suggestions' }
+            { id: 'input-keyword', type: 'button' as const, label: 'Enter Keyword', action: 'workflow:keyword-input' },
+            { id: 'suggest-keywords', type: 'button' as const, label: 'Get Suggestions', action: 'workflow:keyword-suggestions' }
           ],
           progress: { current: 1, total: 4 }
         },
@@ -164,9 +164,9 @@ class EnhancedAIService {
           title: 'Content Type Selection',
           description: 'What type of content would you like to create?',
           actions: [
-            { id: 'blog-post', type: 'button', label: 'Blog Post', action: 'workflow:content-blog' },
-            { id: 'landing-page', type: 'button', label: 'Landing Page', action: 'workflow:content-landing' },
-            { id: 'social-post', type: 'button', label: 'Social Media', action: 'workflow:content-social' }
+            { id: 'blog-post', type: 'button' as const, label: 'Blog Post', action: 'workflow:content-blog' },
+            { id: 'landing-page', type: 'button' as const, label: 'Landing Page', action: 'workflow:content-landing' },
+            { id: 'social-post', type: 'button' as const, label: 'Social Media', action: 'workflow:content-social' }
           ],
           progress: { current: 1, total: 3 }
         }
