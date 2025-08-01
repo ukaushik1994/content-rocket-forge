@@ -6,9 +6,9 @@ import { EnhancedWelcomeSection } from '@/components/dashboard/EnhancedWelcomeSe
 import { EnhancedQuickActions } from '@/components/dashboard/EnhancedQuickActions';
 import { EnhancedPerformanceSection } from '@/components/dashboard/EnhancedPerformanceSection';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
-import { TourProvider } from '@/contexts/TourContext';
-import { AppTour } from '@/components/tour/AppTour';
-import { TourTrigger } from '@/components/tour/TourTrigger';
+import { EnhancedTourProvider } from '@/contexts/EnhancedTourContext';
+import { EnhancedAppTour } from '@/components/tour/EnhancedAppTour';
+import { EnhancedTourTrigger } from '@/components/tour/EnhancedTourTrigger';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
@@ -52,7 +52,7 @@ const Index = () => {
   };
   
   return (
-    <TourProvider>
+    <EnhancedTourProvider>
       <div className="min-h-screen flex flex-col bg-background overflow-hidden">
         {/* Enhanced background with multiple animated layers */}
         <div className="absolute inset-0 -z-10">
@@ -160,7 +160,7 @@ const Index = () => {
               </motion.section>
               
               {/* Enhanced Quick Actions */}
-              <motion.section variants={sectionVariants}>
+              <motion.section variants={sectionVariants} id="quick-actions">
                 <div className="space-y-6">
                   <motion.div 
                     className="flex items-center justify-between"
@@ -180,7 +180,7 @@ const Index = () => {
                       <div className="px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-sm text-white/60">
                         Choose your next step
                       </div>
-                      <TourTrigger variant="inline" size="sm" />
+                      <EnhancedTourTrigger variant="inline" size="sm" showAchievements />
                     </div>
                   </motion.div>
                   
@@ -189,20 +189,20 @@ const Index = () => {
               </motion.section>
               
               {/* Enhanced Performance Section */}
-              <motion.section variants={sectionVariants}>
+              <motion.section variants={sectionVariants} id="performance-section">
                 <EnhancedPerformanceSection />
               </motion.section>
             </motion.div>
           </Container>
         </main>
         
-        {/* Tour Components */}
-        <AppTour />
-        <TourTrigger variant="floating" />
+        {/* Enhanced Tour Components */}
+        <EnhancedAppTour />
+        <EnhancedTourTrigger variant="floating" showAchievements />
         
         <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       </div>
-    </TourProvider>
+    </EnhancedTourProvider>
   );
 };
 
