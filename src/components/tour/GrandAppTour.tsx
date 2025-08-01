@@ -4,74 +4,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { X, ChevronLeft, ChevronRight, Sparkles, Trophy } from 'lucide-react';
 import { useGrandTour } from '@/contexts/GrandTourContext';
-
-// Particle component for visual effects
-const Particles: React.FC<{ type: 'cosmic' | 'content' | 'data' | 'ai' }> = ({ type }) => {
-  const getParticleConfig = () => {
-    switch (type) {
-      case 'cosmic':
-        return { count: 20, colors: ['#9b87f5', '#33c3f0', '#d946ef'], size: [1, 3] };
-      case 'content':
-        return { count: 15, colors: ['#10b981', '#f59e0b', '#ef4444'], size: [2, 4] };
-      case 'data':
-        return { count: 12, colors: ['#06b6d4', '#8b5cf6', '#ec4899'], size: [1, 2] };
-      case 'ai':
-        return { count: 25, colors: ['#f472b6', '#a855f7', '#6366f1'], size: [2, 5] };
-      default:
-        return { count: 10, colors: ['#9b87f5'], size: [1, 2] };
-    }
-  };
-
-  const config = getParticleConfig();
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(config.count)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full opacity-70"
-          style={{
-            backgroundColor: config.colors[i % config.colors.length],
-            width: Math.random() * (config.size[1] - config.size[0]) + config.size[0],
-            height: Math.random() * (config.size[1] - config.size[0]) + config.size[0],
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            x: [0, Math.random() * 100 - 50],
-            y: [0, Math.random() * 100 - 50],
-            opacity: [0.3, 0.8, 0.3],
-            scale: [1, 1.5, 1],
-          }}
-          transition={{
-            duration: Math.random() * 20 + 10,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-            delay: Math.random() * 5,
-          }}
-        />
-      ))}
-    </div>
-  );
-};
+import { TourStepCard } from './TourStepCard';
+import { TourProgress } from './TourProgress';
+import { Particles } from './TourParticles';
 
 // Achievement notification component
 const AchievementNotification: React.FC<{ achievement: any; onClose: () => void }> = ({ achievement, onClose }) => (
   <motion.div
-    className="fixed top-4 right-4 z-70 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 backdrop-blur-xl border border-yellow-400/30 rounded-xl p-4 max-w-sm"
+    className="fixed top-8 right-8 z-70 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 backdrop-blur-xl border border-yellow-400/30 rounded-xl p-6 max-w-sm shadow-2xl"
     initial={{ opacity: 0, x: 100, scale: 0.8 }}
     animate={{ opacity: 1, x: 0, scale: 1 }}
     exit={{ opacity: 0, x: 100, scale: 0.8 }}
     transition={{ type: "spring", stiffness: 300, damping: 30 }}
   >
-    <div className="flex items-center gap-3">
-      <div className="text-2xl">{achievement.icon}</div>
-      <div className="flex-1">
-        <div className="font-semibold text-yellow-300">Achievement Unlocked!</div>
-        <div className="text-sm text-white/80">{achievement.name}</div>
+    <div className="flex items-center gap-4">
+      <div className="flex-shrink-0">
+        <Trophy className="h-8 w-8 text-yellow-400" />
       </div>
-      <Button variant="ghost" size="icon" onClick={onClose} className="h-6 w-6">
+      <div className="flex-1">
+        <div className="font-bold text-yellow-300 text-lg">Achievement Unlocked!</div>
+        <div className="text-white/90 text-sm mt-1">{achievement.name}</div>
+      </div>
+      <Button variant="ghost" size="icon" onClick={onClose} className="h-6 w-6 text-white/60 hover:text-white">
         <X className="h-4 w-4" />
       </Button>
     </div>
@@ -113,7 +67,7 @@ export const GrandAppTour: React.FC = () => {
     if (unlockedAchievement) {
       setShowAchievement(unlockedAchievement);
       localStorage.setItem(`shown-${unlockedAchievement.id}`, 'true');
-      setTimeout(() => setShowAchievement(null), 4000);
+      setTimeout(() => setShowAchievement(null), 5000);
     }
   }, [achievements]);
 
@@ -136,7 +90,7 @@ export const GrandAppTour: React.FC = () => {
     <AnimatePresence>
       <motion.div
         ref={overlayRef}
-        className="fixed inset-0 bg-black/70 backdrop-blur-lg z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/80 backdrop-blur-lg z-50 flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -145,119 +99,98 @@ export const GrandAppTour: React.FC = () => {
         <Particles type={currentTourStep.particles} />
         
         <motion.div
-          className="relative w-full max-w-4xl bg-background/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden"
-          style={{
-            maxHeight: '90vh',
-            minHeight: '600px',
-          }}
+          className="relative w-full max-w-6xl bg-background/95 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden"
+          style={{ height: '85vh' }}
           initial={{ opacity: 0, scale: 0.8, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 40 }}
           transition={{ duration: 0.5, type: "spring", stiffness: 300, damping: 30 }}
         >
           {/* Dynamic gradient header */}
-          <div className={`h-2 bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)}`} />
+          <div className={`h-3 bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)}`} />
           
           {/* Header */}
-          <div className="relative p-8 pb-6">
-            <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-r from-neon-purple to-neon-blue rounded-full flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white animate-pulse" />
-            </div>
-            
+          <div className="relative p-8 pb-6 border-b border-white/10">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-white/10"
+              className="absolute top-6 right-6 h-10 w-10 rounded-full hover:bg-white/10 text-white/60 hover:text-white"
               onClick={skipTour}
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
 
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-6 w-6 text-neon-blue" />
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  Step {currentStep + 1} of {steps.length}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-8 w-8 text-neon-blue" />
+                  <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                      Grand App Tour
+                    </h1>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Discover the full potential of your application
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="text-sm px-3 py-1.5 rounded-full bg-white/10 capitalize">
-                {currentTourStep.phase.replace('-', ' ')} Phase
+              
+              {/* Achievement counter */}
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/20">
+                <Trophy className="h-5 w-5 text-yellow-400" />
+                <span className="text-sm font-semibold text-white">
+                  {achievements.filter(a => a.unlocked).length}/{achievements.length} Achievements
+                </span>
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              {currentTourStep.title}
-            </h2>
+            {/* Progress */}
+            <TourProgress 
+              currentStep={currentStep}
+              totalSteps={steps.length}
+              steps={steps}
+              onStepClick={goToStep}
+            />
           </div>
 
-          {/* Content with scroll */}
-          <div className="px-8 pb-6 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-white/10">
-            <div className="text-base text-muted-foreground leading-relaxed">
-              {currentTourStep.description}
-            </div>
-          </div>
-
-          {/* Enhanced progress indicators */}
-          <div className="px-8 pb-6">
-            <div className="flex gap-2 mb-4">
-              {steps.map((step, index) => (
-                <motion.button
-                  key={step.id}
-                  className={`h-3 rounded-full transition-all duration-300 ${
-                    index === currentStep
-                      ? `bg-gradient-to-r ${getPhaseColor(step.phase)} w-16`
-                      : index < currentStep
-                      ? 'bg-white/50 w-4'
-                      : 'bg-white/20 w-3'
-                  }`}
-                  onClick={() => goToStep(index)}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  title={step.title}
-                />
-              ))}
-            </div>
-            
-            {/* Phase indicator */}
-            <div className="text-sm text-center text-white/60">
-              Phase: {currentTourStep.phase.replace('-', ' ').toUpperCase()}
-            </div>
+          {/* Content - No scrollbars, uses full available space */}
+          <div className="flex-1 p-8 overflow-hidden">
+            <AnimatePresence mode="wait">
+              <TourStepCard
+                key={currentTourStep.id}
+                title={currentTourStep.title}
+                description={currentTourStep.description}
+                phase={currentTourStep.phase}
+                icon={currentTourStep.icon}
+                highlights={currentTourStep.highlights}
+              />
+            </AnimatePresence>
           </div>
 
           {/* Enhanced footer */}
-          <div className="flex items-center justify-between p-8 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={skipTour}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Skip Tour
-              </Button>
-              
-              {/* Achievement counter */}
-              <div className="text-sm text-white/60">
-                🏆 {achievements.filter(a => a.unlocked).length}/{achievements.length} Achievements
-              </div>
-            </div>
+          <div className="flex items-center justify-between p-8 pt-6 border-t border-white/10">
+            <Button
+              variant="ghost"
+              onClick={skipTour}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Skip Tour
+            </Button>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="border-white/20 hover:border-white/40"
+                className="border-white/20 hover:border-white/40 disabled:opacity-50"
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeft className="h-4 w-4 mr-2" />
                 Previous
               </Button>
               
               <Button
-                size="sm"
                 onClick={nextStep}
-                className={`bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)} hover:opacity-90 text-white font-semibold px-8`}
+                className={`bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)} hover:opacity-90 text-white font-semibold px-8 shadow-lg`}
               >
                 {currentStep === steps.length - 1 ? (
                   <>
@@ -267,7 +200,7 @@ export const GrandAppTour: React.FC = () => {
                 ) : (
                   <>
                     Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                    <ChevronRight className="h-4 w-4 ml-2" />
                   </>
                 )}
               </Button>
