@@ -11,14 +11,14 @@ class TopicClusterService {
     try {
       const stored = localStorage.getItem(this.storageKey);
       if (stored) {
-        return JSON.parse(stored);
+        const clusters = JSON.parse(stored);
+        return Array.isArray(clusters) ? clusters : [];
       }
     } catch (error) {
       console.error('Error loading clusters:', error);
     }
     
-    // Return mock data if no stored data
-    return this.getMockClusters();
+    return [];
   }
 
   // Create a new cluster
@@ -100,9 +100,9 @@ class TopicClusterService {
     return {
       totalClusters: clusters.length,
       totalTraffic: this.formatNumber(totalTraffic),
-      avgPosition: avgPosition.toFixed(1),
+      avgPosition: avgPosition > 0 ? avgPosition.toFixed(1) : '0',
       activeArticles: activeArticles.toString(),
-      monthlyGrowth: 12.5, // Mock growth percentage
+      monthlyGrowth: 0,
       topPerformingCluster: topPerformer?.name || 'None'
     };
   }
@@ -139,6 +139,11 @@ class TopicClusterService {
     return opportunities.slice(0, 8); // Return top 8 opportunities
   }
 
+  // Clear all data (useful for development/testing)
+  clearAllClusters(): void {
+    localStorage.removeItem(this.storageKey);
+  }
+
   private saveClusters(clusters: TopicCluster[]): void {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(clusters));
@@ -165,62 +170,6 @@ class TopicClusterService {
       "from-emerald-500 to-green-600"
     ];
     return gradients[Math.floor(Math.random() * gradients.length)];
-  }
-
-  private getMockClusters(): TopicCluster[] {
-    return [
-      {
-        id: '1',
-        name: "Content Marketing Strategy",
-        mainKeyword: "content marketing",
-        status: "active",
-        completion: 75,
-        keywords: ["content strategy", "content creation", "content calendar", "content distribution"],
-        articles: 12,
-        totalTraffic: 45000,
-        avgPosition: 5.2,
-        lastUpdated: "2 days ago",
-        color: "from-blue-500 to-purple-600",
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        description: "Comprehensive content marketing strategy cluster",
-        targetAudience: "Marketing professionals and business owners"
-      },
-      {
-        id: '2',
-        name: "SEO Optimization",
-        mainKeyword: "SEO optimization",
-        status: "active", 
-        completion: 90,
-        keywords: ["on-page SEO", "technical SEO", "link building", "keyword research"],
-        articles: 18,
-        totalTraffic: 67000,
-        avgPosition: 3.8,
-        lastUpdated: "1 day ago",
-        color: "from-green-500 to-teal-600",
-        createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        description: "Complete SEO optimization guide cluster",
-        targetAudience: "SEO specialists and digital marketers"
-      },
-      {
-        id: '3',
-        name: "Social Media Marketing",
-        mainKeyword: "social media marketing",
-        status: "draft",
-        completion: 30,
-        keywords: ["social media strategy", "social media ads", "content scheduling"],
-        articles: 6,
-        totalTraffic: 23000,
-        avgPosition: 8.1,
-        lastUpdated: "3 days ago",
-        color: "from-pink-500 to-rose-600",
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        description: "Social media marketing strategies and tactics",
-        targetAudience: "Social media managers and content creators"
-      }
-    ];
   }
 }
 
