@@ -1,67 +1,73 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
-import { Toaster } from '@/components/ui/sonner';
-import { HelmetProvider } from 'react-helmet-async';
 
-import Dashboard from '@/pages/Dashboard';
-import ContentBuilderPage from '@/pages/ContentBuilder';
-import ContentApproval from '@/pages/content/ContentApproval';
-import ContentDrafts from '@/pages/content/ContentDrafts';
-import ContentPublished from '@/pages/content/ContentPublished';
-import TopicClusters from '@/pages/content/TopicClusters';
-import SeoOptimization from '@/pages/content/SeoOptimization';
-import SerpData from '@/pages/serp/SerpData';
-import SerpAnalysis from '@/pages/serp/SerpAnalysis';
-import Analytics from '@/pages/Analytics';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Drafts from "./pages/Drafts";
+import ContentBuilder from "./pages/ContentBuilder";
+import ContentRepurposing from "./pages/ContentRepurposing";
+import ContentApproval from "./pages/ContentApproval";
+import Solutions from "./pages/Solutions";
+import Settings from "./pages/Settings";
+import Analytics from "./pages/Analytics";
+import ContentStrategy from "./pages/research/ContentStrategy";
+import KeywordResearch from "./pages/research/KeywordResearch";
+import AnswerThePeople from "./pages/research/AnswerThePeople";
+import TopicClusters from "./pages/research/TopicClusters";
+import AIChat from "./pages/AIChat";
+import NotFound from "./pages/NotFound";
+import { ContentProvider } from "./contexts/content";
+import { AuthProvider } from "./contexts/AuthContext";
+import { FeedbackProvider } from "./contexts/FeedbackContext";
+import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-// Create a query client
-// Documentation: https://tanstack.com/query/v4/docs/react/reference/QueryClient
-// Usage:
-// 1. Wrap your app with <QueryClientProvider client={queryClient}>
-// 2. Use the useQuery hook to fetch data
-//    const { data, isLoading, error } = useQuery(['todos'], fetchTodos)
-// 3. Use the useMutation hook to update data
-//    const mutation = useMutation(updateTodo)
-//    mutation.mutate({ id: 1, title: 'New Title' })
+const queryClient = new QueryClient();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-function App() {
-  return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <Router>
-            <div className="min-h-screen bg-background text-foreground">
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <ContentProvider>
+          <FeedbackProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/content-builder" element={<ContentBuilderPage />} />
-                <Route path="/content/approval" element={<ContentApproval />} />
-                <Route path="/content/drafts" element={<ContentDrafts />} />
-                <Route path="/content/published" element={<ContentPublished />} />
-                <Route path="/content/topic-clusters" element={<TopicClusters />} />
-                <Route path="/content/seo-optimization" element={<SeoOptimization />} />
-                <Route path="/serp/data" element={<SerpData />} />
-                <Route path="/serp/analysis" element={<SerpAnalysis />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Protected routes */}
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
+                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
+                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
+                <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                
+                {/* AI Chat route */}
+                <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+                
+                {/* Research routes */}
+                <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
+                <Route path="/research/keyword-research" element={<ProtectedRoute><KeywordResearch /></ProtectedRoute>} />
+                <Route path="/research/answer-the-people" element={<ProtectedRoute><AnswerThePeople /></ProtectedRoute>} />
+                <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
-              <Toaster />
-            </div>
-          </Router>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
-  );
-}
+              <FloatingFeedbackButton />
+            </BrowserRouter>
+          </FeedbackProvider>
+        </ContentProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

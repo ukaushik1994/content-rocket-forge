@@ -1,147 +1,218 @@
 
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  BarChart3,
-  FileText,
-  Search,
-  Target,
-  PenTool,
-  CheckCircle,
-  Archive,
-  Globe,
-  Layers,
-  Zap
-} from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
-const NavItems = () => {
-  const location = useLocation();
+interface NavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
-  const isContentActive = () => {
-    return location.pathname.startsWith('/content');
-  };
-
-  const isSerpActive = () => {
-    return location.pathname.startsWith('/serp');
-  };
-
-  const contentRoutes = [
-    { path: '/content/approval', label: 'Approval Queue', icon: CheckCircle },
-    { path: '/content/drafts', label: 'Drafts', icon: FileText },
-    { path: '/content/published', label: 'Published', icon: Globe },
-    { path: '/content/topic-clusters', label: 'Topic Clusters', icon: Layers },
-    { path: '/content/seo-optimization', label: 'SEO Optimization', icon: Zap }
-  ];
-
-  const serpRoutes = [
-    { path: '/serp/data', label: 'SERP Data', icon: Search },
-    { path: '/serp/analysis', label: 'SERP Analysis', icon: Target }
-  ];
-
-  return (
-    <nav className="space-y-2">
-      {/* Dashboard */}
-      <Link
-        to="/"
-        className={cn(
-          "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          isActive('/') 
-            ? "bg-primary/10 text-primary border border-primary/20" 
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-        )}
-      >
-        <BarChart3 className="h-5 w-5" />
-        <span>Dashboard</span>
-      </Link>
-
-      {/* Content Builder */}
-      <Link
-        to="/content-builder"
-        className={cn(
-          "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          isActive('/content-builder') 
-            ? "bg-primary/10 text-primary border border-primary/20" 
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-        )}
-      >
-        <PenTool className="h-5 w-5" />
-        <span>Content Builder</span>
-      </Link>
-
-      {/* Content Section */}
-      <div>
-        <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Content
-        </div>
-        <div className="space-y-1">
-          {contentRoutes.map((route) => {
-            const Icon = route.icon;
-            return (
-              <Link
-                key={route.path}
-                to={route.path}
-                className={cn(
-                  "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ml-2",
-                  isActive(route.path) 
-                    ? "bg-primary/10 text-primary border border-primary/20" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{route.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* SERP Section */}
-      <div>
-        <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          SERP
-        </div>
-        <div className="space-y-1">
-          {serpRoutes.map((route) => {
-            const Icon = route.icon;
-            return (
-              <Link
-                key={route.path}
-                to={route.path}
-                className={cn(
-                  "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ml-2",
-                  isActive(route.path) 
-                    ? "bg-primary/10 text-primary border border-primary/20" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{route.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Analytics */}
-      <Link
-        to="/analytics"
-        className={cn(
-          "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          isActive('/analytics') 
-            ? "bg-primary/10 text-primary border border-primary/20" 
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-        )}
-      >
-        <BarChart3 className="h-5 w-5" />
-        <span>Analytics</span>
-      </Link>
-    </nav>
-  );
+const NavItem: React.FC<NavItemProps> = ({
+  to,
+  icon,
+  label,
+  active
+}) => {
+  return <Link to={to} className={cn('relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors', active ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' : 'hover:bg-white/10 text-white/60 hover:text-white')}>
+      {icon}
+      {label}
+      {active && <motion.span layoutId="nav-highlight" transition={{
+      type: "spring",
+      duration: 0.6
+    }} className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" />}
+    </Link>;
 };
 
-export default NavItems;
+export default function NavItems() {
+  const location = useLocation();
+  
+  // Content-related routes
+  const contentRoutes = [
+    '/content-builder',
+    '/content-repurposing', 
+    '/content-approval',
+    '/drafts'
+  ];
+  
+  // Research-related routes
+  const researchRoutes = [
+    '/research/content-strategy',
+    '/research/keyword-research',
+    '/research/answer-the-people',
+    '/research/topic-clusters'
+  ];
+  
+  const isContentActive = contentRoutes.includes(location.pathname);
+  const isResearchActive = researchRoutes.includes(location.pathname);
+  
+  return <div className="flex flex-row gap-1">
+      <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Dashboard" active={location.pathname === '/'} />
+      
+      {/* Content Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+              isContentActive 
+                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
+                : 'hover:bg-white/10 text-white/60 hover:text-white'
+            )}
+          >
+            <Puzzle className="h-4 w-4" />
+            Content
+            <ChevronDown className="h-3 w-3" />
+            {isContentActive && (
+              <motion.span 
+                layoutId="nav-highlight" 
+                transition={{
+                  type: "spring",
+                  duration: 0.6
+                }} 
+                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
+              />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10">
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/content-builder" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/content-builder' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Puzzle className="h-4 w-4" />
+              Builder
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/content-repurposing" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/content-repurposing' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Repeat className="h-4 w-4" />
+              Repurpose
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/content-approval" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/content-approval' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <CheckCircle className="h-4 w-4" />
+              Approval
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/drafts" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/drafts' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <FileText className="h-4 w-4" />
+              Drafts
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Research Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+              isResearchActive 
+                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
+                : 'hover:bg-white/10 text-white/60 hover:text-white'
+            )}
+          >
+            <Search className="h-4 w-4" />
+            Research
+            <ChevronDown className="h-3 w-3" />
+            {isResearchActive && (
+              <motion.span 
+                layoutId="nav-highlight" 
+                transition={{
+                  type: "spring",
+                  duration: 0.6
+                }} 
+                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
+              />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10">
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/content-strategy" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/content-strategy' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Target className="h-4 w-4" />
+              Content Strategy
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/keyword-research" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/keyword-research' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Search className="h-4 w-4" />
+              Keyword Research
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/answer-the-people" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/answer-the-people' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Users className="h-4 w-4" />
+              Answer the People
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/topic-clusters" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/topic-clusters' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Network className="h-4 w-4" />
+              Topic Clusters
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <NavItem to="/solutions" icon={<Puzzle className="h-4 w-4" />} label="Solutions" active={location.pathname === '/solutions'} />
+      <NavItem to="/analytics" icon={<BarChart3 className="h-4 w-4" />} label="Analytics" active={location.pathname === '/analytics'} />
+    </div>;
+}
