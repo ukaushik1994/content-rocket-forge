@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SelectedKeywords } from '../../keyword/SelectedKeywords';
 import { SelectionSummaryCard } from './SelectionSummaryCard';
 import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
+import { Separator } from '@/components/ui/separator';
 
 interface CollapsibleRightSidebarProps {
   selectedKeywords: string[];
@@ -71,13 +72,22 @@ export function CollapsibleRightSidebar({
           >
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="p-6 border-b border-border/50">
+              <div className="p-6 border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">Analysis Tools</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/20">
+                      <Settings className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">Analysis Tools</h3>
+                      <p className="text-xs text-muted-foreground">Manage your content selections</p>
+                    </div>
+                  </div>
                   <Button
                     onClick={() => setIsOpen(false)}
                     variant="ghost"
                     size="sm"
+                    className="hover:bg-background/80"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -85,32 +95,76 @@ export function CollapsibleRightSidebar({
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                >
-                  <SelectedKeywords 
-                    keywords={selectedKeywords} 
-                    onRemoveKeyword={onRemoveKeyword} 
-                  />
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                >
-                  <SelectionSummaryCard
-                    serpSelections={serpSelections}
-                    onOpenSelectionManager={onOpenSelectionManager}
-                    onGenerateOutline={onGenerateOutline}
-                    isGenerating={isGeneratingOutline}
-                  />
-                </motion.div>
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-6 space-y-8">
+                  {/* Keywords Section */}
+                  <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-1 w-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" />
+                      <h4 className="text-sm font-medium text-foreground uppercase tracking-wide">
+                        Selected Keywords
+                      </h4>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg overflow-hidden">
+                      <div className="p-1">
+                        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
+                          <SelectedKeywords 
+                            keywords={selectedKeywords} 
+                            onRemoveKeyword={onRemoveKeyword} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.section>
+
+                  {/* Visual Separator */}
+                  <div className="flex items-center gap-4 py-2">
+                    <Separator className="flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" />
+                      <div className="w-1 h-1 rounded-full bg-primary/40" />
+                      <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                    </div>
+                    <Separator className="flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                  </div>
+                  
+                  {/* SERP Analysis Section */}
+                  <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-1 w-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
+                      <h4 className="text-sm font-medium text-foreground uppercase tracking-wide">
+                        SERP Analysis
+                      </h4>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg overflow-hidden">
+                      <div className="p-1">
+                        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
+                          <SelectionSummaryCard
+                            serpSelections={serpSelections}
+                            onOpenSelectionManager={onOpenSelectionManager}
+                            onGenerateOutline={onGenerateOutline}
+                            isGenerating={isGeneratingOutline}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.section>
+                </div>
+
+                {/* Bottom Gradient Fade */}
+                <div className="h-8 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
               </div>
             </div>
           </motion.div>
