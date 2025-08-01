@@ -5,28 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-interface ContextualAction {
-  id: string;
-  label: string;
-  action: string;
-  data?: any;
-  type?: 'button' | 'card';
-  variant?: 'primary' | 'secondary' | 'default';
-  description?: string;
-}
+import { ContextualAction } from '@/services/aiService';
 
 interface ActionButtonsProps {
   actions: ContextualAction[];
-  onActionClick: (action: ContextualAction) => void;
+  onAction: (action: string, data?: any) => void;
 }
 
-export const ActionButtons: React.FC<ActionButtonsProps> = ({ actions, onActionClick }) => {
+export const ActionButtons: React.FC<ActionButtonsProps> = ({ actions, onAction }) => {
   if (!actions || actions.length === 0) return null;
 
   const handleActionClick = (action: ContextualAction) => {
     console.log('Action clicked:', action);
-    onActionClick(action);
+    onAction(action.action, action.data);
   };
 
   return (
@@ -68,7 +59,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ actions, onActionC
               </Card>
             ) : (
               <Button
-                variant={action.variant === 'primary' ? 'default' : 'outline'}
+                variant={action.variant === 'primary' ? 'default' : action.variant === 'outline' ? 'outline' : 'outline'}
                 className="w-full justify-between text-left"
                 onClick={() => handleActionClick(action)}
               >

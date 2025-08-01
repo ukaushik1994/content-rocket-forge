@@ -1,3 +1,4 @@
+
 // Common types for AI service
 
 export type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio';
@@ -95,6 +96,6 @@ export interface ContextualAction {
   action: string;
   data?: any;
   type?: 'button' | 'card';
-  variant?: 'primary' | 'secondary' | 'default';
+  variant?: 'primary' | 'secondary' | 'default' | 'outline';
   description?: string;
 }

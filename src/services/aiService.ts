@@ -19,6 +19,7 @@ export interface ContextualAction {
   action: string;
   data?: any;
   variant?: 'default' | 'primary' | 'secondary' | 'outline';
+  description?: string;
 }
 
 // Extended parameters interface for backward compatibility
