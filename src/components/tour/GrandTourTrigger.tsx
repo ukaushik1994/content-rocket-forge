@@ -25,7 +25,7 @@ export const GrandTourTrigger: React.FC<GrandTourTriggerProps> = ({
   if (variant === 'floating') {
     return (
       <motion.div
-        className={`fixed bottom-8 right-8 z-40 ${className}`}
+        className={`fixed bottom-8 left-8 z-40 ${className}`}
         initial={{ scale: 0, opacity: 0, y: 100 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ 
