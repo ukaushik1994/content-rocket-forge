@@ -10,7 +10,7 @@ import { AnalysisResults } from '@/components/seo-optimization/AnalysisResults';
 import { RecommendationsPanel } from '@/components/seo-optimization/RecommendationsPanel';
 import { SerpAnalysis } from '@/components/seo-optimization/SerpAnalysis';
 import { useSeoOptimization } from '@/hooks/useSeoOptimization';
-import { Zap, FileText, Target, Search } from 'lucide-react';
+import { Zap, FileText, Target, Search, BarChart3 } from 'lucide-react';
 
 const SeoOptimization = () => {
   const {

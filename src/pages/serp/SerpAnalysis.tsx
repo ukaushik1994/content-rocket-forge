@@ -3,13 +3,13 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PenTool, Sparkles } from 'lucide-react';
+import { Target, TrendingUp } from 'lucide-react';
 
-const ContentBuilderPage = () => {
+const SerpAnalysis = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
-        <title>Content Builder | Content Platform</title>
+        <title>SERP Analysis | Content Platform</title>
       </Helmet>
       
       <Navbar />
@@ -18,13 +18,13 @@ const ContentBuilderPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                <PenTool className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                <Target className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Content Builder</h1>
+                <h1 className="text-3xl font-bold text-foreground">SERP Analysis</h1>
                 <p className="text-muted-foreground mt-1">
-                  Create new content with AI assistance
+                  Analyze search results and competitor performance
                 </p>
               </div>
             </div>
@@ -33,15 +33,15 @@ const ContentBuilderPage = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                AI Content Generation
+                <TrendingUp className="h-5 w-5" />
+                Analysis Results
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12 text-muted-foreground">
-                <PenTool className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Content builder coming soon</p>
-                <p className="text-sm mt-2">AI-powered content creation tools</p>
+                <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No analysis results available</p>
+                <p className="text-sm mt-2">SERP analysis results will appear here</p>
               </div>
             </CardContent>
           </Card>
@@ -51,4 +51,4 @@ const ContentBuilderPage = () => {
   );
 };
 
-export default ContentBuilderPage;
+export default SerpAnalysis;
