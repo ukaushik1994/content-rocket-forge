@@ -17,42 +17,25 @@ import {
   PenTool,
   Loader2
 } from 'lucide-react';
+import { TopicCluster } from '@/contexts/content-builder/types/cluster-types';
 import { SerpAnalysisResult } from '@/types/serp';
-
-interface TopicCluster {
-  id: string;
-  name: string;
-  mainKeyword: string;
-  keywords: string[];
-  searchVolume: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  competition: number;
-  pillarContent?: string;
-  subTopics: Array<{
-    title: string;
-    searchVolume: number;
-    difficulty: string;
-    contentGap: boolean;
-  }>;
-  serpData?: SerpAnalysisResult;
-  createdAt: Date;
-  status: 'draft' | 'analyzing' | 'ready' | 'published';
-}
 
 interface ClusterAnalysisCardProps {
   cluster: TopicCluster;
-  isAnalyzing: boolean;
-  onAnalyze: () => void;
-  onViewDetails: () => void;
-  onCreateContent: () => void;
+  isAnalyzing?: boolean;
+  onAnalyze?: () => void;
+  onViewDetails?: () => void;
+  onCreateContent?: () => void;
+  serpData?: SerpAnalysisResult;
 }
 
 export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
   cluster,
-  isAnalyzing,
+  isAnalyzing = false,
   onAnalyze,
   onViewDetails,
-  onCreateContent
+  onCreateContent,
+  serpData
 }) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -110,20 +93,22 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <Target className="h-3 w-3" />
-                  {cluster.subTopics.length} subtopics
+                  {cluster.subTopics?.length || 0} subtopics
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={onViewDetails}
-                className="text-white/60 hover:text-white hover:bg-white/10"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </div>
+            {onViewDetails && (
+              <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={onViewDetails}
+                  className="text-white/60 hover:text-white hover:bg-white/10"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
 
@@ -151,7 +136,7 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
                 <span className="text-xs text-white/60">Volume</span>
               </div>
               <div className="text-lg font-bold text-blue-400">
-                {cluster.searchVolume.toLocaleString()}
+                {cluster.searchVolume?.toLocaleString() || '0'}
               </div>
             </motion.div>
 
@@ -177,7 +162,7 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
                 <span className="text-xs text-white/60">Competition</span>
               </div>
               <div className="text-lg font-bold text-green-400">
-                {Math.round(cluster.competition * 100)}%
+                {Math.round((cluster.competition || 0) * 100)}%
               </div>
             </motion.div>
 
@@ -190,7 +175,7 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
                 <span className="text-xs text-white/60">Gaps</span>
               </div>
               <div className="text-lg font-bold text-red-400">
-                {cluster.subTopics.filter(t => t.contentGap).length}
+                {cluster.subTopics?.filter(t => t.contentGap).length || 0}
               </div>
             </motion.div>
           </div>
@@ -199,7 +184,7 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
           <div className="space-y-2">
             <div className="text-sm text-white/60">Keywords</div>
             <div className="flex flex-wrap gap-2">
-              {cluster.keywords.slice(0, 4).map((keyword, idx) => (
+              {(cluster.keywords || []).slice(0, 4).map((keyword, idx) => (
                 <Badge 
                   key={idx} 
                   variant="outline" 
@@ -208,7 +193,7 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
                   {keyword}
                 </Badge>
               ))}
-              {cluster.keywords.length > 4 && (
+              {(cluster.keywords || []).length > 4 && (
                 <Badge variant="outline" className="bg-white/10 border-white/20 text-white/60 text-xs">
                   +{cluster.keywords.length - 4}
                 </Badge>
@@ -218,7 +203,7 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2">
-            {cluster.status === 'draft' && (
+            {cluster.status === 'draft' && onAnalyze && (
               <Button 
                 size="sm"
                 onClick={onAnalyze}
@@ -248,26 +233,30 @@ export const ClusterAnalysisCard: React.FC<ClusterAnalysisCardProps> = ({
 
             {cluster.status === 'ready' && (
               <>
-                <Button 
-                  size="sm"
-                  onClick={onCreateContent}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0"
-                >
-                  <PenTool className="h-4 w-4 mr-2" />
-                  Create Content
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={onViewDetails}
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
+                {onCreateContent && (
+                  <Button 
+                    size="sm"
+                    onClick={onCreateContent}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0"
+                  >
+                    <PenTool className="h-4 w-4 mr-2" />
+                    Create Content
+                  </Button>
+                )}
+                {onViewDetails && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={onViewDetails}
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
               </>
             )}
 
-            {cluster.status === 'published' && (
+            {cluster.status === 'published' && onViewDetails && (
               <Button 
                 size="sm" 
                 variant="outline"

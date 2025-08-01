@@ -37,18 +37,7 @@ import { ClusterAnalysisCard } from '@/components/research/topic-clusters/Cluste
 import { SerpIntegrationPanel } from '@/components/research/topic-clusters/SerpIntegrationPanel';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { SerpAnalysisResult } from '@/types/serp';
-
-interface TopicCluster {
-  id: string;
-  name: string;
-  mainKeyword: string;
-  keywords: string[];
-  serpData?: SerpAnalysisResult;
-  contentIdeas: string[];
-  difficulty: number;
-  opportunity: number;
-  createdAt: Date;
-}
+import { TopicCluster } from '@/contexts/content-builder/types/cluster-types';
 
 export default function TopicClusters() {
   const [clusters, setClusters] = useState<TopicCluster[]>([]);
@@ -66,20 +55,35 @@ export default function TopicClusters() {
         name: 'Digital Marketing Fundamentals',
         mainKeyword: 'digital marketing',
         keywords: ['SEO', 'social media marketing', 'content marketing', 'email marketing', 'PPC'],
-        contentIdeas: ['Beginner\'s guide to digital marketing', 'Digital marketing trends 2024', 'ROI measurement in digital marketing'],
-        difficulty: 75,
+        searchVolume: 12000,
+        difficulty: 'Hard',
+        competition: 0.75,
         opportunity: 85,
-        createdAt: new Date()
+        contentIdeas: ['Beginner\'s guide to digital marketing', 'Digital marketing trends 2024', 'ROI measurement in digital marketing'],
+        subTopics: [
+          { title: 'SEO Basics', searchVolume: 5000, difficulty: 'Medium', contentGap: false },
+          { title: 'Social Media Strategy', searchVolume: 8000, difficulty: 'Easy', contentGap: true },
+          { title: 'Content Marketing ROI', searchVolume: 3000, difficulty: 'Hard', contentGap: true }
+        ],
+        createdAt: new Date(),
+        status: 'draft'
       },
       {
         id: '2',
         name: 'AI Content Creation',
         mainKeyword: 'AI content writing',
         keywords: ['AI writing tools', 'automated content', 'GPT content', 'AI copywriting', 'content automation'],
-        contentIdeas: ['Best AI writing tools comparison', 'How to use AI for content creation', 'AI vs human content writers'],
-        difficulty: 68,
+        searchVolume: 8500,
+        difficulty: 'Medium',
+        competition: 0.68,
         opportunity: 92,
-        createdAt: new Date()
+        contentIdeas: ['Best AI writing tools comparison', 'How to use AI for content creation', 'AI vs human content writers'],
+        subTopics: [
+          { title: 'AI Writing Tools', searchVolume: 4500, difficulty: 'Easy', contentGap: false },
+          { title: 'Content Automation', searchVolume: 2800, difficulty: 'Medium', contentGap: true }
+        ],
+        createdAt: new Date(),
+        status: 'ready'
       }
     ];
     setClusters(sampleClusters);
@@ -121,11 +125,21 @@ export default function TopicClusters() {
         name: `${searchKeyword} Cluster`,
         mainKeyword: searchKeyword,
         keywords: serpData?.keywords?.slice(0, 8) || [searchKeyword],
+        searchVolume: serpData?.searchVolume || 0,
+        difficulty: serpData?.keywordDifficulty && serpData.keywordDifficulty > 70 ? 'Hard' : 
+                   serpData?.keywordDifficulty && serpData.keywordDifficulty > 40 ? 'Medium' : 'Easy',
+        competition: serpData?.competitionScore || 0.5,
+        opportunity: Math.round(Math.random() * 40 + 60), // Random for demo
         serpData: serpData,
         contentIdeas: serpData?.contentGaps?.map(gap => gap.topic)?.slice(0, 5) || [],
-        difficulty: serpData?.keywordDifficulty || 50,
-        opportunity: Math.round(Math.random() * 40 + 60), // Random for demo
-        createdAt: new Date()
+        subTopics: serpData?.contentGaps?.map(gap => ({
+          title: gap.topic,
+          searchVolume: Math.round(Math.random() * 5000 + 1000),
+          difficulty: 'Medium',
+          contentGap: true
+        })) || [],
+        createdAt: new Date(),
+        status: 'draft'
       };
 
       setClusters(prev => [newCluster, ...prev]);
@@ -139,7 +153,15 @@ export default function TopicClusters() {
     }
   };
 
-  const getDifficultyColor = (difficulty: number) => {
+  const getDifficultyColor = (difficulty: number | string) => {
+    if (typeof difficulty === 'string') {
+      switch (difficulty) {
+        case 'Hard': return 'text-red-500';
+        case 'Medium': return 'text-yellow-500';
+        case 'Easy': return 'text-green-500';
+        default: return 'text-gray-500';
+      }
+    }
     if (difficulty >= 80) return 'text-red-500';
     if (difficulty >= 60) return 'text-yellow-500';
     return 'text-green-500';
@@ -257,10 +279,10 @@ export default function TopicClusters() {
                               
                               <div className="flex items-center gap-2 text-xs">
                                 <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-xs px-2 py-1">
-                                  {cluster.keywords.length} keywords
+                                  {cluster.keywords?.length || 0} keywords
                                 </Badge>
                                 <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1">
-                                  {cluster.contentIdeas.length} ideas
+                                  {cluster.contentIdeas?.length || 0} ideas
                                 </Badge>
                               </div>
                               
@@ -269,7 +291,7 @@ export default function TopicClusters() {
                                   <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                                   <span className="text-white/60">Difficulty:</span>
                                   <span className={getDifficultyColor(cluster.difficulty)}>
-                                    {cluster.difficulty}%
+                                    {typeof cluster.difficulty === 'string' ? cluster.difficulty : `${cluster.difficulty}%`}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -346,7 +368,9 @@ export default function TopicClusters() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div className="text-center p-4 bg-white/5 rounded-lg">
                           <BarChart3 className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-yellow-400">{selectedCluster.difficulty}%</div>
+                          <div className="text-2xl font-bold text-yellow-400">
+                            {typeof selectedCluster.difficulty === 'string' ? selectedCluster.difficulty : `${selectedCluster.difficulty}%`}
+                          </div>
                           <div className="text-sm text-white/60">Difficulty</div>
                         </div>
                         <div className="text-center p-4 bg-white/5 rounded-lg">
@@ -356,7 +380,7 @@ export default function TopicClusters() {
                         </div>
                         <div className="text-center p-4 bg-white/5 rounded-lg">
                           <Tag className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                          <div className="text-2xl font-bold text-blue-400">{selectedCluster.keywords.length}</div>
+                          <div className="text-2xl font-bold text-blue-400">{selectedCluster.keywords?.length || 0}</div>
                           <div className="text-sm text-white/60">Keywords</div>
                         </div>
                       </div>
