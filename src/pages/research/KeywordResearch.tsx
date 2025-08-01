@@ -4,13 +4,12 @@ import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, TrendingUp, Target, BarChart3, Plus, Sparkles, Zap, Filter, Download, Bookmark, ArrowRight } from 'lucide-react';
+import { Search, TrendingUp, Target, BarChart3, Plus, Sparkles, Zap, Bookmark, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { analyzeKeywordSerp, searchKeywords } from '@/services/serpApiService';
 import { useNavigate } from 'react-router-dom';
 import { KeywordSearchInterface } from '@/components/research/keyword/KeywordSearchInterface';
 import { SerpResultsDisplay } from '@/components/research/keyword/SerpResultsDisplay';
@@ -25,9 +24,10 @@ const KeywordResearch = () => {
   const [savedKeywords, setSavedKeywords] = useState([]);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [selectedKeywords, setSelectedKeywords] = useState([]);
+  const [realTimeData, setRealTimeData] = useState(false);
   const navigate = useNavigate();
 
-  const steps = ['Search', 'Analysis', 'Results', 'Content'];
+  const steps = ['Search', 'SERP Analysis', 'Content Intelligence', 'Content Creation'];
 
   const handleKeywordSearch = async () => {
     if (!searchTerm.trim()) {
@@ -37,19 +37,39 @@ const KeywordResearch = () => {
 
     setLoading(true);
     setAnalysisStep(1);
+    setRealTimeData(false);
     
     try {
-      // Animate through steps
-      setTimeout(() => setAnalysisStep(2), 1500);
+      // Show progressive analysis steps
+      toast.info("Analyzing SERP data...");
+      setTimeout(() => setAnalysisStep(2), 1000);
       
-      const data = await analyzeKeywordSerp(searchTerm);
-      setSerpData(data);
+      // Call SERP API for real-time analysis
+      const data = await analyzeKeywordSerp(searchTerm, true); // Force refresh for latest data
       
-      setTimeout(() => setAnalysisStep(3), 500);
-      toast.success("Keyword analysis completed!");
+      if (data && data.isGoogleData) {
+        setSerpData(data);
+        setRealTimeData(true);
+        setTimeout(() => setAnalysisStep(3), 500);
+        
+        toast.success("✅ Real-time SERP analysis completed!", {
+          description: `Found ${data.topResults?.length || 0} organic results, ${data.peopleAlsoAsk?.length || 0} PAA questions`
+        });
+      } else {
+        // Handle case where no real data is available
+        toast.warning("⚠️ Using estimated data - add your SERP API key for real-time results", {
+          action: {
+            label: "Add API Key",
+            onClick: () => window.location.href = "/settings/api"
+          }
+        });
+        setSerpData(data);
+      }
     } catch (error) {
-      toast.error("Failed to analyze keyword");
-      console.error(error);
+      toast.error("Failed to analyze keyword", {
+        description: "Please check your API configuration or try again"
+      });
+      console.error('SERP Analysis Error:', error);
       setAnalysisStep(0);
     } finally {
       setLoading(false);
@@ -62,20 +82,32 @@ const KeywordResearch = () => {
       return;
     }
 
-    // Navigate to content builder with SERP data
+    // Navigate to content builder with comprehensive SERP data
     navigate('/content-builder', {
       state: {
         mainKeyword: searchTerm,
         serpData: serpData,
+        selectedKeywords: selectedKeywords,
+        contentOpportunities: serpData.contentGaps,
+        serpFeatures: {
+          peopleAlsoAsk: serpData.peopleAlsoAsk,
+          relatedSearches: serpData.relatedSearches,
+          topResults: serpData.topResults,
+          entities: serpData.entities
+        },
         step: 1
       }
     });
+
+    toast.success("🚀 Launching Content Builder with SERP insights!");
   };
 
   const handleSaveKeyword = (keyword) => {
     if (!savedKeywords.find(k => k.keyword === keyword.keyword)) {
       setSavedKeywords([...savedKeywords, keyword]);
-      toast.success("Keyword saved to your list!");
+      toast.success("📌 Keyword saved to your research library!");
+    } else {
+      toast.info("This keyword is already in your saved list");
     }
   };
 
@@ -97,7 +129,7 @@ const KeywordResearch = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Helmet>
-        <title>Keyword Research | Research Platform</title>
+        <title>Keyword Research | AI Content Platform</title>
       </Helmet>
       
       <Navbar />
@@ -129,19 +161,6 @@ const KeywordResearch = () => {
             delay: 2
           }}
         />
-        <motion.div 
-          className="absolute bottom-40 left-1/2 w-64 h-64 bg-neon-purple/10 rounded-full filter blur-3xl"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.4, 0.7, 0.4]
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 4
-          }}
-        />
       </div>
       
       <main className="flex-1 container py-8 z-10 relative">
@@ -163,11 +182,32 @@ const KeywordResearch = () => {
               </motion.div>
             </div>
             <h1 className="text-5xl font-bold text-gradient bg-gradient-to-r from-primary via-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Advanced Keyword Research
+              Real-Time SERP Research
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Discover high-performing keywords with real-time SERP analysis, competitor insights, and AI-powered content opportunities
+              Discover high-performing keywords with live Google SERP analysis, AI-powered content opportunities, and instant content creation
             </p>
+            
+            {/* Data Quality Indicator */}
+            {serpData && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center justify-center gap-2"
+              >
+                {realTimeData ? (
+                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse" />
+                    Live SERP Data
+                  </Badge>
+                ) : (
+                  <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                    <AlertCircle className="w-3 h-3 mr-2" />
+                    Estimated Data
+                  </Badge>
+                )}
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Progress Indicator */}
@@ -223,7 +263,7 @@ const KeywordResearch = () => {
                 transition={{ duration: 0.5 }}
               >
                 <Tabs defaultValue="overview" className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-6 bg-glass border border-white/10">
+                  <TabsList className="grid w-full grid-cols-5 bg-glass border border-white/10">
                     <TabsTrigger value="overview" className="flex items-center gap-2">
                       <Target className="h-4 w-4" />
                       Overview
@@ -238,13 +278,9 @@ const KeywordResearch = () => {
                     </TabsTrigger>
                     <TabsTrigger value="clusters" className="flex items-center gap-2">
                       <Zap className="h-4 w-4" />
-                      Clusters
+                      Intent Clusters
                     </TabsTrigger>
-                    <TabsTrigger value="competitors" className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      Competitors
-                    </TabsTrigger>
-                    <TabsTrigger value="content" className="flex items-center gap-2">
+                    <TabsTrigger value="create" className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
                       Create Content
                     </TabsTrigger>
@@ -281,57 +317,24 @@ const KeywordResearch = () => {
                     />
                   </TabsContent>
 
-                  <TabsContent value="competitors">
-                    <div className="grid gap-6">
-                      {serpData?.topResults?.map((result, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <Card className="glass-panel border-white/10 hover:border-primary/30 transition-all duration-300">
-                            <CardContent className="p-6">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    <Badge variant="outline" className="bg-primary/10">
-                                      #{result.position}
-                                    </Badge>
-                                    <h3 className="font-semibold text-lg">{result.title}</h3>
-                                  </div>
-                                  <p className="text-muted-foreground mb-3">{result.snippet}</p>
-                                  <p className="text-sm text-primary">{new URL(result.link).hostname}</p>
-                                </div>
-                                <Button variant="outline" size="sm">
-                                  Analyze
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="content">
+                  <TabsContent value="create">
                     <Card className="glass-panel border-white/10">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Plus className="h-5 w-5 text-primary" />
-                          Create Content from Research
+                          Create Content from SERP Research
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                             <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={handleCreateContent}>
                               <CardContent className="p-6 text-center">
                                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                   <Target className="h-6 w-6 text-primary" />
                                 </div>
-                                <h3 className="font-semibold mb-2">Blog Post</h3>
-                                <p className="text-sm text-muted-foreground">Create comprehensive blog content</p>
+                                <h3 className="font-semibold mb-2">SEO Blog Post</h3>
+                                <p className="text-sm text-muted-foreground">Create comprehensive blog content with SERP insights</p>
                               </CardContent>
                             </Card>
                           </motion.div>
@@ -343,7 +346,7 @@ const KeywordResearch = () => {
                                   <BarChart3 className="h-6 w-6 text-blue-500" />
                                 </div>
                                 <h3 className="font-semibold mb-2">Landing Page</h3>
-                                <p className="text-sm text-muted-foreground">Build high-converting pages</p>
+                                <p className="text-sm text-muted-foreground">Build high-converting pages with competitor analysis</p>
                               </CardContent>
                             </Card>
                           </motion.div>
@@ -355,16 +358,42 @@ const KeywordResearch = () => {
                                   <Sparkles className="h-6 w-6 text-purple-500" />
                                 </div>
                                 <h3 className="font-semibold mb-2">FAQ Content</h3>
-                                <p className="text-sm text-muted-foreground">Answer common questions</p>
+                                <p className="text-sm text-muted-foreground">Answer People Also Ask questions</p>
                               </CardContent>
                             </Card>
                           </motion.div>
                         </div>
                         
+                        {/* SERP Integration Summary */}
+                        <div className="bg-glass border border-white/10 rounded-lg p-4">
+                          <h3 className="font-semibold mb-3 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Your SERP Research Summary
+                          </h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Questions Found:</span>
+                              <div className="font-semibold text-blue-400">{serpData.peopleAlsoAsk?.length || 0}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Content Gaps:</span>
+                              <div className="font-semibold text-purple-400">{serpData.contentGaps?.length || 0}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Related Keywords:</span>
+                              <div className="font-semibold text-green-400">{serpData.keywords?.length || 0}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Competitors:</span>
+                              <div className="font-semibold text-orange-400">{serpData.topResults?.length || 0}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
                         <div className="text-center">
                           <Button onClick={handleCreateContent} size="lg" className="bg-gradient-to-r from-primary to-blue-500 hover:from-blue-500 hover:to-primary">
                             <Plus className="h-5 w-5 mr-2" />
-                            Start Content Creation
+                            Launch Content Builder
                           </Button>
                         </div>
                       </CardContent>
@@ -387,12 +416,8 @@ const KeywordResearch = () => {
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <Bookmark className="h-5 w-5 text-primary" />
-                      Saved Keywords ({savedKeywords.length})
+                      Research Library ({savedKeywords.length})
                     </span>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -403,8 +428,13 @@ const KeywordResearch = () => {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSearchTerm(keyword.keyword);
+                          handleKeywordSearch();
+                        }}
                       >
-                        <Badge variant="outline" className="text-sm p-2 bg-primary/5">
+                        <Badge variant="outline" className="text-sm p-2 bg-primary/5 hover:bg-primary/10 transition-colors">
                           {keyword.keyword}
                         </Badge>
                       </motion.div>

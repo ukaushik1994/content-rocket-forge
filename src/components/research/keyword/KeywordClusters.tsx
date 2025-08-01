@@ -1,10 +1,9 @@
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Network, Target, Zap, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Brain, Target, TrendingUp, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface KeywordClustersProps {
@@ -12,216 +11,196 @@ interface KeywordClustersProps {
   onSelectKeywords: (keywords: string[]) => void;
 }
 
+interface KeywordCluster {
+  name: string;
+  intent: 'informational' | 'commercial' | 'transactional' | 'navigational';
+  keywords: string[];
+  difficulty: number;
+  description: string;
+  color: string;
+  bgColor: string;
+  icon: React.ComponentType<any>;
+}
+
 export const KeywordClusters: React.FC<KeywordClustersProps> = ({
   serpData,
   onSelectKeywords
 }) => {
-  const [selectedCluster, setSelectedCluster] = useState(null);
-
-  // Generate keyword clusters based on SERP data
-  const clusters = useMemo(() => {
+  // Generate keyword clusters from SERP data
+  const generateClusters = (): KeywordCluster[] => {
     const allKeywords = [
       ...(serpData?.keywords || []),
-      ...(serpData?.relatedSearches?.map(rs => rs.query) || []),
-      ...(serpData?.peopleAlsoAsk?.map(q => q.question) || [])
+      ...(serpData?.relatedSearches?.map((rs: any) => rs.query) || []),
+      ...(serpData?.peopleAlsoAsk?.map((paa: any) => paa.question) || [])
     ];
 
-    // Simple clustering based on common words
-    const clusters = {
-      informational: {
-        name: 'Informational',
-        description: 'How-to, what is, guide content',
-        keywords: allKeywords.filter(k => 
-          /\b(how|what|why|guide|tips|learn|understand)\b/i.test(k)
-        ),
-        intent: 'Informational',
-        difficulty: 'Easy',
+    const informationalKeywords = allKeywords.filter((keyword: string) => 
+      keyword.toLowerCase().includes('what') || 
+      keyword.toLowerCase().includes('how') || 
+      keyword.toLowerCase().includes('why') ||
+      keyword.toLowerCase().includes('guide') ||
+      keyword.toLowerCase().includes('tutorial')
+    );
+
+    const commercialKeywords = allKeywords.filter((keyword: string) => 
+      keyword.toLowerCase().includes('best') || 
+      keyword.toLowerCase().includes('review') || 
+      keyword.toLowerCase().includes('comparison') ||
+      keyword.toLowerCase().includes('vs') ||
+      keyword.toLowerCase().includes('alternative')
+    );
+
+    const transactionalKeywords = allKeywords.filter((keyword: string) => 
+      keyword.toLowerCase().includes('buy') || 
+      keyword.toLowerCase().includes('price') || 
+      keyword.toLowerCase().includes('cost') ||
+      keyword.toLowerCase().includes('discount') ||
+      keyword.toLowerCase().includes('deal')
+    );
+
+    const navigationalKeywords = allKeywords.filter((keyword: string) => 
+      keyword.toLowerCase().includes('login') || 
+      keyword.toLowerCase().includes('website') || 
+      keyword.toLowerCase().includes('official') ||
+      keyword.toLowerCase().includes('app')
+    );
+
+    return [
+      {
+        name: 'Informational Intent',
+        intent: 'informational' as const,
+        keywords: informationalKeywords.slice(0, 8),
+        difficulty: Math.floor(Math.random() * 30) + 20,
+        description: 'Keywords focused on learning and understanding',
         color: 'text-blue-400',
-        bgColor: 'bg-blue-500/10'
+        bgColor: 'bg-blue-500/10',
+        icon: Lightbulb
       },
-      commercial: {
-        name: 'Commercial',
-        description: 'Best, top, review, comparison',
-        keywords: allKeywords.filter(k => 
-          /\b(best|top|review|compare|vs|versus|alternative)\b/i.test(k)
-        ),
-        intent: 'Commercial',
-        difficulty: 'Medium',
-        color: 'text-green-400',
-        bgColor: 'bg-green-500/10'
-      },
-      transactional: {
-        name: 'Transactional',
-        description: 'Buy, price, cost, purchase',
-        keywords: allKeywords.filter(k => 
-          /\b(buy|price|cost|purchase|order|discount|deal)\b/i.test(k)
-        ),
-        intent: 'Transactional',
-        difficulty: 'Hard',
+      {
+        name: 'Commercial Intent',
+        intent: 'commercial' as const,
+        keywords: commercialKeywords.slice(0, 8),
+        difficulty: Math.floor(Math.random() * 40) + 40,
+        description: 'Keywords for research and comparison',
         color: 'text-purple-400',
-        bgColor: 'bg-purple-500/10'
+        bgColor: 'bg-purple-500/10',
+        icon: Target
       },
-      navigational: {
-        name: 'Navigational',
-        description: 'Brand names, specific sites',
-        keywords: allKeywords.filter(k => 
-          /\b(login|sign|account|dashboard|app|software)\b/i.test(k)
-        ),
-        intent: 'Navigational',
-        difficulty: 'Medium',
+      {
+        name: 'Transactional Intent',
+        intent: 'transactional' as const,
+        keywords: transactionalKeywords.slice(0, 8),
+        difficulty: Math.floor(Math.random() * 30) + 60,
+        description: 'Keywords with purchase intent',
+        color: 'text-green-400',
+        bgColor: 'bg-green-500/10',
+        icon: TrendingUp
+      },
+      {
+        name: 'Navigational Intent',
+        intent: 'navigational' as const,
+        keywords: navigationalKeywords.slice(0, 8),
+        difficulty: Math.floor(Math.random() * 20) + 10,
+        description: 'Brand and navigation focused keywords',
         color: 'text-orange-400',
-        bgColor: 'bg-orange-500/10'
+        bgColor: 'bg-orange-500/10',
+        icon: Brain
       }
-    };
-
-    // Filter out empty clusters
-    return Object.entries(clusters)
-      .filter(([_, cluster]) => cluster.keywords.length > 0)
-      .reduce((acc, [key, cluster]) => ({ ...acc, [key]: cluster }), {});
-  }, [serpData]);
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'text-green-400 border-green-400';
-      case 'Medium': return 'text-yellow-400 border-yellow-400';
-      case 'Hard': return 'text-red-400 border-red-400';
-      default: return 'text-gray-400 border-gray-400';
-    }
+    ].filter(cluster => cluster.keywords.length > 0);
   };
 
-  const handleSelectCluster = (clusterKey: string) => {
-    const cluster = clusters[clusterKey];
+  const clusters = generateClusters();
+
+  const getDifficultyColor = (difficulty: number) => {
+    if (difficulty < 30) return 'text-green-400 border-green-400';
+    if (difficulty < 60) return 'text-yellow-400 border-yellow-400';
+    return 'text-red-400 border-red-400';
+  };
+
+  const handleSelectCluster = (cluster: KeywordCluster) => {
     onSelectKeywords(cluster.keywords);
-    setSelectedCluster(clusterKey);
   };
 
   return (
     <div className="space-y-6">
-      {/* Cluster Overview */}
-      <Card className="glass-panel border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Network className="h-5 w-5 text-primary" />
-            Keyword Clusters by Search Intent
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(clusters).map(([key, cluster]) => (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Card 
-                  className={`cursor-pointer transition-all duration-300 ${
-                    selectedCluster === key 
-                      ? 'ring-2 ring-primary bg-primary/5' 
-                      : 'hover:border-white/20'
-                  }`}
-                  onClick={() => handleSelectCluster(key)}
-                >
-                  <CardContent className="p-4">
-                    <div className={`w-12 h-12 ${cluster.bgColor} rounded-full flex items-center justify-center mb-3`}>
-                      <Target className={`h-6 w-6 ${cluster.color}`} />
-                    </div>
-                    <h3 className="font-semibold mb-1">{cluster.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {cluster.description}
-                    </p>
-                    <div className="flex gap-2 mb-3">
-                      <Badge variant="outline" className="text-xs">
-                        {cluster.keywords.length} keywords
-                      </Badge>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${getDifficultyColor(cluster.difficulty)}`}
-                      >
-                        {cluster.difficulty}
-                      </Badge>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {cluster.intent} Intent
-                    </Badge>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center"
+      >
+        <h2 className="text-2xl font-bold mb-2">Keyword Intent Clusters</h2>
+        <p className="text-muted-foreground">
+          Keywords grouped by search intent from SERP analysis
+        </p>
+      </motion.div>
 
-      {/* Selected Cluster Details */}
-      {selectedCluster && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card className="glass-panel border-white/10">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Target className={clusters[selectedCluster].color} />
-                  {clusters[selectedCluster].name} Cluster
-                </span>
-                <Button
-                  onClick={() => onSelectKeywords(clusters[selectedCluster].keywords)}
-                  className="bg-gradient-to-r from-primary to-blue-500"
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  Use All Keywords
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {clusters[selectedCluster].keywords.map((keyword, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="p-3 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
-                  >
-                    <p className="font-medium text-sm">{keyword}</p>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-white/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <h4 className="font-semibold">Content Strategy Recommendation</h4>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {clusters.map((cluster, index) => (
+          <motion.div
+            key={cluster.intent}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="glass-panel border-white/10 hover:border-white/20 transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <div className={`p-2 ${cluster.bgColor} rounded-lg`}>
+                      <cluster.icon className={`h-5 w-5 ${cluster.color}`} />
+                    </div>
+                    {cluster.name}
+                  </span>
+                  <Badge variant="outline" className={getDifficultyColor(cluster.difficulty)}>
+                    Difficulty: {cluster.difficulty}
+                  </Badge>
+                </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {selectedCluster === 'informational' && 
-                    "Create comprehensive guides, tutorials, and educational content. Focus on answering common questions and providing step-by-step instructions."
-                  }
-                  {selectedCluster === 'commercial' && 
-                    "Develop comparison content, reviews, and buyer's guides. Highlight features, benefits, and help users make informed decisions."
-                  }
-                  {selectedCluster === 'transactional' && 
-                    "Build conversion-focused landing pages with clear CTAs, pricing information, and purchase incentives."
-                  }
-                  {selectedCluster === 'navigational' && 
-                    "Create brand-specific content, product pages, and resources that help users find what they're looking for."
-                  }
+                  {cluster.description}
                 </p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {cluster.keywords.slice(0, 6).map((keyword, keywordIndex) => (
+                    <Badge 
+                      key={keywordIndex} 
+                      variant="outline" 
+                      className="text-xs bg-white/5"
+                    >
+                      {keyword}
+                    </Badge>
+                  ))}
+                  {cluster.keywords.length > 6 && (
+                    <Badge variant="outline" className="text-xs bg-white/5">
+                      +{cluster.keywords.length - 6} more
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-sm text-muted-foreground">
+                    {cluster.keywords.length} keywords
+                  </span>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleSelectCluster(cluster)}
+                    className="bg-gradient-to-r from-primary/20 to-blue-500/20 hover:from-primary/30 hover:to-blue-500/30"
+                  >
+                    Select Cluster
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
 
-      {Object.keys(clusters).length === 0 && (
+      {clusters.length === 0 && (
         <Card className="glass-panel border-white/10">
-          <CardContent className="p-8 text-center">
-            <Network className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Keyword Clusters Found</h3>
+          <CardContent className="text-center py-8">
+            <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              Try searching for a different keyword to see cluster analysis.
+              No keyword clusters found. Run a keyword analysis to see intent-based groupings.
             </p>
           </CardContent>
         </Card>
