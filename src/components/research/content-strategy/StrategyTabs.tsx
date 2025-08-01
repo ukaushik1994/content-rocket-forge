@@ -6,6 +6,9 @@ import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { TopicClustersTab } from './tabs/TopicClustersTab';
 import { EditorialCalendar } from './calendar/EditorialCalendar';
 import { ContentPipeline } from './pipeline/ContentPipeline';
+import { StrategyDashboard } from './dashboard/StrategyDashboard';
+import { ContentPerformance } from './performance/ContentPerformance';
+import { ROICalculator } from './performance/ROICalculator';
 
 interface StrategyTabsProps {
   serpMetrics: any;
@@ -19,24 +22,37 @@ interface StrategyTabsProps {
 
 export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
   return (
-    <Tabs defaultValue="strategies" className="space-y-8">
-      <TabsList className="grid w-full grid-cols-5 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
-        <TabsTrigger value="strategies" className="h-14 text-base font-medium">
-          Strategy Suggestions
+    <Tabs defaultValue="dashboard" className="space-y-8">
+      <TabsList className="grid w-full grid-cols-8 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
+        <TabsTrigger value="dashboard" className="h-14 text-sm font-medium">
+          Dashboard
         </TabsTrigger>
-        <TabsTrigger value="gaps" className="h-14 text-base font-medium">
+        <TabsTrigger value="strategies" className="h-14 text-sm font-medium">
+          Strategies
+        </TabsTrigger>
+        <TabsTrigger value="gaps" className="h-14 text-sm font-medium">
           Content Gaps
         </TabsTrigger>
-        <TabsTrigger value="clusters" className="h-14 text-base font-medium">
+        <TabsTrigger value="clusters" className="h-14 text-sm font-medium">
           Topic Clusters
         </TabsTrigger>
-        <TabsTrigger value="calendar" className="h-14 text-base font-medium">
-          Editorial Calendar
+        <TabsTrigger value="calendar" className="h-14 text-sm font-medium">
+          Calendar
         </TabsTrigger>
-        <TabsTrigger value="pipeline" className="h-14 text-base font-medium">
-          Content Pipeline
+        <TabsTrigger value="pipeline" className="h-14 text-sm font-medium">
+          Pipeline
+        </TabsTrigger>
+        <TabsTrigger value="performance" className="h-14 text-sm font-medium">
+          Performance
+        </TabsTrigger>
+        <TabsTrigger value="roi" className="h-14 text-sm font-medium">
+          ROI
         </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="dashboard">
+        <StrategyDashboard serpMetrics={serpMetrics} goals={goals} />
+      </TabsContent>
 
       <TabsContent value="strategies">
         <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
@@ -56,6 +72,14 @@ export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
 
       <TabsContent value="pipeline">
         <ContentPipeline goals={goals} />
+      </TabsContent>
+
+      <TabsContent value="performance">
+        <ContentPerformance goals={goals} />
+      </TabsContent>
+
+      <TabsContent value="roi">
+        <ROICalculator goals={goals} serpMetrics={serpMetrics} />
       </TabsContent>
     </Tabs>
   );
