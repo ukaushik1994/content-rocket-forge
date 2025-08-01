@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,12 @@ import {
   TrendingUp, 
   Target, 
   Lightbulb,
-  Sparkles 
+  Sparkles,
+  HelpCircle,
+  Search,
+  FileText,
+  Tag,
+  Wrench
 } from 'lucide-react';
 import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
 import { motion } from 'framer-motion';
@@ -138,12 +144,18 @@ export const SerpIntegrationPanel: React.FC<SerpIntegrationPanelProps> = ({
   // Get icon for SERP type
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'people_also_ask': return '❓';
-      case 'related_searches': return '🔍';
-      case 'headings': return '📝';
-      case 'entities': return '🏷️';
-      case 'content_gaps': return '🔧';
-      default: return '📄';
+      case 'people_also_ask': 
+        return <HelpCircle className="h-4 w-4 text-blue-500" />;
+      case 'related_searches': 
+        return <Search className="h-4 w-4 text-green-500" />;
+      case 'headings': 
+        return <FileText className="h-4 w-4 text-purple-500" />;
+      case 'entities': 
+        return <Tag className="h-4 w-4 text-orange-500" />;
+      case 'content_gaps': 
+        return <Wrench className="h-4 w-4 text-red-500" />;
+      default: 
+        return <FileText className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -252,7 +264,7 @@ export const SerpIntegrationPanel: React.FC<SerpIntegrationPanelProps> = ({
                     transition={{ delay: index * 0.1 }}
                   >
                     <div className="flex items-start gap-2">
-                      <span className="text-lg">{getTypeIcon(item.type)}</span>
+                      {getTypeIcon(item.type)}
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-muted-foreground mb-1">
                           {item.type.replace(/_/g, ' ')}
