@@ -1,5 +1,6 @@
+
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Zap, FileTemplate } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -55,7 +56,7 @@ export function NavItems() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/templates" className="flex items-center space-x-2">
-              <FileTemplate className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
               <span>Content Templates</span>
             </Link>
           </DropdownMenuItem>

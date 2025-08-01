@@ -1,176 +1,126 @@
 
-import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, FileTemplate, Star, TrendingUp } from 'lucide-react';
-import { useContentTemplates } from '@/contexts/ContentTemplatesContext';
-import { templateService } from '@/services/templateService';
+import { Eye, Edit, FileText, Layout, List, HelpCircle, GitCompare, BookOpen, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useContentTemplates } from '@/contexts/ContentTemplatesContext';
+
+const templateTypes = [
+  { id: 'blog', name: 'Blog Posts', icon: FileText, color: 'from-blue-500 to-purple-600' },
+  { id: 'landing', name: 'Landing Pages', icon: Layout, color: 'from-green-500 to-teal-600' },
+  { id: 'social', name: 'Social Media', icon: List, color: 'from-pink-500 to-rose-600' },
+  { id: 'faq', name: 'FAQ', icon: HelpCircle, color: 'from-orange-500 to-red-600' },
+  { id: 'comparison', name: 'Comparison', icon: GitCompare, color: 'from-purple-500 to-indigo-600' },
+  { id: 'guide', name: 'How-to Guides', icon: BookOpen, color: 'from-teal-500 to-cyan-600' },
+  { id: 'analysis', name: 'Analysis', icon: BarChart3, color: 'from-amber-500 to-orange-600' }
+];
 
 export const TemplateLibrary = () => {
-  const { state, dispatch } = useContentTemplates();
+  const { state, actions } = useContentTemplates();
 
-  useEffect(() => {
-    // Initialize with default templates
-    const templates = templateService.getDefaultTemplates();
-    dispatch({ type: 'SET_TEMPLATES', payload: templates });
-  }, [dispatch]);
-
-  const categories = templateService.getTemplateCategories();
-
-  const handleCategoryChange = (category: string) => {
-    dispatch({ type: 'SET_SELECTED_CATEGORY', payload: category });
-    const filtered = templateService.filterTemplates(
-      state.templates, 
-      category, 
-      state.searchQuery
-    );
-    dispatch({ type: 'SET_FILTERED_TEMPLATES', payload: filtered });
-  };
-
-  const handleSearchChange = (query: string) => {
-    dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
-    const filtered = templateService.filterTemplates(
-      state.templates, 
-      state.selectedCategory, 
-      query
-    );
-    dispatch({ type: 'SET_FILTERED_TEMPLATES', payload: filtered });
-  };
-
-  const handleSelectTemplate = (template: any) => {
-    dispatch({ type: 'SET_SELECTED_TEMPLATE', payload: template });
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'blog': return '📝';
-      case 'landing-page': return '🚀';
-      case 'social-media': return '📱';
-      case 'email': return '📧';
-      case 'ecommerce': return '🛒';
-      case 'custom': return '🎨';
-      default: return '📄';
-    }
-  };
+  const filteredTemplates = state.selectedCategory === 'all' 
+    ? state.templates 
+    : state.templates.filter(template => template.category === state.selectedCategory);
 
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileTemplate className="h-5 w-5" />
-            Template Library
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search templates..."
-                value={state.searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={state.selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleCategoryChange(category)}
-                  className="capitalize"
-                >
-                  {getCategoryIcon(category)} {category === 'all' ? 'All Templates' : category.replace('-', ' ')}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {state.filteredTemplates.map((template, index) => (
-          <motion.div
-            key={template.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card 
-              className={`cursor-pointer transition-all hover:shadow-lg ${
-                state.selectedTemplate?.id === template.id 
-                  ? 'ring-2 ring-primary border-primary' 
-                  : 'hover:border-primary/50'
-              }`}
-              onClick={() => handleSelectTemplate(template)}
+      {/* Category Filter */}
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant={state.selectedCategory === 'all' ? 'default' : 'outline'}
+          onClick={() => actions.setSelectedCategory('all')}
+        >
+          All Templates
+        </Button>
+        {templateTypes.map(type => {
+          const Icon = type.icon;
+          return (
+            <Button
+              key={type.id}
+              variant={state.selectedCategory === type.id ? 'default' : 'outline'}
+              onClick={() => actions.setSelectedCategory(type.id)}
+              className="flex items-center gap-2"
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{getCategoryIcon(template.category)}</span>
-                    <div>
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
-                      <Badge variant="secondary" className="mt-1">
-                        {template.category.replace('-', ' ')}
-                      </Badge>
-                    </div>
-                  </div>
-                  {template.isCustom && (
-                    <Badge variant="outline" className="text-xs">
-                      Custom
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {template.description}
-                </p>
-                
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>Used {template.usage} times</span>
-                  </div>
-                  {template.usage > 10 && (
-                    <div className="flex items-center gap-1 text-yellow-600">
-                      <Star className="h-3 w-3 fill-current" />
-                      <span>Popular</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 pt-3 border-t">
-                  <div className="text-xs text-muted-foreground">
-                    <strong>Variables:</strong> {template.variables.length > 0 ? template.variables.join(', ') : 'None'}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+              <Icon className="h-4 w-4" />
+              {type.name}
+            </Button>
+          );
+        })}
       </div>
 
-      {state.filteredTemplates.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileTemplate className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No templates found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search criteria or create a custom template.
-            </p>
-          </CardContent>
-        </Card>
+      {/* Template Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredTemplates.map((template, index) => {
+          const typeInfo = templateTypes.find(t => t.id === template.category);
+          const Icon = typeInfo?.icon || FileText;
+          
+          return (
+            <motion.div
+              key={template.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-5 w-5" />
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                    </div>
+                    <Badge variant="secondary">{template.category}</Badge>
+                  </div>
+                  <CardDescription>{template.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-1">
+                      {template.variables.slice(0, 3).map(variable => (
+                        <Badge key={variable} variant="outline" className="text-xs">
+                          {variable}
+                        </Badge>
+                      ))}
+                      {template.variables.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{template.variables.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => actions.previewTemplate(template.id)}
+                        className="flex-1"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={() => actions.useTemplate(template.id)}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Use Template
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">No templates found in this category</p>
+        </div>
       )}
     </div>
   );
