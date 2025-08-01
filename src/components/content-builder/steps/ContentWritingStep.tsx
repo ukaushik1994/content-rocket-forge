@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { EnhancedContentEditor } from '../editor/EnhancedContentEditor';
-import { SerpIntegrationPanel } from '../analysis/SerpIntegrationPanel';
+import { CollapsibleSerpSidebar } from './writing/CollapsibleSerpSidebar';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { SaveContentDialog } from './writing/SaveContentDialog';
@@ -140,47 +139,44 @@ export const ContentWritingStep = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 mt-8">
-          <div className="xl:col-span-3">
-            <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Enhanced Content Editor</h3>
-                    <p className="text-sm text-muted-foreground">With real-time SERP integration highlighting</p>
-                  </div>
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <FileText className="h-5 w-5 text-primary" />
                 </div>
-                
-                <EnhancedContentEditor
-                  content={content}
-                  onContentChange={handleContentChange}
-                  isLoading={isGenerating}
-                  serpSelections={state.serpSelections}
-                />
-                
-                {autoSaveTimestamp && (
-                  <div className="mt-4 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
-                    Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
-                  </div>
-                )}
+                <div>
+                  <h3 className="font-semibold text-foreground">Enhanced Content Editor</h3>
+                  <p className="text-sm text-muted-foreground">With real-time SERP integration highlighting</p>
+                </div>
               </div>
+              
+              <EnhancedContentEditor
+                content={content}
+                onContentChange={handleContentChange}
+                isLoading={isGenerating}
+                serpSelections={state.serpSelections}
+              />
+              
+              {autoSaveTimestamp && (
+                <div className="mt-4 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
+                  Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
+                </div>
+              )}
             </div>
-          </div>
-          
-          <div className="xl:col-span-1">
-            <SerpIntegrationPanel
-              content={content}
-              serpSelections={state.serpSelections}
-              onIntegrateItem={(item) => {
-                toast.info(`Integration suggestion for: ${item.type.replace(/_/g, ' ')}`);
-              }}
-            />
           </div>
         </div>
       </div>
+
+      {/* Collapsible SERP Sidebar */}
+      <CollapsibleSerpSidebar
+        content={content}
+        serpSelections={state.serpSelections}
+        onIntegrateItem={(item) => {
+          toast.info(`Integration suggestion for: ${item.type.replace(/_/g, ' ')}`);
+        }}
+      />
 
       <SaveContentDialog
         showSaveDialog={showSaveDialog}
