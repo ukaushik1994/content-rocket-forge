@@ -9,7 +9,5 @@ export const initialState: GlossaryBuilderState = {
   lastError: null,
   activeMode: 'domain',
   suggestedTerms: [],
-  exportFormat: 'markdown',
-  currentStep: 0,
-  stepProgress: {}
+  exportFormat: 'markdown'
 };

@@ -130,21 +130,6 @@ export const glossaryBuilderReducer = (
         exportFormat: action.payload
       };
 
-    case 'SET_CURRENT_STEP':
-      return {
-        ...state,
-        currentStep: action.payload
-      };
-
-    case 'MARK_STEP_COMPLETE':
-      return {
-        ...state,
-        stepProgress: {
-          ...state.stepProgress,
-          [action.payload]: true
-        }
-      };
-
     default:
       return state;
   }
