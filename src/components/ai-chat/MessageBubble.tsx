@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ChatMessage } from '@/hooks/useAIChat';
+import { ConversationMessage } from '@/hooks/useAIChat';
 import { User, Bot, Copy, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 interface MessageBubbleProps {
-  message: ChatMessage;
+  message: ConversationMessage;
   isLatest: boolean;
 }
 
@@ -36,8 +37,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  const isUser = message.type === 'user';
-  const isAssistant = message.type === 'assistant';
+  const isUser = message.role === 'user';
+  const isAssistant = message.role === 'assistant';
 
   const bubbleVariants = {
     hidden: { 

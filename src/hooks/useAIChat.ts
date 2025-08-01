@@ -5,10 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+// Export ChatMessage for compatibility
+export type { ChatMessage };
+
 export interface ConversationMessage extends ChatMessage {
   id: string;
   timestamp: Date;
   actions?: ContextualAction[];
+  type?: 'user' | 'assistant' | 'system'; // Add type property for MessageBubble compatibility
 }
 
 export interface Conversation {
@@ -18,8 +22,8 @@ export interface Conversation {
   updated_at: string;
 }
 
-// Export ChatMessage for other components
-export type { ChatMessage };
+// Export Conversation as ChatConversation for backward compatibility
+export type ChatConversation = Conversation;
 
 export const useAIChat = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -65,13 +69,16 @@ export const useAIChat = () => {
         
         // Safely parse attachments
         if (msg.attachments && typeof msg.attachments === 'object') {
-          const attachments = msg.attachments as { actions?: ContextualAction[] };
-          actions = attachments.actions || [];
+          const attachments = msg.attachments as any;
+          if (attachments.actions && Array.isArray(attachments.actions)) {
+            actions = attachments.actions;
+          }
         }
         
         return {
           id: msg.id,
           role: msg.type as 'user' | 'assistant' | 'system',
+          type: msg.type as 'user' | 'assistant' | 'system', // Add type for MessageBubble
           content: msg.content,
           timestamp: new Date(msg.created_at),
           actions
@@ -127,6 +134,7 @@ export const useAIChat = () => {
     const userMessage: ConversationMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
+      type: 'user',
       content,
       timestamp: new Date()
     };
@@ -157,6 +165,7 @@ export const useAIChat = () => {
         const assistantMessage: ConversationMessage = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
+          type: 'assistant',
           content: response.message,
           timestamp: new Date(),
           actions: response.actions
@@ -171,7 +180,7 @@ export const useAIChat = () => {
             conversation_id: activeConversation,
             type: 'assistant',
             content: response.message,
-            attachments: response.actions ? JSON.parse(JSON.stringify({ actions: response.actions })) : null
+            attachments: response.actions ? { actions: response.actions } : null
           });
 
         // Update conversation title if it's the first exchange

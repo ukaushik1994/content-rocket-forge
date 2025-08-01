@@ -58,12 +58,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             className="space-y-4"
           >
             <MessageBubble 
-              message={{
-                id: message.id,
-                type: message.role as 'user' | 'assistant',
-                content: message.content,
-                timestamp: message.timestamp
-              }}
+              message={message} // Pass the full ConversationMessage with all required properties
               isLatest={index === messages.length - 1}
             />
             

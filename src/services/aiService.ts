@@ -21,6 +21,14 @@ export interface ContextualAction {
   variant?: 'default' | 'primary' | 'secondary' | 'outline';
 }
 
+// Extended parameters interface for backward compatibility
+export interface ChatRequestParams {
+  messages: ChatMessage[];
+  temperature?: number;
+  maxTokens?: number;
+  model?: string;
+}
+
 /**
  * Send a chat message to the AI assistant
  */
@@ -62,13 +70,13 @@ export async function sendChatMessage(
 }
 
 /**
- * Legacy function name for backward compatibility
+ * Legacy function name for backward compatibility with extended parameters
  */
 export async function sendChatRequest(
   provider: string,
-  params: { messages: ChatMessage[] }
+  params: ChatRequestParams
 ): Promise<any> {
-  console.log('Using legacy sendChatRequest, redirecting to sendChatMessage');
+  console.log('Using sendChatRequest with params:', { provider, temperature: params.temperature });
   const response = await sendChatMessage(params.messages);
   
   if (!response) return null;
@@ -138,9 +146,6 @@ function generateContextualActions(
   return actions.slice(0, 3); // Limit to 3 actions max
 }
 
-/**
- * Test AI service connection
- */
 export async function testAIConnection(): Promise<boolean> {
   try {
     const response = await sendChatMessage([
