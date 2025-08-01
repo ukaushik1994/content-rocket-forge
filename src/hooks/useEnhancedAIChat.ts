@@ -3,14 +3,25 @@ import { useState, useCallback } from 'react';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { enhancedAIService } from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useEnhancedAIChat = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const sendMessage = useCallback(async (content: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to use the AI assistant",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     setIsTyping(true);
 
@@ -28,7 +39,8 @@ export const useEnhancedAIChat = () => {
       // Get enhanced AI response
       const aiResponse = await enhancedAIService.processEnhancedMessage(
         content,
-        [...messages, userMessage]
+        [...messages, userMessage],
+        user.id
       );
 
       setMessages(prev => [...prev, aiResponse]);
@@ -43,44 +55,55 @@ export const useEnhancedAIChat = () => {
       setIsLoading(false);
       setIsTyping(false);
     }
-  }, [messages, toast]);
+  }, [messages, toast, user]);
 
-  const handleAction = useCallback((action: string, data?: any) => {
-    if (action.startsWith('navigate:')) {
-      const path = action.replace('navigate:', '');
-      window.location.href = path;
-    } else if (action.startsWith('workflow:')) {
-      // Handle workflow actions
+  const handleAction = useCallback(async (action: string, data?: any) => {
+    if (!user) return;
+
+    if (action.startsWith('workflow:')) {
       const workflowAction = action.replace('workflow:', '');
-      handleWorkflowAction(workflowAction, data);
+      await handleWorkflowAction(workflowAction, data);
     } else if (action.startsWith('send:')) {
       const message = action.replace('send:', '');
-      sendMessage(message);
+      await sendMessage(message);
     }
-  }, [sendMessage]);
+  }, [sendMessage, user]);
 
   const handleWorkflowAction = useCallback(async (workflowAction: string, data?: any) => {
-    // Update workflow context
+    if (!user) return;
+
+    // Update workflow context in service
     enhancedAIService.updateWorkflowContext({
       currentWorkflow: workflowAction,
       stepData: { ...enhancedAIService.getWorkflowContext().stepData, ...data }
     });
 
+    // Update workflow state in database
+    await enhancedAIService.updateWorkflowState(
+      user.id,
+      workflowAction,
+      'initiated',
+      data || {}
+    );
+
     // Send appropriate message based on workflow action
     switch (workflowAction) {
-      case 'keyword-start':
-        await sendMessage('I want to start keyword research and optimization');
+      case 'keyword-optimization':
+        await sendMessage('I want to start keyword research and optimization for my content');
         break;
-      case 'keyword-input':
-        await sendMessage('Let me enter a primary keyword for optimization');
+      case 'content-creation':
+        await sendMessage('Help me create high-performing content');
         break;
-      case 'content-blog':
-        await sendMessage('I want to create a blog post');
+      case 'performance-analysis':
+        await sendMessage('Show me my content performance and optimization opportunities');
+        break;
+      case 'solution-integration':
+        await sendMessage('Help me better integrate my solutions into my content strategy');
         break;
       default:
         console.log('Unknown workflow action:', workflowAction);
     }
-  }, [sendMessage]);
+  }, [sendMessage, user]);
 
   return {
     messages,

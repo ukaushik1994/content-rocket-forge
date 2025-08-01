@@ -1,70 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
-import { ChatInterface } from '@/components/ai-chat/ChatInterface';
-import { ChatSidebar } from '@/components/ai-chat/ChatSidebar';
-import { useAIChat } from '@/hooks/useAIChat';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { EnhancedChatInterface } from '@/components/ai-chat/EnhancedChatInterface';
 
 const AIChat = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const chatRef = useRef<HTMLDivElement>(null);
-
-  const {
-    conversations,
-    activeConversation,
-    isLoading,
-    loadConversations,
-    createConversation,
-    selectConversation,
-    deleteConversation
-  } = useAIChat();
-
-  // Load conversations on mount
-  useEffect(() => {
-    if (user) {
-      loadConversations();
-    }
-  }, [user, loadConversations]);
-
-  // Auto-create first conversation if none exist
-  useEffect(() => {
-    if (user && conversations.length === 0 && !activeConversation) {
-      createConversation("AI Assistant Chat");
-    }
-  }, [conversations.length, createConversation, activeConversation, user]);
-
-  const handleClearConversation = async () => {
-    if (!activeConversation) return;
-
-    try {
-      // Delete all messages for this conversation
-      const { error } = await supabase
-        .from('ai_messages')
-        .delete()
-        .eq('conversation_id', activeConversation);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Conversation cleared",
-        description: "All messages have been removed from this conversation."
-      });
-    } catch (error) {
-      console.error('Error clearing conversation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to clear conversation",
-        variant: "destructive"
-      });
-    }
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -112,37 +52,8 @@ const AIChat = () => {
         animate="visible"
         variants={containerVariants}
       >
-        {/* Chat Sidebar */}
-        <AnimatePresence mode="wait">
-          {sidebarOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="flex-shrink-0 border-r border-white/10 bg-gradient-to-b from-background/95 to-background/80 backdrop-blur-sm"
-            >
-              <ChatSidebar
-                conversations={conversations}
-                activeConversation={activeConversation}
-                onSelectConversation={selectConversation}
-                onCreateConversation={createConversation}
-                onDeleteConversation={deleteConversation}
-                onToggleSidebar={() => setSidebarOpen(false)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Main Chat Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          <ChatInterface
-            ref={chatRef}
-            onClearConversation={handleClearConversation}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            sidebarOpen={sidebarOpen}
-            activeConversation={activeConversation}
-          />
+          <EnhancedChatInterface />
         </div>
       </motion.main>
     </div>

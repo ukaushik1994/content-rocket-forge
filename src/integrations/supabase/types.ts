@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_contexts: {
+        Row: {
+          context_data: Json
+          context_type: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context_data?: Json
+          context_type: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context_data?: Json
+          context_type?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           created_at: string
@@ -72,6 +99,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_workflow_states: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          current_step: string
+          id: string
+          updated_at: string
+          user_id: string
+          workflow_data: Json
+          workflow_type: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          current_step: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          workflow_data?: Json
+          workflow_type: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          current_step?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          workflow_data?: Json
+          workflow_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_workflow_states_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "ai_conversations"
