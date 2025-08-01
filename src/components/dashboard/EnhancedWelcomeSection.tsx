@@ -103,16 +103,32 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.3 }}
                   className="space-y-6"
                 >
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                    <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent">
-                      Content Rocket </span>
-                    <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent">
-                      Forge
-                    </span>
-                  </h1>
+                  {/* New streamlined title design */}
+                  <div className="space-y-2">
+                    <motion.div 
+                      className="flex items-center gap-3 mb-4"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                    >
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 border border-white/20 backdrop-blur-xl">
+                        <RocketIcon className="h-4 w-4 text-neon-blue" />
+                        <span className="text-sm font-medium text-white/90">Content Creation Platform</span>
+                      </div>
+                    </motion.div>
+                    
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight tracking-tight">
+                      <span className="block bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent">
+                        Content Rocket
+                      </span>
+                      <span className="block bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent -mt-2">
+                        Forge
+                      </span>
+                    </h1>
+                  </div>
                   
                   <div className="space-y-4">
-                    <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light max-w-2xl">
+                    <p className="text-lg md:text-xl text-white/80 leading-relaxed font-light max-w-2xl">
                       Generate high-ranking, conversion-driven content by integrating 
                       real-time SERP data, keyword clusters, and business solutions.
                     </p>
