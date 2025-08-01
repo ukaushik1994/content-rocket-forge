@@ -16,8 +16,22 @@ import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { toast } from "sonner";
 import { getApiKey } from '@/services/apiKeyService';
 
-export const ContentBuilder = () => {
-  const { state, navigateToStep, addSerpSelections } = useContentBuilder();
+interface ContentBuilderProps {
+  initialKeyword?: string;
+  selectedKeywords?: string[];
+  location?: string;
+  serpData?: any;
+  initialStep?: number;
+}
+
+export const ContentBuilder: React.FC<ContentBuilderProps> = ({
+  initialKeyword,
+  selectedKeywords,
+  location,
+  serpData,
+  initialStep
+}) => {
+  const { state, dispatch, navigateToStep, addSerpSelections } = useContentBuilder();
   const { activeStep, steps, content } = state;
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<number | null>(null);
@@ -49,6 +63,34 @@ export const ContentBuilder = () => {
       }
     }
   }, [addSerpSelections]);
+
+  // Initialize with preloaded data
+  useEffect(() => {
+    if (initialKeyword || selectedKeywords || location || serpData || initialStep !== undefined) {
+      dispatch({
+        type: 'LOAD_PRELOADED_DATA',
+        payload: {
+          mainKeyword: initialKeyword,
+          selectedKeywords,
+          location,
+          serpData,
+          step: initialStep
+        }
+      });
+
+      // Mark previous steps as completed if starting at a later step
+      if (initialStep !== undefined && initialStep > 0) {
+        for (let i = 0; i < initialStep; i++) {
+          dispatch({ type: 'MARK_STEP_COMPLETED', payload: i });
+        }
+        
+        // If we have SERP data, skip SERP Analysis step (id: 2)
+        if (serpData && initialStep >= 2) {
+          dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
+        }
+      }
+    }
+  }, [initialKeyword, selectedKeywords, location, serpData, initialStep, dispatch]);
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step

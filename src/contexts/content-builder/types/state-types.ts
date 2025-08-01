@@ -73,4 +73,7 @@ export interface ContentBuilderState {
 
   // Additional Instructions
   additionalInstructions: string;
+
+  // Location (for geo-targeted content)
+  location: string;
 }

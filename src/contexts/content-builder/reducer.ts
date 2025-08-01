@@ -268,6 +268,35 @@ export const contentBuilderReducer = (
         ...state,
         additionalInstructions: action.payload
       };
+
+    case 'SET_SELECTED_KEYWORDS':
+      return {
+        ...state,
+        selectedKeywords: action.payload
+      };
+
+    case 'SET_LOCATION':
+      return {
+        ...state,
+        location: action.payload
+      };
+
+    case 'LOAD_PRELOADED_DATA': {
+      const { mainKeyword, selectedKeywords, location, serpData, step } = action.payload;
+      return {
+        ...state,
+        ...(mainKeyword && { mainKeyword }),
+        ...(selectedKeywords && { selectedKeywords }),
+        ...(location && { location }),
+        ...(serpData && { serpData }),
+        ...(step !== undefined && { activeStep: step }),
+        steps: state.steps.map((s, index) => ({
+          ...s,
+          completed: index < (step || 0),
+          visited: index <= (step || 0)
+        }))
+      };
+    }
       
     default:
       return state;

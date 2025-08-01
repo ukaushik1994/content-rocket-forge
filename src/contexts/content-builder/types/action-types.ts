@@ -45,4 +45,7 @@ export type ContentBuilderAction =
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }
   | { type: 'SET_SOLUTION_INTEGRATION_METRICS'; payload: SolutionIntegrationMetrics }
-  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string };
+  | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
+  | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] }
+  | { type: 'SET_LOCATION'; payload: string }
+  | { type: 'LOAD_PRELOADED_DATA'; payload: { mainKeyword?: string; selectedKeywords?: string[]; location?: string; serpData?: any; step?: number } };

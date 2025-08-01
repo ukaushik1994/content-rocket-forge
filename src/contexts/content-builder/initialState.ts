@@ -65,5 +65,8 @@ export const initialState: ContentBuilderState = {
   solutionIntegrationMetrics: null,
   
   // Additional Instructions
-  additionalInstructions: ''
+  additionalInstructions: '',
+
+  // Location
+  location: ''
 };
