@@ -90,6 +90,21 @@ const jsonToStringArray = (jsonValue: any): string[] => {
   return [];
 };
 
+// Helper function to convert Json to any array
+const jsonToArray = (jsonValue: any): any[] => {
+  if (!jsonValue) return [];
+  if (Array.isArray(jsonValue)) return jsonValue;
+  if (typeof jsonValue === 'string') {
+    try {
+      const parsed = JSON.parse(jsonValue);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 class ContentStrategyService {
   // Strategy operations
   async getStrategies(): Promise<ContentStrategy[]> {
@@ -342,7 +357,12 @@ class ContentStrategyService {
       .order('last_analyzed', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      content_gaps: jsonToArray(item.content_gaps),
+      top_competitors: jsonToArray(item.top_competitors),
+      suggested_content: jsonToArray(item.suggested_content)
+    }));
   }
 
   async saveInsight(insight: Partial<StrategyInsight>): Promise<StrategyInsight> {
@@ -366,7 +386,12 @@ class ContentStrategyService {
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      content_gaps: jsonToArray(data.content_gaps),
+      top_competitors: jsonToArray(data.top_competitors),
+      suggested_content: jsonToArray(data.suggested_content)
+    };
   }
 
   // SERP Analysis
