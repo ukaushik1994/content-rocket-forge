@@ -10,6 +10,7 @@ import Drafts from "./pages/Drafts";
 import ContentBuilder from "./pages/ContentBuilder";
 import ContentRepurposing from "./pages/ContentRepurposing";
 import ContentApproval from "./pages/ContentApproval";
+import GlossaryBuilder from "./pages/GlossaryBuilder";
 import Solutions from "./pages/Solutions";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
                 <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
                 <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
+                <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
                 <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />

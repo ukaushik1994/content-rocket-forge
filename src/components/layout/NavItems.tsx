@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Globe } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Globe, Book } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -37,6 +37,7 @@ export default function NavItems() {
     '/content-builder',
     '/content-repurposing', 
     '/content-approval',
+    '/glossary-builder',
     '/drafts'
   ];
   
@@ -116,6 +117,18 @@ export default function NavItems() {
             >
               <CheckCircle className="h-4 w-4" />
               Approval
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/glossary-builder" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/glossary-builder' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Book className="h-4 w-4" />
+              Glossary Builder
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

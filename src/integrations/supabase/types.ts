@@ -890,6 +890,95 @@ export type Database = {
           },
         ]
       }
+      glossaries: {
+        Row: {
+          created_at: string
+          description: string | null
+          domain_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          domain_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          domain_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      glossary_terms: {
+        Row: {
+          created_at: string
+          expanded_explanation: string | null
+          glossary_id: string
+          id: string
+          internal_links: Json | null
+          keyword_difficulty: number | null
+          last_updated: string
+          paa_questions: Json | null
+          related_terms: Json | null
+          search_volume: number | null
+          short_definition: string | null
+          term: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expanded_explanation?: string | null
+          glossary_id: string
+          id?: string
+          internal_links?: Json | null
+          keyword_difficulty?: number | null
+          last_updated?: string
+          paa_questions?: Json | null
+          related_terms?: Json | null
+          search_volume?: number | null
+          short_definition?: string | null
+          term: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expanded_explanation?: string | null
+          glossary_id?: string
+          id?: string
+          internal_links?: Json | null
+          keyword_difficulty?: number | null
+          last_updated?: string
+          paa_questions?: Json | null
+          related_terms?: Json | null
+          search_volume?: number | null
+          short_definition?: string | null
+          term?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_terms_glossary_id_fkey"
+            columns: ["glossary_id"]
+            isOneToOne: false
+            referencedRelation: "glossaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keywords: {
         Row: {
           created_at: string
