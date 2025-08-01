@@ -1,309 +1,436 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Network, Plus, Target, BarChart3, Users, TrendingUp, Search, Filter, Calendar, Eye, Edit, Lightbulb, BookOpen, Zap } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Network, 
+  Plus, 
+  Target, 
+  BarChart3, 
+  Search, 
+  Zap, 
+  TrendingUp, 
+  Globe,
+  Users,
+  Clock,
+  ArrowRight,
+  Sparkles,
+  Brain,
+  Lightbulb,
+  BookOpen
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { TopicClusterCard } from '@/components/research/topic-clusters/TopicClusterCard';
+import { CreateClusterModal } from '@/components/research/topic-clusters/CreateClusterModal';
+import { SerpAnalysisPanel } from '@/components/research/topic-clusters/SerpAnalysisPanel';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 
 const TopicClusters = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [isCreating, setIsCreating] = useState(false);
+  const [selectedKeyword, setSelectedKeyword] = useState('');
+  const [serpData, setSerpData] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const { analyzeKeyword } = useContentBuilder();
 
-  // Enhanced sample data matching the reference
-  const clusterData = [
+  // Mock clusters data - in production this would come from your database
+  const [clusters] = useState([
     {
       id: 1,
-      title: "Content Marketing Strategy",
+      name: "Content Marketing Strategy",
       mainKeyword: "content marketing",
-      status: "In Progress",
+      status: "active",
       completion: 75,
-      subTopicsCount: 12,
-      keywordVolume: "45K",
-      difficulty: "Medium",
+      keywords: ["content strategy", "content creation", "content calendar", "content distribution"],
+      articles: 12,
+      totalTraffic: 45000,
+      avgPosition: 5.2,
       lastUpdated: "2 days ago",
-      pillarPage: "Ultimate Guide to Content Marketing",
-      description: "Comprehensive content marketing strategies and best practices"
+      color: "from-blue-500 to-purple-600"
     },
     {
       id: 2,
-      title: "SEO Optimization Techniques",
+      name: "SEO Optimization",
       mainKeyword: "SEO optimization",
-      status: "Published",
-      completion: 100,
-      subTopicsCount: 18,
-      keywordVolume: "67K",
-      difficulty: "High",
-      lastUpdated: "1 week ago",
-      pillarPage: "Complete SEO Guide for 2024",
-      description: "Advanced SEO techniques and optimization strategies"
+      status: "active",
+      completion: 90,
+      keywords: ["on-page SEO", "technical SEO", "link building", "keyword research"],
+      articles: 18,
+      totalTraffic: 67000,
+      avgPosition: 3.8,
+      lastUpdated: "1 day ago",
+      color: "from-green-500 to-teal-600"
     },
     {
       id: 3,
-      title: "Social Media Marketing",
+      name: "Social Media Marketing",
       mainKeyword: "social media marketing",
-      status: "Draft",
+      status: "draft",
       completion: 30,
-      subTopicsCount: 8,
-      keywordVolume: "23K",
-      difficulty: "Low",
+      keywords: ["social media strategy", "social media ads", "content scheduling"],
+      articles: 6,
+      totalTraffic: 23000,
+      avgPosition: 8.1,
       lastUpdated: "3 days ago",
-      pillarPage: "Social Media Marketing Mastery",
-      description: "Complete social media marketing strategies across platforms"
-    },
-    {
-      id: 4,
-      title: "Email Marketing Automation",
-      mainKeyword: "email marketing",
-      status: "In Progress",
-      completion: 60,
-      subTopicsCount: 15,
-      keywordVolume: "34K",
-      difficulty: "Medium",
-      lastUpdated: "1 day ago",
-      pillarPage: "Email Marketing Automation Guide",
-      description: "Advanced email marketing automation and personalization"
+      color: "from-pink-500 to-rose-600"
     }
-  ];
+  ]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Published': return 'bg-neon-green text-black';
-      case 'In Progress': return 'bg-neon-blue text-white';
-      case 'Draft': return 'bg-orange-500 text-white';
-      default: return 'bg-secondary text-secondary-foreground';
+  const handleKeywordAnalysis = async (keyword: string) => {
+    if (!keyword.trim()) return;
+    
+    setSelectedKeyword(keyword);
+    setIsAnalyzing(true);
+    
+    try {
+      console.log(`🔍 Starting SERP analysis for: ${keyword}`);
+      
+      // Use the content builder's analyze function
+      await analyzeKeyword(keyword, true);
+      
+      // Also get the raw SERP data for our display
+      const data = await analyzeKeywordSerp(keyword, true);
+      setSerpData(data);
+      
+      toast.success(`Analysis complete for "${keyword}"`);
+      setActiveTab('analysis');
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast.error('Failed to analyze keyword. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
-  const filteredClusters = clusterData.filter(cluster => {
-    const matchesSearch = cluster.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cluster.mainKeyword.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || cluster.status.toLowerCase().replace(' ', '-') === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5
+      }
+    }
+  };
+
+  const metricsData = [
+    {
+      title: "Total Clusters",
+      value: clusters.length,
+      icon: Network,
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10"
+    },
+    {
+      title: "Total Traffic",
+      value: "135K",
+      icon: TrendingUp,
+      color: "text-green-400",
+      bgColor: "bg-green-500/10"
+    },
+    {
+      title: "Avg. Position",
+      value: "5.7",
+      icon: Target,
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/10"
+    },
+    {
+      title: "Active Articles",
+      value: "36",
+      icon: BookOpen,
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/10"
+    }
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <Helmet>
-        <title>Topic Clusters | Research Platform</title>
+        <title>Topic Clusters | AI Content Platform</title>
       </Helmet>
       
       <Navbar />
       
-      {/* Background elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50"></div>
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neon-blue/10 rounded-full filter blur-3xl opacity-40"></div>
-        <div className="absolute bottom-40 left-1/2 w-64 h-64 bg-neon-purple/10 rounded-full filter blur-3xl opacity-30"></div>
-        <div className="futuristic-grid absolute inset-0 opacity-10"></div>
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/5 rounded-full filter blur-3xl animate-pulse delay-2000"></div>
       </div>
       
-      <main className="flex-1 container py-8 z-10 relative">
-        <div className="space-y-8">
-          {/* Enhanced Header */}
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-4xl font-bold text-gradient">Topic Clusters</h1>
-                <p className="text-xl text-muted-foreground mt-2">
-                  Organize your content into strategic topic clusters for better SEO
-                </p>
-              </div>
-              <Button className="bg-neon-blue hover:bg-neon-blue/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Cluster
-              </Button>
-            </div>
-
-            {/* Search and Filter Bar */}
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search clusters or keywords..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-glass border-white/10"
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-48 bg-glass border-white/10">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-white/10">
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Metrics Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="glass-panel border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Clusters</p>
-                      <p className="text-3xl font-bold text-neon-blue">{clusterData.length}</p>
-                    </div>
-                    <Network className="h-8 w-8 text-neon-blue" />
-                  </div>
-                </CardContent>
-              </Card>
+      <main className="container mx-auto px-4 py-8 relative z-10">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
+          {/* Hero Section */}
+          <motion.div variants={itemVariants} className="text-center space-y-6">
+            <div className="space-y-4">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full border border-white/10"
+              >
+                <Sparkles className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  AI-Powered Topic Research
+                </span>
+              </motion.div>
               
-              <Card className="glass-panel border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Keywords</p>
-                      <p className="text-3xl font-bold text-neon-green">169K</p>
-                    </div>
-                    <Target className="h-8 w-8 text-neon-green" />
-                  </div>
-                </CardContent>
-              </Card>
+              <h1 className="text-4xl md:text-6xl font-bold">
+                <span className="bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+                  Topic Clusters
+                </span>
+              </h1>
               
-              <Card className="glass-panel border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Avg. Completion</p>
-                      <p className="text-3xl font-bold text-neon-purple">66%</p>
-                    </div>
-                    <BarChart3 className="h-8 w-8 text-neon-purple" />
-                  </div>
-                </CardContent>
-              </Card>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                Create strategic content clusters using real SERP data and AI insights
+              </p>
             </div>
-          </div>
 
-          {/* Enhanced Cluster Cards */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Your Topic Clusters</h2>
-            <div className="grid gap-6">
-              {filteredClusters.map((cluster) => (
-                <Card key={cluster.id} className="glass-panel border-white/10 hover:border-neon-blue/30 transition-all">
+            {/* Search Section */}
+            <motion.div
+              variants={itemVariants}
+              className="max-w-2xl mx-auto"
+            >
+              <Card className="bg-white/5 backdrop-blur-md border-white/10 p-6">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      placeholder="Enter a keyword to analyze and build clusters around..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-12 bg-white/5 border-white/20 text-white placeholder-gray-400"
+                      onKeyPress={(e) => e.key === 'Enter' && handleKeywordAnalysis(searchTerm)}
+                    />
+                  </div>
+                  
+                  <Button
+                    onClick={() => handleKeywordAnalysis(searchTerm)}
+                    disabled={!searchTerm.trim() || isAnalyzing}
+                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                          className="mr-2"
+                        >
+                          <Zap className="h-4 w-4" />
+                        </motion.div>
+                        Analyzing SERP Data...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="h-4 w-4 mr-2" />
+                        Analyze with AI
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+
+          {/* Metrics Cards */}
+          <motion.div
+            variants={itemVariants}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {metricsData.map((metric, index) => (
+              <motion.div
+                key={metric.title}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 * index, duration: 0.5 }}
+                whileHover={{ scale: 1.05 }}
+                className="group"
+              >
+                <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden">
                   <CardContent className="p-6">
-                    <div className="space-y-4">
-                      {/* Header Row */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-semibold text-white">{cluster.title}</h3>
-                            <Badge className={`${getStatusColor(cluster.status)} text-xs`}>
-                              {cluster.status}
-                            </Badge>
-                          </div>
-                          <p className="text-muted-foreground text-sm">{cluster.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" className="border-white/20">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          <Button size="sm" variant="outline" className="border-white/20">
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </Button>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-400 mb-1">{metric.title}</p>
+                        <p className="text-2xl font-bold text-white">{metric.value}</p>
                       </div>
-
-                      {/* Main Keyword and Progress */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-1">Main Keyword</p>
-                          <p className="text-lg font-semibold text-neon-blue">{cluster.mainKeyword}</p>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm text-muted-foreground">Completion</p>
-                            <p className="text-sm font-medium text-white">{cluster.completion}%</p>
-                          </div>
-                          <Progress value={cluster.completion} className="h-2 bg-gray-700">
-                            <div 
-                              className="h-full bg-gradient-to-r from-neon-blue to-neon-purple rounded-full transition-all"
-                              style={{ width: `${cluster.completion}%` }}
-                            />
-                          </Progress>
-                        </div>
-                      </div>
-
-                      {/* Metrics Row */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/10">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Sub-topics</p>
-                          <p className="text-lg font-semibold text-white">{cluster.subTopicsCount}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Search Volume</p>
-                          <p className="text-lg font-semibold text-neon-green">{cluster.keywordVolume}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Difficulty</p>
-                          <Badge variant={cluster.difficulty === 'Low' ? 'default' : cluster.difficulty === 'Medium' ? 'secondary' : 'destructive'}>
-                            {cluster.difficulty}
-                          </Badge>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Last Updated</p>
-                          <p className="text-sm text-white flex items-center justify-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {cluster.lastUpdated}
-                          </p>
-                        </div>
+                      <div className={`p-3 rounded-full ${metric.bgColor} group-hover:scale-110 transition-transform duration-300`}>
+                        <metric.icon className={`h-6 w-6 ${metric.color}`} />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </div>
+              </motion.div>
+            ))}
+          </motion.div>
 
-          {/* Best Practices Section */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Topic Cluster Best Practices</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="glass-panel border-white/10">
-                <CardContent className="p-6 text-center">
-                  <Lightbulb className="h-12 w-12 text-neon-blue mx-auto mb-4" />
-                  <h3 className="font-semibold text-white mb-2">Strategic Planning</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Plan your topic clusters around high-value keywords and user intent to maximize SEO impact.
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="glass-panel border-white/10">
-                <CardContent className="p-6 text-center">
-                  <BookOpen className="h-12 w-12 text-neon-green mx-auto mb-4" />
-                  <h3 className="font-semibold text-white mb-2">Content Depth</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Create comprehensive pillar pages with supporting content that covers all aspects of your topic.
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="glass-panel border-white/10">
-                <CardContent className="p-6 text-center">
-                  <Zap className="h-12 w-12 text-neon-purple mx-auto mb-4" />
-                  <h3 className="font-semibold text-white mb-2">Internal Linking</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Build strong internal linking between cluster content to boost topical authority and rankings.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+          {/* Main Content Tabs */}
+          <motion.div variants={itemVariants}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 bg-white/5 backdrop-blur-md border-white/10">
+                <TabsTrigger
+                  value="overview"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600"
+                >
+                  <Network className="h-4 w-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="analysis"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600"
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  SERP Analysis
+                </TabsTrigger>
+                <TabsTrigger
+                  value="create"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Content
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-white">Your Topic Clusters</h2>
+                  <Button
+                    onClick={() => setIsCreating(true)}
+                    className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Cluster
+                  </Button>
+                </div>
+
+                <div className="grid gap-6">
+                  <AnimatePresence>
+                    {clusters.map((cluster, index) => (
+                      <motion.div
+                        key={cluster.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <TopicClusterCard
+                          cluster={cluster}
+                          onAnalyze={(keyword) => handleKeywordAnalysis(keyword)}
+                          onEdit={() => console.log('Edit cluster:', cluster.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="analysis" className="space-y-6">
+                <AnimatePresence mode="wait">
+                  {selectedKeyword ? (
+                    <motion.div
+                      key="analysis-panel"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <SerpAnalysisPanel
+                        keyword={selectedKeyword}
+                        serpData={serpData}
+                        isLoading={isAnalyzing}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty-state"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-center py-16"
+                    >
+                      <div className="space-y-4">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
+                          <BarChart3 className="h-8 w-8 text-blue-400" />
+                        </div>
+                        <h3 className="text-xl font-medium text-white">No Analysis Yet</h3>
+                        <p className="text-gray-400 max-w-md mx-auto">
+                          Enter a keyword in the search box above to get started with SERP analysis
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </TabsContent>
+
+              <TabsContent value="create" className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card className="bg-white/5 backdrop-blur-md border-white/10 p-8 text-center">
+                    <div className="space-y-6">
+                      <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500/20 to-teal-500/20 rounded-full flex items-center justify-center">
+                        <Lightbulb className="h-8 w-8 text-green-400" />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-bold text-white">Ready to Create Content?</h3>
+                        <p className="text-gray-400 max-w-2xl mx-auto">
+                          Use your SERP analysis to create comprehensive content that ranks higher
+                        </p>
+                      </div>
+
+                      <Button
+                        onClick={() => window.location.href = '/content-builder'}
+                        className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 h-12 px-8"
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Go to Content Builder
+                      </Button>
+                    </div>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </motion.div>
       </main>
+
+      <CreateClusterModal
+        isOpen={isCreating}
+        onClose={() => setIsCreating(false)}
+        onSuccess={() => {
+          setIsCreating(false);
+          toast.success('Topic cluster created successfully!');
+        }}
+      />
     </div>
   );
 };
