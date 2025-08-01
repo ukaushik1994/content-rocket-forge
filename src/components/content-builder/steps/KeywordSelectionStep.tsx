@@ -134,15 +134,70 @@ export const KeywordSelectionStep = () => {
   const selectedCount = serpSelections.filter(item => item.selected).length;
   
   return (
-    <div className="space-y-8 relative">
-      {/* Floating background elements */}
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+    >
+      {/* Dynamic Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl animate-pulse-glow" />
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-500/5 rounded-full blur-2xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl animate-pulse-glow" style={{ animationDelay: '4s' }} />
+        {/* Animated gradient orbs */}
+        <motion.div 
+          className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+            x: [0, 50, 0],
+            y: [0, -30, 0]
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-40 right-20 w-96 h-96 bg-gradient-to-r from-purple-500/15 to-pink-500/15 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            opacity: [0.2, 0.5, 0.2],
+            x: [0, -40, 0],
+            y: [0, 40, 0]
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+        <motion.div 
+          className="absolute top-1/3 left-1/2 w-64 h-64 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-full blur-3xl"
+          animate={{ 
+            scale: [1, 1.4, 1],
+            opacity: [0.4, 0.2, 0.4],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        />
+        
+        {/* Floating particles */}
+        {Array.from({ length: 12 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-primary/30 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -100, 0],
+              opacity: [0, 1, 0],
+              scale: [0, 1, 0],
+            }}
+            transition={{
+              duration: 3 + Math.random() * 4,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Enhanced Header */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 space-y-12">
+          {/* Enhanced Header */}
       <motion.div 
         className="relative overflow-hidden rounded-2xl glass-panel p-8 holographic-border"
         initial={{ opacity: 0, y: -30 }}
@@ -550,6 +605,7 @@ export const KeywordSelectionStep = () => {
         onClearAll={handleClearAllSelections}
         onGenerateOutline={handleGenerateOutline}
       />
-    </div>
+        </div>
+      </motion.div>
   );
 };
