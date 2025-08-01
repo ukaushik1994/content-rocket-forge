@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -6,9 +5,9 @@ import { EnhancedWelcomeSection } from '@/components/dashboard/EnhancedWelcomeSe
 import { EnhancedQuickActions } from '@/components/dashboard/EnhancedQuickActions';
 import { EnhancedPerformanceSection } from '@/components/dashboard/EnhancedPerformanceSection';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
-import { TourProvider } from '@/contexts/TourContext';
-import { AppTour } from '@/components/tour/AppTour';
-import { TourTrigger } from '@/components/tour/TourTrigger';
+import { GrandTourProvider } from '@/contexts/GrandTourContext';
+import { GrandAppTour } from '@/components/tour/GrandAppTour';
+import { GrandTourTrigger } from '@/components/tour/GrandTourTrigger';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
@@ -52,7 +51,7 @@ const Index = () => {
   };
   
   return (
-    <TourProvider>
+    <GrandTourProvider>
       <div className="min-h-screen flex flex-col bg-background overflow-hidden">
         {/* Enhanced background with multiple animated layers */}
         <div className="absolute inset-0 -z-10">
@@ -180,7 +179,7 @@ const Index = () => {
                       <div className="px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-sm text-white/60">
                         Choose your next step
                       </div>
-                      <TourTrigger variant="inline" size="sm" />
+                      <GrandTourTrigger variant="inline" size="sm" />
                     </div>
                   </motion.div>
                   
@@ -196,13 +195,13 @@ const Index = () => {
           </Container>
         </main>
         
-        {/* Tour Components */}
-        <AppTour />
-        <TourTrigger variant="floating" />
+        {/* Grand Tour Components */}
+        <GrandAppTour />
+        <GrandTourTrigger variant="floating" />
         
         <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       </div>
-    </TourProvider>
+    </GrandTourProvider>
   );
 };
 
