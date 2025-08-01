@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Compass, Play, Sparkles, Trophy, Rocket } from 'lucide-react';
@@ -40,19 +39,20 @@ export const GrandTourTrigger: React.FC<GrandTourTriggerProps> = ({
         whileTap={{ scale: 0.95 }}
       >
         {/* Outer glow ring */}
-        <div className="absolute inset-0 rounded-full">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-neon-purple/30 via-neon-blue/30 to-neon-pink/30 animate-pulse blur-xl" />
+        <div className="absolute inset-0 rounded-lg">
+          <div className="w-full h-full rounded-lg bg-gradient-to-r from-neon-purple/30 via-neon-blue/30 to-neon-pink/30 animate-pulse blur-xl" />
         </div>
         
         {/* Middle glow ring */}
-        <div className="absolute inset-2 rounded-full">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-neon-purple/50 via-neon-blue/50 to-neon-pink/50 animate-pulse blur-lg" 
+        <div className="absolute inset-2 rounded-lg">
+          <div className="w-full h-full rounded-lg bg-gradient-to-r from-neon-purple/50 via-neon-blue/50 to-neon-pink/50 animate-pulse blur-lg" 
                style={{ animationDelay: '0.5s' }} />
         </div>
 
         <Button
           onClick={handleStartTour}
-          className="relative w-20 h-20 rounded-full bg-gradient-to-br from-neon-purple via-neon-blue to-neon-pink hover:from-neon-blue hover:via-neon-pink hover:to-neon-purple text-white shadow-2xl shadow-neon-blue/60 hover:shadow-neon-pink/80 transition-all duration-700 border-2 border-white/20 hover:border-white/40 group overflow-hidden"
+          size="sm"
+          className="relative px-4 py-2 h-9 text-sm rounded-lg bg-gradient-to-br from-neon-purple via-neon-blue to-neon-pink hover:from-neon-blue hover:via-neon-pink hover:to-neon-purple text-white shadow-2xl shadow-neon-blue/60 hover:shadow-neon-pink/80 transition-all duration-700 border-2 border-white/20 hover:border-white/40 group overflow-hidden"
           title={hasCompletedTour ? "Experience Grand Tour Again" : "Take the Grand Tour"}
         >
           {/* Background shimmer effect */}
@@ -60,7 +60,7 @@ export const GrandTourTrigger: React.FC<GrandTourTriggerProps> = ({
           
           {/* Main icon with enhanced animation */}
           <motion.div
-            className="relative z-10"
+            className="relative z-10 mr-2"
             animate={{ 
               rotate: [0, 360],
               scale: [1, 1.1, 1]
@@ -70,8 +70,10 @@ export const GrandTourTrigger: React.FC<GrandTourTriggerProps> = ({
               scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
             }}
           >
-            <Rocket className="h-8 w-8" />
+            <Rocket className="h-4 w-4" />
           </motion.div>
+          
+          <span className="relative z-10 text-sm font-medium">Take Tour</span>
           
           {/* Floating particles */}
           {[...Array(6)].map((_, i) => (
@@ -99,12 +101,12 @@ export const GrandTourTrigger: React.FC<GrandTourTriggerProps> = ({
           {/* Achievement badge with enhanced styling */}
           {unlockedCount > 0 && (
             <motion.div 
-              className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-white shadow-lg"
+              className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-white shadow-lg"
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <Trophy className="h-4 w-4" />
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center text-xs">
+              <Trophy className="h-3 w-3" />
+              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center text-xs">
                 {unlockedCount}
               </span>
             </motion.div>
@@ -113,11 +115,11 @@ export const GrandTourTrigger: React.FC<GrandTourTriggerProps> = ({
         
         {/* Tooltip */}
         <motion.div
-          className="absolute -top-14 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-xl text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/20"
+          className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-xl text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/20"
           initial={{ y: 10, opacity: 0 }}
           whileHover={{ y: 0, opacity: 1 }}
         >
-          {hasCompletedTour ? 'Experience Again' : 'Start Grand Tour'}
+          Take Tour
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-black/90" />
         </motion.div>
       </motion.div>
