@@ -63,46 +63,42 @@ export function KeywordsTab({ keywords, relatedSearches, serpSelections, onToggl
 
   return (
     <div className="space-y-6">
-      {/* Primary Keywords */}
+      {/* Section Headers */}
+      <div className="flex gap-4 border-b border-border">
+        <div className="flex items-center gap-2 pb-2 border-b-2 border-blue-500">
+          <Tag className="h-5 w-5 text-blue-500" />
+          <span className="font-medium">Secondary Keywords</span>
+          <Badge variant="outline">{keywords.length}</Badge>
+        </div>
+        <div className="flex items-center gap-2 pb-2 border-b-2 border-transparent hover:border-green-500/50 transition-colors cursor-pointer">
+          <TrendingUp className="h-5 w-5 text-green-500" />
+          <span className="font-medium">Related Searches</span>
+          <Badge variant="outline">{relatedSearches.length}</Badge>
+        </div>
+      </div>
+
+      {/* Keywords Section */}
       {keywords.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Tag className="h-5 w-5 text-blue-500" />
-              Secondary Keywords
-              <Badge variant="outline">{keywords.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {keywords.map((keyword, index) => 
-                renderKeywordItem(keyword, 'keyword', undefined, index)
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            {keywords.map((keyword, index) => 
+              renderKeywordItem(keyword, 'keyword', undefined, index)
+            )}
+          </div>
+        </div>
       )}
 
-      {/* Related Searches */}
+      {/* Related Searches Section */}
       {relatedSearches.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-500" />
-              Related Searches
-              <Badge variant="outline">{relatedSearches.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {relatedSearches.map((search, index) => {
-                const searchText = typeof search === 'string' ? search : search.query;
-                const searchVolume = typeof search === 'object' ? search.volume : undefined;
-                return renderKeywordItem(searchText, 'relatedSearch', searchVolume, index);
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            {relatedSearches.map((search, index) => {
+              const searchText = typeof search === 'string' ? search : search.query;
+              const searchVolume = typeof search === 'object' ? search.volume : undefined;
+              return renderKeywordItem(searchText, 'relatedSearch', searchVolume, index);
+            })}
+          </div>
+        </div>
       )}
 
       {keywords.length === 0 && relatedSearches.length === 0 && (
