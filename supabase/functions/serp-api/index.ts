@@ -1,5 +1,17 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { calculateRealMetrics, estimateSearchVolume } from "./metrics-calculator.ts"
+import { 
+  generateSmartHeadings, 
+  generateAdvancedContentGaps, 
+  extractComprehensiveEntities,
+  extractFeaturedSnippets,
+  extractKnowledgeGraph,
+  extractTopStories,
+  extractMultimedia,
+  generateSerpInsights,
+  generateRecommendations
+} from "./serp-extractors.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,54 +132,72 @@ serve(async (req) => {
  * Transform SerpAPI data to our clean format without provider contamination
  */
 function transformSerpApiData(data: any, keyword: string): any {
-  console.log('🔄 Transforming SerpAPI data for keyword:', keyword);
+  console.log('🔄 Enhanced SERP data transformation for keyword:', keyword);
   
-  // Extract clean organic results
+  // Extract comprehensive organic results
   const organicResults = (data.organic_results || []).slice(0, 10).map((result: any, index: number) => ({
     position: index + 1,
     title: cleanText(result.title),
     link: result.link,
     snippet: cleanText(result.snippet || result.description || ''),
-    displayed_link: result.displayed_link
+    displayed_link: result.displayed_link,
+    rich_snippet: result.rich_snippet || null,
+    sitelinks: result.sitelinks || []
   }));
 
-  // Extract clean People Also Ask questions
+  // Extract People Also Ask questions with enhanced data
   const peopleAlsoAsk = (data.people_also_ask || []).map((item: any) => ({
     question: cleanText(item.question),
     answer: cleanText(item.snippet || item.answer || ''),
-    source: 'google_search'
+    source: 'google_search',
+    link: item.link || null,
+    displayed_link: item.displayed_link || null
   }));
 
-  // Extract clean related searches
+  // Extract related searches with enhanced context
   const relatedSearches = (data.related_searches || []).map((item: any) => ({
     query: cleanText(item.query),
-    volume: null // SerpAPI doesn't provide volume data
+    volume: estimateSearchVolume(item.query, keyword), // Heuristic estimation
+    link: item.link || null
   }));
 
-  // Extract clean keywords from various sources
-  const keywords = extractCleanKeywords(data, keyword);
+  // Extract comprehensive keywords
+  const keywords = extractEnhancedKeywords(data, keyword);
 
-  // Generate clean headings from organic results
-  const headings = organicResults.slice(0, 5).map((result: any, index: number) => ({
-    text: result.title,
-    level: index === 0 ? 'h1' as const : 'h2' as const,
-    subtext: result.snippet,
-    type: 'organic_heading'
-  }));
+  // Generate smart headings from multiple sources
+  const headings = generateSmartHeadings(organicResults, peopleAlsoAsk, data);
 
-  // Generate content gaps from analysis
-  const contentGaps = generateContentGaps(organicResults, peopleAlsoAsk, keyword);
+  // Generate advanced content gaps
+  const contentGaps = generateAdvancedContentGaps(organicResults, peopleAlsoAsk, data, keyword);
 
-  // Extract entities (clean)
-  const entities = extractEntities(data, keyword);
+  // Extract comprehensive entities
+  const entities = extractComprehensiveEntities(data, keyword);
+
+  // Extract featured snippets
+  const featuredSnippets = extractFeaturedSnippets(data);
+
+  // Extract knowledge graph data
+  const knowledgeGraph = extractKnowledgeGraph(data);
+
+  // Extract top stories if available
+  const topStories = extractTopStories(data);
+
+  // Extract images and videos
+  const multimedia = extractMultimedia(data);
+
+  // Calculate real metrics based on SERP analysis
+  const metrics = calculateRealMetrics(data, keyword, organicResults);
+
+  // Generate comprehensive insights
+  const insights = generateSerpInsights(data, organicResults, peopleAlsoAsk, keyword);
 
   return {
     keyword: cleanText(keyword),
-    searchVolume: data.search_metadata?.total_results || 0,
-    keywordDifficulty: Math.min(Math.max(Math.floor(Math.random() * 100), 10), 90), // Estimate
-    competitionScore: Math.random(),
+    searchVolume: metrics.searchVolume,
+    keywordDifficulty: metrics.keywordDifficulty,
+    competitionScore: metrics.competitionScore,
     
-    // Clean data arrays
+    // Enhanced SERP sections
     topResults: organicResults,
     peopleAlsoAsk: peopleAlsoAsk,
     relatedSearches: relatedSearches,
@@ -175,18 +205,62 @@ function transformSerpApiData(data: any, keyword: string): any {
     headings: headings,
     contentGaps: contentGaps,
     entities: entities,
+    featuredSnippets: featuredSnippets,
+    knowledgeGraph: knowledgeGraph,
+    topStories: topStories,
+    multimedia: multimedia,
+
+    // Enhanced metrics section
+    metrics: {
+      search_volume: metrics.searchVolume,
+      seo_difficulty: metrics.keywordDifficulty,
+      opportunity_score: metrics.opportunityScore,
+      competition_pct: metrics.competitionScore * 100,
+      result_count: data.search_metadata?.total_results || 0
+    },
+
+    // SERP blocks for compatibility
+    serp_blocks: {
+      organic: organicResults,
+      ads: (data.ads || []).map((ad: any) => ({
+        title: cleanText(ad.title),
+        link: ad.link,
+        description: cleanText(ad.description || ad.snippet || '')
+      })),
+      people_also_ask: peopleAlsoAsk,
+      images: multimedia.images,
+      videos: multimedia.videos,
+      knowledge_graph: knowledgeGraph.title ? knowledgeGraph : undefined
+    },
+
+    // Enhanced insights and recommendations
+    insights: insights,
+    recommendations: generateRecommendations(data, organicResults, contentGaps),
+
+    // Data source tracking
+    data_sources: {
+      is_cached: false,
+      volume_api: false, // We're using heuristics
+      serp_api: true
+    },
+
+    related_keywords: relatedSearches.map(rs => ({
+      title: rs.query,
+      volume: rs.volume
+    })),
     
     // Metadata
     isGoogleData: true,
     isMockData: false,
-    dataQuality: 'high',
+    dataQuality: metrics.dataQuality,
     volumeMetadata: {
-      source: 'serpapi_estimate',
-      confidence: 'medium',
+      source: 'serp_heuristic_calculation',
+      confidence: metrics.confidence,
       engine: 'google',
       location: 'United States',
       language: 'English',
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      calculation_method: 'serp_feature_analysis'
     }
   };
 }
@@ -204,13 +278,14 @@ function cleanText(text: string): string {
 }
 
 /**
- * Extract clean keywords from SerpAPI data
+ * Extract enhanced keywords from comprehensive SERP analysis
  */
-function extractCleanKeywords(data: any, mainKeyword: string): string[] {
+function extractEnhancedKeywords(data: any, mainKeyword: string): string[] {
   const keywords = new Set<string>();
   
-  // Add main keyword
+  // Add main keyword variations
   keywords.add(cleanText(mainKeyword));
+  keywords.add(cleanText(mainKeyword).toLowerCase());
   
   // Extract from related searches
   (data.related_searches || []).forEach((item: any) => {
@@ -219,38 +294,95 @@ function extractCleanKeywords(data: any, mainKeyword: string): string[] {
     }
   });
   
-  // Extract from People Also Ask
+  // Extract from People Also Ask with semantic analysis
   (data.people_also_ask || []).forEach((item: any) => {
     if (item.question) {
-      // Extract keywords from questions
-      const questionWords = cleanText(item.question)
-        .toLowerCase()
-        .split(/\s+/)
-        .filter(word => word.length > 3 && !['what', 'how', 'why', 'when', 'where', 'which', 'who'].includes(word));
-      
-      questionWords.forEach(word => {
-        if (word.includes(mainKeyword.toLowerCase()) || mainKeyword.toLowerCase().includes(word)) {
-          keywords.add(word);
-        }
-      });
+      const questionKeywords = extractKeywordsFromText(item.question, mainKeyword);
+      questionKeywords.forEach(kw => keywords.add(kw));
     }
   });
+
+  // Extract from organic result titles and snippets
+  (data.organic_results || []).slice(0, 5).forEach((result: any) => {
+    if (result.title) {
+      const titleKeywords = extractKeywordsFromText(result.title, mainKeyword);
+      titleKeywords.forEach(kw => keywords.add(kw));
+    }
+  });
+
+  // Extract from featured snippets
+  if (data.featured_snippet?.snippet) {
+    const snippetKeywords = extractKeywordsFromText(data.featured_snippet.snippet, mainKeyword);
+    snippetKeywords.forEach(kw => keywords.add(kw));
+  }
+
+  // Generate intent-based keywords
+  const intentKeywords = generateIntentKeywords(mainKeyword);
+  intentKeywords.forEach(kw => keywords.add(kw));
   
-  // Generate related keywords
-  const relatedKeywords = [
+  return Array.from(keywords).slice(0, 25);
+}
+
+/**
+ * Extract keywords from text using semantic analysis
+ */
+function extractKeywordsFromText(text: string, mainKeyword: string): string[] {
+  if (!text) return [];
+  
+  const cleanedText = cleanText(text).toLowerCase();
+  const words = cleanedText.split(/\s+/)
+    .filter(word => word.length > 3)
+    .filter(word => !['what', 'how', 'why', 'when', 'where', 'which', 'who', 'the', 'and', 'but', 'for', 'are', 'this', 'that', 'with', 'from', 'have', 'been', 'will', 'they', 'them', 'their', 'there', 'would', 'could', 'should'].includes(word));
+
+  const mainKeywordLower = mainKeyword.toLowerCase();
+  const relevantWords = words.filter(word => 
+    word.includes(mainKeywordLower) || 
+    mainKeywordLower.includes(word) ||
+    word.length > 6 // Longer words are often more relevant
+  );
+
+  return relevantWords.slice(0, 8);
+}
+
+/**
+ * Generate intent-based keywords
+ */
+function generateIntentKeywords(mainKeyword: string): string[] {
+  return [
+    // Informational intent
+    `what is ${mainKeyword}`,
+    `${mainKeyword} definition`,
+    `${mainKeyword} explained`,
     `${mainKeyword} guide`,
+    `${mainKeyword} tutorial`,
+    `learn ${mainKeyword}`,
+    
+    // Navigational intent
+    `${mainKeyword} website`,
+    `${mainKeyword} official`,
+    
+    // Transactional intent
+    `buy ${mainKeyword}`,
+    `${mainKeyword} price`,
+    `${mainKeyword} cost`,
+    `${mainKeyword} free`,
+    
+    // Commercial intent
+    `${mainKeyword} reviews`,
+    `${mainKeyword} comparison`,
+    `best ${mainKeyword}`,
+    `${mainKeyword} vs`,
+    
+    // Local intent
+    `${mainKeyword} near me`,
+    `${mainKeyword} location`,
+    
+    // How-to intent
+    `how to ${mainKeyword}`,
     `${mainKeyword} tips`,
     `${mainKeyword} best practices`,
-    `${mainKeyword} tutorial`,
-    `${mainKeyword} examples`,
-    `how to ${mainKeyword}`,
-    `${mainKeyword} strategies`,
-    `${mainKeyword} techniques`
+    `${mainKeyword} strategies`
   ];
-  
-  relatedKeywords.forEach(kw => keywords.add(cleanText(kw)));
-  
-  return Array.from(keywords).slice(0, 15);
 }
 
 /**
