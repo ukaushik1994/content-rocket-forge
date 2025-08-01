@@ -13,6 +13,7 @@ import { SerpAnalysisModal } from './keyword-analysis/SerpAnalysisModal';
 import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal';
 import { SelectionSummaryCard } from './keyword-analysis/SelectionSummaryCard';
 import { DataSourceIndicator } from './keyword-analysis/DataSourceIndicator';
+import { CollapsibleRightSidebar } from './keyword-analysis/CollapsibleRightSidebar';
 
 interface ApiKeysStatus {
   serpApi: {
@@ -349,194 +350,171 @@ export const KeywordSelectionStep = () => {
                 </motion.div>
               )}
 
-              {/* Results Grid */}
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                {/* Sidebar - Keywords & Summary */}
-                <motion.div 
-                  className="xl:col-span-1 space-y-6"
-                  initial={{ opacity: 0, x: -50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <motion.div
+              {/* Main Content Area - Full Width */}
+              <motion.div 
+                className="w-full"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                {isAnalyzing ? (
+                  <motion.div 
                     className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
+                    initial={{ scale: 0.95 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200 }}
                   >
-                    <SelectedKeywords 
-                      keywords={selectedKeywords} 
-                      onRemoveKeyword={handleRemoveKeyword} 
-                    />
-                  </motion.div>
-                  
-                  <motion.div
-                    className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <SelectionSummaryCard
-                      serpSelections={serpSelections}
-                      onOpenSelectionManager={() => setShowSelectionManagerModal(true)}
-                      onGenerateOutline={handleGenerateOutline}
-                      isGenerating={isGeneratingOutline}
-                    />
-                  </motion.div>
-                </motion.div>
-
-                {/* Main Content - SERP Analysis */}
-                <motion.div 
-                  className="xl:col-span-3"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  {isAnalyzing ? (
-                    <motion.div 
-                      className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                      initial={{ scale: 0.95 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200 }}
-                    >
-                      <div className="relative p-12 text-center">
+                    <div className="relative p-12 text-center">
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10"
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      
+                      <div className="relative z-10 space-y-8">
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10"
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
+                          className="relative inline-block"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        >
+                          <div className="absolute inset-0 bg-primary/30 rounded-full blur-lg" />
+                          <div className="relative p-6 bg-background/80 rounded-full">
+                            <Loader2 className="h-12 w-12 text-primary" />
+                          </div>
+                        </motion.div>
                         
-                        <div className="relative z-10 space-y-8">
-                          <motion.div
-                            className="relative inline-block"
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        <div>
+                          <h3 className="text-2xl font-bold mb-3 text-foreground">
+                            Analyzing SERP Intelligence
+                          </h3>
+                          <p className="text-muted-foreground text-lg">
+                            Extracting competitor insights, content gaps, and optimization opportunities...
+                          </p>
+                        </div>
+                        
+                        <motion.div 
+                          className="flex justify-center space-x-2"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          {[0, 1, 2, 3].map((i) => (
+                            <motion.div
+                              key={i}
+                              className="w-3 h-3 bg-primary rounded-full"
+                              animate={{ 
+                                scale: [1, 1.5, 1],
+                                opacity: [0.3, 1, 0.3]
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Infinity,
+                                delay: i * 0.2
+                              }}
+                            />
+                          ))}
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : serpData ? (
+                  <motion.div 
+                    className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                  >
+                    <div className="relative p-8">
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5"
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 4, repeat: Infinity }}
+                      />
+                      
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-8">
+                          <motion.div 
+                            className="flex items-center gap-4"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
                           >
-                            <div className="absolute inset-0 bg-primary/30 rounded-full blur-lg" />
-                            <div className="relative p-6 bg-background/80 rounded-full">
-                              <Loader2 className="h-12 w-12 text-primary" />
+                            <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-green-500/30">
+                              <BarChart3 className="h-8 w-8 text-green-400" />
+                            </div>
+                            <div>
+                              <h2 className="text-2xl font-bold text-foreground">SERP Intelligence</h2>
+                              <p className="text-muted-foreground">Advanced competitive analysis for "{mainKeyword}"</p>
                             </div>
                           </motion.div>
                           
-                          <div>
-                            <h3 className="text-2xl font-bold mb-3 text-foreground">
-                              Analyzing SERP Intelligence
-                            </h3>
-                            <p className="text-muted-foreground text-lg">
-                              Extracting competitor insights, content gaps, and optimization opportunities...
-                            </p>
-                          </div>
-                          
                           <motion.div 
-                            className="flex justify-center space-x-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.5 }}
+                            className="flex gap-3"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
                           >
-                            {[0, 1, 2, 3].map((i) => (
-                              <motion.div
-                                key={i}
-                                className="w-3 h-3 bg-primary rounded-full"
-                                animate={{ 
-                                  scale: [1, 1.5, 1],
-                                  opacity: [0.3, 1, 0.3]
-                                }}
-                                transition={{
-                                  duration: 1.5,
-                                  repeat: Infinity,
-                                  delay: i * 0.2
-                                }}
-                              />
-                            ))}
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowSerpAnalysisModal(true)}
+                              className="bg-background/60 hover:bg-background/80 border-border/50 hover:border-border"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Explore Data
+                            </Button>
+                            {selectedCount > 0 && (
+                              <Button
+                                onClick={() => setShowSelectionManagerModal(true)}
+                                className="bg-primary hover:bg-primary/90"
+                              >
+                                <Settings className="h-4 w-4 mr-2" />
+                                Manage ({selectedCount})
+                              </Button>
+                            )}
                           </motion.div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ) : serpData ? (
-                    <motion.div 
-                      className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden"
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 200 }}
-                    >
-                      <div className="relative p-8">
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5"
-                          animate={{ opacity: [0.3, 0.6, 0.3] }}
-                          transition={{ duration: 4, repeat: Infinity }}
-                        />
                         
-                        <div className="relative z-10">
-                          <div className="flex items-center justify-between mb-8">
-                            <motion.div 
-                              className="flex items-center gap-4"
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                            >
-                              <div className="p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-green-500/30">
-                                <BarChart3 className="h-8 w-8 text-green-400" />
-                              </div>
-                              <div>
-                                <h2 className="text-2xl font-bold text-foreground">SERP Intelligence</h2>
-                                <p className="text-muted-foreground">Advanced competitive analysis for "{mainKeyword}"</p>
-                              </div>
-                            </motion.div>
-                            
-                            <motion.div 
-                              className="flex gap-3"
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                            >
-                              <Button
-                                variant="outline"
-                                onClick={() => setShowSerpAnalysisModal(true)}
-                                className="bg-background/60 hover:bg-background/80 border-border/50 hover:border-border"
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Explore Data
-                              </Button>
-                              {selectedCount > 0 && (
-                                <Button
-                                  onClick={() => setShowSelectionManagerModal(true)}
-                                  className="bg-primary hover:bg-primary/90"
-                                >
-                                  <Settings className="h-4 w-4 mr-2" />
-                                  Manage ({selectedCount})
-                                </Button>
-                              )}
-                            </motion.div>
-                          </div>
-                          
-                          <InlineSerpAnalysis
-                            serpData={serpData}
-                            keyword={mainKeyword}
-                          />
-                        </div>
+                        <InlineSerpAnalysis
+                          serpData={serpData}
+                          keyword={mainKeyword}
+                        />
                       </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div 
-                      className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 p-12 text-center"
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                    >
-                      <div className="space-y-6">
-                        <div className="p-6 bg-muted/50 rounded-full inline-block">
-                          <Search className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2 text-foreground">No Data Available</h3>
-                          <p className="text-muted-foreground">
-                            Enter a keyword to start SERP analysis and discover content opportunities
-                          </p>
-                        </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 p-12 text-center"
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                  >
+                    <div className="space-y-6">
+                      <div className="p-6 bg-muted/50 rounded-full inline-block">
+                        <Search className="h-12 w-12 text-muted-foreground" />
                       </div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              </div>
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2 text-foreground">No Data Available</h3>
+                        <p className="text-muted-foreground">
+                          Enter a keyword to start SERP analysis and discover content opportunities
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Collapsible Right Sidebar */}
+      {hasSearched && (
+        <CollapsibleRightSidebar
+          selectedKeywords={selectedKeywords}
+          serpSelections={serpSelections}
+          onRemoveKeyword={handleRemoveKeyword}
+          onOpenSelectionManager={() => setShowSelectionManagerModal(true)}
+          onGenerateOutline={handleGenerateOutline}
+          isGeneratingOutline={isGeneratingOutline}
+        />
+      )}
 
       {/* Modals */}
       <SerpAnalysisModal
