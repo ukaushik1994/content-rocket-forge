@@ -23,6 +23,22 @@ interface HighlightMatch {
   serpItem: SerpSelection;
 }
 
+// Extract search terms from SERP items - moved before usage
+const extractSearchTerms = (item: SerpSelection): string[] => {
+  const terms: string[] = [];
+  const content = item.content.toLowerCase();
+  
+  // Extract key phrases (3+ words)
+  const phrases = content.match(/\b\w+\s+\w+\s+\w+(?:\s+\w+)*\b/g) || [];
+  terms.push(...phrases.slice(0, 3)); // Take first 3 phrases
+  
+  // Extract important keywords (longer than 4 characters)
+  const words = content.match(/\b\w{5,}\b/g) || [];
+  terms.push(...words.slice(0, 5)); // Take first 5 words
+  
+  return [...new Set(terms)]; // Remove duplicates
+};
+
 export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
   content,
   onContentChange,
@@ -64,22 +80,6 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
     
     return matches.sort((a, b) => a.start - b.start);
   }, [content, serpSelections]);
-
-  // Extract search terms from SERP items
-  const extractSearchTerms = (item: SerpSelection): string[] => {
-    const terms: string[] = [];
-    const content = item.content.toLowerCase();
-    
-    // Extract key phrases (3+ words)
-    const phrases = content.match(/\b\w+\s+\w+\s+\w+(?:\s+\w+)*\b/g) || [];
-    terms.push(...phrases.slice(0, 3)); // Take first 3 phrases
-    
-    // Extract important keywords (longer than 4 characters)
-    const words = content.match(/\b\w{5,}\b/g) || [];
-    terms.push(...words.slice(0, 5)); // Take first 5 words
-    
-    return [...new Set(terms)]; // Remove duplicates
-  };
 
   // Get color for SERP item type
   const getHighlightColor = (type: string) => {
