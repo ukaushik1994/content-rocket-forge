@@ -55,8 +55,8 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
 
   return (
     <div className="space-y-8">
-      {/* Futuristic Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -66,7 +66,7 @@ export function MetricsTab({ serpData }: MetricsTabProps) {
             whileHover={{ scale: 1.05, y: -5 }}
             className="group"
           >
-            <Card className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300">
+            <Card className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300 h-full">
               {/* Animated background gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`} />
               

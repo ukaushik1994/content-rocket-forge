@@ -87,7 +87,7 @@ export function InlineSerpAnalysis({
       </motion.div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="relative z-10">
-        <TabsList className="grid w-full grid-cols-5 bg-card/50 backdrop-blur-sm border border-border p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-5 bg-card/50 backdrop-blur-sm border border-border p-1 rounded-xl mb-1">
           {tabs.map((tab, index) => (
             <TabsTrigger 
               key={tab.id} 
@@ -121,7 +121,7 @@ export function InlineSerpAnalysis({
           ))}
         </TabsList>
 
-        <ScrollArea className="mt-6 h-[60vh]">
+        <ScrollArea className="mt-4 h-[60vh]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
