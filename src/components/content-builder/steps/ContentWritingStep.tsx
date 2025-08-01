@@ -145,16 +145,8 @@ export const ContentWritingStep = () => {
                 <ContentSidebar
                   outline={outline}
                   selectedSolution={selectedSolution}
-                  mainKeyword={mainKeyword}
-                  secondaryKeywords={secondaryKeywords}
                   additionalInstructions={additionalInstructions}
-                  onInstructionsChange={handleInstructionsChange}
-                  onToggleGenerator={handleToggleGenerator}
-                  showGenerator={false}
-                  aiProvider={aiProvider}
-                  onAiProviderChange={handleAiProviderChange}
-                  wordCountLimit={wordCountLimit}
-                  onWordCountChange={handleWordCountChange}
+                  handleInstructionsChange={handleInstructionsChange}
                 />
               </div>
             </div>
