@@ -197,7 +197,6 @@ const Index = () => {
         
         {/* Grand Tour Components */}
         <GrandAppTour />
-        <GrandTourTrigger variant="floating" />
         
         <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       </div>
