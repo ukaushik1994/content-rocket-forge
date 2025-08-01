@@ -136,7 +136,7 @@ export const GrandAppTour: React.FC = () => {
     <AnimatePresence>
       <motion.div
         ref={overlayRef}
-        className="fixed inset-0 bg-black/70 backdrop-blur-lg z-50"
+        className="fixed inset-0 bg-black/70 backdrop-blur-lg z-50 flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -145,14 +145,10 @@ export const GrandAppTour: React.FC = () => {
         <Particles type={currentTourStep.particles} />
         
         <motion.div
-          className="fixed inset-4 max-w-2xl mx-auto my-8 bg-background/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-4xl bg-background/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden"
           style={{
-            width: '600px',
-            maxWidth: '90vw',
-            maxHeight: '85vh',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
+            maxHeight: '90vh',
+            minHeight: '600px',
           }}
           initial={{ opacity: 0, scale: 0.8, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -163,7 +159,7 @@ export const GrandAppTour: React.FC = () => {
           <div className={`h-2 bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)}`} />
           
           {/* Header */}
-          <div className="relative p-6 pb-4">
+          <div className="relative p-8 pb-6">
             <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-r from-neon-purple to-neon-blue rounded-full flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-white animate-pulse" />
             </div>
@@ -171,48 +167,48 @@ export const GrandAppTour: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 rounded-full hover:bg-white/10"
+              className="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-white/10"
               onClick={skipTour}
             >
               <X className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-neon-blue" />
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-6 w-6 text-neon-blue" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   Step {currentStep + 1} of {steps.length}
                 </div>
               </div>
-              <div className="text-xs px-2 py-1 rounded-full bg-white/10 capitalize">
+              <div className="text-sm px-3 py-1.5 rounded-full bg-white/10 capitalize">
                 {currentTourStep.phase.replace('-', ' ')} Phase
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
               {currentTourStep.title}
             </h2>
           </div>
 
           {/* Content with scroll */}
-          <div className="px-6 pb-4 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-white/10">
-            <div className="text-sm text-muted-foreground leading-relaxed">
+          <div className="px-8 pb-6 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-white/10">
+            <div className="text-base text-muted-foreground leading-relaxed">
               {currentTourStep.description}
             </div>
           </div>
 
           {/* Enhanced progress indicators */}
-          <div className="px-6 pb-4">
-            <div className="flex gap-1.5">
+          <div className="px-8 pb-6">
+            <div className="flex gap-2 mb-4">
               {steps.map((step, index) => (
                 <motion.button
                   key={step.id}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-3 rounded-full transition-all duration-300 ${
                     index === currentStep
-                      ? `bg-gradient-to-r ${getPhaseColor(step.phase)} w-12`
+                      ? `bg-gradient-to-r ${getPhaseColor(step.phase)} w-16`
                       : index < currentStep
-                      ? 'bg-white/50 w-3'
-                      : 'bg-white/20 w-2'
+                      ? 'bg-white/50 w-4'
+                      : 'bg-white/20 w-3'
                   }`}
                   onClick={() => goToStep(index)}
                   whileHover={{ scale: 1.2 }}
@@ -223,14 +219,14 @@ export const GrandAppTour: React.FC = () => {
             </div>
             
             {/* Phase indicator */}
-            <div className="mt-2 text-xs text-center text-white/60">
+            <div className="text-sm text-center text-white/60">
               Phase: {currentTourStep.phase.replace('-', ' ').toUpperCase()}
             </div>
           </div>
 
           {/* Enhanced footer */}
-          <div className="flex items-center justify-between p-6 pt-0 border-t border-white/10">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between p-8 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -241,12 +237,12 @@ export const GrandAppTour: React.FC = () => {
               </Button>
               
               {/* Achievement counter */}
-              <div className="text-xs text-white/60">
+              <div className="text-sm text-white/60">
                 🏆 {achievements.filter(a => a.unlocked).length}/{achievements.length} Achievements
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -261,7 +257,7 @@ export const GrandAppTour: React.FC = () => {
               <Button
                 size="sm"
                 onClick={nextStep}
-                className={`bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)} hover:opacity-90 text-white font-semibold px-6`}
+                className={`bg-gradient-to-r ${getPhaseColor(currentTourStep.phase)} hover:opacity-90 text-white font-semibold px-8`}
               >
                 {currentStep === steps.length - 1 ? (
                   <>
