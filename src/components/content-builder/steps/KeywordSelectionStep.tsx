@@ -12,6 +12,7 @@ import { InlineSerpAnalysis } from './keyword-analysis/InlineSerpAnalysis';
 import { SerpAnalysisModal } from './keyword-analysis/SerpAnalysisModal';
 import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal';
 import { SelectionSummaryCard } from './keyword-analysis/SelectionSummaryCard';
+import { DataSourceIndicator } from './keyword-analysis/DataSourceIndicator';
 
 interface ApiKeysStatus {
   serpApi: {
@@ -334,6 +335,20 @@ export const KeywordSelectionStep = () => {
               exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.6 }}
             >
+              {/* Data Source Indicator */}
+              {serpData && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <DataSourceIndicator
+                    isRealData={serpData.isGoogleData || false}
+                    isMockData={serpData.isMockData || false}
+                  />
+                </motion.div>
+              )}
+
               {/* Results Grid */}
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 {/* Sidebar - Keywords & Summary */}
