@@ -36,6 +36,55 @@ export const SerpIntegrationPanel: React.FC<SerpIntegrationPanelProps> = ({
   serpSelections,
   onIntegrateItem
 }) => {
+  // Extract key terms from content
+  const extractKeyTerms = (text: string): string[] => {
+    // Remove common words and extract meaningful terms
+    const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those'];
+    
+    const words = text.match(/\b\w{4,}\b/g) || [];
+    return words
+      .filter(word => !commonWords.includes(word.toLowerCase()))
+      .slice(0, 5); // Take first 5 meaningful words
+  };
+
+  // Check if SERP item is used in content
+  const checkIfItemIsUsed = (text: string, item: SerpSelection): boolean => {
+    if (!text || !item.content) return false;
+    
+    const itemContent = item.content.toLowerCase();
+    const contentLower = text.toLowerCase();
+    
+    // Extract key terms from the SERP item
+    const keyTerms = extractKeyTerms(itemContent);
+    
+    // Check if at least 2 key terms are present in content
+    const foundTerms = keyTerms.filter(term => 
+      contentLower.includes(term.toLowerCase())
+    );
+    
+    return foundTerms.length >= Math.min(2, keyTerms.length);
+  };
+
+  // Generate suggestions for unused items
+  const generateSuggestion = (item: SerpSelection): string => {
+    const type = item.type;
+    
+    switch (type) {
+      case 'people_also_ask':
+        return `Add a FAQ section addressing: "${item.content.slice(0, 60)}..."`;
+      case 'related_searches':
+        return `Include content about: "${item.content}"`;
+      case 'headings':
+        return `Consider adding a section with heading: "${item.content}"`;
+      case 'entities':
+        return `Mention or explain: "${item.content}"`;
+      case 'content_gaps':
+        return `Address the content gap: "${item.content.slice(0, 60)}..."`;
+      default:
+        return `Integrate: "${item.content.slice(0, 60)}..."`;
+    }
+  };
+
   // Analyze SERP integration
   const analysis = useMemo((): IntegrationAnalysis => {
     const selectedItems = serpSelections.filter(item => item.selected);
@@ -78,55 +127,6 @@ export const SerpIntegrationPanel: React.FC<SerpIntegrationPanelProps> = ({
       suggestions: suggestions.slice(0, 3) // Limit to 3 suggestions
     };
   }, [content, serpSelections]);
-
-  // Check if SERP item is used in content
-  const checkIfItemIsUsed = (text: string, item: SerpSelection): boolean => {
-    if (!text || !item.content) return false;
-    
-    const itemContent = item.content.toLowerCase();
-    const contentLower = text.toLowerCase();
-    
-    // Extract key terms from the SERP item
-    const keyTerms = extractKeyTerms(itemContent);
-    
-    // Check if at least 2 key terms are present in content
-    const foundTerms = keyTerms.filter(term => 
-      contentLower.includes(term.toLowerCase())
-    );
-    
-    return foundTerms.length >= Math.min(2, keyTerms.length);
-  };
-
-  // Extract key terms from content
-  const extractKeyTerms = (text: string): string[] => {
-    // Remove common words and extract meaningful terms
-    const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those'];
-    
-    const words = text.match(/\b\w{4,}\b/g) || [];
-    return words
-      .filter(word => !commonWords.includes(word.toLowerCase()))
-      .slice(0, 5); // Take first 5 meaningful words
-  };
-
-  // Generate suggestions for unused items
-  const generateSuggestion = (item: SerpSelection): string => {
-    const type = item.type;
-    
-    switch (type) {
-      case 'people_also_ask':
-        return `Add a FAQ section addressing: "${item.content.slice(0, 60)}..."`;
-      case 'related_searches':
-        return `Include content about: "${item.content}"`;
-      case 'headings':
-        return `Consider adding a section with heading: "${item.content}"`;
-      case 'entities':
-        return `Mention or explain: "${item.content}"`;
-      case 'content_gaps':
-        return `Address the content gap: "${item.content.slice(0, 60)}..."`;
-      default:
-        return `Integrate: "${item.content.slice(0, 60)}..."`;
-    }
-  };
 
   // Get color for integration status
   const getStatusColor = (percentage: number) => {
