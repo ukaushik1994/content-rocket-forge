@@ -1,33 +1,21 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { TrendingUp, Target, DollarSign, Users, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Search, DollarSign, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SerpMetricsDisplayProps {
-  metrics: {
-    searchVolume: number;
-    keywordDifficulty: number;
-    competitionScore: number;
-    cpc?: number;
-    topResults?: any[];
-    isMockData?: boolean;
-  };
+  metrics: any;
 }
 
 export const SerpMetricsDisplay = ({ metrics }: SerpMetricsDisplayProps) => {
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
+  if (!metrics) return null;
 
   const getDifficultyColor = (difficulty: number) => {
-    if (difficulty < 30) return 'from-green-500 to-emerald-500';
-    if (difficulty < 60) return 'from-yellow-500 to-orange-500';
-    return 'from-red-500 to-pink-500';
+    if (difficulty < 30) return 'text-green-400 border-green-400';
+    if (difficulty < 60) return 'text-yellow-400 border-yellow-400';
+    return 'text-red-400 border-red-400';
   };
 
   const getDifficultyLabel = (difficulty: number) => {
@@ -36,130 +24,107 @@ export const SerpMetricsDisplay = ({ metrics }: SerpMetricsDisplayProps) => {
     return 'Hard';
   };
 
-  const metricsData = [
-    {
-      icon: TrendingUp,
-      label: 'Search Volume',
-      value: formatNumber(metrics.searchVolume),
-      subtitle: 'Monthly searches',
-      color: 'from-blue-500 to-cyan-500',
-      progress: Math.min((metrics.searchVolume / 100000) * 100, 100)
-    },
-    {
-      icon: Target,
-      label: 'Difficulty',
-      value: metrics.keywordDifficulty,
-      subtitle: getDifficultyLabel(metrics.keywordDifficulty),
-      color: getDifficultyColor(metrics.keywordDifficulty),
-      progress: metrics.keywordDifficulty
-    },
-    {
-      icon: Users,
-      label: 'Competition',
-      value: `${Math.round(metrics.competitionScore * 100)}%`,
-      subtitle: 'Market Competition',
-      color: 'from-purple-500 to-pink-500',
-      progress: metrics.competitionScore * 100
-    },
-    ...(metrics.cpc ? [{
-      icon: DollarSign,
-      label: 'CPC',
-      value: `$${metrics.cpc.toFixed(2)}`,
-      subtitle: 'Cost per click',
-      color: 'from-green-500 to-emerald-500',
-      progress: Math.min((metrics.cpc / 5) * 100, 100)
-    }] : [])
-  ];
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl border border-white/10"
     >
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {metricsData.map((metric, index) => (
-          <motion.div
-            key={metric.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.05, y: -5 }}
-          >
-            <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`} />
-              
-              <CardContent className="p-4 relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2 rounded-lg bg-gradient-to-r ${metric.color} bg-opacity-20 backdrop-blur-sm border border-white/10`}>
-                    <metric.icon className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                      {metric.value}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-300">{metric.label}</span>
-                  </div>
-                  <Progress value={metric.progress} className="h-2 bg-gray-800" />
-                  <div className="text-xs text-gray-400">{metric.subtitle}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+      {/* Search Volume */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Search className="h-4 w-4 text-blue-400" />
+          <span className="text-sm text-gray-400">Search Volume</span>
+        </div>
+        <div className="text-2xl font-bold text-blue-400">
+          {metrics.searchVolume?.toLocaleString() || 'N/A'}
+        </div>
+        <div className="text-xs text-gray-500">monthly searches</div>
       </div>
+
+      {/* Keyword Difficulty */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <TrendingUp className="h-4 w-4 text-yellow-400" />
+          <span className="text-sm text-gray-400">Difficulty</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="text-2xl font-bold text-yellow-400">
+            {metrics.keywordDifficulty || 'N/A'}
+          </div>
+          {metrics.keywordDifficulty && (
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${getDifficultyColor(metrics.keywordDifficulty)}`}
+            >
+              {getDifficultyLabel(metrics.keywordDifficulty)}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* CPC */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <DollarSign className="h-4 w-4 text-green-400" />
+          <span className="text-sm text-gray-400">CPC</span>
+        </div>
+        <div className="text-2xl font-bold text-green-400">
+          ${metrics.cpc?.toFixed(2) || '0.00'}
+        </div>
+        <div className="text-xs text-gray-500">per click</div>
+      </div>
+
+      {/* Competition Score */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Zap className="h-4 w-4 text-purple-400" />
+          <span className="text-sm text-gray-400">Competition</span>
+        </div>
+        <div className="text-2xl font-bold text-purple-400">
+          {metrics.competitionScore ? (metrics.competitionScore * 100).toFixed(0) : 'N/A'}%
+        </div>
+        <div className="text-xs text-gray-500">advertiser competition</div>
+      </div>
+
+      {metrics.isMockData && (
+        <div className="col-span-full mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <div className="text-center text-yellow-400 text-sm">
+            ⚠️ This is demo data. Connect your SERP API for real metrics.
+          </div>
+        </div>
+      )}
 
       {/* Top Results Preview */}
       {metrics.topResults && metrics.topResults.length > 0 && (
-        <Card className="bg-gradient-to-br from-gray-800/20 to-gray-900/20 backdrop-blur-xl border border-white/10">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-400" />
-              Top Competitors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {metrics.topResults.slice(0, 3).map((result, index) => (
-                <div 
-                  key={index}
-                  className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10"
-                >
-                  <Badge variant="outline" className="text-xs">
+        <div className="col-span-full mt-4">
+          <h4 className="text-sm font-medium text-white mb-3">Top Search Results</h4>
+          <div className="space-y-2">
+            {metrics.topResults.slice(0, 3).map((result: any, index: number) => (
+              <div key={index} className="p-2 bg-white/5 rounded border border-white/10">
+                <div className="flex items-start gap-2">
+                  <Badge variant="outline" className="text-xs shrink-0">
                     #{result.position}
                   </Badge>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white text-sm truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-white truncate">
                       {result.title}
                     </div>
-                    <div className="text-xs text-gray-400 line-clamp-2 mt-1">
-                      {result.snippet}
+                    <div className="text-xs text-blue-400 truncate">
+                      {result.url}
                     </div>
+                    {result.snippet && (
+                      <div className="text-xs text-gray-400 line-clamp-2 mt-1">
+                        {result.snippet}
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
-
-      {/* Data Quality Badge */}
-      <div className="flex justify-center">
-        <Badge className={`px-4 py-2 text-sm ${
-          metrics.isMockData 
-            ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' 
-            : 'bg-green-500/20 text-green-300 border-green-500/30'
-        }`}>
-          {metrics.isMockData && <AlertTriangle className="h-3 w-3 mr-1" />}
-          {metrics.isMockData ? 'Demo Data' : 'Live SERP Data'}
-        </Badge>
-      </div>
     </motion.div>
   );
 };
