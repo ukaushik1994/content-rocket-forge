@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -181,7 +182,7 @@ const Index = () => {
                       </div>
                       <TourTrigger variant="inline" size="sm" />
                     </div>
-                  </div>
+                  </motion.div>
                   
                   <EnhancedQuickActions navigate={navigate} />
                 </div>
