@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,12 +6,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SerpAnalysisResult } from '@/types/serp';
 import { SerpSelection } from '@/contexts/content-builder/types';
-import { MetricsTab } from './tabs/MetricsTab';
 import { QuestionsTab } from './tabs/QuestionsTab';
 import { HeadingsTab } from './tabs/HeadingsTab';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { KeywordsTab } from './tabs/KeywordsTab';
-import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap } from 'lucide-react';
+import { HelpCircle, Heading, Star, Tag, CheckCircle, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SerpAnalysisModalProps {
@@ -32,7 +30,7 @@ export function SerpAnalysisModal({
   onToggleSelection,
   keyword
 }: SerpAnalysisModalProps) {
-  const [activeTab, setActiveTab] = useState('metrics');
+  const [activeTab, setActiveTab] = useState('questions');
   
   if (!serpData) {
     return null;
@@ -41,7 +39,6 @@ export function SerpAnalysisModal({
   const selectedCount = serpSelections.filter(item => item.selected).length;
   
   const tabs = [
-    { id: 'metrics', label: 'Metrics', icon: TrendingUp, count: null, color: 'from-blue-500 to-cyan-500' },
     { id: 'questions', label: 'FAQ Questions', icon: HelpCircle, count: serpData.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
     { id: 'headings', label: 'SERP Headings', icon: Heading, count: serpData.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
     { id: 'gaps', label: 'Content Gaps', icon: Star, count: serpData.contentGaps?.length || 0, color: 'from-orange-500 to-red-500' },
@@ -95,7 +92,7 @@ export function SerpAnalysisModal({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden relative z-10">
-          <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-4 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl">
             {tabs.map((tab, index) => (
               <TabsTrigger 
                 key={tab.id} 
@@ -138,9 +135,6 @@ export function SerpAnalysisModal({
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <TabsContent value="metrics" className="mt-0">
-                  <MetricsTab serpData={serpData} />
-                </TabsContent>
                 
                 <TabsContent value="questions" className="mt-0">
                   <QuestionsTab 
