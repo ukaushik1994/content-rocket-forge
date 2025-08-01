@@ -112,31 +112,33 @@ export const ContentWritingStep = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-12 pb-12">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8 pb-12">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
             {state.contentTitle || 'Create Amazing Content'}
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Enhanced editor with real-time SERP integration analysis
           </p>
         </div>
 
-        <ContentGenerationHeader
-          isGenerating={isGenerating}
-          handleGenerateContent={handleGenerateContent}
-          handleToggleOutline={handleToggleOutline}
-          showOutline={showOutline}
-          outlineLength={state.outline.length}
-          aiProvider={aiProvider}
-          onAiProviderChange={handleAiProviderChange}
-          autoSaveTimestamp={autoSaveTimestamp}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onManualSave={handleManualSave}
-          wordCountLimit={wordCountLimit}
-          onWordCountChange={handleWordCountChange}
-          onGenerateTitle={generateTitleSuggestions}
-        />
+        <div className="mb-8">
+          <ContentGenerationHeader
+            isGenerating={isGenerating}
+            handleGenerateContent={handleGenerateContent}
+            handleToggleOutline={handleToggleOutline}
+            showOutline={showOutline}
+            outlineLength={state.outline.length}
+            aiProvider={aiProvider}
+            onAiProviderChange={handleAiProviderChange}
+            autoSaveTimestamp={autoSaveTimestamp}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onManualSave={handleManualSave}
+            wordCountLimit={wordCountLimit}
+            onWordCountChange={handleWordCountChange}
+            onGenerateTitle={generateTitleSuggestions}
+          />
+        </div>
         
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 mt-8">
           {showOutline && (

@@ -58,105 +58,71 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between gap-3">
-      <div className="flex flex-wrap gap-2 items-center">
-        <Button
-          onClick={handleGenerateContent}
-          disabled={isGenerating || outlineLength === 0}
-          className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple text-white"
-        >
-          {isGenerating ? (
-            <><Sparkles className="mr-2 h-4 w-4 animate-pulse" /> Generating...</>
-          ) : (
-            <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
-          )}
-        </Button>
-        
-        <div className="flex gap-1 ml-2">
+    <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          <Button
+            onClick={handleGenerateContent}
+            disabled={isGenerating || outlineLength === 0}
+            className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white shadow-lg"
+            size="lg"
+          >
+            {isGenerating ? (
+              <><Sparkles className="mr-2 h-4 w-4 animate-pulse" /> Generating...</>
+            ) : (
+              <><Sparkles className="mr-2 h-4 w-4" /> Generate Content{wordCountLimit ? ` (${wordCountLimit} words)` : ''}</>
+            )}
+          </Button>
+          
           <Toggle
             variant="outline"
             pressed={showOutline}
             onPressedChange={handleToggleOutline}
             aria-label="Toggle outline"
-            className="bg-slate-900/30 data-[state=on]:bg-slate-800/70 border border-white/10 hover:bg-slate-800/50"
+            className="data-[state=on]:bg-primary/10 data-[state=on]:text-primary border-border hover:bg-muted"
           >
-            <ListTodo className="h-4 w-4" />
+            <ListTodo className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Outline</span>
           </Toggle>
+          
+          <TitleGenerationButton />
+          
+          <form onSubmit={handleWordCountSubmit} className="flex items-center gap-2 bg-background/50 border border-border rounded-lg p-2">
+            <Hash className="h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="number"
+              value={wordCountInput}
+              onChange={(e) => setWordCountInput(e.target.value)}
+              className="w-20 h-8 text-sm bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:ring-offset-0"
+              placeholder="1500"
+              min="100"
+            />
+            <Button 
+              type="submit" 
+              size="sm" 
+              variant="secondary" 
+              className="h-8 px-3 text-sm"
+            >
+              Set
+            </Button>
+          </form>
         </div>
         
-        <TitleGenerationButton />
-        
-        <form onSubmit={handleWordCountSubmit} className="flex items-center gap-2 ml-2 bg-slate-900/30 border border-white/10 rounded-md p-1">
-          <Hash className="h-3 w-3 text-white/50 ml-1" />
-          <Input 
-            type="number"
-            value={wordCountInput}
-            onChange={(e) => setWordCountInput(e.target.value)}
-            className="w-20 h-7 text-xs bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-white/20 focus-visible:ring-offset-0 rounded-sm"
-            placeholder="Word count"
-            min="100"
-          />
-          <Button 
-            type="submit" 
-            size="sm" 
-            variant="ghost" 
-            className="h-6 px-2 text-xs"
-          >
-            Set
-          </Button>
-        </form>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        {/* Auto-save indicator */}
-        <div className="text-xs text-white/50 flex items-center gap-1">
-          {hasUnsavedChanges ? (
-            <>
-              <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
-              Unsaved changes
-            </>
-          ) : autoSaveTimestamp ? (
-            <>
-              <CheckSquare className="h-3 w-3 text-green-400" />
-              Saved {formatDistanceToNow(new Date(autoSaveTimestamp), { addSuffix: true })}
-            </>
-          ) : null}
-        </div>
-        
-        {/* Manual save button */}
-        {onManualSave && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onManualSave}
-            disabled={!hasUnsavedChanges}
-            className="text-xs bg-white/5 border-white/10 hover:bg-white/10"
-          >
-            <Save className="h-3 w-3 mr-1" />
-            Save
-          </Button>
-        )}
-        
-        {/* AI Provider selector */}
-        <div className="flex items-center gap-1 border border-white/10 p-1 rounded-md bg-slate-900/30">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`text-xs px-2 ${aiProvider === 'openai' ? 'bg-white/10' : ''}`}
-            onClick={() => onAiProviderChange('openai')}
-          >
-            <Bot className="h-3 w-3 mr-1" />
-            GPT
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`text-xs px-2 ${aiProvider === 'anthropic' ? 'bg-white/10' : ''}`}
-            onClick={() => onAiProviderChange('anthropic')}
-          >
-            <UserRound className="h-3 w-3 mr-1" />
-            Claude
-          </Button>
+        <div className="flex items-center gap-4">
+          {/* Auto-save indicator */}
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            {hasUnsavedChanges ? (
+              <div className="flex items-center gap-2 text-amber-600">
+                <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
+                <span>Unsaved changes</span>
+              </div>
+            ) : autoSaveTimestamp ? (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckSquare className="h-4 w-4" />
+                <span>Auto-saved {formatDistanceToNow(new Date(autoSaveTimestamp), { addSuffix: true })}</span>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
