@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
-import { ContentEditor } from '@/components/content/ContentEditor';
+import { EnhancedContentEditor } from '../editor/EnhancedContentEditor';
+import { SerpIntegrationPanel } from '../analysis/SerpIntegrationPanel';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { ContentSidebar } from './writing/ContentSidebar';
@@ -10,7 +10,8 @@ import { generateAdvancedContent, ContentGenerationConfig } from '@/services/adv
 import { saveContentToDraft } from './writing/ContentGenerationService';
 import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const ContentWritingStep = () => {
   const {
@@ -18,7 +19,6 @@ export const ContentWritingStep = () => {
     isGenerating,
     setIsGenerating,
     showOutline,
-    showGenerator,
     isSaving,
     setIsSaving,
     showSaveDialog,
@@ -46,32 +46,13 @@ export const ContentWritingStep = () => {
     handleWordCountChange
   } = useWritingStep();
   
-  // Title generation hook
   const { generateTitleSuggestions } = useTitleSuggestions();
-  
-  // New state for advanced content generation
   const [writingStyle, setWritingStyle] = useState('Conversational');
   const [expertiseLevel, setExpertiseLevel] = useState('Beginner');
   const [contentType, setContentType] = useState<'how-to' | 'listicle' | 'comprehensive' | 'general'>('general');
   const [includeStats, setIncludeStats] = useState(true);
   const [includeCaseStudies, setIncludeCaseStudies] = useState(true);
   const [includeFAQs, setIncludeFAQs] = useState(true);
-  
-  // Setup leave confirmation
-  useEffect(() => {
-    const handleBeforeNavigate = (e: PopStateEvent) => {
-      if (hasUnsavedChanges) {
-        const confirmMessage = "You have unsaved changes. Are you sure you want to leave?";
-        if (!window.confirm(confirmMessage)) {
-          e.preventDefault();
-          history.pushState(null, '', window.location.pathname);
-        }
-      }
-    };
-    
-    window.addEventListener('popstate', handleBeforeNavigate);
-    return () => window.removeEventListener('popstate', handleBeforeNavigate);
-  }, [hasUnsavedChanges]);
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
@@ -79,38 +60,11 @@ export const ContentWritingStep = () => {
       return;
     }
     
-    // Auto-generate title if none exists or if it's a generic default
-    if (!state.contentTitle || 
-        state.contentTitle.includes('Complete Guide') || 
-        state.contentTitle === `${mainKeyword}: Professional Guide and Best Practices`) {
-      console.log('Auto-generating unique title before content generation');
-      await generateTitleSuggestions();
-    }
-    
-    // Convert outline to a formatted string for the prompt
-    const outlineText = Array.isArray(state.outline) 
-      ? state.outline.map((item, index) => {
-          if (typeof item === 'string') {
-            return `${index + 1}. ${item}`;
-          } else if (item && typeof item === 'object' && 'title' in item) {
-            return `${index + 1}. ${(item as { title: string }).title}`;
-          }
-          return '';
-        }).filter(Boolean).join('\n')
-      : '';
-        
-    // Prepare secondary keywords
-    const secondaryKeywordsStr = state.selectedKeywords?.join(', ') || '';
-    
-    // Create advanced generation config
-    // Use the current title or generate a simple one from keyword
-    const finalTitle = state.contentTitle || `${mainKeyword}: Expert Guide and Strategies`;
-
     const config: ContentGenerationConfig = {
       mainKeyword,
-      title: finalTitle,
-      outline: outlineText,
-      secondaryKeywords: secondaryKeywordsStr,
+      title: state.contentTitle || `${mainKeyword}: Expert Guide`,
+      outline: '',
+      secondaryKeywords: state.selectedKeywords?.join(', ') || '',
       writingStyle,
       expertiseLevel,
       targetLength: wordCountLimit || 1500,
@@ -123,26 +77,16 @@ export const ContentWritingStep = () => {
       includeFAQs
     };
     
-    console.log('📝 Content generation config:', {
-      title: finalTitle,
-      serpSelectionsCount: state.serpSelections?.length || 0,
-      selectedItems: state.serpSelections?.filter(item => item.selected).length || 0
-    });
-    
     setIsGenerating(true);
     
     try {
       const generatedContent = await generateAdvancedContent(config, aiProvider);
-      
       if (generatedContent) {
         handleContentChange(generatedContent);
-        toast.success('High-quality content generated successfully!');
-      } else {
-        toast.error('Failed to generate content. Please try again.');
+        toast.success('Content generated successfully!');
       }
     } catch (error) {
-      console.error('Content generation error:', error);
-      toast.error('Content generation failed. Please check your settings.');
+      toast.error('Content generation failed');
     } finally {
       setIsGenerating(false);
     }
@@ -162,75 +106,97 @@ export const ContentWritingStep = () => {
   };
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      <ContentGenerationHeader
-        isGenerating={isGenerating}
-        handleGenerateContent={handleGenerateContent}
-        handleToggleOutline={handleToggleOutline}
-        showOutline={showOutline}
-        outlineLength={state.outline.length}
-        aiProvider={aiProvider}
-        onAiProviderChange={handleAiProviderChange}
-        autoSaveTimestamp={autoSaveTimestamp}
-        hasUnsavedChanges={hasUnsavedChanges}
-        onManualSave={handleManualSave}
-        wordCountLimit={wordCountLimit}
-        onWordCountChange={handleWordCountChange}
-        onGenerateTitle={generateTitleSuggestions}
-      />
-      
-      {/* Display content title */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">
-          {state.contentTitle ? (
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-              {state.contentTitle}
-            </span>
-          ) : (
-            <span className="text-muted-foreground text-base">No title set</span>
-          )}
-        </h2>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
-        {showOutline && (
-          <div className="lg:col-span-1 space-y-4 h-full">
-            <ContentSidebar
-              outline={outline}
-              selectedSolution={selectedSolution}
-              additionalInstructions={additionalInstructions}
-              handleInstructionsChange={handleInstructionsChange}
-            />
-          </div>
-        )}
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+    >
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-12 pb-12">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
+            {state.contentTitle || 'Create Amazing Content'}
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Enhanced editor with real-time SERP integration analysis
+          </p>
+        </div>
+
+        <ContentGenerationHeader
+          isGenerating={isGenerating}
+          handleGenerateContent={handleGenerateContent}
+          handleToggleOutline={handleToggleOutline}
+          showOutline={showOutline}
+          outlineLength={state.outline.length}
+          aiProvider={aiProvider}
+          onAiProviderChange={handleAiProviderChange}
+          autoSaveTimestamp={autoSaveTimestamp}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onManualSave={handleManualSave}
+          wordCountLimit={wordCountLimit}
+          onWordCountChange={handleWordCountChange}
+          onGenerateTitle={generateTitleSuggestions}
+        />
         
-        <div className={`${showOutline ? 'lg:col-span-3' : 'lg:col-span-4'} h-full flex flex-col`}>
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-4 w-4" />
-            <span className="font-medium">Content Editor</span>
-          </div>
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 mt-8">
+          {showOutline && (
+            <div className="xl:col-span-1">
+              <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
+                <ContentSidebar
+                  outline={outline}
+                  selectedSolution={selectedSolution}
+                  mainKeyword={mainKeyword}
+                  secondaryKeywords={secondaryKeywords}
+                  additionalInstructions={additionalInstructions}
+                  onInstructionsChange={handleInstructionsChange}
+                  onToggleGenerator={handleToggleGenerator}
+                  showGenerator={false}
+                  aiProvider={aiProvider}
+                  onAiProviderChange={handleAiProviderChange}
+                  wordCountLimit={wordCountLimit}
+                  onWordCountChange={handleWordCountChange}
+                />
+              </div>
+            </div>
+          )}
           
-          <div className="flex-1 flex flex-col">
-            <ContentEditor
-              content={content}
-              onContentChange={handleContentChange}
-            />
-            
-            {/* Add auto-save notice at the bottom */}
-            {(autoSaveTimestamp || hasUnsavedChanges) && (
-              <div className="mt-2 text-xs text-white/50 flex items-center justify-end gap-1 px-4 py-2 border-t border-white/5">
-                {hasUnsavedChanges ? (
-                  <>
-                    <span className="inline-block h-2 w-2 bg-amber-400 rounded-full animate-pulse"></span>
-                    Unsaved changes
-                  </>
-                ) : (
-                  <>
-                    <span className="text-green-400">✓</span> Auto-saved
-                  </>
+          <div className={`${showOutline ? 'xl:col-span-3' : 'xl:col-span-4'}`}>
+            <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Enhanced Content Editor</h3>
+                    <p className="text-sm text-muted-foreground">With real-time SERP integration highlighting</p>
+                  </div>
+                </div>
+                
+                <EnhancedContentEditor
+                  content={content}
+                  onContentChange={handleContentChange}
+                  isLoading={isGenerating}
+                  serpSelections={state.serpSelections}
+                />
+                
+                {autoSaveTimestamp && (
+                  <div className="mt-4 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
+                    Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
+                  </div>
                 )}
               </div>
-            )}
+            </div>
+          </div>
+          
+          <div className="xl:col-span-1">
+            <SerpIntegrationPanel
+              content={content}
+              serpSelections={state.serpSelections}
+              onIntegrateItem={(item) => {
+                toast.info(`Integration suggestion for: ${item.type.replace(/_/g, ' ')}`);
+              }}
+            />
           </div>
         </div>
       </div>
@@ -249,6 +215,6 @@ export const ContentWritingStep = () => {
         content={content}
         outlineLength={state.outline.length}
       />
-    </div>
+    </motion.div>
   );
 };
