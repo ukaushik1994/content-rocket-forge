@@ -10,12 +10,20 @@ import {
   StrategyInsight 
 } from '@/services/contentStrategyService';
 
+interface ContentItem {
+  id: string;
+  title: string;
+  status: string;
+  updated_at: string;
+}
+
 interface ContentStrategyContextType {
   // Strategy state
   currentStrategy: ContentStrategy | null;
   strategies: ContentStrategy[];
   calendarItems: CalendarItem[];
   pipelineItems: PipelineItem[];
+  contentItems: ContentItem[];
   insights: StrategyInsight[];
   loading: boolean;
 
@@ -49,6 +57,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
   const [strategies, setStrategies] = useState<ContentStrategy[]>([]);
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([]);
   const [pipelineItems, setPipelineItems] = useState<PipelineItem[]>([]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [insights, setInsights] = useState<StrategyInsight[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,6 +67,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       setStrategies([]);
       setCalendarItems([]);
       setPipelineItems([]);
+      setContentItems([]);
       setInsights([]);
       setLoading(false);
       return;
@@ -77,6 +87,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
       setCurrentStrategy(activeStrategy);
       setCalendarItems(calendarData);
       setPipelineItems(pipelineData);
+      setContentItems([]); // TODO: Load from content service when available
       setInsights(insightsData);
     } catch (error: any) {
       console.error('Error loading content strategy data:', error);
@@ -229,6 +240,7 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
         strategies,
         calendarItems,
         pipelineItems,
+        contentItems,
         insights,
         loading,
         createStrategy,

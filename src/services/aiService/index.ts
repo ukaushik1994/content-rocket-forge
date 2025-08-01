@@ -93,8 +93,8 @@ export interface ContextualAction {
   id: string;
   label: string;
   action: string;
-  type?: 'button' | 'card';
-  variant?: 'primary' | 'secondary' | 'outline';
   data?: any;
-  description?: string; // Added description property
+  type?: 'button' | 'card';
+  variant?: 'primary' | 'secondary' | 'default';
+  description?: string;
 }
