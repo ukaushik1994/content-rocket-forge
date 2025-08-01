@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategySuggestions } from './tabs/StrategySuggestions';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
@@ -7,18 +7,23 @@ import { EditorialCalendar } from './calendar/EditorialCalendar';
 import { ContentPipeline } from './pipeline/ContentPipeline';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
-interface StrategyTabsProps {
-  serpMetrics: any;
-  goals: {
-    monthlyTraffic: string;
-    contentPieces: string;
-    timeline: string;
-    mainKeyword: string;
+export const StrategyTabs = () => {
+  const { currentStrategy, insights } = useContentStrategy();
+  
+  // Find the latest SERP metrics for the current strategy
+  const serpMetrics = insights.find(insight => 
+    insight.keyword === currentStrategy?.main_keyword
+  )?.serp_data || null;
+
+  const goals = {
+    monthlyTraffic: currentStrategy?.monthly_traffic_goal?.toString() || '',
+    contentPieces: currentStrategy?.content_pieces_per_month?.toString() || '',
+    timeline: currentStrategy?.timeline || '3 months',
+    mainKeyword: currentStrategy?.main_keyword || ''
   };
-}
 
-export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
   return (
     <Tabs defaultValue="dashboard" className="space-y-8">
       <TabsList className="grid w-full grid-cols-6 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
@@ -55,11 +60,11 @@ export const StrategyTabs = ({ serpMetrics, goals }: StrategyTabsProps) => {
       </TabsContent>
 
       <TabsContent value="calendar">
-        <EditorialCalendar goals={goals} />
+        <EditorialCalendar />
       </TabsContent>
 
       <TabsContent value="pipeline">
-        <ContentPipeline goals={goals} />
+        <ContentPipeline />
       </TabsContent>
 
       <TabsContent value="roi">

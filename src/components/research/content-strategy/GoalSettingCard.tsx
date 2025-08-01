@@ -1,37 +1,49 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Target, Sparkles, TrendingUp, Search, Volume } from 'lucide-react';
+import { Target, Sparkles, TrendingUp, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SerpMetricsDisplay } from './SerpMetricsDisplay';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface GoalSettingCardProps {
-  goals: {
-    monthlyTraffic: string;
-    contentPieces: string;
-    timeline: string;
-    mainKeyword: string;
-  };
-  setGoals: (goals: any) => void;
-  serpMetrics: any;
-  setSerpMetrics: (metrics: any) => void;
-  isGenerating: boolean;
-  setIsGenerating: (loading: boolean) => void;
-}
+export const GoalSettingCard = () => {
+  const { user } = useAuth();
+  const { 
+    currentStrategy, 
+    createStrategy, 
+    updateStrategy, 
+    analyzeSERP, 
+    saveInsight,
+    loading 
+  } = useContentStrategy();
 
-export const GoalSettingCard = ({ 
-  goals, 
-  setGoals, 
-  serpMetrics, 
-  setSerpMetrics,
-  isGenerating, 
-  setIsGenerating 
-}: GoalSettingCardProps) => {
+  const [goals, setGoals] = useState({
+    monthlyTraffic: '',
+    contentPieces: '',
+    timeline: '3 months',
+    mainKeyword: ''
+  });
+  
+  const [serpMetrics, setSerpMetrics] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Load current strategy data
+  useEffect(() => {
+    if (currentStrategy) {
+      setGoals({
+        monthlyTraffic: currentStrategy.monthly_traffic_goal?.toString() || '',
+        contentPieces: currentStrategy.content_pieces_per_month?.toString() || '',
+        timeline: currentStrategy.timeline || '3 months',
+        mainKeyword: currentStrategy.main_keyword || ''
+      });
+    }
+  }, [currentStrategy]);
 
   const handleAnalyzeKeyword = async () => {
     if (!goals.mainKeyword.trim()) {
@@ -39,64 +51,83 @@ export const GoalSettingCard = ({
       return;
     }
     
+    if (!user) {
+      toast.error("Please log in to analyze keywords");
+      return;
+    }
+    
     setIsGenerating(true);
     
     try {
-      // Call SERP API
-      const response = await fetch('/api/serp-analysis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          keyword: goals.mainKeyword,
-          location: 'United States',
-          language: 'en'
-        }),
+      const data = await analyzeSERP(goals.mainKeyword);
+      setSerpMetrics(data);
+      
+      // Save the insight to database
+      await saveInsight({
+        keyword: goals.mainKeyword,
+        search_volume: data.searchVolume,
+        keyword_difficulty: data.keywordDifficulty,
+        competition_score: data.competitionScore,
+        serp_data: data,
+        opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to analyze keyword');
-      }
-      
-      const data = await response.json();
-      setSerpMetrics(data);
-      toast.success("Keyword analyzed successfully!");
+      toast.success(data.isMockData ? "Keyword analyzed (demo data)" : "Keyword analyzed successfully!");
       
     } catch (error) {
       console.error('SERP analysis error:', error);
-      // Fallback to mock data for demo
-      const mockMetrics = {
-        searchVolume: Math.floor(Math.random() * 50000) + 5000,
-        keywordDifficulty: Math.floor(Math.random() * 70) + 20,
-        competitionScore: Math.random() * 0.8 + 0.1,
-        cpc: Math.random() * 3 + 0.5,
-        topResults: Array(5).fill(null).map((_, i) => ({
-          position: i + 1,
-          title: `Top Result ${i + 1} for "${goals.mainKeyword}"`,
-          url: `https://example${i + 1}.com`,
-          snippet: `High-quality content about ${goals.mainKeyword} with detailed information...`
-        })),
-        isMockData: true
-      };
-      setSerpMetrics(mockMetrics);
-      toast.success("Keyword analyzed (demo data)");
+      toast.error('Failed to analyze keyword');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleGenerateStrategy = async () => {
+  const handleSaveStrategy = async () => {
+    if (!user) {
+      toast.error("Please log in to save your strategy");
+      return;
+    }
+
     if (!goals.monthlyTraffic || !goals.contentPieces) {
       toast.error("Please fill in your traffic and content goals");
       return;
     }
     
     setIsGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsGenerating(false);
-    toast.success("AI strategy generated based on your goals and SERP data!");
+    
+    try {
+      const strategyData = {
+        name: `Content Strategy - ${goals.mainKeyword || 'General'}`,
+        monthly_traffic_goal: parseInt(goals.monthlyTraffic) || null,
+        content_pieces_per_month: parseInt(goals.contentPieces) || null,
+        timeline: goals.timeline,
+        main_keyword: goals.mainKeyword || null
+      };
+
+      if (currentStrategy) {
+        await updateStrategy(currentStrategy.id, strategyData);
+      } else {
+        await createStrategy(strategyData);
+      }
+    } catch (error) {
+      console.error('Strategy save error:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <Card className="glass-panel border-white/10 shadow-2xl">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-white">Loading strategy...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <motion.div
@@ -116,7 +147,7 @@ export const GoalSettingCard = ({
               Strategy Goals & SERP Analysis
             </span>
             <Badge variant="outline" className="text-primary border-primary ml-auto">
-              AI-Powered
+              {currentStrategy ? 'Active Strategy' : 'New Strategy'}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -226,19 +257,19 @@ export const GoalSettingCard = ({
             whileTap={{ scale: 0.98 }}
           >
             <Button 
-              onClick={handleGenerateStrategy} 
+              onClick={handleSaveStrategy} 
               disabled={isGenerating}
               className="w-full h-14 px-8 text-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg"
             >
               {isGenerating ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Generating Strategy...
+                  Saving Strategy...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-5 w-5 mr-2" />
-                  Generate AI Strategy
+                  {currentStrategy ? 'Update Strategy' : 'Save Strategy'}
                 </>
               )}
             </Button>

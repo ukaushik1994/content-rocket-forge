@@ -463,6 +463,75 @@ export type Database = {
           },
         ]
       }
+      content_calendar: {
+        Row: {
+          assigned_to: string | null
+          content_id: string | null
+          content_type: string
+          created_at: string
+          estimated_hours: number | null
+          id: string
+          notes: string | null
+          priority: string
+          scheduled_date: string
+          status: string
+          strategy_id: string | null
+          tags: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          estimated_hours?: number | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          scheduled_date: string
+          status?: string
+          strategy_id?: string | null
+          tags?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          estimated_hours?: number | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          scheduled_date?: string
+          status?: string
+          strategy_id?: string | null
+          tags?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_calendar_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_calendar_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_formats: {
         Row: {
           created_at: string
@@ -578,6 +647,142 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_pipeline: {
+        Row: {
+          assigned_to: string | null
+          blockers: Json | null
+          calendar_item_id: string | null
+          content_id: string | null
+          content_type: string
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          priority: string
+          progress_percentage: number | null
+          seo_score: number | null
+          stage: string
+          strategy_id: string | null
+          target_keyword: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          blockers?: Json | null
+          calendar_item_id?: string | null
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          progress_percentage?: number | null
+          seo_score?: number | null
+          stage?: string
+          strategy_id?: string | null
+          target_keyword?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          assigned_to?: string | null
+          blockers?: Json | null
+          calendar_item_id?: string | null
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          progress_percentage?: number | null
+          seo_score?: number | null
+          stage?: string
+          strategy_id?: string | null
+          target_keyword?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_pipeline_calendar_item_id_fkey"
+            columns: ["calendar_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_calendar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_pipeline_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_pipeline_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_strategies: {
+        Row: {
+          brand_voice: string | null
+          content_pieces_per_month: number | null
+          content_pillars: Json | null
+          created_at: string
+          id: string
+          is_active: boolean
+          main_keyword: string | null
+          monthly_traffic_goal: number | null
+          name: string
+          target_audience: string | null
+          timeline: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_voice?: string | null
+          content_pieces_per_month?: number | null
+          content_pillars?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          main_keyword?: string | null
+          monthly_traffic_goal?: number | null
+          name?: string
+          target_audience?: string | null
+          timeline?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_voice?: string | null
+          content_pieces_per_month?: number | null
+          content_pillars?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          main_keyword?: string | null
+          monthly_traffic_goal?: number | null
+          name?: string
+          target_audience?: string | null
+          timeline?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       feedback: {
         Row: {
@@ -824,6 +1029,65 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_insights: {
+        Row: {
+          competition_score: number | null
+          content_gaps: Json | null
+          created_at: string
+          id: string
+          keyword: string
+          keyword_difficulty: number | null
+          last_analyzed: string
+          opportunity_score: number | null
+          search_volume: number | null
+          serp_data: Json | null
+          strategy_id: string | null
+          suggested_content: Json | null
+          top_competitors: Json | null
+          user_id: string
+        }
+        Insert: {
+          competition_score?: number | null
+          content_gaps?: Json | null
+          created_at?: string
+          id?: string
+          keyword: string
+          keyword_difficulty?: number | null
+          last_analyzed?: string
+          opportunity_score?: number | null
+          search_volume?: number | null
+          serp_data?: Json | null
+          strategy_id?: string | null
+          suggested_content?: Json | null
+          top_competitors?: Json | null
+          user_id: string
+        }
+        Update: {
+          competition_score?: number | null
+          content_gaps?: Json | null
+          created_at?: string
+          id?: string
+          keyword?: string
+          keyword_difficulty?: number | null
+          last_analyzed?: string
+          opportunity_score?: number | null
+          search_volume?: number | null
+          serp_data?: Json | null
+          strategy_id?: string | null
+          suggested_content?: Json | null
+          top_competitors?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_insights_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategies"
             referencedColumns: ["id"]
           },
         ]
