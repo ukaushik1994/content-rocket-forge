@@ -106,7 +106,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                     <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent block">
                       Content Rocket
                     </span>
-                    <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent block mt-2">
+                    <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent block -mt-1">
                       Forge
                     </span>
                   </h1>
