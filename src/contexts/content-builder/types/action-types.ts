@@ -48,4 +48,5 @@ export type ContentBuilderAction =
   | { type: 'SET_ADDITIONAL_INSTRUCTIONS'; payload: string }
   | { type: 'SET_SELECTED_KEYWORDS'; payload: string[] }
   | { type: 'SET_LOCATION'; payload: string }
-  | { type: 'LOAD_PRELOADED_DATA'; payload: { mainKeyword?: string; selectedKeywords?: string[]; location?: string; serpData?: any; step?: number } };
+  | { type: 'SET_COMPREHENSIVE_INSIGHTS'; payload: any }
+  | { type: 'LOAD_PRELOADED_DATA'; payload: { mainKeyword?: string; selectedKeywords?: string[]; location?: string; serpData?: any; comprehensiveInsights?: any; step?: number } };

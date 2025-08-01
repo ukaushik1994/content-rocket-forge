@@ -76,4 +76,7 @@ export interface ContentBuilderState {
 
   // Location (for geo-targeted content)
   location: string;
+  
+  // Comprehensive Insights (from AIO/GEO analysis)
+  comprehensiveInsights: any;
 }

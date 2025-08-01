@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Globe, Target, CheckCircle, MapPin, TrendingUp, Users, Clock, ArrowRight } from 'lucide-react';
+import { Search, Globe, Target, CheckCircle, MapPin, TrendingUp, Users, Clock, ArrowRight, Brain, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 import { useNavigate } from 'react-router-dom';
 import { SerpResultsDisplay } from '@/components/research/keyword/SerpResultsDisplay';
+import { ComprehensiveSerpAnalyzer, ComprehensiveSerpInsights } from '@/services/comprehensiveSerpAnalyzer';
+import { ComprehensiveSerpAnalysis } from '@/components/aio-geo/ComprehensiveSerpAnalysis';
+import { ContentOutlinePreview } from '@/components/aio-geo/ContentOutlinePreview';
 
 const AioGeo = () => {
   const [keyword, setKeyword] = useState('');
@@ -19,6 +22,8 @@ const AioGeo = () => {
   const [loading, setLoading] = useState(false);
   const [realTimeData, setRealTimeData] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState([]);
+  const [comprehensiveInsights, setComprehensiveInsights] = useState<ComprehensiveSerpInsights | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const navigate = useNavigate();
 
   const geoKeywordSuggestions = keyword && location ? [
@@ -39,27 +44,40 @@ const AioGeo = () => {
     }
 
     setLoading(true);
+    setAnalyzing(true);
     setRealTimeData(false);
+    setComprehensiveInsights(null);
     
     try {
-      toast.info("Analyzing keyword for AI and GEO optimization...");
+      toast.info("🔍 Analyzing keyword for comprehensive SEO insights...");
       
       const data = await analyzeKeywordSerp(keyword, true);
       
       if (data && data.isGoogleData) {
         setSerpData(data);
         setRealTimeData(true);
-        toast.success("Analysis complete! Real-time SERP data loaded.");
+        toast.success("✅ SERP data loaded! Generating comprehensive insights...");
+        
+        // Generate comprehensive insights
+        const insights = await ComprehensiveSerpAnalyzer.analyzeComprehensively(data, location);
+        setComprehensiveInsights(insights);
+        toast.success("🧠 Comprehensive analysis complete! Content gaps and opportunities identified.");
       } else {
         setSerpData(data);
         setRealTimeData(false);
         toast.warning("Using estimated data - configure SERP API for real-time analysis");
+        
+        if (data) {
+          const insights = await ComprehensiveSerpAnalyzer.analyzeComprehensively(data, location);
+          setComprehensiveInsights(insights);
+        }
       }
     } catch (error) {
       console.error('Analysis failed:', error);
       toast.error("Analysis failed - please try again");
     } finally {
       setLoading(false);
+      setAnalyzing(false);
     }
   };
 
@@ -77,7 +95,8 @@ const AioGeo = () => {
         serpData: serpData,
         selectedKeywords: allKeywords,
         location: location,
-        step: 1
+        comprehensiveInsights: comprehensiveInsights,
+        step: comprehensiveInsights ? 2 : 1 // Skip to outline if we have comprehensive insights
       }
     });
   };
@@ -133,7 +152,7 @@ const AioGeo = () => {
               variants={fadeInUp}
               className="text-xl text-muted-foreground max-w-3xl mx-auto"
             >
-              Combine AI-powered keyword analysis with geo-targeted SEO to create content that ranks in AI search results and captures local intent.
+              Advanced SERP analysis with content gap identification, competitor research, and AI-powered content outlines optimized for search engines and user intent.
             </motion.p>
           </div>
 
@@ -174,12 +193,12 @@ const AioGeo = () => {
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Analyzing...
+                      {analyzing ? 'Generating Insights...' : 'Analyzing...'}
                     </>
                   ) : (
                     <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Analyze for AIO/GEO
+                      <Brain className="h-4 w-4 mr-2" />
+                      Deep SEO Analysis
                     </>
                   )}
                 </Button>
@@ -196,27 +215,45 @@ const AioGeo = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                {/* SERP Results Summary */}
-                <Card className="bg-card/50 backdrop-blur border-white/10">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
-                        SERP Analysis Results
-                      </CardTitle>
-                      <Badge variant={realTimeData ? "default" : "secondary"}>
-                        {realTimeData ? "Real-time Data" : "Estimated Data"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <SerpResultsDisplay 
-                      serpData={serpData}
-                      onSelectKeywords={setSelectedKeywords}
-                      selectedKeywords={selectedKeywords}
-                    />
-                  </CardContent>
-                </Card>
+                {/* Comprehensive Insights */}
+                {comprehensiveInsights && (
+                  <ComprehensiveSerpAnalysis 
+                    insights={comprehensiveInsights}
+                    onSelectSection={(section) => console.log('Selected section:', section)}
+                  />
+                )}
+
+                {/* Content Outline Preview */}
+                {comprehensiveInsights && (
+                  <ContentOutlinePreview 
+                    insights={comprehensiveInsights}
+                    onStartContentBuilder={handleStartContentBuilder}
+                  />
+                )}
+
+                {/* Original SERP Results (collapsed when comprehensive insights available) */}
+                {!comprehensiveInsights && (
+                  <Card className="bg-card/50 backdrop-blur border-white/10">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <Target className="h-5 w-5" />
+                          Basic SERP Analysis
+                        </CardTitle>
+                        <Badge variant={realTimeData ? "default" : "secondary"}>
+                          {realTimeData ? "Real-time Data" : "Estimated Data"}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <SerpResultsDisplay 
+                        serpData={serpData}
+                        onSelectKeywords={setSelectedKeywords}
+                        selectedKeywords={selectedKeywords}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* GEO Keyword Suggestions */}
                 {geoKeywordSuggestions.length > 0 && (
@@ -249,27 +286,29 @@ const AioGeo = () => {
                   </Card>
                 )}
 
-                {/* Start Content Builder */}
-                <Card className="bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/20">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold">Ready to Create Content?</h3>
-                        <p className="text-muted-foreground">
-                          Start the content builder with your analysis data pre-loaded
-                        </p>
+                {/* Start Content Builder - Only show if no comprehensive insights */}
+                {!comprehensiveInsights && (
+                  <Card className="bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/20">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold">Ready to Create Content?</h3>
+                          <p className="text-muted-foreground">
+                            Start the content builder with your analysis data pre-loaded
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={handleStartContentBuilder}
+                          size="lg"
+                          className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90"
+                        >
+                          Start Content Builder
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
                       </div>
-                      <Button 
-                        onClick={handleStartContentBuilder}
-                        size="lg"
-                        className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90"
-                      >
-                        Start Content Builder
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

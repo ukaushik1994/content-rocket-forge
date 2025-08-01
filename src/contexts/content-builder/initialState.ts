@@ -1,4 +1,3 @@
-
 import { ContentBuilderState } from './types';
 
 export const initialState: ContentBuilderState = {
@@ -68,5 +67,8 @@ export const initialState: ContentBuilderState = {
   additionalInstructions: '',
 
   // Location
-  location: ''
+  location: '',
+  
+  // Comprehensive Insights
+  comprehensiveInsights: null,
 };
