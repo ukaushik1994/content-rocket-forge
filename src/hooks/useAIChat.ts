@@ -180,7 +180,7 @@ export const useAIChat = () => {
             conversation_id: activeConversation,
             type: 'assistant',
             content: response.message,
-            attachments: response.actions ? { actions: response.actions } : null
+            attachments: response.actions ? JSON.parse(JSON.stringify({ actions: response.actions })) : null
           });
 
         // Update conversation title if it's the first exchange
