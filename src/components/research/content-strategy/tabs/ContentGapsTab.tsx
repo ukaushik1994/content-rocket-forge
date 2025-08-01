@@ -1,144 +1,197 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Plus, Target } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, Lightbulb, Plus, TrendingUp } from 'lucide-react';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
+import { toast } from 'sonner';
 
 interface ContentGapsTabProps {
-  serpMetrics: any;
-  goals: any;
+  serpMetrics?: any;
+  goals: {
+    monthlyTraffic: string;
+    contentPieces: string;
+    timeline: string;
+    mainKeyword: string;
+  };
 }
 
-export const ContentGapsTab = ({ serpMetrics, goals }: ContentGapsTabProps) => {
-  const getContentGaps = () => {
-    const keyword = goals.mainKeyword || 'your topic';
-    const difficulty = serpMetrics?.keywordDifficulty || 50;
-    
-    return [
-      {
-        topic: `Advanced ${keyword} tutorials`,
-        opportunity: difficulty < 40 ? "High" : "Medium",
-        competition: difficulty > 60 ? "High" : "Medium", 
-        volume: Math.floor((serpMetrics?.searchVolume || 10000) * 0.3).toLocaleString(),
-        description: "In-depth technical content that competitors are missing",
-        actionItems: [
-          "Create step-by-step video tutorials",
-          "Write comprehensive guides with screenshots", 
-          "Include downloadable templates and resources"
-        ]
-      },
-      {
-        topic: `${keyword} case studies`,
-        opportunity: "High",
-        competition: "Low",
-        volume: Math.floor((serpMetrics?.searchVolume || 10000) * 0.2).toLocaleString(),
-        description: "Real-world success stories and detailed analysis",
-        actionItems: [
-          "Interview successful customers",
-          "Document ROI and key metrics",
-          "Create visual case study templates"
-        ]
-      },
-      {
-        topic: `${keyword} comparison guides`,
-        opportunity: "Medium",
-        competition: difficulty > 50 ? "High" : "Medium",
-        volume: Math.floor((serpMetrics?.searchVolume || 10000) * 0.4).toLocaleString(),
-        description: "Detailed comparison content that helps users make decisions",
-        actionItems: [
-          "Create comparison matrices and charts",
-          "Include pricing and feature analysis",
-          "Add pros/cons sections with real insights"
-        ]
-      }
-    ];
+export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goals }) => {
+  const { analyzeSERP, saveInsight } = useContentStrategy();
+  const [keyword, setKeyword] = useState(goals.mainKeyword || '');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [gapAnalysis, setGapAnalysis] = useState<any>(null);
+  const [selectedGaps, setSelectedGaps] = useState<string[]>([]);
+
+  const handleAnalyzeGaps = async () => {
+    if (!keyword.trim()) {
+      toast.error('Please enter a keyword to analyze');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const serpData = await analyzeSERP(keyword);
+      
+      // Generate content gaps based on SERP analysis
+      const gaps = generateContentGaps(serpData);
+      setGapAnalysis({ keyword, gaps, serpData });
+      
+      // Save the insight
+      await saveInsight({
+        keyword,
+        serp_data: serpData,
+        content_gaps: gaps,
+        opportunity_score: calculateOpportunityScore(gaps),
+        last_analyzed: new Date().toISOString()
+      });
+      
+      toast.success('Content gap analysis completed');
+    } catch (error) {
+      toast.error('Failed to analyze content gaps');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
-  const contentGaps = getContentGaps();
+  const generateContentGaps = (serpData: any) => {
+    // Mock implementation - in real app would use AI/analysis
+    const baseGaps = [
+      `How to optimize ${keyword} for beginners`,
+      `Advanced ${keyword} strategies`,
+      `${keyword} vs alternatives comparison`,
+      `Common ${keyword} mistakes to avoid`,
+      `${keyword} best practices 2024`,
+      `Case studies using ${keyword}`,
+      `${keyword} tools and resources`,
+      `${keyword} ROI measurement`
+    ];
 
-  const getOpportunityColor = (opportunity: string) => {
-    if (opportunity === 'High') return 'text-green-400 bg-green-500/20 border-green-500/30';
-    if (opportunity === 'Medium') return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
-    return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
+    // Add dynamic gaps based on SERP data
+    if (serpData?.topResults) {
+      baseGaps.push(`What ${serpData.topResults.length} top sites miss about ${keyword}`);
+    }
+
+    return baseGaps.slice(0, 6);
+  };
+
+  const calculateOpportunityScore = (gaps: string[]) => {
+    return Math.floor(Math.random() * 40) + 60; // Mock score 60-100
+  };
+
+  const toggleGapSelection = (gap: string) => {
+    setSelectedGaps(prev => 
+      prev.includes(gap) 
+        ? prev.filter(g => g !== gap)
+        : [...prev, gap]
+    );
   };
 
   return (
-    <Card className="glass-panel border-white/10 shadow-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-2xl">
-          <div className="p-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl backdrop-blur-sm border border-white/10">
-            <TrendingUp className="h-6 w-6 text-green-400" />
-          </div>
-          <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+    <div className="space-y-6">
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Search className="h-5 w-5" />
             Content Gap Analysis
-          </span>
-          <Badge variant="outline" className="text-green-400 border-green-400 ml-auto">
-            {serpMetrics ? 'SERP-Powered' : 'AI-Analyzed'}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {contentGaps.map((gap, index) => (
-            <motion.div 
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-6 bg-glass rounded-xl border border-white/10 hover:border-green-400/30 transition-all"
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter keyword to analyze gaps..."
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+              onKeyPress={(e) => e.key === 'Enter' && handleAnalyzeGaps()}
+            />
+            <Button
+              onClick={handleAnalyzeGaps}
+              disabled={isAnalyzing}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h4 className="font-semibold text-white text-xl mb-2">{gap.topic}</h4>
-                  <p className="text-muted-foreground mb-3">{gap.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Volume: <span className="text-white font-medium">{gap.volume}/month</span></span>
-                    <Badge variant="outline" className={getOpportunityColor(gap.opportunity)}>
-                      {gap.opportunity} Opportunity
-                    </Badge>
-                    <Badge variant={gap.competition === 'Low' ? 'default' : gap.competition === 'Medium' ? 'secondary' : 'destructive'}>
-                      {gap.competition} Competition
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <h5 className="text-sm font-medium text-green-400 mb-2">Action Items:</h5>
-                <div className="grid gap-2">
-                  {gap.actionItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-white/80">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Button size="sm" variant="outline" className="hover:bg-green-400/10 hover:border-green-400">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Content Plan
-              </Button>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* SERP Integration Note */}
-        {serpMetrics && (
-          <div className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl border border-white/10">
-            <div className="flex items-center gap-2 text-sm text-primary mb-2">
-              <Target className="h-4 w-4" />
-              SERP-Enhanced Analysis
-            </div>
-            <p className="text-sm text-white/70">
-              Gap analysis enhanced with real SERP data from your keyword "{goals.mainKeyword}". 
-              Recommendations are based on actual competitor content and search result features.
-            </p>
+              {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+            </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {gapAnalysis && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">
+                  Content Opportunities for "{gapAnalysis.keyword}"
+                </h3>
+                <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                  Opportunity Score: {calculateOpportunityScore(gapAnalysis.gaps)}%
+                </Badge>
+              </div>
+
+              <div className="grid gap-3">
+                {gapAnalysis.gaps.map((gap: string, index: number) => (
+                  <Card 
+                    key={index} 
+                    className="bg-white/5 border-white/10 cursor-pointer transition-colors hover:bg-white/10"
+                    onClick={() => toggleGapSelection(gap)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={selectedGaps.includes(gap)}
+                          onChange={() => toggleGapSelection(gap)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4 text-yellow-400" />
+                            <span className="text-white font-medium">{gap}</span>
+                          </div>
+                          <div className="flex items-center gap-4 mt-2">
+                            <Badge variant="outline" className="text-xs">
+                              Est. Traffic: {Math.floor(Math.random() * 5000) + 500}/month
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Difficulty: {Math.floor(Math.random() * 50) + 20}/100
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setSelectedGaps(gapAnalysis.gaps)}
+                  variant="outline"
+                  size="sm"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Select All
+                </Button>
+                <Button
+                  onClick={() => setSelectedGaps([])}
+                  variant="outline" 
+                  size="sm"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedGaps.length > 0 && (
+        <StrategyWorkflowActions 
+          selectedKeywords={[keyword]}
+          contentGaps={selectedGaps}
+        />
+      )}
+    </div>
   );
 };

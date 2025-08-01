@@ -2,197 +2,213 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, Target, Users, Calendar, ArrowUp, ArrowDown, Minus } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { TrendingUp, Target, FileText, Calendar, Users, BarChart3 } from 'lucide-react';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { useStrategyIntegration } from '@/hooks/useStrategyIntegration';
+import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 
 interface StrategyDashboardProps {
-  goals: any;
-  serpMetrics: any;
+  serpMetrics?: any;
+  goals: {
+    monthlyTraffic: string;
+    contentPieces: string;
+    timeline: string;
+    mainKeyword: string;
+  };
 }
 
-export const StrategyDashboard = ({ goals, serpMetrics }: StrategyDashboardProps) => {
-  const getGoalProgress = () => {
-    const targetTraffic = parseInt(goals.monthlyTraffic) || 50000;
-    const currentTraffic = serpMetrics ? Math.floor(serpMetrics.searchVolume * 0.1) : 2500;
-    return Math.min((currentTraffic / targetTraffic) * 100, 100);
+export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetrics, goals }) => {
+  const { currentStrategy, contentItems, calendarItems, pipelineItems } = useContentStrategy();
+  const { context, crossToolActions, isLoading } = useStrategyIntegration();
+
+  const calculateProgress = () => {
+    if (!currentStrategy || !goals.contentPieces) return 0;
+    const target = parseInt(goals.contentPieces);
+    const current = contentItems.length;
+    return Math.min((current / target) * 100, 100);
   };
 
-  const getContentProgress = () => {
-    const targetContent = parseInt(goals.contentPieces) || 8;
-    const publishedContent = 3; // Mock data
-    return (publishedContent / targetContent) * 100;
+  const getUpcomingDeadlines = () => {
+    return calendarItems
+      .filter(item => new Date(item.scheduled_date) > new Date())
+      .slice(0, 3)
+      .map(item => ({
+        title: item.title,
+        date: new Date(item.scheduled_date).toLocaleDateString(),
+        status: item.status
+      }));
   };
 
-  const metrics = [
-    {
-      title: "Monthly Traffic Goal",
-      current: serpMetrics ? Math.floor(serpMetrics.searchVolume * 0.1).toLocaleString() : '2,500',
-      target: parseInt(goals.monthlyTraffic || '50000').toLocaleString(),
-      progress: getGoalProgress(),
-      trend: 'up',
-      change: '+12%',
-      icon: TrendingUp,
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      title: "Content Production",
-      current: '3',
-      target: goals.contentPieces || '8',
-      progress: getContentProgress(),
-      trend: 'up',
-      change: '+25%',
-      icon: Target,
-      color: 'from-green-500 to-emerald-500'
-    },
-    {
-      title: "Keyword Rankings",
-      current: serpMetrics ? Math.floor(serpMetrics.keywordDifficulty * 0.4) : '12',
-      target: '50',
-      progress: serpMetrics ? (serpMetrics.keywordDifficulty * 0.4 / 50) * 100 : 24,
-      trend: 'down',
-      change: '-3%',
-      icon: Users,
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      title: "Timeline Progress",
-      current: '1.2',
-      target: goals.timeline?.split(' ')[0] || '3',
-      progress: goals.timeline?.includes('month') ? 40 : 30,
-      trend: 'neutral',
-      change: '0%',
-      icon: Calendar,
-      color: 'from-orange-500 to-red-500'
-    }
-  ];
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up': return <ArrowUp className="h-4 w-4 text-green-400" />;
-      case 'down': return <ArrowDown className="h-4 w-4 text-red-400" />;
-      default: return <Minus className="h-4 w-4 text-gray-400" />;
-    }
+  const getRecentActivity = () => {
+    const recentContent = contentItems.slice(0, 3);
+    const recentPipeline = pipelineItems.slice(0, 2);
+    
+    return [
+      ...recentContent.map(item => ({
+        type: 'content',
+        title: item.title,
+        status: item.status,
+        date: new Date(item.updated_at).toLocaleDateString()
+      })),
+      ...recentPipeline.map(item => ({
+        type: 'pipeline',
+        title: item.title,
+        status: item.stage,
+        date: new Date(item.updated_at).toLocaleDateString()
+      }))
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
   };
 
-  const getTrendColor = (trend: string) => {
-    switch (trend) {
-      case 'up': return 'text-green-400';
-      case 'down': return 'text-red-400';
-      default: return 'text-gray-400';
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-white">Loading dashboard...</div>
+      </div>
+    );
+  }
 
   return (
-    <Card className="glass-panel border-white/10 shadow-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-2xl">
-          <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl backdrop-blur-sm border border-white/10">
-            <TrendingUp className="h-6 w-6 text-blue-400" />
+    <div className="space-y-6">
+      {/* Strategy Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-blue-400" />
+              <div>
+                <p className="text-sm text-white/60">Monthly Goal</p>
+                <p className="text-lg font-semibold text-white">{goals.monthlyTraffic}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-green-400" />
+              <div>
+                <p className="text-sm text-white/60">Content Progress</p>
+                <p className="text-lg font-semibold text-white">
+                  {contentItems.length}/{goals.contentPieces}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-purple-400" />
+              <div>
+                <p className="text-sm text-white/60">Scheduled</p>
+                <p className="text-lg font-semibold text-white">{calendarItems.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-orange-400" />
+              <div>
+                <p className="text-sm text-white/60">In Pipeline</p>
+                <p className="text-lg font-semibold text-white">{pipelineItems.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Progress Overview */}
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white">Strategy Progress</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-white/60">Content Creation</span>
+              <span className="text-white">{Math.round(calculateProgress())}%</span>
+            </div>
+            <Progress value={calculateProgress()} className="h-2" />
           </div>
-          <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            Strategy Performance Dashboard
-          </span>
-          <Badge variant="outline" className="text-blue-400 border-blue-400">
-            Live Data
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => (
-            <motion.div
-              key={metric.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02, y: -2 }}
-            >
-              <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300">
-                <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`} />
-                
-                <CardContent className="p-6 relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-2 rounded-lg bg-gradient-to-r ${metric.color} bg-opacity-20 backdrop-blur-sm border border-white/10`}>
-                      <metric.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {getTrendIcon(metric.trend)}
-                      <span className={`text-sm font-medium ${getTrendColor(metric.trend)}`}>
-                        {metric.change}
-                      </span>
-                    </div>
+          
+          {currentStrategy && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <h4 className="text-sm font-medium text-white mb-2">Strategy Details</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Main Keyword:</span>
+                    <Badge variant="outline">{currentStrategy.main_keyword || 'Not set'}</Badge>
                   </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-sm font-medium text-gray-300 mb-1">{metric.title}</div>
-                      <div className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                        {metric.current} / {metric.target}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-xs mb-2">
-                        <span className="text-gray-400">Progress</span>
-                        <span className="text-white">{Math.round(metric.progress)}%</span>
-                      </div>
-                      <Progress value={metric.progress} className="h-2 bg-gray-800" />
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Timeline:</span>
+                    <span className="text-white">{currentStrategy.timeline}</span>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Strategy Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-            <CardHeader>
-              <CardTitle className="text-lg text-green-400">Strategy Wins</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2" />
-                  <p className="text-sm text-white/80">Content production is 25% ahead of schedule</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2" />
-                  <p className="text-sm text-white/80">SERP visibility improved for target keywords</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2" />
-                  <p className="text-sm text-white/80">Traffic growth trending upward (+12% this month)</p>
+                  <div className="flex justify-between">
+                    <span className="text-white/60">Target Audience:</span>
+                    <span className="text-white">{currentStrategy.target_audience || 'Not set'}</span>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
-            <CardHeader>
-              <CardTitle className="text-lg text-yellow-400">Action Items</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
-                  <p className="text-sm text-white/80">Focus on improving keyword rankings for competitive terms</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
-                  <p className="text-sm text-white/80">Accelerate content production to meet monthly goals</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2" />
-                  <p className="text-sm text-white/80">Optimize existing content for better performance</p>
+              
+              <div>
+                <h4 className="text-sm font-medium text-white mb-2">Recent Activity</h4>
+                <div className="space-y-2">
+                  {getRecentActivity().map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs">
+                      <span className="text-white/80">{activity.title}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {activity.status}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Workflow Actions */}
+      <StrategyWorkflowActions />
+
+      {/* Quick Actions from Cross-Tool Integration */}
+      {crossToolActions.length > 0 && (
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Recommended Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {crossToolActions.slice(0, 4).map((action) => (
+                <Button
+                  key={action.id}
+                  variant="outline"
+                  className="justify-start border-white/20 text-white hover:bg-white/10 h-auto p-3"
+                  onClick={action.action}
+                >
+                  <div className="text-left">
+                    <div className="font-medium">{action.label}</div>
+                    {action.priority === 'high' && (
+                      <Badge variant="destructive" className="mt-1 text-xs">High Priority</Badge>
+                    )}
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };

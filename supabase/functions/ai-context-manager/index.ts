@@ -1,4 +1,5 @@
 
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { corsHeaders } from '../shared/cors.ts';
@@ -13,55 +14,51 @@ serve(async (req) => {
 
   try {
     const { userId, contextType } = await req.json();
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    let contextData = {};
+    // Fetch comprehensive user context
+    const [
+      strategiesResult,
+      solutionsResult,
+      contentResult,
+      calendarResult,
+      pipelineResult,
+      analyticsResult
+    ] = await Promise.all([
+      supabase.from('content_strategies').select('*').eq('user_id', userId).eq('is_active', true).single(),
+      supabase.from('solutions').select('*').eq('user_id', userId).limit(5),
+      supabase.from('content_items').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+      supabase.from('content_calendar').select('*').eq('user_id', userId).limit(10),
+      supabase.from('content_pipeline').select('*').eq('user_id', userId).limit(10),
+      supabase.from('content_analytics').select('*').eq('content_id', 'in', '(select id from content_items where user_id = \'' + userId + '\')').limit(5)
+    ]);
 
-    // Fetch user's solutions
-    if (contextType === 'all' || contextType === 'solutions') {
-      const { data: solutions } = await supabase
-        .from('solutions')
-        .select('*')
-        .eq('user_id', userId);
-      contextData = { ...contextData, solutions };
-    }
+    const context = {
+      currentStrategy: strategiesResult.data,
+      solutions: solutionsResult.data || [],
+      contentItems: contentResult.data || [],
+      calendarItems: calendarResult.data || [],
+      pipelineItems: pipelineResult.data || [],
+      analytics: {
+        totalContent: contentResult.data?.length || 0,
+        published: contentResult.data?.filter(item => item.status === 'published').length || 0,
+        inReview: contentResult.data?.filter(item => item.status === 'review').length || 0,
+        totalTraffic: '0', // Would calculate from analytics data
+        averageEngagement: '0%'
+      }
+    };
 
-    // Fetch user's content analytics
-    if (contextType === 'all' || contextType === 'analytics') {
-      const { data: contentItems } = await supabase
-        .from('content_items')
-        .select('id, title, status, created_at, seo_score')
-        .eq('user_id', userId);
-      
-      const analytics = {
-        totalContent: contentItems?.length || 0,
-        published: contentItems?.filter(item => item.status === 'published').length || 0,
-        inReview: contentItems?.filter(item => item.status === 'review').length || 0,
-        drafts: contentItems?.filter(item => item.status === 'draft').length || 0,
-        avgSeoScore: contentItems?.length > 0 
-          ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / contentItems.length)
-          : 0,
-        recentContent: contentItems?.slice(0, 5) || []
-      };
-      contextData = { ...contextData, analytics };
-    }
+    // Generate contextual suggestions based on current state
+    const suggestions = generateContextualSuggestions(context);
 
-    // Fetch workflow states
-    if (contextType === 'all' || contextType === 'workflow') {
-      const { data: workflowStates } = await supabase
-        .from('ai_workflow_states')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1);
-      
-      contextData = { ...contextData, currentWorkflow: workflowStates?.[0] || null };
-    }
-
-    return new Response(JSON.stringify(contextData), {
+    return new Response(JSON.stringify({
+      ...context,
+      suggestions,
+      lastUpdated: new Date().toISOString()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (error) {
     console.error('Error in ai-context-manager:', error);
     return new Response(JSON.stringify({ error: error.message }), {
@@ -70,3 +67,66 @@ serve(async (req) => {
     });
   }
 });
+
+function generateContextualSuggestions(context: any) {
+  const suggestions = [];
+
+  // Strategy-based suggestions
+  if (context.currentStrategy) {
+    if (context.currentStrategy.main_keyword) {
+      suggestions.push({
+        type: 'keyword-analysis',
+        title: `Analyze "${context.currentStrategy.main_keyword}"`,
+        description: 'Get detailed SERP analysis and content opportunities',
+        action: 'workflow:keyword-analysis',
+        data: { keyword: context.currentStrategy.main_keyword }
+      });
+    }
+
+    suggestions.push({
+      type: 'content-creation',
+      title: 'Create Strategic Content',
+      description: 'Generate content aligned with your strategy goals',
+      action: 'workflow:content-creation',
+      data: { strategy: context.currentStrategy }
+    });
+  }
+
+  // Solution-based suggestions
+  if (context.solutions.length > 0) {
+    suggestions.push({
+      type: 'solution-content',
+      title: 'Solution-Focused Content',
+      description: `Create content featuring ${context.solutions[0].name}`,
+      action: 'workflow:solution-integration',
+      data: { solution: context.solutions[0] }
+    });
+  }
+
+  // Pipeline suggestions
+  if (context.pipelineItems.length > 0) {
+    const ideaStageItems = context.pipelineItems.filter(item => item.stage === 'idea');
+    if (ideaStageItems.length > 0) {
+      suggestions.push({
+        type: 'pipeline-action',
+        title: 'Develop Pipeline Ideas',
+        description: `You have ${ideaStageItems.length} content ideas ready to develop`,
+        action: 'workflow:pipeline-development',
+        data: { items: ideaStageItems }
+      });
+    }
+  }
+
+  // Performance suggestions
+  if (context.contentItems.length > 0) {
+    suggestions.push({
+      type: 'performance-analysis',
+      title: 'Analyze Content Performance',
+      description: 'Review and optimize your published content',
+      action: 'workflow:performance-analysis',
+      data: { contentCount: context.contentItems.length }
+    });
+  }
+
+  return suggestions.slice(0, 4); // Limit to top 4 suggestions
+}
