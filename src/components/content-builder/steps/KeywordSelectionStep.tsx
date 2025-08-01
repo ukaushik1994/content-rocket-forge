@@ -492,8 +492,6 @@ export const KeywordSelectionStep = () => {
                           
                           <InlineSerpAnalysis
                             serpData={serpData}
-                            serpSelections={serpSelections}
-                            onToggleSelection={handleToggleSelection}
                             keyword={mainKeyword}
                           />
                         </div>
