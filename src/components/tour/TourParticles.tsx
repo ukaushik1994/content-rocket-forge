@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const Particles: React.FC<{ type: 'cosmic' | 'content' | 'data' | 'ai' }> = ({ type }) => {
+export const Particles: React.FC<{ type: 'cosmic' | 'content' | 'data' | 'ai' | 'sparkles' }> = ({ type }) => {
   const getParticleConfig = () => {
     switch (type) {
       case 'cosmic':
@@ -13,6 +13,7 @@ export const Particles: React.FC<{ type: 'cosmic' | 'content' | 'data' | 'ai' }>
         return { count: 10, colors: ['#06b6d4', '#8b5cf6', '#ec4899'], size: [1, 2] };
       case 'ai':
         return { count: 18, colors: ['#f472b6', '#a855f7', '#6366f1'], size: [2, 5] };
+      case 'sparkles':
       default:
         return { count: 8, colors: ['#9b87f5'], size: [1, 2] };
     }

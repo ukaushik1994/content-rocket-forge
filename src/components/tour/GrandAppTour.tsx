@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -86,6 +85,15 @@ export const GrandAppTour: React.FC = () => {
     }
   };
 
+  // Convert ReactNode description to string for the TourStepCard
+  const getDescriptionString = (description: React.ReactNode): string => {
+    if (typeof description === 'string') {
+      return description;
+    }
+    // For complex ReactNode, provide a fallback description
+    return 'Explore this powerful feature to enhance your content creation workflow.';
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -96,7 +104,7 @@ export const GrandAppTour: React.FC = () => {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Particles type={currentTourStep.particles || 'sparkles'} />
+        <Particles type="sparkles" />
         
         <motion.div
           className="relative w-full max-w-6xl bg-background/95 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden"
@@ -107,7 +115,7 @@ export const GrandAppTour: React.FC = () => {
           transition={{ duration: 0.5, type: "spring", stiffness: 300, damping: 30 }}
         >
           {/* Dynamic gradient header */}
-          <div className={`h-3 bg-gradient-to-r ${getPhaseColor(currentTourStep.phase || 'welcome')}`} />
+          <div className={`h-3 bg-gradient-to-r ${getPhaseColor('welcome')}`} />
           
           {/* Header */}
           <div className="relative p-8 pb-6 border-b border-white/10">
@@ -148,7 +156,7 @@ export const GrandAppTour: React.FC = () => {
             <TourProgress 
               currentStep={currentStep}
               totalSteps={steps.length}
-              steps={steps}
+              steps={steps.map(step => ({ ...step, phase: 'welcome' }))}
               onStepClick={goToStep}
             />
           </div>
@@ -159,10 +167,10 @@ export const GrandAppTour: React.FC = () => {
               <TourStepCard
                 key={currentTourStep.id}
                 title={currentTourStep.title}
-                description={currentTourStep.description}
-                phase={currentTourStep.phase || 'welcome'}
-                icon={currentTourStep.icon}
-                highlights={currentTourStep.highlights || []}
+                description={getDescriptionString(currentTourStep.description)}
+                phase="welcome"
+                icon={Sparkles}
+                highlights={[]}
               />
             </AnimatePresence>
           </div>
@@ -190,7 +198,7 @@ export const GrandAppTour: React.FC = () => {
               
               <Button
                 onClick={nextStep}
-                className={`bg-gradient-to-r ${getPhaseColor(currentTourStep.phase || 'welcome')} hover:opacity-90 text-white font-semibold px-8 shadow-lg`}
+                className={`bg-gradient-to-r ${getPhaseColor('welcome')} hover:opacity-90 text-white font-semibold px-8 shadow-lg`}
               >
                 {currentStep === steps.length - 1 ? (
                   <>
