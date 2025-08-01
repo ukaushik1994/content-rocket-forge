@@ -1,111 +1,212 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Zap } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface NavItemProps {
   to: string;
   icon: React.ReactNode;
   label: string;
-  active: boolean;
+  active?: boolean;
 }
 
-function NavItem({ to, icon, label, active }: NavItemProps) {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Link
-        to={to}
-        className={cn(
-          "flex items-center space-x-2 text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-2 rounded-md transition-colors",
-          active ? "text-foreground" : "hover:bg-secondary"
-        )}
-      >
-        {icon}
-        <span>{label}</span>
-      </Link>
-    </motion.div>
-  );
-}
+const NavItem: React.FC<NavItemProps> = ({
+  to,
+  icon,
+  label,
+  active
+}) => {
+  return <Link to={to} className={cn('relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors', active ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' : 'hover:bg-white/10 text-white/60 hover:text-white')}>
+      {icon}
+      {label}
+      {active && <motion.span layoutId="nav-highlight" transition={{
+      type: "spring",
+      duration: 0.6
+    }} className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" />}
+    </Link>;
+};
 
-export function NavItems() {
+export default function NavItems() {
   const location = useLocation();
-
-  return <div className="flex items-center space-x-4">
-      <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Home" active={location.pathname === '/'} />
+  
+  // Content-related routes
+  const contentRoutes = [
+    '/content-builder',
+    '/content-repurposing', 
+    '/content-approval',
+    '/drafts'
+  ];
+  
+  // Research-related routes
+  const researchRoutes = [
+    '/research/content-strategy',
+    '/research/keyword-research',
+    '/research/answer-the-people',
+    '/research/topic-clusters'
+  ];
+  
+  const isContentActive = contentRoutes.includes(location.pathname);
+  const isResearchActive = researchRoutes.includes(location.pathname);
+  
+  return <div className="flex flex-row gap-1">
+      <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Dashboard" active={location.pathname === '/'} />
       
+      {/* Content Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center space-x-2 text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-2 rounded-md transition-colors">
-            <FileText className="h-4 w-4" />
-            <span>Content</span>
+          <Button
+            variant="ghost"
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+              isContentActive 
+                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
+                : 'hover:bg-white/10 text-white/60 hover:text-white'
+            )}
+          >
+            <Puzzle className="h-4 w-4" />
+            Content
             <ChevronDown className="h-3 w-3" />
-          </button>
+            {isContentActive && (
+              <motion.span 
+                layoutId="nav-highlight" 
+                transition={{
+                  type: "spring",
+                  duration: 0.6
+                }} 
+                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
+              />
+            )}
+          </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10">
           <DropdownMenuItem asChild>
-            <Link to="/content-builder" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>Content Builder</span>
+            <Link 
+              to="/content-builder" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/content-builder' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Puzzle className="h-4 w-4" />
+              Builder
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/templates" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>Content Templates</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/content-repurposing" className="flex items-center space-x-2">
+            <Link 
+              to="/content-repurposing" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/content-repurposing' && 'bg-accent text-accent-foreground'
+              )}
+            >
               <Repeat className="h-4 w-4" />
-              <span>Content Repurposing</span>
+              Repurpose
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/content-analysis" className="flex items-center space-x-2">
+            <Link 
+              to="/content-approval" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/content-approval' && 'bg-accent text-accent-foreground'
+              )}
+            >
               <CheckCircle className="h-4 w-4" />
-              <span>Content Analysis</span>
+              Approval
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/drafts" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/drafts' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <FileText className="h-4 w-4" />
+              Drafts
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Research Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center space-x-2 text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-2 rounded-md transition-colors">
+          <Button
+            variant="ghost"
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+              isResearchActive 
+                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
+                : 'hover:bg-white/10 text-white/60 hover:text-white'
+            )}
+          >
             <Search className="h-4 w-4" />
-            <span>SEO Tools</span>
+            Research
             <ChevronDown className="h-3 w-3" />
-          </button>
+            {isResearchActive && (
+              <motion.span 
+                layoutId="nav-highlight" 
+                transition={{
+                  type: "spring",
+                  duration: 0.6
+                }} 
+                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
+              />
+            )}
+          </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuContent align="start" className="w-48 bg-card border border-white/10">
           <DropdownMenuItem asChild>
-            <Link to="/seo-tools" className="flex items-center space-x-2">
-              <Zap className="h-4 w-4" />
-              <span>SEO Optimization</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/serp-analysis" className="flex items-center space-x-2">
+            <Link 
+              to="/research/content-strategy" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/content-strategy' && 'bg-accent text-accent-foreground'
+              )}
+            >
               <Target className="h-4 w-4" />
-              <span>SERP Analysis</span>
+              Content Strategy
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/competitor-analysis" className="flex items-center space-x-2">
+            <Link 
+              to="/research/keyword-research" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/keyword-research' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Search className="h-4 w-4" />
+              Keyword Research
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/answer-the-people" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/answer-the-people' && 'bg-accent text-accent-foreground'
+              )}
+            >
               <Users className="h-4 w-4" />
-              <span>Competitor Analysis</span>
+              Answer the People
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/link-building" className="flex items-center space-x-2">
+            <Link 
+              to="/research/topic-clusters" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/topic-clusters' && 'bg-accent text-accent-foreground'
+              )}
+            >
               <Network className="h-4 w-4" />
-              <span>Link Building</span>
+              Topic Clusters
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
