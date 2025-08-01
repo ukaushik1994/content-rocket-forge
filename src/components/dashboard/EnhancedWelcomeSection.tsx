@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -102,10 +103,9 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.3 }}
                   className="space-y-6"
                 >
-                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.9] tracking-tight">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
                     <span className="bg-gradient-to-r from-white via-white/95 to-white/90 bg-clip-text text-transparent">
-                      Content Rocket{' '}
-                    </span>
+                      Content Rocket </span>
                     <span className="bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink bg-clip-text text-transparent">
                       Forge
                     </span>
