@@ -280,12 +280,6 @@ export const contentBuilderReducer = (
         ...state,
         location: action.payload
       };
-      
-    case 'SET_COMPREHENSIVE_INSIGHTS':
-      return {
-        ...state,
-        comprehensiveInsights: action.payload
-      };
 
     case 'LOAD_PRELOADED_DATA': {
       const { mainKeyword, selectedKeywords, location, serpData, step } = action.payload;

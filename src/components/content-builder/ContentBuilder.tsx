@@ -21,7 +21,6 @@ interface ContentBuilderProps {
   selectedKeywords?: string[];
   location?: string;
   serpData?: any;
-  comprehensiveInsights?: any;
   initialStep?: number;
 }
 
