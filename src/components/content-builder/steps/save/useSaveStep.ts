@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+
+import { useState, useEffect } from 'react';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContent } from '@/contexts/content';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { SaveContentParams } from '@/contexts/content-builder/types/content-types';
 import { useSaveContent } from '@/hooks/final-review/useSaveContent';
 

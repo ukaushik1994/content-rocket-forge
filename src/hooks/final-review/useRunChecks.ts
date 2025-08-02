@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useContentAnalysis } from './useContentAnalysis';
 import { useMetaGenerator } from './useMetaGenerator';
 import { useSolutionAnalysis } from './useSolutionAnalysis';

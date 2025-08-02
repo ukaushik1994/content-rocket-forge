@@ -1,4 +1,5 @@
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { useState, useCallback, useEffect } from 'react';
 import { useContentAnalysis } from '@/hooks/final-review/useContentAnalysis'; 
 

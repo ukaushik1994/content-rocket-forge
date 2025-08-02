@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
 import { TitleGenerationButton } from '../steps/writing/TitleGenerationButton';

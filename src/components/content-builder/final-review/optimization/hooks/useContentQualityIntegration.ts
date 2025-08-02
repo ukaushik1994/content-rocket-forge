@@ -1,6 +1,7 @@
+
 import { useCallback, useMemo } from 'react';
 import { useChecklistItems } from '../../hooks/useChecklistItems';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 export interface QualityCheckSuggestion {
   id: string;

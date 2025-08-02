@@ -1,98 +1,152 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Loader2, Check, RefreshCw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RefreshButton } from '@/components/ui/refresh-button';
+import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
+import { Sparkles, Check, ChevronRight } from 'lucide-react';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 
-export function TitleGenerationButton() {
-  const { state, setContentTitle } = useContentBuilder();
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
+export const TitleGenerationButton = () => {
+  const [showDialog, setShowDialog] = useState(false);
+  const { state } = useContentBuilder();
+  const { 
+    titleSuggestions, 
+    isGeneratingTitles, 
+    generateTitleSuggestions,
+    applyTitle,
+    currentTitle 
+  } = useTitleSuggestions();
   
-  const generateTitles = async () => {
-    setIsLoading(true);
-    
-    // Simulate title generation (replace with actual API call)
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const generated = [
-      `Compelling Title 1 for ${state.mainKeyword}`,
-      `Amazing Title 2 about ${state.mainKeyword}`,
-      `Catchy Title 3 on ${state.mainKeyword}`
-    ];
-    
-    setGeneratedTitles(generated);
-    setIsLoading(false);
-    toast.success("Generated title suggestions!");
+  const [selectedTitleIndex, setSelectedTitleIndex] = useState<number | null>(null);
+  
+  // Reset selected index when suggestions change
+  useEffect(() => {
+    // Find if current title is in the suggestions
+    if (currentTitle && titleSuggestions.length > 0) {
+      const index = titleSuggestions.findIndex(title => title === currentTitle);
+      if (index >= 0) {
+        setSelectedTitleIndex(index);
+      } else {
+        setSelectedTitleIndex(null);
+      }
+    }
+  }, [titleSuggestions, currentTitle]);
+  
+  const handleOpenDialog = async () => {
+    setShowDialog(true);
+    // Generate initial titles if none exist
+    if (titleSuggestions.length === 0) {
+      await generateTitleSuggestions();
+    }
   };
   
-  const applyTitle = (title: string) => {
-    setContentTitle(title);
-    toast.success(`Applied title: ${title}`);
+  const handleRegenerateTitles = () => {
+    setSelectedTitleIndex(null);
+    generateTitleSuggestions();
   };
-
+  
+  const handleSelectTitle = (index: number) => {
+    setSelectedTitleIndex(index);
+  };
+  
+  const handleApplyTitle = () => {
+    if (selectedTitleIndex !== null && titleSuggestions[selectedTitleIndex]) {
+      const selectedTitle = titleSuggestions[selectedTitleIndex];
+      applyTitle(selectedTitle);
+      setShowDialog(false);
+    } else {
+      toast.error("Please select a title first");
+    }
+  };
+  
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Generate Titles
-            </>
-          )}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Suggested Titles</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {generatedTitles.length > 0 ? (
-            <ScrollArea className="h-40">
-              <div className="space-y-2">
-                {generatedTitles.map((title, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 flex items-center justify-between"
-                    onClick={() => applyTitle(title)}
-                  >
-                    {title}
-                    <Check className="h-4 w-4 ml-2" />
-                  </Badge>
-                ))}
+    <>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleOpenDialog}
+        className="gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10"
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        {currentTitle ? "Change Title" : "Generate Title"}
+      </Button>
+      
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              {currentTitle ? "Update Content Title" : "Generate Unique Title"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {currentTitle && (
+              <div className="mb-4 p-3 bg-secondary/20 rounded-md border border-secondary/30">
+                <p className="text-xs text-muted-foreground mb-1">Current Title:</p>
+                <p className="text-sm font-medium">{currentTitle}</p>
               </div>
-            </ScrollArea>
-          ) : (
-            <div className="text-center text-muted-foreground">
-              No titles generated yet.
+            )}
+            
+            <div className="flex justify-end mb-4">
+              <RefreshButton 
+                isRefreshing={isGeneratingTitles} 
+                onClick={handleRegenerateTitles}
+                className="text-xs"
+              >
+                Regenerate Titles
+              </RefreshButton>
             </div>
-          )}
-        </div>
-        <Button variant="outline" className="w-full" onClick={generateTitles} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Regenerate Titles
-            </>
-          )}
-        </Button>
-      </DialogContent>
-    </Dialog>
+            
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              {isGeneratingTitles ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : titleSuggestions.length > 0 ? (
+                titleSuggestions.map((title, index) => (
+                  <div 
+                    key={index}
+                    className={`p-3 rounded-md border cursor-pointer transition-all duration-200 flex items-center justify-between ${
+                      selectedTitleIndex === index 
+                        ? 'border-blue-500 bg-blue-500/10 shadow-md' 
+                        : 'border-border/50 hover:bg-secondary/30'
+                    }`}
+                    onClick={() => handleSelectTitle(index)}
+                  >
+                    <p className="text-sm">{title}</p>
+                    {selectedTitleIndex === index && (
+                      <Check className="h-4 w-4 text-blue-500" />
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  No title suggestions available. Click "Regenerate Titles" to create some.
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleApplyTitle}
+              disabled={selectedTitleIndex === null}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+            >
+              Apply Selected Title <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-}
-
+};

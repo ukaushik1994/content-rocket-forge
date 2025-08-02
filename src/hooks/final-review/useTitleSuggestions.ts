@@ -1,5 +1,6 @@
+
 import { useState, useCallback } from 'react';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
 import { toast } from 'sonner';
 

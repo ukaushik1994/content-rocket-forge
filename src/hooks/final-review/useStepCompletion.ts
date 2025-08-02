@@ -1,4 +1,5 @@
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 
 /**
  * Custom hook for checking if the final review step can be marked as completed

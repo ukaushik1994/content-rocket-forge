@@ -1,6 +1,7 @@
+
 import { useState, useCallback } from 'react';
 import { OptimizationSuggestion } from '../types';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { analyzeSerpUsage } from '@/services/serpIntegrationAnalyzer';
 
 export function useSerpIntegration() {

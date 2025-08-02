@@ -1,5 +1,6 @@
+
 import React, { useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { SaveAlreadyExistsAlert } from './SaveAlreadyExistsAlert';
 import { SaveStepOptimizationsAlert } from './SaveStepOptimizationsAlert';
 import { ContentDetailsCard } from './ContentDetailsCard';

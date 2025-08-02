@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { FileText, Sparkles, CheckCircle, ArrowRight } from 'lucide-react';

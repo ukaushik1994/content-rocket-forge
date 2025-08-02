@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFinalReview } from '@/hooks/useFinalReview';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OverviewTab } from '../final-review/tabs/OverviewTab';
 import { TechnicalTabContent } from '../final-review/tabs/TechnicalTabContent';
 import { RepurposeTab } from '../final-review/tabs/RepurposeTab';
