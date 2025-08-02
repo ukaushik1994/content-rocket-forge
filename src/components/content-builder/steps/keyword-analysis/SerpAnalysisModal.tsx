@@ -52,10 +52,20 @@ export function SerpAnalysisModal({
     serpstack: null
   });
   
+  // Debug logging
+  console.log('🔍 SerpAnalysisModal Debug:', {
+    isOpen,
+    keyword,
+    serpData: !!serpData,
+    currentSerpData: !!providerData[activeProvider],
+    isLoadingProvider
+  });
+  
   // Get current data based on active provider
   const currentSerpData = providerData[activeProvider];
   
-  if (!currentSerpData && !isLoadingProvider) {
+  // Always render the modal when open, even without data
+  if (!isOpen) {
     return null;
   }
 
@@ -128,7 +138,7 @@ export function SerpAnalysisModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-xl border border-white/20 shadow-2xl">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-background/95 backdrop-blur-xl border border-border shadow-2xl z-50">
         {/* Animated background particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow"></div>
@@ -294,20 +304,25 @@ export function SerpAnalysisModal({
                 ) : !currentSerpData ? (
                   <div className="flex items-center justify-center py-20">
                     <div className="text-center">
-                      <Database className="h-12 w-12 mx-auto mb-4 text-gray-500" />
-                      <p className="text-lg font-medium bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
-                        No data from {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}
+                      <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-lg font-medium text-foreground mb-2">
+                        No data available for "{keyword}"
                       </p>
-                      <p className="text-sm text-gray-400 mb-4">
-                        Click the button above to fetch data from this provider
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {keyword ? 
+                          `No SERP data available from ${activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}. Try switching providers or fetch fresh data.` :
+                          'Please enter a keyword first to analyze SERP data.'
+                        }
                       </p>
-                      <Button 
-                        onClick={() => fetchFromProvider(activeProvider)}
-                        className="bg-gradient-to-r from-primary/20 to-blue-500/20 hover:from-primary/30 hover:to-blue-500/30 border border-white/20"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Fetch Data
-                      </Button>
+                      {keyword && (
+                        <Button 
+                          onClick={() => fetchFromProvider(activeProvider)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Fetch Data from {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (

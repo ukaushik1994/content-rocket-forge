@@ -454,7 +454,10 @@ export const KeywordSelectionStep = () => {
                           >
                             <Button
                               variant="outline"
-                              onClick={() => setShowSerpAnalysisModal(true)}
+                              onClick={() => {
+                                console.log('🔥 Explore Data button clicked!');
+                                setShowSerpAnalysisModal(true);
+                              }}
                               className="bg-background/60 hover:bg-background/80 border-border/50 hover:border-border"
                             >
                               <Eye className="h-4 w-4 mr-2" />
@@ -519,11 +522,14 @@ export const KeywordSelectionStep = () => {
       {/* Modals */}
       <SerpAnalysisModal
         isOpen={showSerpAnalysisModal}
-        onClose={() => setShowSerpAnalysisModal(false)}
+        onClose={() => {
+          console.log('🔥 Modal closing');
+          setShowSerpAnalysisModal(false);
+        }}
         serpData={serpData}
         serpSelections={serpSelections}
         onToggleSelection={handleToggleSelection}
-        keyword={mainKeyword}
+        keyword={mainKeyword || ''}
         onSerpDataUpdate={(data) => {
           dispatch({ type: 'SET_SERP_DATA', payload: data });
         }}
