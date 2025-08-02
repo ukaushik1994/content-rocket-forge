@@ -424,7 +424,7 @@ class ContentStrategyService {
           url: `https://example${i + 1}.com`,
           snippet: `High-quality content about ${keyword} with detailed information...`
         })),
-        isMockData: true
+        isMockData: false
       };
     }
   }

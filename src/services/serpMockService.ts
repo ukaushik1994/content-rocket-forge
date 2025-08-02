@@ -1,25 +1,25 @@
 
 /**
- * Mock SERP service - DISABLED to prevent data contamination
- * All functions now return null to force proper "No Data Available" handling
+ * Mock SERP service - FULLY DISABLED
+ * All mock data generation removed to force real API integration
  */
 
 import { SerpAnalysisResult } from '@/types/serp';
 
 /**
- * DISABLED: No longer generates mock SERP data to prevent contamination
+ * REMOVED: Mock SERP data generation completely eliminated
  */
-export const getMockSerpData = (keyword: string): SerpAnalysisResult | null => {
-  console.warn('🚫 Mock SERP data generation disabled to prevent contamination');
-  console.log('💡 Add your SERP API key in Settings to get real data');
+export const getMockSerpData = (keyword: string): null => {
+  console.error('🚫 Mock SERP data completely disabled');
+  console.error('🔑 SERP API key required in Settings for data analysis');
   return null;
 };
 
 /**
- * DISABLED: No longer generates mock keyword results
+ * REMOVED: Mock keyword results completely eliminated  
  */
-export const getMockKeywordResults = (query: string): any[] => {
-  console.warn('🚫 Mock keyword results disabled to prevent contamination');
-  console.log('💡 Add your SERP API key in Settings to get real keyword data');
+export const getMockKeywordResults = (query: string): never[] => {
+  console.error('🚫 Mock keyword data completely disabled');
+  console.error('🔑 SERP API key required in Settings for keyword research');
   return [];
 };

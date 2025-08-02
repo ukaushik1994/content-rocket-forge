@@ -89,11 +89,11 @@ export function DataSourceIndicator({
             </div>
           </div>
 
-          {!isRealData || isMockData ? (
-            <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-xs text-yellow-300 flex items-center gap-2">
+          {!isRealData ? (
+            <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-xs text-red-300 flex items-center gap-2">
                 <Database className="h-3 w-3" />
-                Add your SERP API key in Settings to get real-time data and insights
+                SERP API key required for data analysis. Configure in Settings.
               </p>
             </div>
           ) : null}

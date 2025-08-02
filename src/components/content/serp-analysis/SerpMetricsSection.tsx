@@ -41,7 +41,7 @@ export function SerpMetricsSection({ serpData, expanded, onAddToContent }: SerpM
   
   // Provider-specific metadata with proper defaults
   const volumeMetadata = displayData.volumeMetadata || {
-    source: 'mock_google_estimate' as const,
+    source: 'google_search_results_estimate' as const,
     confidence: 'low' as const,
     engine: 'google' as const,
     location: 'United States',
@@ -50,7 +50,7 @@ export function SerpMetricsSection({ serpData, expanded, onAddToContent }: SerpM
   };
   
   const competitionMetadata = displayData.competitionMetadata || {
-    source: 'mock_google_estimate' as const,
+    source: 'google_search_results_estimate' as const,
     engine: 'google' as const,
     adsCompetition: 'ESTIMATED' as const
   };

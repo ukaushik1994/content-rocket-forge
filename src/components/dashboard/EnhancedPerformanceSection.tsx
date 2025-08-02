@@ -4,7 +4,9 @@ import { EnhancedStatCard } from './EnhancedStatCard';
 import { PerformanceChart } from './PerformanceChart';
 import { Activity, Clock, FileText, Search, BarChart3, Fingerprint, Users, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useRealAnalytics } from '@/hooks/useRealAnalytics';
 export const EnhancedPerformanceSection: React.FC = () => {
+  const { metrics, loading, error } = useRealAnalytics();
   const containerVariants = {
     hidden: {
       opacity: 0
@@ -47,6 +49,43 @@ export const EnhancedPerformanceSection: React.FC = () => {
       }
     }
   };
+  if (loading) {
+    return (
+      <motion.div
+        className="space-y-8"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-white/10 rounded-lg w-1/3 mx-auto"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-white/5 rounded-lg border border-white/10"></div>
+            ))}
+          </div>
+          <div className="h-80 bg-white/5 rounded-lg border border-white/10"></div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        className="space-y-8"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <div className="text-center p-8 border border-red-500/20 bg-red-500/10 rounded-lg">
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Analytics Error</h3>
+          <p className="text-white/60">Unable to load performance data. Please try again.</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       className="space-y-8"
@@ -81,8 +120,8 @@ export const EnhancedPerformanceSection: React.FC = () => {
         <motion.div variants={itemVariants}>
           <EnhancedStatCard
             title="Total Content"
-            value="24"
-            trend={{ value: 12, positive: true }}
+            value={metrics?.views ? Math.floor(metrics.views / 1000) : 0}
+            trend={{ value: metrics?.change.views || 0, positive: (metrics?.change.views || 0) >= 0 }}
             icon="FileText"
             description="Published articles"
           />
@@ -91,8 +130,8 @@ export const EnhancedPerformanceSection: React.FC = () => {
         <motion.div variants={itemVariants}>
           <EnhancedStatCard
             title="Search Volume"
-            value="15.2K"
-            trend={{ value: 8, positive: true }}
+            value={metrics?.engagement ? `${(metrics.engagement * 1000).toFixed(1)}K` : "0"}
+            trend={{ value: metrics?.change.engagement || 0, positive: (metrics?.change.engagement || 0) >= 0 }}
             icon="Search"
             description="Monthly searches"
           />
@@ -100,21 +139,21 @@ export const EnhancedPerformanceSection: React.FC = () => {
         
         <motion.div variants={itemVariants}>
           <EnhancedStatCard
-            title="Avg. Sessions"
-            value="1,250"
-            trend={{ value: 15, positive: true }}
+            title="Total Sessions"
+            value={metrics?.conversions ? (metrics.conversions * 100).toLocaleString() : "0"}
+            trend={{ value: metrics?.change.conversions || 0, positive: (metrics?.change.conversions || 0) >= 0 }}
             icon="Users"
-            description="Weekly sessions"
+            description="Total sessions"
           />
         </motion.div>
         
         <motion.div variants={itemVariants}>
           <EnhancedStatCard
-            title="Conversion Rate"
-            value="3.2%"
-            trend={{ value: 0.5, positive: true }}
+            title="Revenue"
+            value={metrics?.revenue ? `$${(metrics.revenue / 1000).toFixed(1)}K` : "$0"}
+            trend={{ value: metrics?.change.revenue || 0, positive: (metrics?.change.revenue || 0) >= 0 }}
             icon="TrendingUp"
-            description="Goal completions"
+            description="Total revenue"
           />
         </motion.div>
       </motion.div>
