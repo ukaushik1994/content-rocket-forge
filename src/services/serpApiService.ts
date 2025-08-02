@@ -136,32 +136,20 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
       provider
     });
     
-    // Route Serpstack calls to api-proxy, SerpAPI calls to serp-api
-    const functionName = provider === 'serpstack' ? 'api-proxy' : 'serp-api';
-    const requestBody = provider === 'serpstack' 
-      ? {
-          service: 'serpstack',
-          endpoint,
-          apiKey,
-          params: {
-            ...params,
-            engine: 'google',
-            gl: 'us',
-            hl: 'en',
-            device: 'desktop'
-          }
-        }
-      : {
-          endpoint,
-          params: {
-            ...params,
-            engine: 'google',
-            gl: 'us',
-            hl: 'en',
-            device: 'desktop'
-          },
-          apiKey
-        };
+    // Route both providers through api-proxy now
+    const functionName = 'api-proxy';
+    const requestBody = {
+      service: provider,
+      endpoint,
+      apiKey,
+      params: {
+        ...params,
+        engine: 'google',
+        gl: 'us',
+        hl: 'en',
+        device: 'desktop'
+      }
+    };
     
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: requestBody
@@ -268,7 +256,7 @@ export const analyzeKeywordSerp = async (
     try {
       // Call the API-Proxy Edge Function for SerpAPI
       const { data, error } = await supabase.functions.invoke('api-proxy', {
-        body: JSON.stringify({
+        body: {
           service: 'serp',
           endpoint: 'analyze',
           apiKey: apiKey, // Optional - will fall back to SERP_API_KEY secret
@@ -278,7 +266,7 @@ export const analyzeKeywordSerp = async (
             num: 10,
             device: 'desktop'
           }
-        })
+        }
       });
       
       if (error) {
