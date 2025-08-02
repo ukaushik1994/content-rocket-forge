@@ -130,18 +130,10 @@ export const glossaryBuilderReducer = (
         exportFormat: action.payload
       };
 
-    case 'SET_ACTIVE_STEP':
+    case 'SET_CURRENT_STEP':
       return {
         ...state,
-        activeStep: action.payload
-      };
-
-    case 'MARK_STEP_COMPLETED':
-      return {
-        ...state,
-        steps: state.steps.map(step => 
-          step.id === action.payload ? { ...step, completed: true } : step
-        )
+        currentStep: action.payload
       };
 
     case 'SET_SELECTED_SOLUTION':
@@ -150,28 +142,32 @@ export const glossaryBuilderReducer = (
         selectedSolution: action.payload
       };
 
-    case 'SET_GENERATION_PROGRESS':
+    case 'TOGGLE_TERM_SELECTION':
+      const termToToggle = action.payload;
+      const isSelected = state.selectedTerms.includes(termToToggle);
       return {
         ...state,
-        generationProgress: action.payload
+        selectedTerms: isSelected
+          ? state.selectedTerms.filter(term => term !== termToToggle)
+          : [...state.selectedTerms, termToToggle]
       };
 
-    case 'SET_SAVING':
+    case 'SELECT_ALL_TERMS':
       return {
         ...state,
-        isSaving: action.payload
+        selectedTerms: action.payload
       };
 
-    case 'SET_LAST_SAVE_TIMESTAMP':
+    case 'CLEAR_TERM_SELECTION':
       return {
         ...state,
-        lastSaveTimestamp: action.payload
+        selectedTerms: []
       };
 
-    case 'NAVIGATE_TO_STEP':
+    case 'SET_GENERATED_TERMS':
       return {
         ...state,
-        activeStep: action.payload
+        generatedTerms: action.payload
       };
 
     default:
