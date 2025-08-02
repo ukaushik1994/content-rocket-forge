@@ -8,6 +8,7 @@ import { TrendingUp, Target, Calendar, FileText, Users, BarChart3, AlertCircle }
 import { motion } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
+import { StrategyOptimization } from '../StrategyOptimization';
 
 interface StrategyDashboardProps {
   serpMetrics?: any;
@@ -296,6 +297,13 @@ export const StrategyDashboard: React.FC<StrategyDashboardProps> = ({ serpMetric
           </CardContent>
         </Card>
       )}
+
+      {/* AI Strategy Optimization */}
+      <StrategyOptimization 
+        strategy={currentStrategy}
+        serpMetrics={serpMetrics}
+        goals={goals}
+      />
     </div>
   );
 };
