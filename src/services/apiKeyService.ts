@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { encryptApiKey, decryptApiKey, migrateApiKey } from './apiKeys/encryption';
 import { detectApiKeyType as detectKeyType, validateApiKeyFormat } from './apiKeys/validation';
@@ -26,8 +25,8 @@ class ApiKeyService {
         return false;
       }
 
-      // Validate API key format
-      if (!this.validateApiKey(service, apiKey)) {
+      // Validate API key format using the imported function
+      if (!validateApiKeyFormat(service, apiKey)) {
         toast.error('Invalid API key format for ' + service);
         return false;
       }
@@ -162,13 +161,6 @@ class ApiKeyService {
       console.error('Error getting configured services:', error);
       return [];
     }
-  }
-
-  /**
-   * Validates API key format for different services
-   */
-  private static validateApiKey(service: ApiProvider, apiKey: string): boolean {
-    return validateApiKeyFormat(service, apiKey);
   }
 
   /**
