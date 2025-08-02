@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
+import { AnimatedBackground } from '@/components/auth/AnimatedBackground';
+import { RocketLogo } from '@/components/auth/RocketLogo';
+import { EnhancedAuthForm } from '@/components/auth/EnhancedAuthForm';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -24,9 +23,6 @@ const Auth = () => {
   const redirectTo = searchParams.get('redirectTo');
   
   const isSignIn = mode === 'signin';
-  const title = isSignIn ? 'Sign In' : 'Sign Up';
-  const description = isSignIn ? 'Enter your email and password to sign in' : 'Create an account to continue';
-  const buttonText = isSignIn ? 'Sign In' : 'Sign Up';
 
   const handleSignIn = async () => {
     setIsLoading(true);
@@ -35,6 +31,7 @@ const Auth = () => {
       if (result.error) {
         toast.error(result.error.message);
       } else {
+        toast.success('Welcome back! 🚀');
         navigate(redirectTo || '/');
       }
     } finally {
@@ -49,6 +46,7 @@ const Auth = () => {
       if (result.error) {
         toast.error(result.error.message);
       } else {
+        toast.success('Check your email to confirm your account! 📧');
         navigate('/auth/check-email');
       }
     } finally {
@@ -65,105 +63,64 @@ const Auth = () => {
     }
   };
 
+  const toggleMode = () => {
+    const newMode = isSignIn ? 'signup' : 'signin';
+    navigate(`/auth?mode=${newMode}`);
+    // Clear form when switching modes
+    setEmail('');
+    setPassword('');
+  };
+
   return (
-    <div className="container relative flex h-[calc(100vh-80px)] flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <button
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      <AnimatedBackground />
+      
+      {/* Back button */}
+      <motion.button
         onClick={() => navigate('/')}
-        className={cn(
-          'absolute left-4 top-4 md:left-8 md:top-8 flex items-center text-sm hover:underline',
-          isSignIn ? 'lg:block' : 'lg:hidden'
-        )}
+        className="fixed top-6 left-6 z-10 flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 bg-background/80 backdrop-blur-sm rounded-lg border border-border/40 hover:border-border/60"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <ChevronLeft className="mr-2 h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" />
         Back to home
-      </button>
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-foreground lg:flex">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
-          <div className="mr-2 h-6 w-6 rounded bg-primary" />
-          ContentRevolver
-        </div>
-        <div className="relative z-20 mt-auto">
-          <blockquote className="space-y-2">
-            <p className="text-lg">
-              &ldquo;Empower your content creation with AI-driven insights and seamless workflows.&rdquo;
-            </p>
-            <footer className="text-sm">ContentRevolver</footer>
-          </blockquote>
-        </div>
-      </div>
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <Card>
-            <CardHeader>
-              <CardTitle>{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <form onSubmit={handleSubmit} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Input
-                    id="email"
-                    placeholder="Email"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    id="password"
-                    placeholder="Password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Please wait
-                    </>
-                  ) : (
-                    buttonText
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <Separator />
-              <div className="text-center text-sm">
-                {isSignIn ? (
-                  <>
-                    Don't have an account?{' '}
-                    <button 
-                      onClick={() => navigate('/auth?mode=signup')}
-                      className="underline underline-offset-4 hover:text-primary"
-                    >
-                      Sign up
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Already have an account?{' '}
-                    <button 
-                      onClick={() => navigate('/auth?mode=signin')}
-                      className="underline underline-offset-4 hover:text-primary"
-                    >
-                      Sign in
-                    </button>
-                  </>
-                )}
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
+      </motion.button>
+
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-md">
+        {/* Glass morphism container */}
+        <motion.div
+          className="glass-panel rounded-3xl p-8 shadow-2xl"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          <RocketLogo />
+          
+          <EnhancedAuthForm
+            isSignIn={isSignIn}
+            email={email}
+            password={password}
+            isLoading={isLoading}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            onSubmit={handleSubmit}
+            onToggleMode={toggleMode}
+          />
+        </motion.div>
+
+        {/* Bottom decoration */}
+        <motion.div
+          className="text-center mt-8 text-xs text-muted-foreground/60"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1 }}
+        >
+          <p>Powered by AI • Built for creators</p>
+        </motion.div>
       </div>
     </div>
   );

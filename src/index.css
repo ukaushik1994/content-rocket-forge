@@ -135,6 +135,17 @@
     animation: float 8s ease-in-out infinite reverse;
   }
 
+  /* Enhanced Glass effect for auth */
+  .auth-glass {
+    background: rgba(15, 16, 18, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(30px) saturate(150%);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+      0 0 50px rgba(155, 135, 245, 0.1);
+  }
+
   /* Background size utilities */
   .bg-300\% {
     background-size: 300% 300%;
