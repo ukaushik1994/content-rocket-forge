@@ -1,125 +1,96 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { API_PROVIDERS, ApiProvider } from './api/types';
-import { getConfiguredServices } from '@/services/apiKeyService';
+import { ApiKeyInput } from './api/ApiKeyInput';
+import { AvailableProviders } from './api/AvailableProviders';
+import { CategoryTabs } from './api/CategoryTabs';
+import { ApiStatusDashboard } from './api/ApiStatusDashboard';
+import { QuickSetupWizard } from './api/QuickSetupWizard';
+import { EnhancedSearch } from './api/EnhancedSearch';
+import { API_PROVIDERS } from './api/types';
+import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { toast } from 'sonner';
-
-// New minimal components
-import { CompactStatusBar } from './api/CompactStatusBar';
-import { InteractiveProviderGrid } from './api/InteractiveProviderGrid';
-import { SlideoutConfigPanel } from './api/SlideoutConfigPanel';
-import { FloatingSearch } from './api/FloatingSearch';
-
-// Existing components for fallback
-import { QuickSetupWizard } from './api/QuickSetupWizard';
-import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Key, Sparkles, Settings, RefreshCw } from 'lucide-react';
 
 export function APISettings() {
-  // State management
-  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
-  const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
-  const [errorProviders, setErrorProviders] = useState<string[]>([]);
+  const [selectedProviders, setSelectedProviders] = useState<string[]>(
+    API_PROVIDERS.filter(p => p.required).map(p => p.id)
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState('all');
   const [showQuickSetup, setShowQuickSetup] = useState(false);
-  const [defaultAiProvider, setDefaultAiProvider] = useState<string>('');
-  const [selectedProvider, setSelectedProvider] = useState<ApiProvider | null>(null);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
-  const [showFloatingSearch, setShowFloatingSearch] = useState(false);
+  const [defaultAiProvider, setDefaultAiProvider] = useState<'openai' | 'anthropic' | 'gemini' | undefined>(
+    undefined
+  );
   
-  // Load preferences and configured services
+  // Load default AI provider from user preferences
   useEffect(() => {
-    const loadData = async () => {
-      // Load default AI provider
-      const savedProvider = getUserPreference('defaultAiProvider');
-      if (savedProvider) {
-        setDefaultAiProvider(savedProvider);
-      } else {
-        setDefaultAiProvider('openai');
-      }
-      
-      // Load configured services
-      try {
-        const configured = await getConfiguredServices();
-        setSelectedProviders(configured);
-        setConnectedProviders(configured); // For now, assume configured = connected
-      } catch (error) {
-        console.error('Failed to load configured services:', error);
-      }
-    };
-    
-    loadData();
+    const savedProvider = getUserPreference('defaultAiProvider');
+    if (savedProvider) {
+      setDefaultAiProvider(savedProvider);
+    } else {
+      // Default to OpenAI if no preference is set
+      setDefaultAiProvider('openai');
+    }
   }, []);
   
-  // Event handlers
   const handleProviderToggle = (providerId: string) => {
     setSelectedProviders(prev => 
       prev.includes(providerId) 
-        ? prev.filter(id => id !== providerId)
+        ? prev.filter(id => id !== providerId) 
         : [...prev, providerId]
     );
   };
 
-  const handleDefaultAiProviderChange = async (providerId: any) => {
-    try {
-      setDefaultAiProvider(providerId);
-      const success = await saveUserPreference('defaultAiProvider', providerId);
-      if (success) {
-        toast.success(`${API_PROVIDERS.find(p => p.id === providerId)?.name} set as default AI provider`);
-      } else {
-        toast.error('Failed to save default AI provider');
-      }
-    } catch (error) {
-      toast.error('Failed to update default AI provider');
-      console.error('Error setting default AI provider:', error);
+  const handleDisplayOptionChange = (value: string) => {
+    if (value === "all") {
+      setSelectedProviders(API_PROVIDERS.map(p => p.id));
+    } else if (value === "none" || value === "required") {
+      setSelectedProviders(API_PROVIDERS.filter(p => p.required).map(p => p.id));
     }
   };
 
-  const handleProviderClick = (provider: ApiProvider) => {
-    setSelectedProvider(provider);
-    setShowConfigPanel(true);
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setActiveFilters([]);
   };
 
-  const handleRefreshAll = async () => {
-    try {
-      // Reload configured services
-      const configured = await getConfiguredServices();
-      setSelectedProviders(configured);
-      setConnectedProviders(configured);
-      toast.success('Provider statuses refreshed');
-    } catch (error) {
-      toast.error('Failed to refresh statuses');
+  const handleRefreshAll = () => {
+    toast.info('Refreshing all API connections...');
+    // In a real implementation, this would test all configured APIs
+  };
+
+  const handleQuickSetup = () => {
+    setShowQuickSetup(true);
+  };
+
+  const handleDefaultAiProviderChange = async (provider: 'openai' | 'anthropic' | 'gemini') => {
+    setDefaultAiProvider(provider);
+    const success = await saveUserPreference('defaultAiProvider', provider);
+    if (success) {
+      toast.success(`Default AI provider set to ${provider}`);
+    } else {
+      toast.error('Failed to save default AI provider');
     }
   };
 
-  // Get available categories for filtering
-  const availableCategories = Array.from(new Set(API_PROVIDERS.map(p => p.category).filter(Boolean)));
-
-  // Filtered providers based on search and filters
   const filteredProviders = API_PROVIDERS.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          provider.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategory === 'all' || provider.category === activeCategory;
+    const isVisible = provider.required || selectedProviders.includes(provider.id);
     
-    const matchesFilters = selectedFilters.length === 0 || 
-                          selectedFilters.some(filter => {
-                            switch (filter) {
-                              case 'connected':
-                                return connectedProviders.includes(provider.id);
-                              case 'configured':
-                                return selectedProviders.includes(provider.id);
-                              case 'unconfigured':
-                                return !selectedProviders.includes(provider.id);
-                              case 'required':
-                                return provider.required;
-                              default:
-                                return provider.category === filter;
-                            }
-                          });
-    
-    return matchesSearch && matchesFilters;
+    return matchesSearch && matchesCategory && isVisible;
   });
+
+  const availableProviders = API_PROVIDERS.filter(p => 
+    !p.required && !selectedProviders.includes(p.id)
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -150,89 +121,191 @@ export function APISettings() {
   };
 
   return (
-    <motion.div 
-      className="relative space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-neon-purple/5">
       {/* Quick Setup Wizard */}
-      <QuickSetupWizard 
+      <QuickSetupWizard
         isOpen={showQuickSetup}
         onClose={() => setShowQuickSetup(false)}
         providers={API_PROVIDERS}
         onProviderSelect={handleProviderToggle}
       />
+      
+      {/* Floating background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-neon-purple/10 blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-neon-blue/10 blur-3xl animate-pulse"></div>
+      </div>
 
-      {/* Compact Status Bar */}
-      <motion.div variants={itemVariants}>
-        <CompactStatusBar
-          totalProviders={API_PROVIDERS.length}
-          connectedProviders={connectedProviders.length}
-          errorProviders={errorProviders.length}
-          onRefresh={handleRefreshAll}
-          onQuickSetup={() => setShowQuickSetup(true)}
-        />
-      </motion.div>
-
-      {/* Default AI Provider Selector */}
-      {connectedProviders.some(id => API_PROVIDERS.find(p => p.id === id)?.category === 'AI') && (
-        <motion.div variants={itemVariants}>
-          <DefaultAiProviderSelector
-            defaultAiProvider={defaultAiProvider as any}
-            onDefaultAiProviderChange={handleDefaultAiProviderChange}
-          />
+      <motion.div 
+        className="relative z-10 space-y-8 max-w-7xl mx-auto"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Hero Section */}
+        <motion.div 
+          variants={cardVariants}
+          className="relative overflow-hidden"
+        >
+          <Card className="border-0 bg-gradient-to-br from-neon-purple/20 via-background/80 to-neon-blue/10 backdrop-blur-xl shadow-2xl">
+            <CardHeader className="pb-6 pt-8">
+              <div className="flex items-start justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full bg-neon-purple/30 blur-lg"></div>
+                      <div className="relative rounded-full bg-neon-purple/20 p-3 border border-neon-purple/30">
+                        <Settings className="h-6 w-6 text-neon-purple" />
+                      </div>
+                    </div>
+                    <div>
+                      <CardTitle className="text-3xl font-bold bg-gradient-to-r from-neon-purple via-white to-neon-blue bg-clip-text text-transparent">
+                        API Integration Hub
+                      </CardTitle>
+                      <CardDescription className="text-lg text-muted-foreground mt-2">
+                        Connect and manage your third-party API integrations with ease
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
         </motion.div>
-      )}
-
-      {/* Interactive Provider Grid */}
-      <motion.div variants={itemVariants} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">API Integrations</h3>
-            <p className="text-sm text-muted-foreground">
-              Click any provider to configure
-            </p>
-          </div>
-          {(searchQuery || selectedFilters.length > 0) && (
-            <p className="text-sm text-muted-foreground">
-              {filteredProviders.length} of {API_PROVIDERS.length} providers
-            </p>
-          )}
-        </div>
-
-        <InteractiveProviderGrid
+        
+        {/* Status Dashboard */}
+        <ApiStatusDashboard
+          providers={API_PROVIDERS}
           selectedProviders={selectedProviders}
-          connectedProviders={connectedProviders}
-          errorProviders={errorProviders}
-          defaultAiProvider={defaultAiProvider}
-          onProviderClick={handleProviderClick}
-          onSetDefault={handleDefaultAiProviderChange}
+          onRefreshAll={handleRefreshAll}
+          onQuickSetup={handleQuickSetup}
         />
+
+        {/* Enhanced Search */}
+        <motion.div variants={itemVariants}>
+          <Card className="border border-border/50 bg-background/50 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <EnhancedSearch
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                activeFilters={activeFilters}
+                onClearFilters={handleClearFilters}
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Default AI Provider Section */}
+        <motion.div variants={itemVariants}>
+          <Card className="border border-neon-purple/20 bg-gradient-to-r from-background/90 to-neon-purple/5 backdrop-blur-sm shadow-xl">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-neon-blue/20 p-2 border border-neon-blue/30">
+                  <Sparkles className="h-5 w-5 text-neon-blue" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold">Default AI Provider</CardTitle>
+                  <CardDescription>
+                    Choose your preferred AI provider for content generation tasks
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DefaultAiProviderSelector 
+                defaultAiProvider={defaultAiProvider} 
+                onDefaultAiProviderChange={handleDefaultAiProviderChange} 
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Categorized API Configuration */}
+        <motion.div variants={itemVariants}>
+          <Card className="border border-border/50 bg-background/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">API Configuration</CardTitle>
+              <CardDescription>
+                Organize and configure your API integrations by category
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CategoryTabs
+                providers={API_PROVIDERS}
+                selectedProviders={selectedProviders}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeCategory}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
+                    {filteredProviders.length > 0 ? (
+                      <div className="grid gap-4">
+                        {filteredProviders.map((provider, index) => (
+                          <motion.div
+                            key={provider.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ 
+                              delay: index * 0.05,
+                              type: "spring",
+                              stiffness: 100,
+                              damping: 15
+                            }}
+                          >
+                            <ApiKeyInput provider={provider} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Key className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No APIs match your current filters.</p>
+                        <p className="text-sm">Try adjusting your search or category selection.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </CategoryTabs>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Available Providers Section */}
+        {availableProviders.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <Card className="border border-dashed border-neon-purple/30 bg-gradient-to-br from-background/50 to-neon-purple/5 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-neon-purple/20 p-2 border border-neon-purple/30">
+                    <Key className="h-5 w-5 text-neon-purple" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-semibold">Available Providers</CardTitle>
+                    <CardDescription>
+                      Additional API providers you can enable for enhanced functionality
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <AvailableProviders 
+                  providers={availableProviders} 
+                  onToggleProvider={handleProviderToggle} 
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </motion.div>
-
-      {/* Slideout Configuration Panel */}
-      <SlideoutConfigPanel
-        provider={selectedProvider}
-        isOpen={showConfigPanel}
-        onClose={() => {
-          setShowConfigPanel(false);
-          setSelectedProvider(null);
-        }}
-        onSetDefault={handleDefaultAiProviderChange}
-        defaultAiProvider={defaultAiProvider}
-      />
-
-      {/* Floating Search */}
-      <FloatingSearch
-        isOpen={showFloatingSearch}
-        onToggle={() => setShowFloatingSearch(!showFloatingSearch)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        selectedFilters={selectedFilters}
-        onFilterChange={setSelectedFilters}
-        availableCategories={availableCategories}
-      />
-    </motion.div>
+    </div>
   );
 }
