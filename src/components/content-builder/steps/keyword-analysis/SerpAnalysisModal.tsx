@@ -15,6 +15,7 @@ import { RelatedSearchesTab } from './tabs/RelatedSearchesTab';
 import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap, Search, RefreshCw, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { analyzeSerpstackKeyword, testSerpstackConnection } from '@/services/serpstackService';
 import { analyzeKeywordEnhanced } from '@/services/enhancedSerpService';
 import { transformSerpData } from '@/services/serpDataTransformer';
 import EnhancedSerpModal from './EnhancedSerpModal';
@@ -68,7 +69,8 @@ export function SerpAnalysisModal({
       if (provider === 'serpapi') {
         data = await analyzeKeywordEnhanced(keyword);
       } else {
-        data = await analyzeKeywordSerp(keyword, true, 'serpstack');
+        // Use enhanced Serpstack service
+        data = await analyzeSerpstackKeyword(keyword);
       }
       
       if (data) {
@@ -82,7 +84,16 @@ export function SerpAnalysisModal({
           onSerpDataUpdate?.(data);
         }
         
-        toast.success(`Successfully loaded data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
+        const providerName = provider === 'serpapi' ? 'SerpAPI' : 'Serpstack';
+        const dataStats = {
+          faqs: data.peopleAlsoAsk?.length || 0,
+          entities: data.entities?.length || 0,
+          competitors: data.topResults?.length || 0
+        };
+        
+        toast.success(`${providerName} loaded: ${dataStats.faqs} FAQs, ${dataStats.entities} entities, ${dataStats.competitors} competitors!`, {
+          duration: 5000
+        });
       } else {
         toast.error(`Failed to load data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
       }

@@ -128,34 +128,52 @@ function cacheSerpData(keyword: string, data: SerpAnalysisResult, provider: 'ser
 /**
  * Call the Supabase Edge Function for SERP API requests
  */
-async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string): Promise<any> {
+async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: string, provider: 'serp' | 'serpstack' = 'serp'): Promise<any> {
   try {
-    console.log(`🚀 Calling SERP Edge Function: ${endpoint}`, { 
+    console.log(`🚀 Calling ${provider.toUpperCase()} via API Proxy: ${endpoint}`, { 
       params: Object.keys(params), 
-      hasApiKey: !!apiKey
+      hasApiKey: !!apiKey,
+      provider
     });
     
-    const { data, error } = await supabase.functions.invoke('serp-api', {
-      body: {
-        endpoint,
-        params: {
-          ...params,
-          engine: 'google',
-          gl: 'us',
-          hl: 'en',
-          device: 'desktop'
-        },
-        apiKey
-      }
+    // Route Serpstack calls to api-proxy, SerpAPI calls to serp-api
+    const functionName = provider === 'serpstack' ? 'api-proxy' : 'serp-api';
+    const requestBody = provider === 'serpstack' 
+      ? {
+          service: 'serpstack',
+          endpoint,
+          apiKey,
+          params: {
+            ...params,
+            engine: 'google',
+            gl: 'us',
+            hl: 'en',
+            device: 'desktop'
+          }
+        }
+      : {
+          endpoint,
+          params: {
+            ...params,
+            engine: 'google',
+            gl: 'us',
+            hl: 'en',
+            device: 'desktop'
+          },
+          apiKey
+        };
+    
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body: requestBody
     });
     
     if (error) {
-      console.error('❌ SERP Edge Function error:', error);
-      throw new Error(`SERP API error: ${error.message || JSON.stringify(error)}`);
+      console.error(`❌ ${provider.toUpperCase()} Edge Function error:`, error);
+      throw new Error(`${provider.toUpperCase()} API error: ${error.message || JSON.stringify(error)}`);
     }
     
     if (!data) {
-      console.warn('⚠️ No SERP data returned');
+      console.warn(`⚠️ No ${provider.toUpperCase()} data returned`);
       return null;
     }
     
@@ -169,7 +187,7 @@ async function callSerpEdgeFunction(endpoint: string, params: any, apiKey: strin
     
     return data;
   } catch (error) {
-    console.error('💥 Error calling SERP Edge Function:', error);
+    console.error(`💥 Error calling ${provider.toUpperCase()} Edge Function:`, error);
     throw error;
   }
 }
@@ -255,7 +273,7 @@ export const analyzeKeywordSerp = async (
         engine: 'google',
         location: 'United States',
         language: 'en'
-      }, apiKey);
+      }, apiKey, provider);
       
       if (data && data.isGoogleData) {
         console.log(`✅ ${provider.toUpperCase()} returned clean verified data`);
@@ -330,7 +348,7 @@ export const searchKeywords = async (params: SearchKeywordParams) => {
           engine: 'google',
           gl: 'us',
           hl: 'en'
-        }, apiKey);
+        }, apiKey, provider);
         
         if (data && (data.organic_results || data.success !== false)) {
           console.log(`✅ ${provider.toUpperCase()} search results retrieved successfully`);
@@ -385,7 +403,7 @@ export const searchRelatedKeywords = async (keyword: string, provider: 'serp' | 
 
     if (apiKey) {
       try {
-        const data = await callSerpEdgeFunction('related', { keyword }, apiKey);
+        const data = await callSerpEdgeFunction('related', { keyword }, apiKey, provider);
         const cleanKeywords = data.keywords || [];
         localStorage.setItem(cacheKey, JSON.stringify(cleanKeywords));
         return cleanKeywords;
