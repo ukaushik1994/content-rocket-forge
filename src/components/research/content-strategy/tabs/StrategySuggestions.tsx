@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowRight, CheckCircle, Lightbulb, TrendingUp, Target, Users, Calendar } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lightbulb, TrendingUp, Target, Users, Calendar, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { toast } from 'sonner';
 
 interface StrategySuggestionsProps {
   serpMetrics: any;
@@ -14,6 +16,8 @@ interface StrategySuggestionsProps {
 
 export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsProps) => {
   const [selectedStrategy, setSelectedStrategy] = useState<number | null>(null);
+  const [loading, setLoading] = useState<number | null>(null);
+  const { createStrategy, currentStrategy } = useContentStrategy();
 
   const getStrategyRecommendations = () => {
     const difficulty = serpMetrics?.keywordDifficulty || 50;
@@ -77,6 +81,30 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
   };
 
   const strategies = getStrategyRecommendations();
+
+  const handleSelectStrategy = async (strategy: any) => {
+    setLoading(strategy.id);
+    try {
+      await createStrategy({
+        name: strategy.title,
+        monthly_traffic_goal: parseInt(strategy.traffic.replace(/,/g, '')) || undefined,
+        content_pieces_per_month: strategy.contentPieces,
+        timeline: strategy.timeframe,
+        main_keyword: goals.mainKeyword,
+        target_audience: goals.audience || undefined,
+        brand_voice: goals.voice || undefined,
+        content_pillars: strategy.topics
+      });
+      
+      toast.success(`${strategy.title} strategy activated successfully!`);
+      setSelectedStrategy(strategy.id);
+    } catch (error) {
+      console.error('Error creating strategy:', error);
+      toast.error('Failed to activate strategy. Please try again.');
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -171,9 +199,31 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
                 )}
               </AnimatePresence>
               
-              <Button className="w-full h-12 text-base" variant={selectedStrategy === strategy.id ? "default" : "outline"}>
-                {selectedStrategy === strategy.id ? "Strategy Selected" : "Select This Strategy"}
-                <ArrowRight className="h-5 w-5 ml-2" />
+              <Button 
+                className="w-full h-12 text-base" 
+                variant={currentStrategy?.name === strategy.title ? "default" : "outline"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectStrategy(strategy);
+                }}
+                disabled={loading === strategy.id}
+              >
+                {loading === strategy.id ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Activating Strategy...
+                  </>
+                ) : currentStrategy?.name === strategy.title ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Active Strategy
+                  </>
+                ) : (
+                  <>
+                    Select This Strategy
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
