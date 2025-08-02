@@ -86,7 +86,7 @@ class ApiKeyService {
       const encryptedKey = await encryptApiKey(apiKey.trim(), user.id);
       console.log(`✅ ${service} API key encrypted successfully`);
 
-      // Store in database with retry logic
+      // Store in database with proper upsert logic
       console.log(`💾 Storing encrypted ${service} API key in database...`);
       const { error: dbError } = await supabase
         .from('api_keys')
@@ -96,6 +96,8 @@ class ApiKeyService {
           encrypted_key: encryptedKey,
           is_active: true,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,service'
         });
 
       if (dbError) {
