@@ -215,12 +215,14 @@ function transformSerpApiData(data: any, keyword: string) {
     hasFeaturedSnippet: !!data.featured_snippet,
     hasAnswerBox: !!data.answer_box,
     hasRelatedQuestions: !!data.related_questions,
+    hasPeopleAlsoAsk: !!data.people_also_ask,
     hasAds: !!data.ads,
     hasLocalResults: !!data.local_results,
     hasShoppingResults: !!data.shopping_results,
     hasImagesResults: !!data.images_results,
     hasVideosResults: !!data.video_results,
     hasTopStories: !!data.top_stories,
+    hasNewsResults: !!data.news_results,
     organicCount: data.organic_results?.length || 0,
     relatedSearchesCount: data.related_searches?.length || 0
   });
@@ -250,11 +252,26 @@ function transformSerpApiData(data: any, keyword: string) {
   // Generate content gaps based on competitor analysis
   const contentGaps = generateSerpApiContentGaps(data, organicResults, keyword);
   
-  // Extract top stories
+  // Extract top stories and news
   const topStories = extractSerpApiTopStories(data);
   
-  // Extract multimedia content
+  // Extract multimedia content (images and videos)
   const multimedia = extractSerpApiMultimedia(data);
+  
+  // Extract local business data
+  const localBusinessData = extractSerpApiLocalBusinessData(data);
+  
+  // Extract shopping results
+  const shoppingData = extractSerpApiShoppingData(data);
+  
+  // Enhanced SERP feature gap analysis
+  const serpFeatureGaps = analyzeSerpApiFeatureGaps(data, keyword);
+  
+  // Generate comprehensive insights
+  const insights = generateSerpApiInsights(data, organicResults, peopleAlsoAsk, keyword);
+  
+  // Calculate data quality score
+  const dataQualityScore = calculateSerpApiDataQuality(data);
   
   return {
     keyword,
@@ -275,41 +292,54 @@ function transformSerpApiData(data: any, keyword: string) {
       engine: 'google',
       competitorCount: organicResults.length,
       hasAds: !!data.ads,
-      adCount: data.ads?.length || 0
+      adCount: data.ads?.length || 0,
+      hasLocalPack: !!data.local_results,
+      hasShoppingResults: !!data.shopping_results,
+      hasFeaturedSnippet: !!data.featured_snippet,
+      hasKnowledgeGraph: !!data.knowledge_graph
     },
     isMockData: false,
     isGoogleData: true,
-    dataQuality: 'high',
+    dataQuality: dataQualityScore,
     entities,
     peopleAlsoAsk,
     headings,
-    contentGaps,
+    contentGaps: [...contentGaps, ...serpFeatureGaps],
     featuredSnippets,
     topStories,
     multimedia,
+    localBusinessData,
+    shoppingData,
+    insights,
     knowledgeGraph: data.knowledge_graph || null,
     localResults: data.local_results || [],
     shoppingResults: data.shopping_results || [],
     topResults: organicResults.slice(0, 10).map((result: any, index: number) => ({
-      title: result.title || '',
+      title: cleanSerpApiText(result.title || ''),
       link: result.link || '',
-      snippet: result.snippet || '',
+      snippet: cleanSerpApiText(result.snippet || ''),
       position: result.position || index + 1,
-      source: 'serpapi_organic'
+      source: 'organic_result',
+      wordCount: estimateWordCount(result.snippet || ''),
+      hasRichSnippet: !!(result.rich_snippet || result.sitelinks)
     })),
     relatedSearches: relatedSearches.map((search: any) => ({
-      query: search.query || '',
-      source: 'serpapi_related_searches'
+      query: cleanSerpApiText(search.query || ''),
+      source: 'related_searches'
     })),
-    keywords: relatedSearches.map((s: any) => s.query).filter(Boolean),
+    keywords: relatedSearches.map((s: any) => cleanSerpApiText(s.query || '')).filter(Boolean),
     recommendations: [
-      `SerpAPI found ${organicResults.length} organic competitors for "${keyword}"`,
-      `${peopleAlsoAsk.length} FAQ questions extracted from multiple SERP features`,
-      `${entities.length} key entities identified from knowledge graph and organic results`,
-      `${featuredSnippets.length} featured snippets available for content optimization`,
-      data.knowledge_graph ? 'Knowledge Graph data available for comprehensive topic coverage' : '',
-      data.ads?.length ? `${data.ads.length} paid ads indicate commercial value` : '',
-      'SerpAPI provides comprehensive SERP analysis with all Google features'
+      `SerpAPI extracted ${organicResults.length} organic competitors for comprehensive analysis`,
+      `${peopleAlsoAsk.length} FAQ questions discovered from People Also Ask and related questions`,
+      `${entities.length} key entities identified from knowledge graph and organic content`,
+      `${featuredSnippets.length} featured snippets found for optimization opportunities`,
+      data.knowledge_graph ? 'Rich Knowledge Graph data available for entity-based content strategy' : '',
+      data.local_results?.length ? `${data.local_results.length} local results suggest local SEO opportunities` : '',
+      data.shopping_results?.length ? `${data.shopping_results.length} shopping results indicate commercial intent` : '',
+      multimedia.images?.length ? `${multimedia.images.length} image results suggest visual content opportunities` : '',
+      multimedia.videos?.length ? `${multimedia.videos.length} video results indicate video content demand` : '',
+      data.ads?.length ? `${data.ads.length} paid ads confirm commercial value and competition` : '',
+      'SerpAPI provides the most comprehensive SERP analysis with all Google features'
     ].filter(Boolean)
   };
 }
@@ -318,50 +348,92 @@ function transformSerpApiData(data: any, keyword: string) {
 function extractSerpApiPeopleAlsoAsk(data: any) {
   const questions = [];
   
-  console.log('🔍 Extracting People Also Ask from SerpAPI data...');
+  console.log('🔍 Extracting enhanced People Also Ask from SerpAPI data...');
   
   // Method 1: Direct related_questions field (primary for SerpAPI)
   if (data.related_questions && Array.isArray(data.related_questions)) {
     console.log('✅ Found related_questions field with', data.related_questions.length, 'questions');
     data.related_questions.forEach((item: any) => {
       questions.push({
-        question: cleanText(item.question || ''),
-        answer: cleanText(item.snippet || item.answer || ''),
-        source: item.link || 'SerpAPI Related Questions'
+        question: cleanSerpApiText(item.question || ''),
+        answer: cleanSerpApiText(item.snippet || item.answer || ''),
+        source: item.link || item.source || 'Related Questions',
+        priority: 'high'
       });
     });
   }
   
-  // Method 2: Answer box questions  
-  if (data.answer_box && data.answer_box.questions) {
-    console.log('✅ Found answer box questions with', data.answer_box.questions.length, 'items');
-    data.answer_box.questions.forEach((item: any) => {
-      if (!questions.some(q => q.question === item.question)) {
-        questions.push({
-          question: cleanText(item.question || ''),
-          answer: cleanText(item.answer || ''),
-          source: 'SerpAPI Answer Box'
-        });
-      }
-    });
-  }
-  
-  // Method 3: People also ask from SerpAPI structure
+  // Method 2: People also ask from SerpAPI structure
   if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
     console.log('✅ Found people_also_ask field with', data.people_also_ask.length, 'questions');
     data.people_also_ask.forEach((item: any) => {
-      if (!questions.some(q => q.question === item.question)) {
+      const cleanQuestion = cleanSerpApiText(item.question || '');
+      if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
         questions.push({
-          question: cleanText(item.question || ''),
-          answer: cleanText(item.snippet || ''),
-          source: item.link || 'SerpAPI PAA'
+          question: cleanQuestion,
+          answer: cleanSerpApiText(item.snippet || item.answer || ''),
+          source: item.link || item.source || 'People Also Ask',
+          priority: 'high'
         });
       }
     });
   }
   
-  console.log(`📊 Total PAA questions extracted: ${questions.length}`);
-  return questions.slice(0, 10); // Limit to 10 most relevant
+  // Method 3: Answer box questions  
+  if (data.answer_box && data.answer_box.questions) {
+    console.log('✅ Found answer box questions with', data.answer_box.questions.length, 'items');
+    data.answer_box.questions.forEach((item: any) => {
+      const cleanQuestion = cleanSerpApiText(item.question || '');
+      if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
+        questions.push({
+          question: cleanQuestion,
+          answer: cleanSerpApiText(item.answer || ''),
+          source: 'Answer Box',
+          priority: 'medium'
+        });
+      }
+    });
+  }
+  
+  // Method 4: Extract from featured snippet if it contains questions
+  if (data.featured_snippet && data.featured_snippet.snippet) {
+    const snippetText = data.featured_snippet.snippet;
+    const questionMatches = snippetText.match(/[^.!?]*\?[^.!?]*/g);
+    if (questionMatches) {
+      questionMatches.forEach((match: string) => {
+        const cleanQuestion = cleanSerpApiText(match.trim());
+        if (cleanQuestion.length > 10 && !questions.some(q => q.question === cleanQuestion)) {
+          questions.push({
+            question: cleanQuestion,
+            answer: cleanSerpApiText(snippetText),
+            source: data.featured_snippet.link || 'Featured Snippet',
+            priority: 'medium'
+          });
+        }
+      });
+    }
+  }
+  
+  // Method 5: Extract from organic results with question-style titles
+  if (data.organic_results && Array.isArray(data.organic_results)) {
+    data.organic_results.slice(0, 8).forEach((result: any) => {
+      const title = result.title || '';
+      if (title.includes('?') || title.toLowerCase().match(/^(how|what|why|when|where|which|who)/)) {
+        const cleanQuestion = cleanSerpApiText(title);
+        if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
+          questions.push({
+            question: cleanQuestion,
+            answer: cleanSerpApiText(result.snippet || ''),
+            source: result.link || 'Organic Result',
+            priority: 'low'
+          });
+        }
+      }
+    });
+  }
+  
+  console.log(`📊 Total enhanced PAA questions extracted: ${questions.length}`);
+  return questions.slice(0, 15); // Increased limit for comprehensive coverage
 }
 
 function extractSerpApiFeaturedSnippets(data: any) {
@@ -371,9 +443,11 @@ function extractSerpApiFeaturedSnippets(data: any) {
   if (data.featured_snippet) {
     snippets.push({
       type: 'featured_snippet',
-      content: cleanText(data.featured_snippet.snippet || ''),
-      source: data.featured_snippet.link || 'SerpAPI Featured Snippet',
-      title: cleanText(data.featured_snippet.title || 'Featured Snippet')
+      content: cleanSerpApiText(data.featured_snippet.snippet || ''),
+      source: data.featured_snippet.link || 'Featured Snippet',
+      title: cleanSerpApiText(data.featured_snippet.title || 'Featured Snippet'),
+      format: data.featured_snippet.type || 'paragraph',
+      datePublished: data.featured_snippet.date || null
     });
   }
   
@@ -381,9 +455,11 @@ function extractSerpApiFeaturedSnippets(data: any) {
   if (data.answer_box) {
     snippets.push({
       type: 'answer_box',
-      content: cleanText(data.answer_box.snippet || data.answer_box.answer || ''),
-      source: data.answer_box.link || 'SerpAPI Answer Box',
-      title: cleanText(data.answer_box.title || 'Answer Box')
+      content: cleanSerpApiText(data.answer_box.snippet || data.answer_box.answer || ''),
+      source: data.answer_box.link || 'Answer Box',
+      title: cleanSerpApiText(data.answer_box.title || 'Answer Box'),
+      format: data.answer_box.type || 'direct_answer',
+      datePublished: data.answer_box.date || null
     });
   }
   
@@ -391,9 +467,27 @@ function extractSerpApiFeaturedSnippets(data: any) {
   if (data.knowledge_graph && data.knowledge_graph.description) {
     snippets.push({
       type: 'knowledge_graph',
-      content: cleanText(data.knowledge_graph.description),
+      content: cleanSerpApiText(data.knowledge_graph.description),
       source: data.knowledge_graph.source?.link || 'Knowledge Graph',
-      title: cleanText(data.knowledge_graph.title || 'Knowledge Graph')
+      title: cleanSerpApiText(data.knowledge_graph.title || 'Knowledge Graph'),
+      format: 'knowledge_panel',
+      datePublished: null
+    });
+  }
+  
+  // Rich snippets from organic results
+  if (data.organic_results && Array.isArray(data.organic_results)) {
+    data.organic_results.slice(0, 5).forEach((result: any) => {
+      if (result.rich_snippet) {
+        snippets.push({
+          type: 'rich_snippet',
+          content: cleanSerpApiText(result.snippet || ''),
+          source: result.link || 'Rich Snippet',
+          title: cleanSerpApiText(result.title || 'Rich Snippet'),
+          format: result.rich_snippet.type || 'structured_data',
+          datePublished: result.date || null
+        });
+      }
     });
   }
   
@@ -401,53 +495,111 @@ function extractSerpApiFeaturedSnippets(data: any) {
 }
 
 function extractSerpApiEntities(data: any, keyword: string) {
-  const entities = new Set<string>();
+  const entities = new Map<string, any>();
   
-  // Knowledge graph entities (primary source for SerpAPI)
+  // Knowledge graph entities (highest priority for SerpAPI)
   if (data.knowledge_graph) {
-    if (data.knowledge_graph.title) entities.add(data.knowledge_graph.title.toLowerCase());
-    if (data.knowledge_graph.type) entities.add(data.knowledge_graph.type.toLowerCase());
+    if (data.knowledge_graph.title) {
+      entities.set(data.knowledge_graph.title.toLowerCase(), {
+        name: cleanSerpApiText(data.knowledge_graph.title),
+        type: 'primary_entity',
+        description: cleanSerpApiText(data.knowledge_graph.description || `Primary entity for ${keyword}`),
+        source: 'knowledge_graph',
+        importance: 10,
+        attributes: data.knowledge_graph.attributes || {}
+      });
+    }
+    
+    if (data.knowledge_graph.type) {
+      entities.set(data.knowledge_graph.type.toLowerCase(), {
+        name: cleanSerpApiText(data.knowledge_graph.type),
+        type: 'entity_type',
+        description: `Category type for ${keyword}`,
+        source: 'knowledge_graph',
+        importance: 9
+      });
+    }
     
     // Related entities from knowledge graph
     if (data.knowledge_graph.profiles) {
       data.knowledge_graph.profiles.forEach((profile: any) => {
-        if (profile.name) entities.add(profile.name.toLowerCase());
+        if (profile.name && !entities.has(profile.name.toLowerCase())) {
+          entities.set(profile.name.toLowerCase(), {
+            name: cleanSerpApiText(profile.name),
+            type: 'related_entity',
+            description: `Related to ${keyword}`,
+            source: 'knowledge_graph',
+            importance: 8,
+            link: profile.link || null
+          });
+        }
       });
     }
     
     // Extract from knowledge graph attributes
     if (data.knowledge_graph.attributes) {
-      Object.values(data.knowledge_graph.attributes).forEach((value: any) => {
+      Object.entries(data.knowledge_graph.attributes).forEach(([key, value]: [string, any]) => {
         if (typeof value === 'string' && value.length > 3 && value.length < 50) {
-          entities.add(value.toLowerCase());
+          const cleanValue = cleanSerpApiText(value).toLowerCase();
+          if (!entities.has(cleanValue) && !cleanValue.includes(keyword.toLowerCase())) {
+            entities.set(cleanValue, {
+              name: cleanSerpApiText(value),
+              type: 'attribute',
+              description: `${key} related to ${keyword}`,
+              source: 'knowledge_graph',
+              importance: 6
+            });
+          }
         }
       });
     }
   }
   
-  // Extract from organic results
-  if (data.organic_results && Array.isArray(data.organic_results)) {
-    data.organic_results.slice(0, 5).forEach((result: any) => {
-      const text = `${result.title || ''} ${result.snippet || ''}`.toLowerCase();
-      const commonTerms = text.match(/\b[a-z]{4,}\b/g);
-      if (commonTerms) {
-        commonTerms.forEach(term => {
-          if (term.length > 3 && !term.includes(keyword.toLowerCase()) && !['this', 'that', 'with', 'from', 'they', 'have', 'been', 'will', 'more', 'some', 'what', 'than', 'very'].includes(term)) {
-            entities.add(term);
-          }
+  // Extract from featured snippet
+  if (data.featured_snippet && data.featured_snippet.snippet) {
+    const snippetText = data.featured_snippet.snippet.toLowerCase();
+    const entityTerms = snippetText.match(/\b[A-Z][a-z]{3,}\b/g) || [];
+    entityTerms.forEach(term => {
+      const cleanTerm = term.toLowerCase();
+      if (!entities.has(cleanTerm) && !cleanTerm.includes(keyword.toLowerCase())) {
+        entities.set(cleanTerm, {
+          name: term,
+          type: 'featured_entity',
+          description: `Featured in snippet for ${keyword}`,
+          source: 'featured_snippet',
+          importance: 7
         });
       }
     });
   }
   
-  return Array.from(entities).slice(0, 12).map(entity => ({
-    name: entity,
-    type: data.knowledge_graph?.title?.toLowerCase().includes(entity) ? 'primary_entity' : 'related_concept',
-    description: `Key concept related to ${keyword}`,
-    source: data.knowledge_graph?.title?.toLowerCase().includes(entity) 
-      ? 'knowledge_graph' 
-      : 'organic_results'
-  }));
+  // Extract from organic results
+  if (data.organic_results && Array.isArray(data.organic_results)) {
+    data.organic_results.slice(0, 8).forEach((result: any, index: number) => {
+      const text = `${result.title || ''} ${result.snippet || ''}`;
+      const commonTerms = text.match(/\b[A-Z][a-z]{4,}\b/g) || [];
+      
+      commonTerms.forEach(term => {
+        const cleanTerm = term.toLowerCase();
+        if (!entities.has(cleanTerm) && 
+            !cleanTerm.includes(keyword.toLowerCase()) && 
+            !['This', 'That', 'With', 'From', 'They', 'Have', 'Been', 'Will', 'More', 'Some', 'What', 'Than', 'Very', 'When', 'Where', 'Which'].includes(term)) {
+          entities.set(cleanTerm, {
+            name: term,
+            type: 'organic_entity',
+            description: `Commonly mentioned in relation to ${keyword}`,
+            source: 'organic_results',
+            importance: Math.max(5 - Math.floor(index / 2), 1)
+          });
+        }
+      });
+    });
+  }
+  
+  // Sort by importance and return top entities
+  return Array.from(entities.values())
+    .sort((a, b) => b.importance - a.importance)
+    .slice(0, 15);
 }
 
 function generateSerpApiHeadings(data: any, organicResults: any[], keyword: string) {
@@ -577,24 +729,217 @@ function extractSerpApiMultimedia(data: any) {
   
   // Extract images
   if (data.images_results && Array.isArray(data.images_results)) {
-    multimedia.images = data.images_results.slice(0, 8).map((img: any) => ({
-      title: cleanText(img.title || ''),
+    multimedia.images = data.images_results.slice(0, 12).map((img: any) => ({
+      title: cleanSerpApiText(img.title || ''),
       source: img.source || '',
-      thumbnail: img.thumbnail || img.original || ''
+      thumbnail: img.thumbnail || img.original || '',
+      link: img.link || '',
+      position: img.position || 0,
+      isProduct: !!(img.price || img.product)
     }));
   }
   
   // Extract videos
   if (data.video_results && Array.isArray(data.video_results)) {
-    multimedia.videos = data.video_results.slice(0, 6).map((video: any) => ({
-      title: cleanText(video.title || ''),
+    multimedia.videos = data.video_results.slice(0, 10).map((video: any) => ({
+      title: cleanSerpApiText(video.title || ''),
       source: video.link || '',
       duration: video.duration || '',
-      thumbnail: video.thumbnail || ''
+      thumbnail: video.thumbnail || '',
+      channel: video.channel || '',
+      date: video.date || '',
+      position: video.position || 0
     }));
   }
   
   return multimedia;
+}
+
+// New enhanced extraction functions for SerpAPI
+function extractSerpApiLocalBusinessData(data: any) {
+  const localData = [];
+  
+  if (data.local_results && Array.isArray(data.local_results)) {
+    data.local_results.forEach((business: any) => {
+      localData.push({
+        name: cleanSerpApiText(business.title || business.name || ''),
+        address: cleanSerpApiText(business.address || ''),
+        rating: business.rating || 0,
+        reviews: business.reviews || 0,
+        type: business.type || 'local_business',
+        phone: business.phone || '',
+        website: business.website || '',
+        hours: business.hours || null,
+        position: business.position || 0
+      });
+    });
+  }
+  
+  return localData;
+}
+
+function extractSerpApiShoppingData(data: any) {
+  const shoppingData = [];
+  
+  if (data.shopping_results && Array.isArray(data.shopping_results)) {
+    data.shopping_results.forEach((product: any) => {
+      shoppingData.push({
+        title: cleanSerpApiText(product.title || ''),
+        price: product.price || '',
+        source: product.source || '',
+        link: product.link || '',
+        rating: product.rating || 0,
+        reviews: product.reviews || 0,
+        image: product.thumbnail || '',
+        position: product.position || 0,
+        shipping: product.shipping || ''
+      });
+    });
+  }
+  
+  return shoppingData;
+}
+
+function analyzeSerpApiFeatureGaps(data: any, keyword: string) {
+  const featureGaps = [];
+  
+  // Check for missing SERP features that represent opportunities
+  if (!data.featured_snippet) {
+    featureGaps.push({
+      topic: `Featured snippet opportunity for ${keyword}`,
+      description: 'No featured snippet currently exists - opportunity to capture position zero',
+      recommendation: 'Create comprehensive, structured content that directly answers the main query',
+      content: `Definitive guide to ${keyword} with clear, concise answers`,
+      opportunity: 'High - Featured snippet captures significant traffic',
+      source: 'SERP feature gap analysis'
+    });
+  }
+  
+  if (!data.people_also_ask || data.people_also_ask.length < 4) {
+    featureGaps.push({
+      topic: `People Also Ask expansion for ${keyword}`,
+      description: 'Limited FAQ coverage in current SERP results',
+      recommendation: 'Develop comprehensive FAQ section targeting related questions',
+      content: `Detailed FAQ covering all aspects of ${keyword}`,
+      opportunity: 'Medium - FAQ content drives long-tail traffic',
+      source: 'PAA gap analysis'
+    });
+  }
+  
+  if (!data.images_results || data.images_results.length < 5) {
+    featureGaps.push({
+      topic: `Visual content opportunity for ${keyword}`,
+      description: 'Limited image results suggest visual content gap',
+      recommendation: 'Create high-quality images, infographics, and visual guides',
+      content: `Visual content library for ${keyword}`,
+      opportunity: 'Medium - Images drive additional traffic streams',
+      source: 'Image results analysis'
+    });
+  }
+  
+  if (!data.video_results || data.video_results.length < 3) {
+    featureGaps.push({
+      topic: `Video content opportunity for ${keyword}`,
+      description: 'Limited video content in SERP results',
+      recommendation: 'Create educational videos, tutorials, or explainer content',
+      content: `Video series covering ${keyword} comprehensively`,
+      opportunity: 'High - Video content has strong engagement potential',
+      source: 'Video results analysis'
+    });
+  }
+  
+  return featureGaps;
+}
+
+function generateSerpApiInsights(data: any, organicResults: any[], peopleAlsoAsk: any[], keyword: string) {
+  const insights = [];
+  
+  // Competition analysis insights
+  if (organicResults.length >= 10) {
+    insights.push(`High competition: ${organicResults.length} strong organic competitors identified`);
+  } else if (organicResults.length >= 5) {
+    insights.push(`Medium competition: ${organicResults.length} organic competitors with optimization opportunities`);
+  } else {
+    insights.push(`Low competition: Only ${organicResults.length} organic competitors - easier ranking opportunity`);
+  }
+  
+  // SERP features insights
+  const serpFeatures = [];
+  if (data.featured_snippet) serpFeatures.push('Featured Snippet');
+  if (data.knowledge_graph) serpFeatures.push('Knowledge Graph');
+  if (data.local_results?.length) serpFeatures.push('Local Pack');
+  if (data.shopping_results?.length) serpFeatures.push('Shopping Results');
+  if (data.images_results?.length) serpFeatures.push('Images');
+  if (data.video_results?.length) serpFeatures.push('Videos');
+  if (data.people_also_ask?.length) serpFeatures.push('People Also Ask');
+  
+  if (serpFeatures.length > 0) {
+    insights.push(`SERP features present: ${serpFeatures.join(', ')} - diverse content strategy needed`);
+  }
+  
+  // Content opportunity insights
+  if (peopleAlsoAsk.length >= 8) {
+    insights.push(`Rich FAQ opportunity: ${peopleAlsoAsk.length} related questions suggest strong informational intent`);
+  }
+  
+  if (data.ads?.length >= 3) {
+    insights.push(`Commercial intent: ${data.ads.length} ads indicate strong buyer intent and monetization potential`);
+  }
+  
+  return insights;
+}
+
+function calculateSerpApiDataQuality(data: any): string {
+  let score = 0;
+  let maxScore = 10;
+  
+  // Organic results quality
+  if (data.organic_results?.length >= 10) score += 2;
+  else if (data.organic_results?.length >= 5) score += 1;
+  
+  // SERP features presence
+  if (data.featured_snippet) score += 1;
+  if (data.knowledge_graph) score += 1;
+  if (data.people_also_ask?.length >= 4) score += 1;
+  if (data.related_questions?.length >= 2) score += 1;
+  if (data.local_results?.length) score += 1;
+  if (data.shopping_results?.length) score += 1;
+  if (data.images_results?.length >= 5) score += 1;
+  if (data.video_results?.length >= 3) score += 1;
+  
+  const percentage = (score / maxScore) * 100;
+  
+  if (percentage >= 80) return 'excellent';
+  if (percentage >= 60) return 'high';
+  if (percentage >= 40) return 'medium';
+  return 'basic';
+}
+
+function cleanSerpApiText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Remove provider references completely
+  text = text.replace(/\b(serpapi|serp\s*api|serpstack|serp\s*stack)\b/gi, '');
+  
+  // Remove duplicate consecutive words
+  const words = text.split(/\s+/);
+  const cleaned = [];
+  let lastWord = '';
+  
+  for (const word of words) {
+    const cleanWord = word.trim();
+    if (cleanWord && cleanWord !== lastWord) {
+      cleaned.push(cleanWord);
+      lastWord = cleanWord;
+    }
+  }
+  
+  return cleaned.join(' ').trim();
+}
+
+function estimateWordCount(text: string): number {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).length;
 }
 
 // Text cleaning function to remove duplicates and contamination
@@ -727,13 +1072,17 @@ function transformSerpstackData(data: any, keyword: string) {
     hasKnowledgeGraph: !!data.knowledge_graph,
     hasLocalResults: !!data.local_results,
     hasShoppingResults: !!data.shopping_results,
+    hasFeaturedSnippet: !!data.featured_snippet,
+    hasImagesResults: !!data.images_results,
+    hasVideosResults: !!data.video_results,
+    hasNewsResults: !!data.news_results,
     organicCount: data.organic_results?.length || 0,
     relatedSearchesCount: data.related_searches?.length || 0
   });
   
   // Estimate search volume based on total results (Serpstack doesn't provide volume directly)
   const totalResults = data.search_information?.total_results || 0;
-  const estimatedVolume = Math.floor(totalResults / 8000); // Better estimation
+  const estimatedVolume = Math.floor(totalResults / 5000); // Better estimation for Serpstack
   
   // Extract organic results
   const organicResults = data.organic_results || [];
@@ -744,7 +1093,7 @@ function transformSerpstackData(data: any, keyword: string) {
   // Enhanced People Also Ask extraction from multiple sources
   const peopleAlsoAsk = extractSerpstackPeopleAlsoAsk(data);
   
-  // Extract featured snippets
+  // Extract featured snippets and answer boxes
   const featuredSnippets = extractSerpstackFeaturedSnippets(data);
   
   // Extract entities from knowledge graph and organic results
@@ -753,8 +1102,23 @@ function transformSerpstackData(data: any, keyword: string) {
   // Generate smart headings from organic results
   const headings = generateSerpstackHeadings(organicResults, keyword);
   
-  // Generate content gaps based on competitors
-  const contentGaps = generateSerpstackContentGaps(organicResults, keyword);
+  // Generate comprehensive content gaps
+  const contentGaps = generateSerpstackContentGaps(organicResults, keyword, data);
+  
+  // Extract local business data
+  const localBusinessData = extractSerpstackLocalBusinessData(data);
+  
+  // Extract shopping results
+  const shoppingData = extractSerpstackShoppingData(data);
+  
+  // Extract multimedia content
+  const multimedia = extractSerpstackMultimedia(data);
+  
+  // Generate advanced insights
+  const insights = generateSerpstackInsights(data, organicResults, peopleAlsoAsk, keyword);
+  
+  // Calculate data quality
+  const dataQualityScore = calculateSerpstackDataQuality(data);
   
   return {
     keyword,
@@ -771,36 +1135,53 @@ function transformSerpstackData(data: any, keyword: string) {
       estimationMethod: 'total_results_division'
     },
     competitionMetadata: {
-      source: 'serpstack_estimate',
+      source: 'serpstack_analysis',
       engine: 'google',
-      competitorCount: organicResults.length
+      competitorCount: organicResults.length,
+      hasAnswerBox: !!data.answer_box,
+      hasFeaturedSnippet: !!data.featured_snippet,
+      hasKnowledgeGraph: !!data.knowledge_graph,
+      hasLocalResults: !!data.local_results,
+      hasShoppingResults: !!data.shopping_results
     },
     isMockData: false,
     isGoogleData: true,
-    dataQuality: 'medium',
+    dataQuality: dataQualityScore,
     entities,
     peopleAlsoAsk,
     headings,
     contentGaps,
     featuredSnippets,
-    topResults: organicResults.slice(0, 5).map((result: any, index: number) => ({
-      title: result.title || '',
+    localBusinessData,
+    shoppingData,
+    multimedia,
+    insights,
+    topResults: organicResults.slice(0, 10).map((result: any, index: number) => ({
+      title: cleanSerpstackText(result.title || ''),
       link: result.url || result.link || '',
-      snippet: result.snippet || '',
+      snippet: cleanSerpstackText(result.snippet || ''),
       position: result.position || index + 1,
-      source: 'serpstack_organic'
+      source: 'organic_result',
+      wordCount: estimateWordCount(result.snippet || ''),
+      hasRichSnippet: !!(result.rich_snippet || result.sitelinks)
     })),
     relatedSearches: relatedSearches.map((search: any) => ({
-      query: search.query || '',
-      source: 'serpstack_related_searches'
+      query: cleanSerpstackText(search.query || ''),
+      source: 'related_searches'
     })),
-    keywords: relatedSearches.map((s: any) => s.query).filter(Boolean),
+    keywords: relatedSearches.map((s: any) => cleanSerpstackText(s.query || '')).filter(Boolean),
     recommendations: [
-      `Serpstack found ${organicResults.length} organic competitors for "${keyword}"`,
-      `${peopleAlsoAsk.length} FAQ questions discovered for content planning`,
-      `${entities.length} key entities identified for topic coverage`,
-      'Serpstack provides comprehensive SERP feature analysis'
-    ]
+      `Serpstack extracted ${organicResults.length} organic competitors with comprehensive analysis`,
+      `${peopleAlsoAsk.length} FAQ questions discovered from multiple SERP sources`,
+      `${entities.length} key entities identified for comprehensive topic coverage`,
+      `${featuredSnippets.length} featured snippets found for optimization opportunities`,
+      data.knowledge_graph ? 'Knowledge Graph data available for entity-based content strategy' : '',
+      data.local_results?.length ? `${data.local_results.length} local results suggest local SEO opportunities` : '',
+      data.shopping_results?.length ? `${data.shopping_results.length} shopping results indicate commercial intent` : '',
+      multimedia.images?.length ? `${multimedia.images.length} image opportunities identified` : '',
+      multimedia.videos?.length ? `${multimedia.videos.length} video content gaps discovered` : '',
+      'Serpstack provides detailed SERP analysis with enhanced data extraction'
+    ].filter(Boolean)
   };
 }
 
@@ -808,16 +1189,17 @@ function transformSerpstackData(data: any, keyword: string) {
 function extractSerpstackPeopleAlsoAsk(data: any) {
   const questions = [];
   
-  console.log('🔍 Extracting enhanced People Also Ask from Serpstack data...');
+  console.log('🔍 Extracting comprehensive People Also Ask from Serpstack data...');
   
   // Method 1: Direct people_also_ask field
   if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
     console.log('✅ Found people_also_ask field with', data.people_also_ask.length, 'questions');
     data.people_also_ask.forEach((item: any) => {
       questions.push({
-        question: cleanText(item.question || item.title || ''),
-        answer: cleanText(item.answer || item.snippet || ''),
-        source: item.link || item.source || 'Serpstack PAA'
+        question: cleanSerpstackText(item.question || item.title || ''),
+        answer: cleanSerpstackText(item.answer || item.snippet || ''),
+        source: item.link || item.source || 'People Also Ask',
+        priority: 'high'
       });
     });
   }
@@ -826,12 +1208,13 @@ function extractSerpstackPeopleAlsoAsk(data: any) {
   if (data.related_questions && Array.isArray(data.related_questions)) {
     console.log('✅ Found related_questions field with', data.related_questions.length, 'questions');
     data.related_questions.forEach((item: any) => {
-      const cleanQuestion = cleanText(item.question || item.title || '');
+      const cleanQuestion = cleanSerpstackText(item.question || item.title || '');
       if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
         questions.push({
           question: cleanQuestion,
-          answer: cleanText(item.answer || item.snippet || ''),
-          source: item.link || item.source || 'Serpstack Related Questions'
+          answer: cleanSerpstackText(item.answer || item.snippet || ''),
+          source: item.link || item.source || 'Related Questions',
+          priority: 'high'
         });
       }
     });
@@ -841,79 +1224,136 @@ function extractSerpstackPeopleAlsoAsk(data: any) {
   if (data.answer_box && data.answer_box.questions) {
     console.log('✅ Found answer box questions with', data.answer_box.questions.length, 'items');
     data.answer_box.questions.forEach((item: any) => {
-      const cleanQuestion = cleanText(item.question || '');
+      const cleanQuestion = cleanSerpstackText(item.question || '');
       if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
         questions.push({
           question: cleanQuestion,
-          answer: cleanText(item.answer || ''),
-          source: 'Serpstack Answer Box'
+          answer: cleanSerpstackText(item.answer || ''),
+          source: 'Answer Box',
+          priority: 'medium'
         });
       }
     });
   }
   
-  // Method 4: Extract from organic results FAQ sections
+  // Method 4: Extract from featured snippet if it contains questions
+  if (data.featured_snippet && data.featured_snippet.snippet) {
+    const snippetText = data.featured_snippet.snippet;
+    const questionMatches = snippetText.match(/[^.!?]*\?[^.!?]*/g);
+    if (questionMatches) {
+      questionMatches.forEach((match: string) => {
+        const cleanQuestion = cleanSerpstackText(match.trim());
+        if (cleanQuestion.length > 10 && !questions.some(q => q.question === cleanQuestion)) {
+          questions.push({
+            question: cleanQuestion,
+            answer: cleanSerpstackText(snippetText),
+            source: data.featured_snippet.link || 'Featured Snippet',
+            priority: 'medium'
+          });
+        }
+      });
+    }
+  }
+  
+  // Method 5: Extract from organic results FAQ sections
   if (data.organic_results && Array.isArray(data.organic_results)) {
-    data.organic_results.forEach((result: any) => {
+    data.organic_results.slice(0, 5).forEach((result: any) => {
+      // Check for explicit FAQ sections
       if (result.faq || result.questions) {
         const faqItems = result.faq || result.questions;
         if (Array.isArray(faqItems)) {
           faqItems.forEach((faq: any) => {
-            const cleanQuestion = cleanText(faq.question || '');
+            const cleanQuestion = cleanSerpstackText(faq.question || '');
             if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
               questions.push({
                 question: cleanQuestion,
-                answer: cleanText(faq.answer || ''),
-                source: result.url || result.link || 'Serpstack FAQ'
+                answer: cleanSerpstackText(faq.answer || ''),
+                source: result.url || result.link || 'FAQ Section',
+                priority: 'medium'
               });
             }
           });
         }
       }
+      
+      // Extract questions from rich snippets
+      if (result.rich_snippet && result.rich_snippet.questions) {
+        result.rich_snippet.questions.forEach((question: any) => {
+          const cleanQuestion = cleanSerpstackText(question.question || '');
+          if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
+            questions.push({
+              question: cleanQuestion,
+              answer: cleanSerpstackText(question.answer || ''),
+              source: result.url || result.link || 'Rich Snippet',
+              priority: 'medium'
+            });
+          }
+        });
+      }
     });
   }
   
-  // Method 5: Extract smart questions from organic results titles
+  // Method 6: Extract smart questions from organic results titles
   if (data.organic_results && Array.isArray(data.organic_results)) {
-    data.organic_results.slice(0, 8).forEach((result: any) => {
+    data.organic_results.slice(0, 10).forEach((result: any) => {
       const title = result.title || '';
-      if (title.includes('?') || title.toLowerCase().startsWith('how') || title.toLowerCase().startsWith('what') || title.toLowerCase().startsWith('why')) {
-        const cleanQuestion = cleanText(title);
-        if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
+      if (title.includes('?') || title.toLowerCase().match(/^(how|what|why|when|where|which|who)/)) {
+        const cleanQuestion = cleanSerpstackText(title);
+        if (cleanQuestion && cleanQuestion.length > 10 && !questions.some(q => q.question === cleanQuestion)) {
           questions.push({
             question: cleanQuestion,
-            answer: cleanText(result.snippet || ''),
-            source: result.url || result.link || 'Serpstack Organic'
+            answer: cleanSerpstackText(result.snippet || ''),
+            source: result.url || result.link || 'Organic Result',
+            priority: 'low'
           });
         }
       }
     });
   }
   
-  console.log(`📊 Total enhanced PAA questions extracted: ${questions.length}`);
-  return questions.slice(0, 12); // Increased limit for better coverage
+  // Method 7: Extract from knowledge graph if it has Q&A
+  if (data.knowledge_graph && data.knowledge_graph.questions) {
+    data.knowledge_graph.questions.forEach((item: any) => {
+      const cleanQuestion = cleanSerpstackText(item.question || '');
+      if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
+        questions.push({
+          question: cleanQuestion,
+          answer: cleanSerpstackText(item.answer || ''),
+          source: 'Knowledge Graph',
+          priority: 'high'
+        });
+      }
+    });
+  }
+  
+  console.log(`📊 Total comprehensive PAA questions extracted: ${questions.length}`);
+  return questions.slice(0, 15); // Increased limit for maximum coverage
 }
 
 function extractSerpstackFeaturedSnippets(data: any) {
   const snippets = [];
   
-  // Answer box
-  if (data.answer_box) {
-    snippets.push({
-      type: 'answer_box',
-      content: data.answer_box.snippet || data.answer_box.answer || '',
-      source: data.answer_box.link || 'Serpstack Answer Box',
-      title: data.answer_box.title || 'Featured Answer'
-    });
-  }
-  
   // Featured snippet
   if (data.featured_snippet) {
     snippets.push({
       type: 'featured_snippet',
-      content: data.featured_snippet.snippet || '',
-      source: data.featured_snippet.link || 'Serpstack Featured Snippet',
-      title: data.featured_snippet.title || 'Featured Snippet'
+      content: cleanSerpstackText(data.featured_snippet.snippet || ''),
+      source: data.featured_snippet.link || 'Featured Snippet',
+      title: cleanSerpstackText(data.featured_snippet.title || 'Featured Snippet'),
+      format: data.featured_snippet.type || 'paragraph',
+      datePublished: data.featured_snippet.date || null
+    });
+  }
+  
+  // Answer box
+  if (data.answer_box) {
+    snippets.push({
+      type: 'answer_box',
+      content: cleanSerpstackText(data.answer_box.snippet || data.answer_box.answer || ''),
+      source: data.answer_box.link || 'Answer Box',
+      title: cleanSerpstackText(data.answer_box.title || 'Answer Box'),
+      format: data.answer_box.type || 'direct_answer',
+      datePublished: data.answer_box.date || null
     });
   }
   
@@ -921,13 +1361,109 @@ function extractSerpstackFeaturedSnippets(data: any) {
   if (data.knowledge_graph && data.knowledge_graph.description) {
     snippets.push({
       type: 'knowledge_graph',
-      content: data.knowledge_graph.description,
+      content: cleanSerpstackText(data.knowledge_graph.description),
       source: data.knowledge_graph.source?.link || 'Knowledge Graph',
-      title: data.knowledge_graph.title || 'Knowledge Graph'
+      title: cleanSerpstackText(data.knowledge_graph.title || 'Knowledge Graph'),
+      format: 'knowledge_panel',
+      datePublished: null
+    });
+  }
+  
+  // Extract rich snippets from organic results
+  if (data.organic_results && Array.isArray(data.organic_results)) {
+    data.organic_results.slice(0, 3).forEach((result: any) => {
+      if (result.rich_snippet) {
+        snippets.push({
+          type: 'rich_snippet',
+          content: cleanSerpstackText(result.snippet || ''),
+          source: result.url || result.link || 'Rich Snippet',
+          title: cleanSerpstackText(result.title || 'Rich Snippet'),
+          format: result.rich_snippet.type || 'structured_data',
+          datePublished: result.date || null
+        });
+      }
     });
   }
   
   return snippets;
+}
+
+// New enhanced extraction functions for Serpstack
+function extractSerpstackLocalBusinessData(data: any) {
+  const localData = [];
+  
+  if (data.local_results && Array.isArray(data.local_results)) {
+    data.local_results.forEach((business: any) => {
+      localData.push({
+        name: cleanSerpstackText(business.title || business.name || ''),
+        address: cleanSerpstackText(business.address || ''),
+        rating: business.rating || 0,
+        reviews: business.reviews || 0,
+        type: business.type || 'local_business',
+        phone: business.phone || '',
+        website: business.website || '',
+        hours: business.hours || null,
+        position: business.position || 0
+      });
+    });
+  }
+  
+  return localData;
+}
+
+function extractSerpstackShoppingData(data: any) {
+  const shoppingData = [];
+  
+  if (data.shopping_results && Array.isArray(data.shopping_results)) {
+    data.shopping_results.forEach((product: any) => {
+      shoppingData.push({
+        title: cleanSerpstackText(product.title || ''),
+        price: product.price || '',
+        source: product.source || '',
+        link: product.link || '',
+        rating: product.rating || 0,
+        reviews: product.reviews || 0,
+        image: product.thumbnail || '',
+        position: product.position || 0,
+        shipping: product.shipping || ''
+      });
+    });
+  }
+  
+  return shoppingData;
+}
+
+function extractSerpstackMultimedia(data: any) {
+  const multimedia = {
+    images: [],
+    videos: []
+  };
+  
+  // Extract images
+  if (data.images_results && Array.isArray(data.images_results)) {
+    multimedia.images = data.images_results.slice(0, 10).map((img: any) => ({
+      title: cleanSerpstackText(img.title || ''),
+      source: img.source || '',
+      thumbnail: img.thumbnail || img.original || '',
+      link: img.link || '',
+      position: img.position || 0
+    }));
+  }
+  
+  // Extract videos
+  if (data.video_results && Array.isArray(data.video_results)) {
+    multimedia.videos = data.video_results.slice(0, 8).map((video: any) => ({
+      title: cleanSerpstackText(video.title || ''),
+      source: video.link || '',
+      duration: video.duration || '',
+      thumbnail: video.thumbnail || '',
+      channel: video.channel || '',
+      date: video.date || '',
+      position: video.position || 0
+    }));
+  }
+  
+  return multimedia;
 }
 
 function extractSerpstackEntities(data: any, keyword: string) {
@@ -1010,8 +1546,64 @@ function generateSerpstackHeadings(organicResults: any[], keyword: string) {
   return headings;
 }
 
-function generateSerpstackContentGaps(organicResults: any[], keyword: string) {
+function generateSerpstackContentGaps(organicResults: any[], keyword: string, data: any) {
   const gaps = [];
+  
+  // Advanced content gap analysis based on missing SERP features
+  if (!data.featured_snippet) {
+    gaps.push({
+      topic: `Featured snippet optimization for ${keyword}`,
+      description: 'No featured snippet exists - opportunity to capture position zero',
+      recommendation: 'Create comprehensive, well-structured content that directly answers the main query',
+      content: `Complete guide to ${keyword} with clear definitions and step-by-step explanations`,
+      opportunity: 'High - Featured snippets capture significant click-through rates',
+      source: 'SERP feature analysis'
+    });
+  }
+  
+  if (!data.people_also_ask || data.people_also_ask.length < 4) {
+    gaps.push({
+      topic: `FAQ content expansion for ${keyword}`,
+      description: 'Limited People Also Ask coverage suggests content opportunity',
+      recommendation: 'Develop comprehensive FAQ section targeting related questions',
+      content: `Detailed FAQ covering all aspects and variations of ${keyword}`,
+      opportunity: 'Medium - FAQ content drives long-tail organic traffic',
+      source: 'PAA gap analysis'
+    });
+  }
+  
+  if (!data.local_results || data.local_results.length === 0) {
+    gaps.push({
+      topic: `Local SEO opportunity for ${keyword}`,
+      description: 'No local pack results suggest local content gap',
+      recommendation: 'Create location-specific content and local business optimization',
+      content: `Local ${keyword} services and location-based guides`,
+      opportunity: 'Medium - Local searches often have lower competition',
+      source: 'Local results analysis'
+    });
+  }
+  
+  if (!data.images_results || data.images_results.length < 5) {
+    gaps.push({
+      topic: `Visual content opportunity for ${keyword}`,
+      description: 'Limited image results indicate visual content gap',
+      recommendation: 'Create infographics, diagrams, and visual guides',
+      content: `Visual content library including infographics and step-by-step images for ${keyword}`,
+      opportunity: 'Medium - Visual content attracts additional traffic streams',
+      source: 'Image results analysis'
+    });
+  }
+  
+  if (!data.video_results || data.video_results.length < 3) {
+    gaps.push({
+      topic: `Video content opportunity for ${keyword}`,
+      description: 'Limited video content in SERP results',
+      recommendation: 'Create educational videos, tutorials, or explainer content',
+      content: `Video series covering ${keyword} from beginner to advanced levels`,
+      opportunity: 'High - Video content has strong engagement and ranking potential',
+      source: 'Video results analysis'
+    });
+  }
   
   // Analyze competitor content themes
   const themes = new Set<string>();
