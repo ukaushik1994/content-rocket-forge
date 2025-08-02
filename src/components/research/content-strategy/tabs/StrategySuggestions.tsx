@@ -4,10 +4,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowRight, CheckCircle, Lightbulb, TrendingUp, Target, Users, Calendar, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lightbulb, TrendingUp, Target, Users, Calendar, Loader2, Plus, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { toast } from 'sonner';
+import { CustomStrategyCreator } from '../CustomStrategyCreator';
 
 interface StrategySuggestionsProps {
   serpMetrics: any;
@@ -17,67 +18,166 @@ interface StrategySuggestionsProps {
 export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsProps) => {
   const [selectedStrategy, setSelectedStrategy] = useState<number | null>(null);
   const [loading, setLoading] = useState<number | null>(null);
+  const [showCustomCreator, setShowCustomCreator] = useState(false);
   const { createStrategy, currentStrategy } = useContentStrategy();
 
   const getStrategyRecommendations = () => {
     const difficulty = serpMetrics?.keywordDifficulty || 50;
     const volume = serpMetrics?.searchVolume || 10000;
+    const competition = serpMetrics?.competitionScore || 0.5;
+    const cpc = serpMetrics?.cpc || 1.5;
     
-    const strategies = [
-      {
-        id: 1,
-        title: "SEO-Focused Content Hub",
-        description: `Target ${goals.mainKeyword || 'your main keyword'} and related long-tail keywords with comprehensive guides`,
-        difficulty: difficulty < 40 ? "Low" : difficulty < 70 ? "Medium" : "High",
-        traffic: Math.floor(volume * 0.3).toLocaleString(),
-        contentPieces: parseInt(goals.contentPieces) || 12,
-        score: Math.max(90 - (difficulty * 0.5), 60),
-        topics: ["How-to guides", "Best practices", "Industry trends", "Tool comparisons"],
-        timeframe: goals.timeline || "3 months",
-        implementation: [
-          `Create pillar content around "${goals.mainKeyword || 'main topic'}"`,
-          "Develop 8-10 supporting articles targeting long-tail keywords",
-          "Optimize for featured snippets and People Also Ask",
-          "Build internal linking structure for topic authority"
-        ]
-      },
-      {
-        id: 2,
-        title: "Competitor Gap Strategy",
-        description: "Identify and target content gaps left by top-ranking competitors",
-        difficulty: "Medium",
-        traffic: Math.floor(volume * 0.4).toLocaleString(),
-        contentPieces: Math.floor((parseInt(goals.contentPieces) || 12) * 0.8),
-        score: serpMetrics ? 85 : 75,
-        topics: ["Untapped subtopics", "Better user experience", "Updated information", "Missing formats"],
-        timeframe: goals.timeline || "3 months",
-        implementation: [
-          "Analyze top 10 competitors for content gaps",
-          "Create superior content for identified opportunities",
-          "Add visual elements competitors are missing",
-          "Target featured snippet opportunities"
-        ]
-      },
-      {
-        id: 3,
-        title: "Multi-Format Content Series",
-        description: "Diversify content formats to capture different audience preferences",
-        difficulty: "High",
-        traffic: Math.floor(volume * 0.25).toLocaleString(),
-        contentPieces: Math.floor((parseInt(goals.contentPieces) || 12) * 1.2),
-        score: 80,
-        topics: ["Blog posts", "Video content", "Infographics", "Podcasts", "Interactive tools"],
-        timeframe: goals.timeline || "4 months",
-        implementation: [
-          "Create written guides as foundation content",
-          "Repurpose into video tutorials and infographics",
-          "Develop interactive elements and calculators",
-          "Cross-promote across all content formats"
-        ]
-      }
-    ];
+    // Dynamic strategy generation based on SERP metrics
+    const strategies = [];
+    
+    // Strategy 1: SEO-Focused Content Hub (Always recommended but adjusted based on metrics)
+    strategies.push({
+      id: 1,
+      title: difficulty < 40 ? "Aggressive SEO Content Hub" : difficulty < 70 ? "Strategic SEO Content Hub" : "Long-tail SEO Content Hub",
+      description: difficulty < 40 
+        ? `Capitalize on low competition for "${goals.mainKeyword}" with aggressive content targeting`
+        : difficulty < 70
+        ? `Build comprehensive authority around "${goals.mainKeyword}" with strategic content approach`
+        : `Target long-tail opportunities around "${goals.mainKeyword}" to compete in high-difficulty space`,
+      difficulty: difficulty < 40 ? "Low" : difficulty < 70 ? "Medium" : "High",
+      traffic: Math.floor(volume * (difficulty < 40 ? 0.4 : difficulty < 70 ? 0.3 : 0.15)).toLocaleString(),
+      contentPieces: parseInt(goals.contentPieces) || 12,
+      score: Math.max(95 - (difficulty * 0.8), 60),
+      topics: difficulty < 40 
+        ? ["Primary keyword targeting", "Related keywords", "Featured snippets", "Local SEO"]
+        : difficulty < 70
+        ? ["Pillar content", "Topic clusters", "Long-tail keywords", "Internal linking"]
+        : ["Long-tail opportunities", "Question-based content", "Niche subtopics", "Semantic keywords"],
+      timeframe: difficulty < 40 ? "2-3 months" : difficulty < 70 ? goals.timeline || "3 months" : "4-6 months",
+      implementation: difficulty < 40
+        ? [
+            `Target "${goals.mainKeyword}" directly with comprehensive pillar content`,
+            "Create supporting content for 15-20 related keywords",
+            "Optimize aggressively for featured snippets",
+            "Build rapid internal linking structure"
+          ]
+        : difficulty < 70
+        ? [
+            `Create authority content hub around "${goals.mainKeyword}"`,
+            "Develop topic clusters with 8-12 supporting articles",
+            "Focus on E-A-T signals and comprehensive coverage",
+            "Build systematic internal linking strategy"
+          ]
+        : [
+            `Focus on long-tail variations of "${goals.mainKeyword}"`,
+            "Target question-based and conversational queries",
+            "Create in-depth, expert-level content",
+            "Build topical authority through consistent publishing"
+          ]
+    });
 
-    return strategies;
+    // Strategy 2: Competitor Gap Strategy (Recommended when competition data available)
+    if (serpMetrics?.topResults?.length > 0) {
+      strategies.push({
+        id: 2,
+        title: competition > 0.7 ? "Competitive Disruption Strategy" : "Competitor Gap Strategy",
+        description: competition > 0.7
+          ? "Disrupt established competitors with superior content and user experience"
+          : "Identify and exploit content gaps left by competitors in your niche",
+        difficulty: competition > 0.7 ? "High" : "Medium",
+        traffic: Math.floor(volume * (competition > 0.7 ? 0.25 : 0.35)).toLocaleString(),
+        contentPieces: Math.floor((parseInt(goals.contentPieces) || 12) * (competition > 0.7 ? 1.2 : 0.9)),
+        score: competition > 0.7 ? 75 : 85,
+        topics: competition > 0.7
+          ? ["Disruptive content formats", "Superior user experience", "Updated information", "Unique perspectives"]
+          : ["Untapped subtopics", "Missing content types", "Outdated competitor content", "User experience gaps"],
+        timeframe: competition > 0.7 ? "6-8 months" : goals.timeline || "4 months",
+        implementation: competition > 0.7
+          ? [
+              "Analyze top 10 competitors for content weaknesses",
+              "Create dramatically superior content experiences",
+              "Focus on multimedia and interactive elements",
+              "Target emerging trends competitors are missing"
+            ]
+          : [
+              "Conduct comprehensive competitor content audit",
+              "Identify specific gaps in competitor coverage",
+              "Create targeted content for unexploited opportunities",
+              "Optimize for user intent competitors are missing"
+            ]
+      });
+    }
+
+    // Strategy 3: Multi-Format Content Series (Recommended for higher volume keywords)
+    if (volume > 5000) {
+      strategies.push({
+        id: 3,
+        title: volume > 20000 ? "Omnichannel Content Empire" : "Multi-Format Content Series",
+        description: volume > 20000
+          ? "Build comprehensive content ecosystem across all formats to dominate high-volume keyword space"
+          : "Diversify content formats to capture different audience preferences and search intents",
+        difficulty: volume > 20000 ? "High" : "Medium",
+        traffic: Math.floor(volume * (volume > 20000 ? 0.3 : 0.2)).toLocaleString(),
+        contentPieces: Math.floor((parseInt(goals.contentPieces) || 12) * (volume > 20000 ? 1.5 : 1.2)),
+        score: volume > 20000 ? 90 : 80,
+        topics: volume > 20000
+          ? ["Written content", "Video content", "Interactive tools", "Podcasts", "Webinars", "Infographics"]
+          : ["Blog posts", "Video tutorials", "Infographics", "Case studies", "Templates"],
+        timeframe: volume > 20000 ? "6-12 months" : "4-6 months",
+        implementation: volume > 20000
+          ? [
+              "Create comprehensive written content foundation",
+              "Develop video series and podcast episodes",
+              "Build interactive tools and calculators",
+              "Establish cross-format content promotion strategy"
+            ]
+          : [
+              "Start with detailed written guides as foundation",
+              "Repurpose into video tutorials and visual content",
+              "Create downloadable resources and templates",
+              "Cross-promote across all content formats"
+            ]
+      });
+    }
+
+    // Strategy 4: Paid + Organic Hybrid (Recommended for high CPC keywords)
+    if (cpc > 2.0) {
+      strategies.push({
+        id: 4,
+        title: "Paid + Organic Hybrid Strategy",
+        description: `High commercial value detected (CPC: $${cpc.toFixed(2)}). Combine organic content with strategic paid promotion`,
+        difficulty: "Medium",
+        traffic: Math.floor(volume * 0.2).toLocaleString(),
+        contentPieces: Math.floor((parseInt(goals.contentPieces) || 12) * 0.8),
+        score: 88,
+        topics: ["Commercial content", "Comparison guides", "Product reviews", "Landing pages", "Lead magnets"],
+        timeframe: "3-4 months",
+        implementation: [
+          "Create high-converting commercial content",
+          "Develop comparison and review content",
+          "Build landing pages for paid traffic",
+          "Create lead magnets and conversion funnels"
+        ]
+      });
+    }
+
+    // Strategy 5: Local SEO Focus (Recommended if location-based intent detected)
+    if (goals.mainKeyword?.includes('near me') || goals.mainKeyword?.includes('local') || volume < 2000) {
+      strategies.push({
+        id: 5,
+        title: "Local SEO Domination Strategy",
+        description: "Focus on local search optimization and community-based content to dominate local market",
+        difficulty: "Low",
+        traffic: Math.floor(volume * 0.6).toLocaleString(),
+        contentPieces: Math.floor((parseInt(goals.contentPieces) || 12) * 0.7),
+        score: 92,
+        topics: ["Local guides", "Community content", "Location pages", "Local partnerships", "Reviews management"],
+        timeframe: "2-3 months",
+        implementation: [
+          "Optimize Google Business Profile and local listings",
+          "Create location-specific content and landing pages",
+          "Build local partnership and citation opportunities",
+          "Develop community-focused content strategy"
+        ]
+      });
+    }
+
+    return strategies.slice(0, 4); // Return top 4 strategies
   };
 
   const strategies = getStrategyRecommendations();
@@ -108,6 +208,22 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
 
   return (
     <div className="space-y-6">
+      {/* Header with Custom Strategy Creator */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Strategy Recommendations</h2>
+          <p className="text-muted-foreground">AI-powered strategies based on your keyword analysis and goals</p>
+        </div>
+        <Button 
+          onClick={() => setShowCustomCreator(true)}
+          variant="outline" 
+          className="text-primary border-primary hover:bg-primary/10"
+        >
+          <Wand2 className="h-4 w-4 mr-2" />
+          Create Custom Strategy
+        </Button>
+      </div>
+
       {strategies.map((strategy, index) => (
         <motion.div
           key={strategy.id}
@@ -229,6 +345,16 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
           </Card>
         </motion.div>
       ))}
+
+      {/* Custom Strategy Creator Modal */}
+      <AnimatePresence>
+        {showCustomCreator && (
+          <CustomStrategyCreator 
+            onClose={() => setShowCustomCreator(false)}
+            goals={goals}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
