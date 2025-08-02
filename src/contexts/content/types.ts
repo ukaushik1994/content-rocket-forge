@@ -1,10 +1,14 @@
 
+export type ContentType = 'article' | 'blog' | 'glossary' | 'social_post' | 'email' | 'landing_page';
+
 export interface ContentItemType {
   id: string;
   title: string;
   content: string;
   status: 'draft' | 'published' | 'archived';
   approval_status: 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published';
+  content_type: ContentType;
+  glossary_id?: string;
   seo_score?: number;
   keywords?: string[];
   created_at: string;
@@ -27,6 +31,12 @@ export interface ContentItemType {
     qualityScore?: number;
     readabilityScore?: number;
     engagementScore?: number;
+    // Glossary-specific metadata
+    termCount?: number;
+    completedTerms?: number;
+    domainUrl?: string;
+    exportFormats?: string[];
+    lastExportDate?: string;
   };
   submitted_for_review_at?: string;
   reviewer_id?: string;

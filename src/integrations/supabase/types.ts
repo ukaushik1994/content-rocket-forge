@@ -631,7 +631,9 @@ export type Database = {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_workflow_status"]
           content: string | null
+          content_type: Database["public"]["Enums"]["content_type_enum"] | null
           created_at: string
+          glossary_id: string | null
           id: string
           metadata: Json | null
           published_url: string | null
@@ -647,7 +649,9 @@ export type Database = {
         Insert: {
           approval_status?: Database["public"]["Enums"]["approval_workflow_status"]
           content?: string | null
+          content_type?: Database["public"]["Enums"]["content_type_enum"] | null
           created_at?: string
+          glossary_id?: string | null
           id?: string
           metadata?: Json | null
           published_url?: string | null
@@ -663,7 +667,9 @@ export type Database = {
         Update: {
           approval_status?: Database["public"]["Enums"]["approval_workflow_status"]
           content?: string | null
+          content_type?: Database["public"]["Enums"]["content_type_enum"] | null
           created_at?: string
+          glossary_id?: string | null
           id?: string
           metadata?: Json | null
           published_url?: string | null
@@ -677,6 +683,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "content_items_glossary_id_fkey"
+            columns: ["glossary_id"]
+            isOneToOne: false
+            referencedRelation: "glossaries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "content_items_user_id_fkey"
             columns: ["user_id"]
@@ -1276,6 +1289,13 @@ export type Database = {
         | "rejected"
         | "needs_changes"
         | "published"
+      content_type_enum:
+        | "article"
+        | "blog"
+        | "glossary"
+        | "social_post"
+        | "email"
+        | "landing_page"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1411,6 +1431,14 @@ export const Constants = {
         "rejected",
         "needs_changes",
         "published",
+      ],
+      content_type_enum: [
+        "article",
+        "blog",
+        "glossary",
+        "social_post",
+        "email",
+        "landing_page",
       ],
     },
   },

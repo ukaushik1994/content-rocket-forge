@@ -38,6 +38,7 @@ export default function NavItems() {
     '/content-repurposing', 
     '/content-approval',
     '/glossary-builder',
+    '/repository',
     '/drafts'
   ];
   
@@ -133,14 +134,14 @@ export default function NavItems() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link 
-              to="/drafts" 
+              to="/repository" 
               className={cn(
                 'flex items-center gap-2 w-full cursor-pointer',
-                location.pathname === '/drafts' && 'bg-accent text-accent-foreground'
+                (location.pathname === '/repository' || location.pathname === '/drafts') && 'bg-accent text-accent-foreground'
               )}
             >
               <FileText className="h-4 w-4" />
-              Drafts
+              Repository
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>

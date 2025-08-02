@@ -80,6 +80,8 @@ export const processContentItems = async (contentData: any[]): Promise<ContentIt
         content: dbItem.content || '',
         status: dbItem.status as 'draft' | 'published' | 'archived',
         approval_status: dbItem.approval_status as 'draft' | 'pending_review' | 'in_review' | 'approved' | 'rejected' | 'needs_changes' | 'published',
+        content_type: dbItem.content_type || 'article',
+        glossary_id: dbItem.glossary_id,
         created_at: dbItem.created_at,
         updated_at: dbItem.updated_at,
         seo_score: dbItem.seo_score || 0,
