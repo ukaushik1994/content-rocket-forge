@@ -4,11 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowRight, CheckCircle, Lightbulb, TrendingUp, Target, Users, Calendar, Loader2, Plus, Wand2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lightbulb, TrendingUp, Target, Users, Calendar, Loader2, Plus, Wand2, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { toast } from 'sonner';
 import { CustomStrategyCreator } from '../CustomStrategyCreator';
+import { StrategyComparison } from '../StrategyComparison';
 
 interface StrategySuggestionsProps {
   serpMetrics: any;
@@ -19,7 +20,8 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
   const [selectedStrategy, setSelectedStrategy] = useState<number | null>(null);
   const [loading, setLoading] = useState<number | null>(null);
   const [showCustomCreator, setShowCustomCreator] = useState(false);
-  const { createStrategy, currentStrategy } = useContentStrategy();
+  const [showComparison, setShowComparison] = useState(false);
+  const { createStrategy, createPipelineItem, createCalendarItem, currentStrategy } = useContentStrategy();
 
   const getStrategyRecommendations = () => {
     const difficulty = serpMetrics?.keywordDifficulty || 50;
@@ -185,6 +187,7 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
   const handleSelectStrategy = async (strategy: any) => {
     setLoading(strategy.id);
     try {
+      // 1. Create the strategy
       await createStrategy({
         name: strategy.title,
         monthly_traffic_goal: parseInt(strategy.traffic.replace(/,/g, '')) || undefined,
@@ -196,7 +199,13 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
         content_pillars: strategy.topics
       });
       
-      toast.success(`${strategy.title} strategy activated successfully!`);
+      // 2. Auto-generate pipeline items from implementation steps
+      await generatePipelineFromStrategy(strategy);
+      
+      // 3. Auto-generate calendar items based on timeline
+      await generateCalendarFromStrategy(strategy);
+      
+      toast.success(`${strategy.title} strategy activated with ${strategy.implementation.length} pipeline items and calendar schedule!`);
       setSelectedStrategy(strategy.id);
     } catch (error) {
       console.error('Error creating strategy:', error);
@@ -206,22 +215,110 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
     }
   };
 
+  const generatePipelineFromStrategy = async (strategy: any) => {    
+    // Generate pipeline items from implementation steps
+    const pipelinePromises = strategy.implementation.map((step: string, index: number) => {
+      const stageMap = ['idea', 'planning', 'in_progress', 'review'];
+      const priorityMap = ['high', 'medium', 'medium', 'low'];
+      
+      return createPipelineItem({
+        title: step,
+        stage: stageMap[index] || 'idea',
+        content_type: 'blog',
+        priority: priorityMap[index] || 'medium',
+        progress_percentage: 0,
+        notes: `Auto-generated from ${strategy.title} strategy`
+      });
+    });
+
+    // Generate additional content pieces based on topics
+    const topicPromises = strategy.topics.slice(0, Math.min(strategy.contentPieces - strategy.implementation.length, 5)).map((topic: string) => {
+      return createPipelineItem({
+        title: `Create ${topic} content`,
+        stage: 'idea',
+        content_type: 'blog',
+        target_keyword: `${goals.mainKeyword} ${topic.toLowerCase()}`,
+        priority: 'medium',
+        progress_percentage: 0,
+        notes: `Content piece for ${topic} - auto-generated from strategy`
+      });
+    });
+
+    await Promise.all([...pipelinePromises, ...topicPromises]);
+  };
+
+  const generateCalendarFromStrategy = async (strategy: any) => {    
+    // Parse timeline to determine schedule
+    const timelineMatch = strategy.timeframe.match(/(\d+)/);
+    const months = timelineMatch ? parseInt(timelineMatch[1]) : 3;
+    
+    const calendarPromises = [];
+    let currentDate = new Date();
+    
+    // Generate calendar items for implementation steps
+    strategy.implementation.forEach((step: string, index: number) => {
+      const scheduleDate = new Date(currentDate);
+      scheduleDate.setDate(scheduleDate.getDate() + (index * 7)); // Weekly intervals
+      
+      calendarPromises.push(createCalendarItem({
+        title: step,
+        content_type: 'blog',
+        status: 'planning',
+        scheduled_date: scheduleDate.toISOString().split('T')[0],
+        priority: index === 0 ? 'high' : 'medium',
+        estimated_hours: 4,
+        tags: ['strategy-implementation'],
+        notes: `Implementation step ${index + 1} for ${strategy.title}`
+      }));
+    });
+
+    // Generate calendar items for content topics
+    strategy.topics.forEach((topic: string, index: number) => {
+      const scheduleDate = new Date(currentDate);
+      scheduleDate.setDate(scheduleDate.getDate() + ((index + strategy.implementation.length) * 3)); // Every 3 days
+      
+      calendarPromises.push(createCalendarItem({
+        title: `Create ${topic} content`,
+        content_type: 'blog',
+        status: 'planning',
+        scheduled_date: scheduleDate.toISOString().split('T')[0],
+        priority: 'medium',
+        estimated_hours: 6,
+        tags: [topic.toLowerCase().replace(/\s+/g, '-'), 'content-creation'],
+        notes: `Content creation for ${topic} topic`
+      }));
+    });
+
+    await Promise.all(calendarPromises);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header with Custom Strategy Creator */}
+      {/* Header with Action Buttons */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Strategy Recommendations</h2>
           <p className="text-muted-foreground">AI-powered strategies based on your keyword analysis and goals</p>
         </div>
-        <Button 
-          onClick={() => setShowCustomCreator(true)}
-          variant="outline" 
-          className="text-primary border-primary hover:bg-primary/10"
-        >
-          <Wand2 className="h-4 w-4 mr-2" />
-          Create Custom Strategy
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => setShowComparison(true)}
+            variant="outline" 
+            className="text-blue-400 border-blue-400 hover:bg-blue-400/10"
+            disabled={strategies.length < 2}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Compare Strategies
+          </Button>
+          <Button 
+            onClick={() => setShowCustomCreator(true)}
+            variant="outline" 
+            className="text-primary border-primary hover:bg-primary/10"
+          >
+            <Wand2 className="h-4 w-4 mr-2" />
+            Create Custom Strategy
+          </Button>
+        </div>
       </div>
 
       {strategies.map((strategy, index) => (
@@ -352,6 +449,20 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
           <CustomStrategyCreator 
             onClose={() => setShowCustomCreator(false)}
             goals={goals}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Strategy Comparison Modal */}
+      <AnimatePresence>
+        {showComparison && (
+          <StrategyComparison 
+            strategies={strategies}
+            onClose={() => setShowComparison(false)}
+            onSelectStrategy={(strategy) => {
+              setShowComparison(false);
+              handleSelectStrategy(strategy);
+            }}
           />
         )}
       </AnimatePresence>
