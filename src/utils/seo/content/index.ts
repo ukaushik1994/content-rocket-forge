@@ -1,0 +1,2 @@
+
+export { detectCTAs } from './detectCTAs';

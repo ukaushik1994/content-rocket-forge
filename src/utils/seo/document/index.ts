@@ -1,0 +1,2 @@
+
+export { extractDocumentStructure } from './extractDocumentStructure';
