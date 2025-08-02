@@ -19,6 +19,12 @@ import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { FeaturesTab } from './tabs/FeaturesTab';
 import { ResourcesTab } from './tabs/ResourcesTab';
 import { PreviewTab } from './tabs/PreviewTab';
+import { TargetMarketTab } from './tabs/TargetMarketTab';
+import { CompetitiveAnalysisTab } from './tabs/CompetitiveAnalysisTab';
+import { TechnicalSpecsTab } from './tabs/TechnicalSpecsTab';
+import { PricingTab } from './tabs/PricingTab';
+import { CaseStudiesTab } from './tabs/CaseStudiesTab';
+import { AnalyticsTab } from './tabs/AnalyticsTab';
 
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
@@ -154,19 +160,19 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 mb-4 flex-shrink-0">
-              <TabsTrigger value="basic" className="flex items-center gap-2">
-                Basic Info
-              </TabsTrigger>
-              <TabsTrigger value="features" className="flex items-center gap-2">
-                Features
-              </TabsTrigger>
-              <TabsTrigger value="resources" className="flex items-center gap-2">
-                Resources
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
-                Preview
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
+              <TabsTrigger value="basic">Overview</TabsTrigger>
+              <TabsTrigger value="features">Features</TabsTrigger>
+              <TabsTrigger value="market">Market</TabsTrigger>
+              <TabsTrigger value="technical">Technical</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            </TabsList>
+            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
+              <TabsTrigger value="competitors">Competitors</TabsTrigger>
+              <TabsTrigger value="cases">Case Studies</TabsTrigger>
+              <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
             
             <div className="flex-1 overflow-y-auto">
@@ -203,11 +209,32 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
                     />
                   </TabsContent>
                   
+                  <TabsContent value="market" className="mt-0">
+                    <TargetMarketTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="technical" className="mt-0">
+                    <TechnicalSpecsTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="pricing" className="mt-0">
+                    <PricingTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="competitors" className="mt-0">
+                    <CompetitiveAnalysisTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="cases" className="mt-0">
+                    <CaseStudiesTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
+                  <TabsContent value="analytics" className="mt-0">
+                    <AnalyticsTab formData={formData} updateFormData={updateFormData} />
+                  </TabsContent>
+                  
                   <TabsContent value="preview" className="mt-0">
-                    <PreviewTab
-                      formData={formData}
-                      logoPreview={logoPreview}
-                    />
+                    <PreviewTab formData={formData} logoPreview={logoPreview} />
                   </TabsContent>
                 </motion.div>
               </AnimatePresence>

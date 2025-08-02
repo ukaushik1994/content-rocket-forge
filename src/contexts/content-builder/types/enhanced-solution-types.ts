@@ -22,6 +22,76 @@ export interface EnhancedSolutionResource {
   order: number;
 }
 
+export interface MarketData {
+  size?: string;
+  growthRate?: string;
+  geographicAvailability?: string[];
+  complianceRequirements?: string[];
+}
+
+export interface CompetitorInfo {
+  name: string;
+  strengths: string[];
+  weaknesses: string[];
+  marketShare?: string;
+  pricing?: string;
+}
+
+export interface TechnicalSpecs {
+  systemRequirements?: string[];
+  supportedPlatforms?: string[];
+  apiCapabilities?: string[];
+  securityFeatures?: string[];
+  performanceMetrics?: string[];
+  uptimeGuarantee?: string;
+}
+
+export interface PricingModel {
+  model: 'subscription' | 'one-time' | 'usage-based' | 'freemium' | 'enterprise' | 'custom';
+  startingPrice?: string;
+  tiers: Array<{
+    name: string;
+    price: string;
+    features: string[];
+    limitations?: string[];
+  }>;
+  customPricing?: boolean;
+  freeTrialDuration?: string;
+}
+
+export interface CaseStudy {
+  id: string;
+  title: string;
+  company: string;
+  industry: string;
+  challenge: string;
+  solution: string;
+  results: string[];
+  metrics?: Array<{
+    label: string;
+    value: string;
+    improvement?: string;
+  }>;
+  testimonial?: {
+    quote: string;
+    author: string;
+    position: string;
+  };
+}
+
+export interface SolutionMetrics {
+  adoptionRate?: string;
+  customerSatisfaction?: string;
+  roi?: string;
+  implementationTime?: string;
+  supportResponse?: string;
+  usageAnalytics?: Array<{
+    metric: string;
+    value: string;
+    trend: 'up' | 'down' | 'stable';
+  }>;
+}
+
 export interface EnhancedSolution {
   id: string;
   name: string;
@@ -38,14 +108,26 @@ export interface EnhancedSolution {
   shortDescription?: string;
   benefits?: string[];
   integrations?: string[];
-  pricing?: {
-    model: string;
-    startingPrice?: string;
-  };
+  
+  // Enhanced data fields
+  marketData?: MarketData;
+  competitors?: CompetitorInfo[];
+  technicalSpecs?: TechnicalSpecs;
+  pricing?: PricingModel;
+  caseStudies?: CaseStudy[];
+  metrics?: SolutionMetrics;
+  
+  // Positioning & differentiation
+  uniqueValuePropositions?: string[];
+  positioningStatement?: string;
+  keyDifferentiators?: string[];
+  
   metadata?: {
     websiteTitle?: string;
     websiteDescription?: string;
     favicon?: string;
+    lastUpdated?: string;
+    completeness?: number;
   };
 }
 
