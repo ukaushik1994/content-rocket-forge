@@ -11,6 +11,7 @@ import { GrandTourTrigger } from '@/components/tour/GrandTourTrigger';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
+import { DashboardFooter } from '@/components/layout/DashboardFooter';
 
 const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -199,6 +200,9 @@ const Index = () => {
         <GrandAppTour />
         
         <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+        
+        {/* Dashboard Footer */}
+        <DashboardFooter />
       </div>
     </GrandTourProvider>
   );
