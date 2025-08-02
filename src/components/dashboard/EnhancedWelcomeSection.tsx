@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -34,63 +35,23 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
       return () => clearInterval(interval);
     }
   }, [isHovered, messages.length]);
+
   return (
     <div className="relative">
       {/* Main hero container */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border border-white/10 shadow-2xl">
-        {/* Animated background effects */}
+        {/* Static background effects - optimized */}
         <div className="absolute inset-0">
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 via-neon-blue/15 to-neon-pink/10"
-            animate={{ 
-              background: [
-                "linear-gradient(to bottom right, rgba(155, 135, 245, 0.2), rgba(51, 195, 240, 0.15), rgba(217, 70, 239, 0.1))",
-                "linear-gradient(to bottom right, rgba(51, 195, 240, 0.2), rgba(217, 70, 239, 0.15), rgba(155, 135, 245, 0.1))",
-                "linear-gradient(to bottom right, rgba(217, 70, 239, 0.2), rgba(155, 135, 245, 0.15), rgba(51, 195, 240, 0.1))"
-              ]
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              repeatType: "reverse",
-              ease: "easeInOut"
-            }}
-          />
+          {/* Static gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 via-neon-blue/15 to-neon-pink/10" />
           
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:60px_60px]" />
-          
-          {/* Floating orbs */}
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full bg-gradient-to-r from-white/10 to-transparent blur-sm"
-              style={{
-                width: Math.random() * 120 + 40,
-                height: Math.random() * 120 + 40,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`
-              }}
-              animate={{
-                x: [0, Math.random() * 60 - 30],
-                y: [0, Math.random() * 60 - 30],
-                opacity: [0.2, 0.6, 0.2],
-                scale: [1, 1.2, 1]
-              }}
-              transition={{
-                duration: Math.random() * 15 + 10,
-                repeat: Infinity,
-                repeatType: "reverse",
-                ease: "easeInOut",
-                delay: Math.random() * 5
-              }}
-            />
-          ))}
         </div>
 
         <div className="relative z-10 px-6 py-8 md:px-10 md:py-12 lg:px-12 lg:py-14">
           <div className="max-w-5xl mx-auto">
-            {/* Status indicator */}
+            {/* Status indicator - kept lightweight animation */}
             <motion.div 
               className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 mb-6"
               initial={{ opacity: 0, y: 20 }}
@@ -138,6 +99,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                     <div className="h-1 w-16 bg-gradient-to-r from-neon-purple via-neon-blue to-neon-pink rounded-full" />
                   </div>
                   
+                  {/* Simplified message carousel - removed 3D effects */}
                   <div 
                     className="relative h-16 md:h-20 overflow-hidden"
                     onMouseEnter={() => setIsHovered(true)}
@@ -148,27 +110,20 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                         key={currentMessageIndex}
                         className="absolute inset-0 text-base md:text-lg text-white/80 leading-relaxed font-light"
                         initial={{ 
-                          rotateX: -90,
                           opacity: 0,
                           y: 20
                         }}
                         animate={{ 
-                          rotateX: 0,
                           opacity: 1,
                           y: 0
                         }}
                         exit={{ 
-                          rotateX: 90,
                           opacity: 0,
                           y: -20
                         }}
                         transition={{
-                          duration: 0.6,
+                          duration: 0.4,
                           ease: "easeInOut"
-                        }}
-                        style={{
-                          transformStyle: "preserve-3d",
-                          transformOrigin: "center center"
                         }}
                       >
                         {messages[currentMessageIndex]}
@@ -180,13 +135,12 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       {messages.map((_, index) => (
                         <motion.div
                           key={index}
-                          className={`h-1 rounded-full transition-all duration-300 ${
+                          className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
                             index === currentMessageIndex 
                               ? 'w-8 bg-gradient-to-r from-neon-purple to-neon-blue' 
                               : 'w-2 bg-white/30'
                           }`}
                           onClick={() => setCurrentMessageIndex(index)}
-                          style={{ cursor: 'pointer' }}
                           whileHover={{ scale: 1.2 }}
                         />
                       ))}
@@ -208,7 +162,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   </div>
                 </motion.div>
 
-                {/* Compact search interface */}
+                {/* Search interface */}
                 <motion.div
                   className="relative"
                   initial={{ opacity: 0, y: 30 }}
@@ -216,7 +170,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   transition={{ duration: 0.8, delay: 0.5 }}
                 >
                   <div className="relative group">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-500">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300">
                       <Search className="h-5 w-5 text-white/70" />
                       <input 
                         type="text" 
@@ -238,7 +192,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                   </div>
                 </motion.div>
 
-                {/* Compact action buttons */}
+                {/* Action buttons */}
                 <motion.div 
                   className="flex flex-col sm:flex-row gap-3"
                   initial={{ opacity: 0, y: 30 }}
@@ -273,7 +227,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                 </motion.div>
               </div>
 
-              {/* Right visual element */}
+              {/* Right visual element - simplified */}
               <motion.div 
                 className="relative flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -281,38 +235,13 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                 transition={{ duration: 1, delay: 0.8 }}
               >
                 <div className="relative">
-                  {/* Larger animated rings */}
-                  {[...Array(3)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute inset-0 rounded-full border border-white/10"
-                      style={{
-                        width: 240 + i * 80,
-                        height: 240 + i * 80,
-                        left: -(i * 40),
-                        top: -(i * 40)
-                      }}
-                      animate={{
-                        rotate: [0, 360],
-                        opacity: [0.2, 0.5, 0.2]
-                      }}
-                      transition={{
-                        duration: 20 + i * 10,
-                        repeat: Infinity,
-                        ease: "linear"
-                      }}
-                    />
-                  ))}
+                  {/* Static glow effect */}
+                  <div className="absolute inset-0 w-60 h-60 rounded-full bg-gradient-to-br from-neon-purple/30 via-neon-blue/20 to-neon-pink/30 blur-3xl opacity-60" />
                   
                   <motion.div 
                     className="relative w-60 h-60 rounded-full bg-gradient-to-br from-neon-purple/30 via-neon-blue/20 to-neon-pink/30 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl"
                     animate={{
-                      y: [0, -15, 0],
-                      boxShadow: [
-                        "0 0 60px rgba(155, 135, 245, 0.4)",
-                        "0 0 80px rgba(155, 135, 245, 0.6)",
-                        "0 0 60px rgba(155, 135, 245, 0.4)"
-                      ]
+                      y: [0, -15, 0]
                     }}
                     transition={{
                       duration: 6,
@@ -321,9 +250,10 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       ease: "easeInOut"
                     }}
                   >
+                    {/* Simplified icon rotation */}
                     <motion.div
                       animate={{ rotate: [0, 360] }}
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
                     >
                       <Sparkles className="h-20 w-20 text-white" />
                     </motion.div>
