@@ -1,9 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { encryptApiKey, decryptApiKey, migrateApiKey } from './apiKeys/encryption';
+import { detectApiKeyType as detectKeyType, validateApiKeyFormat } from './apiKeys/validation';
+import { testApiKey as testKey } from './apiKeys/testing';
 import { toast } from 'sonner';
 
-type ApiService = 'openai' | 'anthropic' | 'gemini' | 'serpapi';
+// Updated type to include all API providers
+export type ApiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'serp' | 'serpstack';
+
+// Legacy type alias for backward compatibility
+export type ApiService = ApiProvider;
 
 /**
  * Secure API key management service with proper encryption
@@ -12,7 +18,7 @@ class ApiKeyService {
   /**
    * Stores an encrypted API key for a service
    */
-  static async storeApiKey(service: ApiService, apiKey: string): Promise<boolean> {
+  static async storeApiKey(service: ApiProvider, apiKey: string): Promise<boolean> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -58,7 +64,7 @@ class ApiKeyService {
   /**
    * Retrieves and decrypts an API key for a service
    */
-  static async getApiKey(service: ApiService): Promise<string | null> {
+  static async getApiKey(service: ApiProvider): Promise<string | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -102,7 +108,7 @@ class ApiKeyService {
   /**
    * Deletes an API key for a service
    */
-  static async deleteApiKey(service: ApiService): Promise<boolean> {
+  static async deleteApiKey(service: ApiProvider): Promise<boolean> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -134,7 +140,7 @@ class ApiKeyService {
   /**
    * Lists all configured API services for the user
    */
-  static async getConfiguredServices(): Promise<ApiService[]> {
+  static async getConfiguredServices(): Promise<ApiProvider[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -151,7 +157,7 @@ class ApiKeyService {
         return [];
       }
 
-      return data.map(row => row.service as ApiService);
+      return data.map(row => row.service as ApiProvider);
     } catch (error: any) {
       console.error('Error getting configured services:', error);
       return [];
@@ -161,25 +167,8 @@ class ApiKeyService {
   /**
    * Validates API key format for different services
    */
-  private static validateApiKey(service: ApiService, apiKey: string): boolean {
-    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
-      return false;
-    }
-
-    const trimmedKey = apiKey.trim();
-
-    switch (service) {
-      case 'openai':
-        return trimmedKey.startsWith('sk-') && trimmedKey.length > 20;
-      case 'anthropic':
-        return trimmedKey.startsWith('sk-ant-') && trimmedKey.length > 20;
-      case 'gemini':
-        return trimmedKey.length > 20; // Google API keys vary in format
-      case 'serpapi':
-        return trimmedKey.length > 10; // SERP API keys vary in format
-      default:
-        return trimmedKey.length > 10; // Generic validation
-    }
+  private static validateApiKey(service: ApiProvider, apiKey: string): boolean {
+    return validateApiKeyFormat(service, apiKey);
   }
 
   /**
@@ -190,7 +179,7 @@ class ApiKeyService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const services: ApiService[] = ['openai', 'anthropic', 'gemini', 'serpapi'];
+      const services: ApiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'serp', 'serpstack'];
       
       for (const service of services) {
         const key = await this.getApiKey(service);
@@ -208,9 +197,18 @@ class ApiKeyService {
   }
 }
 
-// Export convenience functions
+// Export convenience functions with proper naming
+export const saveApiKey = ApiKeyService.storeApiKey;
 export const storeApiKey = ApiKeyService.storeApiKey;
 export const getApiKey = ApiKeyService.getApiKey;
 export const deleteApiKey = ApiKeyService.deleteApiKey;
 export const getConfiguredServices = ApiKeyService.getConfiguredServices;
 export const migrateAllUserKeys = ApiKeyService.migrateAllUserKeys;
+
+// Export validation and testing functions
+export const detectApiKeyType = detectKeyType;
+export const testApiKey = testKey;
+export const validateApiKey = validateApiKeyFormat;
+
+// Export the service class itself for advanced usage
+export { ApiKeyService };

@@ -3,117 +3,116 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { DemoAccountService } from '@/services/demoAccountService';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, options?: { data?: any }) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>;
+  signUp: (email: string, password: string, redirectTo?: string) => Promise<{ user: User | null; error: AuthError | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
-  loginAsDemo: () => Promise<void>;
-  isDemoAccount: boolean;
+  updateProfile: (updates: { display_name?: string; avatar_url?: string }) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDemoAccount, setIsDemoAccount] = useState(false);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      checkDemoAccount(session?.user?.id);
       setLoading(false);
     });
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      checkDemoAccount(session?.user?.id);
-      setLoading(false);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth event:', event, session?.user?.id);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+
+        // Log security events
+        if (session?.user) {
+          if (event === 'SIGNED_IN') {
+            console.log('Security event: User signed in', { userId: session.user.id, timestamp: new Date().toISOString() });
+          } else if (event === 'TOKEN_REFRESHED') {
+            console.log('Security event: Token refreshed', { userId: session.user.id, timestamp: new Date().toISOString() });
+          }
+        }
+
+        if (event === 'SIGNED_OUT') {
+          console.log('Security event: User signed out', { timestamp: new Date().toISOString() });
+        }
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkDemoAccount = async (userId?: string) => {
-    if (userId) {
-      const isDemo = await DemoAccountService.isDemoAccount(userId);
-      setIsDemoAccount(isDemo);
-    } else {
-      setIsDemoAccount(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string, options?: { data?: any }) => {
-    try {
-      // Add security headers and validation
-      const result = await supabase.auth.signUp({
-        email: email.toLowerCase().trim(),
-        password,
-        options: {
-          ...options,
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            ...options?.data,
-            signup_timestamp: new Date().toISOString(),
-            signup_ip: await getClientIP(), // For security logging
-          }
-        }
-      });
-
-      if (result.error) {
-        console.error('Sign up error:', result.error);
-        toast.error(result.error.message);
-      } else if (result.data.user && !result.data.user.email_confirmed_at) {
-        toast.success('Please check your email to confirm your account');
-      }
-
-      return { error: result.error };
-    } catch (error: any) {
-      console.error('Sign up exception:', error);
-      toast.error('An unexpected error occurred during sign up');
-      return { error: error };
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
     try {
-      // Add rate limiting and security logging
-      const result = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase().trim(),
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
       });
-
-      if (result.error) {
-        console.error('Sign in error:', result.error);
-        // Log security event for failed logins
-        logSecurityEvent('login_failed', { email, error: result.error.message });
-        toast.error(result.error.message);
-      } else {
-        // Log successful login
-        logSecurityEvent('login_success', { email });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        toast.error(error.message);
+      } else if (data.user) {
+        console.log('Security event: Successful sign in', { userId: data.user.id, timestamp: new Date().toISOString() });
         toast.success('Welcome back!');
       }
-
-      return { error: result.error };
+      
+      return { user: data.user, error };
     } catch (error: any) {
       console.error('Sign in exception:', error);
-      logSecurityEvent('login_exception', { email, error: error.message });
-      toast.error('An unexpected error occurred during sign in');
-      return { error: error };
+      toast.error('An unexpected error occurred');
+      return { user: null, error };
+    }
+  };
+
+  const signUp = async (email: string, password: string, redirectTo?: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: redirectTo || `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        toast.error(error.message);
+      } else if (data.user) {
+        console.log('Security event: New user registration', { userId: data.user.id, timestamp: new Date().toISOString() });
+        toast.success('Account created! Please check your email to verify your account.');
+      }
+      
+      return { user: data.user, error };
+    } catch (error: any) {
+      console.error('Sign up exception:', error);
+      toast.error('An unexpected error occurred');
+      return { user: null, error };
     }
   };
 
@@ -122,124 +121,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
-        toast.error('Error signing out');
+        toast.error(error.message);
       } else {
-        setIsDemoAccount(false);
+        console.log('Security event: User signed out', { timestamp: new Date().toISOString() });
         toast.success('Signed out successfully');
       }
     } catch (error: any) {
       console.error('Sign out exception:', error);
-      toast.error('An unexpected error occurred during sign out');
+      toast.error('An unexpected error occurred');
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
-      const result = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
       });
-
-      if (result.error) {
-        console.error('Reset password error:', result.error);
-        toast.error(result.error.message);
-      } else {
-        toast.success('Password reset email sent');
-        logSecurityEvent('password_reset_requested', { email });
-      }
-
-      return { error: result.error };
-    } catch (error: any) {
-      console.error('Reset password exception:', error);
-      toast.error('An unexpected error occurred');
-      return { error: error };
-    }
-  };
-
-  const updatePassword = async (password: string) => {
-    try {
-      const result = await supabase.auth.updateUser({ password });
-
-      if (result.error) {
-        console.error('Update password error:', result.error);
-        toast.error(result.error.message);
-      } else {
-        toast.success('Password updated successfully');
-        logSecurityEvent('password_updated', { user_id: user?.id });
-      }
-
-      return { error: result.error };
-    } catch (error: any) {
-      console.error('Update password exception:', error);
-      toast.error('An unexpected error occurred');
-      return { error: error };
-    }
-  };
-
-  const loginAsDemo = async () => {
-    try {
-      setLoading(true);
-      const result = await DemoAccountService.createOrLoginDemo();
       
-      if (result.success) {
-        toast.success('Logged in as demo user');
-        setIsDemoAccount(true);
-        logSecurityEvent('demo_login', { user_id: result.user?.id });
+      if (error) {
+        console.error('Password reset error:', error);
+        toast.error(error.message);
       } else {
-        toast.error(result.error || 'Failed to access demo account');
+        console.log('Security event: Password reset requested', { email, timestamp: new Date().toISOString() });
+        toast.success('Password reset email sent!');
       }
+      
+      return { error };
     } catch (error: any) {
-      console.error('Demo login error:', error);
-      toast.error('Failed to access demo account');
-    } finally {
-      setLoading(false);
+      console.error('Password reset exception:', error);
+      toast.error('An unexpected error occurred');
+      return { error };
     }
   };
 
-  const value = {
+  const updateProfile = async (updates: { display_name?: string; avatar_url?: string }) => {
+    try {
+      if (!user) {
+        const error = new Error('User not authenticated');
+        toast.error('You must be logged in to update your profile');
+        return { error };
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Profile update error:', error);
+        toast.error('Failed to update profile');
+        return { error: new Error(error.message) };
+      } else {
+        console.log('Security event: Profile updated', { userId: user.id, timestamp: new Date().toISOString() });
+        toast.success('Profile updated successfully');
+        return { error: null };
+      }
+    } catch (error: any) {
+      console.error('Profile update exception:', error);
+      toast.error('An unexpected error occurred');
+      return { error };
+    }
+  };
+
+  const value: AuthContextType = {
     user,
     session,
     loading,
-    signUp,
     signIn,
+    signUp,
     signOut,
     resetPassword,
-    updatePassword,
-    loginAsDemo,
-    isDemoAccount
+    updateProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-// Security helper functions
-async function getClientIP(): Promise<string> {
-  try {
-    // This is a simplified approach - in production you'd want a more robust solution
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip || 'unknown';
-  } catch (error) {
-    return 'unknown';
-  }
-}
-
-function logSecurityEvent(event: string, data: any) {
-  // In production, this should send to a proper security logging service
-  console.log(`Security Event: ${event}`, {
-    timestamp: new Date().toISOString(),
-    event,
-    data: {
-      ...data,
-      user_agent: navigator.userAgent,
-      referrer: document.referrer
-    }
-  });
-}
+};
