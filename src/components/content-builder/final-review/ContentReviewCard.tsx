@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Eye, Edit, FileText, Save, Wand } from 'lucide-react';
+import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AutoOptimizeDialog } from './optimization/AutoOptimizeDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ContentReviewCardProps {
   content: string;
@@ -20,6 +21,12 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   const [activeTab, setActiveTab] = useState('preview');
   const { setContent } = useContentBuilder();
   const [isAutoOptimizeDialogOpen, setIsAutoOptimizeDialogOpen] = useState(false);
+  
+  // Enhanced button states
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [hasOptimized, setHasOptimized] = useState(false);
+  const [suggestionCount, setSuggestionCount] = useState(0);
+  const [optimizationError, setOptimizationError] = useState(false);
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {
@@ -53,10 +60,24 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
       .join('');
   };
 
+  // Enhanced auto-optimize handler
+  const handleAutoOptimize = () => {
+    setIsAnalyzing(true);
+    setOptimizationError(false);
+    setIsAutoOptimizeDialogOpen(true);
+    
+    // Simulate analysis process
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setSuggestionCount(Math.floor(Math.random() * 5) + 1); // Random suggestion count for demo
+    }, 2000);
+  };
+
   // Handle content update from auto-optimize dialog
   const handleContentUpdate = (newContent: string) => {
     setEditedContent(newContent);
     setContent(newContent);
+    setHasOptimized(true);
     
     // Switch to preview tab to show the optimized content
     setActiveTab('preview');
@@ -64,6 +85,35 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
     toast.success("Content optimized successfully", {
       description: "The content has been updated with the optimized version."
     });
+    
+    // Reset optimization state after success animation
+    setTimeout(() => {
+      setHasOptimized(false);
+      setSuggestionCount(0);
+    }, 3000);
+  };
+
+  // Reset states when content changes
+  useEffect(() => {
+    setHasOptimized(false);
+    setSuggestionCount(0);
+    setOptimizationError(false);
+  }, [editedContent]);
+
+  // Get button text based on state
+  const getButtonText = () => {
+    if (isAnalyzing) return 'Analyzing...';
+    if (hasOptimized) return 'Optimized!';
+    if (optimizationError) return 'Retry';
+    return 'Auto-optimize';
+  };
+
+  // Get button icon based on state
+  const getButtonIcon = () => {
+    if (isAnalyzing) return <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />;
+    if (hasOptimized) return <CheckCircle className="h-3.5 w-3.5 mr-1" />;
+    if (optimizationError) return <Wand className="h-3.5 w-3.5 mr-1" />;
+    return <Sparkles className="h-3.5 w-3.5 mr-1" />;
   };
 
   return (
@@ -103,15 +153,69 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
                 Save
               </Button>
             )}
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs border-dashed border-muted-foreground/50"
-              onClick={() => setIsAutoOptimizeDialogOpen(true)}
-            >
-              <Wand className="h-3.5 w-3.5 mr-1" />
-              Auto-optimize
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Button 
+                      size="sm"
+                      disabled={isAnalyzing}
+                      className={`
+                        text-xs relative overflow-hidden group transition-all duration-300 ease-out
+                        ${hasOptimized 
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white' 
+                          : optimizationError
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
+                          : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white'
+                        }
+                        hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25
+                        ${isAnalyzing ? 'animate-pulse' : ''}
+                        before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300
+                      `}
+                      onClick={handleAutoOptimize}
+                    >
+                      <div className="relative z-10 flex items-center">
+                        {getButtonIcon()}
+                        <span className="font-medium">{getButtonText()}</span>
+                        {suggestionCount > 0 && !isAnalyzing && !hasOptimized && (
+                          <span className="ml-1 bg-white/20 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                            {suggestionCount}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Animated background effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      {/* Success celebration effect */}
+                      {hasOptimized && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
+                      )}
+                    </Button>
+                    
+                    {/* Progress indicator for analyzing state */}
+                    {isAnalyzing && (
+                      <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full overflow-hidden">
+                        <div className="h-full bg-white/50 animate-[slide-in-right_2s_ease-in-out_infinite]" />
+                      </div>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-background border border-border">
+                  <div className="text-xs">
+                    {isAnalyzing ? (
+                      'Analyzing content for optimization opportunities...'
+                    ) : hasOptimized ? (
+                      'Content has been successfully optimized!'
+                    ) : suggestionCount > 0 ? (
+                      `${suggestionCount} optimization${suggestionCount > 1 ? 's' : ''} available`
+                    ) : (
+                      'Click to analyze and optimize your content with AI'
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
         
