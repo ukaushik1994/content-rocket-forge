@@ -22,6 +22,14 @@ export function QuestionsTab({ questions, serpSelections, onToggleSelection }: Q
     );
   };
 
+  // Debug: Log questions data
+  console.log('📋 QuestionsTab Debug:', {
+    questionsLength: questions.length,
+    questionsData: questions,
+    questionsType: typeof questions,
+    isArray: Array.isArray(questions)
+  });
+
   if (questions.length === 0) {
     return (
       <motion.div 
@@ -37,11 +45,25 @@ export function QuestionsTab({ questions, serpSelections, onToggleSelection }: Q
           </div>
         </div>
         <h3 className="text-xl font-medium mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-          No questions discovered
+          No FAQ questions discovered
         </h3>
-        <p className="text-gray-400 max-w-md">
-          No "People Also Ask" questions were found for this keyword. Try analyzing a more popular search term.
+        <p className="text-gray-400 max-w-md mb-6">
+          No "People Also Ask" questions were found for this keyword. This could mean:
         </p>
+        <div className="text-left max-w-md space-y-2">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+            The keyword might not trigger FAQ results
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+            Try a more conversational or question-based keyword
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+            Switch to the other API provider above for different results
+          </div>
+        </div>
       </motion.div>
     );
   }

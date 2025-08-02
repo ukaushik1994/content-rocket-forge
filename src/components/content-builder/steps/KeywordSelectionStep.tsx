@@ -524,6 +524,9 @@ export const KeywordSelectionStep = () => {
         serpSelections={serpSelections}
         onToggleSelection={handleToggleSelection}
         keyword={mainKeyword}
+        onSerpDataUpdate={(data) => {
+          dispatch({ type: 'SET_SERP_DATA', payload: data });
+        }}
       />
 
       <SelectionManagerModal

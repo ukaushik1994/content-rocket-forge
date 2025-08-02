@@ -12,8 +12,10 @@ import { HeadingsTab } from './tabs/HeadingsTab';
 import { ContentGapsTab } from './tabs/ContentGapsTab';
 import { KeywordsTab } from './tabs/KeywordsTab';
 import { RelatedSearchesTab } from './tabs/RelatedSearchesTab';
-import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap, Search } from 'lucide-react';
+import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap, Search, RefreshCw, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { toast } from 'sonner';
 
 interface SerpAnalysisModalProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ interface SerpAnalysisModalProps {
   serpSelections: SerpSelection[];
   onToggleSelection: (type: string, content: string) => void;
   keyword: string;
+  onSerpDataUpdate?: (data: SerpAnalysisResult | null) => void;
 }
 
 export function SerpAnalysisModal({
@@ -30,22 +33,78 @@ export function SerpAnalysisModal({
   serpData,
   serpSelections,
   onToggleSelection,
-  keyword
+  keyword,
+  onSerpDataUpdate
 }: SerpAnalysisModalProps) {
   const [activeTab, setActiveTab] = useState('questions');
+  const [activeProvider, setActiveProvider] = useState<'serpapi' | 'serpstack'>('serpapi');
+  const [isLoadingProvider, setIsLoadingProvider] = useState(false);
+  const [providerData, setProviderData] = useState<{
+    serpapi: SerpAnalysisResult | null;
+    serpstack: SerpAnalysisResult | null;
+  }>({
+    serpapi: serpData,
+    serpstack: null
+  });
   
-  if (!serpData) {
+  // Get current data based on active provider
+  const currentSerpData = providerData[activeProvider];
+  
+  if (!currentSerpData && !isLoadingProvider) {
     return null;
   }
 
   const selectedCount = serpSelections.filter(item => item.selected).length;
+
+  // Function to fetch data from alternative provider
+  const fetchFromProvider = async (provider: 'serpapi' | 'serpstack') => {
+    setIsLoadingProvider(true);
+    try {
+      const apiProvider = provider === 'serpapi' ? 'serp' : 'serpstack';
+      const data = await analyzeKeywordSerp(keyword, true, apiProvider);
+      
+      if (data) {
+        setProviderData(prev => ({
+          ...prev,
+          [provider]: data
+        }));
+        
+        // If this is the active provider, notify parent
+        if (provider === activeProvider) {
+          onSerpDataUpdate?.(data);
+        }
+        
+        toast.success(`Successfully loaded data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
+      } else {
+        toast.error(`Failed to load data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
+      }
+    } catch (error) {
+      console.error(`Error fetching from ${provider}:`, error);
+      toast.error(`Error loading data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
+    } finally {
+      setIsLoadingProvider(false);
+    }
+  };
+
+  // Function to switch provider
+  const switchProvider = (provider: 'serpapi' | 'serpstack') => {
+    setActiveProvider(provider);
+    
+    // If we don't have data for this provider, fetch it
+    if (!providerData[provider]) {
+      fetchFromProvider(provider);
+    } else {
+      // Update parent with existing data
+      onSerpDataUpdate?.(providerData[provider]);
+    }
+  };
   
   const tabs = [
-    { id: 'questions', label: 'FAQ Questions', icon: HelpCircle, count: serpData.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
-    { id: 'headings', label: 'SERP Headings', icon: Heading, count: serpData.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
-    { id: 'gaps', label: 'Content Gaps', icon: Star, count: serpData.contentGaps?.length || 0, color: 'from-orange-500 to-red-500' },
-    { id: 'keywords', label: 'Keywords', icon: Tag, count: serpData.keywords?.length || 0, color: 'from-indigo-500 to-purple-500' },
-    { id: 'related', label: 'Related Searches', icon: Search, count: serpData.relatedSearches?.length || 0, color: 'from-teal-500 to-cyan-500' }
+    { id: 'questions', label: 'FAQ Questions', icon: HelpCircle, count: currentSerpData?.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
+    { id: 'headings', label: 'SERP Headings', icon: Heading, count: currentSerpData?.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
+    { id: 'gaps', label: 'Content Gaps', icon: Star, count: currentSerpData?.contentGaps?.length || 0, color: 'from-orange-500 to-red-500' },
+    { id: 'keywords', label: 'Keywords', icon: Tag, count: currentSerpData?.keywords?.length || 0, color: 'from-indigo-500 to-purple-500' },
+    { id: 'related', label: 'Related Searches', icon: Search, count: currentSerpData?.relatedSearches?.length || 0, color: 'from-teal-500 to-cyan-500' }
   ];
 
   return (
@@ -73,6 +132,60 @@ export function SerpAnalysisModal({
                   SERP Analysis
                 </div>
                 <div className="text-sm text-gray-400 font-mono">{keyword}</div>
+              </div>
+            </motion.div>
+            
+            {/* API Provider Selector */}
+            <motion.div 
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="text-xs text-gray-400 font-medium">Data Source:</div>
+              <div className="flex bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-1">
+                <Button
+                  size="sm"
+                  variant={activeProvider === 'serpapi' ? 'default' : 'ghost'}
+                  onClick={() => switchProvider('serpapi')}
+                  disabled={isLoadingProvider}
+                  className={`text-xs h-8 px-3 transition-all duration-300 ${
+                    activeProvider === 'serpapi' 
+                      ? 'bg-gradient-to-r from-primary/30 to-blue-500/30 text-white border border-white/20' 
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {isLoadingProvider && activeProvider === 'serpapi' ? (
+                    <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Database className="h-3 w-3 mr-1" />
+                  )}
+                  SerpAPI
+                  {providerData.serpapi && (
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full ml-1" />
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={activeProvider === 'serpstack' ? 'default' : 'ghost'}
+                  onClick={() => switchProvider('serpstack')}
+                  disabled={isLoadingProvider}
+                  className={`text-xs h-8 px-3 transition-all duration-300 ${
+                    activeProvider === 'serpstack' 
+                      ? 'bg-gradient-to-r from-primary/30 to-blue-500/30 text-white border border-white/20' 
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {isLoadingProvider && activeProvider === 'serpstack' ? (
+                    <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Database className="h-3 w-3 mr-1" />
+                  )}
+                  Serpstack
+                  {providerData.serpstack && (
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full ml-1" />
+                  )}
+                </Button>
               </div>
             </motion.div>
             <AnimatePresence>
@@ -132,52 +245,86 @@ export function SerpAnalysisModal({
           <ScrollArea className="flex-1 mt-6 h-[60vh]">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeTab}
+                key={`${activeTab}-${activeProvider}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                
-                <TabsContent value="questions" className="mt-0">
-                  <QuestionsTab 
-                    questions={serpData.peopleAlsoAsk || []}
-                    serpSelections={serpSelections}
-                    onToggleSelection={onToggleSelection}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="headings" className="mt-0">
-                  <HeadingsTab 
-                    headings={serpData.headings || []}
-                    serpSelections={serpSelections}
-                    onToggleSelection={onToggleSelection}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="gaps" className="mt-0">
-                  <ContentGapsTab 
-                    contentGaps={serpData.contentGaps || []}
-                    serpSelections={serpSelections}
-                    onToggleSelection={onToggleSelection}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="keywords" className="mt-0">
-                  <KeywordsTab 
-                    keywords={serpData.keywords || []}
-                    serpSelections={serpSelections}
-                    onToggleSelection={onToggleSelection}
-                  />
-                </TabsContent>
+                {isLoadingProvider ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                      <p className="text-lg font-medium bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                        Loading {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'} data...
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Fetching fresh SERP analysis
+                      </p>
+                    </div>
+                  </div>
+                ) : !currentSerpData ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <Database className="h-12 w-12 mx-auto mb-4 text-gray-500" />
+                      <p className="text-lg font-medium bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+                        No data from {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}
+                      </p>
+                      <p className="text-sm text-gray-400 mb-4">
+                        Click the button above to fetch data from this provider
+                      </p>
+                      <Button 
+                        onClick={() => fetchFromProvider(activeProvider)}
+                        className="bg-gradient-to-r from-primary/20 to-blue-500/20 hover:from-primary/30 hover:to-blue-500/30 border border-white/20"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Fetch Data
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <TabsContent value="questions" className="mt-0">
+                      <QuestionsTab 
+                        questions={currentSerpData.peopleAlsoAsk || []}
+                        serpSelections={serpSelections}
+                        onToggleSelection={onToggleSelection}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="headings" className="mt-0">
+                      <HeadingsTab 
+                        headings={currentSerpData.headings || []}
+                        serpSelections={serpSelections}
+                        onToggleSelection={onToggleSelection}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="gaps" className="mt-0">
+                      <ContentGapsTab 
+                        contentGaps={currentSerpData.contentGaps || []}
+                        serpSelections={serpSelections}
+                        onToggleSelection={onToggleSelection}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="keywords" className="mt-0">
+                      <KeywordsTab 
+                        keywords={currentSerpData.keywords || []}
+                        serpSelections={serpSelections}
+                        onToggleSelection={onToggleSelection}
+                      />
+                    </TabsContent>
 
-                <TabsContent value="related" className="mt-0">
-                  <RelatedSearchesTab 
-                    relatedSearches={serpData.relatedSearches || []}
-                    serpSelections={serpSelections}
-                    onToggleSelection={onToggleSelection}
-                  />
-                </TabsContent>
+                    <TabsContent value="related" className="mt-0">
+                      <RelatedSearchesTab 
+                        relatedSearches={currentSerpData.relatedSearches || []}
+                        serpSelections={serpSelections}
+                        onToggleSelection={onToggleSelection}
+                      />
+                    </TabsContent>
+                  </>
+                )}
               </motion.div>
             </AnimatePresence>
           </ScrollArea>
