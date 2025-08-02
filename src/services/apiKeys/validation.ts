@@ -42,8 +42,8 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
     return 'mistral';
   }
   
-  // SerpAPI keys - more flexible matching
-  if ((cleanKey.length === 64 || cleanKey.length >= 32) && /^[a-f0-9]+$/i.test(cleanKey)) {
+  // SerpAPI keys - Updated to be more permissive for real SERP API keys
+  if (cleanKey.length >= 16 && /^[A-Za-z0-9_.-]+$/.test(cleanKey)) {
     console.log('✅ Detected SERP API key format');
     return 'serp';
   }
@@ -107,8 +107,8 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
         break;
       
       case 'serp':
-        // More flexible SERP API validation
-        isValid = cleanKey.length >= 16 && /^[a-f0-9_-]+$/i.test(cleanKey);
+        // Updated SERP API validation to be more permissive - allow alphanumeric, underscores, hyphens, and dots
+        isValid = cleanKey.length >= 16 && /^[A-Za-z0-9_.-]+$/.test(cleanKey);
         break;
       
       case 'serpstack':
@@ -183,8 +183,8 @@ export function getValidationErrorMessage(provider: ApiProvider, apiKey: string)
       if (cleanKey.length < 16) {
         return 'SERP API keys must be at least 16 characters long';
       }
-      if (!/^[a-f0-9_-]+$/i.test(cleanKey)) {
-        return 'SERP API keys should contain only hexadecimal characters, underscores, and hyphens';
+      if (!/^[A-Za-z0-9_.-]+$/.test(cleanKey)) {
+        return 'SERP API keys can contain letters, numbers, underscores, hyphens, and dots';
       }
       break;
     
