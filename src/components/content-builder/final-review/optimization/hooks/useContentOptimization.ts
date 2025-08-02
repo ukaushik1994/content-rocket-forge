@@ -1,6 +1,5 @@
-
 import { useState, useCallback } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { sendChatRequest } from '@/services/aiService';
 import { toast } from 'sonner';
 import { humanizeContent } from '@/services/aiContentDetectionService';

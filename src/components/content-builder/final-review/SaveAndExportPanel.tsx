@@ -1,268 +1,154 @@
-
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, FilePlus, FileCheck, Download, FileOutput, Loader2, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { Copy, Download, Save, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { PublishedUrlDialog } from '@/components/content-builder/steps/save/PublishedUrlDialog';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 
-interface SaveAndExportPanelProps {
-  completionPercentage: number;
-  onSave: () => Promise<void>;
-  onPublish: () => Promise<void>;
-  isSaving: boolean;
-  isSavedToDraft: boolean;
-}
-
-export const SaveAndExportPanel: React.FC<SaveAndExportPanelProps> = ({
-  completionPercentage,
-  onSave,
-  onPublish,
-  isSaving,
-  isSavedToDraft
-}) => {
-  const { state } = useContentBuilder();
-  const [showUrlDialog, setShowUrlDialog] = useState(false);
-  const [savedContentId, setSavedContentId] = useState<string | null>(null);
-  const [isProcessingUrl, setIsProcessingUrl] = useState(false);
+export const SaveAndExportPanel: React.FC = () => {
+  const { state, dispatch } = useContentBuilder();
+  const { content, contentTitle } = state;
+  const { user } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [title, setTitle] = useState(contentTitle || 'Untitled Content');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   
-  const isReady = completionPercentage >= 80;
-  const isOkay = completionPercentage >= 60;
+  const hasContent = content && content.trim().length > 0;
+  const hasTitle = title && title.trim().length > 0;
   
-  const handleSave = async () => {
-    try {
-      await onSave();
-      // After save, we need to get the content ID from the database
-      // Let's query for the most recently created draft by this user
-      const { data: user } = await supabase.auth.getUser();
-      if (user?.user) {
-        const { data: contentItem } = await supabase
-          .from('content_items')
-          .select('id')
-          .eq('user_id', user.user.id)
-          .eq('status', 'draft')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        if (contentItem) {
-          setSavedContentId(contentItem.id);
-          setShowUrlDialog(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error saving content:', error);
-      toast.error('Failed to save content to drafts');
-    }
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
   };
   
-  const handlePublish = async () => {
-    if (completionPercentage < 60 && !confirm('Your content is not fully optimized. Are you sure you want to publish?')) {
+  const handleSave = async () => {
+    if (!hasContent || !hasTitle) {
+      toast.error("Content and title are required to save.");
       return;
     }
     
+    setIsSaving(true);
+    setSaveStatus('saving');
+    
     try {
-      await onPublish();
-      // After publish, we need to get the content ID from the database
-      // Let's query for the most recently created published content by this user
-      const { data: user } = await supabase.auth.getUser();
-      if (user?.user) {
-        const { data: contentItem } = await supabase
-          .from('content_items')
-          .select('id')
-          .eq('user_id', user.user.id)
-          .eq('status', 'published')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        if (contentItem) {
-          setSavedContentId(contentItem.id);
-          setShowUrlDialog(true);
-        }
-      }
+      // Simulate saving to a database
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update the content title in the state
+      dispatch({ type: 'SET_CONTENT_TITLE', payload: title });
+      
+      setSaveStatus('success');
+      toast.success("Content saved successfully!");
     } catch (error) {
-      console.error('Error publishing content:', error);
-      toast.error('Failed to publish content');
-    }
-  };
-
-  const handleUrlSubmit = async (publishedUrl: string) => {
-    if (!savedContentId) {
-      toast.error('No content ID available');
-      return;
-    }
-
-    try {
-      setIsProcessingUrl(true);
-
-      // Update the content item with the published URL
-      const { error: updateError } = await supabase
-        .from('content_items')
-        .update({ published_url: publishedUrl })
-        .eq('id', savedContentId);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Trigger analytics data fetch in the background
-      const analyticsPromise = supabase.functions.invoke('google-analytics-fetch', {
-        body: { contentId: savedContentId, publishedUrl }
-      });
-
-      const searchConsolePromise = supabase.functions.invoke('search-console-fetch', {
-        body: { contentId: savedContentId, publishedUrl }
-      });
-
-      // Don't wait for these to complete, let them run in background
-      Promise.allSettled([analyticsPromise, searchConsolePromise]).then((results) => {
-        const analyticsResult = results[0];
-        const searchResult = results[1];
-        
-        if (analyticsResult.status === 'fulfilled') {
-          console.log('Analytics data fetch initiated successfully');
-        } else {
-          console.error('Analytics data fetch failed:', analyticsResult.reason);
-        }
-
-        if (searchResult.status === 'fulfilled') {
-          console.log('Search Console data fetch initiated successfully');
-        } else {
-          console.error('Search Console data fetch failed:', searchResult.reason);
-        }
-      });
-
-      toast.success('Published URL saved and analytics tracking initiated!');
-    } catch (error) {
-      console.error('Error processing published URL:', error);
-      throw error;
+      console.error("Error saving content:", error);
+      setSaveStatus('error');
+      toast.error("Failed to save content.");
     } finally {
-      setIsProcessingUrl(false);
+      setIsSaving(false);
     }
   };
   
+  const handleExport = () => {
+    if (!hasContent) {
+      toast.error("No content to export.");
+      return;
+    }
+    
+    setIsExporting(true);
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title || 'content'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    setIsExporting(false);
+  };
+  
+  const handleCopyToClipboard = () => {
+    if (!content) {
+      toast.error("No content to copy.");
+      return;
+    }
+    
+    navigator.clipboard.writeText(content)
+      .then(() => {
+        toast.success("Content copied to clipboard!");
+      })
+      .catch(err => {
+        console.error("Failed to copy:", err);
+        toast.error("Failed to copy content to clipboard.");
+      });
+  };
+  
   return (
-    <>
-      <Card className={cn(
-        "border p-4",
-        isReady 
-          ? "border-green-500/30 bg-gradient-to-br from-green-950/20 to-black/20" 
-          : "border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-black/20"
-      )}>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              "p-2 rounded-full",
-              isReady ? "bg-green-500/20" : "bg-amber-500/20"
-            )}>
-              {isReady 
-                ? <CheckCircle className="h-5 w-5 text-green-400" />
-                : <AlertTriangle className="h-5 w-5 text-amber-400" />
-              }
-            </div>
-            <div>
-              <h3 className="font-medium">{isReady ? "Ready to Save & Export" : "Content Status"}</h3>
-              <p className="text-sm text-muted-foreground">
-                {isReady 
-                  ? "Your content has passed all checks" 
-                  : `Content is ${completionPercentage}% optimized, needs improvement`
-                }
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge 
-                  variant="outline" 
-                  className={cn(
-                    isReady ? "border-green-500/30 text-green-500" : 
-                    isOkay ? "border-amber-500/30 text-amber-500" : 
-                    "border-red-500/30 text-red-500"
-                  )}
-                >
-                  {isReady ? "Ready for publishing" : 
-                    isOkay ? "Needs minor improvements" : "Needs major improvements"}
-                </Badge>
-                {isSavedToDraft && (
-                  <Badge variant="outline" className="border-blue-500/30 text-blue-500">
-                    <FileCheck className="h-3 w-3 mr-1" />
-                    Saved to drafts
-                  </Badge>
-                )}
-              </div>
-            </div>
+    <Card className="bg-background/50 border-border/50">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium">Save & Export</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input 
+              id="title" 
+              value={title} 
+              onChange={handleTitleChange} 
+              placeholder="Enter content title" 
+            />
           </div>
-          
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <Button
-              variant="outline"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="border-white/10 hover:bg-white/5"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <FilePlus className="h-4 w-4 mr-2" />
-                  Save to Drafts
-                </>
-              )}
-            </Button>
-            
-            <Button
-              onClick={handlePublish}
-              disabled={isSaving}
-              className={cn(
-                "gap-2",
-                isReady 
-                  ? "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600" 
-                  : "bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-700 hover:to-violet-600"
-              )}
-            >
-              <FileOutput className="h-4 w-4" />
-              {isReady ? "Publish Content" : "Publish Anyway"}
-            </Button>
-          </div>
-        </div>
-        
-        {/* Additional export options as a floating bar */}
-        <div className="flex items-center justify-end mt-2">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-xs text-muted-foreground"
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2" 
+            onClick={handleCopyToClipboard}
+            disabled={!hasContent}
           >
-            Export as: 
-            <Button variant="ghost" size="sm" className="text-xs ml-2">
-              <Download className="h-3 w-3 mr-1" />
-              HTML
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs">
-              <Download className="h-3 w-3 mr-1" />
-              Markdown
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs">
-              <Download className="h-3 w-3 mr-1" />
-              Text
-            </Button>
-          </motion.div>
+            <Copy className="h-4 w-4" />
+            Copy to Clipboard
+          </Button>
+          <Button 
+            className="w-full justify-start gap-2" 
+            onClick={handleExport} 
+            disabled={!hasContent}
+          >
+            <Download className="h-4 w-4" />
+            Export as Text
+          </Button>
+          <Separator />
+          <Button 
+            variant="secondary" 
+            className="w-full justify-center gap-2" 
+            onClick={handleSave} 
+            disabled={isSaving || !hasContent || !hasTitle}
+          >
+            {saveStatus === 'success' ? (
+              <>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Saved
+              </>
+            ) : saveStatus === 'error' ? (
+              <>
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                Save Failed
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Saving...' : 'Save'}
+              </>
+            )}
+          </Button>
         </div>
-      </Card>
-
-      <PublishedUrlDialog
-        open={showUrlDialog}
-        onClose={() => setShowUrlDialog(false)}
-        onSubmit={handleUrlSubmit}
-        contentTitle={state.contentTitle || state.metaTitle || state.mainKeyword || 'Untitled Content'}
-      />
-    </>
+      </CardContent>
+    </Card>
   );
 };
