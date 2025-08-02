@@ -15,6 +15,9 @@ import { RelatedSearchesTab } from './tabs/RelatedSearchesTab';
 import { TrendingUp, HelpCircle, Heading, Star, Tag, CheckCircle, Zap, Search, RefreshCw, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { analyzeKeywordEnhanced } from '@/services/enhancedSerpService';
+import { transformSerpData } from '@/services/serpDataTransformer';
+import EnhancedSerpModal from './EnhancedSerpModal';
 import { toast } from 'sonner';
 
 interface SerpAnalysisModalProps {
@@ -39,6 +42,7 @@ export function SerpAnalysisModal({
   const [activeTab, setActiveTab] = useState('questions');
   const [activeProvider, setActiveProvider] = useState<'serpapi' | 'serpstack'>('serpapi');
   const [isLoadingProvider, setIsLoadingProvider] = useState(false);
+  const [showEnhancedModal, setShowEnhancedModal] = useState(false);
   const [providerData, setProviderData] = useState<{
     serpapi: SerpAnalysisResult | null;
     serpstack: SerpAnalysisResult | null;
@@ -60,8 +64,12 @@ export function SerpAnalysisModal({
   const fetchFromProvider = async (provider: 'serpapi' | 'serpstack') => {
     setIsLoadingProvider(true);
     try {
-      const apiProvider = provider === 'serpapi' ? 'serp' : 'serpstack';
-      const data = await analyzeKeywordSerp(keyword, true, apiProvider);
+      let data;
+      if (provider === 'serpapi') {
+        data = await analyzeKeywordEnhanced(keyword);
+      } else {
+        data = await analyzeKeywordSerp(keyword, true, 'serpstack');
+      }
       
       if (data) {
         setProviderData(prev => ({
@@ -198,14 +206,23 @@ export function SerpAnalysisModal({
                 >
                   <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border-green-500/30 px-3 py-1 flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    <span className="font-mono">{selectedCount}</span>
-                    <span>selected</span>
-                  </Badge>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </DialogTitle>
-        </DialogHeader>
+                  <span className="font-mono">{selectedCount}</span>
+                  <span>selected</span>
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowEnhancedModal(true)}
+                  className="text-xs bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-purple-500/30 hover:bg-purple-500/30"
+                >
+                  <Database className="h-3 w-3 mr-1" />
+                  Enhanced View
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </DialogTitle>
+      </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden relative z-10">
           <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl">
@@ -348,6 +365,17 @@ export function SerpAnalysisModal({
             Done
           </Button>
         </motion.div>
+        
+        {/* Enhanced Modal */}
+        <EnhancedSerpModal
+          isOpen={showEnhancedModal}
+          onClose={() => setShowEnhancedModal(false)}
+          serpData={currentSerpData}
+          selections={serpSelections}
+          onToggleSelection={onToggleSelection}
+          keyword={keyword}
+          normalizedData={currentSerpData ? transformSerpData(currentSerpData) : undefined}
+        />
       </DialogContent>
     </Dialog>
   );

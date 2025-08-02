@@ -99,6 +99,16 @@ serve(async (req) => {
       relatedSearchesCount: data.related_searches?.length || 0
     });
 
+    // Enhanced debugging for FAQ/PAA data
+    console.log('🔍 Detailed FAQ/PAA Analysis:', {
+      people_also_ask_keys: data.people_also_ask ? Object.keys(data.people_also_ask[0] || {}) : [],
+      related_questions_exist: !!data.related_questions,
+      related_questions_count: data.related_questions?.length || 0,
+      answer_box_exist: !!data.answer_box,
+      faq_exist: !!data.faq,
+      sample_paa: data.people_also_ask?.[0] ? JSON.stringify(data.people_also_ask[0]) : 'none'
+    });
+
     // Transform the data to our format (clean, no provider contamination)
     const transformedData = transformSerpApiData(data, params.q || params.keyword);
     
@@ -146,13 +156,11 @@ function transformSerpApiData(data: any, keyword: string): any {
   }));
 
   // Extract People Also Ask questions with enhanced data
-  const peopleAlsoAsk = (data.people_also_ask || []).map((item: any) => ({
-    question: cleanText(item.question),
-    answer: cleanText(item.snippet || item.answer || ''),
-    source: 'google_search',
-    link: item.link || null,
-    displayed_link: item.displayed_link || null
-  }));
+  const peopleAlsoAsk = extractPeopleAlsoAsk(data);
+  console.log('📋 Extracted PAA questions:', {
+    paaCount: peopleAlsoAsk.length,
+    questions: peopleAlsoAsk.map(q => q.question).slice(0, 3)
+  });
 
   // Extract related searches with enhanced context
   const relatedSearches = (data.related_searches || []).map((item: any) => ({
@@ -439,6 +447,80 @@ function generateContentGaps(organicResults: any[], peopleAlsoAsk: any[], keywor
   }
   
   return gaps.slice(0, 4);
+}
+
+/**
+ * Enhanced People Also Ask extraction with multiple fallbacks
+ */
+function extractPeopleAlsoAsk(data: any): any[] {
+  const questions = [];
+  
+  // Primary source: people_also_ask
+  if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
+    data.people_also_ask.forEach((item: any) => {
+      questions.push({
+        question: cleanText(item.question),
+        answer: cleanText(item.snippet || item.answer || item.text || ''),
+        source: 'people_also_ask',
+        link: item.link || null,
+        displayed_link: item.displayed_link || null
+      });
+    });
+  }
+  
+  // Fallback 1: related_questions
+  if (data.related_questions && Array.isArray(data.related_questions)) {
+    data.related_questions.forEach((item: any) => {
+      questions.push({
+        question: cleanText(item.question || item.query),
+        answer: cleanText(item.answer || item.snippet || ''),
+        source: 'related_questions',
+        link: item.link || null,
+        displayed_link: item.displayed_link || null
+      });
+    });
+  }
+  
+  // Fallback 2: answer_box (sometimes contains Q&A)
+  if (data.answer_box && data.answer_box.questions) {
+    data.answer_box.questions.forEach((item: any) => {
+      questions.push({
+        question: cleanText(item.question),
+        answer: cleanText(item.answer || ''),
+        source: 'answer_box',
+        link: null,
+        displayed_link: null
+      });
+    });
+  }
+  
+  // Fallback 3: faq section
+  if (data.faq && Array.isArray(data.faq)) {
+    data.faq.forEach((item: any) => {
+      questions.push({
+        question: cleanText(item.question),
+        answer: cleanText(item.answer || ''),
+        source: 'faq_section',
+        link: item.link || null,
+        displayed_link: null
+      });
+    });
+  }
+  
+  // Remove duplicates and return
+  const uniqueQuestions = [];
+  const seenQuestions = new Set();
+  
+  questions.forEach(q => {
+    const questionKey = q.question.toLowerCase().trim();
+    if (!seenQuestions.has(questionKey) && q.question.length > 10) {
+      seenQuestions.add(questionKey);
+      uniqueQuestions.push(q);
+    }
+  });
+  
+  console.log(`📝 PAA Extraction Summary: Found ${uniqueQuestions.length} unique questions from ${questions.length} total`);
+  return uniqueQuestions.slice(0, 15);
 }
 
 /**
