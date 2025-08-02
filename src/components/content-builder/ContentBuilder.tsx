@@ -253,7 +253,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   const isLastStep = activeStep === steps.length - 1 || steps[activeStep].id === 4;
   
   return (
-    <div className="flex min-h-[calc(100vh-theme(spacing.20))]">
+    <div className="flex min-h-[calc(100vh-theme(spacing.20))] bg-gradient-to-br from-background via-background/95 to-background/90">
       {/* Content Builder Sidebar */}
       <ContentBuilderSidebar 
         steps={steps} 
@@ -269,58 +269,86 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
       />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative">
+        {/* Decorative background gradients */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-l from-accent/5 to-primary/5 rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+        
         {/* Progress indicator */}
-        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/40 px-6 py-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-neon-purple to-neon-blue">
+        <div className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border/40 px-6 py-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-full border border-primary/20">
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                <span className="text-sm font-medium text-primary">Content Builder</span>
+              </div>
+              <div className="h-4 w-px bg-border/40" />
+              <h1 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
                 {steps[activeStep].name}
               </h1>
             </div>
             <div className="flex items-center gap-3">
               {apiKeyStatus === 'not-found' && (
-                <div className="flex items-center gap-1 text-xs text-amber-400 bg-amber-950/30 px-2 py-1 rounded-full border border-amber-800/30">
+                <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-950/20 px-3 py-1.5 rounded-full border border-amber-800/30 backdrop-blur-sm">
                   <AlertTriangle className="h-3 w-3" />
-                  <span>Using mock data</span>
+                  <span>Mock data mode</span>
                 </div>
               )}
-              <div className="text-xs text-muted-foreground px-3 py-1 bg-white/5 rounded-full border border-white/10">
+              <div className="text-sm text-muted-foreground px-4 py-1.5 bg-muted/30 rounded-full border border-border/30 backdrop-blur-sm">
                 Step {stepInfo.current} of {stepInfo.total}
               </div>
             </div>
           </div>
-          <Progress value={progressPercentage} className="h-1.5 bg-white/5" />
+          <div className="relative">
+            <Progress value={progressPercentage} className="h-2 bg-muted/30 rounded-full overflow-hidden" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-sm" />
+          </div>
         </div>
         
         {/* Step content */}
-        <div className="flex-1 p-6 overflow-y-auto" id="content-builder-main-content">
-          <div className="space-y-6">
-            {renderStepContent()}
+        <div className="flex-1 p-8 overflow-y-auto relative z-10" id="content-builder-main-content">
+          <div className="max-w-7xl mx-auto">
+            <div className="space-y-8">
+              {renderStepContent()}
+            </div>
           </div>
         </div>
         
         {/* Navigation controls */}
         {!isLastStep && (
-          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
-            <div className="flex justify-between px-2">
+          <div className="sticky bottom-0 z-20 bg-background/90 backdrop-blur-md border-t border-border/40 p-6 shadow-lg">
+            <div className="max-w-7xl mx-auto flex justify-between items-center">
               <Button
                 variant="outline"
                 onClick={handlePrevStep}
                 disabled={activeStep === 0}
-                className="gap-1 bg-glass border border-white/10 hover:border-white/20 transition-all"
+                className="gap-2 px-6 py-2.5 bg-background/50 border-border/60 hover:border-border hover:bg-background/70 transition-all duration-200 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
               
-              <Button
-                onClick={handleNextStep}
-                disabled={!canGoNext}
-                className={`gap-1 shadow-lg ${canGoNext ? 'bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple transition-all duration-300' : 'opacity-50'}`}
-              >
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                {currentStepComplete && (
+                  <div className="flex items-center gap-2 text-sm text-green-400 bg-green-950/20 px-3 py-1.5 rounded-full border border-green-800/30">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Step complete</span>
+                  </div>
+                )}
+                
+                <Button
+                  onClick={handleNextStep}
+                  disabled={!canGoNext}
+                  className={`gap-2 px-6 py-2.5 transition-all duration-300 ${
+                    canGoNext 
+                      ? 'bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg hover:shadow-primary/25' 
+                      : 'opacity-40 cursor-not-allowed'
+                  }`}
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}

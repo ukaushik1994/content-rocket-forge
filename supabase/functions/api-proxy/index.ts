@@ -970,6 +970,28 @@ function cleanSerpApiText(text: string): string {
   return cleaned.join(' ').trim();
 }
 
+function cleanSerpstackText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Remove provider references completely
+  text = text.replace(/\b(serpstack|serp\s*stack|serpapi|serp\s*api)\b/gi, '');
+  
+  // Remove duplicate consecutive words
+  const words = text.split(/\s+/);
+  const cleaned = [];
+  let lastWord = '';
+  
+  for (const word of words) {
+    const cleanWord = word.trim();
+    if (cleanWord && cleanWord !== lastWord) {
+      cleaned.push(cleanWord);
+      lastWord = cleanWord;
+    }
+  }
+  
+  return cleaned.join(' ').trim();
+}
+
 function estimateWordCount(text: string): number {
   if (!text) return 0;
   return text.trim().split(/\s+/).length;
