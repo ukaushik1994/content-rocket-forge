@@ -12,7 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, redirectTo?: string) => Promise<{ user: User | null; error: AuthError | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updateProfile: (updates: { display_name?: string; avatar_url?: string }) => Promise<{ error: Error | null }>;
+  updateProfile: (updates: { display_name?: string; avatar_url?: string; first_name?: string; last_name?: string }) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,10 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+        password
       });
       
       if (error) {
@@ -154,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateProfile = async (updates: { display_name?: string; avatar_url?: string }) => {
+  const updateProfile = async (updates: { display_name?: string; avatar_url?: string; first_name?: string; last_name?: string }) => {
     try {
       if (!user) {
         const error = new Error('User not authenticated');
@@ -162,20 +159,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+      // Update the user metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          first_name: updates.first_name,
+          last_name: updates.last_name,
+          display_name: updates.display_name
+        }
+      });
 
-      if (error) {
-        console.error('Profile update error:', error);
+      if (authError) {
+        console.error('Profile update error:', authError);
         toast.error('Failed to update profile');
-        return { error: new Error(error.message) };
-      } else {
-        console.log('Security event: Profile updated', { userId: user.id, timestamp: new Date().toISOString() });
-        toast.success('Profile updated successfully');
-        return { error: null };
+        return { error: new Error(authError.message) };
       }
+
+      // Also update profiles table if it exists
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          display_name: updates.display_name,
+          avatar_url: updates.avatar_url,
+          first_name: updates.first_name,
+          last_name: updates.last_name,
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        console.warn('Profile table update error (this may be expected if table does not exist):', profileError);
+      }
+
+      console.log('Security event: Profile updated', { userId: user.id, timestamp: new Date().toISOString() });
+      return { error: null };
     } catch (error: any) {
       console.error('Profile update exception:', error);
       toast.error('An unexpected error occurred');

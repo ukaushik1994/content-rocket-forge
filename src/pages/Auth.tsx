@@ -1,27 +1,32 @@
+
 import { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Icons } from '@/components/Icons';
 import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
-  const router = useRouter();
-  const { mode } = router.query;
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Parse query parameters from URL
+  const searchParams = new URLSearchParams(location.search);
+  const mode = searchParams.get('mode') || 'signin';
+  const redirectTo = searchParams.get('redirectTo');
+  
   const isSignIn = mode === 'signin';
   const title = isSignIn ? 'Sign In' : 'Sign Up';
   const description = isSignIn ? 'Enter your email and password to sign in' : 'Create an account to continue';
   const buttonText = isSignIn ? 'Sign In' : 'Sign Up';
-  const redirectTo = router.query.redirectTo as string;
 
   const handleSignIn = async () => {
     setIsLoading(true);
@@ -30,7 +35,7 @@ const Auth = () => {
       if (result.error) {
         toast.error(result.error.message);
       } else {
-        router.push(redirectTo || '/');
+        navigate(redirectTo || '/');
       }
     } finally {
       setIsLoading(false);
@@ -40,12 +45,11 @@ const Auth = () => {
   const handleSignUp = async () => {
     setIsLoading(true);
     try {
-      // In the handleSignUp function, remove the extra parameter
-      const result = await signUp(email, password, redirectTo);
+      const result = await signUp(email, password, redirectTo || undefined);
       if (result.error) {
         toast.error(result.error.message);
       } else {
-        router.push('/auth/check-email');
+        navigate('/auth/check-email');
       }
     } finally {
       setIsLoading(false);
@@ -63,23 +67,24 @@ const Auth = () => {
 
   return (
     <div className="container relative flex h-[calc(100vh-80px)] flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <Link
-        href="/examples/authentication"
+      <button
+        onClick={() => navigate('/')}
         className={cn(
-          'absolute left-4 top-4 md:left-8 md:top-8',
+          'absolute left-4 top-4 md:left-8 md:top-8 flex items-center text-sm hover:underline',
           isSignIn ? 'lg:block' : 'lg:hidden'
         )}
       >
-        <>
-          <Icons.chevronLeft className="mr-2 h-4 w-4" />
-          Back to demo
-        </>
-      </Link>
+        <ChevronLeft className="mr-2 h-4 w-4" />
+        Back to home
+      </button>
       <div className="relative hidden h-full flex-col bg-muted p-10 text-foreground lg:flex">
-        <div className="absolute inset-0 bg-[url(/auth-background.png)] dark:bg-[url(/auth-background-dark.png)] opacity-30" />
-        <div className="my-auto">
-          <Icons.logo className="h-6 text-primary" />
-          <blockquote className="mt-6 space-y-2">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
+        <div className="relative z-20 flex items-center text-lg font-medium">
+          <div className="mr-2 h-6 w-6 rounded bg-primary" />
+          ContentRevolver
+        </div>
+        <div className="relative z-20 mt-auto">
+          <blockquote className="space-y-2">
             <p className="text-lg">
               &ldquo;Empower your content creation with AI-driven insights and seamless workflows.&rdquo;
             </p>
@@ -95,56 +100,64 @@ const Auth = () => {
               <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <div className="grid gap-2">
-                <Input
-                  id="email"
-                  placeholder="Email"
-                  type="email"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Input
-                  id="password"
-                  placeholder="Password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="grid gap-4">
+                <div className="grid gap-2">
+                  <Input
+                    id="email"
+                    placeholder="Email"
+                    type="email"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    id="password"
+                    placeholder="Password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Please wait
+                    </>
+                  ) : (
+                    buttonText
+                  )}
+                </Button>
+              </form>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button disabled={isLoading} onClick={handleSubmit}>
-                {isLoading ? (
-                  <>
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                    Please wait
-                  </>
-                ) : (
-                  buttonText
-                )}
-              </Button>
               <Separator />
               <div className="text-center text-sm">
                 {isSignIn ? (
                   <>
                     Don't have an account?{' '}
-                    <Link href="/auth?mode=signup" className="underline underline-offset-4">
+                    <button 
+                      onClick={() => navigate('/auth?mode=signup')}
+                      className="underline underline-offset-4 hover:text-primary"
+                    >
                       Sign up
-                    </Link>
+                    </button>
                   </>
                 ) : (
                   <>
                     Already have an account?{' '}
-                    <Link href="/auth?mode=signin" className="underline underline-offset-4">
+                    <button 
+                      onClick={() => navigate('/auth?mode=signin')}
+                      className="underline underline-offset-4 hover:text-primary"
+                    >
                       Sign in
-                    </Link>
+                    </button>
                   </>
                 )}
               </div>

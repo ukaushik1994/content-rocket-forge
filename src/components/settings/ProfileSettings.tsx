@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -31,9 +30,13 @@ export function ProfileSettings() {
     setIsUpdating(true);
     
     try {
+      // Create display name from first and last name
+      const displayName = `${firstName} ${lastName}`.trim();
+      
       await updateProfile({
-        firstName,
-        lastName,
+        display_name: displayName,
+        first_name: firstName,
+        last_name: lastName,
       });
       toast.success('Profile updated successfully');
     } catch (error: any) {
