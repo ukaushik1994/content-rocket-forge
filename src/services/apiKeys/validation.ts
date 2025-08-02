@@ -40,16 +40,16 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
     return 'gemini';
   }
   
-  // Mistral keys - specific patterns
-  if (cleanKey.startsWith('mi-') || (cleanKey.length === 32 && /^[A-Za-z0-9]+$/.test(cleanKey))) {
-    console.log('✅ Detected Mistral API key format');
-    return 'mistral';
-  }
-  
-  // Serpstack keys - 32 character hex (more specific than SERP)
+  // Serpstack keys - 32 character hex (most specific, check before mistral)
   if (cleanKey.length === 32 && /^[a-f0-9]+$/i.test(cleanKey)) {
     console.log('✅ Detected Serpstack API key format (32-char hex)');
     return 'serpstack';
+  }
+  
+  // Mistral keys - specific patterns (after serpstack to avoid conflicts)
+  if (cleanKey.startsWith('mi-') || (cleanKey.length === 32 && /^[A-Za-z0-9]+$/.test(cleanKey))) {
+    console.log('✅ Detected Mistral API key format');
+    return 'mistral';
   }
   
   // LM Studio keys - local/custom patterns
