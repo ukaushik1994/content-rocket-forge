@@ -56,7 +56,7 @@ export function transformEnhancedSerpData(data: EnhancedSerpResult): NormalizedS
       
       questions: (data.questions || []).map(q => ({
         type: 'question',
-        content: q.question,
+        content: cleanDuplicateText(q.question || ''),
         selected: false,
         source: 'enhanced_serp',
         metadata: q
@@ -140,7 +140,7 @@ export function transformLegacySerpData(data: SerpAnalysisResult): NormalizedSer
       
       questions: (data.peopleAlsoAsk || []).map(q => ({
         type: 'question',
-        content: q.question,
+        content: cleanDuplicateText(q.question || ''),
         selected: false,
         source: 'legacy_serp',
         metadata: q
@@ -237,4 +237,43 @@ export function getSelectionStats(selections: SerpSelection[]): Record<string, n
   });
   
   return stats;
+}
+
+/**
+ * Clean duplicate text and provider contamination
+ */
+function cleanDuplicateText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Remove provider references
+  text = text.replace(/serpapi|serpstack|serp api|serp stack/gi, '');
+  
+  // Remove duplicate consecutive words/phrases
+  const words = text.split(' ');
+  const cleaned = [];
+  let lastWord = '';
+  
+  for (const word of words) {
+    const cleanWord = word.trim();
+    if (cleanWord && (cleanWord !== lastWord || cleanWord.length < 3)) {
+      cleaned.push(cleanWord);
+      lastWord = cleanWord;
+    }
+  }
+  
+  // Remove duplicate consecutive sentences (common issue with PAA)
+  let result = cleaned.join(' ');
+  const sentences = result.split(/[.!?]+/);
+  const uniqueSentences = [];
+  let lastSentence = '';
+  
+  for (const sentence of sentences) {
+    const cleanSentence = sentence.trim();
+    if (cleanSentence && cleanSentence !== lastSentence) {
+      uniqueSentences.push(cleanSentence);
+      lastSentence = cleanSentence;
+    }
+  }
+  
+  return uniqueSentences.join('. ').trim();
 }

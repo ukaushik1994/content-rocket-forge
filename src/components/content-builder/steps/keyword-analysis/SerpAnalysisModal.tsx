@@ -128,12 +128,71 @@ export function SerpAnalysisModal({
     }
   };
   
+  // Provider-specific capabilities and data counts
+  const getProviderCapabilities = (provider: 'serpapi' | 'serpstack') => {
+    const data = providerData[provider];
+    if (!data) return null;
+    
+    return {
+      serpapi: {
+        knowledgeGraph: !!(data as any).knowledgeGraph,
+        featuredSnippets: (data.featuredSnippets?.length || 0) > 0,
+        localResults: ((data as any).localResults?.length || 0) > 0,
+        shoppingResults: ((data as any).shoppingResults?.length || 0) > 0,
+        multimedia: ((data as any).multimedia?.images?.length || 0) + ((data as any).multimedia?.videos?.length || 0) > 0,
+        topStories: ((data as any).topStories?.length || 0) > 0
+      },
+      serpstack: {
+        enhancedPAA: (data.peopleAlsoAsk?.length || 0) > 4,
+        smartHeadings: (data.headings?.length || 0) > 3,
+        contentGaps: (data.contentGaps?.length || 0) > 2,
+        entityExtraction: (data.entities?.length || 0) > 5,
+        competitorAnalysis: (data.topResults?.length || 0) > 5
+      }
+    }[provider];
+  };
+
   const tabs = [
-    { id: 'questions', label: 'FAQ Questions', icon: HelpCircle, count: currentSerpData?.peopleAlsoAsk?.length || 0, color: 'from-purple-500 to-pink-500' },
-    { id: 'headings', label: 'SERP Headings', icon: Heading, count: currentSerpData?.headings?.length || 0, color: 'from-green-500 to-emerald-500' },
-    { id: 'gaps', label: 'Content Gaps', icon: Star, count: currentSerpData?.contentGaps?.length || 0, color: 'from-orange-500 to-red-500' },
-    { id: 'keywords', label: 'Keywords', icon: Tag, count: currentSerpData?.keywords?.length || 0, color: 'from-indigo-500 to-purple-500' },
-    { id: 'related', label: 'Related Searches', icon: Search, count: currentSerpData?.relatedSearches?.length || 0, color: 'from-teal-500 to-cyan-500' }
+    { 
+      id: 'questions', 
+      label: 'FAQ Questions', 
+      icon: HelpCircle, 
+      count: currentSerpData?.peopleAlsoAsk?.length || 0, 
+      color: 'from-purple-500 to-pink-500',
+      capability: activeProvider === 'serpapi' ? 'Enhanced PAA' : 'Smart FAQ Extraction'
+    },
+    { 
+      id: 'headings', 
+      label: 'SERP Headings', 
+      icon: Heading, 
+      count: currentSerpData?.headings?.length || 0, 
+      color: 'from-green-500 to-emerald-500',
+      capability: activeProvider === 'serpapi' ? 'Title Analysis' : 'Smart Headings'
+    },
+    { 
+      id: 'gaps', 
+      label: 'Content Gaps', 
+      icon: Star, 
+      count: currentSerpData?.contentGaps?.length || 0, 
+      color: 'from-orange-500 to-red-500',
+      capability: 'Gap Analysis'
+    },
+    { 
+      id: 'keywords', 
+      label: 'Keywords', 
+      icon: Tag, 
+      count: currentSerpData?.keywords?.length || 0, 
+      color: 'from-indigo-500 to-purple-500',
+      capability: 'Keyword Discovery'
+    },
+    { 
+      id: 'related', 
+      label: 'Related Searches', 
+      icon: Search, 
+      count: currentSerpData?.relatedSearches?.length || 0, 
+      color: 'from-teal-500 to-cyan-500',
+      capability: 'Search Expansion'
+    }
   ];
 
   return (
@@ -267,6 +326,14 @@ export function SerpAnalysisModal({
                     <Badge variant="outline" className="ml-1 text-xs bg-white/10 border-white/20 text-white font-mono">
                       {tab.count}
                     </Badge>
+                  )}
+                  {/* Show capability indicator for active tab */}
+                  {activeTab === tab.id && tab.capability && (
+                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                      <div className="text-[9px] text-gray-400 bg-black/40 px-2 py-1 rounded border border-white/10">
+                        {tab.capability}
+                      </div>
+                    </div>
                   )}
                 </motion.div>
                 {activeTab === tab.id && (

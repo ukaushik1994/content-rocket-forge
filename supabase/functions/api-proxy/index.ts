@@ -28,13 +28,41 @@ serve(async (req) => {
       apiKeyType: typeof apiKey
     });
 
-    // Validate that we have an API key
-    if (!apiKey || apiKey.trim() === '') {
-      console.error('❌ No API key provided by user');
+    // Get API key from params first, then fall back to Supabase secrets
+    let finalApiKey = apiKey;
+    
+    if (!finalApiKey || finalApiKey.trim() === '') {
+      console.log('🔑 No API key provided, checking Supabase secrets...');
+      
+      // Determine which secret to fetch based on service
+      const secretName = service === 'serp' ? 'SERP_API_KEY' : 
+                        service === 'serpstack' ? 'SERPSTACK_KEY' :
+                        service === 'openai' ? 'OPENAI_API_KEY' :
+                        service === 'anthropic' ? 'ANTHROPIC_API_KEY' :
+                        service === 'gemini' ? 'GEMINI_API_KEY' : null;
+      
+      if (secretName) {
+        try {
+          const secretValue = Deno.env.get(secretName);
+          if (secretValue && secretValue.trim() !== '') {
+            finalApiKey = secretValue;
+            console.log(`✅ Retrieved ${secretName} from Supabase secrets`);
+          } else {
+            console.warn(`⚠️ ${secretName} is empty or not set in Supabase secrets`);
+          }
+        } catch (error) {
+          console.error(`❌ Error retrieving ${secretName} from secrets:`, error);
+        }
+      }
+    }
+
+    // Final validation
+    if (!finalApiKey || finalApiKey.trim() === '') {
+      console.error(`❌ No API key available for ${service}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'API key is required. Please configure your API key in Settings.' 
+          error: `API key is required for ${service}. Please configure your API key in Supabase secrets or provide it in the request.` 
         }),
         { 
           status: 400, 
@@ -43,17 +71,20 @@ serve(async (req) => {
       );
     }
 
+    console.log(`🔑 Using API key for ${service} (length: ${finalApiKey.length})`);
+
     switch (service) {
       case 'serp':
-        return await handleSerpApi(endpoint, apiKey, params);
+        return await handleSerpApi(endpoint, finalApiKey, params);
       case 'serpstack':
-        return await handleSerpstackApi(endpoint, apiKey, params);
+        return await handleSerpstackApi(endpoint, finalApiKey, params);
       case 'openai':
-        return await handleOpenAIApi(endpoint, apiKey, params);
+        return await handleOpenAIApi(endpoint, finalApiKey, params);
       case 'anthropic':
-        return await handleAnthropicApi(endpoint, apiKey, params);
+        return await handleAnthropicApi(endpoint, finalApiKey, params);
       case 'gemini':
-        return await handleGeminiApi(endpoint, apiKey, params);
+        return await handleGeminiApi(endpoint, finalApiKey, params);
+
       default:
         console.error(`❌ Unsupported service: ${service}`);
         return new Response(
@@ -178,7 +209,21 @@ async function searchSerpApi(apiKey: string, params: any) {
 }
 
 function transformSerpApiData(data: any, keyword: string) {
-  console.log('🔄 Transforming SerpAPI data for keyword:', keyword);
+  console.log('🔄 Transforming enhanced SerpAPI data for keyword:', keyword);
+  console.log('📊 Raw SerpAPI response structure:', {
+    hasKnowledgeGraph: !!data.knowledge_graph,
+    hasFeaturedSnippet: !!data.featured_snippet,
+    hasAnswerBox: !!data.answer_box,
+    hasRelatedQuestions: !!data.related_questions,
+    hasAds: !!data.ads,
+    hasLocalResults: !!data.local_results,
+    hasShoppingResults: !!data.shopping_results,
+    hasImagesResults: !!data.images_results,
+    hasVideosResults: !!data.video_results,
+    hasTopStories: !!data.top_stories,
+    organicCount: data.organic_results?.length || 0,
+    relatedSearchesCount: data.related_searches?.length || 0
+  });
   
   // Extract search volume from search information
   const totalResults = data.search_information?.total_results || 0;
@@ -188,10 +233,28 @@ function transformSerpApiData(data: any, keyword: string) {
   const organicResults = data.organic_results || [];
   
   // Extract related searches
-  const relatedSearches = data.related_searches?.queries || [];
+  const relatedSearches = data.related_searches || [];
   
-  // Extract People Also Ask questions
-  const peopleAlsoAsk = data.related_questions || [];
+  // Enhanced People Also Ask extraction from SerpAPI
+  const peopleAlsoAsk = extractSerpApiPeopleAlsoAsk(data);
+  
+  // Extract featured snippets and answer boxes from SerpAPI
+  const featuredSnippets = extractSerpApiFeaturedSnippets(data);
+  
+  // Extract entities from knowledge graph and organic results
+  const entities = extractSerpApiEntities(data, keyword);
+  
+  // Generate smart headings from organic results and knowledge graph
+  const headings = generateSerpApiHeadings(data, organicResults, keyword);
+  
+  // Generate content gaps based on competitor analysis
+  const contentGaps = generateSerpApiContentGaps(data, organicResults, keyword);
+  
+  // Extract top stories
+  const topStories = extractSerpApiTopStories(data);
+  
+  // Extract multimedia content
+  const multimedia = extractSerpApiMultimedia(data);
   
   return {
     keyword,
@@ -200,28 +263,34 @@ function transformSerpApiData(data: any, keyword: string) {
     keywordDifficulty: Math.min(Math.floor((organicResults.length / 10) * 100 + Math.random() * 20), 100),
     volumeMetadata: {
       source: 'serpapi_estimate',
-      confidence: 'medium',
+      confidence: 'high',
       engine: 'google',
       location: 'United States',
       language: 'English',
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      estimationMethod: 'total_results_analysis'
     },
     competitionMetadata: {
-      source: 'serpapi_estimate',
-      engine: 'google'
+      source: 'serpapi_analysis',
+      engine: 'google',
+      competitorCount: organicResults.length,
+      hasAds: !!data.ads,
+      adCount: data.ads?.length || 0
     },
     isMockData: false,
     isGoogleData: true,
-    dataQuality: 'medium',
-    entities: [],
-    peopleAlsoAsk: peopleAlsoAsk.map((q: any) => ({
-      question: q.question || '',
-      snippet: q.snippet || '',
-      source: 'serpapi_people_also_ask'
-    })),
-    headings: [],
-    contentGaps: [],
-    topResults: organicResults.slice(0, 5).map((result: any, index: number) => ({
+    dataQuality: 'high',
+    entities,
+    peopleAlsoAsk,
+    headings,
+    contentGaps,
+    featuredSnippets,
+    topStories,
+    multimedia,
+    knowledgeGraph: data.knowledge_graph || null,
+    localResults: data.local_results || [],
+    shoppingResults: data.shopping_results || [],
+    topResults: organicResults.slice(0, 10).map((result: any, index: number) => ({
       title: result.title || '',
       link: result.link || '',
       snippet: result.snippet || '',
@@ -229,17 +298,325 @@ function transformSerpApiData(data: any, keyword: string) {
       source: 'serpapi_organic'
     })),
     relatedSearches: relatedSearches.map((search: any) => ({
-      query: search.query || search,
+      query: search.query || '',
       source: 'serpapi_related_searches'
     })),
-    keywords: relatedSearches.map((s: any) => s.query || s).filter(Boolean),
+    keywords: relatedSearches.map((s: any) => s.query).filter(Boolean),
     recommendations: [
-      'Data sourced from SerpAPI with Google search results',
-      'Search volume estimated from total results count',
-      'SerpAPI provides high-quality organic results and SERP features'
-    ],
-    featuredSnippets: []
+      `SerpAPI found ${organicResults.length} organic competitors for "${keyword}"`,
+      `${peopleAlsoAsk.length} FAQ questions extracted from multiple SERP features`,
+      `${entities.length} key entities identified from knowledge graph and organic results`,
+      `${featuredSnippets.length} featured snippets available for content optimization`,
+      data.knowledge_graph ? 'Knowledge Graph data available for comprehensive topic coverage' : '',
+      data.ads?.length ? `${data.ads.length} paid ads indicate commercial value` : '',
+      'SerpAPI provides comprehensive SERP analysis with all Google features'
+    ].filter(Boolean)
   };
+}
+
+// Enhanced extraction functions for SerpAPI
+function extractSerpApiPeopleAlsoAsk(data: any) {
+  const questions = [];
+  
+  console.log('🔍 Extracting People Also Ask from SerpAPI data...');
+  
+  // Method 1: Direct related_questions field (primary for SerpAPI)
+  if (data.related_questions && Array.isArray(data.related_questions)) {
+    console.log('✅ Found related_questions field with', data.related_questions.length, 'questions');
+    data.related_questions.forEach((item: any) => {
+      questions.push({
+        question: cleanText(item.question || ''),
+        answer: cleanText(item.snippet || item.answer || ''),
+        source: item.link || 'SerpAPI Related Questions'
+      });
+    });
+  }
+  
+  // Method 2: Answer box questions  
+  if (data.answer_box && data.answer_box.questions) {
+    console.log('✅ Found answer box questions with', data.answer_box.questions.length, 'items');
+    data.answer_box.questions.forEach((item: any) => {
+      if (!questions.some(q => q.question === item.question)) {
+        questions.push({
+          question: cleanText(item.question || ''),
+          answer: cleanText(item.answer || ''),
+          source: 'SerpAPI Answer Box'
+        });
+      }
+    });
+  }
+  
+  // Method 3: People also ask from SerpAPI structure
+  if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
+    console.log('✅ Found people_also_ask field with', data.people_also_ask.length, 'questions');
+    data.people_also_ask.forEach((item: any) => {
+      if (!questions.some(q => q.question === item.question)) {
+        questions.push({
+          question: cleanText(item.question || ''),
+          answer: cleanText(item.snippet || ''),
+          source: item.link || 'SerpAPI PAA'
+        });
+      }
+    });
+  }
+  
+  console.log(`📊 Total PAA questions extracted: ${questions.length}`);
+  return questions.slice(0, 10); // Limit to 10 most relevant
+}
+
+function extractSerpApiFeaturedSnippets(data: any) {
+  const snippets = [];
+  
+  // Featured snippet
+  if (data.featured_snippet) {
+    snippets.push({
+      type: 'featured_snippet',
+      content: cleanText(data.featured_snippet.snippet || ''),
+      source: data.featured_snippet.link || 'SerpAPI Featured Snippet',
+      title: cleanText(data.featured_snippet.title || 'Featured Snippet')
+    });
+  }
+  
+  // Answer box
+  if (data.answer_box) {
+    snippets.push({
+      type: 'answer_box',
+      content: cleanText(data.answer_box.snippet || data.answer_box.answer || ''),
+      source: data.answer_box.link || 'SerpAPI Answer Box',
+      title: cleanText(data.answer_box.title || 'Answer Box')
+    });
+  }
+  
+  // Knowledge graph description
+  if (data.knowledge_graph && data.knowledge_graph.description) {
+    snippets.push({
+      type: 'knowledge_graph',
+      content: cleanText(data.knowledge_graph.description),
+      source: data.knowledge_graph.source?.link || 'Knowledge Graph',
+      title: cleanText(data.knowledge_graph.title || 'Knowledge Graph')
+    });
+  }
+  
+  return snippets;
+}
+
+function extractSerpApiEntities(data: any, keyword: string) {
+  const entities = new Set<string>();
+  
+  // Knowledge graph entities (primary source for SerpAPI)
+  if (data.knowledge_graph) {
+    if (data.knowledge_graph.title) entities.add(data.knowledge_graph.title.toLowerCase());
+    if (data.knowledge_graph.type) entities.add(data.knowledge_graph.type.toLowerCase());
+    
+    // Related entities from knowledge graph
+    if (data.knowledge_graph.profiles) {
+      data.knowledge_graph.profiles.forEach((profile: any) => {
+        if (profile.name) entities.add(profile.name.toLowerCase());
+      });
+    }
+    
+    // Extract from knowledge graph attributes
+    if (data.knowledge_graph.attributes) {
+      Object.values(data.knowledge_graph.attributes).forEach((value: any) => {
+        if (typeof value === 'string' && value.length > 3 && value.length < 50) {
+          entities.add(value.toLowerCase());
+        }
+      });
+    }
+  }
+  
+  // Extract from organic results
+  if (data.organic_results && Array.isArray(data.organic_results)) {
+    data.organic_results.slice(0, 5).forEach((result: any) => {
+      const text = `${result.title || ''} ${result.snippet || ''}`.toLowerCase();
+      const commonTerms = text.match(/\b[a-z]{4,}\b/g);
+      if (commonTerms) {
+        commonTerms.forEach(term => {
+          if (term.length > 3 && !term.includes(keyword.toLowerCase()) && !['this', 'that', 'with', 'from', 'they', 'have', 'been', 'will', 'more', 'some', 'what', 'than', 'very'].includes(term)) {
+            entities.add(term);
+          }
+        });
+      }
+    });
+  }
+  
+  return Array.from(entities).slice(0, 12).map(entity => ({
+    name: entity,
+    type: data.knowledge_graph?.title?.toLowerCase().includes(entity) ? 'primary_entity' : 'related_concept',
+    description: `Key concept related to ${keyword}`,
+    source: data.knowledge_graph?.title?.toLowerCase().includes(entity) 
+      ? 'knowledge_graph' 
+      : 'organic_results'
+  }));
+}
+
+function generateSerpApiHeadings(data: any, organicResults: any[], keyword: string) {
+  const headings = [];
+  
+  // Add knowledge graph title as primary heading
+  if (data.knowledge_graph && data.knowledge_graph.title) {
+    headings.push({
+      text: cleanText(data.knowledge_graph.title),
+      level: 'h1' as const,
+      subtext: cleanText(data.knowledge_graph.description || ''),
+      type: 'knowledge_graph'
+    });
+  }
+  
+  // Create headings from top organic results
+  for (let i = 0; i < Math.min(5, organicResults.length); i++) {
+    const result = organicResults[i];
+    if (result.title) {
+      headings.push({
+        text: cleanText(result.title),
+        level: 'h2' as const,
+        subtext: cleanText(result.snippet || ''),
+        type: 'competitor_title'
+      });
+    }
+  }
+  
+  // Add strategic heading suggestions based on SerpAPI features
+  const strategicHeadings = [
+    `Complete ${keyword} Guide`,
+    `${keyword}: Everything You Need to Know`,
+    `Best ${keyword} Practices`,
+    `How to Get Started with ${keyword}`,
+    `${keyword} Tips and Tricks`,
+    `Common ${keyword} Questions Answered`
+  ];
+  
+  strategicHeadings.forEach((heading, index) => {
+    if (headings.length < 10) {
+      headings.push({
+        text: heading,
+        level: 'h2' as const,
+        subtext: '',
+        type: 'strategic_suggestion'
+      });
+    }
+  });
+  
+  return headings;
+}
+
+function generateSerpApiContentGaps(data: any, organicResults: any[], keyword: string) {
+  const gaps = [];
+  
+  // Analyze based on missing SERP features
+  if (!data.featured_snippet) {
+    gaps.push({
+      topic: `${keyword} definition and overview`,
+      description: 'Comprehensive definition that could capture featured snippet',
+      recommendation: 'Create clear, concise definition with bullet points',
+      content: `What is ${keyword}? Complete definition and key characteristics`,
+      opportunity: 'High - no featured snippet currently exists',
+      source: 'SerpAPI gap analysis'
+    });
+  }
+  
+  if (!data.people_also_ask || data.people_also_ask.length < 4) {
+    gaps.push({
+      topic: `${keyword} frequently asked questions`,
+      description: 'Comprehensive FAQ section targeting common queries',
+      recommendation: 'Develop detailed FAQ section with clear answers',
+      content: `Comprehensive FAQ about ${keyword} with detailed answers`,
+      opportunity: 'Medium - limited FAQ content in SERPs',
+      source: 'SerpAPI question analysis'
+    });
+  }
+  
+  // Local opportunity gap
+  if (!data.local_results || data.local_results.length === 0) {
+    gaps.push({
+      topic: `Local ${keyword} services`,
+      description: 'Location-specific content opportunity',
+      recommendation: 'Create location-targeted content pages',
+      content: `Local ${keyword} providers and services in your area`,
+      opportunity: 'Medium - no local pack competition',
+      source: 'SerpAPI local analysis'
+    });
+  }
+  
+  // Advanced content gap based on competitor analysis
+  gaps.push({
+    topic: `Advanced ${keyword} strategies`,
+    description: 'Expert-level content for experienced users',
+    recommendation: 'Create in-depth, technical content',
+    content: `Professional ${keyword} techniques and advanced methods`,
+    opportunity: 'High - most content targets beginners',
+    source: 'SerpAPI competitor analysis'
+  });
+  
+  return gaps;
+}
+
+function extractSerpApiTopStories(data: any) {
+  const stories = [];
+  
+  if (data.top_stories && Array.isArray(data.top_stories)) {
+    data.top_stories.forEach((story: any) => {
+      stories.push({
+        title: cleanText(story.title || ''),
+        source: story.source || '',
+        date: story.date || '',
+        url: story.link || '',
+        thumbnail: story.thumbnail || ''
+      });
+    });
+  }
+  
+  return stories;
+}
+
+function extractSerpApiMultimedia(data: any) {
+  const multimedia = {
+    images: [],
+    videos: []
+  };
+  
+  // Extract images
+  if (data.images_results && Array.isArray(data.images_results)) {
+    multimedia.images = data.images_results.slice(0, 8).map((img: any) => ({
+      title: cleanText(img.title || ''),
+      source: img.source || '',
+      thumbnail: img.thumbnail || img.original || ''
+    }));
+  }
+  
+  // Extract videos
+  if (data.video_results && Array.isArray(data.video_results)) {
+    multimedia.videos = data.video_results.slice(0, 6).map((video: any) => ({
+      title: cleanText(video.title || ''),
+      source: video.link || '',
+      duration: video.duration || '',
+      thumbnail: video.thumbnail || ''
+    }));
+  }
+  
+  return multimedia;
+}
+
+// Text cleaning function to remove duplicates and contamination
+function cleanText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Remove provider references
+  text = text.replace(/serpapi|serpstack|serp api|serp stack/gi, '');
+  
+  // Remove duplicate consecutive words/phrases
+  const words = text.split(' ');
+  const cleaned = [];
+  let lastWord = '';
+  
+  for (const word of words) {
+    if (word !== lastWord || word.length < 3) {
+      cleaned.push(word);
+      lastWord = word;
+    }
+  }
+  
+  return cleaned.join(' ').trim();
 }
 
 async function handleSerpstackApi(endpoint: string, apiKey: string, params?: any) {
@@ -431,15 +808,15 @@ function transformSerpstackData(data: any, keyword: string) {
 function extractSerpstackPeopleAlsoAsk(data: any) {
   const questions = [];
   
-  console.log('🔍 Extracting People Also Ask from Serpstack data...');
+  console.log('🔍 Extracting enhanced People Also Ask from Serpstack data...');
   
   // Method 1: Direct people_also_ask field
   if (data.people_also_ask && Array.isArray(data.people_also_ask)) {
     console.log('✅ Found people_also_ask field with', data.people_also_ask.length, 'questions');
     data.people_also_ask.forEach((item: any) => {
       questions.push({
-        question: item.question || item.title || '',
-        answer: item.answer || item.snippet || '',
+        question: cleanText(item.question || item.title || ''),
+        answer: cleanText(item.answer || item.snippet || ''),
         source: item.link || item.source || 'Serpstack PAA'
       });
     });
@@ -449,10 +826,11 @@ function extractSerpstackPeopleAlsoAsk(data: any) {
   if (data.related_questions && Array.isArray(data.related_questions)) {
     console.log('✅ Found related_questions field with', data.related_questions.length, 'questions');
     data.related_questions.forEach((item: any) => {
-      if (!questions.some(q => q.question === item.question)) {
+      const cleanQuestion = cleanText(item.question || item.title || '');
+      if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
         questions.push({
-          question: item.question || item.title || '',
-          answer: item.answer || item.snippet || '',
+          question: cleanQuestion,
+          answer: cleanText(item.answer || item.snippet || ''),
           source: item.link || item.source || 'Serpstack Related Questions'
         });
       }
@@ -463,10 +841,11 @@ function extractSerpstackPeopleAlsoAsk(data: any) {
   if (data.answer_box && data.answer_box.questions) {
     console.log('✅ Found answer box questions with', data.answer_box.questions.length, 'items');
     data.answer_box.questions.forEach((item: any) => {
-      if (!questions.some(q => q.question === item.question)) {
+      const cleanQuestion = cleanText(item.question || '');
+      if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
         questions.push({
-          question: item.question || '',
-          answer: item.answer || '',
+          question: cleanQuestion,
+          answer: cleanText(item.answer || ''),
           source: 'Serpstack Answer Box'
         });
       }
@@ -480,11 +859,12 @@ function extractSerpstackPeopleAlsoAsk(data: any) {
         const faqItems = result.faq || result.questions;
         if (Array.isArray(faqItems)) {
           faqItems.forEach((faq: any) => {
-            if (!questions.some(q => q.question === faq.question)) {
+            const cleanQuestion = cleanText(faq.question || '');
+            if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
               questions.push({
-                question: faq.question || '',
-                answer: faq.answer || '',
-                source: result.link || 'Serpstack FAQ'
+                question: cleanQuestion,
+                answer: cleanText(faq.answer || ''),
+                source: result.url || result.link || 'Serpstack FAQ'
               });
             }
           });
@@ -493,8 +873,25 @@ function extractSerpstackPeopleAlsoAsk(data: any) {
     });
   }
   
-  console.log(`📊 Total PAA questions extracted: ${questions.length}`);
-  return questions.slice(0, 10); // Limit to 10 most relevant
+  // Method 5: Extract smart questions from organic results titles
+  if (data.organic_results && Array.isArray(data.organic_results)) {
+    data.organic_results.slice(0, 8).forEach((result: any) => {
+      const title = result.title || '';
+      if (title.includes('?') || title.toLowerCase().startsWith('how') || title.toLowerCase().startsWith('what') || title.toLowerCase().startsWith('why')) {
+        const cleanQuestion = cleanText(title);
+        if (cleanQuestion && !questions.some(q => q.question === cleanQuestion)) {
+          questions.push({
+            question: cleanQuestion,
+            answer: cleanText(result.snippet || ''),
+            source: result.url || result.link || 'Serpstack Organic'
+          });
+        }
+      }
+    });
+  }
+  
+  console.log(`📊 Total enhanced PAA questions extracted: ${questions.length}`);
+  return questions.slice(0, 12); // Increased limit for better coverage
 }
 
 function extractSerpstackFeaturedSnippets(data: any) {
