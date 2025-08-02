@@ -1,270 +1,216 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { encryptApiKey, decryptApiKey, migrateApiKey } from './apiKeys/encryption';
+import { toast } from 'sonner';
 
-export type ApiProvider = 'serp' | 'serpstack' | 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio';
-
-const API_KEY_MAPPING: Record<ApiProvider, string> = {
-  serp: 'SERP_API_KEY',
-  serpstack: 'SERPSTACK_API_KEY',
-  openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY',
-  gemini: 'GEMINI_API_KEY',
-  mistral: 'MISTRAL_API_KEY',
-  lmstudio: 'LMSTUDIO_API_KEY'
-};
+type ApiService = 'openai' | 'anthropic' | 'gemini' | 'serpapi';
 
 /**
- * Simple encryption for API keys (base64 + simple cipher)
+ * Secure API key management service with proper encryption
  */
-function encryptKey(key: string): string {
-  try {
-    const encoded = btoa(key);
-    // Simple cipher - rotate each character
-    return encoded.split('').map(char => 
-      String.fromCharCode(char.charCodeAt(0) + 3)
-    ).join('');
-  } catch {
-    return btoa(key); // Fallback to just base64
-  }
-}
-
-/**
- * Simple decryption for API keys
- */
-function decryptKey(encryptedKey: string): string {
-  try {
-    // Reverse the simple cipher
-    const decoded = encryptedKey.split('').map(char => 
-      String.fromCharCode(char.charCodeAt(0) - 3)
-    ).join('');
-    return atob(decoded);
-  } catch {
+class ApiKeyService {
+  /**
+   * Stores an encrypted API key for a service
+   */
+  static async storeApiKey(service: ApiService, apiKey: string): Promise<boolean> {
     try {
-      return atob(encryptedKey); // Fallback to just base64
-    } catch {
-      return encryptedKey; // Last resort
-    }
-  }
-}
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to store API keys');
+        return false;
+      }
 
-/**
- * Get API key for a specific provider from database
- */
-export async function getApiKey(provider: ApiProvider): Promise<string | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.warn('User not logged in while trying to retrieve API key');
-      return null;
-    }
-    
-    console.log(`🔍 Retrieving ${provider} API key from database`);
+      // Validate API key format
+      if (!this.validateApiKey(service, apiKey)) {
+        toast.error('Invalid API key format for ' + service);
+        return false;
+      }
 
-    const { data, error } = await supabase
-      .from('api_keys')
-      .select('encrypted_key')
-      .eq('service', provider)
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .maybeSingle();
+      // Encrypt the API key using the new secure encryption
+      const encryptedKey = await encryptApiKey(apiKey, user.id);
 
-    if (error) {
-      console.error(`Error fetching ${provider} API key:`, error);
-      return null;
-    }
-    
-    if (!data || !data.encrypted_key) {
-      console.log(`No ${provider} API key found in database`);
-      return null;
-    }
-    
-    const decryptedKey = decryptKey(data.encrypted_key);
-    console.log(`✅ ${provider} API key retrieved successfully`);
-    
-    return decryptedKey;
-  } catch (error) {
-    console.error(`Error fetching ${provider} API key:`, error);
-    return null;
-  }
-}
-
-/**
- * Save API key for a specific provider to database
- */
-export async function saveApiKey(provider: ApiProvider, apiKey: string): Promise<boolean> {
-  try {
-    if (!apiKey || !apiKey.trim()) {
-      throw new Error('API key cannot be empty');
-    }
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error('You must be logged in to save API keys');
-    }
-    
-    const cleanKey = apiKey.trim();
-    console.log(`💾 Saving ${provider} API key to database`);
-
-    const { data: existingKey, error: fetchError } = await supabase
-      .from('api_keys')
-      .select('*')
-      .eq('service', provider)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
-    }
-
-    const encrypted_key = encryptKey(cleanKey);
-
-    if (existingKey) {
-      // Update existing key
+      // Store in database
       const { error } = await supabase
         .from('api_keys')
-        .update({ 
-          encrypted_key, 
+        .upsert({
+          user_id: user.id,
+          service,
+          encrypted_key: encryptedKey,
           is_active: true,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', existingKey.id);
-
-      if (error) throw error;
-    } else {
-      // Insert new key
-      const { error } = await supabase
-        .from('api_keys')
-        .insert({ 
-          service: provider, 
-          encrypted_key, 
-          is_active: true,
-          user_id: user.id
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error storing API key:', error);
+        toast.error('Failed to store API key');
+        return false;
+      }
+
+      toast.success(`${service} API key stored securely`);
+      return true;
+    } catch (error: any) {
+      console.error('Error in storeApiKey:', error);
+      toast.error('Failed to store API key: ' + error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Retrieves and decrypts an API key for a service
+   */
+  static async getApiKey(service: ApiService): Promise<string | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('encrypted_key')
+        .eq('user_id', user.id)
+        .eq('service', service)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Try to decrypt with new encryption method
+      try {
+        return await decryptApiKey(data.encrypted_key, user.id);
+      } catch (decryptError) {
+        // If decryption fails, it might be an old format
+        console.warn(`API key for ${service} uses old encryption format`);
+        try {
+          // Try to migrate the key
+          const migratedKey = await migrateApiKey(data.encrypted_key, user.id);
+          return migratedKey;
+        } catch (migrationError) {
+          console.error(`Failed to migrate API key for ${service}:`, migrationError);
+          toast.error(`API key for ${service} needs to be re-entered due to security upgrade`);
+          return null;
+        }
+      }
+    } catch (error: any) {
+      console.error('Error retrieving API key:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Deletes an API key for a service
+   */
+  static async deleteApiKey(service: ApiService): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to delete API keys');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('service', service);
+
+      if (error) {
+        console.error('Error deleting API key:', error);
+        toast.error('Failed to delete API key');
+        return false;
+      }
+
+      toast.success(`${service} API key deleted`);
+      return true;
+    } catch (error: any) {
+      console.error('Error in deleteApiKey:', error);
+      toast.error('Failed to delete API key: ' + error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Lists all configured API services for the user
+   */
+  static async getConfiguredServices(): Promise<ApiService[]> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('service')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      if (error || !data) {
+        return [];
+      }
+
+      return data.map(row => row.service as ApiService);
+    } catch (error: any) {
+      console.error('Error getting configured services:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Validates API key format for different services
+   */
+  private static validateApiKey(service: ApiService, apiKey: string): boolean {
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+      return false;
     }
 
-    console.log(`✅ ${provider} API key saved successfully`);
-    return true;
-  } catch (error: any) {
-    console.error(`Error saving ${provider} API key:`, error);
-    return false;
-  }
-}
+    const trimmedKey = apiKey.trim();
 
-/**
- * Test API key for a specific provider
- */
-export async function testApiKey(provider: ApiProvider, apiKey: string): Promise<boolean> {
-  try {
-    console.log(`🧪 Testing ${provider} API key`);
-    
-    // Simple validation based on known patterns
-    switch (provider) {
+    switch (service) {
       case 'openai':
-        return apiKey.startsWith('sk-') && apiKey.length > 20;
+        return trimmedKey.startsWith('sk-') && trimmedKey.length > 20;
       case 'anthropic':
-        return apiKey.startsWith('sk-ant-') && apiKey.length > 20;
+        return trimmedKey.startsWith('sk-ant-') && trimmedKey.length > 20;
       case 'gemini':
-        return apiKey.length === 39 && /^[A-Za-z0-9_-]+$/.test(apiKey);
-      case 'serp':
-        return apiKey.length >= 32 && /^[a-f0-9]+$/.test(apiKey);
-      case 'serpstack':
-        return apiKey.length === 32 && /^[a-f0-9]+$/.test(apiKey);
-      case 'mistral':
-        return apiKey.length >= 20;
-      case 'lmstudio':
-        return apiKey.length >= 8; // More flexible for local instances
+        return trimmedKey.length > 20; // Google API keys vary in format
+      case 'serpapi':
+        return trimmedKey.length > 10; // SERP API keys vary in format
       default:
-        return apiKey.length >= 8;
+        return trimmedKey.length > 10; // Generic validation
     }
-  } catch (error: any) {
-    console.error(`Error testing ${provider} API key:`, error);
-    return false;
   }
-}
 
-/**
- * Delete API key for a specific provider
- */
-export async function deleteApiKey(provider: ApiProvider): Promise<boolean> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error('You must be logged in to delete API keys');
+  /**
+   * Migrates all user's API keys to new encryption format
+   */
+  static async migrateAllUserKeys(): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const services: ApiService[] = ['openai', 'anthropic', 'gemini', 'serpapi'];
+      
+      for (const service of services) {
+        const key = await this.getApiKey(service);
+        if (key) {
+          // Re-store the key to ensure it's using the new encryption
+          await this.storeApiKey(service, key);
+        }
+      }
+      
+      toast.success('API keys successfully updated to new security format');
+    } catch (error: any) {
+      console.error('Error migrating API keys:', error);
+      toast.error('Failed to update API key security format');
     }
-
-    const { error } = await supabase
-      .from('api_keys')
-      .delete()
-      .eq('service', provider)
-      .eq('user_id', user.id);
-
-    if (error) throw error;
-    
-    console.log(`🗑️ ${provider} API key deleted successfully`);
-    return true;
-  } catch (error: any) {
-    console.error('Error deleting API key:', error);
-    return false;
   }
 }
 
-/**
- * Detect API key type based on format
- */
-export function detectApiKeyType(apiKey: string): ApiProvider | null {
-  if (!apiKey) return null;
-  
-  // OpenAI keys start with 'sk-'
-  if (apiKey.startsWith('sk-')) {
-    return 'openai';
-  }
-  
-  // Anthropic keys start with 'sk-ant-'
-  if (apiKey.startsWith('sk-ant-')) {
-    return 'anthropic';
-  }
-  
-  // Gemini keys are typically 39 characters
-  if (apiKey.length === 39 && /^[A-Za-z0-9_-]+$/.test(apiKey)) {
-    return 'gemini';
-  }
-  
-  // SerpAPI keys are typically 64 characters
-  if (apiKey.length === 64 && /^[a-f0-9]+$/.test(apiKey)) {
-    return 'serp';
-  }
-  
-  // Serpstack keys are typically alphanumeric
-  if (apiKey.length === 32 && /^[a-f0-9]+$/.test(apiKey)) {
-    return 'serpstack';
-  }
-  
-  return null;
-}
-
-/**
- * Test if API key exists for a provider
- */
-export async function hasApiKey(provider: ApiProvider): Promise<boolean> {
-  const key = await getApiKey(provider);
-  return !!key;
-}
-
-/**
- * Get all configured API keys status
- */
-export async function getApiKeysStatus() {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
-  const status: Record<ApiProvider, boolean> = {} as Record<ApiProvider, boolean>;
-
-  for (const provider of providers) {
-    status[provider] = await hasApiKey(provider);
-  }
-
-  return status;
-}
+// Export convenience functions
+export const storeApiKey = ApiKeyService.storeApiKey;
+export const getApiKey = ApiKeyService.getApiKey;
+export const deleteApiKey = ApiKeyService.deleteApiKey;
+export const getConfiguredServices = ApiKeyService.getConfiguredServices;
+export const migrateAllUserKeys = ApiKeyService.migrateAllUserKeys;

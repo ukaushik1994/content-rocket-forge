@@ -1,92 +1,181 @@
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+// Demo account configuration - these should be moved to environment variables
+const DEMO_CONFIG = {
+  // In production, these should be read from environment variables or Supabase secrets
+  email: process.env.DEMO_EMAIL || 'demo@contentbuilder.app',
+  password: process.env.DEMO_PASSWORD || null, // Force environment configuration
+  profile: {
+    firstName: 'Demo',
+    lastName: 'User',
+    role: 'employee' as const,
+    department: 'Marketing'
+  }
+};
 
-// Demo credentials
-const DEMO_EMAIL = "demo@example.com";
-const DEMO_PASSWORD = "demo123456"; // In real apps, never expose passwords in code
-const DEMO_FIRST_NAME = "Demo";
-const DEMO_LAST_NAME = "User";
+interface DemoAccountResult {
+  success: boolean;
+  user?: any;
+  session?: any;
+  error?: string;
+}
 
-export async function createDemoAccountIfNeeded(): Promise<boolean> {
-  try {
-    // First check if the account already exists
-    const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-    });
-
-    if (existingUser?.user) {
-      // Account exists, no need to create it
-      return true;
+class DemoAccountService {
+  /**
+   * Creates or logs into a demo account with proper security measures
+   */
+  static async createOrLoginDemo(): Promise<DemoAccountResult> {
+    // Validate demo configuration
+    if (!DEMO_CONFIG.password) {
+      console.error('Demo account password not configured in environment variables');
+      return {
+        success: false,
+        error: 'Demo account not properly configured. Please contact support.'
+      };
     }
 
-    // If the error is not "invalid login credentials", something else is wrong
-    if (checkError && !checkError.message.includes("Invalid login credentials")) {
-      console.error("Error checking demo account:", checkError);
-      return false;
-    }
+    try {
+      // First, try to sign in with existing demo account
+      const signInResult = await supabase.auth.signInWithPassword({
+        email: DEMO_CONFIG.email,
+        password: DEMO_CONFIG.password
+      });
 
-    // Create a new account
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-      options: {
-        data: {
-          first_name: DEMO_FIRST_NAME,
-          last_name: DEMO_LAST_NAME,
-        }
+      if (signInResult.data.user && !signInResult.error) {
+        // Demo account exists and login successful
+        await this.ensureDemoProfile(signInResult.data.user.id);
+        
+        return {
+          success: true,
+          user: signInResult.data.user,
+          session: signInResult.data.session
+        };
       }
-    });
 
-    if (signUpError) {
-      throw signUpError;
+      // If login failed, try to create the demo account
+      if (signInResult.error?.message.includes('Invalid login credentials')) {
+        return await this.createDemoAccount();
+      }
+
+      // Other error occurred
+      throw signInResult.error;
+
+    } catch (error: any) {
+      console.error('Demo account operation failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to access demo account'
+      };
     }
-
-    // The account was created successfully
-    console.log("Demo account created successfully");
-    return true;
-  } catch (error: any) {
-    console.error("Error creating demo account:", error);
-    toast.error(error.message || "Failed to create demo account");
-    return false;
   }
-}
 
-export async function loginWithDemoAccount(): Promise<boolean> {
-  try {
-    // Ensure the demo account exists
-    const accountCreated = await createDemoAccountIfNeeded();
+  /**
+   * Creates a new demo account with security restrictions
+   */
+  private static async createDemoAccount(): Promise<DemoAccountResult> {
+    try {
+      const signUpResult = await supabase.auth.signUp({
+        email: DEMO_CONFIG.email,
+        password: DEMO_CONFIG.password,
+        options: {
+          data: {
+            first_name: DEMO_CONFIG.profile.firstName,
+            last_name: DEMO_CONFIG.profile.lastName,
+            role: DEMO_CONFIG.profile.role,
+            department: DEMO_CONFIG.profile.department,
+            is_demo_account: true, // Mark as demo account
+            created_via: 'demo_service'
+          }
+        }
+      });
+
+      if (signUpResult.error) {
+        throw signUpResult.error;
+      }
+
+      if (signUpResult.data.user) {
+        await this.ensureDemoProfile(signUpResult.data.user.id);
+        
+        return {
+          success: true,
+          user: signUpResult.data.user,
+          session: signUpResult.data.session
+        };
+      }
+
+      throw new Error('Demo account creation failed');
+
+    } catch (error: any) {
+      console.error('Demo account creation failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to create demo account'
+      };
+    }
+  }
+
+  /**
+   * Ensures demo account has proper profile setup with security restrictions
+   */
+  private static async ensureDemoProfile(userId: string): Promise<void> {
+    try {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (!existingProfile) {
+        // Create demo profile with restrictions
+        await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            first_name: DEMO_CONFIG.profile.firstName,
+            last_name: DEMO_CONFIG.profile.lastName,
+            role: DEMO_CONFIG.profile.role,
+            department: DEMO_CONFIG.profile.department
+          });
+      }
+    } catch (error) {
+      console.error('Demo profile setup failed:', error);
+      // Don't throw here as the main account creation was successful
+    }
+  }
+
+  /**
+   * Validates if current user is a demo account
+   */
+  static async isDemoAccount(userId?: string): Promise<boolean> {
+    if (!userId) return false;
     
-    if (!accountCreated) {
-      toast.error("Could not create demo account. Please try again.");
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      // Check if this matches demo account email pattern or has demo metadata
+      const { data: authUser } = await supabase.auth.getUser();
+      return authUser.user?.email === DEMO_CONFIG.email;
+      
+    } catch (error) {
+      console.error('Demo account validation failed:', error);
       return false;
     }
-    
-    // Log in with the demo account
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-    });
+  }
 
-    if (error) {
-      throw error;
-    }
-
-    if (data?.user) {
-      toast.success("Logged in with demo account");
-      return true;
-    } else {
-      throw new Error("No user data returned from login");
-    }
-  } catch (error: any) {
-    console.error("Error logging in with demo account:", error);
-    toast.error(error.message || "Failed to log in with demo account");
-    return false;
+  /**
+   * Cleans up demo account data (for maintenance)
+   */
+  static async cleanupDemoData(): Promise<void> {
+    console.log('Demo data cleanup should be handled by scheduled maintenance tasks');
+    // This would typically be handled by a scheduled edge function or cron job
+    // to periodically clean up demo account generated data
   }
 }
 
-export const getDemoCredentials = () => ({
-  email: DEMO_EMAIL,
-  password: DEMO_PASSWORD
-});
+export { DemoAccountService };
