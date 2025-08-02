@@ -99,7 +99,7 @@ export const SaveAndExportStep = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-12">
+      <div className="relative z-10 w-full px-6 pt-24 pb-12">
         {/* Header */}
         <motion.div 
           className="text-center mb-16"
@@ -128,7 +128,7 @@ export const SaveAndExportStep = () => {
           </p>
         </motion.div>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {/* Save to Library */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -309,7 +309,7 @@ export const SaveAndExportStep = () => {
         {/* Terms Preview */}
         {generatedTerms.length > 0 && (
           <motion.div
-            className="max-w-6xl mx-auto mt-12"
+            className="w-full max-w-7xl mx-auto mt-12"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}

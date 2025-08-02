@@ -82,7 +82,7 @@ export const ReviewAndEditStep = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-12">
+      <div className="relative z-10 w-full px-6 pt-24 pb-12">
         {/* Header */}
         <motion.div 
           className="text-center mb-16"
@@ -115,7 +115,7 @@ export const ReviewAndEditStep = () => {
 
         {/* Progress Overview */}
         <motion.div 
-          className="max-w-4xl mx-auto mb-8"
+          className="w-full max-w-6xl mx-auto mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -150,7 +150,7 @@ export const ReviewAndEditStep = () => {
 
         {/* Terms List */}
         <motion.div 
-          className="max-w-6xl mx-auto space-y-6"
+          className="w-full space-y-6"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}

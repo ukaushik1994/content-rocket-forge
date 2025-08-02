@@ -83,7 +83,7 @@ export const TermInputStep = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-12">
+      <div className="relative z-10 w-full px-6 pt-24 pb-12">
         {/* Hero Section */}
         <motion.div 
           className="text-center mb-16 relative"
@@ -160,7 +160,7 @@ export const TermInputStep = () => {
 
         {/* Main Content */}
         <motion.div 
-          className="max-w-4xl mx-auto"
+          className="w-full max-w-6xl mx-auto"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
