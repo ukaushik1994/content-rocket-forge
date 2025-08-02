@@ -25,7 +25,8 @@ serve(async (req) => {
     console.log(`📥 Request received: ${service} - ${endpoint}`, {
       hasApiKey: !!apiKey,
       apiKeyLength: apiKey?.length || 0,
-      apiKeyType: typeof apiKey
+      apiKeyType: typeof apiKey,
+      paramsReceived: Object.keys(params || {})
     });
 
     // Get API key from params first, then fall back to Supabase secrets
@@ -35,7 +36,7 @@ serve(async (req) => {
       console.log('🔑 No API key provided, checking Supabase secrets...');
       
       // Determine which secret to fetch based on service
-      const secretName = service === 'serp' ? 'SERP_API_KEY' : 
+      const secretName = (service === 'serp' || service === 'serpapi') ? 'SERP_API_KEY' : 
                         service === 'serpstack' ? 'SERPSTACK_KEY' :
                         service === 'openai' ? 'OPENAI_API_KEY' :
                         service === 'anthropic' ? 'ANTHROPIC_API_KEY' :
@@ -75,6 +76,7 @@ serve(async (req) => {
 
     switch (service) {
       case 'serp':
+      case 'serpapi':  // Handle both 'serp' and 'serpapi' for compatibility
         return await handleSerpApi(endpoint, finalApiKey, params);
       case 'serpstack':
         return await handleSerpstackApi(endpoint, finalApiKey, params);
@@ -129,12 +131,17 @@ async function handleSerpApi(endpoint: string, apiKey: string, params?: any) {
 
 async function analyzeSerpApiKeyword(apiKey: string, params: any) {
   try {
-    console.log('🎯 Analyzing keyword with SerpAPI:', params.keyword);
+    const keyword = params.keyword || params.q;
+    if (!keyword) {
+      throw new Error('No keyword provided for analysis');
+    }
+    
+    console.log('🎯 Analyzing keyword with SerpAPI:', keyword);
     
     const searchParams = new URLSearchParams({
       api_key: apiKey,
       engine: 'google',
-      q: params.keyword,
+      q: keyword,
       num: '10',
       gl: 'us',
       hl: 'en'
@@ -143,12 +150,37 @@ async function analyzeSerpApiKeyword(apiKey: string, params: any) {
     const response = await fetch(`https://serpapi.com/search?${searchParams}`);
     const data = await response.json();
     
+    console.log('📊 SerpAPI response received:', {
+      status: response.status,
+      hasError: !!data.error,
+      hasOrganicResults: !!data.organic_results,
+      organicCount: data.organic_results?.length || 0,
+      searchInformation: !!data.search_information
+    });
+    
     if (!response.ok || data.error) {
-      throw new Error(data.error?.message || 'SerpAPI request failed');
+      const errorMessage = data.error?.message || data.error || 'SerpAPI request failed';
+      console.error('❌ SerpAPI error:', errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    // Validate that we have actual search results
+    if (!data.search_information && !data.organic_results) {
+      console.warn('⚠️ SerpAPI returned empty results');
+      throw new Error('SerpAPI returned no search results');
     }
 
     // Transform SerpAPI data to match our expected format
-    const transformedData = transformSerpApiData(data, params.keyword);
+    const transformedData = transformSerpApiData(data, keyword);
+    
+    console.log('✅ SerpAPI data transformation complete:', {
+      keyword: transformedData.keyword,
+      peopleAlsoAskCount: transformedData.peopleAlsoAsk?.length || 0,
+      entitiesCount: transformedData.entities?.length || 0,
+      featuredSnippetsCount: transformedData.featuredSnippets?.length || 0,
+      topResultsCount: transformedData.topResults?.length || 0,
+      dataQuality: transformedData.dataQuality
+    });
     
     return new Response(
       JSON.stringify(transformedData),
@@ -159,7 +191,8 @@ async function analyzeSerpApiKeyword(apiKey: string, params: any) {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'SerpAPI analysis failed' 
+        error: error.message || 'SerpAPI analysis failed',
+        details: 'Check API key validity and quota limits'
       }),
       { 
         status: 400, 
@@ -1651,10 +1684,20 @@ function generateSerpstackContentGaps(organicResults: any[], keyword: string, da
 
 async function testSerpApi(apiKey: string) {
   try {
-    console.log('🧪 Testing SerpAPI key');
+    console.log('🧪 Testing SerpAPI connection with key length:', apiKey?.length || 0);
+    
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('No API key provided for SerpAPI test');
+    }
     
     const response = await fetch('https://serpapi.com/search.json?engine=google&q=test&api_key=' + apiKey);
     const data = await response.json();
+    
+    console.log('🧪 SerpAPI test response:', {
+      status: response.status,
+      hasError: !!data.error,
+      errorMessage: data.error?.message || data.error
+    });
     
     if (response.ok && !data.error) {
       console.log('✅ SerpAPI test successful');
@@ -1662,20 +1705,32 @@ async function testSerpApi(apiKey: string) {
         JSON.stringify({ 
           success: true, 
           message: 'SerpAPI connection successful',
-          provider: 'SerpAPI'
+          provider: 'SerpAPI',
+          capabilities: [
+            'Organic search results',
+            'Knowledge Graph data',
+            'Featured snippets',
+            'People Also Ask questions',
+            'Local business results',
+            'Shopping results',
+            'Images and videos',
+            'Related searches'
+          ]
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else {
       console.error('❌ SerpAPI test failed:', data);
-      throw new Error(data.error || 'SerpAPI test failed');
+      const errorMessage = data.error?.message || data.error || 'SerpAPI test failed';
+      throw new Error(errorMessage);
     }
   } catch (error: any) {
     console.error('💥 SerpAPI test exception:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'SerpAPI test failed' 
+        error: error.message || 'SerpAPI test failed',
+        details: 'Check API key validity and account status'
       }),
       { 
         status: 400, 

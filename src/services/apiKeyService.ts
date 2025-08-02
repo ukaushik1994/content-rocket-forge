@@ -6,7 +6,7 @@ import { testApiKey as testKey } from './apiKeys/testing';
 import { toast } from 'sonner';
 
 // Updated type to include all API providers
-export type ApiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'serp' | 'serpstack';
+export type ApiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'serp' | 'serpapi' | 'serpstack';
 
 // Legacy type alias for backward compatibility
 export type ApiService = ApiProvider;
@@ -135,7 +135,9 @@ class ApiKeyService {
    */
   static async getApiKey(service: ApiProvider): Promise<string | null> {
     try {
-      console.log(`🔍 Retrieving ${service} API key...`);
+      // Handle serpapi alias for serp
+      const normalizedService = service === 'serpapi' ? 'serp' : service;
+      console.log(`🔍 Retrieving ${service} API key (normalized to ${normalizedService})...`);
       
       // Validate user authentication - Fixed: Use ApiKeyService instead of this
       const { user, error: authError } = await ApiKeyService.validateUserAuth();
@@ -148,20 +150,20 @@ class ApiKeyService {
         .from('api_keys')
         .select('encrypted_key')
         .eq('user_id', user.id)
-        .eq('service', service)
+        .eq('service', normalizedService)
         .eq('is_active', true)
         .single();
 
       if (error || !data) {
-        console.log(`ℹ️ No ${service} API key found in database`);
+        console.log(`ℹ️ No ${normalizedService} API key found in database`);
         return null;
       }
 
       // Try to decrypt with new encryption method
       try {
-        console.log(`🔓 Decrypting ${service} API key...`);
+        console.log(`🔓 Decrypting ${normalizedService} API key...`);
         const decryptedKey = await decryptApiKey(data.encrypted_key, user.id);
-        console.log(`✅ ${service} API key decrypted successfully`);
+        console.log(`✅ ${normalizedService} API key decrypted successfully`);
         return decryptedKey;
       } catch (decryptError: any) {
         // If decryption fails, it might be an old format
