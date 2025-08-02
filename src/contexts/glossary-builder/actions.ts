@@ -156,18 +156,26 @@ export const createGlossaryBuilderActions = (
     }
   };
 
-  const generateDefinitions = async (terms: string[]): Promise<void> => {
+  const generateDefinitions = async (terms: string[], solutionContext?: any): Promise<void> => {
     dispatch({ type: 'SET_GENERATING', payload: true });
+    dispatch({ type: 'SET_GENERATION_PROGRESS', payload: 0 });
+    
     try {
       // Call edge function to generate definitions
       const { data, error } = await supabase.functions.invoke('glossary-generator', {
-        body: { terms, action: 'generate_definitions' }
+        body: { 
+          terms, 
+          action: 'generate_definitions',
+          solutionContext 
+        }
       });
 
       if (error) throw error;
 
-      // Process generated definitions and add terms
-      for (const termData of data.terms) {
+      // Process generated definitions and add terms with progress tracking
+      const totalTerms = data.terms.length;
+      for (let i = 0; i < data.terms.length; i++) {
+        const termData = data.terms[i];
         const term: GlossaryTerm = {
           id: uuidv4(),
           term: termData.term,
@@ -181,12 +189,17 @@ export const createGlossaryBuilderActions = (
         };
         
         await addTerm(term);
+        
+        // Update progress
+        const progress = Math.round(((i + 1) / totalTerms) * 100);
+        dispatch({ type: 'SET_GENERATION_PROGRESS', payload: progress });
       }
     } catch (error) {
       console.error('Error generating definitions:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to generate definitions' });
     } finally {
       dispatch({ type: 'SET_GENERATING', payload: false });
+      dispatch({ type: 'SET_GENERATION_PROGRESS', payload: 0 });
     }
   };
 
@@ -255,6 +268,25 @@ export const createGlossaryBuilderActions = (
     }
   };
 
+  const navigateToStep = (step: number): void => {
+    dispatch({ type: 'NAVIGATE_TO_STEP', payload: step });
+  };
+
+  const saveGlossary = async (): Promise<void> => {
+    dispatch({ type: 'SET_SAVING', payload: true });
+    try {
+      if (!state.currentGlossary) throw new Error('No active glossary');
+
+      await updateGlossary(state.currentGlossary);
+      dispatch({ type: 'SET_LAST_SAVE_TIMESTAMP', payload: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error saving glossary:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to save glossary' });
+    } finally {
+      dispatch({ type: 'SET_SAVING', payload: false });
+    }
+  };
+
   return {
     createGlossary,
     updateGlossary,
@@ -265,6 +297,8 @@ export const createGlossaryBuilderActions = (
     generateDefinitions,
     analyzeDomain,
     suggestTopicTerms,
-    exportGlossary
+    exportGlossary,
+    navigateToStep,
+    saveGlossary
   };
 };

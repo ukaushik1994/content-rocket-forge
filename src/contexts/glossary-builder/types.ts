@@ -39,6 +39,19 @@ export interface GlossaryBuilderState {
   activeMode: 'domain' | 'topic' | 'manual';
   suggestedTerms: string[];
   exportFormat: 'markdown' | 'json' | 'csv';
+  activeStep: number;
+  steps: GlossaryStep[];
+  selectedSolution: any | null;
+  generationProgress: number;
+  isSaving: boolean;
+  lastSaveTimestamp: string | null;
+}
+
+export interface GlossaryStep {
+  id: number;
+  name: string;
+  description: string;
+  completed: boolean;
 }
 
 export type GlossaryBuilderAction =
@@ -55,7 +68,14 @@ export type GlossaryBuilderAction =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_ACTIVE_MODE'; payload: 'domain' | 'topic' | 'manual' }
   | { type: 'SET_SUGGESTED_TERMS'; payload: string[] }
-  | { type: 'SET_EXPORT_FORMAT'; payload: 'markdown' | 'json' | 'csv' };
+  | { type: 'SET_EXPORT_FORMAT'; payload: 'markdown' | 'json' | 'csv' }
+  | { type: 'SET_ACTIVE_STEP'; payload: number }
+  | { type: 'MARK_STEP_COMPLETED'; payload: number }
+  | { type: 'SET_SELECTED_SOLUTION'; payload: any | null }
+  | { type: 'SET_GENERATION_PROGRESS'; payload: number }
+  | { type: 'SET_SAVING'; payload: boolean }
+  | { type: 'SET_LAST_SAVE_TIMESTAMP'; payload: string | null }
+  | { type: 'NAVIGATE_TO_STEP'; payload: number };
 
 export interface GlossaryBuilderContextType {
   state: GlossaryBuilderState;
@@ -67,8 +87,10 @@ export interface GlossaryBuilderContextType {
   addTerm: (term: GlossaryTerm) => Promise<void>;
   updateTerm: (term: GlossaryTerm) => Promise<void>;
   deleteTerm: (id: string) => Promise<void>;
-  generateDefinitions: (terms: string[]) => Promise<void>;
+  generateDefinitions: (terms: string[], solutionContext?: any) => Promise<void>;
   analyzeDomain: (url: string) => Promise<void>;
   suggestTopicTerms: (topic: string) => Promise<void>;
   exportGlossary: (format: 'markdown' | 'json' | 'csv') => Promise<void>;
+  navigateToStep: (step: number) => void;
+  saveGlossary: () => Promise<void>;
 }

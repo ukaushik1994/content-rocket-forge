@@ -130,6 +130,50 @@ export const glossaryBuilderReducer = (
         exportFormat: action.payload
       };
 
+    case 'SET_ACTIVE_STEP':
+      return {
+        ...state,
+        activeStep: action.payload
+      };
+
+    case 'MARK_STEP_COMPLETED':
+      return {
+        ...state,
+        steps: state.steps.map(step => 
+          step.id === action.payload ? { ...step, completed: true } : step
+        )
+      };
+
+    case 'SET_SELECTED_SOLUTION':
+      return {
+        ...state,
+        selectedSolution: action.payload
+      };
+
+    case 'SET_GENERATION_PROGRESS':
+      return {
+        ...state,
+        generationProgress: action.payload
+      };
+
+    case 'SET_SAVING':
+      return {
+        ...state,
+        isSaving: action.payload
+      };
+
+    case 'SET_LAST_SAVE_TIMESTAMP':
+      return {
+        ...state,
+        lastSaveTimestamp: action.payload
+      };
+
+    case 'NAVIGATE_TO_STEP':
+      return {
+        ...state,
+        activeStep: action.payload
+      };
+
     default:
       return state;
   }
