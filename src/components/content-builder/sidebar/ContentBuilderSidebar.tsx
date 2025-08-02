@@ -2,6 +2,7 @@
 import React from 'react';
 import { CheckCircle, ChevronRight, CheckSquare, Settings, Search, FileText, Edit, Sparkles, BarChart4, Upload, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ContentBuilderSidebarProps {
   steps: {
@@ -36,83 +37,122 @@ export const ContentBuilderSidebar = ({ steps, activeStep, navigateToStep }: Con
   };
   
   return (
-    <div className="w-72 border-r border-white/10 bg-black/20 backdrop-blur-lg shrink-0 hidden md:block">
+    <div className="w-80 border-r border-border/40 bg-background/60 backdrop-blur-sm">
       <div className="p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="p-1.5 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue">
-            <Sparkles className="h-4 w-4 text-white" />
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="inline-flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-full border border-primary/20 mb-4">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Content Builder</span>
           </div>
-          <h3 className="font-semibold text-lg">Content Builder</h3>
-        </div>
+          <h2 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-primary">
+            Build Your Content
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Create SEO-optimized, AI-powered content
+          </p>
+        </motion.div>
         
-        <div className="space-y-1.5">
+        <div className="space-y-4">
           {visibleSteps.map((step, index) => {
             // Find the actual step index from the original steps array
             const originalStepIndex = steps.findIndex(s => s.id === step.id);
             const isActive = activeStep === originalStepIndex;
             const isCompleted = step.completed;
+            const canNavigate = !isCompleted && !isActive && index !== 0 ? false : true;
             
             return (
-              <button
+              <motion.div
                 key={step.id}
-                onClick={() => navigateToStep(originalStepIndex)}
-                disabled={!isCompleted && !isActive && index !== 0}
-                className={cn(
-                  "w-full flex items-center text-left rounded-md px-3 py-2.5 text-sm transition-colors relative overflow-hidden group",
-                  isActive 
-                    ? "bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 text-white"
-                    : isCompleted
-                      ? "text-white/90 hover:bg-white/5"
-                      : "text-white/40 cursor-not-allowed"
-                )}
+                className={`relative group cursor-pointer transition-all duration-300 ${
+                  canNavigate ? 'hover:scale-102' : 'opacity-50 cursor-not-allowed'
+                }`}
+                onClick={() => canNavigate && navigateToStep(originalStepIndex)}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                whileHover={canNavigate ? { scale: 1.02 } : {}}
               >
-                {isActive && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/20 to-neon-blue/10 opacity-[0.15] animate-pulse"></div>
-                )}
-                
                 <div className={cn(
-                  "flex items-center justify-center rounded-full h-6 w-6 mr-3 shrink-0",
+                  "flex items-center gap-3 p-4 rounded-xl border transition-all duration-300",
                   isActive 
-                    ? "bg-gradient-to-r from-neon-purple to-neon-blue text-white"
+                    ? "bg-gradient-to-r from-primary/20 to-blue-500/20 border-primary/40 shadow-lg shadow-primary/20" 
                     : isCompleted
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-white/10 text-white/40"
+                    ? "bg-green-500/10 border-green-500/20 hover:bg-green-500/15"
+                    : "bg-background/60 border-border/40 hover:bg-background/80"
                 )}>
-                  {isCompleted ? (
-                    <CheckCircle className="h-3.5 w-3.5" />
-                  ) : (
-                    getStepIcon(step.id)
+                  
+                  {/* Step indicator */}
+                  <div className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300",
+                    isActive 
+                      ? "bg-primary text-primary-foreground shadow-lg" 
+                      : isCompleted
+                      ? "bg-green-500 text-white"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {isCompleted ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      getStepIcon(step.id)
+                    )}
+                  </div>
+                  
+                  {/* Step content */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className={cn(
+                      "text-sm font-medium transition-colors duration-300",
+                      isActive ? "text-foreground" : "text-foreground/80"
+                    )}>
+                      {step.name}
+                    </h3>
+                    <p className={cn(
+                      "text-xs mt-1 transition-colors duration-300",
+                      isActive ? "text-muted-foreground" : "text-muted-foreground/70"
+                    )}>
+                      {step.description}
+                    </p>
+                  </div>
+                  
+                  {/* Active indicator */}
+                  {isActive && (
+                    <motion.div
+                      className="w-2 h-2 bg-primary rounded-full"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
                   )}
                 </div>
-                
-                <div className="flex-1">
-                  <div className="font-medium">{step.name}</div>
-                  <div className={cn(
-                    "text-xs line-clamp-1",
-                    isActive ? "text-white/70" : "text-white/50"
-                  )}>
-                    {step.description}
-                  </div>
-                </div>
-                
-                {isActive && (
-                  <ChevronRight className="h-4 w-4 ml-2 text-white/70 animate-bounce" />
+
+                {/* Connecting line */}
+                {index < visibleSteps.length - 1 && (
+                  <div className="ml-7 mt-2 h-6 w-px bg-border/30" />
                 )}
-              </button>
+              </motion.div>
             );
           })}
         </div>
-      </div>
-      
-      <div className="px-3 pb-4 pt-6 mt-auto border-t border-white/10">
-        <div className="bg-white/5 rounded-md p-3 text-xs text-white/70">
-          <p className="font-medium mb-1">Tips</p>
-          <ul className="space-y-1 list-disc pl-4 text-white/60">
-            <li>Complete each step before moving to the next</li>
-            <li>You can go back to previous steps anytime</li>
-            <li>Progress is automatically saved</li>
+
+        {/* Tips section */}
+        <motion.div 
+          className="mt-8 p-4 bg-gradient-to-br from-primary/5 to-blue-500/5 rounded-xl border border-primary/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          <h4 className="text-sm font-medium mb-2 text-foreground">💡 Pro Tips</h4>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>• Complete each step before moving to the next</li>
+            <li>• You can go back to previous steps anytime</li>
+            <li>• Progress is automatically saved</li>
+            <li>• Use AI assistance for better optimization</li>
           </ul>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
