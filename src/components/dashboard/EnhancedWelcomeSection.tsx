@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -235,7 +234,7 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                 </AnimatePresence>
               </div>
 
-              {/* Right visual element - dynamic module icon */}
+              {/* Right visual element - dynamic module icon with bounce animation */}
               <div className="relative flex items-center justify-center">
                 <div className="relative">
                   {/* Dynamic glow effect */}
@@ -260,8 +259,15 @@ export const EnhancedWelcomeSection: React.FC<EnhancedWelcomeSectionProps> = ({
                       transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
                     >
                       <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                        animate={{ 
+                          y: [0, -8, 0],
+                          scale: [1, 1.02, 1]
+                        }}
+                        transition={{ 
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
                       >
                         <currentModule.icon className="h-20 w-20 text-white" />
                       </motion.div>
