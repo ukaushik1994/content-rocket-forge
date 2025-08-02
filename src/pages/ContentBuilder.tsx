@@ -18,7 +18,7 @@ const ContentBuilderPage = () => {
       
       <Navbar />
       
-      <main className="flex-1 container py-8">
+      <main className="flex-1 py-8">
         <ContentBuilderProvider>
           <ContentBuilder 
             initialKeyword={preloadData?.mainKeyword}

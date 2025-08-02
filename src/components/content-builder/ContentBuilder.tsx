@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
@@ -297,7 +296,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
         
         {/* Step content */}
         <div className="flex-1 p-6 overflow-y-auto" id="content-builder-main-content">
-          <div className="max-w-5xl mx-auto space-y-6">
+          <div className="space-y-6">
             {renderStepContent()}
           </div>
         </div>
@@ -305,7 +304,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
         {/* Navigation controls */}
         {!isLastStep && (
           <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/40 p-4">
-            <div className="flex justify-between max-w-5xl mx-auto">
+            <div className="flex justify-between px-2">
               <Button
                 variant="outline"
                 onClick={handlePrevStep}
