@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { detectCTAs } from '@/utils/seo/content/detectCTAs';
 import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
 import { validateKeywordUsage } from '@/utils/validation/dataValidation';

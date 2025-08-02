@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Tag, HelpCircle, Heading, FileSearch, FileText, Users, Star } from 'lucide-react';
 

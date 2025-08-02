@@ -1,14 +1,14 @@
 
 import React, { createContext, useContext, useReducer } from 'react';
 import { ContentBuilderState, ContentBuilderAction, ContentBuilderContextType } from './types';
-import { contentBuilderReducer } from './reducer/contentBuilderReducer';
+import { contentBuilderReducer } from './reducer';
 import { createContentBuilderActions } from './actions';
-import { initialContentBuilderState } from './initialState';
+import { initialState } from './initialState';
 
 const ContentBuilderContext = createContext<ContentBuilderContextType | null>(null);
 
 export const ContentBuilderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(contentBuilderReducer, initialContentBuilderState);
+  const [state, dispatch] = useReducer(contentBuilderReducer, initialState);
   const actions = createContentBuilderActions(state, dispatch);
 
   const contextValue: ContentBuilderContextType = {

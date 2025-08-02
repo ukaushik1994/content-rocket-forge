@@ -1,126 +1,103 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
+import { Save, Loader2 } from 'lucide-react';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 
 interface SaveContentDialogProps {
-  showSaveDialog: boolean;
-  setShowSaveDialog: React.Dispatch<React.SetStateAction<boolean>>;
-  saveTitle: string;
-  setSaveTitle: React.Dispatch<React.SetStateAction<string>>;
-  saveNote: string;
-  setSaveNote: React.Dispatch<React.SetStateAction<string>>;
-  handleSaveToDraft: () => Promise<void>;
-  isSaving: boolean;
-  mainKeyword: string;
-  secondaryKeywords: string[];
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  title: string;
   content: string;
-  outlineLength: number;
+  onSave: (title: string, content: string) => Promise<void>;
+  isSaving: boolean;
 }
 
-export function SaveContentDialog({
-  showSaveDialog,
-  setShowSaveDialog,
-  saveTitle,
-  setSaveTitle,
-  saveNote,
-  setSaveNote,
-  handleSaveToDraft,
-  isSaving,
-  mainKeyword,
-  secondaryKeywords,
+export const SaveContentDialog: React.FC<SaveContentDialogProps> = ({
+  open,
+  setOpen,
+  title: initialTitle,
   content,
-  outlineLength
-}: SaveContentDialogProps) {
+  onSave,
+  isSaving
+}) => {
+  const [title, setTitle] = useState(initialTitle);
   const { state } = useContentBuilder();
-  const { serpSelections } = state;
 
-  // Get selected SERP items count
-  const selectedSerpCount = serpSelections ? serpSelections.filter(item => item.selected).length : 0;
+  const handleSave = async () => {
+    if (title.trim() === '') {
+      alert('Title cannot be empty');
+      return;
+    }
+    await onSave(title, content);
+    setOpen(false);
+  };
 
   return (
-    <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Save Content to Drafts</DialogTitle>
-          <DialogDescription>
-            Save your content as a draft to continue working on it later.
-          </DialogDescription>
+          <DialogTitle>Save Content</DialogTitle>
         </DialogHeader>
-
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Content Title</Label>
-            <Input 
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="title" className="text-right">
+              Title
+            </Label>
+            <Input
               id="title"
-              value={saveTitle}
-              onChange={(e) => setSaveTitle(e.target.value)}
-              placeholder="Enter title for your content"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="col-span-3"
             />
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="keyword" className="text-right">
+              Keyword
+            </Label>
+            <Input
+              id="keyword"
+              value={state.mainKeyword}
+              className="col-span-3"
+              disabled
+            />
+          </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="content" className="text-right mt-2">
+              Content
+            </Label>
             <Textarea
-              id="notes"
-              value={saveNote}
-              onChange={(e) => setSaveNote(e.target.value)}
-              placeholder="Add any notes about this draft..."
-              className="min-h-[100px]"
+              id="content"
+              value={content}
+              className="col-span-3"
+              rows={5}
+              disabled
             />
-          </div>
-
-          <div>
-            <Label>Content Summary</Label>
-            <div className="bg-muted p-3 rounded-md mt-1 text-sm space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Content Length:</span>
-                <span>{content.length} characters</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Main Keyword:</span>
-                <Badge variant="outline">{mainKeyword}</Badge>
-              </div>
-              {secondaryKeywords.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Secondary Keywords:</span>
-                  <span>{secondaryKeywords.length}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Outline Sections:</span>
-                <span>{outlineLength}</span>
-              </div>
-              {selectedSerpCount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">SERP Selections:</span>
-                  <span>{selectedSerpCount}</span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
-
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowSaveDialog(false)}
-          >
+        <div className="flex justify-end">
+          <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSaveToDraft}
-            disabled={isSaving || !saveTitle.trim()}
-          >
-            {isSaving ? 'Saving...' : 'Save to Drafts'}
+          <Button type="submit" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Please wait
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Content
+              </>
+            )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
-}
+};
+

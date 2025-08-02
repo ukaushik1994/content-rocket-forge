@@ -1,6 +1,6 @@
-
 import { useState, useCallback } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { toast } from 'sonner';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { OptimizationSuggestion } from './types';
 
 export const useContentOptimizer = (content: string) => {

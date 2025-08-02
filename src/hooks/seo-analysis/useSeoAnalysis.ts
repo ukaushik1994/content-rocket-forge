@@ -1,127 +1,103 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { calculateKeywordUsage } from '@/utils/seo/keywordAnalysis';
-import { useAnalysisOperation } from './useAnalysisOperation';
-import { getScoreColor } from './utils';
-import { KeywordUsage, SeoAnalysisScores, UseSeoAnalysisReturn } from './types';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { sendChatRequest } from '@/services/aiService';
+import { SeoImprovement } from '@/contexts/content-builder/types';
 
-/**
- * Custom hook for SEO analysis functionality with improved performance and error handling
- */
-export const useSeoAnalysis = (): UseSeoAnalysisReturn => {
+export const useSeoAnalysis = () => {
   const { state, dispatch } = useContentBuilder();
-  const { content, mainKeyword, selectedKeywords, seoScore } = state;
-  
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [keywordUsage, setKeywordUsage] = useState<KeywordUsage[]>([]);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [scores, setScores] = useState<SeoAnalysisScores>({
-    keywordUsage: 0,
-    contentLength: 0,
-    readability: 0
-  });
-  const [improvements, setImprovements] = useState<any[]>([]);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  
-  const { runAnalysis, abortAnalysis, cleanup } = useAnalysisOperation();
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-  
-  // Calculate keyword usage on content change - with proper debounce
-  useEffect(() => {
-    if (!content || !mainKeyword) return;
-    
-    const timer = setTimeout(() => {
-      try {
-        const usage = calculateKeywordUsage(content, mainKeyword, selectedKeywords);
-        setKeywordUsage(usage);
-      } catch (error) {
-        console.error('Error calculating keyword usage:', error);
-        // Don't show toast here to avoid spamming user during typing
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+
+  const analyzeSeoContent = useCallback(async (content: string) => {
+    if (!content || content.trim().length === 0) {
+      toast.error('No content to analyze');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const response = await sendChatRequest('openai', {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an SEO expert. Analyze the provided content and suggest improvements for better search engine optimization.'
+          },
+          {
+            role: 'user',
+            content: `Analyze this content for SEO improvements:
+
+CONTENT:
+${content}
+
+MAIN KEYWORD: ${state.mainKeyword || 'Not specified'}
+SELECTED KEYWORDS: ${state.selectedKeywords?.join(', ') || 'None'}
+
+Provide specific, actionable SEO improvement suggestions in JSON format:
+{
+  "seoScore": number (0-100),
+  "improvements": [
+    {
+      "id": "unique_id",
+      "title": "Improvement Title",
+      "description": "Detailed description",
+      "priority": "high|medium|low",
+      "category": "keywords|structure|content|meta",
+      "applied": false
+    }
+  ]
+}`
+          }
+        ]
+      });
+
+      if (response?.choices?.[0]?.message?.content) {
+        const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          setAnalysisResults(result);
+          
+          // Update state with SEO improvements
+          if (result.improvements) {
+            dispatch({ type: 'SET_SEO_IMPROVEMENTS', payload: result.improvements });
+          }
+          if (result.seoScore) {
+            dispatch({ type: 'SET_SEO_SCORE', payload: result.seoScore });
+          }
+          
+          toast.success('SEO analysis completed');
+          return result;
+        }
       }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [content, mainKeyword, selectedKeywords]);
-  
-  // Ensure step is marked as analyzed when we have recommendations
-  useEffect(() => {
-    if (recommendations.length > 0) {
-      console.log('Marking step as analyzed due to recommendations presence');
-      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
+      
+      toast.error('Failed to analyze content for SEO');
+      return null;
+    } catch (error) {
+      console.error('SEO analysis error:', error);
+      toast.error('Failed to analyze content for SEO');
+      return null;
+    } finally {
+      setIsAnalyzing(false);
     }
-  }, [recommendations, dispatch]);
-  
-  // Mark step as complete based on score or analysis - ensure we only run this once
-  useEffect(() => {
-    // Only mark as analyzed and completed if we have a good score
-    // This prevents loops from repeatedly dispatching actions
-    if (seoScore >= 70 && !state.steps[5]?.completed) {
-      console.log('Marking step as analyzed and completed due to good score:', seoScore);
-      dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-    } 
-    // If step was analyzed but not completed, and we have a minimum score, mark as completed
-    else if (state.steps[5]?.analyzed && !state.steps[5]?.completed && seoScore >= 50) {
-      console.log('Marking step as completed due to minimum score:', seoScore);
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-    }
-  }, [seoScore, dispatch, state.steps]);
-  
-  // Run SEO analysis with proper timeout and error handling
-  const runSeoAnalysis = useCallback(() => {
-    // Prevent duplicate analysis runs
-    if (isAnalyzing) return;
-    
-    // Show loading toast
-    toast.loading('Analyzing your content...', { id: 'seo-analysis' });
-    
-    console.log('Starting SEO analysis run...');
-    
-    runAnalysis(
-      setIsAnalyzing,
-      setKeywordUsage,
-      setRecommendations,
-      setScores,
-      setImprovements,
-      setAnalysisError
-    );
-    
-    // Always mark step as analyzed after running analysis
-    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
-  }, [runAnalysis, isAnalyzing, dispatch]);
-  
-  // Force skip analysis if it's taking too long
-  const forceSkipAnalysis = useCallback(() => {
-    // Abort any running analysis
-    abortAnalysis();
-    
-    setIsAnalyzing(false);
-    setAnalysisError(null);
-    
-    console.log('Force skipping analysis...');
-    
-    // Mark step as analyzed and completed so user can continue
-    dispatch({ type: 'MARK_STEP_ANALYZED', payload: 5 });
-    dispatch({ type: 'MARK_STEP_COMPLETED', payload: 5 });
-    
-    toast.success('Optimization step skipped. You can continue to the next step.');
-  }, [dispatch, abortAnalysis]);
+  }, [state.mainKeyword, state.selectedKeywords, dispatch]);
+
+  const applySeoImprovement = useCallback((improvementId: string) => {
+    dispatch({ type: 'APPLY_SEO_IMPROVEMENT', payload: improvementId });
+    toast.success('SEO improvement applied');
+  }, [dispatch]);
+
+  const skipSeoOptimization = useCallback(() => {
+    dispatch({ type: 'SKIP_SEO_OPTIMIZATION' });
+    toast.info('SEO optimization skipped');
+  }, [dispatch]);
 
   return {
     isAnalyzing,
-    keywordUsage,
-    recommendations,
-    scores,
-    improvements,
-    analysisError,
-    runSeoAnalysis,
-    getScoreColor,
-    forceSkipAnalysis
+    analysisResults,
+    analyzeSeoContent,
+    applySeoImprovement,
+    skipSeoOptimization,
+    seoScore: state.seoScore,
+    seoImprovements: state.seoImprovements
   };
 };

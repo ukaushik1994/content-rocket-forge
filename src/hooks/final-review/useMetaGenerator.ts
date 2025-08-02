@@ -1,5 +1,5 @@
-
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useState, useCallback } from 'react';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
 import { sendChatRequest } from '@/services/aiService';
 import { toast } from 'sonner';

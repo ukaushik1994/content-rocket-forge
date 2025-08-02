@@ -1,6 +1,5 @@
-
 import { useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { extractDocumentStructure } from '@/utils/seo/document/extractDocumentStructure';
 
 /**

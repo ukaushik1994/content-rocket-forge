@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 
 export const SaveStepOptimizationsAlert: React.FC = () => {
   const { state } = useContentBuilder();
