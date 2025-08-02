@@ -20,10 +20,9 @@ export const TermSelectionStep = () => {
     setLocalSelectedTerms(selectedTerms);
   }, [selectedTerms]);
 
-  // Mark step as completed when terms are selected
+  // Update selected terms when local selection changes
   useEffect(() => {
     if (localSelectedTerms.length > 0) {
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 1 });
       dispatch({ type: 'SELECT_TERMS', payload: localSelectedTerms });
     }
   }, [localSelectedTerms, dispatch]);
