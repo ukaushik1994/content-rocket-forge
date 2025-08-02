@@ -57,8 +57,8 @@ class ApiKeyService {
         return false;
       }
 
-      // Validate user authentication
-      const { user, error: authError } = await this.validateUserAuth();
+      // Validate user authentication - Fixed: Use ApiKeyService instead of this
+      const { user, error: authError } = await ApiKeyService.validateUserAuth();
       if (authError) {
         toast.error(authError);
         return false;
@@ -126,8 +126,8 @@ class ApiKeyService {
     try {
       console.log(`🔍 Retrieving ${service} API key...`);
       
-      // Validate user authentication
-      const { user, error: authError } = await this.validateUserAuth();
+      // Validate user authentication - Fixed: Use ApiKeyService instead of this
+      const { user, error: authError } = await ApiKeyService.validateUserAuth();
       if (authError) {
         console.warn(`⚠️ Auth error when retrieving ${service} API key:`, authError);
         return null;
@@ -179,8 +179,8 @@ class ApiKeyService {
     try {
       console.log(`🗑️ Deleting ${service} API key...`);
       
-      // Validate user authentication
-      const { user, error: authError } = await this.validateUserAuth();
+      // Validate user authentication - Fixed: Use ApiKeyService instead of this
+      const { user, error: authError } = await ApiKeyService.validateUserAuth();
       if (authError) {
         toast.error(authError);
         return false;
@@ -215,8 +215,8 @@ class ApiKeyService {
     try {
       console.log('📋 Retrieving configured services...');
       
-      // Validate user authentication
-      const { user, error: authError } = await this.validateUserAuth();
+      // Validate user authentication - Fixed: Use ApiKeyService instead of this
+      const { user, error: authError } = await ApiKeyService.validateUserAuth();
       if (authError) {
         console.warn('⚠️ Auth error when retrieving configured services:', authError);
         return [];
@@ -249,8 +249,8 @@ class ApiKeyService {
     try {
       console.log('🔄 Starting migration of all user API keys...');
       
-      // Validate user authentication
-      const { user, error: authError } = await this.validateUserAuth();
+      // Validate user authentication - Fixed: Use ApiKeyService instead of this
+      const { user, error: authError } = await ApiKeyService.validateUserAuth();
       if (authError) {
         toast.error(authError);
         return;
@@ -262,10 +262,12 @@ class ApiKeyService {
       for (const service of services) {
         try {
           console.log(`🔄 Checking ${service} API key for migration...`);
-          const key = await this.getApiKey(service);
+          // Fixed: Use ApiKeyService instead of this
+          const key = await ApiKeyService.getApiKey(service);
           if (key) {
             // Re-store the key to ensure it's using the new encryption
-            const success = await this.storeApiKey(service, key);
+            // Fixed: Use ApiKeyService instead of this
+            const success = await ApiKeyService.storeApiKey(service, key);
             if (success) {
               migratedCount++;
               console.log(`✅ ${service} API key migrated successfully`);
