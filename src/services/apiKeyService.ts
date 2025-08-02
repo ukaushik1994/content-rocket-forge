@@ -66,8 +66,17 @@ class ApiKeyService {
 
       // Validate API key format using the imported function
       console.log(`🔍 Validating ${service} API key format...`);
+      
+      // Try to detect the API key type first
+      const detectedType = detectKeyType(apiKey.trim());
+      if (detectedType && detectedType !== service) {
+        console.warn(`⚠️ Detected ${detectedType} key format but expecting ${service}`);
+        toast.error(`This appears to be a ${detectedType} API key, but you selected ${service}. Please check your selection.`);
+        return false;
+      }
+      
       if (!validateApiKeyFormat(service, apiKey.trim())) {
-        toast.error(`Invalid API key format for ${service}`);
+        toast.error(`Invalid API key format for ${service}. Please check the format and try again.`);
         return false;
       }
       console.log(`✅ ${service} API key format validation passed`);

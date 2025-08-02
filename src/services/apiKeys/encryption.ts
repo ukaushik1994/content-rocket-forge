@@ -44,7 +44,7 @@ class SecureEncryption {
    * Derives an AES key from a password using PBKDF2
    */
   private static async deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
-    if (!this.isWebCryptoAvailable()) {
+    if (!SecureEncryption.isWebCryptoAvailable()) {
       throw new Error('Web Crypto API is not available in this browser');
     }
 
@@ -64,11 +64,11 @@ class SecureEncryption {
         {
           name: 'PBKDF2',
           salt,
-          iterations: this.ITERATIONS,
+          iterations: SecureEncryption.ITERATIONS,
           hash: 'SHA-256'
         },
         keyMaterial,
-        { name: this.ALGORITHM, length: this.KEY_LENGTH },
+        { name: SecureEncryption.ALGORITHM, length: SecureEncryption.KEY_LENGTH },
         false,
         ['encrypt', 'decrypt']
       );
@@ -111,7 +111,7 @@ class SecureEncryption {
         throw new Error('Invalid user ID provided for encryption');
       }
 
-      if (!this.isWebCryptoAvailable()) {
+      if (!SecureEncryption.isWebCryptoAvailable()) {
         throw new Error('Web Crypto API is not supported in this browser. Please use a modern browser.');
       }
 
@@ -120,18 +120,18 @@ class SecureEncryption {
       console.log('📝 Data prepared for encryption, length:', data.length);
       
       // Generate random salt and IV
-      const salt = crypto.getRandomValues(new Uint8Array(this.SALT_LENGTH));
-      const iv = crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
+      const salt = crypto.getRandomValues(new Uint8Array(SecureEncryption.SALT_LENGTH));
+      const iv = crypto.getRandomValues(new Uint8Array(SecureEncryption.IV_LENGTH));
       console.log('🎲 Random salt and IV generated');
       
       // Derive key from master password
-      const masterPassword = this.generateMasterPassword(userId);
-      const key = await this.deriveKey(masterPassword, salt);
+      const masterPassword = SecureEncryption.generateMasterPassword(userId);
+      const key = await SecureEncryption.deriveKey(masterPassword, salt);
       
       // Encrypt the data
       console.log('🔐 Encrypting data...');
       const encrypted = await crypto.subtle.encrypt(
-        { name: this.ALGORITHM, iv },
+        { name: SecureEncryption.ALGORITHM, iv },
         key,
         data
       );
@@ -144,7 +144,7 @@ class SecureEncryption {
       combined.set(new Uint8Array(encrypted), salt.length + iv.length);
       
       // Return base64 encoded result using safe conversion
-      const base64Result = this.arrayBufferToBase64(combined.buffer);
+      const base64Result = SecureEncryption.arrayBufferToBase64(combined.buffer);
       console.log('✅ API key encryption completed successfully');
       
       return base64Result;
@@ -184,24 +184,24 @@ class SecureEncryption {
         throw new Error('Invalid user ID provided for decryption');
       }
 
-      if (!this.isWebCryptoAvailable()) {
+      if (!SecureEncryption.isWebCryptoAvailable()) {
         throw new Error('Web Crypto API is not supported in this browser');
       }
 
       // Decode base64 using safe conversion
-      const combinedBuffer = this.base64ToArrayBuffer(encryptedData);
+      const combinedBuffer = SecureEncryption.base64ToArrayBuffer(encryptedData);
       const combined = new Uint8Array(combinedBuffer);
       console.log('📝 Encrypted data decoded, total length:', combined.length);
       
       // Validate minimum length
-      if (combined.length < this.SALT_LENGTH + this.IV_LENGTH + 1) {
+      if (combined.length < SecureEncryption.SALT_LENGTH + SecureEncryption.IV_LENGTH + 1) {
         throw new Error('Encrypted data appears to be corrupted or incomplete');
       }
       
       // Extract salt, IV, and encrypted data
-      const salt = combined.slice(0, this.SALT_LENGTH);
-      const iv = combined.slice(this.SALT_LENGTH, this.SALT_LENGTH + this.IV_LENGTH);
-      const encrypted = combined.slice(this.SALT_LENGTH + this.IV_LENGTH);
+      const salt = combined.slice(0, SecureEncryption.SALT_LENGTH);
+      const iv = combined.slice(SecureEncryption.SALT_LENGTH, SecureEncryption.SALT_LENGTH + SecureEncryption.IV_LENGTH);
+      const encrypted = combined.slice(SecureEncryption.SALT_LENGTH + SecureEncryption.IV_LENGTH);
       
       console.log('🔍 Data components extracted:', {
         saltLength: salt.length,
@@ -210,13 +210,13 @@ class SecureEncryption {
       });
       
       // Derive key from master password
-      const masterPassword = this.generateMasterPassword(userId);
-      const key = await this.deriveKey(masterPassword, salt);
+      const masterPassword = SecureEncryption.generateMasterPassword(userId);
+      const key = await SecureEncryption.deriveKey(masterPassword, salt);
       
       // Decrypt the data
       console.log('🔓 Decrypting data...');
       const decrypted = await crypto.subtle.decrypt(
-        { name: this.ALGORITHM, iv },
+        { name: SecureEncryption.ALGORITHM, iv },
         key,
         encrypted
       );
