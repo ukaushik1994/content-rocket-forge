@@ -1,5 +1,4 @@
 
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CompetitorAnalysis {
@@ -66,8 +65,8 @@ export interface Opportunity {
   content_format_reason?: string;
   status: string;
   source?: string;
-  serp_data?: any;
-  serp_analysis?: any;
+  serp_data?: Record<string, any>;
+  serp_analysis?: Record<string, any>;
   content_gaps?: any[];
   competitor_analysis?: CompetitorAnalysis[];
   competitive_advantage?: string;
@@ -101,7 +100,7 @@ export interface OpportunityNotification {
   sent_at?: string;
   read_at?: string;
   dismissed_at?: string;
-  metadata?: any; // Use any to match Supabase Json type
+  metadata?: Record<string, any>;
   created_at: string;
 }
 
@@ -137,8 +136,32 @@ class OpportunityHunterService {
     };
   }
 
+  private transformBrief(data: any): OpportunityBrief {
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      opportunity_id: data.opportunity_id,
+      title: data.title,
+      content_type: data.content_type,
+      introduction: data.introduction,
+      outline: Array.isArray(data.outline) ? data.outline : [],
+      faq_section: Array.isArray(data.faq_section) ? data.faq_section : [],
+      internal_links: Array.isArray(data.internal_links) ? data.internal_links : [],
+      meta_title: data.meta_title,
+      meta_description: data.meta_description,
+      target_word_count: data.target_word_count,
+      content_brief: data.content_brief,
+      format: data.format,
+      ai_model_used: data.ai_model_used,
+      generation_prompt: data.generation_prompt,
+      status: data.status,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  }
+
   private transformSettings(data: any): OpportunityUserSettings {
-    const settings: OpportunityUserSettings = {
+    return {
       id: data.id,
       user_id: data.user_id,
       scan_frequency: data.scan_frequency || 'daily',
@@ -153,7 +176,6 @@ class OpportunityHunterService {
       relevance_threshold: data.relevance_threshold || 70,
       is_active: data.is_active !== false
     };
-    return settings;
   }
 
   // Public method - simple scan wrapper
@@ -362,7 +384,7 @@ class OpportunityHunterService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => this.transformBrief(item));
   }
 
   async getNotifications(): Promise<OpportunityNotification[]> {
@@ -373,7 +395,10 @@ class OpportunityHunterService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      metadata: item.metadata || {}
+    }));
   }
 
   async markNotificationRead(notificationId: string): Promise<void> {
@@ -474,4 +499,3 @@ class OpportunityHunterService {
 }
 
 export const opportunityHunterService = new OpportunityHunterService();
-
