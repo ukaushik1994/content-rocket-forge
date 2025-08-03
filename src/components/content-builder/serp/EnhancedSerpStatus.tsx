@@ -138,6 +138,11 @@ export const EnhancedSerpStatus: React.FC<EnhancedSerpStatusProps> = ({
     );
   }
 
+  // Hide the component when both APIs are ready
+  if (status.serpApi.working && status.serpstack.working) {
+    return null;
+  }
+
   return (
     <Card className="border-neon-purple/20">
       <CardHeader>
