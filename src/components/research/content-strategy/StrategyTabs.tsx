@@ -8,6 +8,7 @@ import { ContentPipeline } from './pipeline/ContentPipeline';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
+import { OpportunityHunter } from './opportunity/OpportunityHunter';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
 export const StrategyTabs = () => {
@@ -27,12 +28,15 @@ export const StrategyTabs = () => {
 
   return (
     <Tabs defaultValue="dashboard" className="space-y-8">
-      <TabsList className="grid w-full grid-cols-7 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
+      <TabsList className="grid w-full grid-cols-8 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
         <TabsTrigger value="dashboard" className="h-14 text-sm font-medium">
           Dashboard
         </TabsTrigger>
         <TabsTrigger value="progress" className="h-14 text-sm font-medium">
           Progress
+        </TabsTrigger>
+        <TabsTrigger value="opportunities" className="h-14 text-sm font-medium">
+          Opportunities
         </TabsTrigger>
         <TabsTrigger value="strategies" className="h-14 text-sm font-medium">
           Strategies
@@ -57,6 +61,10 @@ export const StrategyTabs = () => {
 
       <TabsContent value="progress">
         <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
+      </TabsContent>
+
+      <TabsContent value="opportunities">
+        <OpportunityHunter />
       </TabsContent>
 
       <TabsContent value="strategies">

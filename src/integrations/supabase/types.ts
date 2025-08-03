@@ -729,6 +729,98 @@ export type Database = {
           },
         ]
       }
+      content_opportunities: {
+        Row: {
+          assigned_to: string | null
+          competition_score: number | null
+          content_format: string | null
+          content_gaps: Json | null
+          detected_at: string
+          expires_at: string | null
+          id: string
+          internal_link_opportunities: Json | null
+          is_aio_friendly: boolean | null
+          keyword: string
+          keyword_difficulty: number | null
+          last_updated: string
+          notes: string | null
+          opportunity_score: number | null
+          priority: string
+          relevance_score: number | null
+          search_volume: number | null
+          serp_data: Json | null
+          source: string | null
+          status: string
+          strategy_id: string | null
+          suggested_outline: Json | null
+          suggested_title: string | null
+          trend_direction: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          competition_score?: number | null
+          content_format?: string | null
+          content_gaps?: Json | null
+          detected_at?: string
+          expires_at?: string | null
+          id?: string
+          internal_link_opportunities?: Json | null
+          is_aio_friendly?: boolean | null
+          keyword: string
+          keyword_difficulty?: number | null
+          last_updated?: string
+          notes?: string | null
+          opportunity_score?: number | null
+          priority?: string
+          relevance_score?: number | null
+          search_volume?: number | null
+          serp_data?: Json | null
+          source?: string | null
+          status?: string
+          strategy_id?: string | null
+          suggested_outline?: Json | null
+          suggested_title?: string | null
+          trend_direction?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          competition_score?: number | null
+          content_format?: string | null
+          content_gaps?: Json | null
+          detected_at?: string
+          expires_at?: string | null
+          id?: string
+          internal_link_opportunities?: Json | null
+          is_aio_friendly?: boolean | null
+          keyword?: string
+          keyword_difficulty?: number | null
+          last_updated?: string
+          notes?: string | null
+          opportunity_score?: number | null
+          priority?: string
+          relevance_score?: number | null
+          search_volume?: number | null
+          serp_data?: Json | null
+          source?: string | null
+          status?: string
+          strategy_id?: string | null
+          suggested_outline?: Json | null
+          suggested_title?: string | null
+          trend_direction?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_opportunities_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_pipeline: {
         Row: {
           assigned_to: string | null
@@ -1027,6 +1119,127 @@ export type Database = {
           },
         ]
       }
+      opportunity_briefs: {
+        Row: {
+          ai_model_used: string | null
+          content_brief: string | null
+          content_type: string | null
+          created_at: string
+          faq_section: Json | null
+          format: string
+          generation_prompt: string | null
+          id: string
+          internal_links: Json | null
+          introduction: string | null
+          meta_description: string | null
+          meta_title: string | null
+          opportunity_id: string
+          outline: Json | null
+          status: string
+          target_word_count: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_model_used?: string | null
+          content_brief?: string | null
+          content_type?: string | null
+          created_at?: string
+          faq_section?: Json | null
+          format?: string
+          generation_prompt?: string | null
+          id?: string
+          internal_links?: Json | null
+          introduction?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          opportunity_id: string
+          outline?: Json | null
+          status?: string
+          target_word_count?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_model_used?: string | null
+          content_brief?: string | null
+          content_type?: string | null
+          created_at?: string
+          faq_section?: Json | null
+          format?: string
+          generation_prompt?: string | null
+          id?: string
+          internal_links?: Json | null
+          introduction?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          opportunity_id?: string
+          outline?: Json | null
+          status?: string
+          target_word_count?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_briefs_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "content_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_notifications: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          metadata: Json | null
+          notification_type: string
+          opportunity_id: string
+          read_at: string | null
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          opportunity_id: string
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          opportunity_id?: string
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_notifications_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "content_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1261,6 +1474,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_opportunity_settings: {
+        Row: {
+          aio_friendly_only: boolean | null
+          auto_generate_briefs: boolean | null
+          created_at: string
+          excluded_keywords: Json | null
+          id: string
+          is_active: boolean | null
+          max_keyword_difficulty: number | null
+          min_search_volume: number | null
+          notification_channels: Json | null
+          preferred_content_formats: Json | null
+          relevance_threshold: number | null
+          scan_frequency: string
+          trend_threshold: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aio_friendly_only?: boolean | null
+          auto_generate_briefs?: boolean | null
+          created_at?: string
+          excluded_keywords?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_keyword_difficulty?: number | null
+          min_search_volume?: number | null
+          notification_channels?: Json | null
+          preferred_content_formats?: Json | null
+          relevance_threshold?: number | null
+          scan_frequency?: string
+          trend_threshold?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aio_friendly_only?: boolean | null
+          auto_generate_briefs?: boolean | null
+          created_at?: string
+          excluded_keywords?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_keyword_difficulty?: number | null
+          min_search_volume?: number | null
+          notification_channels?: Json | null
+          preferred_content_formats?: Json | null
+          relevance_threshold?: number | null
+          scan_frequency?: string
+          trend_threshold?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
