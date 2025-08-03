@@ -30,7 +30,7 @@ serve(async (req) => {
       supabase.from('content_items').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
       supabase.from('content_calendar').select('*').eq('user_id', userId).limit(10),
       supabase.from('content_pipeline').select('*').eq('user_id', userId).limit(10),
-      supabase.from('content_analytics').select('*').eq('content_id', 'in', '(select id from content_items where user_id = \'' + userId + '\')').limit(5)
+      supabase.from('content_analytics').select('*').limit(5)
     ]);
 
     const context = {

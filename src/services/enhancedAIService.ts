@@ -1,8 +1,6 @@
-
 import { EnhancedChatMessage, VisualData, WorkflowStep } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface WorkflowContext {
   currentWorkflow?: string;
@@ -34,71 +32,32 @@ class EnhancedAIService {
       }));
       messages.push({ role: 'user', content: message });
 
-      // Create the streaming request
-      const response = await fetch(`https://iqiundzzcepmuykcnfbc.supabase.co/functions/v1/enhanced-ai-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA`
-        },
-        body: JSON.stringify({
+      // Create the request using Supabase functions
+      const response = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
           messages,
           userId,
           conversationId: `conv_${Date.now()}`,
           solutions: context.solutions || [],
           analytics: context.analytics || {},
           workflowContext: this.workflowContext
-        })
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
-      let fullContent = '';
-      let finalData: any = {};
-
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                
-                if (data.type === 'content_delta') {
-                  fullContent = data.fullMessage;
-                  onStreamUpdate?.(fullContent);
-                } else if (data.type === 'response_complete') {
-                  finalData = data;
-                } else if (data.type === 'error') {
-                  throw new Error(data.error);
-                }
-              } catch (e) {
-                console.error('Error parsing streaming data:', e);
-              }
-            }
-          }
-        }
-      }
-
-      // Create enhanced message
+      // Since we're using supabase.functions.invoke, we need to handle non-streaming for now
+      const data = response.data;
+      
       const enhancedMessage: EnhancedChatMessage = {
         id: `enhanced-${Date.now()}`,
         role: 'assistant',
-        content: finalData.message || fullContent || 'Response received',
+        content: data?.message || 'Response received',
         timestamp: new Date(),
-        actions: finalData.actions || [],
-        visualData: finalData.visualData || null,
+        actions: data?.actions || [],
+        visualData: data?.visualData || null,
       };
 
       return enhancedMessage;

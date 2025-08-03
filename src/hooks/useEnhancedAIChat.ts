@@ -46,19 +46,11 @@ export const useEnhancedAIChat = () => {
     setMessages(prev => [...prev, placeholderAI]);
 
     try {
-      // Get enhanced AI response with streaming
+      // Get enhanced AI response
       const aiResponse = await enhancedAIService.processEnhancedMessage(
         content,
         [...messages, userMessage],
-        user.id,
-        // Stream update callback
-        (streamContent: string) => {
-          setMessages(prev => prev.map(msg => 
-            msg.id === placeholderAI.id 
-              ? { ...msg, content: streamContent }
-              : msg
-          ));
-        }
+        user.id
       );
 
       // Update with final response

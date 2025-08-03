@@ -92,86 +92,29 @@ Response format should include:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: contextPrompt },
           ...messages
         ],
         temperature: 0.7,
         max_tokens: 2000,
-        stream: true
+        stream: false
       }),
     });
 
-    // Create a TransformStream to handle the streaming response
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        let fullMessage = '';
-        
-        try {
-          const reader = response.body?.getReader();
-          if (!reader) throw new Error('No reader available');
+    const data = await response.json();
+    const fullMessage = data.choices?.[0]?.message?.content || '';
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') continue;
-                
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content;
-                  
-                  if (content) {
-                    fullMessage += content;
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                      type: 'content_delta', 
-                      content,
-                      fullMessage 
-                    })}\n\n`));
-                  }
-                } catch (e) {
-                  console.error('Error parsing streaming chunk:', e);
-                }
-              }
-            }
-          }
-
-          // Parse final response for structured elements
-          const parsedResponse = parseAIResponse(fullMessage);
-          
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'response_complete',
-            ...parsedResponse 
-          })}\n\n`));
-          
-        } catch (error) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'error', 
-            error: error.message 
-          })}\n\n`));
-        } finally {
-          controller.close();
-        }
-      }
-    });
-
-    return new Response(stream, {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      },
+    // Parse final response for structured elements
+    const parsedResponse = parseAIResponse(fullMessage);
+    
+    return new Response(JSON.stringify(parsedResponse), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
