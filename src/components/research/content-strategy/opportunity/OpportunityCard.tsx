@@ -45,12 +45,28 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
 }) => {
   const [showBrief, setShowBrief] = useState(false);
   const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
+  const [hasBrief, setHasBrief] = useState(false);
+
+  React.useEffect(() => {
+    // Check if opportunity has existing briefs
+    checkForExistingBrief();
+  }, [opportunity.id]);
+
+  const checkForExistingBrief = async () => {
+    try {
+      const briefs = await opportunityHunterService.getBriefsByOpportunityId(opportunity.id);
+      setHasBrief(briefs.length > 0);
+    } catch (error) {
+      console.error('Error checking for brief:', error);
+    }
+  };
 
   const handleGenerateBrief = async () => {
     try {
       setIsGeneratingBrief(true);
       await opportunityHunterService.generateBrief(opportunity.id);
       toast.success('Content brief generated successfully');
+      setHasBrief(true);
       setShowBrief(true);
     } catch (error) {
       console.error('Error generating brief:', error);
@@ -221,7 +237,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
               <FileText className="h-4 w-4 mr-2" />
               Generate Brief
             </Button>
-            {opportunity.opportunity_briefs && opportunity.opportunity_briefs.length > 0 && (
+            {hasBrief && (
               <Button
                 size="sm"
                 variant="outline"

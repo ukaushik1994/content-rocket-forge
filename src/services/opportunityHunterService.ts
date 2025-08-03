@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CompetitorAnalysis {
@@ -137,12 +138,22 @@ class OpportunityHunterService {
   }
 
   private transformSettings(data: any): OpportunityUserSettings {
-    return {
-      ...data,
+    const settings: OpportunityUserSettings = {
+      id: data.id,
+      user_id: data.user_id,
+      scan_frequency: data.scan_frequency || 'daily',
+      min_search_volume: data.min_search_volume || 100,
+      max_keyword_difficulty: data.max_keyword_difficulty || 70,
       notification_channels: Array.isArray(data.notification_channels) ? data.notification_channels : ['in_app'],
       excluded_keywords: Array.isArray(data.excluded_keywords) ? data.excluded_keywords : [],
-      preferred_content_formats: Array.isArray(data.preferred_content_formats) ? data.preferred_content_formats : ['blog', 'guide', 'faq']
+      preferred_content_formats: Array.isArray(data.preferred_content_formats) ? data.preferred_content_formats : ['blog', 'guide', 'faq'],
+      auto_generate_briefs: data.auto_generate_briefs || false,
+      aio_friendly_only: data.aio_friendly_only || false,
+      trend_threshold: data.trend_threshold || 5,
+      relevance_threshold: data.relevance_threshold || 70,
+      is_active: data.is_active !== false
     };
+    return settings;
   }
 
   // Public method - simple scan wrapper
@@ -342,6 +353,18 @@ class OpportunityHunterService {
     return this.transformOpportunity(data);
   }
 
+  // Separate method to get briefs for an opportunity
+  async getBriefsByOpportunityId(opportunityId: string): Promise<OpportunityBrief[]> {
+    const { data, error } = await supabase
+      .from('opportunity_briefs')
+      .select('*')
+      .eq('opportunity_id', opportunityId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
   async getNotifications(): Promise<OpportunityNotification[]> {
     const { data, error } = await supabase
       .from('opportunity_notifications')
@@ -451,3 +474,4 @@ class OpportunityHunterService {
 }
 
 export const opportunityHunterService = new OpportunityHunterService();
+

@@ -26,12 +26,30 @@ export const BriefModal: React.FC<BriefModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && opportunity.opportunity_briefs?.length) {
-      setBrief(opportunity.opportunity_briefs[0]);
-    } else if (isOpen) {
-      generateBrief();
+    if (isOpen) {
+      loadBrief();
     }
   }, [isOpen, opportunity]);
+
+  const loadBrief = async () => {
+    try {
+      setIsLoading(true);
+      // First try to get existing briefs
+      const briefs = await opportunityHunterService.getBriefsByOpportunityId(opportunity.id);
+      if (briefs.length > 0) {
+        setBrief(briefs[0]);
+      } else {
+        // Generate new brief if none exists
+        const generatedBrief = await opportunityHunterService.generateBrief(opportunity.id);
+        setBrief(generatedBrief);
+      }
+    } catch (error) {
+      console.error('Error loading brief:', error);
+      toast.error('Failed to load content brief');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const generateBrief = async () => {
     try {
