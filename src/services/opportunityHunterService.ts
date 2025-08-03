@@ -65,7 +65,7 @@ export interface OpportunityNotification {
   created_at: string;
 }
 
-export interface OpportunitySettings {
+export interface OpportunityUserSettings {
   id?: string;
   user_id: string;
   scan_frequency: string;
@@ -82,6 +82,26 @@ export interface OpportunitySettings {
 }
 
 class OpportunityHunterService {
+  private transformOpportunity(data: any): Opportunity {
+    return {
+      ...data,
+      content_gaps: Array.isArray(data.content_gaps) ? data.content_gaps : [],
+      suggested_outline: Array.isArray(data.suggested_outline) ? data.suggested_outline : [],
+      internal_link_opportunities: Array.isArray(data.internal_link_opportunities) ? data.internal_link_opportunities : [],
+      serp_data: data.serp_data || {},
+      opportunity_briefs: data.opportunity_briefs || []
+    };
+  }
+
+  private transformSettings(data: any): OpportunityUserSettings {
+    return {
+      ...data,
+      notification_channels: Array.isArray(data.notification_channels) ? data.notification_channels : ['in_app'],
+      excluded_keywords: Array.isArray(data.excluded_keywords) ? data.excluded_keywords : [],
+      preferred_content_formats: Array.isArray(data.preferred_content_formats) ? data.preferred_content_formats : ['blog', 'guide', 'faq']
+    };
+  }
+
   // Scan for new opportunities
   async scanOpportunities(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
     const { data, error } = await supabase.functions.invoke('opportunity-hunter', {
@@ -106,7 +126,7 @@ class OpportunityHunterService {
       .order('detected_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => this.transformOpportunity(item));
   }
 
   // Get opportunities with filters
@@ -147,7 +167,7 @@ class OpportunityHunterService {
     const { data, error } = await query.order('detected_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => this.transformOpportunity(item));
   }
 
   // Update opportunity status
@@ -160,7 +180,7 @@ class OpportunityHunterService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformOpportunity(data);
   }
 
   // Generate content brief for opportunity
@@ -214,26 +234,35 @@ class OpportunityHunterService {
   }
 
   // Get user opportunity settings
-  async getSettings(): Promise<OpportunitySettings | null> {
+  async getSettings(): Promise<OpportunityUserSettings | null> {
     const { data, error } = await supabase
       .from('user_opportunity_settings')
       .select('*')
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    return data ? this.transformSettings(data) : null;
   }
 
   // Update user opportunity settings
-  async updateSettings(settings: Partial<OpportunitySettings>): Promise<OpportunitySettings> {
+  async updateSettings(settings: Partial<OpportunityUserSettings>): Promise<OpportunityUserSettings> {
+    // Ensure user_id is always present for upsert
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
+    const settingsWithUserId = {
+      ...settings,
+      user_id: user.id
+    };
+
     const { data, error } = await supabase
       .from('user_opportunity_settings')
-      .upsert(settings)
+      .upsert(settingsWithUserId)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return this.transformSettings(data);
   }
 
   // Delete opportunity
@@ -260,9 +289,13 @@ class OpportunityHunterService {
     
     if (!opportunity) throw new Error('Opportunity not found');
 
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
     const { error } = await supabase
       .from('content_calendar')
       .insert({
+        user_id: user.id,
         strategy_id: opportunity.strategy_id,
         title: opportunity.suggested_title || opportunity.keyword,
         content_type: opportunity.content_format || 'blog',
@@ -288,7 +321,7 @@ class OpportunityHunterService {
       .single();
 
     if (error) return null;
-    return data;
+    return this.transformOpportunity(data);
   }
 }
 

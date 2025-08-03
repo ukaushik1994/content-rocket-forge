@@ -8,12 +8,12 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { type OpportunitySettings, opportunityHunterService } from '@/services/opportunityHunterService';
+import { type OpportunityUserSettings, opportunityHunterService } from '@/services/opportunityHunterService';
 import { toast } from 'sonner';
 import { Settings, Save, Plus, X } from 'lucide-react';
 
-export const OpportunitySettings: React.FC = () => {
-  const [settings, setSettings] = useState<OpportunitySettings>({
+export const OpportunitySettingsPanel: React.FC = () => {
+  const [settings, setSettings] = useState<OpportunityUserSettings>({
     user_id: '',
     scan_frequency: 'daily',
     min_search_volume: 100,
