@@ -24,6 +24,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (!openAIApiKey) {
+    console.error('OPENAI_API_KEY not configured');
+    return new Response(JSON.stringify({ 
+      error: 'AI service not configured. Please add your OpenAI API key.' 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const { messages, userId, conversationId, solutions, analytics, workflowContext }: EnhancedRequest = await req.json();
 
@@ -82,12 +92,13 @@ Response format should include:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { role: 'system', content: contextPrompt },
           ...messages
         ],
         temperature: 0.7,
+        max_tokens: 2000
       }),
     });
 
