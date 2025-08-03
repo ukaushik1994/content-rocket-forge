@@ -9,6 +9,7 @@ import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
 import { OpportunityHunter } from './opportunity/OpportunityHunter';
+import { ContentStrategyEngine } from './ContentStrategyEngine';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
 export const StrategyTabs = () => {
@@ -27,8 +28,11 @@ export const StrategyTabs = () => {
   };
 
   return (
-    <Tabs defaultValue="dashboard" className="space-y-8">
-      <TabsList className="grid w-full grid-cols-8 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
+    <Tabs defaultValue="engine" className="space-y-8">
+      <TabsList className="grid w-full grid-cols-9 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
+        <TabsTrigger value="engine" className="h-14 text-sm font-medium">
+          Strategy Engine
+        </TabsTrigger>
         <TabsTrigger value="dashboard" className="h-14 text-sm font-medium">
           Dashboard
         </TabsTrigger>
@@ -54,6 +58,10 @@ export const StrategyTabs = () => {
           ROI
         </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="engine">
+        <ContentStrategyEngine />
+      </TabsContent>
 
       <TabsContent value="dashboard">
         <StrategyDashboard serpMetrics={serpMetrics} goals={goals} />

@@ -2,6 +2,36 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface ContentCluster {
+  id: string;
+  user_id: string;
+  name: string;
+  status: 'new' | 'in_progress' | 'published';
+  estimated_traffic: number;
+  suggested_assets: {
+    glossary: number;
+    blog: number;
+    article: number;
+    faq: number;
+  };
+  timeframe_weeks: number;
+  priority_tag: 'quick_win' | 'high_return' | 'evergreen' | 'low_priority';
+  description?: string;
+  solution_mapping: string[];
+  competitor_analysis: any[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StrategyLog {
+  id: string;
+  user_id: string;
+  cluster_id?: string;
+  action: string;
+  metadata: any;
+  timestamp: string;
+}
+
 export interface ContentStrategy {
   id: string;
   user_id: string;
@@ -426,6 +456,142 @@ class ContentStrategyService {
         })),
         isMockData: false
       };
+    }
+  }
+
+  // Content Strategy Engine operations
+  async generateStrategyBlueprint(): Promise<{ clusters: ContentCluster[]; message: string }> {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
+      body: {
+        action: 'generate_strategy_blueprint',
+        user_id: user.id
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getContentClusters(): Promise<ContentCluster[]> {
+    const { data, error } = await supabase
+      .from('content_clusters')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as ContentCluster[];
+  }
+
+  async updateClusterStatus(clusterId: string, status: string): Promise<ContentCluster> {
+    const { data, error } = await supabase
+      .from('content_clusters')
+      .update({ status })
+      .eq('id', clusterId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ContentCluster;
+  }
+
+  async refreshClusters(): Promise<{ message: string; clusters_updated: number }> {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
+      body: {
+        action: 'refresh_clusters',
+        user_id: user.id
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async sendToContentBuilder(clusterId: string): Promise<{ payload: any; redirect_url: string }> {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
+      body: {
+        action: 'send_to_content_builder',
+        cluster_id: clusterId,
+        user_id: user.id
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteCluster(clusterId: string): Promise<void> {
+    const { error } = await supabase
+      .from('content_clusters')
+      .delete()
+      .eq('id', clusterId);
+
+    if (error) throw error;
+  }
+
+  async getStrategyLogs(clusterId?: string): Promise<StrategyLog[]> {
+    let query = supabase
+      .from('strategy_logs')
+      .select('*')
+      .order('timestamp', { ascending: false });
+
+    if (clusterId) {
+      query = query.eq('cluster_id', clusterId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as StrategyLog[];
+  }
+
+  getPriorityTagColor(tag: string): string {
+    switch (tag) {
+      case 'quick_win':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'high_return':
+        return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'evergreen':
+        return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'low_priority':
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  }
+
+  getPriorityTagLabel(tag: string): string {
+    switch (tag) {
+      case 'quick_win':
+        return '🔥 Quick Win';
+      case 'high_return':
+        return '🚀 High Return';
+      case 'evergreen':
+        return '🌲 Evergreen';
+      case 'low_priority':
+        return '🛑 Low Priority';
+      default:
+        return tag;
+    }
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'new':
+        return 'text-blue-600 bg-blue-50';
+      case 'in_progress':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'published':
+        return 'text-green-600 bg-green-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   }
 }

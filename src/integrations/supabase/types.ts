@@ -392,6 +392,36 @@ export type Database = {
           },
         ]
       }
+      cluster_keywords: {
+        Row: {
+          cluster_id: string
+          created_at: string
+          difficulty: number | null
+          id: string
+          is_primary: boolean | null
+          keyword_id: string
+          volume: number | null
+        }
+        Insert: {
+          cluster_id: string
+          created_at?: string
+          difficulty?: number | null
+          id?: string
+          is_primary?: boolean | null
+          keyword_id: string
+          volume?: number | null
+        }
+        Update: {
+          cluster_id?: string
+          created_at?: string
+          difficulty?: number | null
+          id?: string
+          is_primary?: boolean | null
+          keyword_id?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
       company_competitors: {
         Row: {
           created_at: string
@@ -733,6 +763,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_clusters: {
+        Row: {
+          competitor_analysis: Json | null
+          created_at: string
+          description: string | null
+          estimated_traffic: number | null
+          id: string
+          name: string
+          priority_tag: string | null
+          solution_mapping: string[] | null
+          status: string
+          suggested_assets: Json | null
+          timeframe_weeks: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          competitor_analysis?: Json | null
+          created_at?: string
+          description?: string | null
+          estimated_traffic?: number | null
+          id?: string
+          name: string
+          priority_tag?: string | null
+          solution_mapping?: string[] | null
+          status?: string
+          suggested_assets?: Json | null
+          timeframe_weeks?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          competitor_analysis?: Json | null
+          created_at?: string
+          description?: string | null
+          estimated_traffic?: number | null
+          id?: string
+          name?: string
+          priority_tag?: string | null
+          solution_mapping?: string[] | null
+          status?: string
+          suggested_assets?: Json | null
+          timeframe_weeks?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       content_formats: {
         Row: {
@@ -1810,6 +1888,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      strategy_logs: {
+        Row: {
+          action: string
+          cluster_id: string | null
+          id: string
+          metadata: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          cluster_id?: string | null
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          cluster_id?: string | null
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_opportunity_settings: {
         Row: {
