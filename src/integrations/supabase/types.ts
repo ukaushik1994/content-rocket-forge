@@ -531,6 +531,89 @@ export type Database = {
           },
         ]
       }
+      content_briefs: {
+        Row: {
+          ai_model_used: string | null
+          brief_content: string | null
+          content_type: string
+          created_at: string
+          cta_suggestions: Json | null
+          external_links: Json | null
+          faq_section: Json | null
+          generation_prompt: string | null
+          id: string
+          internal_links: Json | null
+          introduction: string | null
+          meta_description: string | null
+          meta_title: string | null
+          opportunity_id: string | null
+          outline: Json | null
+          quality_score: number | null
+          status: string
+          suggested_headings: Json | null
+          target_word_count: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_model_used?: string | null
+          brief_content?: string | null
+          content_type?: string
+          created_at?: string
+          cta_suggestions?: Json | null
+          external_links?: Json | null
+          faq_section?: Json | null
+          generation_prompt?: string | null
+          id?: string
+          internal_links?: Json | null
+          introduction?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          opportunity_id?: string | null
+          outline?: Json | null
+          quality_score?: number | null
+          status?: string
+          suggested_headings?: Json | null
+          target_word_count?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_model_used?: string | null
+          brief_content?: string | null
+          content_type?: string
+          created_at?: string
+          cta_suggestions?: Json | null
+          external_links?: Json | null
+          faq_section?: Json | null
+          generation_prompt?: string | null
+          id?: string
+          internal_links?: Json | null
+          introduction?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          opportunity_id?: string | null
+          outline?: Json | null
+          quality_score?: number | null
+          status?: string
+          suggested_headings?: Json | null
+          target_word_count?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_briefs_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "content_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_calendar: {
         Row: {
           assigned_to: string | null
@@ -1119,6 +1202,50 @@ export type Database = {
           },
         ]
       }
+      opportunity_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assigned_to: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          opportunity_id: string
+          priority: string | null
+          status: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assigned_to: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          opportunity_id: string
+          priority?: string | null
+          status?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assigned_to?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          opportunity_id?: string
+          priority?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_assignments_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "content_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunity_briefs: {
         Row: {
           ai_model_used: string | null
@@ -1193,6 +1320,66 @@ export type Database = {
           },
         ]
       }
+      opportunity_metrics: {
+        Row: {
+          click_through_rate: number | null
+          clicks: number | null
+          content_id: string | null
+          conversions: number | null
+          created_at: string
+          current_rank: number | null
+          id: string
+          impressions: number | null
+          initial_rank: number | null
+          last_updated: string | null
+          opportunity_id: string
+          published_url: string | null
+        }
+        Insert: {
+          click_through_rate?: number | null
+          clicks?: number | null
+          content_id?: string | null
+          conversions?: number | null
+          created_at?: string
+          current_rank?: number | null
+          id?: string
+          impressions?: number | null
+          initial_rank?: number | null
+          last_updated?: string | null
+          opportunity_id: string
+          published_url?: string | null
+        }
+        Update: {
+          click_through_rate?: number | null
+          clicks?: number | null
+          content_id?: string | null
+          conversions?: number | null
+          created_at?: string
+          current_rank?: number | null
+          id?: string
+          impressions?: number | null
+          initial_rank?: number | null
+          last_updated?: string | null
+          opportunity_id?: string
+          published_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_metrics_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_metrics_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "content_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunity_notifications: {
         Row: {
           created_at: string
@@ -1240,6 +1427,56 @@ export type Database = {
           },
         ]
       }
+      opportunity_seeds: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          keyword: string
+          last_scanned: string | null
+          scan_frequency: string | null
+          search_volume: number | null
+          strategy_id: string | null
+          topic_cluster: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keyword: string
+          last_scanned?: string | null
+          scan_frequency?: string | null
+          search_volume?: number | null
+          strategy_id?: string | null
+          topic_cluster?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keyword?: string
+          last_scanned?: string | null
+          scan_frequency?: string | null
+          search_volume?: number | null
+          strategy_id?: string | null
+          topic_cluster?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_seeds_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1273,6 +1510,54 @@ export type Database = {
           last_name?: string | null
           role?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      raw_serp_data: {
+        Row: {
+          cached_at: string
+          expires_at: string | null
+          featured_snippet: Json | null
+          id: string
+          keyword: string
+          language: string | null
+          location: string | null
+          organic_results: Json | null
+          people_also_ask: Json | null
+          related_searches: Json | null
+          search_engine: string | null
+          serp_response: Json
+          total_results: number | null
+        }
+        Insert: {
+          cached_at?: string
+          expires_at?: string | null
+          featured_snippet?: Json | null
+          id?: string
+          keyword: string
+          language?: string | null
+          location?: string | null
+          organic_results?: Json | null
+          people_also_ask?: Json | null
+          related_searches?: Json | null
+          search_engine?: string | null
+          serp_response: Json
+          total_results?: number | null
+        }
+        Update: {
+          cached_at?: string
+          expires_at?: string | null
+          featured_snippet?: Json | null
+          id?: string
+          keyword?: string
+          language?: string | null
+          location?: string | null
+          organic_results?: Json | null
+          people_also_ask?: Json | null
+          related_searches?: Json | null
+          search_engine?: string | null
+          serp_response?: Json
+          total_results?: number | null
         }
         Relationships: []
       }
@@ -1534,6 +1819,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clean_expired_serp_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
