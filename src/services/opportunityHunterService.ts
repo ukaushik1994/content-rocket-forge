@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CompetitorAnalysis {
@@ -26,7 +27,7 @@ export interface ContentBuilderPayload {
   };
 }
 
-// Simplified OpportunityBrief interface to break circular reference
+// Basic opportunity brief without circular references
 export interface OpportunityBrief {
   id: string;
   user_id: string;
@@ -49,7 +50,7 @@ export interface OpportunityBrief {
   updated_at: string;
 }
 
-// Main Opportunity interface - simplified to avoid circular references
+// Main Opportunity interface - no circular references
 export interface Opportunity {
   id: string;
   user_id: string;
@@ -64,8 +65,8 @@ export interface Opportunity {
   content_format_reason?: string;
   status: string;
   source?: string;
-  serp_data?: Record<string, any>;
-  serp_analysis?: Record<string, any>;
+  serp_data?: any;
+  serp_analysis?: any;
   content_gaps?: any[];
   competitor_analysis?: CompetitorAnalysis[];
   competitive_advantage?: string;
@@ -88,8 +89,6 @@ export interface Opportunity {
   routed_to_content_builder?: boolean;
   content_builder_payload?: ContentBuilderPayload;
   routed_at?: string;
-  // Remove circular reference - we'll load briefs separately if needed
-  opportunity_briefs?: OpportunityBrief[];
 }
 
 export interface OpportunityNotification {
@@ -101,7 +100,7 @@ export interface OpportunityNotification {
   sent_at?: string;
   read_at?: string;
   dismissed_at?: string;
-  metadata?: Record<string, any>;
+  metadata?: any; // Use any to match Supabase Json type
   created_at: string;
 }
 
@@ -133,8 +132,7 @@ class OpportunityHunterService {
       competitor_analysis: Array.isArray(data.competitor_analysis) ? data.competitor_analysis : [],
       internal_link_opportunities: Array.isArray(data.internal_link_opportunities) ? data.internal_link_opportunities : [],
       serp_data: data.serp_data || {},
-      serp_analysis: data.serp_analysis || {},
-      opportunity_briefs: data.opportunity_briefs || []
+      serp_analysis: data.serp_analysis || {}
     };
   }
 
@@ -255,10 +253,7 @@ class OpportunityHunterService {
   async getOpportunities(): Promise<Opportunity[]> {
     const { data, error } = await supabase
       .from('content_opportunities')
-      .select(`
-        *,
-        opportunity_briefs (*)
-      `)
+      .select('*')
       .order('detected_at', { ascending: false });
 
     if (error) throw error;
@@ -276,10 +271,7 @@ class OpportunityHunterService {
   }): Promise<Opportunity[]> {
     let query = supabase
       .from('content_opportunities')
-      .select(`
-        *,
-        opportunity_briefs (*)
-      `);
+      .select('*');
 
     if (filters.status?.length) {
       query = query.in('status', filters.status);
@@ -342,10 +334,7 @@ class OpportunityHunterService {
   async getOpportunityById(opportunityId: string): Promise<Opportunity | null> {
     const { data, error } = await supabase
       .from('content_opportunities')
-      .select(`
-        *,
-        opportunity_briefs (*)
-      `)
+      .select('*')
       .eq('id', opportunityId)
       .single();
 
