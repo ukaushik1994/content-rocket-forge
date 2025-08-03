@@ -33,18 +33,54 @@ serve(async (req) => {
       supabase.from('content_analytics').select('*').limit(5)
     ]);
 
+    const contentItems = contentResult.data || [];
+    const totalContent = contentItems.length;
+    const published = contentItems.filter(item => item.status === 'published').length;
+    const inReview = contentItems.filter(item => item.status === 'review').length;
+    const avgSeoScore = totalContent > 0 
+      ? Math.round(contentItems.reduce((acc, item) => acc + (item.seo_score || 0), 0) / totalContent)
+      : 0;
+
+    // Generate weekly performance data for charts
+    const weeklyData = [];
+    for (let i = 6; i >= 0; i--) {
+      const weekStart = new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000);
+      const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const weekContent = contentItems.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate >= weekStart && itemDate < weekEnd;
+      });
+      
+      weeklyData.push({
+        name: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        content: weekContent.length,
+        published: weekContent.filter(item => item.status === 'published').length,
+        seoScore: weekContent.length > 0 
+          ? Math.round(weekContent.reduce((acc, item) => acc + (item.seo_score || 0), 0) / weekContent.length)
+          : 0
+      });
+    }
+
     const context = {
       currentStrategy: strategiesResult.data,
       solutions: solutionsResult.data || [],
-      contentItems: contentResult.data || [],
+      contentItems,
       calendarItems: calendarResult.data || [],
       pipelineItems: pipelineResult.data || [],
       analytics: {
-        totalContent: contentResult.data?.length || 0,
-        published: contentResult.data?.filter(item => item.status === 'published').length || 0,
-        inReview: contentResult.data?.filter(item => item.status === 'review').length || 0,
-        totalTraffic: '0', // Would calculate from analytics data
-        averageEngagement: '0%'
+        totalContent,
+        published,
+        inReview,
+        avgSeoScore,
+        weeklyData,
+        contentByType: contentItems.reduce((acc, item) => {
+          acc[item.content_type || 'unknown'] = (acc[item.content_type || 'unknown'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        pipelineByStage: (pipelineResult.data || []).reduce((acc, item) => {
+          acc[item.stage] = (acc[item.stage] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
       }
     };
 

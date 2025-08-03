@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { VisualData } from '@/types/enhancedChat';
-import { LineChart, BarChart } from '@/components/ui/chart';
+import { LineChart, BarChart, PieChartComponent } from '@/components/ui/chart';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Activity, Target } from 'lucide-react';
@@ -30,6 +30,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
         return <LineChart {...chartProps} />;
       case 'bar':
         return <BarChart {...chartProps} />;
+      case 'pie':
+        return <PieChartComponent {...chartProps} />;
+      case 'area':
+        return <LineChart {...chartProps} />;
       default:
         return <div className="text-muted-foreground">Chart type not supported</div>;
     }

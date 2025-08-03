@@ -67,23 +67,84 @@ AVAILABLE USER CONTEXT:`;
       contextPrompt += `\n- Content pieces: ${analytics.totalContent || 0}`;
       contextPrompt += `\n- Published: ${analytics.published || 0}`;
       contextPrompt += `\n- In review: ${analytics.inReview || 0}`;
+      contextPrompt += `\n- Average SEO Score: ${analytics.avgSeoScore || 0}%`;
+      contextPrompt += `\n- Weekly performance data available: ${analytics.weeklyData ? 'Yes' : 'No'}`;
+      contextPrompt += `\n- Content by type: ${JSON.stringify(analytics.contentByType || {})}`;
+      contextPrompt += `\n- Pipeline by stage: ${JSON.stringify(analytics.pipelineByStage || {})}`;
     }
 
     if (workflowContext) {
-      contextPrompt += `\n\nWORKFLOW CONTEXT: ${JSON.stringify(workflowContext)}`;
+    contextPrompt += `\n\nWORKFLOW CONTEXT: ${JSON.stringify(workflowContext)}`;
     }
 
     contextPrompt += `\n\nWhen responding:
 1. Always include specific action buttons using this JSON format in your response
-2. For data visualizations, include chart specifications
+2. For data visualizations, include chart specifications when relevant
 3. For workflows, provide step-by-step guidance with interactive elements
 4. Make recommendations based on the user's actual solutions and data
 
-Response format should include:
-- Clear, helpful text
-- Specific action buttons in JSON format
-- Visual data specifications when relevant
-- Workflow progress indicators when in a workflow`;
+IMPORTANT: When user requests performance analysis, keyword optimization, or content insights, you must generate real visualizations and action buttons.
+
+CRITICAL: For performance analysis requests, ALWAYS generate visual data using the provided analytics.
+
+EXAMPLE FOR PERFORMANCE ANALYSIS:
+\`\`\`json
+{
+  "actions": [
+    {
+      "id": "deep-dive-analysis",
+      "label": "Deep Dive Analysis",
+      "type": "workflow",
+      "data": { "workflow": "performance-deep-dive" }
+    },
+    {
+      "id": "optimize-content",
+      "label": "Optimize Low Performers",
+      "type": "workflow", 
+      "data": { "workflow": "content-optimization" }
+    }
+  ],
+  "visualData": {
+    "type": "chart",
+    "chartConfig": {
+      "type": "line",
+      "data": [/* use analytics.weeklyData */],
+      "categories": ["content", "published", "seoScore"],
+      "colors": ["#8b5cf6", "#06b6d4", "#10b981"],
+      "height": 300
+    }
+  }
+}
+\`\`\`
+
+EXAMPLE FOR METRICS DISPLAY:
+\`\`\`json
+{
+  "visualData": {
+    "type": "metrics",
+    "metrics": [
+      {
+        "id": "total-content",
+        "title": "Total Content",
+        "value": "${analytics.totalContent || 0}",
+        "icon": "filetext"
+      },
+      {
+        "id": "seo-score",
+        "title": "Avg SEO Score", 
+        "value": "${analytics.avgSeoScore || 0}%",
+        "change": { "value": 5, "type": "increase", "period": "vs last month" }
+      }
+    ]
+  }
+}
+\`\`\`
+
+Response guidelines:
+- Always generate contextual action buttons based on user's data
+- Include visual data (metrics, charts) for performance requests  
+- Create specific workflows for optimization tasks
+- Reference actual user solutions and content data`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

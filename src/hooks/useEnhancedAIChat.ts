@@ -103,22 +103,27 @@ export const useEnhancedAIChat = () => {
       data || {}
     );
 
-    // Send appropriate message based on workflow action
+    // Send contextual messages based on workflow action with real data context
     switch (workflowAction) {
       case 'keyword-optimization':
-        await sendMessage('I want to start keyword research and optimization for my content');
+        await sendMessage('Analyze my current content and solutions to find high-impact keyword opportunities. Show me visual data on keyword gaps and optimization potential.');
         break;
       case 'content-creation':
-        await sendMessage('Help me create high-performing content');
+        await sendMessage('Based on my solutions and target audience, help me create a high-performing content strategy with specific recommendations and metrics.');
         break;
       case 'performance-analysis':
-        await sendMessage('Show me my content performance and optimization opportunities');
+        await sendMessage('Show me a comprehensive performance analysis of my content with charts, metrics, and actionable optimization recommendations.');
         break;
       case 'solution-integration':
-        await sendMessage('Help me better integrate my solutions into my content strategy');
+        await sendMessage('Analyze how well my current content integrates with my solutions and show me specific opportunities to improve solution visibility and conversion.');
         break;
       default:
-        console.log('Unknown workflow action:', workflowAction);
+        // Handle custom workflow actions with data
+        if (data?.workflow) {
+          await sendMessage(`Execute the ${data.workflow} workflow and provide detailed insights with visual data.`);
+        } else {
+          console.log('Unknown workflow action:', workflowAction);
+        }
     }
   }, [sendMessage, user]);
 
