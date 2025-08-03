@@ -520,12 +520,18 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
         </div>
 
         {competitors.length === 0 ? (
-          <div className="text-center py-12">
-            <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h4 className="text-lg font-medium mb-2">No competitors added yet</h4>
-            <p className="text-muted-foreground mb-4">
-              Start tracking your competition to gain valuable market insights
+          <div className="text-center py-12 bg-gradient-to-br from-background to-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/20">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-primary" />
+            </div>
+            <h4 className="text-lg font-semibold text-foreground mb-2">No competitors added yet</h4>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Start tracking your competition to gain valuable market insights and stay ahead of industry trends
             </p>
+            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shadow-lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your First Competitor
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
