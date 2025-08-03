@@ -1,5 +1,30 @@
-
 import { supabase } from '@/integrations/supabase/client';
+
+export interface CompetitorAnalysis {
+  competitor_name: string;
+  competitor_url: string;
+  ranking_position: number;
+  content_gaps: string[];
+  weaknesses: string[];
+  competitive_advantage: string;
+}
+
+export interface ContentBuilderPayload {
+  keyword: string;
+  suggested_format: string;
+  format_reason: string;
+  title_suggestions: string[];
+  faq_opportunities: Array<{ question: string; answer?: string }>;
+  suggested_headings: string[];
+  competitor_analysis: CompetitorAnalysis[];
+  related_keywords: string[];
+  internal_link_opportunities: string[];
+  search_intent: string;
+  meta_suggestions: {
+    title: string;
+    description: string;
+  };
+}
 
 export interface Opportunity {
   id: string;
@@ -12,21 +37,33 @@ export interface Opportunity {
   opportunity_score?: number;
   relevance_score?: number;
   content_format?: string;
+  content_format_reason?: string;
   status: string;
   source?: string;
   serp_data?: any;
+  serp_analysis?: any;
   content_gaps?: any[];
+  competitor_analysis?: CompetitorAnalysis[];
+  competitive_advantage?: string;
   suggested_title?: string;
   suggested_outline?: string[];
+  suggested_headings?: string[];
+  faq_opportunities?: Array<{ question: string; answer?: string }>;
+  related_keywords?: string[];
   internal_link_opportunities?: any[];
   is_aio_friendly?: boolean;
+  aio_score?: number;
   trend_direction?: string;
   priority: string;
+  search_intent?: string;
   detected_at: string;
   last_updated: string;
   expires_at?: string;
   assigned_to?: string;
   notes?: string;
+  routed_to_content_builder?: boolean;
+  content_builder_payload?: ContentBuilderPayload;
+  routed_at?: string;
   opportunity_briefs?: OpportunityBrief[];
 }
 
@@ -87,8 +124,13 @@ class OpportunityHunterService {
       ...data,
       content_gaps: Array.isArray(data.content_gaps) ? data.content_gaps : [],
       suggested_outline: Array.isArray(data.suggested_outline) ? data.suggested_outline : [],
+      suggested_headings: Array.isArray(data.suggested_headings) ? data.suggested_headings : [],
+      faq_opportunities: Array.isArray(data.faq_opportunities) ? data.faq_opportunities : [],
+      related_keywords: Array.isArray(data.related_keywords) ? data.related_keywords : [],
+      competitor_analysis: Array.isArray(data.competitor_analysis) ? data.competitor_analysis : [],
       internal_link_opportunities: Array.isArray(data.internal_link_opportunities) ? data.internal_link_opportunities : [],
       serp_data: data.serp_data || {},
+      serp_analysis: data.serp_analysis || {},
       opportunity_briefs: data.opportunity_briefs || []
     };
   }
@@ -102,12 +144,13 @@ class OpportunityHunterService {
     };
   }
 
-  // Scan for new opportunities
-  async scanOpportunities(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
+  // Enhanced scan with competitor intelligence
+  async scanOpportunitiesWithCompetitorIntelligence(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
     const { data, error } = await supabase.functions.invoke('opportunity-hunter', {
       body: {
-        action: 'scan_opportunities',
-        userId
+        action: 'enhanced_scan_opportunities',
+        userId,
+        include_competitor_analysis: true
       }
     });
 
@@ -115,7 +158,85 @@ class OpportunityHunterService {
     return data;
   }
 
-  // Get all opportunities for user
+  // Analyze competitor for specific opportunity
+  async analyzeCompetitors(opportunityId: string): Promise<CompetitorAnalysis[]> {
+    const { data, error } = await supabase.functions.invoke('competitor-analyzer', {
+      body: {
+        opportunityId
+      }
+    });
+
+    if (error) throw error;
+    return data.competitor_analysis || [];
+  }
+
+  // Generate content builder payload
+  async generateContentBuilderPayload(opportunityId: string): Promise<ContentBuilderPayload> {
+    const opportunity = await this.getOpportunityById(opportunityId);
+    if (!opportunity) throw new Error('Opportunity not found');
+
+    // Get user's competitors for analysis
+    const { data: competitors } = await supabase
+      .from('company_competitors')
+      .select('*')
+      .eq('user_id', opportunity.user_id);
+
+    const payload: ContentBuilderPayload = {
+      keyword: opportunity.keyword,
+      suggested_format: opportunity.content_format || 'blog',
+      format_reason: opportunity.content_format_reason || 'Based on search intent analysis',
+      title_suggestions: [
+        opportunity.suggested_title || `Complete Guide to ${opportunity.keyword}`,
+        `How to ${opportunity.keyword}: A Step-by-Step Guide`,
+        `${opportunity.keyword}: Everything You Need to Know`,
+        `The Ultimate ${opportunity.keyword} Guide for 2024`
+      ],
+      faq_opportunities: opportunity.faq_opportunities || [],
+      suggested_headings: opportunity.suggested_headings || [
+        `What is ${opportunity.keyword}?`,
+        `Benefits of ${opportunity.keyword}`,
+        `How to implement ${opportunity.keyword}`,
+        'Best practices and tips',
+        'Common mistakes to avoid',
+        'Conclusion'
+      ],
+      competitor_analysis: opportunity.competitor_analysis || [],
+      related_keywords: opportunity.related_keywords || [],
+      internal_link_opportunities: opportunity.internal_link_opportunities || [],
+      search_intent: opportunity.search_intent || 'informational',
+      meta_suggestions: {
+        title: `${opportunity.keyword} - Complete Guide | Your Brand`,
+        description: `Learn everything about ${opportunity.keyword}. Expert tips, best practices, and actionable insights. Read our comprehensive guide now.`
+      }
+    };
+
+    // Update opportunity with payload and routing info
+    await this.updateOpportunity(opportunityId, {
+      content_builder_payload: payload,
+      routed_to_content_builder: true,
+      routed_at: new Date().toISOString()
+    });
+
+    return payload;
+  }
+
+  // Route opportunity to content builder
+  async routeToContentBuilder(opportunityId: string): Promise<string> {
+    const payload = await this.generateContentBuilderPayload(opportunityId);
+    
+    // Store the payload in sessionStorage for content builder to pick up
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('contentBuilderPayload', JSON.stringify({
+        source: 'opportunity_hunter',
+        opportunityId,
+        payload
+      }));
+    }
+
+    return `/content/builder?source=opportunity&id=${opportunityId}`;
+  }
+
+  // Get opportunities with enhanced data
   async getOpportunities(): Promise<Opportunity[]> {
     const { data, error } = await supabase
       .from('content_opportunities')
@@ -129,13 +250,15 @@ class OpportunityHunterService {
     return (data || []).map(item => this.transformOpportunity(item));
   }
 
-  // Get opportunities with filters
+  // Get filtered opportunities with competitor intelligence
   async getFilteredOpportunities(filters: {
     status?: string[];
     priority?: string[];
     aioFriendly?: boolean;
     maxDifficulty?: number;
     minVolume?: number;
+    searchIntent?: string[];
+    hasCompetitorAnalysis?: boolean;
   }): Promise<Opportunity[]> {
     let query = supabase
       .from('content_opportunities')
@@ -164,13 +287,21 @@ class OpportunityHunterService {
       query = query.gte('search_volume', filters.minVolume);
     }
 
+    if (filters.searchIntent?.length) {
+      query = query.in('search_intent', filters.searchIntent);
+    }
+
+    if (filters.hasCompetitorAnalysis) {
+      query = query.not('competitor_analysis', 'eq', '[]');
+    }
+
     const { data, error } = await query.order('detected_at', { ascending: false });
 
     if (error) throw error;
     return (data || []).map(item => this.transformOpportunity(item));
   }
 
-  // Update opportunity status
+  // Update opportunity with enhanced fields
   async updateOpportunity(opportunityId: string, updates: Partial<Opportunity>): Promise<Opportunity> {
     const { data, error } = await supabase
       .from('content_opportunities')
@@ -183,11 +314,13 @@ class OpportunityHunterService {
     return this.transformOpportunity(data);
   }
 
-  // Generate content brief for opportunity
-  async generateBrief(opportunityId: string): Promise<OpportunityBrief> {
-    const { data, error } = await supabase.functions.invoke('generate-content-brief', {
+  // Enhanced brief generation with competitor context
+  async generateEnhancedBrief(opportunityId: string): Promise<OpportunityBrief> {
+    const { data, error } = await supabase.functions.invoke('generate-enhanced-content-brief', {
       body: {
-        opportunityId
+        opportunityId,
+        includeCompetitorAnalysis: true,
+        includeSemanticKeywords: true
       }
     });
 
@@ -195,7 +328,34 @@ class OpportunityHunterService {
     return data.brief;
   }
 
-  // Get notifications for user
+  // Check for duplicate opportunities (prevent same keyword)
+  async checkDuplicateOpportunity(keyword: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('content_opportunities')
+      .select('id')
+      .ilike('keyword', keyword)
+      .in('status', ['new', 'assigned', 'in_progress'])
+      .limit(1);
+
+    if (error) throw error;
+    return (data || []).length > 0;
+  }
+
+  // Get single opportunity by ID with full data
+  async getOpportunityById(opportunityId: string): Promise<Opportunity | null> {
+    const { data, error } = await supabase
+      .from('content_opportunities')
+      .select(`
+        *,
+        opportunity_briefs (*)
+      `)
+      .eq('id', opportunityId)
+      .single();
+
+    if (error) return null;
+    return this.transformOpportunity(data);
+  }
+
   async getNotifications(): Promise<OpportunityNotification[]> {
     const { data, error } = await supabase
       .from('opportunity_notifications')
@@ -207,7 +367,6 @@ class OpportunityHunterService {
     return data || [];
   }
 
-  // Mark notification as read
   async markNotificationRead(notificationId: string): Promise<void> {
     const { error } = await supabase
       .from('opportunity_notifications')
@@ -220,7 +379,6 @@ class OpportunityHunterService {
     if (error) throw error;
   }
 
-  // Dismiss notification
   async dismissNotification(notificationId: string): Promise<void> {
     const { error } = await supabase
       .from('opportunity_notifications')
@@ -233,7 +391,6 @@ class OpportunityHunterService {
     if (error) throw error;
   }
 
-  // Get user opportunity settings
   async getSettings(): Promise<OpportunityUserSettings | null> {
     const { data, error } = await supabase
       .from('user_opportunity_settings')
@@ -244,7 +401,6 @@ class OpportunityHunterService {
     return data ? this.transformSettings(data) : null;
   }
 
-  // Update user opportunity settings
   async updateSettings(settings: Partial<OpportunityUserSettings>): Promise<OpportunityUserSettings> {
     // Ensure user_id is always present for upsert
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -265,7 +421,6 @@ class OpportunityHunterService {
     return this.transformSettings(data);
   }
 
-  // Delete opportunity
   async deleteOpportunity(opportunityId: string): Promise<void> {
     const { error } = await supabase
       .from('content_opportunities')
@@ -275,7 +430,6 @@ class OpportunityHunterService {
     if (error) throw error;
   }
 
-  // Assign opportunity to user
   async assignOpportunity(opportunityId: string, assignedTo: string): Promise<Opportunity> {
     return this.updateOpportunity(opportunityId, { 
       assigned_to: assignedTo,
@@ -283,7 +437,6 @@ class OpportunityHunterService {
     });
   }
 
-  // Add to content calendar
   async addToCalendar(opportunityId: string, scheduledDate: string): Promise<void> {
     const opportunity = await this.getOpportunityById(opportunityId);
     
@@ -308,20 +461,7 @@ class OpportunityHunterService {
 
     if (error) throw error;
 
-    // Update opportunity status
     await this.updateOpportunity(opportunityId, { status: 'scheduled' });
-  }
-
-  // Get single opportunity by ID
-  private async getOpportunityById(opportunityId: string): Promise<Opportunity | null> {
-    const { data, error } = await supabase
-      .from('content_opportunities')
-      .select('*')
-      .eq('id', opportunityId)
-      .single();
-
-    if (error) return null;
-    return this.transformOpportunity(data);
   }
 }
 
