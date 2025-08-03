@@ -18,7 +18,12 @@ import {
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { useToast } from '@/hooks/use-toast';
 
-export function ContentStrategyEngine() {
+interface ContentStrategyEngineProps {
+  serpMetrics?: any;
+  goals?: any;
+}
+
+export function ContentStrategyEngine({ serpMetrics, goals }: ContentStrategyEngineProps) {
   const [clusters, setClusters] = useState<ContentCluster[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);

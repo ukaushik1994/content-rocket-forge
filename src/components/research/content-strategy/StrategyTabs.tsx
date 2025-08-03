@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategySuggestions } from './tabs/StrategySuggestions';
@@ -9,7 +8,7 @@ import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
 import { OpportunityHunter } from './opportunity/OpportunityHunter';
-import { ContentStrategyEngine } from './ContentStrategyEngine';
+
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
 export const StrategyTabs = () => {
@@ -28,72 +27,71 @@ export const StrategyTabs = () => {
   };
 
   return (
-    <Tabs defaultValue="engine" className="space-y-8">
-      <TabsList className="grid w-full grid-cols-9 h-16 bg-glass border border-white/10 p-1 backdrop-blur-xl">
-        <TabsTrigger value="engine" className="h-14 text-sm font-medium">
-          Strategy Engine
-        </TabsTrigger>
-        <TabsTrigger value="dashboard" className="h-14 text-sm font-medium">
-          Dashboard
-        </TabsTrigger>
-        <TabsTrigger value="progress" className="h-14 text-sm font-medium">
-          Progress
-        </TabsTrigger>
-        <TabsTrigger value="opportunities" className="h-14 text-sm font-medium">
-          Opportunities
-        </TabsTrigger>
-        <TabsTrigger value="strategies" className="h-14 text-sm font-medium">
-          Strategies
-        </TabsTrigger>
-        <TabsTrigger value="gaps" className="h-14 text-sm font-medium">
-          Content Gaps
-        </TabsTrigger>
-        <TabsTrigger value="calendar" className="h-14 text-sm font-medium">
-          Calendar
-        </TabsTrigger>
-        <TabsTrigger value="pipeline" className="h-14 text-sm font-medium">
-          Pipeline
-        </TabsTrigger>
-        <TabsTrigger value="roi" className="h-14 text-sm font-medium">
-          ROI
-        </TabsTrigger>
-      </TabsList>
+    <div className="space-y-6">
+      <Tabs defaultValue="strategies" className="w-full">
+        <TabsList className="grid w-full grid-cols-6 bg-muted/30 p-1 h-auto">
+          <TabsTrigger 
+            value="strategies" 
+            className="px-2 py-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Strategies
+          </TabsTrigger>
+          <TabsTrigger 
+            value="dashboard" 
+            className="px-2 py-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger 
+            value="calendar" 
+            className="px-2 py-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger 
+            value="pipeline" 
+            className="px-2 py-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Pipeline
+          </TabsTrigger>
+          <TabsTrigger 
+            value="opportunities" 
+            className="px-2 py-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Opportunities
+          </TabsTrigger>
+          <TabsTrigger 
+            value="performance" 
+            className="px-2 py-3 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Performance
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="engine">
-        <ContentStrategyEngine />
-      </TabsContent>
+        <TabsContent value="strategies">
+          <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
+        </TabsContent>
+        
+        <TabsContent value="dashboard">
+          <StrategyDashboard goals={goals} />
+        </TabsContent>
 
-      <TabsContent value="dashboard">
-        <StrategyDashboard serpMetrics={serpMetrics} goals={goals} />
-      </TabsContent>
+        <TabsContent value="calendar">
+          <EditorialCalendar goals={goals} />
+        </TabsContent>
 
-      <TabsContent value="progress">
-        <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
-      </TabsContent>
+        <TabsContent value="pipeline">
+          <ContentPipeline goals={goals} />
+        </TabsContent>
 
-      <TabsContent value="opportunities">
-        <OpportunityHunter />
-      </TabsContent>
+        <TabsContent value="opportunities">
+          <OpportunityHunter />
+        </TabsContent>
 
-      <TabsContent value="strategies">
-        <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
-      </TabsContent>
-
-      <TabsContent value="gaps">
-        <ContentGapsTab serpMetrics={serpMetrics} goals={goals} />
-      </TabsContent>
-
-      <TabsContent value="calendar">
-        <EditorialCalendar goals={goals} />
-      </TabsContent>
-
-      <TabsContent value="pipeline">
-        <ContentPipeline goals={goals} />
-      </TabsContent>
-
-      <TabsContent value="roi">
-        <ROICalculator goals={goals} serpMetrics={serpMetrics} />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="performance">
+          <ROICalculator goals={goals} serpMetrics={serpMetrics} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
