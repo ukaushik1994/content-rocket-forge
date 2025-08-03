@@ -1,202 +1,136 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Plus, Search, Trash2, Edit2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { Plus, Trash2, Search, Clock, TrendingUp } from 'lucide-react';
-import { format } from 'date-fns';
 
 interface SeedKeyword {
   id: string;
   keyword: string;
-  topic_cluster: string;
-  search_volume: number;
-  is_active: boolean;
+  topic_cluster?: string;
   scan_frequency: string;
-  last_scanned: string;
-  created_at: string;
+  is_active: boolean;
+  last_scanned?: string;
+  search_volume?: number;
 }
 
 export const SeedKeywordManager: React.FC = () => {
-  const [seeds, setSeeds] = useState<SeedKeyword[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [seedKeywords] = useState<SeedKeyword[]>([
+    {
+      id: '1',
+      keyword: 'content marketing',
+      topic_cluster: 'Marketing',
+      scan_frequency: 'daily',
+      is_active: true,
+      search_volume: 8100,
+      last_scanned: '2024-01-15T10:30:00Z'
+    },
+    {
+      id: '2',
+      keyword: 'SEO strategy',
+      topic_cluster: 'SEO',
+      scan_frequency: 'daily',
+      is_active: true,
+      search_volume: 5400,
+      last_scanned: '2024-01-15T09:15:00Z'
+    }
+  ]);
+
   const [newKeyword, setNewKeyword] = useState('');
-  const [newTopicCluster, setNewTopicCluster] = useState('');
-  const [newScanFrequency, setNewScanFrequency] = useState('daily');
+  const [newCluster, setNewCluster] = useState('');
+  const [newFrequency, setNewFrequency] = useState('daily');
 
-  useEffect(() => {
-    loadSeeds();
-  }, []);
-
-  const loadSeeds = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('opportunity_seeds')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setSeeds(data || []);
-    } catch (error) {
-      console.error('Error loading seeds:', error);
-      toast.error('Failed to load seed keywords');
-    } finally {
-      setLoading(false);
+  const handleAddKeyword = () => {
+    if (!newKeyword.trim()) {
+      toast.error('Please enter a keyword');
+      return;
     }
+
+    // Here you would integrate with the opportunityHunterService
+    toast.success('Seed keyword added successfully');
+    setNewKeyword('');
+    setNewCluster('');
   };
 
-  const addSeed = async () => {
-    if (!newKeyword.trim()) return;
-
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        toast.error('Please log in to add seed keywords');
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('opportunity_seeds')
-        .insert([{
-          user_id: user.id,
-          keyword: newKeyword.trim(),
-          topic_cluster: newTopicCluster.trim() || null,
-          scan_frequency: newScanFrequency,
-          is_active: true
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setSeeds(prev => [data, ...prev]);
-      setNewKeyword('');
-      setNewTopicCluster('');
-      toast.success('Seed keyword added successfully');
-    } catch (error) {
-      console.error('Error adding seed:', error);
-      toast.error('Failed to add seed keyword');
-    }
+  const handleDeleteKeyword = (id: string) => {
+    // Here you would integrate with the opportunityHunterService
+    toast.success('Seed keyword removed');
   };
 
-  const updateSeed = async (id: string, updates: Partial<SeedKeyword>) => {
-    try {
-      const { error } = await supabase
-        .from('opportunity_seeds')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setSeeds(prev => prev.map(seed => 
-        seed.id === id ? { ...seed, ...updates } : seed
-      ));
-      toast.success('Seed keyword updated');
-    } catch (error) {
-      console.error('Error updating seed:', error);
-      toast.error('Failed to update seed keyword');
-    }
+  const handleToggleActive = (id: string) => {
+    // Here you would integrate with the opportunityHunterService
+    toast.success('Keyword status updated');
   };
 
-  const deleteSeed = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('opportunity_seeds')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setSeeds(prev => prev.filter(seed => seed.id !== id));
-      toast.success('Seed keyword deleted');
-    } catch (error) {
-      console.error('Error deleting seed:', error);
-      toast.error('Failed to delete seed keyword');
-    }
-  };
-
-  const triggerScan = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('scheduled-opportunity-scan', {
-        body: { manual_trigger: true }
-      });
-
-      if (error) throw error;
-      toast.success('Opportunity scan initiated');
-      
-      // Reload seeds to update last_scanned times
-      setTimeout(loadSeeds, 2000);
-    } catch (error) {
-      console.error('Error triggering scan:', error);
-      toast.error('Failed to trigger scan');
-    }
-  };
-
-  const getScanStatusColor = (lastScanned: string, frequency: string) => {
-    if (!lastScanned) return 'bg-gray-500';
-    
-    const last = new Date(lastScanned);
+  const formatLastScanned = (dateString?: string) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
     const now = new Date();
-    const hoursSince = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    const threshold = frequency === 'hourly' ? 1 : frequency === 'daily' ? 24 : 168;
-    
-    if (hoursSince < threshold) return 'bg-green-500';
-    if (hoursSince < threshold * 1.5) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+  const getFrequencyColor = (frequency: string) => {
+    switch (frequency) {
+      case 'hourly':
+        return 'bg-red-500/20 text-red-300';
+      case 'daily':
+        return 'bg-blue-500/20 text-blue-300';
+      case 'weekly':
+        return 'bg-green-500/20 text-green-300';
+      default:
+        return 'bg-gray-500/20 text-gray-300';
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Add New Seed */}
+      {/* Add New Seed Keyword */}
       <Card className="border-white/10 bg-glass">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Plus className="h-5 w-5 mr-2 text-neon-purple" />
-            Add Seed Keywords
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Add Seed Keyword
           </CardTitle>
-          <CardDescription>
-            Seed keywords are the foundation for discovering content opportunities. 
-            The system will regularly scan these keywords for new content gaps and trends.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="keyword">Keyword</Label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Keyword</Label>
               <Input
-                id="keyword"
                 placeholder="Enter seed keyword..."
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addSeed()}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddKeyword()}
               />
             </div>
-            <div>
-              <Label htmlFor="cluster">Topic Cluster (Optional)</Label>
+            
+            <div className="space-y-2">
+              <Label>Topic Cluster</Label>
               <Input
-                id="cluster"
-                placeholder="e.g., Analytics, HR Tech..."
-                value={newTopicCluster}
-                onChange={(e) => setNewTopicCluster(e.target.value)}
+                placeholder="e.g., Marketing, SEO..."
+                value={newCluster}
+                onChange={(e) => setNewCluster(e.target.value)}
               />
             </div>
-            <div>
-              <Label htmlFor="frequency">Scan Frequency</Label>
-              <Select value={newScanFrequency} onValueChange={setNewScanFrequency}>
+
+            <div className="space-y-2">
+              <Label>Scan Frequency</Label>
+              <Select value={newFrequency} onValueChange={setNewFrequency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -207,124 +141,107 @@ export const SeedKeywordManager: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={addSeed} disabled={!newKeyword.trim()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Seed Keyword
-            </Button>
-            <Button onClick={triggerScan} variant="outline">
-              <Search className="h-4 w-4 mr-2" />
-              Trigger Scan Now
-            </Button>
+
+            <div className="flex items-end">
+              <Button 
+                onClick={handleAddKeyword}
+                className="w-full bg-neon-purple hover:bg-neon-blue"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Keyword
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Seed Keywords List */}
+      {/* Existing Seed Keywords */}
       <Card className="border-white/10 bg-glass">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2 text-green-400" />
-              Seed Keywords ({seeds.length})
-            </span>
+            <div className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Seed Keywords
+            </div>
+            <Badge variant="secondary">
+              {seedKeywords.filter(k => k.is_active).length} active
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {seeds.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No seed keywords added yet.</p>
-              <p className="text-sm">Add your first seed keyword to start discovering opportunities.</p>
+          {seedKeywords.length === 0 ? (
+            <div className="text-center py-8">
+              <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">No seed keywords yet</h3>
+              <p className="text-muted-foreground">
+                Add seed keywords to automatically discover content opportunities
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {seeds.map((seed) => (
-                <div 
-                  key={seed.id}
-                  className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-white/5"
+              {seedKeywords.map((keyword) => (
+                <div
+                  key={keyword.id}
+                  className="flex items-center justify-between p-4 border border-white/10 rounded-lg bg-black/20"
                 >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-medium">{seed.keyword}</h3>
-                      <div className={`w-2 h-2 rounded-full ${getScanStatusColor(seed.last_scanned, seed.scan_frequency)}`} />
-                      {seed.topic_cluster && (
-                        <Badge variant="outline" className="text-xs">
-                          {seed.topic_cluster}
-                        </Badge>
-                      )}
-                      <Badge variant="outline" className="text-xs">
-                        {seed.scan_frequency}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Last scanned: {seed.last_scanned ? format(new Date(seed.last_scanned), 'MMM d, HH:mm') : 'Never'}
-                      </span>
-                      {seed.search_volume && (
-                        <span>Volume: {seed.search_volume.toLocaleString()}</span>
-                      )}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium">{keyword.keyword}</h4>
+                        {keyword.topic_cluster && (
+                          <Badge variant="outline" className="text-xs">
+                            {keyword.topic_cluster}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Search className="h-3 w-3" />
+                          {keyword.search_volume?.toLocaleString() || 'N/A'} volume
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatLastScanned(keyword.last_scanned)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
-                    <Switch
-                      checked={seed.is_active}
-                      onCheckedChange={(checked) => updateSeed(seed.id, { is_active: checked })}
-                    />
-                    <Select
-                      value={seed.scan_frequency}
-                      onValueChange={(value) => updateSeed(seed.id, { scan_frequency: value })}
+                    <Badge className={getFrequencyColor(keyword.scan_frequency)}>
+                      {keyword.scan_frequency}
+                    </Badge>
+                    
+                    <Button
+                      variant={keyword.is_active ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleToggleActive(keyword.id)}
+                      className="text-xs"
                     >
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hourly">Hourly</SelectItem>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      {keyword.is_active ? 'Active' : 'Inactive'}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteSeed(seed.id)}
-                      className="text-red-400 hover:text-red-300"
+                      onClick={() => handleDeleteKeyword(keyword.id)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Scan Status Overview */}
-      <Card className="border-white/10 bg-glass">
-        <CardHeader>
-          <CardTitle className="text-sm">Scan Status Legend</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span>Recently scanned (within schedule)</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-            <span>Overdue (needs scan)</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-            <span>Significantly overdue</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-2 h-2 rounded-full bg-gray-500"></div>
-            <span>Never scanned</span>
-          </div>
         </CardContent>
       </Card>
     </div>

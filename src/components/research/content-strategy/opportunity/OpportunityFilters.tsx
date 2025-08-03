@@ -1,20 +1,30 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Filter, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Filter, X, Brain, Users } from 'lucide-react';
 
 interface OpportunityFiltersProps {
   filters: {
     status: string[];
     priority: string[];
-    aioFriendly: boolean | undefined;
+    aioFriendly: boolean;
     maxDifficulty: number;
     minVolume: number;
+    searchIntent?: string[];
+    hasCompetitorAnalysis?: boolean;
   };
   onFiltersChange: (filters: any) => void;
   totalCount: number;
@@ -25,148 +35,157 @@ export const OpportunityFilters: React.FC<OpportunityFiltersProps> = ({
   onFiltersChange,
   totalCount
 }) => {
-  const statusOptions = ['new', 'in_progress', 'scheduled', 'published', 'dismissed'];
-  const priorityOptions = ['high', 'medium', 'low'];
-
-  const handleStatusToggle = (status: string) => {
-    const newStatus = filters.status.includes(status)
-      ? filters.status.filter(s => s !== status)
-      : [...filters.status, status];
-    
-    onFiltersChange({ ...filters, status: newStatus });
+  const updateFilter = (key: string, value: any) => {
+    onFiltersChange({ ...filters, [key]: value });
   };
 
-  const handlePriorityToggle = (priority: string) => {
-    const newPriority = filters.priority.includes(priority)
-      ? filters.priority.filter(p => p !== priority)
-      : [...filters.priority, priority];
-    
-    onFiltersChange({ ...filters, priority: newPriority });
+  const toggleArrayFilter = (key: string, value: string) => {
+    const currentArray = filters[key as keyof typeof filters] as string[] || [];
+    const newArray = currentArray.includes(value)
+      ? currentArray.filter(item => item !== value)
+      : [...currentArray, value];
+    updateFilter(key, newArray);
   };
 
-  const clearFilters = () => {
+  const clearAllFilters = () => {
     onFiltersChange({
       status: [],
       priority: [],
-      aioFriendly: undefined,
-      maxDifficulty: 50,
-      minVolume: 100
+      aioFriendly: false,
+      maxDifficulty: 100,
+      minVolume: 0,
+      searchIntent: [],
+      hasCompetitorAnalysis: false
     });
   };
-
-  const hasActiveFilters = 
-    filters.status.length > 0 || 
-    filters.priority.length > 0 || 
-    filters.aioFriendly !== undefined ||
-    filters.maxDifficulty !== 50 ||
-    filters.minVolume !== 100;
 
   return (
     <Card className="border-white/10 bg-glass">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-sm">
-            <Filter className="h-4 w-4 mr-2" />
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
             Filters
+            <Badge variant="secondary" className="ml-2">
+              {totalCount} opportunities
+            </Badge>
           </CardTitle>
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-muted-foreground hover:text-white"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={clearAllFilters}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Clear All
+          </Button>
         </div>
       </CardHeader>
-      
       <CardContent className="space-y-6">
         {/* Status Filter */}
-        <div>
-          <Label className="text-sm font-medium mb-3 block">Status</Label>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Status</Label>
           <div className="flex flex-wrap gap-2">
-            {statusOptions.map(status => (
-              <Badge
+            {['new', 'assigned', 'in_progress', 'scheduled', 'published'].map(status => (
+              <Button
                 key={status}
                 variant={filters.status.includes(status) ? "default" : "outline"}
-                className={`cursor-pointer transition-colors ${
-                  filters.status.includes(status) 
-                    ? 'bg-neon-purple text-white' 
-                    : 'hover:bg-white/10'
-                }`}
-                onClick={() => handleStatusToggle(status)}
+                size="sm"
+                onClick={() => toggleArrayFilter('status', status)}
+                className="text-xs"
               >
                 {status.replace('_', ' ')}
-              </Badge>
+              </Button>
             ))}
           </div>
         </div>
 
         {/* Priority Filter */}
-        <div>
-          <Label className="text-sm font-medium mb-3 block">Priority</Label>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Priority</Label>
           <div className="flex flex-wrap gap-2">
-            {priorityOptions.map(priority => (
-              <Badge
+            {['high', 'medium', 'low'].map(priority => (
+              <Button
                 key={priority}
                 variant={filters.priority.includes(priority) ? "default" : "outline"}
-                className={`cursor-pointer transition-colors ${
-                  filters.priority.includes(priority) 
-                    ? 'bg-neon-purple text-white' 
-                    : 'hover:bg-white/10'
-                }`}
-                onClick={() => handlePriorityToggle(priority)}
+                size="sm"
+                onClick={() => toggleArrayFilter('priority', priority)}
+                className="text-xs"
               >
                 {priority}
-              </Badge>
+              </Button>
             ))}
           </div>
         </div>
 
-        {/* AIO Friendly Filter */}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="aio-friendly" className="text-sm font-medium">
-            AIO Friendly Only
-          </Label>
-          <Switch
-            id="aio-friendly"
-            checked={filters.aioFriendly === true}
-            onCheckedChange={(checked) => 
-              onFiltersChange({ ...filters, aioFriendly: checked ? true : undefined })
-            }
-          />
+        {/* Search Intent Filter */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Search Intent</Label>
+          <div className="flex flex-wrap gap-2">
+            {['informational', 'navigational', 'transactional', 'commercial'].map(intent => (
+              <Button
+                key={intent}
+                variant={filters.searchIntent?.includes(intent) ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleArrayFilter('searchIntent', intent)}
+                className="text-xs"
+              >
+                {intent}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* AIO Friendly */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4 text-purple-500" />
+              <Label className="text-sm">AIO-Friendly Only</Label>
+            </div>
+            <Switch
+              checked={filters.aioFriendly}
+              onCheckedChange={(checked) => updateFilter('aioFriendly', checked)}
+            />
+          </div>
+
+          {/* Competitor Analysis */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-500" />
+              <Label className="text-sm">Has Competitor Analysis</Label>
+            </div>
+            <Switch
+              checked={filters.hasCompetitorAnalysis || false}
+              onCheckedChange={(checked) => updateFilter('hasCompetitorAnalysis', checked)}
+            />
+          </div>
         </div>
 
         {/* Difficulty Range */}
-        <div>
-          <Label className="text-sm font-medium mb-3 block">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
             Max Keyword Difficulty: {filters.maxDifficulty}
           </Label>
           <Slider
             value={[filters.maxDifficulty]}
-            onValueChange={([value]) => 
-              onFiltersChange({ ...filters, maxDifficulty: value })
-            }
+            onValueChange={([value]) => updateFilter('maxDifficulty', value)}
             max={100}
-            min={1}
-            step={1}
+            min={0}
+            step={5}
             className="w-full"
           />
         </div>
 
         {/* Volume Range */}
-        <div>
-          <Label className="text-sm font-medium mb-3 block">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
             Min Search Volume: {filters.minVolume.toLocaleString()}
           </Label>
           <Slider
             value={[filters.minVolume]}
-            onValueChange={([value]) => 
-              onFiltersChange({ ...filters, minVolume: value })
-            }
+            onValueChange={([value]) => updateFilter('minVolume', value)}
             max={10000}
             min={0}
             step={100}

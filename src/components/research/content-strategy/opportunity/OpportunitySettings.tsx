@@ -1,36 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { type OpportunityUserSettings, opportunityHunterService } from '@/services/opportunityHunterService';
-import { toast } from 'sonner';
 import { Settings, Save, Plus, X } from 'lucide-react';
+import { opportunityHunterService, OpportunityUserSettings } from '@/services/opportunityHunterService';
+import { toast } from 'sonner';
 
 export const OpportunitySettingsPanel: React.FC = () => {
-  const [settings, setSettings] = useState<OpportunityUserSettings>({
-    user_id: '',
-    scan_frequency: 'daily',
-    min_search_volume: 100,
-    max_keyword_difficulty: 50,
-    notification_channels: ['in_app'],
-    excluded_keywords: [],
-    preferred_content_formats: ['blog', 'guide', 'faq'],
-    auto_generate_briefs: true,
-    aio_friendly_only: false,
-    trend_threshold: 0.2,
-    relevance_threshold: 0.6,
-    is_active: true
-  });
-  
+  const [settings, setSettings] = useState<OpportunityUserSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [newKeyword, setNewKeyword] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -38,62 +30,87 @@ export const OpportunitySettingsPanel: React.FC = () => {
 
   const loadSettings = async () => {
     try {
-      setIsLoading(true);
-      const userSettings = await opportunityHunterService.getSettings();
-      if (userSettings) {
-        setSettings(userSettings);
+      setLoading(true);
+      const data = await opportunityHunterService.getSettings();
+      if (data) {
+        setSettings(data);
+      } else {
+        // Set default settings
+        setSettings({
+          user_id: '',
+          scan_frequency: 'daily',
+          min_search_volume: 100,
+          max_keyword_difficulty: 70,
+          notification_channels: ['in_app'],
+          excluded_keywords: [],
+          preferred_content_formats: ['blog', 'guide'],
+          auto_generate_briefs: false,
+          aio_friendly_only: false,
+          trend_threshold: 5,
+          relevance_threshold: 0.7,
+          is_active: true
+        });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
       toast.error('Failed to load settings');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleSave = async () => {
+    if (!settings) return;
+    
     try {
-      setIsSaving(true);
+      setSaving(true);
       await opportunityHunterService.updateSettings(settings);
       toast.success('Settings saved successfully');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const handleAddExcludedKeyword = () => {
-    if (newKeyword.trim() && !settings.excluded_keywords.includes(newKeyword.trim())) {
-      setSettings(prev => ({
-        ...prev,
-        excluded_keywords: [...prev.excluded_keywords, newKeyword.trim()]
-      }));
-      setNewKeyword('');
-    }
+  const updateSetting = (key: keyof OpportunityUserSettings, value: any) => {
+    if (!settings) return;
+    setSettings({ ...settings, [key]: value });
   };
 
-  const handleRemoveExcludedKeyword = (keyword: string) => {
-    setSettings(prev => ({
-      ...prev,
-      excluded_keywords: prev.excluded_keywords.filter(k => k !== keyword)
-    }));
+  const addExcludedKeyword = () => {
+    if (!settings || !newKeyword.trim()) return;
+    const updated = [...settings.excluded_keywords, newKeyword.trim()];
+    updateSetting('excluded_keywords', updated);
+    setNewKeyword('');
   };
 
-  const handleFormatToggle = (format: string) => {
-    const isSelected = settings.preferred_content_formats.includes(format);
-    setSettings(prev => ({
-      ...prev,
-      preferred_content_formats: isSelected
-        ? prev.preferred_content_formats.filter(f => f !== format)
-        : [...prev.preferred_content_formats, format]
-    }));
+  const removeExcludedKeyword = (keyword: string) => {
+    if (!settings) return;
+    const updated = settings.excluded_keywords.filter(k => k !== keyword);
+    updateSetting('excluded_keywords', updated);
   };
 
-  const contentFormats = ['blog', 'guide', 'faq', 'listicle', 'case-study', 'tutorial', 'comparison'];
+  const toggleContentFormat = (format: string) => {
+    if (!settings) return;
+    const current = settings.preferred_content_formats;
+    const updated = current.includes(format)
+      ? current.filter(f => f !== format)
+      : [...current, format];
+    updateSetting('preferred_content_formats', updated);
+  };
 
-  if (isLoading) {
+  const toggleNotificationChannel = (channel: string) => {
+    if (!settings) return;
+    const current = settings.notification_channels;
+    const updated = current.includes(channel)
+      ? current.filter(c => c !== channel)
+      : [...current, channel];
+    updateSetting('notification_channels', updated);
+  };
+
+  if (loading || !settings) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin h-8 w-8 border-4 border-neon-purple border-t-transparent rounded-full"></div>
@@ -105,201 +122,180 @@ export const OpportunitySettingsPanel: React.FC = () => {
     <div className="space-y-6">
       <Card className="border-white/10 bg-glass">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Settings className="h-5 w-5 mr-2 text-neon-purple" />
-            OpportunityHunter Settings
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Opportunity Hunter Settings
           </CardTitle>
-          <CardDescription>
-            Configure how OpportunityHunter scans and notifies you about content opportunities
-          </CardDescription>
         </CardHeader>
-        
         <CardContent className="space-y-6">
-          {/* Scanning Frequency */}
-          <div>
-            <Label className="text-sm font-medium mb-3 block">Scan Frequency</Label>
-            <Select
-              value={settings.scan_frequency}
-              onValueChange={(value) => setSettings(prev => ({ ...prev, scan_frequency: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hourly">Hourly</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="manual">Manual Only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Volume and Difficulty Thresholds */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label className="text-sm font-medium mb-3 block">
-                Min Search Volume: {settings.min_search_volume.toLocaleString()}
-              </Label>
-              <Slider
-                value={[settings.min_search_volume]}
-                onValueChange={([value]) => setSettings(prev => ({ ...prev, min_search_volume: value }))}
-                max={10000}
-                min={0}
-                step={100}
-              />
-            </div>
+          {/* Scan Settings */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Scan Configuration</h3>
             
-            <div>
-              <Label className="text-sm font-medium mb-3 block">
-                Max Keyword Difficulty: {settings.max_keyword_difficulty}
-              </Label>
-              <Slider
-                value={[settings.max_keyword_difficulty]}
-                onValueChange={([value]) => setSettings(prev => ({ ...prev, max_keyword_difficulty: value }))}
-                max={100}
-                min={1}
-                step={1}
-              />
-            </div>
-          </div>
-
-          {/* Relevance and Trend Thresholds */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label className="text-sm font-medium mb-3 block">
-                Relevance Threshold: {Math.round(settings.relevance_threshold * 100)}%
-              </Label>
-              <Slider
-                value={[settings.relevance_threshold]}
-                onValueChange={([value]) => setSettings(prev => ({ ...prev, relevance_threshold: value }))}
-                max={1}
-                min={0}
-                step={0.1}
-              />
-            </div>
-            
-            <div>
-              <Label className="text-sm font-medium mb-3 block">
-                Trend Threshold: {Math.round(settings.trend_threshold * 100)}%
-              </Label>
-              <Slider
-                value={[settings.trend_threshold]}
-                onValueChange={([value]) => setSettings(prev => ({ ...prev, trend_threshold: value }))}
-                max={1}
-                min={0}
-                step={0.1}
-              />
-            </div>
-          </div>
-
-          {/* Content Format Preferences */}
-          <div>
-            <Label className="text-sm font-medium mb-3 block">Preferred Content Formats</Label>
-            <div className="flex flex-wrap gap-2">
-              {contentFormats.map(format => (
-                <Badge
-                  key={format}
-                  variant={settings.preferred_content_formats.includes(format) ? "default" : "outline"}
-                  className={`cursor-pointer transition-colors ${
-                    settings.preferred_content_formats.includes(format)
-                      ? 'bg-neon-purple text-white'
-                      : 'hover:bg-white/10'
-                  }`}
-                  onClick={() => handleFormatToggle(format)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Scan Frequency</Label>
+                <Select
+                  value={settings.scan_frequency}
+                  onValueChange={(value) => updateSetting('scan_frequency', value)}
                 >
-                  {format}
-                </Badge>
-              ))}
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="manual">Manual Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>Active Scanning</Label>
+                <Switch
+                  checked={settings.is_active}
+                  onCheckedChange={(checked) => updateSetting('is_active', checked)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>
+                  Minimum Search Volume: {settings.min_search_volume.toLocaleString()}
+                </Label>
+                <Slider
+                  value={[settings.min_search_volume]}
+                  onValueChange={([value]) => updateSetting('min_search_volume', value)}
+                  max={10000}
+                  min={0}
+                  step={50}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  Maximum Keyword Difficulty: {settings.max_keyword_difficulty}
+                </Label>
+                <Slider
+                  value={[settings.max_keyword_difficulty]}
+                  onValueChange={([value]) => updateSetting('max_keyword_difficulty', value)}
+                  max={100}
+                  min={0}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Content Preferences */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Content Preferences</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Preferred Content Formats</Label>
+                <div className="flex flex-wrap gap-2">
+                  {['blog', 'guide', 'tutorial', 'glossary', 'faq', 'video', 'infographic'].map(format => (
+                    <Button
+                      key={format}
+                      variant={settings.preferred_content_formats.includes(format) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleContentFormat(format)}
+                      className="text-xs"
+                    >
+                      {format}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between">
+                  <Label>Auto-generate Content Briefs</Label>
+                  <Switch
+                    checked={settings.auto_generate_briefs}
+                    onCheckedChange={(checked) => updateSetting('auto_generate_briefs', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label>AIO-Friendly Content Only</Label>
+                  <Switch
+                    checked={settings.aio_friendly_only}
+                    onCheckedChange={(checked) => updateSetting('aio_friendly_only', checked)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Notification Settings */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Notifications</h3>
+            
+            <div className="space-y-2">
+              <Label>Notification Channels</Label>
+              <div className="flex flex-wrap gap-2">
+                {['in_app', 'email', 'slack', 'webhook'].map(channel => (
+                  <Button
+                    key={channel}
+                    variant={settings.notification_channels.includes(channel) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleNotificationChannel(channel)}
+                    className="text-xs"
+                  >
+                    {channel.replace('_', ' ')}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Excluded Keywords */}
-          <div>
-            <Label className="text-sm font-medium mb-3 block">Excluded Keywords</Label>
-            <div className="flex gap-2 mb-3">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Excluded Keywords</h3>
+            
+            <div className="flex gap-2">
               <Input
-                placeholder="Add keyword to exclude"
+                placeholder="Add keyword to exclude..."
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddExcludedKeyword()}
+                onKeyPress={(e) => e.key === 'Enter' && addExcludedKeyword()}
               />
-              <Button onClick={handleAddExcludedKeyword} size="sm">
+              <Button onClick={addExcludedKeyword} size="sm">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {settings.excluded_keywords.map(keyword => (
-                <Badge key={keyword} variant="outline" className="pr-1">
-                  {keyword}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 ml-1 hover:bg-red-500/20"
-                    onClick={() => handleRemoveExcludedKeyword(keyword)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Toggles */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="font-medium">Auto-Generate Content Briefs</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically generate AI content briefs for new opportunities
-                </p>
+            
+            {settings.excluded_keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {settings.excluded_keywords.map((keyword, index) => (
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    {keyword}
+                    <button
+                      onClick={() => removeExcludedKeyword(keyword)}
+                      className="ml-1 hover:text-red-500"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
-              <Switch
-                checked={settings.auto_generate_briefs}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, auto_generate_briefs: checked }))
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="font-medium">AIO-Friendly Keywords Only</Label>
-                <p className="text-sm text-muted-foreground">
-                  Only show opportunities optimized for AI Overviews
-                </p>
-              </div>
-              <Switch
-                checked={settings.aio_friendly_only}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, aio_friendly_only: checked }))
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="font-medium">Enable OpportunityHunter</Label>
-                <p className="text-sm text-muted-foreground">
-                  Turn on/off automatic opportunity scanning
-                </p>
-              </div>
-              <Switch
-                checked={settings.is_active}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, is_active: checked }))
-                }
-              />
-            </div>
+            )}
           </div>
 
           {/* Save Button */}
           <div className="pt-4 border-t border-white/10">
             <Button
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={saving}
               className="bg-neon-purple hover:bg-neon-blue text-white"
             >
-              {isSaving ? (
+              {saving ? (
                 <>
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                   Saving...

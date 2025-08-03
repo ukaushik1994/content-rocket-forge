@@ -3,9 +3,18 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { type OpportunityNotification, opportunityHunterService } from '@/services/opportunityHunterService';
+import { 
+  Bell, 
+  CheckCircle, 
+  X, 
+  AlertTriangle, 
+  Info, 
+  TrendingUp,
+  Clock
+} from 'lucide-react';
+import { OpportunityNotification } from '@/services/opportunityHunterService';
+import { opportunityHunterService } from '@/services/opportunityHunterService';
 import { toast } from 'sonner';
-import { Bell, Eye, X, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface NotificationPanelProps {
@@ -23,7 +32,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       toast.success('Notification marked as read');
       onNotificationAction();
     } catch (error) {
-      console.error('Error marking notification as read:', error);
       toast.error('Failed to mark notification as read');
     }
   };
@@ -34,8 +42,54 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       toast.success('Notification dismissed');
       onNotificationAction();
     } catch (error) {
-      console.error('Error dismissing notification:', error);
       toast.error('Failed to dismiss notification');
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'new_opportunity':
+        return <TrendingUp className="h-4 w-4 text-green-500" />;
+      case 'high_priority':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'competitor_alert':
+        return <Info className="h-4 w-4 text-blue-500" />;
+      case 'deadline_reminder':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getNotificationTypeLabel = (type: string) => {
+    switch (type) {
+      case 'new_opportunity':
+        return 'New Opportunity';
+      case 'high_priority':
+        return 'High Priority';
+      case 'competitor_alert':
+        return 'Competitor Alert';
+      case 'deadline_reminder':
+        return 'Deadline Reminder';
+      default:
+        return 'Notification';
+    }
+  };
+
+  const getNotificationMessage = (notification: OpportunityNotification) => {
+    const metadata = notification.metadata || {};
+    
+    switch (notification.notification_type) {
+      case 'new_opportunity':
+        return `New opportunity discovered: "${metadata.keyword || 'Unknown keyword'}"`;
+      case 'high_priority':
+        return `High priority opportunity requires attention: "${metadata.keyword || 'Unknown keyword'}"`;
+      case 'competitor_alert':
+        return `Competitor movement detected for: "${metadata.keyword || 'Unknown keyword'}"`;
+      case 'deadline_reminder':
+        return `Deadline approaching for: "${metadata.keyword || 'Unknown keyword'}"`;
+      default:
+        return 'New notification received';
     }
   };
 
@@ -43,8 +97,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     return (
       <Card className="border-white/10 bg-glass">
         <CardContent className="p-8 text-center">
-          <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No New Notifications</h3>
+          <Bell className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium mb-2">No notifications</h3>
           <p className="text-muted-foreground">
             You're all caught up! New opportunity notifications will appear here.
           </p>
@@ -55,79 +109,65 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
   return (
     <div className="space-y-4">
-      {notifications.map((notification) => (
-        <Card key={notification.id} className="border-white/10 bg-glass">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                <Bell className="h-4 w-4 text-neon-purple mr-2" />
-                <CardTitle className="text-base">New Opportunity Detected</CardTitle>
-                <Badge className="ml-2 bg-blue-500/20 text-blue-300 border-blue-500/30">
-                  {notification.notification_type}
-                </Badge>
+      <Card className="border-white/10 bg-glass">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Notifications
+            <Badge variant="secondary">
+              {notifications.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className="flex items-start gap-4 p-4 border border-white/10 rounded-lg bg-black/20"
+            >
+              <div className="flex-shrink-0 mt-1">
+                {getNotificationIcon(notification.notification_type)}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleMarkRead(notification.id)}
-                  disabled={notification.status === 'read'}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDismiss(notification.id)}
-                  className="text-muted-foreground hover:text-red-400"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-3">
-            {notification.metadata && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Keyword:</span>
-                  <span className="text-neon-purple">{notification.metadata.keyword}</span>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <Badge variant="outline" className="text-xs">
+                    {getNotificationTypeLabel(notification.notification_type)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(notification.created_at), 'MMM d, HH:mm')}
+                  </span>
                 </div>
                 
-                {notification.metadata.opportunity_score && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Opportunity Score:</span>
-                    <span>{notification.metadata.opportunity_score}</span>
-                  </div>
-                )}
+                <p className="text-sm mb-3">
+                  {getNotificationMessage(notification)}
+                </p>
                 
-                {notification.metadata.priority && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Priority:</span>
-                    <Badge 
-                      className={
-                        notification.metadata.priority === 'high' 
-                          ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                          : notification.metadata.priority === 'medium'
-                          ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
-                          : 'bg-green-500/20 text-green-300 border-green-500/30'
-                      }
-                    >
-                      {notification.metadata.priority}
-                    </Badge>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleMarkRead(notification.id)}
+                    className="text-xs"
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Mark Read
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDismiss(notification.id)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Dismiss
+                  </Button>
+                </div>
               </div>
-            )}
-            
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Clock className="h-3 w-3 mr-1" />
-              {format(new Date(notification.created_at), 'MMM d, yyyy h:mm a')}
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };

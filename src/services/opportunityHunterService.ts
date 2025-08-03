@@ -144,9 +144,14 @@ class OpportunityHunterService {
     };
   }
 
+  // Scan for opportunities - public method
+  async scanOpportunities(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
+    return this.scanOpportunitiesWithCompetitorIntelligence(userId);
+  }
+
   // Enhanced scan with competitor intelligence
   async scanOpportunitiesWithCompetitorIntelligence(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
-    const { data, error } = await supabase.functions.invoke('opportunity-hunter', {
+    const { data, error } = await supabase.functions.invoke('enhanced-opportunity-hunter', {
       body: {
         action: 'enhanced_scan_opportunities',
         userId,
@@ -156,6 +161,25 @@ class OpportunityHunterService {
 
     if (error) throw error;
     return data;
+  }
+
+  // Generate brief - public method
+  async generateBrief(opportunityId: string): Promise<OpportunityBrief> {
+    return this.generateEnhancedBrief(opportunityId);
+  }
+
+  // Enhanced brief generation with competitor context
+  async generateEnhancedBrief(opportunityId: string): Promise<OpportunityBrief> {
+    const { data, error } = await supabase.functions.invoke('generate-enhanced-content-brief', {
+      body: {
+        opportunityId,
+        includeCompetitorAnalysis: true,
+        includeSemanticKeywords: true
+      }
+    });
+
+    if (error) throw error;
+    return data.brief;
   }
 
   // Analyze competitor for specific opportunity
@@ -170,16 +194,9 @@ class OpportunityHunterService {
     return data.competitor_analysis || [];
   }
 
-  // Generate content builder payload
   async generateContentBuilderPayload(opportunityId: string): Promise<ContentBuilderPayload> {
     const opportunity = await this.getOpportunityById(opportunityId);
     if (!opportunity) throw new Error('Opportunity not found');
-
-    // Get user's competitors for analysis
-    const { data: competitors } = await supabase
-      .from('company_competitors')
-      .select('*')
-      .eq('user_id', opportunity.user_id);
 
     const payload: ContentBuilderPayload = {
       keyword: opportunity.keyword,
@@ -210,7 +227,6 @@ class OpportunityHunterService {
       }
     };
 
-    // Update opportunity with payload and routing info
     await this.updateOpportunity(opportunityId, {
       content_builder_payload: payload,
       routed_to_content_builder: true,
@@ -220,11 +236,9 @@ class OpportunityHunterService {
     return payload;
   }
 
-  // Route opportunity to content builder
   async routeToContentBuilder(opportunityId: string): Promise<string> {
     const payload = await this.generateContentBuilderPayload(opportunityId);
     
-    // Store the payload in sessionStorage for content builder to pick up
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('contentBuilderPayload', JSON.stringify({
         source: 'opportunity_hunter',
@@ -236,7 +250,6 @@ class OpportunityHunterService {
     return `/content/builder?source=opportunity&id=${opportunityId}`;
   }
 
-  // Get opportunities with enhanced data
   async getOpportunities(): Promise<Opportunity[]> {
     const { data, error } = await supabase
       .from('content_opportunities')
@@ -250,7 +263,6 @@ class OpportunityHunterService {
     return (data || []).map(item => this.transformOpportunity(item));
   }
 
-  // Get filtered opportunities with competitor intelligence
   async getFilteredOpportunities(filters: {
     status?: string[];
     priority?: string[];
@@ -301,7 +313,6 @@ class OpportunityHunterService {
     return (data || []).map(item => this.transformOpportunity(item));
   }
 
-  // Update opportunity with enhanced fields
   async updateOpportunity(opportunityId: string, updates: Partial<Opportunity>): Promise<Opportunity> {
     const { data, error } = await supabase
       .from('content_opportunities')
@@ -314,21 +325,6 @@ class OpportunityHunterService {
     return this.transformOpportunity(data);
   }
 
-  // Enhanced brief generation with competitor context
-  async generateEnhancedBrief(opportunityId: string): Promise<OpportunityBrief> {
-    const { data, error } = await supabase.functions.invoke('generate-enhanced-content-brief', {
-      body: {
-        opportunityId,
-        includeCompetitorAnalysis: true,
-        includeSemanticKeywords: true
-      }
-    });
-
-    if (error) throw error;
-    return data.brief;
-  }
-
-  // Check for duplicate opportunities (prevent same keyword)
   async checkDuplicateOpportunity(keyword: string): Promise<boolean> {
     const { data, error } = await supabase
       .from('content_opportunities')
@@ -341,7 +337,6 @@ class OpportunityHunterService {
     return (data || []).length > 0;
   }
 
-  // Get single opportunity by ID with full data
   async getOpportunityById(opportunityId: string): Promise<Opportunity | null> {
     const { data, error } = await supabase
       .from('content_opportunities')
@@ -402,7 +397,6 @@ class OpportunityHunterService {
   }
 
   async updateSettings(settings: Partial<OpportunityUserSettings>): Promise<OpportunityUserSettings> {
-    // Ensure user_id is always present for upsert
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('User not authenticated');
 
