@@ -16,7 +16,8 @@ class EnhancedAIService {
   async processEnhancedMessage(
     message: string, 
     conversationHistory: EnhancedChatMessage[],
-    userId?: string
+    userId?: string,
+    onStreamUpdate?: (content: string) => void
   ): Promise<EnhancedChatMessage> {
     try {
       if (!userId) {
@@ -33,29 +34,71 @@ class EnhancedAIService {
       }));
       messages.push({ role: 'user', content: message });
 
-      // Call enhanced AI function
-      const response = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: {
+      // Create the streaming request
+      const response = await fetch(`https://iqiundzzcepmuykcnfbc.supabase.co/functions/v1/enhanced-ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxaXVuZHp6Y2VwbXV5a2NuZmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMTU0MTYsImV4cCI6MjA2MTc5MTQxNn0.k3PVN3ETBJ-ho4gtmTf8XisS-FbTwzTaAc62nL6cFtA`
+        },
+        body: JSON.stringify({
           messages,
           userId,
-          ...context
-        }
+          conversationId: `conv_${Date.now()}`,
+          solutions: context.solutions || [],
+          analytics: context.analytics || {},
+          workflowContext: this.workflowContext
+        })
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const { message: aiMessage, actions, visualData } = response.data;
+      let fullContent = '';
+      let finalData: any = {};
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.type === 'content_delta') {
+                  fullContent = data.fullMessage;
+                  onStreamUpdate?.(fullContent);
+                } else if (data.type === 'response_complete') {
+                  finalData = data;
+                } else if (data.type === 'error') {
+                  throw new Error(data.error);
+                }
+              } catch (e) {
+                console.error('Error parsing streaming data:', e);
+              }
+            }
+          }
+        }
+      }
 
       // Create enhanced message
       const enhancedMessage: EnhancedChatMessage = {
         id: `enhanced-${Date.now()}`,
         role: 'assistant',
-        content: aiMessage,
+        content: finalData.message || fullContent || 'Response received',
         timestamp: new Date(),
-        actions: actions || [],
-        visualData: visualData || null,
+        actions: finalData.actions || [],
+        visualData: finalData.visualData || null,
       };
 
       return enhancedMessage;

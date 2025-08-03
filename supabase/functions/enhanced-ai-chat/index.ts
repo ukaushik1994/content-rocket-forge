@@ -98,19 +98,82 @@ Response format should include:
           ...messages
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        stream: true
       }),
     });
 
-    const data = await response.json();
-    const aiMessage = data.choices[0].message.content;
+    // Create a TransformStream to handle the streaming response
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    // Parse AI response for structured elements
-    const parsedResponse = parseAIResponse(aiMessage);
+    const stream = new ReadableStream({
+      async start(controller) {
+        let fullMessage = '';
+        
+        try {
+          const reader = response.body?.getReader();
+          if (!reader) throw new Error('No reader available');
 
-    return new Response(JSON.stringify(parsedResponse), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+                
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  
+                  if (content) {
+                    fullMessage += content;
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                      type: 'content_delta', 
+                      content,
+                      fullMessage 
+                    })}\n\n`));
+                  }
+                } catch (e) {
+                  console.error('Error parsing streaming chunk:', e);
+                }
+              }
+            }
+          }
+
+          // Parse final response for structured elements
+          const parsedResponse = parseAIResponse(fullMessage);
+          
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+            type: 'response_complete',
+            ...parsedResponse 
+          })}\n\n`));
+          
+        } catch (error) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+            type: 'error', 
+            error: error.message 
+          })}\n\n`));
+        } finally {
+          controller.close();
+        }
+      }
     });
+
+    return new Response(stream, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      },
+    });
+
   } catch (error) {
     console.error('Error in enhanced-ai-chat:', error);
     return new Response(JSON.stringify({ error: error.message }), {

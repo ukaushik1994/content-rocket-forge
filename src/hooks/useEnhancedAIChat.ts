@@ -35,17 +35,42 @@ export const useEnhancedAIChat = () => {
 
     setMessages(prev => [...prev, userMessage]);
 
+    // Add placeholder AI message for streaming
+    const placeholderAI: EnhancedChatMessage = {
+      id: `ai-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, placeholderAI]);
+
     try {
-      // Get enhanced AI response
+      // Get enhanced AI response with streaming
       const aiResponse = await enhancedAIService.processEnhancedMessage(
         content,
         [...messages, userMessage],
-        user.id
+        user.id,
+        // Stream update callback
+        (streamContent: string) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === placeholderAI.id 
+              ? { ...msg, content: streamContent }
+              : msg
+          ));
+        }
       );
 
-      setMessages(prev => [...prev, aiResponse]);
+      // Update with final response
+      setMessages(prev => prev.map(msg => 
+        msg.id === placeholderAI.id ? aiResponse : msg
+      ));
     } catch (error) {
       console.error('Error sending enhanced message:', error);
+      
+      // Remove placeholder and show error
+      setMessages(prev => prev.filter(msg => msg.id !== placeholderAI.id));
+      
       toast({
         title: "Error",
         description: "Failed to send message",
