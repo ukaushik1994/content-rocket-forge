@@ -26,47 +26,7 @@ export interface ContentBuilderPayload {
   };
 }
 
-export interface Opportunity {
-  id: string;
-  user_id: string;
-  strategy_id?: string;
-  keyword: string;
-  search_volume?: number;
-  keyword_difficulty?: number;
-  competition_score?: number;
-  opportunity_score?: number;
-  relevance_score?: number;
-  content_format?: string;
-  content_format_reason?: string;
-  status: string;
-  source?: string;
-  serp_data?: any;
-  serp_analysis?: any;
-  content_gaps?: any[];
-  competitor_analysis?: CompetitorAnalysis[];
-  competitive_advantage?: string;
-  suggested_title?: string;
-  suggested_outline?: string[];
-  suggested_headings?: string[];
-  faq_opportunities?: Array<{ question: string; answer?: string }>;
-  related_keywords?: string[];
-  internal_link_opportunities?: any[];
-  is_aio_friendly?: boolean;
-  aio_score?: number;
-  trend_direction?: string;
-  priority: string;
-  search_intent?: string;
-  detected_at: string;
-  last_updated: string;
-  expires_at?: string;
-  assigned_to?: string;
-  notes?: string;
-  routed_to_content_builder?: boolean;
-  content_builder_payload?: ContentBuilderPayload;
-  routed_at?: string;
-  opportunity_briefs?: OpportunityBrief[];
-}
-
+// Simplified OpportunityBrief interface to break circular reference
 export interface OpportunityBrief {
   id: string;
   user_id: string;
@@ -89,6 +49,49 @@ export interface OpportunityBrief {
   updated_at: string;
 }
 
+// Main Opportunity interface - simplified to avoid circular references
+export interface Opportunity {
+  id: string;
+  user_id: string;
+  strategy_id?: string;
+  keyword: string;
+  search_volume?: number;
+  keyword_difficulty?: number;
+  competition_score?: number;
+  opportunity_score?: number;
+  relevance_score?: number;
+  content_format?: string;
+  content_format_reason?: string;
+  status: string;
+  source?: string;
+  serp_data?: Record<string, any>;
+  serp_analysis?: Record<string, any>;
+  content_gaps?: any[];
+  competitor_analysis?: CompetitorAnalysis[];
+  competitive_advantage?: string;
+  suggested_title?: string;
+  suggested_outline?: string[];
+  suggested_headings?: string[];
+  faq_opportunities?: Array<{ question: string; answer?: string }>;
+  related_keywords?: string[];
+  internal_link_opportunities?: string[];
+  is_aio_friendly?: boolean;
+  aio_score?: number;
+  trend_direction?: string;
+  priority: string;
+  search_intent?: string;
+  detected_at: string;
+  last_updated: string;
+  expires_at?: string;
+  assigned_to?: string;
+  notes?: string;
+  routed_to_content_builder?: boolean;
+  content_builder_payload?: ContentBuilderPayload;
+  routed_at?: string;
+  // Remove circular reference - we'll load briefs separately if needed
+  opportunity_briefs?: OpportunityBrief[];
+}
+
 export interface OpportunityNotification {
   id: string;
   user_id: string;
@@ -98,7 +101,7 @@ export interface OpportunityNotification {
   sent_at?: string;
   read_at?: string;
   dismissed_at?: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
   created_at: string;
 }
 
@@ -144,7 +147,7 @@ class OpportunityHunterService {
     };
   }
 
-  // Scan for opportunities - public method
+  // Public method - simple scan wrapper
   async scanOpportunities(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
     return this.scanOpportunitiesWithCompetitorIntelligence(userId);
   }
@@ -163,7 +166,7 @@ class OpportunityHunterService {
     return data;
   }
 
-  // Generate brief - public method
+  // Public method - simple brief generation wrapper
   async generateBrief(opportunityId: string): Promise<OpportunityBrief> {
     return this.generateEnhancedBrief(opportunityId);
   }
@@ -182,7 +185,6 @@ class OpportunityHunterService {
     return data.brief;
   }
 
-  // Analyze competitor for specific opportunity
   async analyzeCompetitors(opportunityId: string): Promise<CompetitorAnalysis[]> {
     const { data, error } = await supabase.functions.invoke('competitor-analyzer', {
       body: {
