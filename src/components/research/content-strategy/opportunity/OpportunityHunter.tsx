@@ -10,6 +10,7 @@ import { OpportunityMetrics } from './OpportunityMetrics';
 import { BriefModal } from './BriefModal';
 import { NotificationPanel } from './NotificationPanel';
 import { OpportunitySettingsPanel } from './OpportunitySettings';
+import { SeedKeywordManager } from './SeedKeywordManager';
 import { opportunityHunterService, type Opportunity, type OpportunityNotification } from '@/services/opportunityHunterService';
 import { toast } from 'sonner';
 import { Search, TrendingUp, Clock, Settings, RefreshCw, Brain, HelpCircle } from 'lucide-react';
@@ -147,6 +148,7 @@ export const OpportunityHunter: React.FC = () => {
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+            <TabsTrigger value="seeds">Seed Keywords</TabsTrigger>
             <TabsTrigger value="notifications" className="relative">
               Notifications
               {notifications.length > 0 && (
@@ -226,6 +228,10 @@ export const OpportunityHunter: React.FC = () => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="seeds">
+          <SeedKeywordManager />
         </TabsContent>
 
         <TabsContent value="notifications">
