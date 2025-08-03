@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
+// Simple interfaces without complex nested types
 export interface CompetitorAnalysis {
   competitor_name: string;
   competitor_url: string;
@@ -15,9 +15,9 @@ export interface ContentBuilderPayload {
   suggested_format: string;
   format_reason: string;
   title_suggestions: string[];
-  faq_opportunities: Array<{ question: string; answer?: string }>;
+  faq_opportunities: any[];
   suggested_headings: string[];
-  competitor_analysis: CompetitorAnalysis[];
+  competitor_analysis: any[];
   related_keywords: string[];
   internal_link_opportunities: string[];
   search_intent: string;
@@ -27,7 +27,6 @@ export interface ContentBuilderPayload {
   };
 }
 
-// Basic opportunity brief without circular references
 export interface OpportunityBrief {
   id: string;
   user_id: string;
@@ -36,7 +35,7 @@ export interface OpportunityBrief {
   content_type?: string;
   introduction?: string;
   outline?: string[];
-  faq_section?: Array<{ question: string; answer: string }>;
+  faq_section?: any[];
   internal_links?: string[];
   meta_title?: string;
   meta_description?: string;
@@ -50,7 +49,6 @@ export interface OpportunityBrief {
   updated_at: string;
 }
 
-// Main Opportunity interface - no circular references
 export interface Opportunity {
   id: string;
   user_id: string;
@@ -65,15 +63,15 @@ export interface Opportunity {
   content_format_reason?: string;
   status: string;
   source?: string;
-  serp_data?: Record<string, any>;
-  serp_analysis?: Record<string, any>;
+  serp_data?: any;
+  serp_analysis?: any;
   content_gaps?: any[];
-  competitor_analysis?: CompetitorAnalysis[];
+  competitor_analysis?: any[];
   competitive_advantage?: string;
   suggested_title?: string;
   suggested_outline?: string[];
   suggested_headings?: string[];
-  faq_opportunities?: Array<{ question: string; answer?: string }>;
+  faq_opportunities?: any[];
   related_keywords?: string[];
   internal_link_opportunities?: string[];
   is_aio_friendly?: boolean;
@@ -87,7 +85,7 @@ export interface Opportunity {
   assigned_to?: string;
   notes?: string;
   routed_to_content_builder?: boolean;
-  content_builder_payload?: ContentBuilderPayload;
+  content_builder_payload?: any;
   routed_at?: string;
 }
 
@@ -100,7 +98,7 @@ export interface OpportunityNotification {
   sent_at?: string;
   read_at?: string;
   dismissed_at?: string;
-  metadata?: Record<string, any>;
+  metadata?: any;
   created_at: string;
 }
 
@@ -121,88 +119,6 @@ export interface OpportunityUserSettings {
 }
 
 class OpportunityHunterService {
-  private transformOpportunity(data: any): Opportunity {
-    return {
-      ...data,
-      content_gaps: Array.isArray(data.content_gaps) ? data.content_gaps : [],
-      suggested_outline: Array.isArray(data.suggested_outline) ? data.suggested_outline : [],
-      suggested_headings: Array.isArray(data.suggested_headings) ? data.suggested_headings : [],
-      faq_opportunities: Array.isArray(data.faq_opportunities) ? data.faq_opportunities : [],
-      related_keywords: Array.isArray(data.related_keywords) ? data.related_keywords : [],
-      competitor_analysis: Array.isArray(data.competitor_analysis) ? data.competitor_analysis : [],
-      internal_link_opportunities: Array.isArray(data.internal_link_opportunities) ? data.internal_link_opportunities : [],
-      serp_data: data.serp_data || {},
-      serp_analysis: data.serp_analysis || {}
-    };
-  }
-
-  private transformBrief(data: any): OpportunityBrief {
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      opportunity_id: data.opportunity_id,
-      title: data.title,
-      content_type: data.content_type,
-      introduction: data.introduction,
-      outline: Array.isArray(data.outline) ? data.outline : [],
-      faq_section: Array.isArray(data.faq_section) ? data.faq_section : [],
-      internal_links: Array.isArray(data.internal_links) ? data.internal_links : [],
-      meta_title: data.meta_title,
-      meta_description: data.meta_description,
-      target_word_count: data.target_word_count,
-      content_brief: data.content_brief,
-      format: data.format,
-      ai_model_used: data.ai_model_used,
-      generation_prompt: data.generation_prompt,
-      status: data.status,
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-  }
-
-  private transformSettings(data: any): OpportunityUserSettings {
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      scan_frequency: data.scan_frequency || 'daily',
-      min_search_volume: data.min_search_volume || 100,
-      max_keyword_difficulty: data.max_keyword_difficulty || 70,
-      notification_channels: Array.isArray(data.notification_channels) ? data.notification_channels : ['in_app'],
-      excluded_keywords: Array.isArray(data.excluded_keywords) ? data.excluded_keywords : [],
-      preferred_content_formats: Array.isArray(data.preferred_content_formats) ? data.preferred_content_formats : ['blog', 'guide', 'faq'],
-      auto_generate_briefs: data.auto_generate_briefs || false,
-      aio_friendly_only: data.aio_friendly_only || false,
-      trend_threshold: data.trend_threshold || 5,
-      relevance_threshold: data.relevance_threshold || 70,
-      is_active: data.is_active !== false
-    };
-  }
-
-  private transformNotification(data: any): OpportunityNotification {
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      opportunity_id: data.opportunity_id,
-      notification_type: data.notification_type,
-      status: data.status,
-      sent_at: data.sent_at,
-      read_at: data.read_at,
-      dismissed_at: data.dismissed_at,
-      metadata: this.safeJsonToRecord(data.metadata),
-      created_at: data.created_at
-    };
-  }
-
-  private safeJsonToRecord(json: any): Record<string, any> {
-    if (json === null || json === undefined) {
-      return {};
-    }
-    if (typeof json === 'object' && !Array.isArray(json)) {
-      return json as Record<string, any>;
-    }
-    return {};
-  }
-
   // Public method - simple scan wrapper
   async scanOpportunities(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
     return this.scanOpportunitiesWithCompetitorIntelligence(userId);
@@ -315,57 +231,20 @@ class OpportunityHunterService {
       .order('detected_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(item => this.transformOpportunity(item));
+    return (data || []) as Opportunity[];
   }
 
-  async getFilteredOpportunities(filters: {
-    status?: string[];
-    priority?: string[];
-    aioFriendly?: boolean;
-    maxDifficulty?: number;
-    minVolume?: number;
-    searchIntent?: string[];
-    hasCompetitorAnalysis?: boolean;
-  }): Promise<Opportunity[]> {
-    let query = supabase
+  async getFilteredOpportunities(filters: any): Promise<any[]> {
+    const { data, error } = await supabase
       .from('content_opportunities')
-      .select('*');
-
-    if (filters.status?.length) {
-      query = query.in('status', filters.status);
-    }
-
-    if (filters.priority?.length) {
-      query = query.in('priority', filters.priority);
-    }
-
-    if (filters.aioFriendly !== undefined) {
-      query = query.eq('is_aio_friendly', filters.aioFriendly);
-    }
-
-    if (filters.maxDifficulty) {
-      query = query.lte('keyword_difficulty', filters.maxDifficulty);
-    }
-
-    if (filters.minVolume) {
-      query = query.gte('search_volume', filters.minVolume);
-    }
-
-    if (filters.searchIntent?.length) {
-      query = query.in('search_intent', filters.searchIntent);
-    }
-
-    if (filters.hasCompetitorAnalysis) {
-      query = query.not('competitor_analysis', 'eq', '[]');
-    }
-
-    const { data, error } = await query.order('detected_at', { ascending: false });
+      .select('*')
+      .order('detected_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(item => this.transformOpportunity(item));
+    return (data || []);
   }
 
-  async updateOpportunity(opportunityId: string, updates: Partial<Opportunity>): Promise<Opportunity> {
+  async updateOpportunity(opportunityId: string, updates: any): Promise<any> {
     const { data, error } = await supabase
       .from('content_opportunities')
       .update(updates)
@@ -374,7 +253,7 @@ class OpportunityHunterService {
       .single();
 
     if (error) throw error;
-    return this.transformOpportunity(data);
+    return data;
   }
 
   async checkDuplicateOpportunity(keyword: string): Promise<boolean> {
@@ -397,10 +276,9 @@ class OpportunityHunterService {
       .single();
 
     if (error) return null;
-    return this.transformOpportunity(data);
+    return data as Opportunity;
   }
 
-  // Separate method to get briefs for an opportunity
   async getBriefsByOpportunityId(opportunityId: string): Promise<OpportunityBrief[]> {
     const { data, error } = await supabase
       .from('opportunity_briefs')
@@ -409,7 +287,7 @@ class OpportunityHunterService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(item => this.transformBrief(item));
+    return (data || []) as OpportunityBrief[];
   }
 
   async getNotifications(): Promise<OpportunityNotification[]> {
@@ -420,7 +298,7 @@ class OpportunityHunterService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(item => this.transformNotification(item));
+    return (data || []) as OpportunityNotification[];
   }
 
   async markNotificationRead(notificationId: string): Promise<void> {
@@ -454,7 +332,7 @@ class OpportunityHunterService {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data ? this.transformSettings(data) : null;
+    return data as OpportunityUserSettings | null;
   }
 
   async updateSettings(settings: Partial<OpportunityUserSettings>): Promise<OpportunityUserSettings> {
@@ -473,7 +351,7 @@ class OpportunityHunterService {
       .single();
 
     if (error) throw error;
-    return this.transformSettings(data);
+    return data as OpportunityUserSettings;
   }
 
   async deleteOpportunity(opportunityId: string): Promise<void> {
