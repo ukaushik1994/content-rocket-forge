@@ -178,6 +178,31 @@ class OpportunityHunterService {
     };
   }
 
+  private transformNotification(data: any): OpportunityNotification {
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      opportunity_id: data.opportunity_id,
+      notification_type: data.notification_type,
+      status: data.status,
+      sent_at: data.sent_at,
+      read_at: data.read_at,
+      dismissed_at: data.dismissed_at,
+      metadata: this.safeJsonToRecord(data.metadata),
+      created_at: data.created_at
+    };
+  }
+
+  private safeJsonToRecord(json: any): Record<string, any> {
+    if (json === null || json === undefined) {
+      return {};
+    }
+    if (typeof json === 'object' && !Array.isArray(json)) {
+      return json as Record<string, any>;
+    }
+    return {};
+  }
+
   // Public method - simple scan wrapper
   async scanOpportunities(userId?: string): Promise<{ message: string; opportunities: Opportunity[] }> {
     return this.scanOpportunitiesWithCompetitorIntelligence(userId);
@@ -395,10 +420,7 @@ class OpportunityHunterService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(item => ({
-      ...item,
-      metadata: item.metadata || {}
-    }));
+    return (data || []).map(item => this.transformNotification(item));
   }
 
   async markNotificationRead(notificationId: string): Promise<void> {
