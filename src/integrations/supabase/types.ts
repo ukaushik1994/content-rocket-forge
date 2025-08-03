@@ -392,6 +392,57 @@ export type Database = {
           },
         ]
       }
+      company_competitors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          market_position: string | null
+          name: string
+          notes: string | null
+          priority_order: number | null
+          resources: Json | null
+          strengths: Json | null
+          updated_at: string
+          user_id: string
+          weaknesses: Json | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          market_position?: string | null
+          name: string
+          notes?: string | null
+          priority_order?: number | null
+          resources?: Json | null
+          strengths?: Json | null
+          updated_at?: string
+          user_id: string
+          weaknesses?: Json | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          market_position?: string | null
+          name?: string
+          notes?: string | null
+          priority_order?: number | null
+          resources?: Json | null
+          strengths?: Json | null
+          updated_at?: string
+          user_id?: string
+          weaknesses?: Json | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       company_info: {
         Row: {
           created_at: string

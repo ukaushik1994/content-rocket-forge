@@ -38,3 +38,26 @@ export interface BrandGuidelines {
   brandValues?: string | null;
   brandAssetsUrl: string | null;
 }
+
+export interface CompetitorResource {
+  title: string;
+  url: string;
+  category: 'website' | 'social_media' | 'documentation' | 'case_studies' | 'marketing' | 'other';
+}
+
+export interface CompanyCompetitor {
+  id: string;
+  userId: string;
+  name: string;
+  website?: string | null;
+  description?: string | null;
+  logoUrl?: string | null;
+  resources: CompetitorResource[];
+  marketPosition?: string | null;
+  strengths: string[];
+  weaknesses: string[];
+  notes?: string | null;
+  priorityOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}

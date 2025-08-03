@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { motion } from 'framer-motion';
 import { CompanyInfo, BrandGuidelines } from '@/contexts/content-builder/types/company-types';
+import { CompetitorSection } from '@/components/company/CompetitorSection';
 import { CompanySection } from '@/components/solutions/company';
 import { BrandGuidelinesDisplay } from '@/components/solutions/brand';
 import { Button } from '@/components/ui/button';
@@ -381,6 +382,11 @@ const Solutions = () => {
             companyId={companyInfo?.id || ''}
             onSave={handleSaveBrandGuidelines}
           />
+          
+          {/* Competitor Intelligence Section */}
+          {user && (
+            <CompetitorSection userId={user.id} />
+          )}
         </motion.div>
       </main>
     </motion.div>;
