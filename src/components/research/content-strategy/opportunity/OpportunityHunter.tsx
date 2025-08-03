@@ -6,20 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { OpportunityCard } from './OpportunityCard';
 import { OpportunityFilters } from './OpportunityFilters';
+import { OpportunityMetrics } from './OpportunityMetrics';
 import { BriefModal } from './BriefModal';
 import { NotificationPanel } from './NotificationPanel';
 import { OpportunitySettingsPanel } from './OpportunitySettings';
-import { opportunityHunterService, type Opportunity } from '@/services/opportunityHunterService';
+import { opportunityHunterService, type Opportunity, type OpportunityNotification } from '@/services/opportunityHunterService';
 import { toast } from 'sonner';
-import { Search, TrendingUp, Clock, Settings, RefreshCw, Brain } from 'lucide-react';
+import { Search, TrendingUp, Clock, Settings, RefreshCw, Brain, HelpCircle } from 'lucide-react';
+import { OpportunityHelpModal } from './OpportunityHelpModal';
 
 export const OpportunityHunter: React.FC = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
+  const [notifications, setNotifications] = useState<OpportunityNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showBriefModal, setShowBriefModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const [filters, setFilters] = useState({
     status: [] as string[],
@@ -31,6 +35,7 @@ export const OpportunityHunter: React.FC = () => {
 
   useEffect(() => {
     loadOpportunities();
+    loadNotifications();
   }, []);
 
   useEffect(() => {
@@ -47,6 +52,15 @@ export const OpportunityHunter: React.FC = () => {
       toast.error('Failed to load opportunities');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const data = await opportunityHunterService.getNotifications();
+      setNotifications(data);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
     }
   };
 
@@ -101,6 +115,10 @@ export const OpportunityHunter: React.FC = () => {
     }
   };
 
+  const handleNotificationAction = async () => {
+    await loadNotifications();
+  };
+
   const getStats = () => {
     const total = opportunities.length;
     const newCount = opportunities.filter(o => o.status === 'new').length;
@@ -122,82 +140,52 @@ export const OpportunityHunter: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-white/10 bg-glass">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Opportunities</p>
-              </div>
-              <Search className="h-8 w-8 text-neon-purple" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-glass">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{stats.newCount}</p>
-                <p className="text-sm text-muted-foreground">New This Week</p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-glass">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{stats.highPriority}</p>
-                <p className="text-sm text-muted-foreground">High Priority</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-orange-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-glass">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{stats.aioFriendly}</p>
-                <p className="text-sm text-muted-foreground">AIO-Friendly</p>
-              </div>
-              <Brain className="h-8 w-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Metrics Overview */}
+      <OpportunityMetrics opportunities={opportunities} />
 
       <Tabs defaultValue="opportunities" className="space-y-6">
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="notifications" className="relative">
+              Notifications
+              {notifications.length > 0 && (
+                <Badge className="ml-2 bg-red-500 text-white text-xs px-1 py-0 h-5 min-w-5">
+                  {notifications.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <Button
-            onClick={handleScanOpportunities}
-            disabled={scanning}
-            className="bg-neon-purple hover:bg-neon-blue text-white"
-          >
-            {scanning ? (
-              <>
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                Scanning...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Scan for Opportunities
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowHelpModal(true)}
+              variant="outline"
+              size="sm"
+            >
+              <HelpCircle className="h-4 w-4 mr-2" />
+              Help
+            </Button>
+            
+            <Button
+              onClick={handleScanOpportunities}
+              disabled={scanning}
+              className="bg-neon-purple hover:bg-neon-blue text-white"
+            >
+              {scanning ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                  Scanning...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Scan for Opportunities
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <TabsContent value="opportunities" className="space-y-6">
@@ -242,8 +230,8 @@ export const OpportunityHunter: React.FC = () => {
 
         <TabsContent value="notifications">
           <NotificationPanel 
-            notifications={[]}
-            onNotificationAction={() => {}}
+            notifications={notifications}
+            onNotificationAction={handleNotificationAction}
           />
         </TabsContent>
 
@@ -263,6 +251,12 @@ export const OpportunityHunter: React.FC = () => {
           }}
         />
       )}
+
+      {/* Help Modal */}
+      <OpportunityHelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+      />
     </div>
   );
 };
