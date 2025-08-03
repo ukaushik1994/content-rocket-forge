@@ -9,9 +9,9 @@ import {
   Swords, 
   BarChart3,
   Plus,
-  Search,
-  FileText,
-  Users
+  ArrowRight,
+  Zap,
+  TrendingUp
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,8 @@ interface QuickAction {
   description: string;
   icon: React.ComponentType<any>;
   route: string;
-  color: string;
+  gradient: string;
+  iconGradient: string;
 }
 
 const quickActions: QuickAction[] = [
@@ -32,7 +33,8 @@ const quickActions: QuickAction[] = [
     description: 'Start a new content strategy with AI guidance',
     icon: Target,
     route: '/research/content-strategy',
-    color: 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+    gradient: 'from-neon-blue/10 via-neon-blue/5 to-transparent',
+    iconGradient: 'from-neon-blue to-cyan-400'
   },
   {
     id: 'view-opportunities',
@@ -40,7 +42,8 @@ const quickActions: QuickAction[] = [
     description: 'Discover new content opportunities and gaps',
     icon: Eye,
     route: '/research/opportunity-hunter',
-    color: 'text-green-600 bg-green-50 hover:bg-green-100'
+    gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+    iconGradient: 'from-emerald-400 to-green-400'
   },
   {
     id: 'glossary-builder',
@@ -48,7 +51,8 @@ const quickActions: QuickAction[] = [
     description: 'Build comprehensive glossaries for your industry',
     icon: Book,
     route: '/glossary-builder',
-    color: 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+    gradient: 'from-neon-purple/10 via-neon-purple/5 to-transparent',
+    iconGradient: 'from-neon-purple to-purple-400'
   },
   {
     id: 'content-builder',
@@ -56,7 +60,8 @@ const quickActions: QuickAction[] = [
     description: 'Create and optimize content with AI assistance',
     icon: Brain,
     route: '/content-builder',
-    color: 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+    gradient: 'from-orange-500/10 via-orange-500/5 to-transparent',
+    iconGradient: 'from-orange-400 to-yellow-400'
   },
   {
     id: 'competitor-insights',
@@ -64,7 +69,8 @@ const quickActions: QuickAction[] = [
     description: 'Track and analyze competitor content strategies',
     icon: Swords,
     route: '/research/competitor-analysis',
-    color: 'text-red-600 bg-red-50 hover:bg-red-100'
+    gradient: 'from-red-500/10 via-red-500/5 to-transparent',
+    iconGradient: 'from-red-400 to-pink-400'
   },
   {
     id: 'performance-review',
@@ -72,7 +78,8 @@ const quickActions: QuickAction[] = [
     description: 'Analyze content performance and ROI metrics',
     icon: BarChart3,
     route: '/analytics',
-    color: 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+    gradient: 'from-neon-pink/10 via-neon-pink/5 to-transparent',
+    iconGradient: 'from-neon-pink to-pink-400'
   }
 ];
 
@@ -84,46 +91,136 @@ export const QuickActions = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 relative">
+      {/* Background Effects */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <motion.div 
+          className="absolute top-[10%] left-[20%] w-[300px] h-[300px] rounded-full bg-gradient-to-r from-neon-blue/20 via-neon-purple/15 to-transparent blur-[100px]"
+          animate={{
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-[20%] right-[15%] w-[250px] h-[250px] rounded-full bg-gradient-to-l from-neon-pink/15 via-neon-purple/10 to-transparent blur-[80px]"
+          animate={{
+            x: [0, -30, 0],
+            y: [0, 20, 0],
+            scale: [1, 0.8, 1],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut",
+            delay: 5
+          }}
+        />
+      </div>
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Quick Actions</h2>
-        <Button variant="outline" size="sm">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+          Quick Actions
+        </h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="border-white/20 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Customize
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Actions Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {quickActions.map((action, index) => (
           <motion.div
             key={action.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ 
+              delay: index * 0.1, 
+              duration: 0.6,
+              type: "spring",
+              stiffness: 100,
+              damping: 20
+            }}
+            whileHover={{ 
+              scale: 1.02, 
+              y: -5,
+              transition: { type: "spring", stiffness: 400, damping: 30 }
+            }}
+            whileTap={{ scale: 0.98 }}
           >
             <Card 
-              className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105"
+              className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full"
               onClick={() => handleActionClick(action.route)}
             >
-              <CardContent className="p-6">
-                <div className="flex flex-col items-start space-y-4">
-                  <div className={`p-3 rounded-lg ${action.color} transition-colors`}>
-                    <action.icon className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg text-foreground">
+              {/* Hover gradient overlay */}
+              <motion.div 
+                className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                initial={false}
+              />
+              
+              {/* Animated border effect */}
+              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className={`absolute inset-0 bg-gradient-to-r ${action.iconGradient} opacity-20 blur-xl`} />
+              </div>
+
+              <CardContent className="p-8 relative z-10 h-full flex flex-col">
+                <div className="flex flex-col items-start space-y-6 flex-1">
+                  {/* Icon */}
+                  <motion.div 
+                    className="relative"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center group-hover:border-white/40 transition-all duration-300 relative overflow-hidden">
+                      {/* Icon background glow */}
+                      <div className={`absolute inset-0 bg-gradient-to-r ${action.iconGradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
+                      
+                      <action.icon className={`w-8 h-8 text-white/70 group-hover:text-white transition-all duration-300 relative z-10`} />
+                    </div>
+                  </motion.div>
+                  
+                  {/* Content */}
+                  <div className="space-y-3 flex-1">
+                    <h3 className="font-bold text-xl text-white/90 group-hover:text-white transition-colors duration-300 leading-tight">
                       {action.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-white/60 group-hover:text-white/80 leading-relaxed transition-colors duration-300 flex-1">
                       {action.description}
                     </p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    className="text-primary hover:text-primary/80 p-0 h-auto font-medium"
+                  
+                  {/* Action Button */}
+                  <motion.div
+                    className="w-full"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   >
-                    Get Started →
-                  </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-between text-white/80 hover:text-white hover:bg-white/10 p-0 h-auto font-medium text-base group/btn"
+                    >
+                      <span>Get Started</span>
+                      <motion.div
+                        whileHover={{ x: 4 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      >
+                        <ArrowRight className="w-5 h-5 group-hover/btn:text-white transition-colors" />
+                      </motion.div>
+                    </Button>
+                  </motion.div>
                 </div>
               </CardContent>
             </Card>
