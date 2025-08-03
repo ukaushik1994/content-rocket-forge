@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import { EnhancedWelcomeSection } from '@/components/dashboard/EnhancedWelcomeSection';
-import { EnhancedQuickActions } from '@/components/dashboard/EnhancedQuickActions';
-import { EnhancedPerformanceSection } from '@/components/dashboard/EnhancedPerformanceSection';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { GrandTourProvider } from '@/contexts/GrandTourContext';
 import { GrandAppTour } from '@/components/tour/GrandAppTour';
@@ -159,38 +159,24 @@ const Index = () => {
                 />
               </motion.section>
               
-              {/* Enhanced Quick Actions */}
+              {/* Quick Actions */}
               <motion.section variants={sectionVariants}>
-                <div className="space-y-6">
-                  <motion.div 
-                    className="flex items-center justify-between"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6, duration: 0.6 }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-neon-purple/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/10">
-                        <div className="h-3 w-3 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue" />
-                      </div>
-                      <h2 className="text-2xl font-semibold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
-                        Quick Actions
-                      </h2>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-sm text-white/60">
-                        Choose your next step
-                      </div>
-                      <GrandTourTrigger variant="inline" size="sm" />
-                    </div>
-                  </motion.div>
-                  
-                  <EnhancedQuickActions navigate={navigate} />
-                </div>
+                <QuickActions />
               </motion.section>
               
-              {/* Enhanced Performance Section */}
+              {/* Strategic Momentum Panel */}
               <motion.section variants={sectionVariants}>
-                <EnhancedPerformanceSection />
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-neon-purple/30 to-neon-blue/30 flex items-center justify-center backdrop-blur-xl border border-white/10">
+                      <div className="h-3 w-3 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue" />
+                    </div>
+                    <h2 className="text-2xl font-semibold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                      Strategic Momentum
+                    </h2>
+                  </div>
+                  <DashboardSummary />
+                </div>
               </motion.section>
             </motion.div>
           </Container>

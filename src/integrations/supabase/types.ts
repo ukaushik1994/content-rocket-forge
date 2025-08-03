@@ -521,6 +521,36 @@ export type Database = {
         }
         Relationships: []
       }
+      content_activity_log: {
+        Row: {
+          action: string
+          content_id: string | null
+          content_type: string
+          id: string
+          metadata: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          content_id?: string | null
+          content_type: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          content_id?: string | null
+          content_type?: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_analytics: {
         Row: {
           analytics_data: Json | null
@@ -836,6 +866,42 @@ export type Database = {
           icon_type?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      content_goals: {
+        Row: {
+          created_at: string
+          goal_article: number | null
+          goal_blog: number | null
+          goal_glossary: number | null
+          goal_strategy: number | null
+          id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_article?: number | null
+          goal_blog?: number | null
+          goal_glossary?: number | null
+          goal_strategy?: number | null
+          id?: string
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_article?: number | null
+          goal_blog?: number | null
+          goal_glossary?: number | null
+          goal_strategy?: number | null
+          id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1165,6 +1231,42 @@ export type Database = {
           target_audience?: string | null
           timeline?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dashboard_alerts: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          category: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          user_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          user_id: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
           user_id?: string
         }
         Relationships: []
@@ -1605,6 +1707,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      performance_metrics: {
+        Row: {
+          avg_time_on_page: number | null
+          bounce_rate: number | null
+          cluster_id: string | null
+          content_id: string
+          content_type: string
+          conversions: number | null
+          created_at: string
+          id: string
+          traffic_last_30d: number | null
+          traffic_last_7d: number | null
+          updated_at: string
+        }
+        Insert: {
+          avg_time_on_page?: number | null
+          bounce_rate?: number | null
+          cluster_id?: string | null
+          content_id: string
+          content_type: string
+          conversions?: number | null
+          created_at?: string
+          id?: string
+          traffic_last_30d?: number | null
+          traffic_last_7d?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avg_time_on_page?: number | null
+          bounce_rate?: number | null
+          cluster_id?: string | null
+          content_id?: string
+          content_type?: string
+          conversions?: number | null
+          created_at?: string
+          id?: string
+          traffic_last_30d?: number | null
+          traffic_last_7d?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
