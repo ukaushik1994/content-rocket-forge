@@ -241,7 +241,10 @@ export const OpportunityHunter: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="notifications">
-          <NotificationPanel />
+          <NotificationPanel 
+            notifications={[]}
+            onNotificationAction={() => {}}
+          />
         </TabsContent>
 
         <TabsContent value="settings">

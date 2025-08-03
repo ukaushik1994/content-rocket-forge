@@ -17,11 +17,13 @@ interface OpportunityFiltersProps {
     minVolume: number;
   };
   onFiltersChange: (filters: any) => void;
+  totalCount: number;
 }
 
 export const OpportunityFilters: React.FC<OpportunityFiltersProps> = ({
   filters,
-  onFiltersChange
+  onFiltersChange,
+  totalCount
 }) => {
   const statusOptions = ['new', 'in_progress', 'scheduled', 'published', 'dismissed'];
   const priorityOptions = ['high', 'medium', 'low'];

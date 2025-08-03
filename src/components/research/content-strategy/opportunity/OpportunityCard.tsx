@@ -32,14 +32,16 @@ import { format } from 'date-fns';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
-  onUpdate: (id: string, updates: Partial<Opportunity>) => void;
-  onDelete: (id: string) => void;
+  onGenerateBrief: () => void;
+  onUpdateStatus: (status: string) => void;
+  onAddToCalendar: (date: string) => void;
 }
 
 export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opportunity,
-  onUpdate,
-  onDelete
+  onGenerateBrief,
+  onUpdateStatus,
+  onAddToCalendar
 }) => {
   const [showBrief, setShowBrief] = useState(false);
   const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
@@ -59,19 +61,13 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   };
 
   const handleStatusChange = (status: string) => {
-    onUpdate(opportunity.id, { status });
+    onUpdateStatus(status);
   };
 
   const handleAddToCalendar = async () => {
-    try {
-      const scheduledDate = new Date();
-      scheduledDate.setDate(scheduledDate.getDate() + 7); // Schedule for next week
-      await opportunityHunterService.addToCalendar(opportunity.id, scheduledDate.toISOString().split('T')[0]);
-      toast.success('Added to content calendar');
-    } catch (error) {
-      console.error('Error adding to calendar:', error);
-      toast.error('Failed to add to calendar');
-    }
+    const scheduledDate = new Date();
+    scheduledDate.setDate(scheduledDate.getDate() + 7); // Schedule for next week
+    onAddToCalendar(scheduledDate.toISOString().split('T')[0]);
   };
 
   const getStatusColor = (status: string) => {
@@ -140,9 +136,9 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleGenerateBrief} disabled={isGeneratingBrief}>
+                  <DropdownMenuItem onClick={onGenerateBrief}>
                     <FileText className="h-4 w-4 mr-2" />
-                    {isGeneratingBrief ? 'Generating...' : 'Generate Brief'}
+                    Generate Brief
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleAddToCalendar}>
                     <Calendar className="h-4 w-4 mr-2" />
@@ -159,11 +155,11 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
-                    onClick={() => onDelete(opportunity.id)}
+                    onClick={() => handleStatusChange('dismissed')}
                     className="text-red-400 hover:text-red-300"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    Archive
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -219,12 +215,11 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
           <div className="flex flex-wrap gap-2 pt-2">
             <Button
               size="sm"
-              onClick={handleGenerateBrief}
-              disabled={isGeneratingBrief}
+              onClick={onGenerateBrief}
               className="bg-neon-purple/20 hover:bg-neon-purple/30 text-neon-purple border border-neon-purple/30"
             >
               <FileText className="h-4 w-4 mr-2" />
-              {isGeneratingBrief ? 'Generating...' : 'Generate Brief'}
+              Generate Brief
             </Button>
             {opportunity.opportunity_briefs && opportunity.opportunity_briefs.length > 0 && (
               <Button
