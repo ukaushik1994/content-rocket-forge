@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -91,7 +92,7 @@ export const QuickActions = () => {
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="w-full space-y-6 relative">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <motion.div 
@@ -126,7 +127,7 @@ export const QuickActions = () => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between w-full">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
           Quick Actions
         </h2>
@@ -140,8 +141,8 @@ export const QuickActions = () => {
         </Button>
       </div>
       
-      {/* Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Actions Grid - Expanded to full width */}
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-6">
         {quickActions.map((action, index) => (
           <motion.div
             key={action.id}
@@ -160,9 +161,10 @@ export const QuickActions = () => {
               transition: { type: "spring", stiffness: 400, damping: 30 }
             }}
             whileTap={{ scale: 0.98 }}
+            className="w-full"
           >
             <Card 
-              className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full"
+              className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full w-full"
               onClick={() => handleActionClick(action.route)}
             >
               {/* Hover gradient overlay */}
@@ -176,8 +178,8 @@ export const QuickActions = () => {
                 <div className={`absolute inset-0 bg-gradient-to-r ${action.iconGradient} opacity-20 blur-xl`} />
               </div>
 
-              <CardContent className="p-8 relative z-10 h-full flex flex-col">
-                <div className="flex flex-col items-start space-y-6 flex-1">
+              <CardContent className="p-8 relative z-10 h-full flex flex-col w-full">
+                <div className="flex flex-col items-start space-y-6 flex-1 w-full">
                   {/* Icon */}
                   <motion.div 
                     className="relative"
@@ -193,7 +195,7 @@ export const QuickActions = () => {
                   </motion.div>
                   
                   {/* Content */}
-                  <div className="space-y-3 flex-1">
+                  <div className="space-y-3 flex-1 w-full">
                     <h3 className="font-bold text-xl text-white/90 group-hover:text-white transition-colors duration-300 leading-tight">
                       {action.title}
                     </h3>
