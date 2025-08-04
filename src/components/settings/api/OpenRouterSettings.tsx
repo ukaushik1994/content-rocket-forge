@@ -225,6 +225,8 @@ export const OpenRouterSettings = () => {
           api_key: apiKey,
           model: selectedModel,
           is_active: true
+        }, {
+          onConflict: 'user_id,provider'
         });
 
       if (error) throw error;
