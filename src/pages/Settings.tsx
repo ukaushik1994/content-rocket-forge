@@ -155,21 +155,12 @@ export default function Settings() {
           ))}
         </div>
 
-        {/* Animated mesh background */}
-        <motion.div 
+        {/* Static mesh background */}
+        <div 
           className="absolute inset-0 opacity-30"
           style={{
             background: 'linear-gradient(45deg, transparent 30%, rgba(155, 135, 245, 0.1) 50%, transparent 70%)',
             backgroundSize: '60px 60px',
-          }}
-          animate={{
-            backgroundPosition: ['0% 0%', '100% 100%'],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "linear",
           }}
         />
 
