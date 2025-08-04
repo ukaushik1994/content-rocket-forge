@@ -1433,6 +1433,51 @@ export type Database = {
           },
         ]
       }
+      llm_usage_logs: {
+        Row: {
+          completion_tokens: number | null
+          cost_estimate: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          model: string
+          prompt_tokens: number | null
+          provider: string
+          request_duration_ms: number | null
+          success: boolean
+          total_tokens: number | null
+          user_id: string
+        }
+        Insert: {
+          completion_tokens?: number | null
+          cost_estimate?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model: string
+          prompt_tokens?: number | null
+          provider: string
+          request_duration_ms?: number | null
+          success?: boolean
+          total_tokens?: number | null
+          user_id: string
+        }
+        Update: {
+          completion_tokens?: number | null
+          cost_estimate?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string
+          prompt_tokens?: number | null
+          provider?: string
+          request_duration_ms?: number | null
+          success?: boolean
+          total_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       opportunity_assignments: {
         Row: {
           assigned_at: string
@@ -2056,6 +2101,39 @@ export type Database = {
           id?: string
           metadata?: Json | null
           timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_llm_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          is_active: boolean
+          model: string | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          model?: string | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          model?: string | null
+          provider?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
