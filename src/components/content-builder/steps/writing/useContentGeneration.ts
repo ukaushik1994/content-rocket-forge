@@ -11,7 +11,7 @@ type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | '
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter'); // Default to OpenRouter
   const [availableProviders, setAvailableProviders] = useState<AiProvider[]>([]);
 
   // Load available providers and the default AI provider from user preferences
@@ -107,13 +107,15 @@ export function useContentGeneration() {
       
       // Try primary provider first
       try {
+        console.log(`🎯 Generating content with ${aiProvider}`);
         const chatResponse = await sendChatRequest(aiProvider, {
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
           ],
           temperature: 0.7,
-          maxTokens: 4000
+          maxTokens: 4000,
+          model: aiProvider === 'openrouter' ? 'openai/gpt-3.5-turbo' : undefined
         });
         
         if (chatResponse?.choices?.[0]?.message?.content) {
@@ -129,11 +131,14 @@ export function useContentGeneration() {
           }
           
           setContent(finalContent);
-          toast.success('Content generated successfully with SERP insights');
+          toast.success(`Content generated successfully with ${aiProvider}!`);
           return true;
+        } else {
+          throw new Error('No content generated from API response');
         }
       } catch (error) {
-        console.error(`Error with primary provider ${aiProvider}:`, error);
+        console.error(`❌ Error with primary provider ${aiProvider}:`, error);
+        toast.error(`${aiProvider} failed. ${enableFallback ? 'Trying fallback providers...' : 'Please check your API key or try another provider.'}`);
       }
       
       // If primary provider failed and fallback is enabled, try other providers
@@ -142,7 +147,7 @@ export function useContentGeneration() {
         
         for (const fallbackProvider of fallbackProviders) {
           try {
-            console.log(`Primary provider ${aiProvider} failed, trying fallback provider ${fallbackProvider}`);
+            console.log(`🔄 Primary provider ${aiProvider} failed, trying fallback provider ${fallbackProvider}`);
             
             const fallbackResponse = await sendChatRequest(fallbackProvider, {
               messages: [
@@ -150,18 +155,28 @@ export function useContentGeneration() {
                 { role: 'user', content: prompt }
               ],
               temperature: 0.7,
-              maxTokens: 4000
+              maxTokens: 4000,
+              model: fallbackProvider === 'openrouter' ? 'openai/gpt-3.5-turbo' : undefined
             });
             
             if (fallbackResponse?.choices?.[0]?.message?.content) {
               // Use the AI-generated content from fallback
               const generatedContent = fallbackResponse.choices[0].message.content;
-              setContent(generatedContent);
-              toast.success(`Content generated successfully using ${fallbackProvider} as fallback`);
+              
+              // If content doesn't start with the title as an H1, add it
+              let finalContent = generatedContent;
+              const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
+              
+              if (!finalContent.trim().startsWith('#')) {
+                finalContent = `${titleAsH1}\n\n${finalContent}`;
+              }
+              
+              setContent(finalContent);
+              toast.success(`✅ Content generated using ${fallbackProvider} as fallback`);
               return true;
             }
           } catch (fallbackError) {
-            console.error(`Fallback provider ${fallbackProvider} also failed:`, fallbackError);
+            console.error(`❌ Fallback provider ${fallbackProvider} also failed:`, fallbackError);
           }
         }
       }

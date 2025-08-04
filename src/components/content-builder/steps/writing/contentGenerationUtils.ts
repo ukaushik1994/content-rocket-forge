@@ -2,7 +2,8 @@
 import { OutlineSection, Solution } from '@/contexts/content-builder/types';
 
 /**
- * Generates demo content based on outline and keywords
+ * DEPRECATED: Mock content generation - use real AI instead
+ * This function should only be used as a last resort fallback
  */
 export const generateDemoContent = (
   title: string,
@@ -10,6 +11,7 @@ export const generateDemoContent = (
   outline: OutlineSection[],
   selectedSolution: Solution | null
 ): string => {
+  console.warn('⚠️ Using deprecated demo content generation. Please configure OpenRouter API key for real content generation.');
   // Create a title based on the main keyword if not provided
   const contentTitle = title || `Complete Guide to ${mainKeyword}`;
   

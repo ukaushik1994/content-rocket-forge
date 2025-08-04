@@ -49,14 +49,16 @@ export const generateContent = async (
     // Enhanced system prompt for better content quality
     const systemPrompt = createEnhancedSystemPrompt();
     
-    // Call the AI API via our service
+    // Call the AI API via our service - prioritize OpenRouter
+    console.log(`🚀 Generating content with ${aiProvider}`);
     const chatResponse = await sendChatRequest(aiProvider, {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      maxTokens: 4000
+      maxTokens: 4000,
+      model: aiProvider === 'openrouter' ? 'openai/gpt-3.5-turbo' : undefined
     });
     
     if (chatResponse?.choices?.[0]?.message?.content) {
