@@ -23,8 +23,8 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
   });
   
   // OpenAI keys - highest priority (specific pattern)
-  if (cleanKey.startsWith('sk-') && !cleanKey.startsWith('sk-ant-')) {
-    console.log('✅ Detected OpenAI API key format (sk- prefix, not Anthropic)');
+  if (cleanKey.startsWith('sk-') && !cleanKey.startsWith('sk-ant-') && !cleanKey.startsWith('sk-or-')) {
+    console.log('✅ Detected OpenAI API key format (sk- prefix, not Anthropic or OpenRouter)');
     return 'openai';
   }
   
@@ -32,6 +32,12 @@ export function detectApiKeyType(apiKey: string): ApiProvider | null {
   if (cleanKey.startsWith('sk-ant-')) {
     console.log('✅ Detected Anthropic API key format (sk-ant- prefix)');
     return 'anthropic';
+  }
+  
+  // OpenRouter keys - specific pattern
+  if (cleanKey.startsWith('sk-or-')) {
+    console.log('✅ Detected OpenRouter API key format (sk-or- prefix)');
+    return 'openrouter';
   }
   
   // Gemini keys - specific length and pattern
@@ -114,9 +120,10 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
       case 'openai':
         const isOpenAiStart = cleanKey.startsWith('sk-');
         const isNotAnthropic = !cleanKey.startsWith('sk-ant-');
+        const isNotOpenRouter = !cleanKey.startsWith('sk-or-');
         const isOpenAiLength = cleanKey.length > 20;
-        validationDetails = `starts with sk-: ${isOpenAiStart}, not Anthropic: ${isNotAnthropic}, length > 20: ${isOpenAiLength}`;
-        isValid = isOpenAiStart && isNotAnthropic && isOpenAiLength;
+        validationDetails = `starts with sk-: ${isOpenAiStart}, not Anthropic: ${isNotAnthropic}, not OpenRouter: ${isNotOpenRouter}, length > 20: ${isOpenAiLength}`;
+        isValid = isOpenAiStart && isNotAnthropic && isNotOpenRouter && isOpenAiLength;
         break;
       
       case 'anthropic':
@@ -161,6 +168,13 @@ export function validateApiKeyFormat(provider: ApiProvider | string, apiKey: str
         const isLmStudioLength = cleanKey.length >= 8;
         validationDetails = `length >= 8: ${isLmStudioLength}`;
         isValid = isLmStudioLength;
+        break;
+      
+      case 'openrouter':
+        const isOpenRouterStart = cleanKey.startsWith('sk-or-');
+        const isOpenRouterLength = cleanKey.length > 20;
+        validationDetails = `starts with sk-or-: ${isOpenRouterStart}, length > 20: ${isOpenRouterLength}`;
+        isValid = isOpenRouterStart && isOpenRouterLength;
         break;
       
       default:
@@ -240,6 +254,15 @@ export function getValidationErrorMessage(provider: ApiProvider, apiKey: string)
       }
       break;
     
+    case 'openrouter':
+      if (!cleanKey.startsWith('sk-or-')) {
+        return 'OpenRouter API keys must start with "sk-or-" (example: sk-or-abc123...)';
+      }
+      if (cleanKey.length <= 20) {
+        return 'OpenRouter API keys must be longer than 20 characters';
+      }
+      break;
+    
     default:
       return `Invalid ${provider} API key format. Please check the key and try again.`;
   }
@@ -251,7 +274,7 @@ export function getValidationErrorMessage(provider: ApiProvider, apiKey: string)
  * Debug function to test API key against all providers
  */
 export function debugApiKeyFormat(apiKey: string): Record<string, { matches: boolean; details: string }> {
-  const providers: ApiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'serp', 'serpstack', 'lmstudio'];
+  const providers: ApiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'serp', 'serpstack', 'lmstudio', 'openrouter'];
   const results: Record<string, { matches: boolean; details: string }> = {};
   
   console.log('🐛 Debug: Testing API key against all providers');
