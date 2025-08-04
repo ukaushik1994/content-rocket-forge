@@ -18,7 +18,7 @@ export function ProviderStatusIndicator({
   showFallbackIndicator = true 
 }: ProviderStatusIndicatorProps) {
   const { enabled: fallbackEnabled } = getFallbackConfig();
-  const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openai';
+  const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openrouter';
   const isFallbackActive = fallbackEnabled && showFallbackIndicator && selectedProvider !== defaultProvider;
   
   const getProviderIcon = (provider: AiProvider) => {

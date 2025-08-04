@@ -18,7 +18,7 @@ interface DefaultAiProviderSelectorProps {
 }
 
 export function DefaultAiProviderSelector({ 
-  defaultAiProvider = 'openai',
+  defaultAiProvider = 'openrouter',
   onDefaultAiProviderChange
 }: DefaultAiProviderSelectorProps) {
   const [enableFallback, setEnableFallback] = useState<boolean>(false);
@@ -45,14 +45,14 @@ export function DefaultAiProviderSelector({
   const checkProviderStatus = async () => {
     setCheckingStatus(true);
     
-    const providers: AiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'];
+    const providers: AiProvider[] = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
     const statusResults: Record<string, boolean> = {
-      openai: false,
+      openrouter: false,
       anthropic: false,
+      openai: false,
       gemini: false,
       mistral: false,
-      lmstudio: false,
-      openrouter: false
+      lmstudio: false
     };
     
     for (const provider of providers) {
@@ -149,11 +149,14 @@ export function DefaultAiProviderSelector({
           className="flex flex-col sm:flex-row gap-4 flex-wrap"
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="openai" id="openai" />
-            <Label htmlFor="openai" className="flex items-center gap-2 cursor-pointer">
-              {getProviderDetails('openai').icon}
-              <span>OpenAI</span>
-              {getProviderDetails('openai').statusBadge}
+            <RadioGroupItem value="openrouter" id="openrouter" />
+            <Label htmlFor="openrouter" className="flex items-center gap-2 cursor-pointer">
+              {getProviderDetails('openrouter').icon}
+              <span>OpenRouter</span>
+              <Badge variant="outline" className="ml-1 text-xs bg-cyan-950/30 text-cyan-400 border-cyan-400/30">
+                Recommended
+              </Badge>
+              {getProviderDetails('openrouter').statusBadge}
             </Label>
           </div>
           
@@ -163,6 +166,15 @@ export function DefaultAiProviderSelector({
               {getProviderDetails('anthropic').icon}
               <span>Claude</span>
               {getProviderDetails('anthropic').statusBadge}
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="openai" id="openai" />
+            <Label htmlFor="openai" className="flex items-center gap-2 cursor-pointer">
+              {getProviderDetails('openai').icon}
+              <span>OpenAI</span>
+              {getProviderDetails('openai').statusBadge}
             </Label>
           </div>
           
@@ -190,15 +202,6 @@ export function DefaultAiProviderSelector({
               {getProviderDetails('lmstudio').icon}
               <span>LM Studio</span>
               {getProviderDetails('lmstudio').statusBadge}
-            </Label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="openrouter" id="openrouter" />
-            <Label htmlFor="openrouter" className="flex items-center gap-2 cursor-pointer">
-              {getProviderDetails('openrouter').icon}
-              <span>OpenRouter</span>
-              {getProviderDetails('openrouter').statusBadge}
             </Label>
           </div>
         </RadioGroup>

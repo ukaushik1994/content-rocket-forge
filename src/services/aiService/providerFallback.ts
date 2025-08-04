@@ -8,22 +8,22 @@ import { AiProvider } from "./types";
  */
 export function getFallbackConfig() {
   const fallbackEnabled = getUserPreference('enableAiFallback') === true;
-  const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openai';
+  const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openrouter';
   
-  // Define fallback order depending on the primary provider
+  // Define fallback order depending on the primary provider - OpenRouter prioritized
   const fallbackProviders: Record<AiProvider, AiProvider[]> = {
-    'openai': ['anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'],
-    'anthropic': ['openai', 'gemini', 'mistral', 'lmstudio', 'openrouter'],
-    'gemini': ['openai', 'anthropic', 'mistral', 'lmstudio', 'openrouter'],
-    'mistral': ['openai', 'anthropic', 'gemini', 'lmstudio', 'openrouter'],
-    'lmstudio': ['openai', 'anthropic', 'gemini', 'mistral', 'openrouter'],
-    'openrouter': ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
+    'openrouter': ['anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'],
+    'anthropic': ['openrouter', 'openai', 'gemini', 'mistral', 'lmstudio'],
+    'openai': ['openrouter', 'anthropic', 'gemini', 'mistral', 'lmstudio'],
+    'gemini': ['openrouter', 'anthropic', 'openai', 'mistral', 'lmstudio'],
+    'mistral': ['openrouter', 'anthropic', 'openai', 'gemini', 'lmstudio'],
+    'lmstudio': ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral']
   };
   
   return {
     enabled: fallbackEnabled,
     defaultProvider,
-    fallbackProviders: fallbackProviders[defaultProvider] || ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio']
+    fallbackProviders: fallbackProviders[defaultProvider] || ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio']
   };
 }
 

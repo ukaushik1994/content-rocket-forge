@@ -206,7 +206,7 @@ export function APISettings() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [showOnlyConfigured, setShowOnlyConfigured] = useState(false);
-  const [defaultAiProvider, setDefaultAiProvider] = useState<'openai' | 'anthropic' | 'gemini' | undefined>(
+  const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>(
     undefined
   );
   
@@ -216,7 +216,7 @@ export function APISettings() {
     if (savedProvider) {
       setDefaultAiProvider(savedProvider);
     } else {
-      setDefaultAiProvider('openai');
+      setDefaultAiProvider('openrouter');
     }
   }, []);
 
@@ -228,7 +228,7 @@ export function APISettings() {
     );
   };
 
-  const handleDefaultAiProviderChange = async (provider: 'openai' | 'anthropic' | 'gemini') => {
+  const handleDefaultAiProviderChange = async (provider: 'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio') => {
     setDefaultAiProvider(provider);
     const success = await saveUserPreference('defaultAiProvider', provider);
     if (success) {

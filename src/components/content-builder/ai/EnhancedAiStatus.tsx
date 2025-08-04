@@ -26,15 +26,15 @@ interface EnhancedAiStatusProps {
   onStatusChange?: (status: AiApiStatus) => void;
 }
 
-const AI_PROVIDERS: AiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'];
+const AI_PROVIDERS: AiProvider[] = ['openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
 
 const PROVIDER_NAMES: Record<AiProvider, string> = {
-  openai: 'OpenAI',
+  openrouter: 'OpenRouter',
   anthropic: 'Anthropic',
+  openai: 'OpenAI',
   gemini: 'Gemini',
   mistral: 'Mistral',
-  lmstudio: 'LM Studio',
-  openrouter: 'OpenRouter'
+  lmstudio: 'LM Studio'
 };
 
 export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({

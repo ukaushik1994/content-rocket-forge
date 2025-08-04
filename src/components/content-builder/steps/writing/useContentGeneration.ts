@@ -5,42 +5,34 @@ import { sendChatRequest } from '@/services/aiService';
 import { ContentBuilderState, SerpSelection } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
+import { getAvailableProviders, getBestAvailableProvider, initializeProviderPreferences } from '@/services/providerAvailabilityService';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter';
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
   const [availableProviders, setAvailableProviders] = useState<AiProvider[]>([]);
 
   // Load available providers and the default AI provider from user preferences
   useEffect(() => {
     const loadProviders = async () => {
-      const providers: AiProvider[] = [];
+      // Initialize provider preferences (upgrades to OpenRouter if available)
+      await initializeProviderPreferences();
       
-      // Check which providers have API keys configured
-      const openaiKey = await getApiKey('openai');
-      const anthropicKey = await getApiKey('anthropic');
-      const geminiKey = await getApiKey('gemini');
-      const mistralKey = await getApiKey('mistral');
-      const lmstudioKey = await getApiKey('lmstudio');
-      const openrouterKey = await getApiKey('openrouter');
-      
-      if (openaiKey) providers.push('openai');
-      if (anthropicKey) providers.push('anthropic');
-      if (geminiKey) providers.push('gemini');
-      if (mistralKey) providers.push('mistral');
-      if (lmstudioKey) providers.push('lmstudio');
-      if (openrouterKey) providers.push('openrouter');
-      
+      // Use the new provider availability service
+      const providers = await getAvailableProviders();
       setAvailableProviders(providers);
       
-      // Set default provider from preferences or first available
+      // Set default provider from preferences or best available (OpenRouter prioritized)
       const defaultProvider = getUserPreference('defaultAiProvider');
       if (defaultProvider && providers.includes(defaultProvider)) {
         setAiProvider(defaultProvider);
-      } else if (providers.length > 0) {
-        setAiProvider(providers[0]);
+      } else {
+        const bestProvider = await getBestAvailableProvider();
+        if (bestProvider) {
+          setAiProvider(bestProvider);
+        }
       }
     };
     

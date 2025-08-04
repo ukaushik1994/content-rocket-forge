@@ -18,7 +18,7 @@ export async function hasApiKey(provider: ApiProvider): Promise<boolean> {
  * Get status of all API keys
  */
 export async function getAllApiKeysStatus(): Promise<Record<string, boolean>> {
-  const providers: ApiProvider[] = ['serp', 'serpstack', 'openai', 'anthropic', 'gemini', 'mistral', 'lmstudio'];
+  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
   const status: Record<string, boolean> = {};
 
   for (const provider of providers) {
