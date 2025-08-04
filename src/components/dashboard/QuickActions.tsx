@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,7 @@ export const QuickActions = () => {
   };
 
   return (
-    <div className="w-full space-y-6 relative">
+    <div className="w-full space-y-8 relative">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <motion.div 
@@ -128,7 +129,7 @@ export const QuickActions = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between w-full">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
           Quick Actions
         </h2>
         <Button 
@@ -141,8 +142,8 @@ export const QuickActions = () => {
         </Button>
       </div>
       
-      {/* Actions Grid - Expanded to full width */}
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-6">
+      {/* Actions Grid - Bigger tiles with better spacing */}
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {quickActions.map((action, index) => (
           <motion.div
             key={action.id}
@@ -157,14 +158,14 @@ export const QuickActions = () => {
             }}
             whileHover={{ 
               scale: 1.02, 
-              y: -5,
+              y: -8,
               transition: { type: "spring", stiffness: 400, damping: 30 }
             }}
             whileTap={{ scale: 0.98 }}
             className="w-full"
           >
             <Card 
-              className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full w-full"
+              className="glass-panel border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-500 cursor-pointer group overflow-hidden relative h-full w-full min-h-[280px]"
               onClick={() => handleActionClick(action.route)}
             >
               {/* Hover gradient overlay */}
@@ -178,33 +179,33 @@ export const QuickActions = () => {
                 <div className={`absolute inset-0 bg-gradient-to-r ${action.iconGradient} opacity-20 blur-xl`} />
               </div>
 
-              <CardContent className="p-8 relative z-10 h-full flex flex-col w-full">
-                <div className="flex flex-col items-start space-y-6 flex-1 w-full">
-                  {/* Icon */}
+              <CardContent className="p-10 relative z-10 h-full flex flex-col w-full">
+                <div className="flex flex-col items-start space-y-8 flex-1 w-full">
+                  {/* Icon - Much larger */}
                   <motion.div 
                     className="relative"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileHover={{ scale: 1.15, rotate: 5 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center group-hover:border-white/40 transition-all duration-300 relative overflow-hidden">
+                    <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center group-hover:border-white/40 transition-all duration-300 relative overflow-hidden">
                       {/* Icon background glow */}
                       <div className={`absolute inset-0 bg-gradient-to-r ${action.iconGradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
                       
-                      <action.icon className={`w-8 h-8 text-white/70 group-hover:text-white transition-all duration-300 relative z-10`} />
+                      <action.icon className={`w-12 h-12 text-white/70 group-hover:text-white transition-all duration-300 relative z-10`} />
                     </div>
                   </motion.div>
                   
-                  {/* Content */}
-                  <div className="space-y-3 flex-1 w-full">
-                    <h3 className="font-bold text-xl text-white/90 group-hover:text-white transition-colors duration-300 leading-tight">
+                  {/* Content - Better spacing */}
+                  <div className="space-y-4 flex-1 w-full">
+                    <h3 className="font-bold text-2xl text-white/90 group-hover:text-white transition-colors duration-300 leading-tight">
                       {action.title}
                     </h3>
-                    <p className="text-white/60 group-hover:text-white/80 leading-relaxed transition-colors duration-300 flex-1">
+                    <p className="text-white/60 group-hover:text-white/80 leading-relaxed transition-colors duration-300 flex-1 text-lg">
                       {action.description}
                     </p>
                   </div>
                   
-                  {/* Action Button */}
+                  {/* Action Button - Larger and more prominent */}
                   <motion.div
                     className="w-full"
                     whileHover={{ x: 4 }}
@@ -212,14 +213,14 @@ export const QuickActions = () => {
                   >
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-between text-white/80 hover:text-white hover:bg-white/10 p-0 h-auto font-medium text-base group/btn"
+                      className="w-full justify-between text-white/80 hover:text-white hover:bg-white/10 p-4 h-auto font-medium text-lg group/btn"
                     >
                       <span>Get Started</span>
                       <motion.div
                         whileHover={{ x: 4 }}
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                       >
-                        <ArrowRight className="w-5 h-5 group-hover/btn:text-white transition-colors" />
+                        <ArrowRight className="w-6 h-6 group-hover/btn:text-white transition-colors" />
                       </motion.div>
                     </Button>
                   </motion.div>
@@ -232,3 +233,4 @@ export const QuickActions = () => {
     </div>
   );
 };
+
