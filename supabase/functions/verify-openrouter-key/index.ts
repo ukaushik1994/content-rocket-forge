@@ -32,9 +32,7 @@ serve(async (req) => {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${api_key}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://localhost:3000", // Required by OpenRouter
-        "X-Title": "Content Rocket Forge" // Required by OpenRouter
+        "Content-Type": "application/json"
       }
     });
 

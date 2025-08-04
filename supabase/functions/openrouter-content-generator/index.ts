@@ -63,9 +63,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${userKey.api_key}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://localhost:3000',
-        'X-Title': 'Content Rocket Forge'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: selectedModel,

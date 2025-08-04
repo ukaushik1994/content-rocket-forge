@@ -25,11 +25,7 @@ interface ApiKeyInputProps {
 export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
   // For OpenRouter, use the special component with model detection
   if (provider.id === 'openrouter') {
-    return (
-      <Suspense fallback={<ApiKeyLoading />}>
-        <OpenRouterSettings />
-      </Suspense>
-    );
+    return <OpenRouterSettings />;
   }
 
   const [apiKey, setApiKey] = useState("");
