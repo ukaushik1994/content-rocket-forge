@@ -1,14 +1,15 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/auth/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ContentBuilderProvider } from "@/contexts/ContentBuilderContext";
 import { GlossaryBuilderProvider } from "@/contexts/glossary-builder/GlossaryBuilderContext";
 import { ContentProvider } from "@/contexts/content/ContentProvider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Home from "@/pages/Home";
+import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Settings from "@/pages/Settings";
 import Pricing from "@/pages/Pricing";
@@ -30,8 +31,8 @@ import AnalyticsDashboard from "@/pages/analytics/AnalyticsDashboard";
 import ApprovalWorkflow from "@/pages/approval/ApprovalWorkflow";
 import NotFound from "@/pages/NotFound";
 import Unauthorized from "@/pages/Unauthorized";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { GuestRoute } from "@/components/auth/GuestRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import GuestRoute from "@/components/auth/GuestRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,7 +58,7 @@ function App() {
                       <div className="min-h-screen bg-background">
                         <ErrorBoundary>
                           <Routes>
-                            <Route path="/" element={<Home />} />
+                            <Route path="/" element={<Index />} />
                             <Route path="/pricing" element={<Pricing />} />
                             <Route path="/contact" element={<Contact />} />
                             
