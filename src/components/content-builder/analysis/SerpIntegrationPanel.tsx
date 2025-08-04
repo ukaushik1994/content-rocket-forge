@@ -47,9 +47,9 @@ export const SerpIntegrationPanel: React.FC<SerpIntegrationPanelProps> = ({
     // Remove common words and extract meaningful terms
     const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those'];
     
-    const words = text.match(/\b\w{4,}\b/g) || [];
+    const words: string[] = text.match(/\b\w{4,}\b/g) || [];
     return words
-      .filter(word => !commonWords.includes(word.toLowerCase()))
+      .filter((word: string) => !commonWords.includes(word.toLowerCase()))
       .slice(0, 5); // Take first 5 meaningful words
   };
 
