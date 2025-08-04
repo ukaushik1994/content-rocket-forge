@@ -67,6 +67,38 @@
 }
 
 @layer utilities {
+  /* Enhanced background utilities */
+  .bg-300% {
+    background-size: 300% 300%;
+  }
+
+  .bg-grid {
+    background-size: 60px 60px;
+  }
+
+  /* Stunning scroll enhancements */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(155, 135, 245, 0.3) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(155, 135, 245, 0.3), rgba(51, 195, 240, 0.2));
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(155, 135, 245, 0.5), rgba(51, 195, 240, 0.3));
+  }
   .glass-panel {
     @apply backdrop-blur-xl bg-black/20 border border-white/10 shadow-2xl;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);

@@ -74,7 +74,7 @@ export function ProfileSettings() {
             </div>
           </CardHeader>
           <form onSubmit={handleUpdateProfile}>
-            <CardContent className="space-y-6">
+            <CardContent className="relative z-10 space-y-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">

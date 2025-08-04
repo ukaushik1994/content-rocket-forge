@@ -121,7 +121,7 @@ export function APISettings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-neon-purple/5">
+    <div className="w-full bg-gradient-to-br from-background via-background to-neon-purple/5 relative">
       {/* Quick Setup Wizard */}
       <QuickSetupWizard
         isOpen={showQuickSetup}
@@ -137,7 +137,7 @@ export function APISettings() {
       </div>
 
       <motion.div 
-        className="relative z-10 space-y-8 max-w-7xl mx-auto"
+        className="relative z-10 space-y-8 w-full"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

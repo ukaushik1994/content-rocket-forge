@@ -117,99 +117,147 @@ export default function Settings() {
       
       <Navbar />
       
-      <main className="flex-1 container py-8">
-        {/* Hero Section */}
+      {/* Full-width immersive hero section */}
+      <section className="relative min-h-[40vh] w-full overflow-hidden bg-gradient-to-br from-neon-purple/30 via-background/90 to-neon-blue/20 border-b border-white/10">
+        {/* Multi-layer animated background */}
+        <div className="absolute inset-0 futuristic-grid opacity-20 bg-grid animate-pulse"></div>
+        
+        {/* Floating gradient orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full blur-2xl"
+              style={{
+                width: Math.random() * 300 + 100,
+                height: Math.random() * 300 + 100,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                background: i % 3 === 0 
+                  ? 'linear-gradient(45deg, rgba(155, 135, 245, 0.4), rgba(217, 70, 239, 0.2))' 
+                  : i % 3 === 1 
+                  ? 'linear-gradient(45deg, rgba(51, 195, 240, 0.3), rgba(155, 135, 245, 0.2))'
+                  : 'linear-gradient(45deg, rgba(217, 70, 239, 0.3), rgba(249, 115, 22, 0.2))',
+              }}
+              animate={{
+                x: [0, Math.random() * 100 - 50],
+                y: [0, Math.random() * 100 - 50],
+                scale: [1, 1.2, 1],
+                opacity: [0.2, 0.6, 0.2],
+              }}
+              transition={{
+                duration: Math.random() * 20 + 20,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Animated mesh background */}
         <motion.div 
-          variants={itemVariants}
-          className="relative overflow-hidden rounded-xl bg-gradient-to-br from-neon-purple/20 via-background to-neon-blue/10 p-8 mb-8 border border-white/10"
-        >
-          {/* Enhanced background elements */}
-          <div className="absolute inset-0 futuristic-grid opacity-10 z-0" />
-          
-          {/* Animated gradient background */}
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-neon-purple/10 to-neon-blue/5 z-0"
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              background: [
-                "linear-gradient(to bottom right, rgba(155, 135, 245, 0.1), rgba(51, 195, 240, 0.05))",
-                "linear-gradient(to bottom right, rgba(155, 135, 245, 0.15), rgba(51, 195, 240, 0.07))",
-                "linear-gradient(to bottom right, rgba(155, 135, 245, 0.1), rgba(51, 195, 240, 0.05))"
-              ]
-            }}
-            transition={{ 
-              duration: 8, 
-              repeat: Infinity, 
-              repeatType: "reverse" 
-            }}
-          />
-          
-          {/* Animated particles */}
-          <motion.div 
-            className="absolute inset-0 z-0 overflow-hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            transition={{ delay: 0.5, duration: 1 }}
-          >
-            {[...Array(5)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full bg-neon-blue/20 blur-md"
-                style={{
-                  width: Math.random() * 100 + 50,
-                  height: Math.random() * 100 + 50,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{
-                  x: [0, Math.random() * 50 - 25],
-                  y: [0, Math.random() * 50 - 25],
-                  opacity: [0.3, 0.7, 0.3],
-                }}
-                transition={{
-                  duration: Math.random() * 10 + 15,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </motion.div>
-          
-          <div className="relative z-10">
-            <div className="flex flex-col md:flex-row items-start justify-between gap-6">
-              <div className="space-y-4 max-w-2xl">
-                <motion.div variants={itemVariants} className="inline-block">
-                  <div className="flex items-center space-x-2 bg-neon-purple/20 rounded-full px-3 py-1 text-sm font-medium text-neon-purple">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>Account Configuration</span>
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: 'linear-gradient(45deg, transparent 30%, rgba(155, 135, 245, 0.1) 50%, transparent 70%)',
+            backgroundSize: '60px 60px',
+          }}
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "linear",
+          }}
+        />
+
+        {/* Content container */}
+        <div className="relative z-10 container mx-auto px-8 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div 
+              variants={itemVariants}
+              className="space-y-8"
+            >
+              <motion.div variants={itemVariants} className="inline-block">
+                <div className="flex items-center space-x-3 bg-gradient-to-r from-neon-purple/30 to-neon-blue/20 rounded-full px-6 py-3 border border-white/20 backdrop-blur-xl">
+                  <Sparkles className="h-5 w-5 text-neon-purple animate-pulse" />
+                  <span className="text-neon-purple font-semibold tracking-wide">ADVANCED CONFIGURATION</span>
+                </div>
+              </motion.div>
+              
+              <motion.h1 
+                variants={itemVariants} 
+                className="text-5xl lg:text-7xl font-black leading-tight"
+              >
+                <span className="bg-gradient-to-r from-white via-neon-purple to-neon-blue bg-clip-text text-transparent animate-gradient-shift bg-300%">
+                  Transform
+                </span>
+                <br />
+                <span className="text-white">Your Workflow</span>
+              </motion.h1>
+              
+              <motion.p 
+                variants={itemVariants} 
+                className="text-xl text-muted-foreground leading-relaxed max-w-lg"
+              >
+                Unlock the full potential of your content creation with advanced API integrations, personalized settings, and intelligent automation.
+              </motion.p>
+
+              <motion.div 
+                variants={itemVariants}
+                className="flex flex-wrap gap-4 pt-4"
+              >
+                {['8 Categories', 'Real-time Status', 'Auto-sync', 'Cloud Backup'].map((feature, index) => (
+                  <motion.div
+                    key={feature}
+                    className="flex items-center space-x-2 bg-glass/20 rounded-full px-4 py-2 border border-white/10 backdrop-blur-sm"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-neon-purple animate-pulse"></div>
+                    <span className="text-sm font-medium text-white/90">{feature}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+
+            {/* Stats section */}
+            <motion.div 
+              variants={itemVariants}
+              className="grid grid-cols-2 gap-6"
+            >
+              {[
+                { number: '8', label: 'Settings Categories', icon: SettingsIcon },
+                { number: '25+', label: 'API Integrations', icon: Sparkles },
+                { number: '99.9%', label: 'Uptime Guaranteed', icon: SettingsIcon },
+                { number: '24/7', label: 'Real-time Sync', icon: Sparkles },
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  className="relative group"
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1, type: "spring", stiffness: 100 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 to-neon-blue/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative bg-glass/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-center group-hover:bg-glass/20 transition-all duration-300">
+                    <stat.icon className="h-8 w-8 text-neon-purple mx-auto mb-3 animate-float" />
+                    <h3 className="text-3xl lg:text-4xl font-bold text-gradient mb-2">{stat.number}</h3>
+                    <p className="text-muted-foreground text-sm font-medium">{stat.label}</p>
                   </div>
                 </motion.div>
-                
-                <motion.h1 variants={itemVariants} className="text-3xl md:text-4xl font-bold text-gradient">
-                  Personalize Your Content Experience
-                </motion.h1>
-                
-                <motion.p variants={itemVariants} className="text-muted-foreground text-lg">
-                  Configure your account settings, API integrations, and preferences to optimize your content creation workflow.
-                </motion.p>
-              </div>
-              
-              <motion.div 
-                variants={itemVariants} 
-                className="bg-glass text-center p-4 rounded-xl border border-white/10 min-w-[140px] backdrop-blur-sm"
-              >
-                <h3 className="text-3xl md:text-4xl font-bold text-gradient mb-1">8</h3>
-                <p className="text-muted-foreground text-sm">
-                  Settings Categories
-                </p>
-              </motion.div>
-            </div>
+              ))}
+            </motion.div>
           </div>
-        </motion.div>
+        </div>
+      </section>
 
-        <motion.div variants={itemVariants}>
+      {/* Full-width main content */}
+      <main className="w-full">
+        <motion.div variants={itemVariants} className="w-full">
           <SettingsLayout
             activeTab={activeTab}
             onTabChange={handleTabChange}
