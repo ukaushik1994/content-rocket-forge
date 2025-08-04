@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { toast } from "sonner";
 import { 
   saveApiKey, 
@@ -16,12 +16,22 @@ import { ApiKeyStatus } from './ApiKeyStatus';
 import { ApiKeyForm } from './ApiKeyForm';
 import { ApiKeyActions } from './ApiKeyActions';
 import { ApiKeyLoading } from './ApiKeyLoading';
+import { OpenRouterSettings } from './OpenRouterSettings';
 
 interface ApiKeyInputProps {
   provider: ApiProviderType;
 }
 
 export const ApiKeyInput = ({ provider }: ApiKeyInputProps) => {
+  // For OpenRouter, use the special component with model detection
+  if (provider.id === 'openrouter') {
+    return (
+      <Suspense fallback={<ApiKeyLoading />}>
+        <OpenRouterSettings />
+      </Suspense>
+    );
+  }
+
   const [apiKey, setApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

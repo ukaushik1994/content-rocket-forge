@@ -73,3 +73,9 @@ verify_jwt = false
 
 [functions.api-test]
 verify_jwt = false
+
+[functions.verify-openrouter-key]
+verify_jwt = false
+
+[functions.openrouter-content-generator]
+verify_jwt = false

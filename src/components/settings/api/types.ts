@@ -28,6 +28,16 @@ import {
 
 export const API_PROVIDERS: ApiProvider[] = [
   {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    description: 'Access multiple AI models through a single API gateway',
+    serviceKey: 'openrouter',
+    icon: Brain,
+    link: 'https://openrouter.ai/keys',
+    required: false,
+    category: 'AI Services'
+  },
+  {
     id: 'openai',
     name: 'OpenAI',
     description: 'Advanced AI models for content generation and analysis',
