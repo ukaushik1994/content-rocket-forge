@@ -75,7 +75,7 @@ export const useEnhancedAIChat = () => {
   }, [messages, toast, user]);
 
   const handleAction = useCallback(async (action: string, data?: any) => {
-    if (!user) return;
+    if (!user || !action) return;
 
     if (action.startsWith('workflow:')) {
       const workflowAction = action.replace('workflow:', '');

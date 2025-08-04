@@ -40,6 +40,12 @@ verify_jwt = false
 [functions.google-analytics-fetch]
 verify_jwt = true
 
+[functions.ai-context-manager]
+verify_jwt = true
+
+[functions.enhanced-ai-chat]
+verify_jwt = true
+
 [db]
 port = 54322
 

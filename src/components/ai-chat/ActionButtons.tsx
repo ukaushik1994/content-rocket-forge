@@ -17,7 +17,9 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ actions, onAction 
 
   const handleActionClick = (action: ContextualAction) => {
     console.log('Action clicked:', action);
-    onAction(action.action, action.data);
+    if (action?.action) {
+      onAction(action.action, action.data);
+    }
   };
 
   return (
