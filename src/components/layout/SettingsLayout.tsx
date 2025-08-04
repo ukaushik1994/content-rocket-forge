@@ -42,7 +42,7 @@ export function SettingsLayout({ children, onTabChange, activeTab }: SettingsLay
     <div className="flex w-full min-h-screen">
       {/* Fixed Sidebar */}
       <aside className="fixed left-0 top-0 h-screen w-80 z-40 border-r border-white/10 bg-gradient-to-b from-background/95 via-background/90 to-neon-purple/5 backdrop-blur-xl">
-        <div className="p-6 h-full overflow-y-auto custom-scrollbar">
+        <div className="p-6 h-full">
           {/* Sidebar Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
