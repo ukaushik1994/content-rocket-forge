@@ -10,9 +10,9 @@ import { getUserPreference, saveUserPreference } from '@/services/userPreference
 const PROVIDER_PRIORITY: AiProvider[] = [
   'openrouter',
   'anthropic', 
-  'openai',
   'gemini',
   'mistral',
+  'openai',
   'lmstudio'
 ];
 
@@ -108,26 +108,30 @@ export function getFallbackProviders(primaryProvider: AiProvider): AiProvider[] 
 }
 
 /**
- * Initialize and upgrade user preferences to prioritize OpenRouter
- * This helps migrate users from OpenAI to OpenRouter when possible
+ * Initialize provider preferences with smart defaults (no OpenAI dependency)
+ * Automatically selects the best available provider without requiring OpenAI
  */
 export async function initializeProviderPreferences(): Promise<void> {
   const currentProvider = getUserPreference('defaultAiProvider');
   const availableProviders = await getAvailableProviders();
   
-  // If no provider is set, or if OpenAI is default but OpenRouter is available, upgrade
-  if (!currentProvider || (currentProvider === 'openai' && availableProviders.includes('openrouter'))) {
-    const bestProvider = await getBestAvailableProvider();
-    if (bestProvider) {
-      await saveUserPreference('defaultAiProvider', bestProvider);
-      console.log(`🔄 Upgraded default AI provider to ${bestProvider}`);
-    }
-  }
+  console.log(`📊 Available providers: ${availableProviders.join(', ')}`);
   
-  // Enable fallback by default if not set and multiple providers available
-  const fallbackEnabled = getUserPreference('enableAiFallback');
-  if (fallbackEnabled === undefined && availableProviders.length > 1) {
-    await saveUserPreference('enableAiFallback', true);
-    console.log('🔄 Enabled AI provider fallback by default');
+  if (availableProviders.length > 0) {
+    // If no provider is set or current provider is not available, set best available
+    if (!currentProvider || !availableProviders.includes(currentProvider)) {
+      const bestProvider = availableProviders[0]; // First in priority order
+      await saveUserPreference('defaultAiProvider', bestProvider);
+      console.log(`🎯 Set ${bestProvider} as default AI provider`);
+    }
+    
+    // Enable fallback by default if multiple providers available
+    const fallbackEnabled = getUserPreference('enableAiFallback');
+    if (fallbackEnabled === undefined && availableProviders.length > 1) {
+      await saveUserPreference('enableAiFallback', true);
+      console.log('🔄 Enabled AI provider fallback by default');
+    }
+  } else {
+    console.log('⚠️ No AI providers configured - user will need to set up at least one');
   }
 }

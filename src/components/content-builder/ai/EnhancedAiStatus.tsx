@@ -189,9 +189,9 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
         {workingProviders.length === 0 && (
           <div className="flex items-center justify-between p-3 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
             <div className="text-sm">
-              <p className="font-medium">Setup Required</p>
+              <p className="font-medium">AI Provider Setup Required</p>
               <p className="text-muted-foreground">
-                Configure at least one AI provider in Settings for content generation
+                Choose from OpenRouter (recommended), Anthropic, or other AI providers for content generation
               </p>
             </div>
             <Button
@@ -200,7 +200,7 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
               onClick={() => window.location.href = '/settings?tab=api'}
             >
               <Settings className="h-4 w-4 mr-1" />
-              Settings
+              Configure
             </Button>
           </div>
         )}

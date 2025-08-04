@@ -77,10 +77,10 @@ export const QuickSetupWizard = ({ isOpen, onClose, providers, onProviderSelect 
             </p>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="p-3 bg-muted/50 rounded-lg">
-                <strong>Required APIs:</strong> OpenAI, SERP API
+                <strong>Recommended:</strong> OpenRouter (AI), SERP API (SEO)
               </div>
               <div className="p-3 bg-muted/50 rounded-lg">
-                <strong>Optional APIs:</strong> Additional AI providers, analytics tools
+                <strong>Optional:</strong> Additional AI providers, analytics tools
               </div>
             </div>
           </div>

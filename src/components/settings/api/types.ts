@@ -44,7 +44,7 @@ export const API_PROVIDERS: ApiProvider[] = [
     serviceKey: 'openai',
     icon: Brain,
     link: 'https://platform.openai.com/api-keys',
-    required: true,
+    required: false,
     category: 'AI Services'
   },
   {
