@@ -142,13 +142,55 @@ export const LMSTUDIO_MODELS: AiModelInfo[] = [
   }
 ];
 
+// OpenRouter models for multi-provider access
+export const OPENROUTER_MODELS: AiModelInfo[] = [
+  {
+    id: 'openai/gpt-4o',
+    provider: 'openrouter',
+    name: 'GPT-4o (via OpenRouter)',
+    description: 'OpenAI GPT-4o through OpenRouter API',
+    maxTokens: 128000,
+    type: 'chat',
+    capabilities: ['text', 'vision', 'function-calling'],
+    isDefault: true
+  },
+  {
+    id: 'anthropic/claude-3.5-sonnet',
+    provider: 'openrouter',
+    name: 'Claude 3.5 Sonnet (via OpenRouter)',
+    description: 'Anthropic Claude 3.5 Sonnet through OpenRouter API',
+    maxTokens: 200000,
+    type: 'chat',
+    capabilities: ['text', 'vision']
+  },
+  {
+    id: 'meta-llama/llama-3.2-3b-instruct:free',
+    provider: 'openrouter',
+    name: 'LLaMA 3.2 3B Instruct (Free)',
+    description: 'Free Meta LLaMA 3.2 3B model via OpenRouter',
+    maxTokens: 131072,
+    type: 'chat',
+    capabilities: ['text']
+  },
+  {
+    id: 'deepseek/deepseek-chat',
+    provider: 'openrouter',
+    name: 'DeepSeek Chat',
+    description: 'DeepSeek conversational AI model',
+    maxTokens: 32768,
+    type: 'chat',
+    capabilities: ['text']
+  }
+];
+
 // Combined list of all models
 export const ALL_AI_MODELS: AiModelInfo[] = [
   ...OPENAI_MODELS,
   ...ANTHROPIC_MODELS,
   ...GEMINI_MODELS,
   ...MISTRAL_MODELS,
-  ...LMSTUDIO_MODELS
+  ...LMSTUDIO_MODELS,
+  ...OPENROUTER_MODELS
 ];
 
 // Helper function to get default model for a provider

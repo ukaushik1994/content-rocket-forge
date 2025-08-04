@@ -9,6 +9,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY");
+const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,6 +31,8 @@ serve(async (req) => {
       return await handleGeminiRequest(endpoint, params, apiKey);
     } else if (service === 'mistral') {
       return await handleMistralRequest(endpoint, params, apiKey);
+    } else if (service === 'openrouter') {
+      return await handleOpenRouterRequest(endpoint, params, apiKey);
     } else {
       return createErrorResponse(`Unsupported AI service: ${service}`, 400, service, endpoint);
     }
@@ -292,6 +295,59 @@ async function handleMistralRequest(endpoint: string, params: any, clientApiKey:
   return createErrorResponse(`Unsupported Mistral endpoint: ${endpoint}`, 400, 'mistral', endpoint);
 }
 
+// Handler for OpenRouter API requests
+async function handleOpenRouterRequest(endpoint: string, params: any, clientApiKey: string | null) {
+  const apiKey = clientApiKey || OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    console.log('No OpenRouter API key available');
+    return createSuccessResponse(null);
+  }
+
+  if (endpoint === 'test') {
+    return await testOpenRouterKey(apiKey);
+  }
+
+  if (endpoint === 'chat') {
+    const { model = 'meta-llama/llama-3.2-3b-instruct:free', messages, temperature = 0.7, maxTokens } = params;
+    
+    if (!messages || !Array.isArray(messages)) {
+      return createErrorResponse('Valid messages array is required', 400, 'openrouter', 'chat');
+    }
+
+    const requestBody: any = {
+      model,
+      messages,
+      temperature,
+    };
+    
+    if (maxTokens) {
+      requestBody.max_tokens = maxTokens;
+    }
+    
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://your-site.com', // Required by OpenRouter
+        'X-Title': 'AI Content Platform', // Optional, for OpenRouter analytics
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return createErrorResponse(data.error?.message || 'OpenRouter API error', response.status, 'openrouter', 'chat');
+    }
+
+    return createSuccessResponse(data);
+  }
+
+  return createErrorResponse(`Unsupported OpenRouter endpoint: ${endpoint}`, 400, 'openrouter', endpoint);
+}
+
 // API key testing functions
 async function testOpenAIKey(apiKey: string) {
   if (!apiKey.startsWith('sk-')) {
@@ -386,5 +442,25 @@ async function testMistralKey(apiKey: string) {
   } else {
     const data = await response.json();
     return createErrorResponse(data.error?.message || 'Invalid Mistral API key', response.status, 'mistral', 'test');
+  }
+}
+
+async function testOpenRouterKey(apiKey: string) {
+  if (!apiKey.startsWith('sk-or-')) {
+    return createErrorResponse('Invalid OpenRouter API key format - must start with "sk-or-"', 400, 'openrouter', 'test');
+  }
+  
+  const response = await fetch('https://openrouter.ai/api/v1/models', {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (response.ok) {
+    return createSuccessResponse({ success: true, message: 'OpenRouter API connection successful' });
+  } else {
+    const data = await response.json();
+    return createErrorResponse(data.error?.message || 'Invalid OpenRouter API key', response.status, 'openrouter', 'test');
   }
 }
