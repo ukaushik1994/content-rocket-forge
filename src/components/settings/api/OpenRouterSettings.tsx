@@ -17,6 +17,10 @@ interface ModelInfo {
     prompt: string;
     completion: string;
   };
+  context_length?: number;
+  architecture?: any;
+  top_provider?: any;
+  per_request_limits?: any;
 }
 
 export const OpenRouterSettings = () => {
@@ -30,6 +34,9 @@ export const OpenRouterSettings = () => {
   const [keyExists, setKeyExists] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [filteredModels, setFilteredModels] = useState<ModelInfo[]>([]);
+  const [modelSearch, setModelSearch] = useState("");
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [detectedModel, setDetectedModel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -154,6 +161,39 @@ export const OpenRouterSettings = () => {
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  // Filter models based on search and free-only toggle
+  useEffect(() => {
+    let filtered = availableModels;
+    
+    if (showFreeOnly) {
+      filtered = filtered.filter(model => 
+        model.pricing?.prompt === "0" || 
+        model.pricing?.completion === "0" ||
+        model.id.includes('free')
+      );
+    }
+    
+    if (modelSearch) {
+      filtered = filtered.filter(model =>
+        (model.name || model.id).toLowerCase().includes(modelSearch.toLowerCase()) ||
+        model.id.toLowerCase().includes(modelSearch.toLowerCase())
+      );
+    }
+    
+    setFilteredModels(filtered);
+  }, [availableModels, modelSearch, showFreeOnly]);
+
+  const getModelPricing = (model: ModelInfo) => {
+    if (!model.pricing) return "Unknown";
+    if (model.pricing.prompt === "0" && model.pricing.completion === "0") return "Free";
+    if (model.pricing.prompt === "0" || model.pricing.completion === "0") return "Partially Free";
+    return `$${model.pricing.prompt}/$${model.pricing.completion}`;
+  };
+
+  const isModelFree = (model: ModelInfo) => {
+    return model.pricing?.prompt === "0" || model.pricing?.completion === "0" || model.id.includes('free');
   };
 
   const handleSaveKey = async () => {
@@ -326,27 +366,61 @@ export const OpenRouterSettings = () => {
 
         {/* Model Selection */}
         {isVerified && availableModels.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Label htmlFor="model-select">Default Model</Label>
+            
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search models..."
+                value={modelSearch}
+                onChange={(e) => setModelSearch(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant={showFreeOnly ? "default" : "outline"}
+                onClick={() => setShowFreeOnly(!showFreeOnly)}
+                className="whitespace-nowrap"
+              >
+                {showFreeOnly ? "Show All" : "Free Only"}
+              </Button>
+            </div>
+            
             <Select value={selectedModel} onValueChange={setSelectedModel}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a model..." />
               </SelectTrigger>
-              <SelectContent>
-                {availableModels.map((model) => (
+              <SelectContent className="max-h-60">
+                {filteredModels.map((model) => (
                   <SelectItem key={model.id} value={model.id}>
                     <div className="flex items-center justify-between w-full">
-                      <span>{model.name || model.id}</span>
-                      {model.pricing && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          ${model.pricing.prompt}/${model.pricing.completion}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="truncate">{model.name || model.id}</span>
+                        {isModelFree(model) && (
+                          <span className="px-1.5 py-0.5 bg-green-500/20 text-green-700 dark:text-green-300 text-xs rounded">
+                            FREE
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-2 shrink-0">
+                        {getModelPricing(model)}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
+                {filteredModels.length === 0 && (
+                  <div className="p-2 text-center text-muted-foreground text-sm">
+                    No models found
+                  </div>
+                )}
               </SelectContent>
             </Select>
+            
+            <div className="text-xs text-muted-foreground">
+              Showing {filteredModels.length} of {availableModels.length} models
+              {showFreeOnly && ` (free models only)`}
+            </div>
+            
             <p className="text-xs text-muted-foreground">
               This model will be used by default for content generation
             </p>

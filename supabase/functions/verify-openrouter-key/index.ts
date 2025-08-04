@@ -110,14 +110,27 @@ serve(async (req) => {
     // Get the available models and find a suitable default
     const models = data.data || [];
     
-    // Prioritize GPT-4 models, then Claude, then others
+    // Prioritize free models first, then popular models
+    const freeModels = models.filter((model: any) => 
+      model.pricing?.prompt === "0" || 
+      model.pricing?.completion === "0" ||
+      model.id.includes('free') ||
+      model.id.includes('hermes') ||
+      model.id.includes('mixtral')
+    );
+    
     const preferredModels = [
-      'openai/gpt-4',
-      'openai/gpt-4-turbo',
+      // Free models first
+      'meta-llama/llama-3.2-3b-instruct:free',
+      'meta-llama/llama-3.2-1b-instruct:free',
+      'microsoft/phi-3-mini-128k-instruct:free',
+      'huggingfaceh4/zephyr-7b-beta:free',
+      'openchat/openchat-7b:free',
+      // Then popular paid models
       'openai/gpt-4o',
+      'openai/gpt-4-turbo',
+      'anthropic/claude-3-5-sonnet',
       'anthropic/claude-3-opus',
-      'anthropic/claude-3-sonnet',
-      'anthropic/claude-3-haiku',
       'openai/gpt-3.5-turbo',
       'meta-llama/llama-3-70b-instruct',
       'mistralai/mistral-7b-instruct'
@@ -134,21 +147,41 @@ serve(async (req) => {
       }
     }
 
-    // If no preferred model found, use the first available model
-    if (!defaultModel && models.length > 0) {
-      defaultModel = models[0].id;
+    // If no preferred model found, use the first free model or any model
+    if (!defaultModel) {
+      if (freeModels.length > 0) {
+        defaultModel = freeModels[0].id;
+      } else if (models.length > 0) {
+        defaultModel = models[0].id;
+      }
     }
 
-    console.log(`✅ OpenRouter key verified. Default model: ${defaultModel}`);
+    // Sort models: free first, then by provider and popularity
+    const sortedModels = models.sort((a: any, b: any) => {
+      const aIsFree = a.pricing?.prompt === "0" || a.pricing?.completion === "0" || a.id.includes('free');
+      const bIsFree = b.pricing?.prompt === "0" || b.pricing?.completion === "0" || b.id.includes('free');
+      
+      if (aIsFree && !bIsFree) return -1;
+      if (!aIsFree && bIsFree) return 1;
+      
+      return a.id.localeCompare(b.id);
+    });
+
+    console.log(`✅ OpenRouter key verified. Default model: ${defaultModel}, Total models: ${models.length}, Free models: ${freeModels.length}`);
 
     return new Response(JSON.stringify({
       success: true,
       model: defaultModel,
       modelCount: models.length,
-      availableModels: models.slice(0, 10).map((m: any) => ({
+      freeModelCount: freeModels.length,
+      availableModels: sortedModels.map((m: any) => ({
         id: m.id,
         name: m.name,
-        pricing: m.pricing
+        pricing: m.pricing,
+        context_length: m.context_length,
+        architecture: m.architecture,
+        top_provider: m.top_provider,
+        per_request_limits: m.per_request_limits
       }))
     }), { 
       status: 200,
