@@ -1,80 +1,106 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Repository from "./pages/Repository";
-import ContentBuilder from "./pages/ContentBuilder";
-import ContentRepurposing from "./pages/ContentRepurposing";
-import ContentApproval from "./pages/ContentApproval";
-import GlossaryBuilder from "./pages/GlossaryBuilder";
-import Solutions from "./pages/Solutions";
-import Settings from "./pages/Settings";
-import Analytics from "./pages/Analytics";
-import ContentStrategy from "./pages/research/ContentStrategy";
-import KeywordResearch from "./pages/research/KeywordResearch";
-import AnswerThePeople from "./pages/research/AnswerThePeople";
-import TopicClusters from "./pages/research/TopicClusters";
-import AioGeo from "./pages/AioGeo";
-import AIChat from "./pages/AIChat";
-import NotFound from "./pages/NotFound";
-import { ContentProvider } from "./contexts/content";
-import { AuthProvider } from "./contexts/AuthContext";
-import { FeedbackProvider } from "./contexts/FeedbackContext";
-import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/contexts/auth/AuthContext";
+import { ContentBuilderProvider } from "@/contexts/ContentBuilderContext";
+import { GlossaryBuilderProvider } from "@/contexts/glossary-builder/GlossaryBuilderContext";
+import { ContentProvider } from "@/contexts/content/ContentProvider";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Home from "@/pages/Home";
+import Dashboard from "@/pages/Dashboard";
+import Settings from "@/pages/Settings";
+import Pricing from "@/pages/Pricing";
+import Contact from "@/pages/Contact";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import Logout from "@/pages/Logout";
+import KeywordResearch from "@/pages/research/KeywordResearch";
+import ContentStrategy from "@/pages/research/ContentStrategy";
+import ContentCalendar from "@/pages/content/ContentCalendar";
+import ContentPipeline from "@/pages/content/ContentPipeline";
+import ContentList from "@/pages/content/ContentList";
+import ContentDetail from "@/pages/content/ContentDetail";
+import ContentBuilder from "@/pages/content/ContentBuilder";
+import GlossaryBuilder from "@/pages/glossary/GlossaryBuilder";
+import AnalyticsDashboard from "@/pages/analytics/AnalyticsDashboard";
+import ApprovalWorkflow from "@/pages/approval/ApprovalWorkflow";
+import NotFound from "@/pages/NotFound";
+import Unauthorized from "@/pages/Unauthorized";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { GuestRoute } from "@/components/auth/GuestRoute";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <ContentProvider>
-          <FeedbackProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                
-                {/* Protected routes */}
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
-                <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
-                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
-                <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
-                <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
-                <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
-                <Route path="/solutions" element={<ProtectedRoute><Solutions /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-                
-                {/* AI Chat route */}
-                <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
-                
-                {/* Research routes */}
-                <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
-                <Route path="/research/keyword-research" element={<ProtectedRoute><KeywordResearch /></ProtectedRoute>} />
-                <Route path="/research/answer-the-people" element={<ProtectedRoute><AnswerThePeople /></ProtectedRoute>} />
-                <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
-                
-                {/* AIO/GEO route */}
-                <Route path="/aio-geo" element={<ProtectedRoute><AioGeo /></ProtectedRoute>} />
-                
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <FloatingFeedbackButton />
-            </BrowserRouter>
-          </FeedbackProvider>
-        </ContentProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <TooltipProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <ContentProvider>
+                <ContentBuilderProvider>
+                  <GlossaryBuilderProvider>
+                    <Router>
+                      <div className="min-h-screen bg-background">
+                        <ErrorBoundary>
+                          <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/pricing" element={<Pricing />} />
+                            <Route path="/contact" element={<Contact />} />
+                            
+                            <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                            <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
+                            <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+                            <Route path="/reset-password/:token" element={<GuestRoute><ResetPassword /></GuestRoute>} />
+                            
+                            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                            <Route path="/logout" element={<ProtectedRoute><Logout /></ProtectedRoute>} />
+                            
+                            <Route path="/research/keyword-research" element={<ProtectedRoute><KeywordResearch /></ProtectedRoute>} />
+                            <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />
+                            
+                            <Route path="/content/calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
+                            <Route path="/content/pipeline" element={<ProtectedRoute><ContentPipeline /></ProtectedRoute>} />
+                            <Route path="/content/list" element={<ProtectedRoute><ContentList /></ProtectedRoute>} />
+                            <Route path="/content/detail/:id" element={<ProtectedRoute><ContentDetail /></ProtectedRoute>} />
+                            <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                            
+                            <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
+                            
+                            <Route path="/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
+                            
+                            <Route path="/approval-workflow" element={<ProtectedRoute><ApprovalWorkflow /></ProtectedRoute>} />
+                            
+                            <Route path="/unauthorized" element={<Unauthorized />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </ErrorBoundary>
+                      </div>
+                      <Toaster richColors position="top-right" />
+                    </Router>
+                  </GlossaryBuilderProvider>
+                </ContentBuilderProvider>
+              </ContentProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
+}
 
 export default App;

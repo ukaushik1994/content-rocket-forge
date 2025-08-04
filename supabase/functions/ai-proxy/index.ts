@@ -1,390 +1,206 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { handleCorsPreflightRequest } from "../shared/cors.ts";
-import { createErrorResponse, createSuccessResponse } from "../shared/errors.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Environment variables for fallback API keys
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY");
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface SerpAPIRequest {
+  service: 'serp' | 'serpstack';
+  endpoint: 'test' | 'search';
+  params: any;
+  apiKey: string;
+}
+
+interface OpenAIRequest {
+  service: 'openai';
+  endpoint: 'chat' | 'completion';
+  params: {
+    messages: Array<{role: string, content: string}>;
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+  };
+  apiKey: string;
+}
+
+type APIRequest = SerpAPIRequest | OpenAIRequest;
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return handleCorsPreflightRequest();
+    return new Response('ok', { headers: corsHeaders });
   }
 
-  try {
-    const { service, endpoint, params, apiKey } = await req.json();
-    
-    console.log(`AI Proxy: ${service} - ${endpoint}`);
+  console.log('🚀 API-Proxy Edge Function called');
 
-    // Route to appropriate AI service
-    if (service === 'openai') {
-      return await handleOpenAIRequest(endpoint, params, apiKey);
-    } else if (service === 'anthropic') {
-      return await handleAnthropicRequest(endpoint, params, apiKey);
-    } else if (service === 'gemini') {
-      return await handleGeminiRequest(endpoint, params, apiKey);
-    } else if (service === 'mistral') {
-      return await handleMistralRequest(endpoint, params, apiKey);
-    } else {
-      return createErrorResponse(`Unsupported AI service: ${service}`, 400, service, endpoint);
+  try {
+    const body: APIRequest = await req.json();
+    const { service, endpoint, params, apiKey } = body;
+
+    console.log(`📥 Request received: ${service} - ${endpoint}`, {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length,
+      apiKeyType: typeof apiKey,
+      paramsReceived: Object.keys(params || {})
+    });
+
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'API key is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
-  } catch (error: any) {
-    return createErrorResponse(error.message || 'Unknown error', 500, 'ai-proxy', 'unknown');
+
+    let response;
+
+    switch (service) {
+      case 'openai':
+        response = await handleOpenAI(endpoint as 'chat' | 'completion', params, apiKey);
+        break;
+      case 'serp':
+        response = await handleSerpAPI(endpoint as 'test' | 'search', params, apiKey);
+        break;
+      case 'serpstack':
+        response = await handleSerpstack(endpoint as 'test' | 'search', params, apiKey);
+        break;
+      default:
+        throw new Error(`Unsupported service: ${service}`);
+    }
+
+    return new Response(
+      JSON.stringify(response),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+
+  } catch (error) {
+    console.error('API Proxy error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'API request failed',
+        details: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });
 
-// Handler for OpenAI API requests
-async function handleOpenAIRequest(endpoint: string, params: any, clientApiKey: string | null) {
-  const apiKey = clientApiKey || OPENAI_API_KEY;
+async function handleOpenAI(endpoint: 'chat' | 'completion', params: any, apiKey: string) {
+  console.log('🤖 Processing OpenAI request');
   
-  if (!apiKey) {
-    console.log('No OpenAI API key available');
-    return createSuccessResponse(null);
-  }
-
-  if (endpoint === 'test') {
-    return await testOpenAIKey(apiKey);
-  }
-
-  if (endpoint === 'chat') {
-    const { model = 'gpt-4o-mini', messages, temperature = 0.7, maxTokens } = params;
-    
-    if (!messages || !Array.isArray(messages)) {
-      return createErrorResponse('Valid messages array is required', 400, 'openai', 'chat');
-    }
-
-    const requestBody: any = {
-      model,
-      messages,
-      temperature,
-    };
-    
-    if (maxTokens) {
-      requestBody.max_tokens = maxTokens;
-    }
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return createErrorResponse(data.error?.message || 'OpenAI API error', response.status, 'openai', 'chat');
-    }
-
-    return createSuccessResponse(data);
-  }
-
-  return createErrorResponse(`Unsupported OpenAI endpoint: ${endpoint}`, 400, 'openai', endpoint);
-}
-
-// Handler for Anthropic API requests
-async function handleAnthropicRequest(endpoint: string, params: any, clientApiKey: string | null) {
-  const apiKey = clientApiKey || ANTHROPIC_API_KEY;
+  const openAIUrl = 'https://api.openai.com/v1/chat/completions';
   
-  if (!apiKey) {
-    console.log('No Anthropic API key available');
-    return createSuccessResponse(null);
-  }
-
-  if (endpoint === 'test') {
-    return await testAnthropicKey(apiKey);
-  }
-
-  if (endpoint === 'chat') {
-    const { model = 'claude-3-sonnet-20240229', messages, temperature = 0.7, maxTokens = 1000 } = params;
-    
-    if (!messages || !Array.isArray(messages)) {
-      return createErrorResponse('Valid messages array is required', 400, 'anthropic', 'chat');
-    }
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens
-      }),
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return createErrorResponse(data.error?.message || 'Anthropic API error', response.status, 'anthropic', 'chat');
-    }
-
-    // Transform Anthropic response to match expected format
-    const transformedResponse = {
-      id: data.id,
-      choices: [{
-        message: {
-          role: 'assistant',
-          content: data.content[0].text
-        },
-        index: 0,
-        finishReason: data.stop_reason
-      }],
-      usage: {
-        promptTokens: data.usage?.input_tokens || 0,
-        completionTokens: data.usage?.output_tokens || 0,
-        totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
-      }
-    };
-
-    return createSuccessResponse(transformedResponse);
-  }
-
-  return createErrorResponse(`Unsupported Anthropic endpoint: ${endpoint}`, 400, 'anthropic', endpoint);
-}
-
-// Handler for Gemini API requests
-async function handleGeminiRequest(endpoint: string, params: any, clientApiKey: string | null) {
-  const apiKey = clientApiKey || GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    console.log('No Gemini API key available');
-    return createSuccessResponse(null);
-  }
-
-  if (endpoint === 'test') {
-    return await testGeminiKey(apiKey);
-  }
-
-  if (endpoint === 'chat') {
-    const { model = 'gemini-1.5-flash', messages, temperature = 0.7, maxTokens } = params;
-    
-    if (!messages || !Array.isArray(messages)) {
-      return createErrorResponse('Valid messages array is required', 400, 'gemini', 'chat');
-    }
-
-    // Transform messages to Gemini format
-    const contents = messages.map(message => ({
-      role: message.role === 'assistant' ? 'model' : message.role,
-      parts: [{ text: message.content }]
-    }));
-
-    const apiBase = 'https://generativelanguage.googleapis.com/v1beta';
-    const modelPath = `models/${model}`;
-    const url = `${apiBase}/${modelPath}:generateContent?key=${apiKey}`;
-    
-    const requestBody: any = {
-      contents,
-      generation_config: {
-        temperature
-      }
-    };
-    
-    if (maxTokens) {
-      requestBody.generation_config.max_output_tokens = maxTokens;
-    }
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (data.error && 
-          (data.error.message.includes('quota') || 
-           data.error.message.includes('rate limit') || 
-           data.error.message.includes('Resource exhausted') ||
-           data.error.status === 'RESOURCE_EXHAUSTED')) {
-        return createErrorResponse(`Gemini API quota exceeded: ${data.error.message}`, response.status, 'gemini', 'chat');
-      }
-      return createErrorResponse(data.error?.message || 'Gemini API error', response.status, 'gemini', 'chat');
-    }
-
-    // Transform Gemini response to match expected format
-    const content = data.candidates[0].content.parts[0].text;
-    const transformedResponse = {
-      id: 'gemini-response',
-      choices: [{
-        message: {
-          role: 'assistant',
-          content: content
-        },
-        index: 0,
-        finishReason: data.candidates[0].finishReason
-      }],
-      usage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0
-      }
-    };
-
-    return createSuccessResponse(transformedResponse);
-  }
-
-  return createErrorResponse(`Unsupported Gemini endpoint: ${endpoint}`, 400, 'gemini', endpoint);
-}
-
-// Handler for Mistral API requests
-async function handleMistralRequest(endpoint: string, params: any, clientApiKey: string | null) {
-  const apiKey = clientApiKey || MISTRAL_API_KEY;
-  
-  if (!apiKey) {
-    console.log('No Mistral API key available');
-    return createSuccessResponse(null);
-  }
-
-  if (endpoint === 'test') {
-    return await testMistralKey(apiKey);
-  }
-
-  if (endpoint === 'chat') {
-    const { model = 'mistral-small-latest', messages, temperature = 0.7, maxTokens } = params;
-    
-    if (!messages || !Array.isArray(messages)) {
-      return createErrorResponse('Valid messages array is required', 400, 'mistral', 'chat');
-    }
-
-    const requestBody: any = {
-      model,
-      messages,
-      temperature,
-    };
-    
-    if (maxTokens) {
-      requestBody.max_tokens = maxTokens;
-    }
-    
-    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return createErrorResponse(data.error?.message || 'Mistral API error', response.status, 'mistral', 'chat');
-    }
-
-    return createSuccessResponse(data);
-  }
-
-  return createErrorResponse(`Unsupported Mistral endpoint: ${endpoint}`, 400, 'mistral', endpoint);
-}
-
-// API key testing functions
-async function testOpenAIKey(apiKey: string) {
-  if (!apiKey.startsWith('sk-')) {
-    return createErrorResponse('Invalid OpenAI API key format - must start with "sk-"', 400, 'openai', 'test');
-  }
-  
-  const response = await fetch('https://api.openai.com/v1/models', {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  if (response.ok) {
-    return createSuccessResponse({ success: true, message: 'OpenAI API connection successful' });
-  } else {
-    const data = await response.json();
-    return createErrorResponse(data.error?.message || 'Invalid OpenAI API key', response.status, 'openai', 'test');
-  }
-}
-
-async function testAnthropicKey(apiKey: string) {
-  if (!apiKey.startsWith('sk-ant-')) {
-    return createErrorResponse('Invalid Anthropic API key format - must start with "sk-ant-"', 400, 'anthropic', 'test');
-  }
-  
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(openAIUrl, {
     method: 'POST',
     headers: {
-      'anthropic-version': '2023-06-01',
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 10,
-      messages: [
-        { role: 'user', content: 'Say hi in one word' }
-      ]
-    })
-  });
-  
-  if (response.ok) {
-    return createSuccessResponse({ success: true, message: 'Anthropic API connection successful' });
-  } else {
-    const data = await response.json();
-    return createErrorResponse(data.error?.message || 'Invalid Anthropic API key', response.status, 'anthropic', 'test');
-  }
-}
-
-async function testGeminiKey(apiKey: string) {
-  const apiBase = 'https://generativelanguage.googleapis.com/v1beta';
-  const model = 'models/gemini-1.5-flash';
-  const url = `${apiBase}/${model}:generateContent?key=${apiKey}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: 'Say hi in one word'
-        }]
-      }]
-    })
-  });
-  
-  if (response.ok) {
-    return createSuccessResponse({ success: true, message: 'Gemini API connection successful' });
-  } else {
-    const data = await response.json();
-    return createErrorResponse(data.error?.message || 'Invalid Gemini API key', response.status, 'gemini', 'test');
-  }
-}
-
-async function testMistralKey(apiKey: string) {
-  if (!apiKey.match(/^[a-zA-Z0-9]{32,}$/)) {
-    return createErrorResponse('Invalid Mistral API key format', 400, 'mistral', 'test');
-  }
-  
-  const response = await fetch('https://api.mistral.ai/v1/models', {
-    headers: {
       'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: params.model || 'gpt-4o-mini',
+      messages: params.messages,
+      temperature: params.temperature || 0.7,
+      max_tokens: params.maxTokens || 2000,
+    }),
   });
-  
-  if (response.ok) {
-    return createSuccessResponse({ success: true, message: 'Mistral API connection successful' });
-  } else {
-    const data = await response.json();
-    return createErrorResponse(data.error?.message || 'Invalid Mistral API key', response.status, 'mistral', 'test');
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
   }
+
+  return await response.json();
+}
+
+async function handleSerpAPI(endpoint: 'test' | 'search', params: any, apiKey: string) {
+  console.log('🔍 Processing SerpAPI request');
+  console.log(`🧪 Testing SerpAPI connection with key length: ${apiKey.length}`);
+  
+  if (endpoint === 'test') {
+    // Test the API key with a simple search
+    const testUrl = `https://serpapi.com/search.json?engine=google&q=test&api_key=${apiKey}&num=1`;
+    
+    const response = await fetch(testUrl);
+    const data = await response.json();
+    
+    console.log('🧪 SerpAPI test response:', { 
+      status: response.status, 
+      hasError: !!data.error,
+      errorMessage: data.error
+    });
+    
+    if (data.error) {
+      throw new Error(`SerpAPI test failed: ${data.error}`);
+    }
+    
+    console.log('✅ SerpAPI test successful');
+    return { success: true, message: 'SerpAPI connection verified' };
+  }
+  
+  // Handle actual search requests
+  const { query, location = 'United States', num = 10 } = params;
+  const searchUrl = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num=${num}&api_key=${apiKey}`;
+  
+  const response = await fetch(searchUrl);
+  const data = await response.json();
+  
+  if (data.error) {
+    throw new Error(`SerpAPI search failed: ${data.error}`);
+  }
+  
+  return data;
+}
+
+async function handleSerpstack(endpoint: 'test' | 'search', params: any, apiKey: string) {
+  console.log('🔍 Processing Serpstack request');
+  
+  console.log(`🔑 Using API key for serpstack (length: ${apiKey.length})`);
+  
+  if (endpoint === 'test') {
+    console.log('🧪 Testing Serpstack API key');
+    console.log('🔧 API Key Details:', {
+      length: apiKey.length,
+      type: typeof apiKey,
+      firstChars: apiKey.substring(0, 8) + '...',
+      lastChars: '...' + apiKey.substring(apiKey.length - 4)
+    });
+    
+    const testUrl = `https://api.serpstack.com/search?access_key=${apiKey}&query=test&num=1`;
+    console.log('📡 Making request to Serpstack API:', testUrl.replace(apiKey, '[REDACTED]'));
+    
+    const response = await fetch(testUrl);
+    const data = await response.json();
+    
+    console.log('📊 Serpstack response status:', response.status);
+    console.log('📊 Serpstack response data:', data);
+    
+    if (data.error) {
+      throw new Error(`Serpstack test failed: ${data.error.info || 'Unknown error'}`);
+    }
+    
+    console.log('✅ Serpstack API test successful');
+    return { success: true, message: 'Serpstack connection verified' };
+  }
+  
+  // Handle actual search requests
+  const { query, location = 'United States', num = 10 } = params;
+  const searchUrl = `https://api.serpstack.com/search?access_key=${apiKey}&query=${encodeURIComponent(query)}&country=${encodeURIComponent(location)}&num=${num}`;
+  
+  const response = await fetch(searchUrl);
+  const data = await response.json();
+  
+  if (data.error) {
+    throw new Error(`Serpstack search failed: ${data.error.info || 'Unknown error'}`);
+  }
+  
+  return data;
 }

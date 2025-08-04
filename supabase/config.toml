@@ -4,19 +4,16 @@ project_id = "iqiundzzcepmuykcnfbc"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "graphql_public"]
+schemas = ["public", "storage", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
 port = 54322
-shadow_port = 54320
-major_version = 15
 
 [studio]
 enabled = true
 port = 54323
-api_url = "http://127.0.0.1:54321"
 
 [inbucket]
 enabled = true
@@ -26,50 +23,56 @@ pop3_port = 54326
 
 [storage]
 enabled = true
-port = 54327
-file_size_limit = "50MiB"
+port = 54325
+image_transformation = { enabled = true }
 
 [auth]
 enabled = true
-port = 54328
+port = 54326
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://lovable.dev"]
+additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
-enable_manual_linking = false
+enable_signup = true
+enable_confirmations = false
 
 [auth.email]
 enable_signup = true
-double_confirm_changes = true
+double_confirm_changes = false
 enable_confirmations = false
 
-[auth.sms]
-enable_signup = true
-enable_confirmations = false
-template = "Your code is {{ .Code }}"
-
-[edge_runtime]
+[edge-runtime]
 enabled = true
-port = 54329
-
-[analytics]
-enabled = false
 port = 54327
-vector_port = 54328
-backend = "postgres"
-
-[functions.api-proxy]
-verify_jwt = false
 
 [functions.ai-proxy]
 verify_jwt = false
 
+[functions.content-generator]
+verify_jwt = true
+
+[functions.seo-analyzer]
+verify_jwt = false
+
+[functions.ai-chat]
+verify_jwt = true
+
+[functions.enhanced-ai-chat]
+verify_jwt = true
+
+[functions.ai-context-manager]
+verify_jwt = true
+
+[functions.serp-analysis]
+verify_jwt = false
+
+[functions.glossary-generator]
+verify_jwt = true
+
+[functions.generate-content-brief]
+verify_jwt = true
+
+[functions.serp-api]
+verify_jwt = false
+
 [functions.serp-proxy]
-verify_jwt = false
-
-[functions.google-proxy]
-verify_jwt = false
-
-[functions.api-test]
 verify_jwt = false
