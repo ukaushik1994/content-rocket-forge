@@ -9,6 +9,7 @@ import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ModelIndicator } from '@/components/ai/ModelIndicator';
 import { Sparkles, Brain, TrendingUp } from 'lucide-react';
 
 interface EnhancedChatInterfaceProps {
@@ -91,10 +92,13 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 </p>
               </div>
             </div>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse" />
-              Online
-            </Badge>
+            <div className="flex items-center gap-2">
+              <ModelIndicator className="text-xs" />
+              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse" />
+                Online
+              </Badge>
+            </div>
           </div>
         </div>
       </div>

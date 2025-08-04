@@ -1,9 +1,15 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -24,18 +30,29 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (!openAIApiKey) {
-    console.error('OPENAI_API_KEY not configured');
-    return new Response(JSON.stringify({ 
-      error: 'AI service not configured. Please add your OpenAI API key.' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   try {
     const { messages, userId, conversationId, solutions, analytics, workflowContext }: EnhancedRequest = await req.json();
+    
+    console.log('🚀 Processing enhanced AI chat request');
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user's AI provider configuration
+    const { data: userKeys, error: keysError } = await supabase
+      .from('user_llm_keys')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false });
+
+    if (keysError) {
+      console.error('Error fetching user keys:', keysError);
+    }
+
+    // Priority: OpenRouter > Anthropic > OpenAI
+    const openrouterKey = userKeys?.find(k => k.provider === 'openrouter');
+    const anthropicKey = userKeys?.find(k => k.provider === 'anthropic');
+    const openaiKey = userKeys?.find(k => k.provider === 'openai');
 
     // Build enhanced context for AI
     let contextPrompt = `You are an intelligent content marketing assistant for a comprehensive content platform. 
@@ -146,33 +163,75 @@ Response guidelines:
 - Create specific workflows for optimization tasks
 - Reference actual user solutions and content data`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: contextPrompt },
-          ...messages
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: false
-      }),
-    });
+    let aiResponse, modelUsed, provider, usage;
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    // Try OpenRouter first (recommended)
+    if (openrouterKey?.api_key) {
+      console.log('🎯 Using OpenRouter for enhanced AI chat');
+      try {
+        const result = await callOpenRouter(openrouterKey.api_key, openrouterKey.model || 'openai/gpt-4o-mini', messages, contextPrompt);
+        aiResponse = result.response;
+        modelUsed = result.model;
+        provider = 'openrouter';
+        usage = result.usage;
+      } catch (error) {
+        console.error('OpenRouter failed, trying fallback:', error);
+      }
     }
 
-    const data = await response.json();
-    const fullMessage = data.choices?.[0]?.message?.content || '';
+    // Fallback to Anthropic
+    if (!aiResponse && anthropicKey?.api_key) {
+      console.log('🔄 Falling back to Anthropic');
+      try {
+        const result = await callAnthropic(anthropicKey.api_key, anthropicKey.model || 'claude-3-haiku-20240307', messages, contextPrompt);
+        aiResponse = result.response;
+        modelUsed = result.model;
+        provider = 'anthropic';
+        usage = result.usage;
+      } catch (error) {
+        console.error('Anthropic failed, trying OpenAI:', error);
+      }
+    }
+
+    // Fallback to OpenAI
+    if (!aiResponse && (openaiKey?.api_key || Deno.env.get('OPENAI_API_KEY'))) {
+      console.log('🔄 Falling back to OpenAI');
+      try {
+        const apiKey = openaiKey?.api_key || Deno.env.get('OPENAI_API_KEY');
+        const result = await callOpenAI(apiKey, openaiKey?.model || 'gpt-4o-mini', messages, contextPrompt);
+        aiResponse = result.response;
+        modelUsed = result.model;
+        provider = 'openai';
+        usage = result.usage;
+      } catch (error) {
+        console.error('All providers failed:', error);
+      }
+    }
+
+    if (!aiResponse) {
+      throw new Error('No AI provider configured or available. Please configure OpenRouter, Anthropic, or OpenAI in Settings.');
+    }
+
+    // Log usage to database
+    if (usage && userId) {
+      await supabase.from('llm_usage_logs').insert({
+        user_id: userId,
+        provider,
+        model: modelUsed,
+        prompt_tokens: usage.prompt_tokens || 0,
+        completion_tokens: usage.completion_tokens || 0,
+        total_tokens: usage.total_tokens || 0,
+        cost_estimate: calculateCost(provider, modelUsed, usage.prompt_tokens || 0, usage.completion_tokens || 0),
+        request_type: 'enhanced_chat',
+        success: true
+      });
+    }
 
     // Parse final response for structured elements
-    const parsedResponse = parseAIResponse(fullMessage);
+    const parsedResponse = parseAIResponse(aiResponse);
+    parsedResponse.model = modelUsed;
+    parsedResponse.provider = provider;
+    parsedResponse.usage = usage;
     
     return new Response(JSON.stringify(parsedResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -186,6 +245,125 @@ Response guidelines:
     });
   }
 });
+
+async function callOpenRouter(apiKey: string, model: string, messages: any[], systemPrompt: string) {
+  const chatMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages
+  ];
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://your-app.com',
+      'X-Title': 'Enhanced AI Content Assistant'
+    },
+    body: JSON.stringify({
+      model,
+      messages: chatMessages,
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  return {
+    response: data.choices[0]?.message?.content,
+    model: data.model || model,
+    usage: data.usage
+  };
+}
+
+async function callAnthropic(apiKey: string, model: string, messages: any[], systemPrompt: string) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: messages.filter(m => m.role !== 'system')
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  return {
+    response: data.content[0]?.text,
+    model: data.model || model,
+    usage: data.usage
+  };
+}
+
+async function callOpenAI(apiKey: string, model: string, messages: any[], systemPrompt: string) {
+  const chatMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages
+  ];
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: chatMessages,
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  return {
+    response: data.choices[0]?.message?.content,
+    model: data.model || model,
+    usage: data.usage
+  };
+}
+
+function calculateCost(provider: string, model: string, promptTokens: number, completionTokens: number): number {
+  const costs: Record<string, Record<string, { input: number; output: number }>> = {
+    openrouter: {
+      'openai/gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+      'openai/gpt-4o': { input: 0.005, output: 0.015 },
+      'anthropic/claude-3-haiku': { input: 0.00025, output: 0.00125 }
+    },
+    anthropic: {
+      'claude-3-haiku-20240307': { input: 0.00025, output: 0.00125 }
+    },
+    openai: {
+      'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+      'gpt-4o': { input: 0.005, output: 0.015 }
+    }
+  };
+
+  const modelCosts = costs[provider]?.[model];
+  if (!modelCosts) return 0;
+
+  return (promptTokens * modelCosts.input / 1000) + (completionTokens * modelCosts.output / 1000);
+}
 
 function parseAIResponse(message: string) {
   // Extract JSON blocks from AI response for actions and visual data

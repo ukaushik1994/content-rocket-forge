@@ -10,6 +10,15 @@ export interface ChatMessage {
 export interface ChatResponse {
   message: string;
   actions?: ContextualAction[];
+  metadata?: {
+    model?: string;
+    provider?: string;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
+  };
 }
 
 export interface ContextualAction {
@@ -40,11 +49,18 @@ export async function sendChatMessage(
   try {
     console.log('🤖 Sending chat message to AI service');
     
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('Please sign in to use AI chat');
+      return null;
+    }
+
     const { data, error } = await supabase.functions.invoke('ai-chat', {
       body: {
         messages,
         context,
-        stream: false
+        userId: user.id
       }
     });
 
@@ -61,7 +77,12 @@ export async function sendChatMessage(
 
     return {
       message: data.message || data.content || '',
-      actions: generateContextualActions(data.message || data.content || '', context)
+      actions: generateContextualActions(data.message || data.content || '', context),
+      metadata: {
+        model: data.model,
+        provider: data.provider,
+        usage: data.usage
+      }
     };
   } catch (error: any) {
     console.error('Error calling AI service:', error);
