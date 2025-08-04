@@ -25,15 +25,59 @@ serve(async (req) => {
       });
     }
 
-    console.log(`🔍 Verifying OpenRouter API key (length: ${api_key.length})`);
+    // Validate and sanitize the API key
+    const sanitizedKey = typeof api_key === 'string' ? api_key.trim() : '';
+    
+    if (!sanitizedKey) {
+      console.error(`❌ Invalid API key format: empty or not a string`);
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Invalid API key format"
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check for valid characters (basic validation for OpenRouter keys)
+    if (!/^[a-zA-Z0-9_\-\.]+$/.test(sanitizedKey)) {
+      console.error(`❌ API key contains invalid characters`);
+      return new Response(JSON.stringify({
+        success: false,
+        error: "API key contains invalid characters"
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`🔍 Verifying OpenRouter API key (length: ${sanitizedKey.length})`);
+
+    // Construct headers safely
+    const requestHeaders: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+
+    // Add authorization header with validation
+    try {
+      requestHeaders["Authorization"] = `Bearer ${sanitizedKey}`;
+    } catch (error) {
+      console.error(`❌ Failed to construct Authorization header: ${error.message}`);
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Invalid API key format for authorization"
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`📡 Making request to OpenRouter API with headers:`, Object.keys(requestHeaders));
 
     // Test the key by getting available models
     const response = await fetch("https://openrouter.ai/api/v1/models", {
       method: "GET",
-      headers: {
-        "Authorization": `Bearer ${api_key}`,
-        "Content-Type": "application/json"
-      }
+      headers: requestHeaders
     });
 
     console.log(`📡 OpenRouter API response status: ${response.status}`);

@@ -86,8 +86,21 @@ export const OpenRouterSettings = () => {
   };
 
   const handleVerifyKey = async () => {
-    if (!apiKey.trim()) {
+    const trimmedKey = apiKey.trim();
+    
+    if (!trimmedKey) {
       toast.error('Please enter an API key');
+      return;
+    }
+
+    // Client-side validation for OpenRouter API key format
+    if (!/^[a-zA-Z0-9_\-\.]+$/.test(trimmedKey)) {
+      toast.error('API key contains invalid characters. Only letters, numbers, hyphens, underscores, and dots are allowed.');
+      return;
+    }
+
+    if (trimmedKey.length < 10) {
+      toast.error('API key appears to be too short. Please check your key.');
       return;
     }
 
@@ -96,7 +109,7 @@ export const OpenRouterSettings = () => {
       console.log('🔍 Verifying OpenRouter API key...');
 
       const { data, error } = await supabase.functions.invoke('verify-openrouter-key', {
-        body: { api_key: apiKey }
+        body: { api_key: trimmedKey }
       });
 
       if (error) {
@@ -122,7 +135,22 @@ export const OpenRouterSettings = () => {
     } catch (error: any) {
       console.error('❌ OpenRouter verification failed:', error);
       setIsVerified(false);
-      toast.error(`❌ ${error.message || 'Invalid API key or connection failed'}`);
+      
+      let errorMessage = 'Invalid API key or connection failed';
+      
+      if (error.message) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Unable to connect to verification service. Please check your internet connection.';
+        } else if (error.message.includes('non-2xx status')) {
+          errorMessage = 'API key verification failed. Please check your key and try again.';
+        } else if (error.message.includes('Invalid API key format')) {
+          errorMessage = 'Invalid API key format. Please check your key.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(`❌ ${errorMessage}`);
     } finally {
       setIsVerifying(false);
     }

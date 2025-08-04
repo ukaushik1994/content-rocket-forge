@@ -27,6 +27,16 @@ serve(async (req) => {
       });
     }
 
+    // Validate prompt is a string and not empty
+    if (typeof prompt !== 'string' || prompt.trim().length === 0) {
+      return new Response(JSON.stringify({
+        error: "Prompt must be a non-empty string"
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     console.log(`🚀 OpenRouter content generation request for user: ${user_id}`);
     
     // Create Supabase client
@@ -51,6 +61,18 @@ serve(async (req) => {
       });
     }
 
+    // Validate the API key format
+    const sanitizedKey = typeof userKey.api_key === 'string' ? userKey.api_key.trim() : '';
+    if (!sanitizedKey || !/^[a-zA-Z0-9_\-\.]+$/.test(sanitizedKey)) {
+      console.error(`❌ Invalid API key format for user: ${user_id}`);
+      return new Response(JSON.stringify({
+        error: "Invalid OpenRouter API key format. Please update your key in Settings."
+      }), { 
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Use provided model or fall back to user's default model
     const selectedModel = model || userKey.model || 'openai/gpt-4';
     
@@ -62,7 +84,7 @@ serve(async (req) => {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${userKey.api_key}`,
+        'Authorization': `Bearer ${sanitizedKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
