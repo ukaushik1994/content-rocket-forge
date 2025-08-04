@@ -4,7 +4,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Server, Key, AlertTriangle, Bell, Check, Binary } from 'lucide-react';
+import { Zap, Server, Key, AlertTriangle, Bell, Check, Binary, Globe, HardDrive } from 'lucide-react';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 import { testApiKey } from '@/services/apiKeys/testing';
@@ -26,7 +26,9 @@ export function DefaultAiProviderSelector({
     openai: false,
     anthropic: false,
     gemini: false,
-    mistral: false
+    mistral: false,
+    lmstudio: false,
+    openrouter: false
   });
   const [checkingStatus, setCheckingStatus] = useState<boolean>(false);
   
@@ -43,12 +45,14 @@ export function DefaultAiProviderSelector({
   const checkProviderStatus = async () => {
     setCheckingStatus(true);
     
-    const providers: AiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral'];
+    const providers: AiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'];
     const statusResults: Record<string, boolean> = {
       openai: false,
       anthropic: false,
       gemini: false,
-      mistral: false
+      mistral: false,
+      lmstudio: false,
+      openrouter: false
     };
     
     for (const provider of providers) {
@@ -99,6 +103,12 @@ export function DefaultAiProviderSelector({
         break;
       case 'mistral':
         icon = <Binary className="h-4 w-4 text-indigo-400" />;
+        break;
+      case 'lmstudio':
+        icon = <HardDrive className="h-4 w-4 text-orange-400" />;
+        break;
+      case 'openrouter':
+        icon = <Globe className="h-4 w-4 text-cyan-400" />;
         break;
       default:
         icon = <Bell className="h-4 w-4 text-gray-400" />;
@@ -171,6 +181,24 @@ export function DefaultAiProviderSelector({
               {getProviderDetails('mistral').icon}
               <span>Mistral</span>
               {getProviderDetails('mistral').statusBadge}
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="lmstudio" id="lmstudio" />
+            <Label htmlFor="lmstudio" className="flex items-center gap-2 cursor-pointer">
+              {getProviderDetails('lmstudio').icon}
+              <span>LM Studio</span>
+              {getProviderDetails('lmstudio').statusBadge}
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="openrouter" id="openrouter" />
+            <Label htmlFor="openrouter" className="flex items-center gap-2 cursor-pointer">
+              {getProviderDetails('openrouter').icon}
+              <span>OpenRouter</span>
+              {getProviderDetails('openrouter').statusBadge}
             </Label>
           </div>
         </RadioGroup>

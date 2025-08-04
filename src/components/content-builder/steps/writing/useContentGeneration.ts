@@ -6,7 +6,7 @@ import { ContentBuilderState, SerpSelection } from '@/contexts/content-builder/t
 import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 
-type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'openrouter';
+type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter';
 
 export function useContentGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -22,11 +22,15 @@ export function useContentGeneration() {
       const openaiKey = await getApiKey('openai');
       const anthropicKey = await getApiKey('anthropic');
       const geminiKey = await getApiKey('gemini');
+      const mistralKey = await getApiKey('mistral');
+      const lmstudioKey = await getApiKey('lmstudio');
       const openrouterKey = await getApiKey('openrouter');
       
       if (openaiKey) providers.push('openai');
       if (anthropicKey) providers.push('anthropic');
       if (geminiKey) providers.push('gemini');
+      if (mistralKey) providers.push('mistral');
+      if (lmstudioKey) providers.push('lmstudio');
       if (openrouterKey) providers.push('openrouter');
       
       setAvailableProviders(providers);
