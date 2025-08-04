@@ -12,7 +12,7 @@ interface AiProviderSelectorProps {
 export function AiProviderSelector({ 
   aiProvider, 
   setAiProvider,
-  availableProviders = ['openai', 'anthropic', 'gemini', 'mistral']
+  availableProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'openrouter']
 }: AiProviderSelectorProps) {
   // Get display names for providers
   const getProviderDisplayName = (provider: string): string => {
@@ -21,6 +21,7 @@ export function AiProviderSelector({
       case 'anthropic': return 'Claude';
       case 'gemini': return 'Gemini';
       case 'mistral': return 'Mistral';
+      case 'openrouter': return 'OpenRouter';
       default: return provider;
     }
   };

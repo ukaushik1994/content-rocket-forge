@@ -36,6 +36,7 @@ export const OpenRouterSettings = () => {
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [filteredModels, setFilteredModels] = useState<ModelInfo[]>([]);
   const [modelSearch, setModelSearch] = useState("");
+  const [isTestingContent, setIsTestingContent] = useState(false);
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [detectedModel, setDetectedModel] = useState<string | null>(null);
 
@@ -265,6 +266,59 @@ export const OpenRouterSettings = () => {
     }
   };
 
+  const handleTestContentGeneration = async () => {
+    if (!user?.id || !selectedModel || !isVerified) {
+      toast.error('Please verify your API key and select a model first');
+      return;
+    }
+
+    try {
+      setIsTestingContent(true);
+      console.log('🧪 Testing OpenRouter content generation...');
+
+      const testPrompt = "Write a brief, engaging paragraph about the benefits of artificial intelligence in modern technology. Keep it under 100 words.";
+
+      const { data, error } = await supabase.functions.invoke('openrouter-content-generator', {
+        body: {
+          prompt: testPrompt,
+          user_id: user.id,
+          model: selectedModel,
+          temperature: 0.7
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.generatedText) {
+        console.log('✅ OpenRouter content generation test successful');
+        toast.success('OpenRouter content generation test successful! The API is working correctly.');
+      } else {
+        throw new Error('No content received from OpenRouter');
+      }
+
+    } catch (error: any) {
+      console.error('❌ OpenRouter content generation test failed:', error);
+      
+      if (error.message.includes('not configured')) {
+        toast.error('OpenRouter not configured properly. Please verify your API key.');
+      } else if (error.message.includes('Rate limit')) {
+        toast.error('Rate limit exceeded. Please try again in a moment.');
+      } else if (error.message.includes('credits')) {
+        toast.error('Insufficient credits. Please check your OpenRouter account.');
+      } else {
+        toast.error(`Content generation test failed: ${error.message}`);
+      }
+    } finally {
+      setIsTestingContent(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="border border-border/50 bg-background/50 backdrop-blur-sm">
@@ -437,6 +491,27 @@ export const OpenRouterSettings = () => {
             <p className="text-sm text-green-200 mt-1">
               Found {availableModels.length} available models
               {detectedModel && ` • Default: ${detectedModel}`}
+            </p>
+          </div>
+        )}
+
+        {/* Test Content Generation */}
+        {isVerified && selectedModel && (
+          <div className="space-y-2">
+            <Button
+              onClick={handleTestContentGeneration}
+              disabled={isTestingContent}
+              variant="outline"
+              className="w-full"
+            >
+              {isTestingContent ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testing Content Generation...</>
+              ) : (
+                'Test Content Generation'
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Test if OpenRouter can generate content with your selected model
             </p>
           </div>
         )}

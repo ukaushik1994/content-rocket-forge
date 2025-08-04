@@ -6,7 +6,7 @@ import { testApiKey as testKey } from './apiKeys/testing';
 import { toast } from 'sonner';
 
 // Updated type to include all API providers
-export type ApiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'serp' | 'serpapi' | 'serpstack';
+export type ApiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter' | 'serp' | 'serpapi' | 'serpstack';
 
 // Legacy type alias for backward compatibility
 export type ApiService = ApiProvider;
@@ -269,7 +269,7 @@ class ApiKeyService {
         return;
       }
 
-      const services: ApiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'serp', 'serpstack'];
+      const services: ApiProvider[] = ['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter', 'serp', 'serpstack'];
       
       let migratedCount = 0;
       for (const service of services) {

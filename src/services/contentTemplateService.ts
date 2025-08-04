@@ -57,20 +57,38 @@ async function generateWithDefaultPrompt(
     // Create default prompt based on format type
     const { prompt, systemMessage } = createDefaultPrompt(formatType, topic, additionalContext);
     
-    // Make the API call
-    const response = await sendChatRequest('openai', {
-      messages: [
-        { 
-          role: 'system', 
-          content: systemMessage
-        },
-        { 
-          role: 'user', 
-          content: prompt 
-        }
-      ],
-      temperature: 0.7
-    });
+    // Try OpenRouter first if available, then fallback to OpenAI
+    let response;
+    try {
+      response = await sendChatRequest('openrouter', {
+        messages: [
+          { 
+            role: 'system', 
+            content: systemMessage
+          },
+          { 
+            role: 'user', 
+            content: prompt 
+          }
+        ],
+        temperature: 0.7
+      });
+    } catch (error) {
+      console.log('OpenRouter not available, falling back to OpenAI');
+      response = await sendChatRequest('openai', {
+        messages: [
+          { 
+            role: 'system', 
+            content: systemMessage
+          },
+          { 
+            role: 'user', 
+            content: prompt 
+          }
+        ],
+        temperature: 0.7
+      });
+    }
     
     if (response?.choices?.[0]?.message?.content) {
       return response.choices[0].message.content;
@@ -201,20 +219,38 @@ async function generateWithTemplate(
     
     console.log(`Generating content using custom template: ${template.name}`);
     
-    // Make the API call
-    const response = await sendChatRequest('openai', {
-      messages: [
-        { 
-          role: 'system', 
-          content: systemMessage
-        },
-        { 
-          role: 'user', 
-          content: promptText 
-        }
-      ],
-      temperature: 0.7
-    });
+    // Try OpenRouter first if available, then fallback to OpenAI
+    let response;
+    try {
+      response = await sendChatRequest('openrouter', {
+        messages: [
+          { 
+            role: 'system', 
+            content: systemMessage
+          },
+          { 
+            role: 'user', 
+            content: promptText 
+          }
+        ],
+        temperature: 0.7
+      });
+    } catch (error) {
+      console.log('OpenRouter not available, falling back to OpenAI');
+      response = await sendChatRequest('openai', {
+        messages: [
+          { 
+            role: 'system', 
+            content: systemMessage
+          },
+          { 
+            role: 'user', 
+            content: promptText 
+          }
+        ],
+        temperature: 0.7
+      });
+    }
     
     if (response?.choices?.[0]?.message?.content) {
       return response.choices[0].message.content;
