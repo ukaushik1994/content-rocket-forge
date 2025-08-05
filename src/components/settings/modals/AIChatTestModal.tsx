@@ -11,9 +11,10 @@ interface AIChatTestModalProps {
   provider: string | null;
   isOpen: boolean;
   onClose: () => void;
+  onTestComplete?: (provider: string, success: boolean) => void;
 }
 
-export function AIChatTestModal({ provider, isOpen, onClose }: AIChatTestModalProps) {
+export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: AIChatTestModalProps) {
   const [testMessage, setTestMessage] = useState('Hello! Can you help me with SEO content creation?');
   const [response, setResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +49,10 @@ export function AIChatTestModal({ provider, isOpen, onClose }: AIChatTestModalPr
         setTestSuccess(true);
         setTestComplete(true);
         toast.success(`✅ ${provider?.charAt(0).toUpperCase() + provider?.slice(1)} test successful! (${responseTime}ms)`);
+        // Notify parent of successful test
+        if (onTestComplete && provider) {
+          onTestComplete(provider, true);
+        }
       } else {
         throw new Error('No response received');
       }
@@ -57,6 +62,10 @@ export function AIChatTestModal({ provider, isOpen, onClose }: AIChatTestModalPr
       setTestSuccess(false);
       setTestComplete(true);
       toast.error(`❌ ${provider?.charAt(0).toUpperCase() + provider?.slice(1)} test failed`);
+      // Notify parent of failed test
+      if (onTestComplete && provider) {
+        onTestComplete(provider, false);
+      }
     } finally {
       setIsLoading(false);
     }

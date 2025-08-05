@@ -212,6 +212,18 @@ export function MinimalAPISettings() {
     setTestProvider(null);
   };
 
+  const handleTestComplete = async (provider: string, success: boolean) => {
+    // Update the provider status immediately
+    setConfiguredProviders(prev => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        status: success ? 'verified' : 'configured',
+        error: success ? undefined : 'Test failed'
+      }
+    }));
+  };
+
   // Show all providers, not just configured ones
   const allAiProviders = aiProviders;
   const allSerpProviders = serpProviders;
@@ -331,6 +343,7 @@ export function MinimalAPISettings() {
         provider={testProvider}
         isOpen={isAITestModalOpen}
         onClose={handleTestModalClose}
+        onTestComplete={handleTestComplete}
       />
       
       <SERPTestModal
