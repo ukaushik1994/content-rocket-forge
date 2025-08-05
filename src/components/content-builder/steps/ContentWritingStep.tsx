@@ -4,10 +4,12 @@ import { CollapsibleSerpSidebar } from './writing/CollapsibleSerpSidebar';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
 import { SaveContentDialog } from './writing/SaveContentDialog';
+import { TitleSelectionCard } from './writing/TitleSelectionCard';
 import { useWritingStep } from './writing/useWritingStep';
 import { generateAdvancedContent, ContentGenerationConfig } from '@/services/advancedContentGeneration';
 import { saveContentToDraft } from './writing/ContentGenerationService';
 import { useTitleSuggestions } from '@/hooks/final-review/useTitleSuggestions';
+import { generateContextualTitles } from '@/utils/seo/titles/generateContextualTitles';
 import { Button } from '@/components/ui/button';
 import { FileText, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -45,13 +47,19 @@ export const ContentWritingStep = () => {
     handleWordCountChange
   } = useWritingStep();
   
-  const { generateTitleSuggestions } = useTitleSuggestions();
+  const { generateTitleSuggestions, applyTitle } = useTitleSuggestions();
   const [writingStyle, setWritingStyle] = useState('Conversational');
   const [expertiseLevel, setExpertiseLevel] = useState('Beginner');
   const [contentType, setContentType] = useState<'how-to' | 'listicle' | 'comprehensive' | 'general'>('general');
   const [includeStats, setIncludeStats] = useState(true);
   const [includeCaseStudies, setIncludeCaseStudies] = useState(true);
   const [includeFAQs, setIncludeFAQs] = useState(true);
+  
+  // Title generation state
+  const [contextualTitles, setContextualTitles] = useState<string[]>([]);
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
+  const [showTitleSelection, setShowTitleSelection] = useState(false);
+  const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
 
   const handleGenerateContent = async () => {
     if (!mainKeyword) {
@@ -77,18 +85,69 @@ export const ContentWritingStep = () => {
     };
     
     setIsGenerating(true);
+    setShowTitleSelection(false);
     
     try {
       const generatedContent = await generateAdvancedContent(config, aiProvider);
       if (generatedContent) {
         handleContentChange(generatedContent);
         toast.success('Content generated successfully!');
+        
+        // Automatically generate contextual titles based on the actual content
+        await generateTitlesForContent(generatedContent, config);
       }
     } catch (error) {
       toast.error('Content generation failed');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const generateTitlesForContent = async (generatedContent: string, config: ContentGenerationConfig) => {
+    setIsGeneratingTitles(true);
+    try {
+      const titles = await generateContextualTitles(generatedContent, config);
+      setContextualTitles(titles);
+      setShowTitleSelection(true);
+      setSelectedTitle(null);
+      toast.success('Title options generated based on your content!');
+    } catch (error) {
+      console.error('Error generating contextual titles:', error);
+      toast.error('Failed to generate title options');
+    } finally {
+      setIsGeneratingTitles(false);
+    }
+  };
+
+  const handleSelectTitle = (title: string) => {
+    setSelectedTitle(title);
+    applyTitle(title);
+  };
+
+  const handleGenerateMoreTitles = async () => {
+    if (!content) {
+      toast.error('Generate content first to get title suggestions');
+      return;
+    }
+    
+    const config: ContentGenerationConfig = {
+      mainKeyword,
+      title: state.contentTitle || `${mainKeyword}: Expert Guide`,
+      outline: '',
+      secondaryKeywords: state.selectedKeywords?.join(', ') || '',
+      writingStyle,
+      expertiseLevel,
+      targetLength: wordCountLimit || 1500,
+      contentType,
+      serpSelections: state.serpSelections || [],
+      selectedSolution,
+      additionalInstructions,
+      includeStats,
+      includeCaseStudies,
+      includeFAQs
+    };
+    
+    await generateTitlesForContent(content, config);
   };
   
   const handleSaveToDraft = async () => {
@@ -138,6 +197,16 @@ export const ContentWritingStep = () => {
             onGenerateTitle={generateTitleSuggestions}
           />
         </div>
+
+        {/* Contextual Title Selection - appears after content generation */}
+        <TitleSelectionCard
+          titles={contextualTitles}
+          selectedTitle={selectedTitle}
+          onSelectTitle={handleSelectTitle}
+          onGenerateMore={handleGenerateMoreTitles}
+          isGenerating={isGeneratingTitles}
+          isVisible={showTitleSelection}
+        />
         
         <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden h-[calc(100vh-200px)]">
           <div className="p-4 h-full flex flex-col">
