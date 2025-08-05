@@ -38,6 +38,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user's AI provider configuration
+    console.log(`🔍 Fetching API keys for user: ${userId}`);
     const { data: userKeys, error: keysError } = await supabase
       .from('user_llm_keys')
       .select('*')
@@ -46,13 +47,19 @@ serve(async (req) => {
       .order('updated_at', { ascending: false });
 
     if (keysError) {
-      console.error('Error fetching user keys:', keysError);
+      console.error('❌ Error fetching user keys:', keysError);
     }
+
+    console.log(`📋 Found ${userKeys?.length || 0} active API keys:`, userKeys?.map(k => ({ provider: k.provider, model: k.model, keyLength: k.api_key?.length })));
 
     // Priority: OpenRouter > Anthropic > OpenAI
     const openrouterKey = userKeys?.find(k => k.provider === 'openrouter');
     const anthropicKey = userKeys?.find(k => k.provider === 'anthropic');
     const openaiKey = userKeys?.find(k => k.provider === 'openai');
+
+    console.log(`🎯 OpenRouter key found: ${!!openrouterKey}, model: ${openrouterKey?.model}`);
+    console.log(`🧠 Anthropic key found: ${!!anthropicKey}, model: ${anthropicKey?.model}`);
+    console.log(`🤖 OpenAI key found: ${!!openaiKey}, model: ${openaiKey?.model}`);
 
     // Build enhanced context for AI
     let contextPrompt = `You are an intelligent content marketing assistant for a comprehensive content platform. 
@@ -167,16 +174,22 @@ Response guidelines:
 
     // Try OpenRouter first (recommended)
     if (openrouterKey?.api_key) {
-      console.log('🎯 Using OpenRouter for enhanced AI chat');
+      const modelToUse = openrouterKey.model || 'openai/gpt-4o-mini';
+      console.log(`🎯 Using OpenRouter with model: ${modelToUse}`);
+      console.log(`🔑 API key format check: ${openrouterKey.api_key.substring(0, 10)}...${openrouterKey.api_key.substring(openrouterKey.api_key.length - 4)}`);
       try {
-        const result = await callOpenRouter(openrouterKey.api_key, openrouterKey.model || 'openai/gpt-4o-mini', messages, contextPrompt);
+        const result = await callOpenRouter(openrouterKey.api_key, modelToUse, messages, contextPrompt);
         aiResponse = result.response;
         modelUsed = result.model;
         provider = 'openrouter';
         usage = result.usage;
+        console.log('✅ OpenRouter request successful');
       } catch (error) {
-        console.error('OpenRouter failed, trying fallback:', error);
+        console.error('❌ OpenRouter failed:', error.message);
+        console.error('📋 OpenRouter error details:', error);
       }
+    } else {
+      console.log('⚠️ No OpenRouter API key found or key is empty');
     }
 
     // Fallback to Anthropic
@@ -252,12 +265,15 @@ async function callOpenRouter(apiKey: string, model: string, messages: any[], sy
     ...messages
   ];
 
+  console.log(`🔗 Making OpenRouter API call with model: ${model}`);
+  console.log(`📨 Message count: ${chatMessages.length}`);
+  
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://your-app.com',
+      'HTTP-Referer': 'https://iqiundzzcepmuykcnfbc.supabase.co',
       'X-Title': 'Enhanced AI Content Assistant'
     },
     body: JSON.stringify({
@@ -268,14 +284,30 @@ async function callOpenRouter(apiKey: string, model: string, messages: any[], sy
     }),
   });
 
+  console.log(`📊 OpenRouter response status: ${response.status}`);
+
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
+    const errorText = await response.text();
+    console.error(`❌ OpenRouter API error response: ${errorText}`);
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { error: { message: errorText } };
+    }
+    throw new Error(`OpenRouter API error (${response.status}): ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
+  console.log(`✅ OpenRouter API response received, model: ${data.model || model}`);
+  
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    console.error('❌ Invalid OpenRouter response structure:', data);
+    throw new Error('Invalid response structure from OpenRouter API');
+  }
+
   return {
-    response: data.choices[0]?.message?.content,
+    response: data.choices[0].message.content,
     model: data.model || model,
     usage: data.usage
   };
