@@ -212,8 +212,9 @@ export function MinimalAPISettings() {
     setTestProvider(null);
   };
 
-  const configuredAiProviders = aiProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured');
-  const configuredSerpProviders = serpProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured');
+  // Show all providers, not just configured ones
+  const allAiProviders = aiProviders;
+  const allSerpProviders = serpProviders;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -270,65 +271,21 @@ export function MinimalAPISettings() {
                     )}
                   </Button>
                   <Badge variant="secondary">
-                    {configuredAiProviders.length} configured
+                    {allAiProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured').length} configured
                   </Badge>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {configuredAiProviders.length > 0 ? (
-                configuredAiProviders.map(provider => (
-                  <ProviderCard
-                    key={provider.id}
-                    provider={provider}
-                    statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
-                    onConfigure={() => handleProviderConfigure(provider)}
-                    onTest={() => handleTestProvider(provider)}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Zap className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No AI providers configured</p>
-                </div>
-              )}
-              
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add AI Provider
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add AI Provider</DialogTitle>
-                    <DialogDescription>
-                      Choose an AI provider to configure
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid grid-cols-1 gap-3 mt-4">
-                    {aiProviders.filter(p => configuredProviders[p.serviceKey]?.status === 'not-configured' || !configuredProviders[p.serviceKey]).map(provider => (
-                      <Button
-                        key={provider.id}
-                        variant="outline"
-                        className="justify-start h-auto p-4"
-                        onClick={() => {
-                          handleProviderConfigure(provider);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <provider.icon className="h-5 w-5" />
-                          <div className="text-left">
-                            <p className="font-medium">{provider.name}</p>
-                            <p className="text-sm text-muted-foreground">{provider.description}</p>
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {allAiProviders.map(provider => (
+                <ProviderCard
+                  key={provider.id}
+                  provider={provider}
+                  statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
+                  onConfigure={() => handleProviderConfigure(provider)}
+                  onTest={() => handleTestProvider(provider)}
+                />
+              ))}
             </CardContent>
           </Card>
         </div>
@@ -343,64 +300,20 @@ export function MinimalAPISettings() {
                   Search Providers
                 </CardTitle>
                 <Badge variant="secondary">
-                  {configuredSerpProviders.length} configured
+                  {allSerpProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured').length} configured
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {configuredSerpProviders.length > 0 ? (
-                configuredSerpProviders.map(provider => (
-                  <ProviderCard
-                    key={provider.id}
-                    provider={provider}
-                    statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
-                    onConfigure={() => handleProviderConfigure(provider)}
-                    onTest={() => handleTestProvider(provider)}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No search providers configured</p>
-                </div>
-              )}
-              
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Search Provider
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Search Provider</DialogTitle>
-                    <DialogDescription>
-                      Choose a search provider to configure
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid grid-cols-1 gap-3 mt-4">
-                    {serpProviders.filter(p => configuredProviders[p.serviceKey]?.status === 'not-configured' || !configuredProviders[p.serviceKey]).map(provider => (
-                      <Button
-                        key={provider.id}
-                        variant="outline"
-                        className="justify-start h-auto p-4"
-                        onClick={() => {
-                          handleProviderConfigure(provider);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <provider.icon className="h-5 w-5" />
-                          <div className="text-left">
-                            <p className="font-medium">{provider.name}</p>
-                            <p className="text-sm text-muted-foreground">{provider.description}</p>
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {allSerpProviders.map(provider => (
+                <ProviderCard
+                  key={provider.id}
+                  provider={provider}
+                  statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
+                  onConfigure={() => handleProviderConfigure(provider)}
+                  onTest={() => handleTestProvider(provider)}
+                />
+              ))}
             </CardContent>
           </Card>
         </div>
