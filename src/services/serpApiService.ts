@@ -257,9 +257,9 @@ export const analyzeKeywordSerp = async (
       // Call the API-Proxy Edge Function for SerpAPI
       const { data, error } = await supabase.functions.invoke('api-proxy', {
         body: {
-          service: 'serp',
+          service: provider, // Use the actual provider
           endpoint: 'analyze',
-          apiKey: apiKey, // Optional - will fall back to SERP_API_KEY secret
+          apiKey: apiKey,
           params: {
             keyword,
             location: 'us',
@@ -271,7 +271,7 @@ export const analyzeKeywordSerp = async (
       
       if (error) {
         console.error(`❌ ${provider.toUpperCase()} API proxy error:`, error);
-        throw error;
+        throw new Error(`${provider.toUpperCase()} API Error: ${error.message || JSON.stringify(error)}`);
       }
       
       if (data && data.isGoogleData) {

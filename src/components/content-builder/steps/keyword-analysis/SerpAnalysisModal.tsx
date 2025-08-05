@@ -52,17 +52,29 @@ export function SerpAnalysisModal({
     serpstack: null
   });
   
+  // Initialize provider data when modal opens and serpData is available
+  React.useEffect(() => {
+    if (isOpen && serpData && !providerData.serpapi) {
+      console.log('🔧 Initializing provider data with serpData');
+      setProviderData(prev => ({
+        ...prev,
+        serpapi: serpData
+      }));
+    }
+  }, [isOpen, serpData]);
+
   // Debug logging
   console.log('🔍 SerpAnalysisModal Debug:', {
     isOpen,
     keyword,
     serpData: !!serpData,
     currentSerpData: !!providerData[activeProvider],
-    isLoadingProvider
+    isLoadingProvider,
+    activeProvider
   });
   
   // Get current data based on active provider
-  const currentSerpData = providerData[activeProvider];
+  const currentSerpData = providerData[activeProvider] || serpData;
   
   // Always render the modal when open, even without data
   if (!isOpen) {
@@ -74,14 +86,19 @@ export function SerpAnalysisModal({
   // Function to fetch data from alternative provider
   const fetchFromProvider = async (provider: 'serpapi' | 'serpstack') => {
     setIsLoadingProvider(true);
+    console.log(`🚀 Fetching data from ${provider} for keyword: ${keyword}`);
+    
     try {
       let data;
       if (provider === 'serpapi') {
+        console.log('📡 Calling analyzeKeywordEnhanced for SerpAPI...');
         data = await analyzeKeywordEnhanced(keyword);
       } else {
-        // Use enhanced Serpstack service
+        console.log('📡 Calling analyzeSerpstackKeyword for Serpstack...');
         data = await analyzeSerpstackKeyword(keyword);
       }
+      
+      console.log(`📊 ${provider} returned data:`, !!data);
       
       if (data) {
         setProviderData(prev => ({
@@ -89,40 +106,56 @@ export function SerpAnalysisModal({
           [provider]: data
         }));
         
-        // If this is the active provider, notify parent
-        if (provider === activeProvider) {
-          onSerpDataUpdate?.(data);
-        }
+        // Always notify parent when we get data, regardless of active provider
+        onSerpDataUpdate?.(data);
         
         const providerName = provider === 'serpapi' ? 'SerpAPI' : 'Serpstack';
         const dataStats = {
           faqs: data.peopleAlsoAsk?.length || 0,
           entities: data.entities?.length || 0,
-          competitors: data.topResults?.length || 0
+          competitors: data.topResults?.length || 0,
+          headings: data.headings?.length || 0,
+          gaps: data.contentGaps?.length || 0
         };
         
-        toast.success(`${providerName} loaded: ${dataStats.faqs} FAQs, ${dataStats.entities} entities, ${dataStats.competitors} competitors!`, {
+        toast.success(`${providerName} loaded: ${dataStats.faqs} FAQs, ${dataStats.entities} entities, ${dataStats.competitors} competitors, ${dataStats.headings} headings, ${dataStats.gaps} gaps!`, {
           duration: 5000
         });
+        
+        return data;
       } else {
-        toast.error(`Failed to load data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
+        const errorMsg = `Failed to load data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}. Please check your API key and try again.`;
+        console.error(errorMsg);
+        toast.error(errorMsg, { duration: 8000 });
+        return null;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error fetching from ${provider}:`, error);
-      toast.error(`Error loading data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
+      const errorMsg = `Error loading data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}: ${error.message || 'Unknown error'}`;
+      toast.error(errorMsg, { 
+        duration: 8000,
+        action: {
+          label: "Check Settings",
+          onClick: () => window.location.href = "/settings/api"
+        }
+      });
+      return null;
     } finally {
       setIsLoadingProvider(false);
     }
   };
 
   // Function to switch provider
-  const switchProvider = (provider: 'serpapi' | 'serpstack') => {
+  const switchProvider = async (provider: 'serpapi' | 'serpstack') => {
+    console.log(`🔄 Switching to provider: ${provider}`);
     setActiveProvider(provider);
     
     // If we don't have data for this provider, fetch it
     if (!providerData[provider]) {
-      fetchFromProvider(provider);
+      console.log(`📡 No data for ${provider}, fetching...`);
+      await fetchFromProvider(provider);
     } else {
+      console.log(`📋 Using existing ${provider} data`);
       // Update parent with existing data
       onSerpDataUpdate?.(providerData[provider]);
     }

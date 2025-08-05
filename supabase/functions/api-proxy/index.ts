@@ -59,11 +59,14 @@ serve(async (req) => {
 
     // Final validation
     if (!finalApiKey || finalApiKey.trim() === '') {
-      console.error(`❌ No API key available for ${service}`);
+      const errorMsg = `API key is required for ${service}. Please configure your API key in Settings.`;
+      console.error(`❌ No API key available for ${service}:`, errorMsg);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `API key is required for ${service}. Please configure your API key in Supabase secrets or provide it in the request.` 
+          error: errorMsg,
+          provider: service,
+          requiresApiKey: true
         }),
         { 
           status: 400, 
@@ -100,7 +103,12 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('💥 API Proxy error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Unknown error occurred' }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Unknown error occurred',
+        details: 'Check API key configuration and service availability',
+        timestamp: new Date().toISOString()
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
