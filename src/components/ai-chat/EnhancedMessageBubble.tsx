@@ -3,7 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { VisualDataRenderer } from './VisualDataRenderer';
-import { ActionButtons } from './ActionButtons';
+import { ModernActionButtons } from './ModernActionButtons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -91,7 +91,7 @@ export const EnhancedMessageBubble: React.FC<EnhancedMessageBubbleProps> = ({
         {/* Action Buttons */}
         {message.actions && message.actions.length > 0 && !isUser && (
           <div className="flex flex-wrap gap-2">
-            <ActionButtons 
+            <ModernActionButtons 
               actions={message.actions}
               onAction={onAction}
             />

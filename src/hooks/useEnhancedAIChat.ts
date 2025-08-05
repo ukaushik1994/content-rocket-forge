@@ -4,6 +4,7 @@ import { EnhancedChatMessage } from '@/types/enhancedChat';
 import { enhancedAIService } from '@/services/enhancedAIService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { ContextualAction } from '@/services/aiService';
 
 export const useEnhancedAIChat = () => {
   const [messages, setMessages] = useState<EnhancedChatMessage[]>([]);

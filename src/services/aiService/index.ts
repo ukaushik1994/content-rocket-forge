@@ -99,3 +99,12 @@ export interface ContextualAction {
   variant?: 'primary' | 'secondary' | 'default' | 'outline';
   description?: string;
 }
+
+// Export contextual action utilities
+export { 
+  generateContextualActions, 
+  handleWorkflowAction,
+  createContentActions,
+  createSEOActions,
+  createStrategyActions
+} from './contextualActions';
