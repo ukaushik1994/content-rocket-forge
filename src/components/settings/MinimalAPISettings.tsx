@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings2, Zap, Search } from 'lucide-react';
+import { Plus, Settings2, Zap, Search, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ApiKeyInput } from './api/ApiKeyInput';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { API_PROVIDERS, ApiProvider } from './api/types';
 import { getAllApiKeysStatus } from '@/services/apiKeys';
 import { getUserPreference } from '@/services/userPreferencesService';
+import { AIChatTestModal } from './modals/AIChatTestModal';
+import { SERPTestModal } from './modals/SERPTestModal';
 
 const StatusDot = ({ status }: { status: 'connected' | 'disconnected' }) => (
   <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-gray-400'}`} />
@@ -18,18 +20,20 @@ const StatusDot = ({ status }: { status: 'connected' | 'disconnected' }) => (
 const ProviderCard = ({ 
   provider, 
   isConfigured, 
-  onConfigure 
+  onConfigure,
+  onTest
 }: { 
   provider: ApiProvider; 
   isConfigured: boolean; 
   onConfigure: () => void;
+  onTest?: () => void;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3 }}
   >
-    <Card className="cursor-pointer hover:shadow-md transition-all duration-200" onClick={onConfigure}>
+    <Card className="hover:shadow-md transition-all duration-200">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -46,8 +50,38 @@ const ProviderCard = ({
               </div>
             </div>
           </div>
-          <Settings2 className="h-4 w-4 text-muted-foreground" />
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={onConfigure}
+          >
+            <Settings2 className="h-4 w-4" />
+          </Button>
         </div>
+        
+        {/* Test Button for configured providers */}
+        {isConfigured && onTest && (
+          <div className="mt-3 pt-3 border-t">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={onTest}
+            >
+              {provider.category === 'AI Services' ? (
+                <>
+                  <MessageSquare className="h-3 w-3 mr-2" />
+                  Test Chat
+                </>
+              ) : (
+                <>
+                  <Search className="h-3 w-3 mr-2" />
+                  Test Search
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   </motion.div>
@@ -89,10 +123,15 @@ export function MinimalAPISettings() {
   const [selectedProvider, setSelectedProvider] = useState<ApiProvider | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>();
+  
+  // Test modal states
+  const [testProvider, setTestProvider] = useState<string | null>(null);
+  const [isAITestModalOpen, setIsAITestModalOpen] = useState(false);
+  const [isSERPTestModalOpen, setIsSERPTestModalOpen] = useState(false);
 
   // Separate AI and SERP providers
   const aiProviders = API_PROVIDERS.filter(p => p.category === 'AI Services');
-  const serpProviders = API_PROVIDERS.filter(p => p.category === 'Search');
+  const serpProviders = API_PROVIDERS.filter(p => p.category === 'SEO & Analytics');
 
   useEffect(() => {
     const loadProviderStatus = async () => {
@@ -123,6 +162,21 @@ export function MinimalAPISettings() {
     setSelectedProvider(null);
     // Refresh provider status after configuration
     getAllApiKeysStatus().then(setConfiguredProviders);
+  };
+
+  const handleTestProvider = (provider: ApiProvider) => {
+    setTestProvider(provider.serviceKey);
+    if (provider.category === 'AI Services') {
+      setIsAITestModalOpen(true);
+    } else if (provider.category === 'SEO & Analytics') {
+      setIsSERPTestModalOpen(true);
+    }
+  };
+
+  const handleTestModalClose = () => {
+    setIsAITestModalOpen(false);
+    setIsSERPTestModalOpen(false);
+    setTestProvider(null);
   };
 
   const configuredAiProviders = aiProviders.filter(p => configuredProviders[p.serviceKey]);
@@ -176,6 +230,7 @@ export function MinimalAPISettings() {
                     provider={provider}
                     isConfigured={true}
                     onConfigure={() => handleProviderConfigure(provider)}
+                    onTest={() => handleTestProvider(provider)}
                   />
                 ))
               ) : (
@@ -247,6 +302,7 @@ export function MinimalAPISettings() {
                     provider={provider}
                     isConfigured={true}
                     onConfigure={() => handleProviderConfigure(provider)}
+                    onTest={() => handleTestProvider(provider)}
                   />
                 ))
               ) : (
@@ -302,6 +358,19 @@ export function MinimalAPISettings() {
         provider={selectedProvider}
         isOpen={isModalOpen}
         onClose={handleModalClose}
+      />
+
+      {/* Test Modals */}
+      <AIChatTestModal
+        provider={testProvider}
+        isOpen={isAITestModalOpen}
+        onClose={handleTestModalClose}
+      />
+      
+      <SERPTestModal
+        provider={testProvider}
+        isOpen={isSERPTestModalOpen}
+        onClose={handleTestModalClose}
       />
     </div>
   );
