@@ -227,7 +227,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
               value={content} 
               onChange={handleChange} 
               placeholder="Write your content here..." 
-              className="min-h-[90vh] h-full border-0 focus-visible:ring-0 resize-none p-4 flex-1 absolute inset-0" 
+              className="min-h-[98vh] h-full border-0 focus-visible:ring-0 resize-none p-4 flex-1 absolute inset-0" 
               disabled={isLoading}
             />
             
@@ -274,7 +274,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
             </div>
           )}
           <CardContent className="p-4 flex-1">
-            <ScrollArea className="h-[90vh]">
+            <ScrollArea className="h-[98vh]">
               <div 
                 className="prose prose-sm max-w-none dark:prose-invert" 
                 dangerouslySetInnerHTML={{

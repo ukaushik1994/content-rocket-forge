@@ -111,8 +111,8 @@ export const ContentWritingStep = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8 pb-12">
-        <div className="text-center mb-10">
+      <div className="relative z-10 max-w-full mx-auto px-4 pt-4 pb-6">
+        <div className="text-center mb-6">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
             {state.contentTitle || 'Create Amazing Content'}
           </h1>
@@ -121,7 +121,7 @@ export const ContentWritingStep = () => {
           </p>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-4">
           <ContentGenerationHeader
             isGenerating={isGenerating}
             handleGenerateContent={handleGenerateContent}
@@ -139,10 +139,10 @@ export const ContentWritingStep = () => {
           />
         </div>
         
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-full mx-auto">
           <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
-            <div className="p-8">
-              <div className="flex items-center gap-3 mb-8">
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <FileText className="h-5 w-5 text-primary" />
                 </div>
