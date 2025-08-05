@@ -103,9 +103,29 @@ async function testApiKeyFunctionality(provider: ApiProvider): Promise<{ success
 }
 
 /**
- * Get detailed status of all API keys
+ * Get basic status of all API keys (existence only, no testing)
  */
 export async function getAllApiKeysStatus(): Promise<Record<string, ApiKeyStatusResult>> {
+  const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
+  const status: Record<string, ApiKeyStatusResult> = {};
+
+  for (const provider of providers) {
+    const hasKey = await hasApiKey(provider);
+    
+    if (!hasKey) {
+      status[provider] = { status: 'not-configured' };
+    } else {
+      status[provider] = { status: 'configured' };
+    }
+  }
+
+  return status;
+}
+
+/**
+ * Test all configured API keys and return detailed status
+ */
+export async function testAllApiKeys(): Promise<Record<string, ApiKeyStatusResult>> {
   const providers: ApiProvider[] = ['serp', 'serpstack', 'openrouter', 'anthropic', 'openai', 'gemini', 'mistral', 'lmstudio'];
   const status: Record<string, ApiKeyStatusResult> = {};
 

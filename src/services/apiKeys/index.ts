@@ -11,4 +11,5 @@ export * from './validation';
 
 // Re-export types for convenience
 export type { ApiKeyStatus, ApiKeyStatusResult } from './crud';
+export { testAllApiKeys } from './crud';
 

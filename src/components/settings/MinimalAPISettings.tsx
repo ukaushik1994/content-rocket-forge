@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings2, Zap, Search, MessageSquare } from 'lucide-react';
+import { Plus, Settings2, Zap, Search, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ApiKeyInput } from './api/ApiKeyInput';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { API_PROVIDERS, ApiProvider } from './api/types';
-import { getAllApiKeysStatus, ApiKeyStatusResult, ApiKeyStatus } from '@/services/apiKeys';
+import { getAllApiKeysStatus, testAllApiKeys, ApiKeyStatusResult, ApiKeyStatus } from '@/services/apiKeys';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AIChatTestModal } from './modals/AIChatTestModal';
 import { SERPTestModal } from './modals/SERPTestModal';
@@ -143,6 +143,7 @@ export function MinimalAPISettings() {
   const [selectedProvider, setSelectedProvider] = useState<ApiProvider | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>();
+  const [isTestingAll, setIsTestingAll] = useState(false);
   
   // Test modal states
   const [testProvider, setTestProvider] = useState<string | null>(null);
@@ -180,8 +181,20 @@ export function MinimalAPISettings() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedProvider(null);
-    // Refresh provider status after configuration
+    // Only refresh basic status after configuration (no testing)
     getAllApiKeysStatus().then(setConfiguredProviders);
+  };
+
+  const handleTestAllProviders = async () => {
+    setIsTestingAll(true);
+    try {
+      const status = await testAllApiKeys();
+      setConfiguredProviders(status);
+    } catch (error) {
+      console.error('Failed to test providers:', error);
+    } finally {
+      setIsTestingAll(false);
+    }
   };
 
   const handleTestProvider = (provider: ApiProvider) => {
@@ -237,9 +250,29 @@ export function MinimalAPISettings() {
                   <Zap className="h-5 w-5" />
                   AI Providers
                 </CardTitle>
-                <Badge variant="secondary">
-                  {configuredAiProviders.length} configured
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleTestAllProviders}
+                    disabled={isTestingAll}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isTestingAll ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Test All
+                      </>
+                    )}
+                  </Button>
+                  <Badge variant="secondary">
+                    {configuredAiProviders.length} configured
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
