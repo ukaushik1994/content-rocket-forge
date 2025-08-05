@@ -85,6 +85,8 @@ async function handleGenericAIRequest(service: string, endpoint: string, params:
 async function callOpenRouter(apiKey: string, params: any) {
   const { model = 'openai/gpt-4o-mini', messages, temperature = 0.7, maxTokens = 2000 } = params;
 
+  console.log(`📤 OpenRouter request: model=${model}, messages=${messages.length}`);
+
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -103,21 +105,23 @@ async function callOpenRouter(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`❌ OpenRouter API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
-  return new Response(JSON.stringify({
-    response: data.choices[0]?.message?.content,
-    model: data.model || model,
-    usage: data.usage
-  }), {
+  console.log(`📥 OpenRouter response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
+  
+  // Return OpenAI-compatible format
+  return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 
 async function callOpenAI(apiKey: string, params: any) {
   const { model = 'gpt-4o-mini', messages, temperature = 0.7, maxTokens = 2000 } = params;
+
+  console.log(`📤 OpenAI request: model=${model}, messages=${messages.length}`);
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -135,15 +139,15 @@ async function callOpenAI(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`❌ OpenAI API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
-  return new Response(JSON.stringify({
-    response: data.choices[0]?.message?.content,
-    model: data.model || model,
-    usage: data.usage
-  }), {
+  console.log(`📥 OpenAI response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
+  
+  // Return OpenAI-compatible format
+  return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
@@ -151,6 +155,8 @@ async function callOpenAI(apiKey: string, params: any) {
 async function callAnthropic(apiKey: string, params: any) {
   const { model = 'claude-3-haiku-20240307', messages, temperature = 0.7, maxTokens = 2000 } = params;
   
+  console.log(`📤 Anthropic request: model=${model}, messages=${messages.length}`);
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -168,21 +174,43 @@ async function callAnthropic(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`❌ Anthropic API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
-  return new Response(JSON.stringify({
-    response: data.content[0]?.text,
+  console.log(`📥 Anthropic response: ${data.content[0]?.text?.substring(0, 100)}...`);
+  
+  // Transform to OpenAI-compatible format
+  const openAIFormat = {
+    id: `chatcmpl-${Date.now()}`,
+    object: 'chat.completion',
+    created: Math.floor(Date.now() / 1000),
     model: data.model || model,
-    usage: data.usage
-  }), {
+    choices: [{
+      index: 0,
+      message: {
+        role: 'assistant',
+        content: data.content[0]?.text || ''
+      },
+      finish_reason: 'stop'
+    }],
+    usage: {
+      prompt_tokens: data.usage?.input_tokens || 0,
+      completion_tokens: data.usage?.output_tokens || 0,
+      total_tokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+    }
+  };
+
+  return new Response(JSON.stringify(openAIFormat), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 
 async function callGemini(apiKey: string, params: any) {
-  const { model = 'gemini-1.5-flash', messages, temperature = 0.7, maxTokens = 2000 } = params;
+  const { model = 'gemini-1.5-pro', messages, temperature = 0.7, maxTokens = 2000 } = params;
+  
+  console.log(`📤 Gemini request: model=${model}, messages=${messages.length}`);
   
   // Convert messages to Gemini format
   const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
@@ -191,68 +219,108 @@ async function callGemini(apiKey: string, params: any) {
     parts: [{ text: m.content }]
   }));
 
+  const requestBody = {
+    contents: geminiMessages,
+    systemInstruction: systemPrompt ? {
+      parts: [{ text: systemPrompt }]
+    } : undefined,
+    generationConfig: {
+      temperature,
+      maxOutputTokens: maxTokens,
+    },
+    safetySettings: [
+      {
+        category: "HARM_CATEGORY_HARASSMENT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      },
+      {
+        category: "HARM_CATEGORY_HATE_SPEECH",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      },
+      {
+        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      },
+      {
+        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE"
+      }
+    ]
+  };
+
+  console.log(`📤 Gemini request body:`, JSON.stringify(requestBody, null, 2));
+
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      contents: geminiMessages,
-      systemInstruction: systemPrompt ? {
-        parts: [{ text: systemPrompt }]
-      } : undefined,
-      generationConfig: {
-        temperature,
-        maxOutputTokens: maxTokens,
-      },
-      safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_MEDIUM_AND_ABOVE"
-        }
-      ]
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+    const errorText = await response.text();
+    console.error(`❌ Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
+    
+    try {
+      const errorData = JSON.parse(errorText);
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+    } catch {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
   }
 
   const data = await response.json();
+  console.log(`📥 Gemini raw response:`, JSON.stringify(data, null, 2));
+  
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
   
   if (!content) {
-    throw new Error('No content generated by Gemini');
+    console.error('❌ No content generated by Gemini:', data);
+    
+    // Check for safety filters or other reasons
+    const finishReason = data.candidates?.[0]?.finishReason;
+    if (finishReason === 'SAFETY') {
+      throw new Error('Gemini blocked the response due to safety filters. Please try a different prompt.');
+    } else if (finishReason === 'RECITATION') {
+      throw new Error('Gemini blocked the response due to recitation concerns. Please try a different prompt.');
+    } else {
+      throw new Error(`No content generated by Gemini. Finish reason: ${finishReason || 'unknown'}`);
+    }
   }
 
-  return new Response(JSON.stringify({
-    response: content,
+  console.log(`📥 Gemini response: ${content.substring(0, 100)}...`);
+  
+  // Transform to OpenAI-compatible format
+  const openAIFormat = {
+    id: `chatcmpl-${Date.now()}`,
+    object: 'chat.completion',
+    created: Math.floor(Date.now() / 1000),
     model: model,
+    choices: [{
+      index: 0,
+      message: {
+        role: 'assistant',
+        content: content
+      },
+      finish_reason: 'stop'
+    }],
     usage: {
       prompt_tokens: data.usageMetadata?.promptTokenCount || 0,
       completion_tokens: data.usageMetadata?.candidatesTokenCount || 0,
       total_tokens: data.usageMetadata?.totalTokenCount || 0
     }
-  }), {
+  };
+
+  return new Response(JSON.stringify(openAIFormat), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 
 async function callMistral(apiKey: string, params: any) {
   const { model = 'mistral-small', messages, temperature = 0.7, maxTokens = 2000 } = params;
+
+  console.log(`📤 Mistral request: model=${model}, messages=${messages.length}`);
 
   const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
@@ -270,15 +338,15 @@ async function callMistral(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error(`❌ Mistral API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`Mistral API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
-  return new Response(JSON.stringify({
-    response: data.choices[0]?.message?.content,
-    model: data.model || model,
-    usage: data.usage
-  }), {
+  console.log(`📥 Mistral response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
+  
+  // Return OpenAI-compatible format
+  return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
