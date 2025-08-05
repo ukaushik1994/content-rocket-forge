@@ -8,26 +8,42 @@ import { motion } from 'framer-motion';
 import { ApiKeyInput } from './api/ApiKeyInput';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
 import { API_PROVIDERS, ApiProvider } from './api/types';
-import { getAllApiKeysStatus } from '@/services/apiKeys';
+import { getAllApiKeysStatus, ApiKeyStatusResult, ApiKeyStatus } from '@/services/apiKeys';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AIChatTestModal } from './modals/AIChatTestModal';
 import { SERPTestModal } from './modals/SERPTestModal';
 
-const StatusDot = ({ status }: { status: 'connected' | 'disconnected' }) => (
-  <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-gray-400'}`} />
-);
+const StatusDot = ({ status }: { status: ApiKeyStatus }) => {
+  const colors = {
+    'not-configured': 'bg-muted-foreground',
+    'configured': 'bg-warning',
+    'verified': 'bg-success'
+  };
+  return <div className={`w-2 h-2 rounded-full ${colors[status]}`} />;
+};
 
 const ProviderCard = ({ 
   provider, 
-  isConfigured, 
+  statusResult, 
   onConfigure,
   onTest
 }: { 
   provider: ApiProvider; 
-  isConfigured: boolean; 
+  statusResult: ApiKeyStatusResult; 
   onConfigure: () => void;
   onTest?: () => void;
-}) => (
+}) => {
+  const isConfigured = statusResult.status !== 'not-configured';
+  
+  const getStatusText = (status: ApiKeyStatus) => {
+    switch (status) {
+      case 'not-configured': return 'Not configured';
+      case 'configured': return 'Configured (untested)';
+      case 'verified': return 'Verified & working';
+    }
+  };
+
+  return (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -43,10 +59,13 @@ const ProviderCard = ({
             <div>
               <p className="font-medium text-sm">{provider.name}</p>
               <div className="flex items-center gap-2 mt-1">
-                <StatusDot status={isConfigured ? 'connected' : 'disconnected'} />
+                <StatusDot status={statusResult.status} />
                 <span className="text-xs text-muted-foreground">
-                  {isConfigured ? 'Connected' : 'Not configured'}
+                  {getStatusText(statusResult.status)}
                 </span>
+                {statusResult.error && (
+                  <span className="text-xs text-destructive" title={statusResult.error}>⚠️</span>
+                )}
               </div>
             </div>
           </div>
@@ -85,7 +104,8 @@ const ProviderCard = ({
       </CardContent>
     </Card>
   </motion.div>
-);
+  );
+};
 
 const ConfigurationModal = ({ 
   provider, 
@@ -119,7 +139,7 @@ const ConfigurationModal = ({
 };
 
 export function MinimalAPISettings() {
-  const [configuredProviders, setConfiguredProviders] = useState<Record<string, boolean>>({});
+  const [configuredProviders, setConfiguredProviders] = useState<Record<string, ApiKeyStatusResult>>({});
   const [selectedProvider, setSelectedProvider] = useState<ApiProvider | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>();
@@ -179,8 +199,8 @@ export function MinimalAPISettings() {
     setTestProvider(null);
   };
 
-  const configuredAiProviders = aiProviders.filter(p => configuredProviders[p.serviceKey]);
-  const configuredSerpProviders = serpProviders.filter(p => configuredProviders[p.serviceKey]);
+  const configuredAiProviders = aiProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured');
+  const configuredSerpProviders = serpProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured');
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -228,7 +248,7 @@ export function MinimalAPISettings() {
                   <ProviderCard
                     key={provider.id}
                     provider={provider}
-                    isConfigured={true}
+                    statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
                     onConfigure={() => handleProviderConfigure(provider)}
                     onTest={() => handleTestProvider(provider)}
                   />
@@ -255,7 +275,7 @@ export function MinimalAPISettings() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-1 gap-3 mt-4">
-                    {aiProviders.filter(p => !configuredProviders[p.serviceKey]).map(provider => (
+                    {aiProviders.filter(p => configuredProviders[p.serviceKey]?.status === 'not-configured' || !configuredProviders[p.serviceKey]).map(provider => (
                       <Button
                         key={provider.id}
                         variant="outline"
@@ -300,7 +320,7 @@ export function MinimalAPISettings() {
                   <ProviderCard
                     key={provider.id}
                     provider={provider}
-                    isConfigured={true}
+                    statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
                     onConfigure={() => handleProviderConfigure(provider)}
                     onTest={() => handleTestProvider(provider)}
                   />
@@ -327,7 +347,7 @@ export function MinimalAPISettings() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-1 gap-3 mt-4">
-                    {serpProviders.filter(p => !configuredProviders[p.serviceKey]).map(provider => (
+                    {serpProviders.filter(p => configuredProviders[p.serviceKey]?.status === 'not-configured' || !configuredProviders[p.serviceKey]).map(provider => (
                       <Button
                         key={provider.id}
                         variant="outline"

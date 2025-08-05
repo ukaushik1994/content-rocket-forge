@@ -9,3 +9,6 @@ export * from './crud';
 export { testApiKey } from './testing';
 export * from './validation';
 
+// Re-export types for convenience
+export type { ApiKeyStatus, ApiKeyStatusResult } from './crud';
+
