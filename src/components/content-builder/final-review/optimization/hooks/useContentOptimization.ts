@@ -64,7 +64,7 @@ export function useContentOptimization() {
         const allSelectedSuggestions = [...selectedContentSuggestions, ...selectedSolutionSuggestions];
         const suggestionPrompts = allSelectedSuggestions.map(s => `- ${s.title}: ${s.description}`).join('\n');
 
-        const response = await sendChatRequest('openai', {
+        const response = await sendChatRequest('openrouter', {
           messages: [
             {
               role: 'system',

@@ -18,7 +18,7 @@ export function useContentAnalysis() {
 
     setIsAnalyzing(true);
     try {
-      const response = await sendChatRequest('openai', {
+      const response = await sendChatRequest('openrouter', {
         messages: [
           {
             role: 'system',

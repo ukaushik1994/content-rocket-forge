@@ -52,7 +52,7 @@ TITLE FORMATS TO PRIORITIZE:
 
 Return ONLY the 10 titles, one per line, without numbering.`;
 
-    const response = await sendChatRequest('openai', {
+    const response = await sendChatRequest('openrouter', {
       messages: [
         { 
           role: 'system', 

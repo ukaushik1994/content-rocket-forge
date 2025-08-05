@@ -31,7 +31,7 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
     
     try {
       // First try to use AI service for advanced analysis
-      const aiResponse = await sendChatRequest('openai', {
+      const aiResponse = await sendChatRequest('openrouter', {
         messages: [
           { 
             role: 'system', 

@@ -26,7 +26,7 @@ export const useMetaGenerator = (onGenerateTitles: () => void) => {
     
     try {
       // First try to use AI service to generate meta information
-      const metaResponse = await sendChatRequest('openai', {
+      const metaResponse = await sendChatRequest('openrouter', {
         messages: [
           { 
             role: 'system', 

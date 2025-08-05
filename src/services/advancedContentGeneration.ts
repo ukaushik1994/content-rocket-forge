@@ -22,8 +22,8 @@ export interface ContentGenerationConfig {
  * Generate advanced content using selected SERP items and AI
  */
 export async function generateAdvancedContent(
-  config: ContentGenerationConfig,
-  aiProvider: string = 'openai'
+  config: ContentGenerationConfig, 
+  aiProvider: string = 'openrouter'
 ): Promise<string | null> {
   try {
     console.log('🚀 Starting advanced content generation with config:', {

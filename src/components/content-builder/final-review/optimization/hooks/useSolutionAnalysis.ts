@@ -19,7 +19,7 @@ export function useSolutionAnalysis() {
     const solutionMetrics = analyzeSolutionIntegration(content, state.selectedSolution);
     setAnalyzedSolutionIntegration(solutionMetrics);
     
-    const solutionResult = await sendChatRequest('openai', {
+    const solutionResult = await sendChatRequest('openrouter', {
       messages: [
         { 
           role: 'system', 

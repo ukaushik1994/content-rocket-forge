@@ -232,7 +232,7 @@ TITLE FORMATS TO USE:
 
 Return ONLY the 15 titles, one per line, without numbering or formatting.`;
 
-    const response = await sendChatRequest('openai', {
+    const response = await sendChatRequest('openrouter', {
       messages: [
         { role: 'system', content: 'You are an expert SEO copywriter specializing in creating compelling, unique titles that drive clicks while maintaining search optimization.' },
         { role: 'user', content: prompt }
