@@ -4,6 +4,7 @@ import { getApiKey, saveApiKey, deleteApiKey, ApiProvider } from '../apiKeyServi
 import { sendChatRequest } from '../aiService/aiService';
 import { searchKeywords } from '../serpApiService';
 import { AiProvider } from '../aiService/types';
+import { supabase } from '@/integrations/supabase/client';
 
 // Re-export the main functions for consistency
 export { getApiKey, saveApiKey, deleteApiKey };
@@ -22,9 +23,37 @@ const TEST_CACHE_DURATION = 5 * 60 * 1000;
 const testCache = new Map<string, { result: boolean; timestamp: number; error?: string }>();
 
 /**
+ * Check if an OpenRouter API key exists in user_llm_keys table
+ */
+async function hasOpenRouterKey(): Promise<boolean> {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return false;
+
+    const { data, error: keyError } = await supabase
+      .from('user_llm_keys')
+      .select('api_key')
+      .eq('user_id', user.id)
+      .eq('provider', 'openrouter')
+      .eq('is_active', true)
+      .single();
+
+    return !keyError && !!data?.api_key;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Check if an API key exists for a provider
  */
 export async function hasApiKey(provider: ApiProvider): Promise<boolean> {
+  // OpenRouter uses user_llm_keys table
+  if (provider === 'openrouter') {
+    return hasOpenRouterKey();
+  }
+  
+  // All other providers use api_keys table
   const key = await getApiKey(provider);
   return !!key;
 }
@@ -42,8 +71,9 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
   }
 
   try {
-    const key = await getApiKey(provider);
-    if (!key) {
+    // Check if the key exists using the appropriate method
+    const hasKey = await hasApiKey(provider);
+    if (!hasKey) {
       return { success: false, error: 'No API key configured' };
     }
 

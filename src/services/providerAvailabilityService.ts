@@ -1,5 +1,6 @@
 import { getApiKey } from '@/services/apiKeyService';
 import { testApiKey } from '@/services/apiKeys/testing';
+import { hasApiKey } from '@/services/apiKeys/crud';
 import { AiProvider } from '@/services/aiService/types';
 import { ApiProvider } from '@/services/apiKeyService';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
@@ -25,8 +26,8 @@ export async function getAvailableProviders(): Promise<AiProvider[]> {
   
   for (const provider of PROVIDER_PRIORITY) {
     try {
-      const apiKey = await getApiKey(provider as ApiProvider);
-      if (apiKey) {
+      const keyExists = await hasApiKey(provider as ApiProvider);
+      if (keyExists) {
         // Just check if key exists - testing can be optional for performance
         availableProviders.push(provider);
       }
@@ -55,8 +56,7 @@ export async function getBestAvailableProvider(): Promise<AiProvider | null> {
  */
 export async function isProviderAvailable(provider: AiProvider): Promise<boolean> {
   try {
-    const apiKey = await getApiKey(provider as ApiProvider);
-    return !!apiKey;
+    return await hasApiKey(provider as ApiProvider);
   } catch (error) {
     console.warn(`Error checking ${provider} availability:`, error);
     return false;
@@ -79,11 +79,18 @@ export async function getProviderStatus(): Promise<Record<AiProvider, boolean>> 
   
   for (const provider of PROVIDER_PRIORITY) {
     try {
-      const apiKey = await getApiKey(provider as ApiProvider);
-      if (apiKey) {
+      const keyExists = await hasApiKey(provider as ApiProvider);
+      if (keyExists) {
         try {
-          const testResult = await testApiKey(provider as ApiProvider, apiKey);
-          status[provider] = testResult;
+          // For OpenRouter, we need to get the key differently
+          if (provider === 'openrouter') {
+            // Just mark as available since key exists and is checked above
+            status[provider] = true;
+          } else {
+            const apiKey = await getApiKey(provider as ApiProvider);
+            const testResult = await testApiKey(provider as ApiProvider, apiKey!);
+            status[provider] = testResult;
+          }
         } catch (error) {
           console.warn(`Error testing ${provider}:`, error);
           status[provider] = false;
