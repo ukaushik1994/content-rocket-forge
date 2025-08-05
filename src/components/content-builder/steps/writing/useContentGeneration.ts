@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { sendChatRequest } from '@/services/aiService';
 import { ContentBuilderState, SerpSelection } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
-import { getApiKey } from '@/services/apiKeyService';
+import { hasApiKey } from '@/services/apiKeys/crud';
 import { getAvailableProviders, getBestAvailableProvider, initializeProviderPreferences } from '@/services/providerAvailabilityService';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter';
@@ -59,8 +59,8 @@ export function useContentGeneration() {
     }
     
     // Make sure the selected provider has a key configured
-    const hasApiKey = await getApiKey(aiProvider);
-    if (!hasApiKey) {
+    const keyExists = await hasApiKey(aiProvider);
+    if (!keyExists) {
       toast.error(`No API key configured for ${aiProvider}. Please add your API key in Settings.`);
       return false;
     }

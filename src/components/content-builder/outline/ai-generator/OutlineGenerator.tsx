@@ -8,9 +8,8 @@ import { AIInstructionsInput } from '../AIInstructionsInput';
 import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
 import { getUserPreference } from '@/services/userPreferencesService';
-import { getApiKey } from '@/services/apiKeyService';
+import { hasApiKey } from '@/services/apiKeys/crud';
 import { AiProvider } from '@/services/aiService/types';
-import { ApiProvider } from '@/services/apiKeyService';
 import { getAvailableProviders, getBestAvailableProvider } from '@/services/providerAvailabilityService';
 
 export function OutlineGenerator() {
@@ -72,8 +71,8 @@ export function OutlineGenerator() {
       console.info("AI Generation prompt:", outlinePrompt);
       
       // Make sure the selected provider has a key configured
-      const hasApiKey = await getApiKey(aiProvider as ApiProvider);
-      if (!hasApiKey) {
+      const keyExists = await hasApiKey(aiProvider);
+      if (!keyExists) {
         toast.error(`No API key configured for ${aiProvider}. Please add your API key in Settings.`);
         setIsGenerating(false);
         return;
