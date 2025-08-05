@@ -203,15 +203,22 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
-          <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="border-t border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm relative">
+          {/* Lock indicator */}
+          <div className="absolute top-2 right-4 z-10 flex items-center gap-1 text-xs text-muted-foreground">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            <span>Locked</span>
+          </div>
+          <div className="max-w-6xl mx-auto px-6 py-4 pointer-events-none opacity-75">
             <EnhancedMessageInput
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
               placeholder={
                 messages.length === 0 
-                  ? "Ask me about your content performance, start optimization workflows, or get strategic insights..."
-                  : "Continue the conversation..."
+                  ? "This input is currently locked..."
+                  : "This input is currently locked..."
               }
             />
           </div>
