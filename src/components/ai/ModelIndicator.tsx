@@ -15,12 +15,14 @@ interface ModelIndicatorProps {
 }
 
 const AVAILABLE_MODELS = [
-  { id: 'openai/gpt-4', name: 'GPT-4', provider: 'OpenAI' },
-  { id: 'openai/gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI' },
+  { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
+  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI' },
   { id: 'openai/gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' },
   { id: 'anthropic/claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
   { id: 'anthropic/claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic' },
   { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'Google' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google' },
   { id: 'mistralai/mistral-7b-instruct', name: 'Mistral 7B', provider: 'Mistral' },
   { id: 'meta-llama/llama-3-70b-instruct', name: 'LLaMA 3 70B', provider: 'Meta' }
 ];
@@ -31,7 +33,7 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
 }) => {
   const { user } = useAuth();
   const { getCurrentModel } = useOpenRouter();
-  const [currentModel, setCurrentModel] = useState<string>('openai/gpt-4');
+  const [currentModel, setCurrentModel] = useState<string>('openai/gpt-4o-mini');
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -161,9 +163,10 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
             <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
               <p className="font-medium mb-1">💡 Model Selection Tips:</p>
               <ul className="space-y-1">
-                <li>• GPT-4: Best for complex reasoning and analysis</li>
+                <li>• GPT-4o: Best for complex reasoning and vision</li>
                 <li>• Claude 3: Excellent for creative writing</li>
-                <li>• GPT-3.5: Fast and cost-effective for simple tasks</li>
+                <li>• Gemini 1.5: Great for long contexts and multilingual</li>
+                <li>• GPT-4o Mini: Fast and cost-effective</li>
                 <li>• Mistral/LLaMA: Open-source alternatives</li>
               </ul>
             </div>
