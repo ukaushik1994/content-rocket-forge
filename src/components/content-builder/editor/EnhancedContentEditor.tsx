@@ -179,7 +179,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
   return (
     <Card className="border border-muted h-full flex-1 flex flex-col">
       <Tabs defaultValue="write" className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between px-3 py-2 border-b">
           <TabsList className="grid grid-cols-2">
             <TabsTrigger value="write">Write</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -187,11 +187,11 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
           
           {/* SERP Highlight Controls */}
           {serpTypes.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">Highlight:</span>
               <button
                 onClick={() => setHighlightMode(null)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
+                className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                   !highlightMode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20'
                 }`}
               >
@@ -201,7 +201,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
                 <button
                   key={type}
                   onClick={() => setHighlightMode(highlightMode === type ? null : type)}
-                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                  className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                     highlightMode === type ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20'
                   }`}
                 >
@@ -227,7 +227,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
               value={content} 
               onChange={handleChange} 
               placeholder="Write your content here..." 
-              className="min-h-[60vh] border-0 focus-visible:ring-0 resize-none p-4 flex-1 absolute inset-0" 
+              className="min-h-[75vh] h-full border-0 focus-visible:ring-0 resize-none p-4 flex-1 absolute inset-0" 
               disabled={isLoading}
             />
             
@@ -243,9 +243,9 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
           
           {/* SERP Integration Info */}
           {highlightMatches.length > 0 && (
-            <div className="p-4 border-t bg-muted/50">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Info className="h-4 w-4" />
+            <div className="px-3 py-2 border-t bg-muted/30">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Info className="h-3 w-3" />
                 <span>
                   {highlightMatches.length} SERP integrations found
                 </span>
@@ -253,7 +253,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
                   {serpTypes.map(type => {
                     const count = highlightMatches.filter(m => m.type === type).length;
                     return (
-                      <Badge key={type} variant="secondary" className="text-xs">
+                      <Badge key={type} variant="secondary" className="text-[10px] px-1 py-0">
                         {type.replace(/_/g, ' ')}: {count}
                       </Badge>
                     );
@@ -274,7 +274,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
             </div>
           )}
           <CardContent className="p-4 flex-1">
-            <ScrollArea className="h-[60vh]">
+            <ScrollArea className="h-[75vh]">
               <div 
                 className="prose prose-sm max-w-none dark:prose-invert" 
                 dangerouslySetInnerHTML={{
