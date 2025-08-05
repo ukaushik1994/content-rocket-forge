@@ -25,7 +25,7 @@ export function useWritingStep() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveTitle, setSaveTitle] = useState(contentTitle || mainKeyword || '');
   const [saveNote, setSaveNote] = useState('');
-  const [aiProvider, setAiProvider] = useState<AiProvider>('openai');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
   const [autoSaveTimestamp, setAutoSaveTimestamp] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [wordCountLimit, setWordCountLimit] = useState<number | undefined>(1500);

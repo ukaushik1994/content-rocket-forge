@@ -11,6 +11,7 @@ import { getUserPreference } from '@/services/userPreferencesService';
 import { getApiKey } from '@/services/apiKeyService';
 import { AiProvider } from '@/services/aiService/types';
 import { ApiProvider } from '@/services/apiKeyService';
+import { getAvailableProviders, getBestAvailableProvider } from '@/services/providerAvailabilityService';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -24,37 +25,28 @@ export function OutlineGenerator() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(additionalInstructions || '');
-  const [aiProvider, setAiProvider] = useState<AiProvider>('gemini');
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
   const [availableProviders, setAvailableProviders] = useState<AiProvider[]>([]);
   
   // Load available providers and default AI provider preference
   useEffect(() => {
-    const checkAvailableProviders = async () => {
-      const providers: AiProvider[] = [];
-      
-      // Check which providers have API keys configured
-      const openaiKey = await getApiKey('openai');
-      const anthropicKey = await getApiKey('anthropic');
-      const geminiKey = await getApiKey('gemini');
-      const mistralKey = await getApiKey('mistral');
-      
-      if (openaiKey) providers.push('openai');
-      if (anthropicKey) providers.push('anthropic');
-      if (geminiKey) providers.push('gemini');
-      if (mistralKey) providers.push('mistral');
-      
+    const initProviders = async () => {
+      const providers = await getAvailableProviders();
       setAvailableProviders(providers);
       
-      // Set default provider from preferences or first available
+      // Set default provider from preferences or best available
       const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
       if (defaultProvider && providers.includes(defaultProvider)) {
         setAiProvider(defaultProvider);
-      } else if (providers.length > 0 && !providers.includes(aiProvider)) {
-        setAiProvider(providers[0]);
+      } else {
+        const bestProvider = await getBestAvailableProvider();
+        if (bestProvider) {
+          setAiProvider(bestProvider);
+        }
       }
     };
     
-    checkAvailableProviders();
+    initProviders();
   }, []);
   
   const selectedItems = serpSelections.filter(item => item.selected);

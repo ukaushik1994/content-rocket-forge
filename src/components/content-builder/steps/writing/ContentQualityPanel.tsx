@@ -30,7 +30,7 @@ export const ContentQualityPanel: React.FC<ContentQualityPanelProps> = ({
   expertiseLevel,
   onWritingStyleChange,
   onExpertiseLevelChange,
-  aiProvider = 'openai'
+  aiProvider = 'openrouter'
 }) => {
   const { state } = useContentBuilder();
   const { serpSelections } = state;
