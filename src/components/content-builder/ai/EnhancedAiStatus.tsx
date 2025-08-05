@@ -8,9 +8,10 @@ import {
   Settings,
   Brain
 } from 'lucide-react';
-import { getApiKey, testApiKey } from '@/services/apiKeyService';
 import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
+import { getAvailableProviders, getProviderStatus } from '@/services/providerAvailabilityService';
+import { hasApiKey } from '@/services/apiKeys/crud';
 
 interface AiProviderStatus {
   configured: boolean;
@@ -48,40 +49,31 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
     setIsLoading(true);
     console.log('🔍 Starting AI provider status check');
     
-    const newStatus: AiApiStatus = {};
-    const working: AiProvider[] = [];
-    
     try {
-      // Check each AI provider
+      // Use the modern provider availability service
+      const availableProviders = await getAvailableProviders();
+      const providerStatus = await getProviderStatus();
+      
+      console.log('📊 Available providers:', availableProviders);
+      console.log('📊 Provider status:', providerStatus);
+      
+      const newStatus: AiApiStatus = {};
+      const working: AiProvider[] = [];
+      
+      // Process all providers to maintain compatibility with the interface
       for (const provider of AI_PROVIDERS) {
-        console.log(`🔍 Checking ${provider} key`);
-        const apiKey = await getApiKey(provider);
-        let isWorking = false;
-        
-        if (apiKey) {
-          console.log(`✅ ${provider} key found in database, testing...`);
-          
-          // Set testing state
-          setStatus(prev => ({
-            ...prev,
-            [provider]: { configured: true, working: false, testing: true }
-          }));
-          
-          isWorking = await testApiKey(provider, apiKey);
-          console.log(`📊 ${provider} test result:`, isWorking);
-          
-          if (isWorking) {
-            working.push(provider);
-          }
-        } else {
-          console.log(`❌ No ${provider} key found in database`);
-        }
+        const isConfigured = await hasApiKey(provider);
+        const isWorking = providerStatus[provider] || false;
         
         newStatus[provider] = {
-          configured: !!apiKey,
+          configured: isConfigured,
           working: isWorking,
           testing: false
         };
+        
+        if (isWorking) {
+          working.push(provider);
+        }
       }
       
       console.log('📊 Final AI provider status:', newStatus);
