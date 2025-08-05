@@ -59,13 +59,13 @@ export function SERPTestModal({ isOpen, onClose, provider }: SERPTestModalProps)
           searchTime,
           success: true
         });
-        toast.success(`${provider.toUpperCase()} search completed successfully!`);
+        toast.success(`${provider ? provider.toUpperCase() : 'SERP'} search completed successfully!`);
       } else {
         throw new Error('No search results returned');
       }
     } catch (error: any) {
-      console.error(`SERP test failed for ${provider}:`, error);
-      toast.error(`${provider.toUpperCase()} test failed: ${error.message}`);
+      console.error(`SERP test failed for ${provider || 'unknown'}:`, error);
+      toast.error(`${provider ? provider.toUpperCase() : 'SERP'} test failed: ${error.message}`);
       setSearchStats({
         success: false,
         searchTime: 0
@@ -95,7 +95,7 @@ export function SERPTestModal({ isOpen, onClose, provider }: SERPTestModalProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Test {provider.toUpperCase()} Search
+            Test {provider ? provider.toUpperCase() : 'SERP'} Search
           </DialogTitle>
         </DialogHeader>
 
@@ -146,7 +146,7 @@ export function SERPTestModal({ isOpen, onClose, provider }: SERPTestModalProps)
           <ScrollArea className="flex-1 border rounded-lg p-4">
             {!searchStats ? (
               <div className="text-center text-muted-foreground py-8">
-                Enter a keyword and click Search to test your {provider.toUpperCase()} integration
+                Enter a keyword and click Search to test your {provider ? provider.toUpperCase() : 'SERP'} integration
               </div>
             ) : !searchStats.success ? (
               <div className="text-center text-destructive py-8">
