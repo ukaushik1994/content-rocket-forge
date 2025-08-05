@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfileSettings } from '@/components/settings';
-import { APISettings } from '@/components/settings';
+import { MinimalAPISettings } from '@/components/settings/MinimalAPISettings';
 import { NotificationSettings } from '@/components/settings';
 import { AdvancedSettings } from '@/components/settings';
 import { BillingSettings } from '@/components/settings';
@@ -48,7 +48,7 @@ export default function Settings() {
       case "profile":
         return <ProfileSettings />;
       case "api":
-        return <APISettings />;
+        return <MinimalAPISettings />;
       case "notifications":
         return <NotificationSettings />;
       case "appearance":

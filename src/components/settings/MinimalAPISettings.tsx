@@ -1,0 +1,308 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Settings2, Zap, Search } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ApiKeyInput } from './api/ApiKeyInput';
+import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
+import { API_PROVIDERS, ApiProvider } from './api/types';
+import { getAllApiKeysStatus } from '@/services/apiKeys';
+import { getUserPreference } from '@/services/userPreferencesService';
+
+const StatusDot = ({ status }: { status: 'connected' | 'disconnected' }) => (
+  <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-500' : 'bg-gray-400'}`} />
+);
+
+const ProviderCard = ({ 
+  provider, 
+  isConfigured, 
+  onConfigure 
+}: { 
+  provider: ApiProvider; 
+  isConfigured: boolean; 
+  onConfigure: () => void;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    <Card className="cursor-pointer hover:shadow-md transition-all duration-200" onClick={onConfigure}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-muted">
+              <provider.icon className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-medium text-sm">{provider.name}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <StatusDot status={isConfigured ? 'connected' : 'disconnected'} />
+                <span className="text-xs text-muted-foreground">
+                  {isConfigured ? 'Connected' : 'Not configured'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <Settings2 className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  </motion.div>
+);
+
+const ConfigurationModal = ({ 
+  provider, 
+  isOpen, 
+  onClose 
+}: { 
+  provider: ApiProvider | null; 
+  isOpen: boolean; 
+  onClose: () => void;
+}) => {
+  if (!provider) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <provider.icon className="h-5 w-5" />
+            Configure {provider.name}
+          </DialogTitle>
+          <DialogDescription>
+            {provider.description}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-4">
+          <ApiKeyInput provider={provider} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export function MinimalAPISettings() {
+  const [configuredProviders, setConfiguredProviders] = useState<Record<string, boolean>>({});
+  const [selectedProvider, setSelectedProvider] = useState<ApiProvider | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [defaultAiProvider, setDefaultAiProvider] = useState<'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio' | undefined>();
+
+  // Separate AI and SERP providers
+  const aiProviders = API_PROVIDERS.filter(p => p.category === 'AI Services');
+  const serpProviders = API_PROVIDERS.filter(p => p.category === 'Search');
+
+  useEffect(() => {
+    const loadProviderStatus = async () => {
+      try {
+        const status = await getAllApiKeysStatus();
+        setConfiguredProviders(status);
+      } catch (error) {
+        console.error('Failed to load provider status:', error);
+      }
+    };
+
+    const loadDefaultProvider = async () => {
+      const defaultProvider = getUserPreference('defaultAiProvider');
+      setDefaultAiProvider(defaultProvider || 'openrouter');
+    };
+
+    loadProviderStatus();
+    loadDefaultProvider();
+  }, []);
+
+  const handleProviderConfigure = (provider: ApiProvider) => {
+    setSelectedProvider(provider);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedProvider(null);
+    // Refresh provider status after configuration
+    getAllApiKeysStatus().then(setConfiguredProviders);
+  };
+
+  const configuredAiProviders = aiProviders.filter(p => configuredProviders[p.serviceKey]);
+  const configuredSerpProviders = serpProviders.filter(p => configuredProviders[p.serviceKey]);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold">API Settings</h1>
+        <p className="text-muted-foreground mt-2">Manage your API integrations</p>
+      </div>
+
+      {/* Default AI Provider Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Default AI Provider
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DefaultAiProviderSelector 
+            defaultAiProvider={defaultAiProvider} 
+            onDefaultAiProviderChange={setDefaultAiProvider} 
+          />
+        </CardContent>
+      </Card>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* AI Providers Section */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  AI Providers
+                </CardTitle>
+                <Badge variant="secondary">
+                  {configuredAiProviders.length} configured
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {configuredAiProviders.length > 0 ? (
+                configuredAiProviders.map(provider => (
+                  <ProviderCard
+                    key={provider.id}
+                    provider={provider}
+                    isConfigured={true}
+                    onConfigure={() => handleProviderConfigure(provider)}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Zap className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No AI providers configured</p>
+                </div>
+              )}
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add AI Provider
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add AI Provider</DialogTitle>
+                    <DialogDescription>
+                      Choose an AI provider to configure
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 gap-3 mt-4">
+                    {aiProviders.filter(p => !configuredProviders[p.serviceKey]).map(provider => (
+                      <Button
+                        key={provider.id}
+                        variant="outline"
+                        className="justify-start h-auto p-4"
+                        onClick={() => {
+                          handleProviderConfigure(provider);
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <provider.icon className="h-5 w-5" />
+                          <div className="text-left">
+                            <p className="font-medium">{provider.name}</p>
+                            <p className="text-sm text-muted-foreground">{provider.description}</p>
+                          </div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* SERP Providers Section */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Search Providers
+                </CardTitle>
+                <Badge variant="secondary">
+                  {configuredSerpProviders.length} configured
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {configuredSerpProviders.length > 0 ? (
+                configuredSerpProviders.map(provider => (
+                  <ProviderCard
+                    key={provider.id}
+                    provider={provider}
+                    isConfigured={true}
+                    onConfigure={() => handleProviderConfigure(provider)}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No search providers configured</p>
+                </div>
+              )}
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Search Provider
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Search Provider</DialogTitle>
+                    <DialogDescription>
+                      Choose a search provider to configure
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 gap-3 mt-4">
+                    {serpProviders.filter(p => !configuredProviders[p.serviceKey]).map(provider => (
+                      <Button
+                        key={provider.id}
+                        variant="outline"
+                        className="justify-start h-auto p-4"
+                        onClick={() => {
+                          handleProviderConfigure(provider);
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <provider.icon className="h-5 w-5" />
+                          <div className="text-left">
+                            <p className="font-medium">{provider.name}</p>
+                            <p className="text-sm text-muted-foreground">{provider.description}</p>
+                          </div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Configuration Modal */}
+      <ConfigurationModal
+        provider={selectedProvider}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+      />
+    </div>
+  );
+}
