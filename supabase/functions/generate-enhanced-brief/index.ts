@@ -9,7 +9,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -52,11 +51,14 @@ serve(async (req) => {
       });
     }
 
+    // Get user's AI providers
+    const aiProvider = await getUserAIProvider(userId || opportunity.user_id);
+
     // Get SERP data for context
     const serpData = opportunity.serp_data || await getCachedSerpData(opportunity.keyword);
 
     // Generate comprehensive brief
-    const brief = await generateComprehensiveBrief(opportunity, serpData);
+    const brief = await generateComprehensiveBrief(opportunity, serpData, aiProvider);
 
     // Save to database
     const { data: savedBrief, error: briefError } = await supabase
@@ -76,7 +78,7 @@ serve(async (req) => {
         meta_description: brief.meta_description,
         cta_suggestions: brief.cta_suggestions,
         target_word_count: brief.target_word_count,
-        ai_model_used: openaiApiKey ? 'gpt-4o-mini' : 'rule-based',
+        ai_model_used: aiProvider?.model || 'rule-based',
         generation_prompt: brief.generation_prompt,
         brief_content: brief.full_brief,
         quality_score: brief.quality_score
@@ -110,6 +112,158 @@ serve(async (req) => {
   }
 });
 
+async function getUserAIProvider(userId: string) {
+  try {
+    const { data: userKeys } = await supabase
+      .from('user_llm_keys')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false });
+
+    // Priority: OpenRouter > Anthropic > Gemini > OpenAI
+    const openrouter = userKeys?.find(k => k.provider === 'openrouter');
+    const anthropic = userKeys?.find(k => k.provider === 'anthropic');
+    const gemini = userKeys?.find(k => k.provider === 'gemini');
+    const openai = userKeys?.find(k => k.provider === 'openai');
+
+    if (openrouter?.api_key) {
+      return {
+        provider: 'openrouter',
+        api_key: openrouter.api_key,
+        model: openrouter.model || 'meta-llama/llama-3.2-3b-instruct:free'
+      };
+    }
+    
+    if (anthropic?.api_key) {
+      return {
+        provider: 'anthropic',
+        api_key: anthropic.api_key,
+        model: anthropic.model || 'claude-3-haiku-20240307'
+      };
+    }
+    
+    if (gemini?.api_key) {
+      return {
+        provider: 'gemini',
+        api_key: gemini.api_key,
+        model: gemini.model || 'gemini-pro'
+      };
+    }
+    
+    if (openai?.api_key) {
+      return {
+        provider: 'openai',
+        api_key: openai.api_key,
+        model: openai.model || 'gpt-4o-mini'
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting user AI provider:', error);
+    return null;
+  }
+}
+
+async function callAIWithFallback(provider: any, prompt: string) {
+  if (!provider) {
+    throw new Error('No AI provider configured');
+  }
+
+  const messages = [{ role: 'user', content: prompt }];
+
+  try {
+    switch (provider.provider) {
+      case 'openrouter':
+        return await callOpenRouter(provider.api_key, provider.model, messages);
+      case 'anthropic':
+        return await callAnthropic(provider.api_key, provider.model, messages);
+      case 'gemini':
+        return await callGemini(provider.api_key, provider.model, messages);
+      case 'openai':
+        return await callOpenAI(provider.api_key, provider.model, messages);
+      default:
+        throw new Error(`Unsupported provider: ${provider.provider}`);
+    }
+  } catch (error) {
+    console.error(`${provider.provider} API error:`, error);
+    throw error;
+  }
+}
+
+async function callOpenRouter(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.4,
+      max_tokens: 2000
+    }),
+  });
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callAnthropic(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      max_tokens: 2000
+    }),
+  });
+
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+async function callGemini(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: messages.map(m => ({ parts: [{ text: m.content }] }))
+    }),
+  });
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function callOpenAI(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.4,
+      max_tokens: 2000
+    }),
+  });
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 async function getCachedSerpData(keyword: string) {
   const { data } = await supabase
     .from('raw_serp_data')
@@ -122,9 +276,9 @@ async function getCachedSerpData(keyword: string) {
   return data?.serp_response || null;
 }
 
-async function generateComprehensiveBrief(opportunity: any, serpData: any) {
-  if (!openaiApiKey) {
-    console.log('⚠️ OpenAI API key not configured, using template-based brief');
+async function generateComprehensiveBrief(opportunity: any, serpData: any, aiProvider: any) {
+  if (!aiProvider) {
+    console.log('⚠️ No AI provider configured, using template-based brief');
     return generateTemplateBrief(opportunity, serpData);
   }
 
@@ -207,22 +361,7 @@ RESPOND IN THIS JSON FORMAT:
   "quality_score": 95
 }`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.4,
-        max_tokens: 2000
-      }),
-    });
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const content = await callAIWithFallback(aiProvider, prompt);
     
     try {
       const briefData = JSON.parse(content);
@@ -238,7 +377,7 @@ RESPOND IN THIS JSON FORMAT:
     }
     
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    console.error('AI API error:', error);
     return generateTemplateBrief(opportunity, serpData);
   }
 }

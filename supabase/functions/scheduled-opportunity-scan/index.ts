@@ -10,7 +10,6 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const serpApiKey = Deno.env.get('SERP_API_KEY');
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -67,8 +66,11 @@ serve(async (req) => {
         }
 
         if (serpData) {
+          // Get user's AI provider for analysis
+          const aiProvider = await getUserAIProvider(seed.user_id);
+          
           // Analyze with AI for content opportunities
-          const opportunities = await analyzeForOpportunities(seed, serpData);
+          const opportunities = await analyzeForOpportunities(seed, serpData, aiProvider);
           
           for (const opportunity of opportunities) {
             // Check if opportunity already exists
@@ -181,6 +183,158 @@ serve(async (req) => {
   }
 });
 
+async function getUserAIProvider(userId: string) {
+  try {
+    const { data: userKeys } = await supabase
+      .from('user_llm_keys')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false });
+
+    // Priority: OpenRouter > Anthropic > Gemini > OpenAI
+    const openrouter = userKeys?.find(k => k.provider === 'openrouter');
+    const anthropic = userKeys?.find(k => k.provider === 'anthropic');
+    const gemini = userKeys?.find(k => k.provider === 'gemini');
+    const openai = userKeys?.find(k => k.provider === 'openai');
+
+    if (openrouter?.api_key) {
+      return {
+        provider: 'openrouter',
+        api_key: openrouter.api_key,
+        model: openrouter.model || 'meta-llama/llama-3.2-3b-instruct:free'
+      };
+    }
+    
+    if (anthropic?.api_key) {
+      return {
+        provider: 'anthropic',
+        api_key: anthropic.api_key,
+        model: anthropic.model || 'claude-3-haiku-20240307'
+      };
+    }
+    
+    if (gemini?.api_key) {
+      return {
+        provider: 'gemini',
+        api_key: gemini.api_key,
+        model: gemini.model || 'gemini-pro'
+      };
+    }
+    
+    if (openai?.api_key) {
+      return {
+        provider: 'openai',
+        api_key: openai.api_key,
+        model: openai.model || 'gpt-4o-mini'
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting user AI provider:', error);
+    return null;
+  }
+}
+
+async function callAIWithFallback(provider: any, prompt: string) {
+  if (!provider) {
+    throw new Error('No AI provider configured');
+  }
+
+  const messages = [{ role: 'user', content: prompt }];
+
+  try {
+    switch (provider.provider) {
+      case 'openrouter':
+        return await callOpenRouter(provider.api_key, provider.model, messages);
+      case 'anthropic':
+        return await callAnthropic(provider.api_key, provider.model, messages);
+      case 'gemini':
+        return await callGemini(provider.api_key, provider.model, messages);
+      case 'openai':
+        return await callOpenAI(provider.api_key, provider.model, messages);
+      default:
+        throw new Error(`Unsupported provider: ${provider.provider}`);
+    }
+  } catch (error) {
+    console.error(`${provider.provider} API error:`, error);
+    throw error;
+  }
+}
+
+async function callOpenRouter(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.3,
+      max_tokens: 1000
+    }),
+  });
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callAnthropic(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      max_tokens: 1000
+    }),
+  });
+
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+async function callGemini(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: messages.map(m => ({ parts: [{ text: m.content }] }))
+    }),
+  });
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function callOpenAI(apiKey: string, model: string, messages: any[]) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.3,
+      max_tokens: 1000
+    }),
+  });
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 function shouldScanKeyword(lastScanned: string | null, frequency: string): boolean {
   if (!lastScanned) return true;
   
@@ -246,7 +400,7 @@ async function cacheSerpData(keyword: string, serpData: any) {
     }]);
 }
 
-async function analyzeForOpportunities(seed: any, serpData: any) {
+async function analyzeForOpportunities(seed: any, serpData: any, aiProvider: any) {
   const opportunities = [];
   
   // Extract data from SERP
@@ -255,7 +409,7 @@ async function analyzeForOpportunities(seed: any, serpData: any) {
   const relatedSearches = serpData.related_searches || [];
   
   // Analyze main keyword
-  const mainOpportunity = await classifyContent(seed.keyword, serpData);
+  const mainOpportunity = await classifyContent(seed.keyword, serpData, aiProvider);
   if (mainOpportunity) {
     opportunities.push(mainOpportunity);
   }
@@ -263,7 +417,7 @@ async function analyzeForOpportunities(seed: any, serpData: any) {
   // Analyze related searches for additional opportunities
   for (const related of relatedSearches.slice(0, 3)) {
     if (related.query && related.query !== seed.keyword) {
-      const relatedOpportunity = await classifyContent(related.query, serpData);
+      const relatedOpportunity = await classifyContent(related.query, serpData, aiProvider);
       if (relatedOpportunity && relatedOpportunity.opportunity_score > 60) {
         opportunities.push(relatedOpportunity);
       }
@@ -273,9 +427,9 @@ async function analyzeForOpportunities(seed: any, serpData: any) {
   return opportunities;
 }
 
-async function classifyContent(keyword: string, serpData: any) {
-  if (!openaiApiKey) {
-    console.log('⚠️ OpenAI API key not configured, using rule-based classification');
+async function classifyContent(keyword: string, serpData: any, aiProvider: any) {
+  if (!aiProvider) {
+    console.log('⚠️ No AI provider configured, using rule-based classification');
     return generateRuleBasedClassification(keyword, serpData);
   }
 
@@ -313,22 +467,7 @@ Respond in JSON format:
   "reasoning": "Brief explanation"
 }`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        max_tokens: 1000
-      }),
-    });
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const content = await callAIWithFallback(aiProvider, prompt);
     
     try {
       const analysis = JSON.parse(content);
@@ -355,7 +494,7 @@ Respond in JSON format:
     }
     
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    console.error('AI API error:', error);
     return generateRuleBasedClassification(keyword, serpData);
   }
 }
