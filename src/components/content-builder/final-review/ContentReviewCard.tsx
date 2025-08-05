@@ -10,6 +10,7 @@ import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AutoOptimizeDialog } from './optimization/AutoOptimizeDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useContentOptimizer } from './optimization/useContentOptimizer';
 
 interface ContentReviewCardProps {
   content: string;
@@ -23,10 +24,15 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   const [isAutoOptimizeDialogOpen, setIsAutoOptimizeDialogOpen] = useState(false);
   
   // Enhanced button states
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hasOptimized, setHasOptimized] = useState(false);
-  const [suggestionCount, setSuggestionCount] = useState(0);
-  const [optimizationError, setOptimizationError] = useState(false);
+  
+  // Use the real content optimizer hook
+  const {
+    isAnalyzing,
+    analyzeContent,
+    getTotalSuggestionCount,
+    analysisError
+  } = useContentOptimizer(editedContent);
 
   // Handle content changes
   const handleContentChange = (newContent: string) => {
@@ -61,16 +67,15 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   };
 
   // Enhanced auto-optimize handler
-  const handleAutoOptimize = () => {
-    setIsAnalyzing(true);
-    setOptimizationError(false);
-    setIsAutoOptimizeDialogOpen(true);
-    
-    // Simulate analysis process
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setSuggestionCount(Math.floor(Math.random() * 5) + 1); // Random suggestion count for demo
-    }, 2000);
+  const handleAutoOptimize = async () => {
+    try {
+      setIsAutoOptimizeDialogOpen(true);
+      // Run the real analysis
+      await analyzeContent();
+    } catch (error) {
+      console.error('Failed to start analysis:', error);
+      toast.error('Failed to start analysis. Please try again.');
+    }
   };
 
   // Handle content update from auto-optimize dialog
@@ -89,22 +94,19 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
     // Reset optimization state after success animation
     setTimeout(() => {
       setHasOptimized(false);
-      setSuggestionCount(0);
     }, 3000);
   };
 
   // Reset states when content changes
   useEffect(() => {
     setHasOptimized(false);
-    setSuggestionCount(0);
-    setOptimizationError(false);
   }, [editedContent]);
 
   // Get button text based on state
   const getButtonText = () => {
     if (isAnalyzing) return 'Analyzing...';
     if (hasOptimized) return 'Optimized!';
-    if (optimizationError) return 'Retry';
+    if (analysisError) return 'Retry';
     return 'Auto-optimize';
   };
 
@@ -112,9 +114,12 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
   const getButtonIcon = () => {
     if (isAnalyzing) return <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />;
     if (hasOptimized) return <CheckCircle className="h-3.5 w-3.5 mr-1" />;
-    if (optimizationError) return <Wand className="h-3.5 w-3.5 mr-1" />;
+    if (analysisError) return <Wand className="h-3.5 w-3.5 mr-1" />;
     return <Sparkles className="h-3.5 w-3.5 mr-1" />;
   };
+
+  // Get current suggestion count
+  const suggestionCount = getTotalSuggestionCount();
 
   return (
     <Card className="shadow-lg overflow-hidden glass-panel flex flex-col border-neon-border h-full">
@@ -164,7 +169,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
                         text-xs relative overflow-hidden group transition-all duration-300 ease-out
                         ${hasOptimized 
                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white' 
-                          : optimizationError
+                          : analysisError
                           ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
                           : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white'
                         }

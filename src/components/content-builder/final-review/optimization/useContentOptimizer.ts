@@ -2,134 +2,137 @@
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { OptimizationSuggestion } from './types';
+import { 
+  useContentAnalysis, 
+  useAIDetection, 
+  useSerpIntegration, 
+  useSolutionAnalysis,
+  useContentOptimization
+} from './hooks';
+import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
+import { toast } from 'sonner';
 
 export const useContentOptimizer = (content: string) => {
   const { state } = useContentBuilder();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [contentSuggestions, setContentSuggestions] = useState<OptimizationSuggestion[]>([]);
-  const [solutionSuggestions, setSolutionSuggestions] = useState<OptimizationSuggestion[]>([]);
-  const [aiDetectionSuggestions, setAiDetectionSuggestions] = useState<OptimizationSuggestion[]>([]);
-  const [serpIntegrationSuggestions, setSerpIntegrationSuggestions] = useState<OptimizationSuggestion[]>([]);
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  // Use the real hooks for analysis
+  const { contentSuggestions, analyzeContentQuality, isAnalyzing: isContentAnalyzing } = useContentAnalysis();
+  const { aiDetectionSuggestions, analyzeAIContent } = useAIDetection();
+  const { serpIntegrationSuggestions, analyzeSerpUsage, incorporateAllSerpItems } = useSerpIntegration();
+  const { solutionSuggestions, analyzeSolution } = useSolutionAnalysis();
+  const { qualitySuggestions } = useContentQualityIntegration();
+  const { optimizeContent: performOptimization } = useContentOptimization();
 
   const analyzeContent = useCallback(async () => {
+    if (!content || content.length < 50) {
+      setAnalysisError('Content is too short for analysis. Please provide at least 50 characters.');
+      return;
+    }
+
     setIsAnalyzing(true);
+    setAnalysisError(null);
     
     try {
-      // Simulate analysis delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate content quality suggestions
-      const contentSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'content-readability',
-          title: 'Improve Content Readability',
-          description: 'Break down complex sentences and use simpler language for better user engagement.',
-          type: 'content',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'content'
-        },
-        {
-          id: 'content-structure',
-          title: 'Enhance Content Structure',
-          description: 'Add more subheadings to improve content organization and scannability.',
-          type: 'content',
-          priority: 'high',
-          autoFixable: true,
-          category: 'structure'
-        }
+      // Run all analysis in parallel for better performance
+      const analysisPromises = [
+        analyzeContentQuality(content).catch(err => {
+          console.error('Content quality analysis failed:', err);
+          return [];
+        }),
+        analyzeAIContent(content).catch(err => {
+          console.error('AI detection analysis failed:', err);
+          return [];
+        }),
+        analyzeSerpUsage(content).catch(err => {
+          console.error('SERP integration analysis failed:', err);
+          return [];
+        }),
+        analyzeSolution(content).catch(err => {
+          console.error('Solution analysis failed:', err);
+          return [];
+        })
       ];
+
+      await Promise.all(analysisPromises);
       
-      // Generate solution integration suggestions
-      const solutionSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'solution-integration',
-          title: 'Better Solution Integration',
-          description: 'More naturally integrate your solution features throughout the content.',
-          type: 'solution',
-          priority: 'high',
-          autoFixable: true,
-          category: 'solution'
-        },
-        {
-          id: 'solution-cta',
-          title: 'Improve Call-to-Action',
-          description: 'Add a stronger call-to-action that connects to your solution benefits.',
-          type: 'solution',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'solution'
-        }
-      ];
-      
-      // Generate AI detection suggestions
-      const aiSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'ai-humanize',
-          title: 'Humanize AI Content',
-          description: 'Add personal experiences and varied sentence structures to reduce AI detection.',
-          type: 'humanization',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'content'
-        }
-      ];
-      
-      // Generate SERP integration suggestions
-      const serpSuggs: OptimizationSuggestion[] = [
-        {
-          id: 'serp-keywords',
-          title: 'Integrate SERP Keywords',
-          description: 'Include additional keywords found in top-ranking SERP results.',
-          type: 'serp_integration',
-          priority: 'high',
-          autoFixable: true,
-          category: 'keywords'
-        },
-        {
-          id: 'serp-topics',
-          title: 'Cover Missing SERP Topics',
-          description: 'Address content gaps identified from competitor analysis.',
-          type: 'serp_integration',
-          priority: 'medium',
-          autoFixable: true,
-          category: 'content'
-        }
-      ];
-      
-      setContentSuggestions(contentSuggs);
-      setSolutionSuggestions(solutionSuggs);
-      setAiDetectionSuggestions(aiSuggs);
-      setSerpIntegrationSuggestions(serpSuggs);
-      
+      // Check if we have any suggestions
+      const totalSuggestions = 
+        contentSuggestions.length + 
+        aiDetectionSuggestions.length + 
+        serpIntegrationSuggestions.length + 
+        solutionSuggestions.length +
+        qualitySuggestions.length;
+
+      if (totalSuggestions === 0) {
+        toast.info('Content analysis complete. No optimization suggestions found - your content looks great!');
+      } else {
+        toast.success(`Analysis complete! Found ${totalSuggestions} optimization opportunities.`);
+      }
+
     } catch (error) {
       console.error('Error analyzing content:', error);
+      setAnalysisError('Failed to analyze content. Please try again.');
+      toast.error('Analysis failed. Please check your connection and try again.');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [content]);
+  }, [content, analyzeContentQuality, analyzeAIContent, analyzeSerpUsage, analyzeSolution, contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
 
   const optimizeContent = useCallback(async (): Promise<string | null> => {
-    if (selectedSuggestions.length === 0) return null;
+    if (selectedSuggestions.length === 0) {
+      toast.error('Please select at least one suggestion to optimize.');
+      return null;
+    }
     
     setIsOptimizing(true);
     
     try {
-      // Simulate optimization process
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Get selected suggestions from all categories
+      const allSuggestions = [
+        ...contentSuggestions,
+        ...aiDetectionSuggestions,
+        ...serpIntegrationSuggestions,
+        ...solutionSuggestions,
+        ...qualitySuggestions
+      ];
+
+      const selected = allSuggestions.filter(s => selectedSuggestions.includes(s.id));
       
-      // Return optimized content (in real implementation, this would call AI service)
-      return content + '\n\n[Content optimized based on selected suggestions]';
+      if (selected.length === 0) {
+        toast.error('Selected suggestions not found.');
+        return null;
+      }
+
+      // Use the real optimization service with correct parameters
+      const optimizedContent = await performOptimization(
+        content,
+        selectedSuggestions,
+        contentSuggestions,
+        aiDetectionSuggestions,
+        serpIntegrationSuggestions,
+        solutionSuggestions
+      );
+      
+      if (optimizedContent) {
+        toast.success(`Content optimized using ${selected.length} suggestions!`);
+        return optimizedContent;
+      } else {
+        toast.error('Optimization failed. Please try again.');
+        return null;
+      }
       
     } catch (error) {
       console.error('Error optimizing content:', error);
+      toast.error('Optimization failed. Please check your connection and try again.');
       return null;
     } finally {
       setIsOptimizing(false);
     }
-  }, [content, selectedSuggestions]);
+  }, [content, selectedSuggestions, contentSuggestions, aiDetectionSuggestions, serpIntegrationSuggestions, solutionSuggestions, qualitySuggestions, performOptimization]);
 
   const toggleSuggestion = useCallback((suggestionId: string) => {
     setSelectedSuggestions(prev => 
@@ -139,22 +142,37 @@ export const useContentOptimizer = (content: string) => {
     );
   }, []);
 
-  const incorporateAllSerpItems = useCallback(() => {
+  const incorporateAllSerpItemsLocal = useCallback(() => {
     const serpSuggestionIds = serpIntegrationSuggestions.map(s => s.id);
     setSelectedSuggestions(prev => [...new Set([...prev, ...serpSuggestionIds])]);
-  }, [serpIntegrationSuggestions]);
+    // Also trigger the hook's incorporate function
+    incorporateAllSerpItems();
+    toast.info(`Selected ${serpSuggestionIds.length} SERP integration suggestions.`);
+  }, [serpIntegrationSuggestions, incorporateAllSerpItems]);
+
+  // Get total suggestion count for UI
+  const getTotalSuggestionCount = useCallback(() => {
+    return contentSuggestions.length + 
+           aiDetectionSuggestions.length + 
+           serpIntegrationSuggestions.length + 
+           solutionSuggestions.length +
+           qualitySuggestions.length;
+  }, [contentSuggestions.length, aiDetectionSuggestions.length, serpIntegrationSuggestions.length, solutionSuggestions.length, qualitySuggestions.length]);
 
   return {
-    isAnalyzing,
+    isAnalyzing: isAnalyzing || isContentAnalyzing,
     isOptimizing,
     contentSuggestions,
     solutionSuggestions,
     aiDetectionSuggestions,
     serpIntegrationSuggestions,
+    qualitySuggestions,
     selectedSuggestions,
+    analysisError,
     analyzeContent,
     optimizeContent,
     toggleSuggestion,
-    incorporateAllSerpItems
+    incorporateAllSerpItems: incorporateAllSerpItemsLocal,
+    getTotalSuggestionCount
   };
 };
