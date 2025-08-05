@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 interface AIChatTestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  provider: AiProvider;
+  provider: AiProvider | null;
 }
 
 interface ChatMessage {
@@ -24,6 +24,11 @@ export function AIChatTestModal({ isOpen, onClose, provider }: AIChatTestModalPr
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // Early return if provider is null
+  if (!provider) {
+    return null;
+  }
 
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;

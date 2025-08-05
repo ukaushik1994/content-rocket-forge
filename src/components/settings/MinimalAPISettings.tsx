@@ -310,13 +310,13 @@ export function MinimalAPISettings() {
       <AIChatTestModal
         isOpen={!!testChatProvider}
         onClose={() => setTestChatProvider(null)}
-        provider={testChatProvider!}
+        provider={testChatProvider}
       />
 
       <SERPTestModal
         isOpen={!!testSerpProvider}
         onClose={() => setTestSerpProvider(null)}
-        provider={testSerpProvider!}
+        provider={testSerpProvider}
       />
     </div>
   );

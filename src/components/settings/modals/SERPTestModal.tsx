@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface SERPTestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  provider: 'serp' | 'serpstack';
+  provider: 'serp' | 'serpstack' | null;
 }
 
 interface SearchResult {
@@ -29,6 +29,11 @@ export function SERPTestModal({ isOpen, onClose, provider }: SERPTestModalProps)
     searchTime?: number;
     success: boolean;
   } | null>(null);
+
+  // Early return if provider is null
+  if (!provider) {
+    return null;
+  }
 
   const handleSearch = async () => {
     if (!keyword.trim() || isLoading) return;
