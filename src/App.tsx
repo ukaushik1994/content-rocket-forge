@@ -8,7 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Repository from "./pages/Repository";
-import ContentBuilder from "./pages/ContentBuilder";
+import ContentBuilderPage from "./pages/ContentBuilder";
 import ContentRepurposing from "./pages/ContentRepurposing";
 import ContentApproval from "./pages/ContentApproval";
 import GlossaryBuilder from "./pages/GlossaryBuilder";
@@ -46,7 +46,7 @@ const App = () => (
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/drafts" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
                 <Route path="/repository" element={<ProtectedRoute><Repository /></ProtectedRoute>} />
-                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+                <Route path="/content-builder" element={<ProtectedRoute><ContentBuilderPage /></ProtectedRoute>} />
                 <Route path="/content-repurposing" element={<ProtectedRoute><ContentRepurposing /></ProtectedRoute>} />
                 <Route path="/content-approval" element={<ProtectedRoute><ContentApproval /></ProtectedRoute>} />
                 <Route path="/glossary-builder" element={<ProtectedRoute><GlossaryBuilder /></ProtectedRoute>} />
