@@ -8,6 +8,9 @@ import { repurposedContentService } from '@/services/repurposedContentService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useRepurposedContentData } from './useRepurposedContentData';
+import { AiProvider } from '@/services/aiService/types';
+import { getAvailableProviders, getBestAvailableProvider } from '@/services/providerAvailabilityService';
+import { getUserPreference } from '@/services/userPreferencesService';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
   const { user } = useAuth();
@@ -17,6 +20,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   const [activeFormat, setActiveFormat] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [aiProvider, setAiProvider] = useState<AiProvider>('openrouter');
+  const [availableProviders, setAvailableProviders] = useState<AiProvider[]>([]);
 
   // Use the repurposed content data hook
   const {
@@ -25,6 +30,31 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     isLoading: isLoadingRepurposed,
     refreshData: refreshRepurposedData
   } = useRepurposedContentData(content?.id || null);
+
+  // Load available providers and set default
+  useEffect(() => {
+    const loadProviders = async () => {
+      try {
+        const providers = await getAvailableProviders();
+        setAvailableProviders(providers);
+        
+        // Set default provider from preferences or best available
+        const defaultProvider = await getUserPreference('defaultAiProvider') as AiProvider;
+        if (defaultProvider && providers.includes(defaultProvider)) {
+          setAiProvider(defaultProvider);
+        } else {
+          const bestProvider = await getBestAvailableProvider();
+          if (bestProvider) {
+            setAiProvider(bestProvider);
+          }
+        }
+      } catch (error) {
+        console.warn('Error loading AI providers:', error);
+      }
+    };
+    
+    loadProviders();
+  }, []);
 
   console.log('[useContentGeneration] Content:', content?.id);
   console.log('[useContentGeneration] repurposedContentMap:', repurposedContentMap);
@@ -76,6 +106,11 @@ export const useContentGeneration = (content: ContentItemType | null) => {
       return;
     }
 
+    if (availableProviders.length === 0) {
+      toast.error('No AI providers configured. Please configure at least one AI provider in Settings.');
+      return;
+    }
+
     console.log('[useContentGeneration] Starting content generation for formats:', formats);
     setIsGenerating(true);
     const newGeneratedContents: Record<string, string> = { ...generatedContents };
@@ -85,7 +120,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
         const format = contentFormats.find(f => f.id === formatId);
         if (!format) continue;
 
-        console.log(`[useContentGeneration] Generating content for format: ${format.name}`);
+        console.log(`[useContentGeneration] Generating content for format: ${format.name} using ${aiProvider}`);
         toast.info(`Generating ${format.name} format...`);
 
         try {
@@ -101,8 +136,8 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
           // Fallback to AI service if template generation fails
           if (!generatedContent) {
-            console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service`);
-            const response = await sendChatRequest('openai', {
+            console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service with ${aiProvider}`);
+            const response = await sendChatRequest(aiProvider, {
               messages: [
                 {
                   role: 'system',
@@ -152,7 +187,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     } finally {
       setIsGenerating(false);
     }
-  }, [content, generatedContents, activeFormat]);
+  }, [content, generatedContents, activeFormat, aiProvider, availableProviders]);
 
   const saveAsNewContent = useCallback(async (formatId: string, generatedContent: string): Promise<boolean> => {
     if (!content || !user || !formatId || !generatedContent) {
@@ -350,6 +385,9 @@ export const useContentGeneration = (content: ContentItemType | null) => {
     isSaving,
     isSavingAll,
     isLoadingRepurposed,
+    aiProvider,
+    setAiProvider,
+    availableProviders,
     setSelectedFormats,
     setActiveFormat,
     handleGenerateContent,

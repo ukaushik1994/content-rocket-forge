@@ -11,6 +11,8 @@ import GeneratedContentDisplay from '@/components/content-repurposing/GeneratedC
 import { ContentItemType } from '@/contexts/content/types';
 import ContentRepurposingTour from '@/components/content-repurposing/tour/ContentRepurposingTour';
 import ContentPreviewDialog from '@/components/content-repurposing/preview/ContentPreviewDialog';
+import { AiProviderSelector } from '@/components/content-builder/outline/ai-generator/AiProviderSelector';
+import { AiProvider } from '@/services/aiService/types';
 
 interface ContentRepurposingViewProps {
   content: ContentItemType;
@@ -21,6 +23,9 @@ interface ContentRepurposingViewProps {
   isSaving: boolean;
   isSavingAll: boolean;
   savedContentFormats: string[];
+  aiProvider: AiProvider;
+  setAiProvider: (provider: AiProvider) => void;
+  availableProviders: AiProvider[];
   setSelectedFormats: (formats: string[]) => void;
   setActiveFormat: (format: string) => void;
   handleGenerateContent: (formats: string[]) => void;
@@ -44,6 +49,9 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
   isSaving,
   isSavingAll,
   savedContentFormats,
+  aiProvider,
+  setAiProvider,
+  availableProviders,
   setSelectedFormats,
   setActiveFormat,
   handleGenerateContent,
@@ -111,6 +119,22 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 space-y-6">
             <ContentDetails content={content} />
+            
+            {/* AI Provider Selection */}
+            <div className="bg-gradient-to-br from-dark-bg via-dark-surface to-dark-bg border border-white/10 backdrop-blur-sm rounded-xl p-4">
+              <h3 className="text-sm font-medium text-white/90 mb-3">AI Provider</h3>
+              <AiProviderSelector 
+                aiProvider={aiProvider}
+                setAiProvider={setAiProvider}
+                availableProviders={availableProviders}
+              />
+              {availableProviders.length === 0 && (
+                <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-md text-sm text-amber-200 mt-3">
+                  No AI provider API keys configured. Please add at least one AI provider API key in Settings.
+                </div>
+              )}
+            </div>
+            
             <ContentFormatSelection
               selectedFormats={selectedFormats}
               setSelectedFormats={setSelectedFormats}

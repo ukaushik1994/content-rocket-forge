@@ -21,6 +21,9 @@ const ContentRepurposing: React.FC = () => {
     isDeleting,
     savedContentFormats,
     isLoadingFormat,
+    aiProvider,
+    setAiProvider,
+    availableProviders,
     setSelectedFormats,
     setActiveFormat,
     handleContentSelection,
@@ -69,6 +72,9 @@ const ContentRepurposing: React.FC = () => {
         isSaving={isSaving}
         isSavingAll={isSavingAll}
         savedContentFormats={savedContentFormats}
+        aiProvider={aiProvider}
+        setAiProvider={setAiProvider}
+        availableProviders={availableProviders}
         setSelectedFormats={setSelectedFormats}
         setActiveFormat={setActiveFormat}
         handleGenerateContent={handleGenerateContent}
