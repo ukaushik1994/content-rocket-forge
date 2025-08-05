@@ -32,7 +32,7 @@ export async function hasApiKey(provider: ApiProvider): Promise<boolean> {
 /**
  * Test if an API key actually works
  */
-async function testApiKeyFunctionality(provider: ApiProvider): Promise<{ success: boolean; error?: string }> {
+async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: boolean = false): Promise<{ success: boolean; error?: string }> {
   const cacheKey = `test_${provider}`;
   const cached = testCache.get(cacheKey);
   
@@ -57,7 +57,7 @@ async function testApiKeyFunctionality(provider: ApiProvider): Promise<{ success
           messages: [{ role: 'user', content: 'Test' }],
           temperature: 0.1,
           maxTokens: 10
-        });
+        }, skipFallback);
         testResult = !!response;
         if (!testResult) error = 'No response from AI provider';
       } catch (e: any) {
@@ -135,7 +135,7 @@ export async function testAllApiKeys(): Promise<Record<string, ApiKeyStatusResul
     if (!hasKey) {
       status[provider] = { status: 'not-configured' };
     } else {
-      const testResult = await testApiKeyFunctionality(provider);
+      const testResult = await testApiKeyFunctionality(provider, true);
       status[provider] = {
         status: testResult.success ? 'verified' : 'configured',
         lastTested: new Date(),

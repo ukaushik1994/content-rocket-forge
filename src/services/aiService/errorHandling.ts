@@ -17,16 +17,24 @@ export async function handleApiError<T>(
   provider: AiProvider,
   error: any,
   params: any,
-  requestType: 'chat' | 'completion'
+  requestType: 'chat' | 'completion',
+  fallbackDepth: number = 0
 ): Promise<T | null> {
   // Log the original error
   console.error(`Error with ${provider} API:`, error);
+  
+  // Prevent infinite fallback loops
+  if (fallbackDepth >= 2) {
+    console.error('Maximum fallback depth reached, stopping fallback attempts');
+    toast.error(`All AI providers failed. Please check your API keys in Settings.`);
+    return null;
+  }
   
   // Get fallback configuration
   const { enabled, fallbackProviders } = getFallbackConfig();
   
   if (enabled && fallbackProviders.length > 0) {
-    return await attemptProviderFallback(provider, error, params, requestType);
+    return await attemptProviderFallback(provider, error, params, requestType, fallbackDepth + 1);
   } else {
     // Show error message without fallback
     toast.error(`API error: ${error.message || 'Unknown error'}`);
@@ -46,7 +54,8 @@ export async function attemptProviderFallback<T>(
   provider: AiProvider,
   error: any,
   params: any,
-  requestType: 'chat' | 'completion'
+  requestType: 'chat' | 'completion',
+  fallbackDepth: number = 0
 ): Promise<T | null> {
   // Get fallback configuration
   const { enabled, fallbackProviders } = getFallbackConfig();
@@ -78,11 +87,11 @@ export async function attemptProviderFallback<T>(
     if (fallbackApiKey) {
       notifyProviderFallback(provider, fallbackProvider);
       
-      // Call the appropriate function based on request type
+      // Call the appropriate function based on request type with skipFallback to prevent loops
       if (requestType === 'chat') {
-        return sendChatRequest(fallbackProvider, params) as T;
+        return sendChatRequest(fallbackProvider, params, true) as T;
       } else {
-        return generateCompletion(fallbackProvider, params) as T;
+        return generateCompletion(fallbackProvider, params, true) as T;
       }
     }
   }

@@ -14,7 +14,8 @@ import { handleApiError, attemptProviderFallback } from "./errorHandling";
  */
 export async function sendChatRequest(
   provider: AiProvider,
-  params: Omit<AiChatParams, 'model'>
+  params: Omit<AiChatParams, 'model'>,
+  skipFallback: boolean = false
 ): Promise<AiChatResponse | null> {
   try {
     console.log(`Sending chat request to primary provider: ${provider}`);
@@ -31,6 +32,9 @@ export async function sendChatRequest(
     const apiKey = await getApiKey(provider);
     if (!apiKey) {
       console.warn(`${provider.toUpperCase()} API key not configured. Please configure your API key in Settings.`);
+      if (skipFallback) {
+        return null;
+      }
       return await attemptProviderFallback(
         provider, 
         new Error(`${provider} API key not configured`),
@@ -56,11 +60,17 @@ export async function sendChatRequest(
     });
 
     if (error) {
+      if (skipFallback) {
+        return null;
+      }
       return await handleApiError(provider, error, params, 'chat');
     }
 
     return data as AiChatResponse;
   } catch (error: any) {
+    if (skipFallback) {
+      return null;
+    }
     return handleApiError(provider, error, params, 'chat');
   }
 }
@@ -73,7 +83,8 @@ export async function sendChatRequest(
  */
 export async function generateCompletion(
   provider: AiProvider,
-  params: Omit<AiCompletionParams, 'model'>
+  params: Omit<AiCompletionParams, 'model'>,
+  skipFallback: boolean = false
 ): Promise<AiCompletionResponse | null> {
   try {
     console.log(`Generating completion with primary provider: ${provider}`);
@@ -90,6 +101,9 @@ export async function generateCompletion(
     const apiKey = await getApiKey(provider);
     if (!apiKey) {
       console.warn(`${provider.toUpperCase()} API key not configured. Please configure your API key in Settings.`);
+      if (skipFallback) {
+        return null;
+      }
       return await attemptProviderFallback(
         provider, 
         new Error(`${provider} API key not configured`),
@@ -115,11 +129,17 @@ export async function generateCompletion(
     });
 
     if (error) {
+      if (skipFallback) {
+        return null;
+      }
       return await handleApiError(provider, error, params, 'completion');
     }
 
     return data as AiCompletionResponse;
   } catch (error: any) {
+    if (skipFallback) {
+      return null;
+    }
     return handleApiError(provider, error, params, 'completion');
   }
 }

@@ -144,10 +144,7 @@ export function OutlineGenerator() {
   };
   
   const generateOutlineWithFallback = async (prompt: string, primaryProvider: AiProvider) => {
-    // Check if fallback is enabled
-    const enableFallback = getUserPreference('enableAiFallback') === true;
-    
-    // Try with primary provider first
+    // Use the centralized service-level fallback instead of component-level fallback
     try {
       const chatResponse = await sendChatRequest(primaryProvider, {
         messages: [
@@ -163,49 +160,19 @@ export function OutlineGenerator() {
           success: true,
           outlineText: chatResponse.choices[0].message.content
         };
+      } else {
+        return {
+          success: false,
+          error: `${primaryProvider} API call failed. Please check your API key in Settings.`
+        };
       }
     } catch (error) {
       console.error(`Error with ${primaryProvider}:`, error);
+      return {
+        success: false,
+        error: `${primaryProvider} API call failed. Please check your API key in Settings.`
+      };
     }
-    
-    // If we get here, the primary provider failed and we need to try fallbacks
-    if (enableFallback) {
-      // Find other available providers that are different from the primary
-      const fallbackProviders = availableProviders.filter(p => p !== primaryProvider);
-      
-      // Try each available fallback provider
-      for (const fallbackProvider of fallbackProviders) {
-        try {
-          console.log(`Primary provider ${primaryProvider} failed, trying fallback provider ${fallbackProvider}`);
-          
-          const fallbackResponse = await sendChatRequest(fallbackProvider, {
-            messages: [
-              { role: 'system', content: 'You are an expert content outline creator.' },
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.7
-          });
-          
-          if (fallbackResponse?.choices?.[0]?.message?.content) {
-            toast.info(`Using ${fallbackProvider} as fallback provider`);
-            return {
-              success: true,
-              outlineText: fallbackResponse.choices[0].message.content
-            };
-          }
-        } catch (fallbackError) {
-          console.error(`Fallback provider ${fallbackProvider} also failed:`, fallbackError);
-        }
-      }
-    }
-    
-    // All providers failed or fallback is disabled
-    return {
-      success: false,
-      error: enableFallback
-        ? `All configured AI providers failed. Please check your API keys in Settings.`
-        : `${primaryProvider} API call failed. Enable AI Provider Fallback in Settings or try another provider.`
-    };
   };
   
   const processOutlineResult = (outlineText: string) => {
