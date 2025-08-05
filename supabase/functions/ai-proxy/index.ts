@@ -44,6 +44,10 @@ async function handleOpenRouterRequest(endpoint: string, params: any, apiKey: st
     return await callOpenRouter(apiKey, params);
   }
   
+  if (endpoint === 'test') {
+    return await testOpenRouter(apiKey);
+  }
+  
   throw new Error(`OpenRouter endpoint '${endpoint}' not supported`);
 }
 
@@ -80,6 +84,43 @@ async function handleGenericAIRequest(service: string, endpoint: string, params:
   }
   
   throw new Error(`Endpoint '${endpoint}' not supported for ${service}`);
+}
+
+async function testOpenRouter(apiKey: string) {
+  console.log('🧪 Testing OpenRouter API key');
+  
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://your-app.com',
+      'X-Title': 'AI Content Assistant'
+    },
+    body: JSON.stringify({
+      model: 'openai/gpt-4o-mini',
+      messages: [{ role: 'user', content: 'Test' }],
+      temperature: 0.1,
+      max_tokens: 10,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error(`❌ OpenRouter test failed: ${errorData.error?.message || response.statusText}`);
+    throw new Error(`OpenRouter API connection failed: ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log(`✅ OpenRouter test successful`);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'OpenRouter API connection successful',
+    model: data.model || 'openai/gpt-4o-mini'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
 }
 
 async function callOpenRouter(apiKey: string, params: any) {

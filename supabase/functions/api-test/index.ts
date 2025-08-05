@@ -22,7 +22,7 @@ serve(async (req) => {
     let proxyUrl: string;
     let requestBody: any;
     
-    if (['openai', 'anthropic', 'gemini', 'mistral'].includes(service)) {
+    if (['openai', 'anthropic', 'gemini', 'mistral', 'openrouter'].includes(service)) {
       proxyUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ai-proxy`;
       requestBody = { service, endpoint: 'test', apiKey };
     } else if (service === 'serp') {
