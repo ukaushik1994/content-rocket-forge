@@ -111,8 +111,8 @@ export const ContentWritingStep = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-8 pb-12">
-        <div className="text-center mb-10">
+      <div className="relative z-10 max-w-full mx-auto px-4 pt-4 pb-6">
+        <div className="text-center mb-6">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-blue-500 bg-clip-text text-transparent">
             {state.contentTitle || 'Create Amazing Content'}
           </h1>
@@ -121,7 +121,7 @@ export const ContentWritingStep = () => {
           </p>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-4">
           <ContentGenerationHeader
             isGenerating={isGenerating}
             handleGenerateContent={handleGenerateContent}
@@ -139,32 +139,32 @@ export const ContentWritingStep = () => {
           />
         </div>
         
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
-            <div className="p-10 w-[600px] h-[500px]">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Enhanced Content Editor</h3>
-                  <p className="text-sm text-muted-foreground">With real-time SERP integration highlighting</p>
-                </div>
+        <div className="bg-background/60 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden h-[calc(100vh-200px)]">
+          <div className="p-4 h-full flex flex-col">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
-              
+              <div>
+                <h3 className="font-semibold text-foreground">Enhanced Content Editor</h3>
+                <p className="text-sm text-muted-foreground">With real-time SERP integration highlighting</p>
+              </div>
+            </div>
+            
+            <div className="flex-1">
               <EnhancedContentEditor
                 content={content}
                 onContentChange={handleContentChange}
                 isLoading={isGenerating}
                 serpSelections={state.serpSelections}
               />
-              
-              {autoSaveTimestamp && (
-                <div className="mt-6 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
-                  Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
-                </div>
-              )}
             </div>
+            
+            {autoSaveTimestamp && (
+              <div className="mt-4 text-xs text-muted-foreground text-center px-4 py-2 bg-muted/50 rounded-lg">
+                Auto-saved at {new Date(autoSaveTimestamp).toLocaleTimeString()}
+              </div>
+            )}
           </div>
         </div>
       </div>
