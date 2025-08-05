@@ -183,6 +183,9 @@ export function DefaultAiProviderSelector({
             <Label htmlFor="gemini" className="flex items-center gap-2 cursor-pointer">
               {getProviderDetails('gemini').icon}
               <span>Gemini</span>
+              <Badge variant="outline" className="ml-1 text-xs bg-emerald-950/30 text-emerald-400 border-emerald-400/30">
+                High Performance
+              </Badge>
               {getProviderDetails('gemini').statusBadge}
             </Label>
           </div>
