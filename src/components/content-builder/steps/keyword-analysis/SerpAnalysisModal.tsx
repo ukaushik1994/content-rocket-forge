@@ -71,125 +71,60 @@ export function SerpAnalysisModal({
 
   const selectedCount = serpSelections.filter(item => item.selected).length;
 
-  // Function to fetch data from alternative provider with robust error handling
+  // Function to fetch data from alternative provider
   const fetchFromProvider = async (provider: 'serpapi' | 'serpstack') => {
     setIsLoadingProvider(true);
-    console.log(`🔄 Attempting to fetch data from ${provider}...`);
-    
     try {
       let data;
-      const providerName = provider === 'serpapi' ? 'SerpAPI' : 'Serpstack';
-      
       if (provider === 'serpapi') {
         data = await analyzeKeywordEnhanced(keyword);
       } else {
-        // Use enhanced Serpstack service with fallback
-        try {
-          data = await analyzeSerpstackKeyword(keyword);
-        } catch (serpstackError: any) {
-          console.warn(`⚠️ Serpstack failed: ${serpstackError.message}`);
-          
-          // If Serpstack fails due to rate limits, automatically try SerpAPI
-          if (serpstackError.message?.includes('rate limit') || 
-              serpstackError.message?.includes('exceeded')) {
-            toast.error(`Serpstack rate limit exceeded, trying SerpAPI...`);
-            
-            // Auto-switch to SerpAPI
-            setActiveProvider('serpapi');
-            data = await analyzeKeywordEnhanced(keyword);
-            
-            if (data) {
-              toast.success('Successfully switched to SerpAPI due to Serpstack rate limits');
-            }
-          } else {
-            throw serpstackError;
-          }
-        }
+        // Use enhanced Serpstack service
+        data = await analyzeSerpstackKeyword(keyword);
       }
       
       if (data) {
         setProviderData(prev => ({
           ...prev,
-          [provider === 'serpstack' && data ? 'serpapi' : provider]: data
+          [provider]: data
         }));
         
-        // Update parent with the new data
-        onSerpDataUpdate?.(data);
+        // If this is the active provider, notify parent
+        if (provider === activeProvider) {
+          onSerpDataUpdate?.(data);
+        }
         
+        const providerName = provider === 'serpapi' ? 'SerpAPI' : 'Serpstack';
         const dataStats = {
           faqs: data.peopleAlsoAsk?.length || 0,
           entities: data.entities?.length || 0,
-          competitors: data.topResults?.length || 0,
-          headings: data.headings?.length || 0,
-          gaps: data.contentGaps?.length || 0
+          competitors: data.topResults?.length || 0
         };
         
-        toast.success(`${providerName} loaded successfully!`, {
-          description: `${dataStats.faqs} FAQs • ${dataStats.entities} entities • ${dataStats.competitors} competitors • ${dataStats.headings} headings • ${dataStats.gaps} content gaps`,
-          duration: 6000
+        toast.success(`${providerName} loaded: ${dataStats.faqs} FAQs, ${dataStats.entities} entities, ${dataStats.competitors} competitors!`, {
+          duration: 5000
         });
       } else {
-        // Try alternative provider automatically
-        const alternativeProvider = provider === 'serpapi' ? 'serpstack' : 'serpapi';
-        toast.error(`${providerName} returned no data, trying ${alternativeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}...`);
-        
-        if (!providerData[alternativeProvider]) {
-          setActiveProvider(alternativeProvider);
-          await fetchFromProvider(alternativeProvider);
-        }
+        toast.error(`Failed to load data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
       }
-    } catch (error: any) {
-      console.error(`💥 Error fetching from ${provider}:`, error);
-      
-      // Attempt fallback to other provider
-      const alternativeProvider = provider === 'serpapi' ? 'serpstack' : 'serpapi';
-      
-      if (!providerData[alternativeProvider]) {
-        toast.error(`${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'} failed, trying ${alternativeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}...`);
-        
-        try {
-          setActiveProvider(alternativeProvider);
-          await fetchFromProvider(alternativeProvider);
-        } catch (fallbackError) {
-          console.error(`💥 Both providers failed:`, fallbackError);
-          toast.error(`Both providers failed. Please check your API keys and try again later.`);
-        }
-      } else {
-        // Switch to provider that has data
-        setActiveProvider(alternativeProvider);
-        toast.error(`${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'} failed, switched to ${alternativeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
-      }
+    } catch (error) {
+      console.error(`Error fetching from ${provider}:`, error);
+      toast.error(`Error loading data from ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`);
     } finally {
       setIsLoadingProvider(false);
     }
   };
 
-  // Function to switch provider with smart data checking
+  // Function to switch provider
   const switchProvider = (provider: 'serpapi' | 'serpstack') => {
-    console.log(`🔄 Switching to provider: ${provider}`);
     setActiveProvider(provider);
     
     // If we don't have data for this provider, fetch it
     if (!providerData[provider]) {
-      console.log(`📊 No data found for ${provider}, fetching...`);
       fetchFromProvider(provider);
     } else {
-      console.log(`✅ Using existing data for ${provider}`);
       // Update parent with existing data
       onSerpDataUpdate?.(providerData[provider]);
-      
-      // Show success message with data stats
-      const data = providerData[provider];
-      const dataStats = {
-        faqs: data?.peopleAlsoAsk?.length || 0,
-        entities: data?.entities?.length || 0,
-        competitors: data?.topResults?.length || 0
-      };
-      
-      toast.success(`Switched to ${provider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}`, {
-        description: `${dataStats.faqs} FAQs • ${dataStats.entities} entities • ${dataStats.competitors} competitors`,
-        duration: 3000
-      });
     }
   };
   
@@ -435,43 +370,25 @@ export function SerpAnalysisModal({
                   </div>
                 ) : !currentSerpData ? (
                   <div className="flex items-center justify-center py-20">
-                    <div className="text-center max-w-md">
+                    <div className="text-center">
                       <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-lg font-medium text-foreground mb-2">
                         No data available for "{keyword}"
                       </p>
                       <p className="text-sm text-muted-foreground mb-4">
                         {keyword ? 
-                          `No SERP data available from ${activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}. We'll try both providers to get the best data.` :
+                          `No SERP data available from ${activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}. Try switching providers or fetch fresh data.` :
                           'Please enter a keyword first to analyze SERP data.'
                         }
                       </p>
                       {keyword && (
-                        <div className="space-y-3">
-                          <Button 
-                            onClick={() => fetchFromProvider(activeProvider)}
-                            className="bg-primary hover:bg-primary/90 w-full"
-                          >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Retry {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}
-                          </Button>
-                          
-                          <Button 
-                            onClick={() => {
-                              const alternativeProvider = activeProvider === 'serpapi' ? 'serpstack' : 'serpapi';
-                              switchProvider(alternativeProvider);
-                            }}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            <Database className="h-4 w-4 mr-2" />
-                            Try {activeProvider === 'serpapi' ? 'Serpstack' : 'SerpAPI'} Instead
-                          </Button>
-                          
-                          <p className="text-xs text-muted-foreground mt-2">
-                            💡 Tip: Different providers may have different rate limits and data coverage
-                          </p>
-                        </div>
+                        <Button 
+                          onClick={() => fetchFromProvider(activeProvider)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Fetch Data from {activeProvider === 'serpapi' ? 'SerpAPI' : 'Serpstack'}
+                        </Button>
                       )}
                     </div>
                   </div>
