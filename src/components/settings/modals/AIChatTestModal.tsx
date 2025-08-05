@@ -95,7 +95,7 @@ export function AIChatTestModal({ isOpen, onClose, provider }: AIChatTestModalPr
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
-            Test {provider ? provider.charAt(0).toUpperCase() + provider.slice(1) : 'AI'} Chat
+            Test {provider.charAt(0).toUpperCase() + provider.slice(1)} Chat
           </DialogTitle>
         </DialogHeader>
 
@@ -103,7 +103,7 @@ export function AIChatTestModal({ isOpen, onClose, provider }: AIChatTestModalPr
           <ScrollArea className="flex-1 border rounded-lg p-4">
             {messages.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
-                Send a message to test your {provider || 'AI'} integration
+                Send a message to test your {provider} integration
               </div>
             ) : (
               <div className="space-y-4">
