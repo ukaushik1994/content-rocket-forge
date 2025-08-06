@@ -87,20 +87,75 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   };
 
   const handleSubmit = async () => {
-    if (formData.name) {
-      // Validate data before submission
-      const validation = solutionService.validateSolutionData(formData as any);
+    if (!formData.name?.trim()) {
+      toast.error("Solution name is required");
+      return;
+    }
+
+    try {
+      // Transform enhanced form data to database format
+      const transformedData = {
+        name: formData.name,
+        description: formData.description || '',
+        short_description: formData.shortDescription || '',
+        category: formData.category || 'Business Solution',
+        external_url: formData.externalUrl || null,
+        features: formData.features || [],
+        use_cases: formData.useCases || [],
+        pain_points: formData.painPoints || [],
+        target_audience: formData.targetAudience || [],
+        benefits: formData.benefits || [],
+        tags: formData.tags || [],
+        unique_value_propositions: formData.uniqueValuePropositions || [],
+        positioning_statement: formData.positioningStatement || '',
+        key_differentiators: formData.keyDifferentiators || [],
+        market_data: formData.marketData || null,
+        competitors: formData.competitors || [],
+        technical_specs: formData.technicalSpecs || null,
+        pricing_model: formData.pricing || null,
+        case_studies: formData.caseStudies || [],
+        metrics: formData.metrics || null,
+        resources: formData.resources?.map((r, index) => ({
+          id: r.id || `resource-${Date.now()}-${index}`,
+          title: r.title,
+          url: r.url,
+          category: r.category,
+          order: r.order || index
+        })) || [],
+        metadata: formData.metadata || null
+      };
+
+      // Validate the transformed data
+      const validation = solutionService.validateSolutionData(transformedData);
       if (!validation.isValid) {
         validation.errors.forEach(error => toast.error(error));
         return;
       }
 
-      try {
-        onSubmit(formData, logoFile || undefined);
-      } catch (error) {
-        console.error('Error submitting solution:', error);
-        toast.error('Failed to save solution');
+      let result;
+      if (solution?.id) {
+        // Update existing solution
+        result = await solutionService.updateSolution(solution.id, transformedData, logoFile || undefined);
+      } else {
+        // Create new solution
+        result = await solutionService.createSolution(transformedData, logoFile || undefined);
       }
+
+      if (result) {
+        toast.success(solution?.id ? "Solution updated successfully!" : "Solution created successfully!");
+        setIsDirty(false);
+        onOpenChange(false);
+        // Trigger refresh in parent component
+        if (typeof onSubmit === 'function') {
+          onSubmit(result, logoFile || undefined);
+        }
+      } else {
+        toast.error("Failed to save solution. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting solution:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(`Error saving solution: ${errorMessage}`);
     }
   };
 
