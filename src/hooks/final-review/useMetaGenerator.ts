@@ -1,7 +1,7 @@
 
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { generateMetaSuggestions } from '@/utils/seo/meta/generateMetaSuggestions';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { toast } from 'sonner';
 
 // Standard toast configuration
@@ -26,22 +26,15 @@ export const useMetaGenerator = (onGenerateTitles: () => void) => {
     
     try {
       // First try to use AI service to generate meta information
-      const metaResponse = await sendChatRequest('openrouter', {
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a specialist in SEO and meta tag generation. Generate a concise meta title and meta description based on the content provided. Meta title should be at most 60 characters. Meta description should be at most 160 characters.'
-          },
-          { 
-            role: 'user', 
-            content: `Content Title: ${contentTitle || 'Untitled'}\nMain Keyword: ${mainKeyword}\n\nContent excerpt: ${content.substring(0, 1000)}...\n\nGenerate a meta title (max 60 characters) and meta description (max 160 characters) that are SEO-optimized and include the main keyword.`
-          }
-        ],
-        temperature: 0.7
+      const metaResponse = await AIServiceController.generate({
+        input: `Content Title: ${contentTitle || 'Untitled'}\nMain Keyword: ${mainKeyword}\n\nContent excerpt: ${content.substring(0, 1000)}...\n\nGenerate a meta title (max 60 characters) and meta description (max 160 characters) that are SEO-optimized and include the main keyword.`,
+        use_case: 'title_generation',
+        temperature: 0.7,
+        max_tokens: 500
       });
 
-      if (metaResponse?.choices?.[0]?.message?.content) {
-        const aiResponse = metaResponse.choices[0].message.content;
+      if (metaResponse?.content) {
+        const aiResponse = metaResponse.content;
         console.log("[useMetaGenerator] AI response:", aiResponse);
         
         // Parse the AI response to extract meta title and description

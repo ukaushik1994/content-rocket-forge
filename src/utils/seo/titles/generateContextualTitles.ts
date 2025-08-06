@@ -1,4 +1,4 @@
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { ContentGenerationConfig } from '@/services/advancedContentGeneration';
 
 /**
@@ -52,20 +52,15 @@ TITLE FORMATS TO PRIORITIZE:
 
 Return ONLY the 10 titles, one per line, without numbering.`;
 
-    const response = await sendChatRequest('openrouter', {
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are an expert content analyst and SEO copywriter. You create titles that perfectly match the actual content value and themes, never overpromising or being generic.'
-        },
-        { role: 'user', content: prompt }
-      ],
+    const response = await AIServiceController.generate({
+      input: prompt,
+      use_case: 'title_generation',
       temperature: 0.7,
-      maxTokens: 600
+      max_tokens: 600
     });
 
-    if (response?.choices?.[0]?.message?.content) {
-      const titles = response.choices[0].message.content
+    if (response?.content) {
+      const titles = response.content
         .split('\n')
         .map(title => title.trim())
         .filter(title => title.length > 0 && !title.match(/^\d+\./))

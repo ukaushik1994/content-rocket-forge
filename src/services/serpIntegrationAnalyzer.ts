@@ -1,5 +1,5 @@
 
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AiProvider } from '@/services/aiService/types';
 import { SerpSelection } from '@/contexts/content-builder/types/index';
 
@@ -36,15 +36,8 @@ export async function analyzeSerpUsage(
       `${item.type}: ${item.content}`
     ).join('\n');
 
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert at analyzing content for SERP data integration. Determine which selected SERP items are properly used in the content and provide suggestions for better integration.`
-        },
-        {
-          role: 'user',
-          content: `Analyze this content to see how well these selected SERP items are integrated:
+    const response = await AIServiceController.generate({
+      input: `Analyze this content to see how well these selected SERP items are integrated:
 
 SELECTED SERP ITEMS:
 ${serpItemsText}
@@ -57,18 +50,17 @@ Respond in JSON format:
   "usedItems": ["item1", "item2"],
   "unusedItems": ["item3", "item4"],
   "integrationSuggestions": ["suggestion1", "suggestion2"]
-}`
-        }
-      ],
+}`,
+      use_case: 'strategy',
       temperature: 0.3,
-      maxTokens: 1500
+      max_tokens: 1500
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
+    if (!response?.content) {
       throw new Error('No response from SERP analysis service');
     }
 
-    const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
+    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No JSON found in SERP analysis response');
     }
@@ -137,15 +129,8 @@ export async function integrateSerpItems(
       `${item.type}: ${item.content}`
     ).join('\n');
 
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert content optimizer. Integrate the unused SERP items naturally into the content while maintaining quality, flow, and structure.`
-        },
-        {
-          role: 'user',
-          content: `Integrate these unused SERP items into the content naturally:
+    const response = await AIServiceController.generate({
+      input: `Integrate these unused SERP items into the content naturally:
 
 UNUSED SERP ITEMS TO INTEGRATE:
 ${unusedItemsText}
@@ -156,14 +141,13 @@ ${integrationSuggestions.map(s => `- ${s}`).join('\n')}
 CURRENT CONTENT:
 ${content}
 
-Rewrite the content to naturally include all unused SERP items while maintaining the same structure and quality.`
-        }
-      ],
+Rewrite the content to naturally include all unused SERP items while maintaining the same structure and quality.`,
+      use_case: 'content_generation',
       temperature: 0.6,
-      maxTokens: 3000
+      max_tokens: 3000
     });
 
-    return response?.choices?.[0]?.message?.content || null;
+    return response?.content || null;
   } catch (error) {
     console.error('Error integrating SERP items:', error);
     return null;

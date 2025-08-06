@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { contentFormats } from '../../formats';
 import { generateContentByFormatType } from '@/services/contentTemplateService';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { repurposedContentService } from '@/services/repurposedContentService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -136,27 +136,21 @@ export const useContentGeneration = (content: ContentItemType | null) => {
 
           // Fallback to AI service if template generation fails
           if (!generatedContent?.content) {
-            console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service with ${aiProvider}`);
-            const response = await sendChatRequest(aiProvider, {
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are an expert content repurposing specialist. Transform the provided content into the requested ${format.name} format while maintaining its core message and value.`
-                },
-                {
-                  role: 'user',
-                  content: `Transform this content titled "${content.title}" for the ${format.name} format.
-                            
-                            Content: ${content.content?.substring(0, 1500)}...
-                            
-                            Make it appropriate for the ${format.name} format with all necessary elements.`
-                }
-              ]
+            console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service`);
+            const response = await AIServiceController.generate({
+              input: `Transform this content titled "${content.title}" for the ${format.name} format.
+                      
+                      Content: ${content.content?.substring(0, 1500)}...
+                      
+                      Make it appropriate for the ${format.name} format with all necessary elements.`,
+              use_case: 'repurpose',
+              temperature: 0.7,
+              max_tokens: 1500
             });
 
-            if (response?.choices?.[0]?.message?.content) {
+            if (response?.content) {
               generatedContent = { 
-                content: response.choices[0].message.content, 
+                content: response.content, 
                 templateUsed: { name: `Default ${format.name}`, isCustom: false } 
               };
             } else {

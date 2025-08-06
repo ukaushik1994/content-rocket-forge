@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 import { toast } from 'sonner';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
 
 // Standard toast configuration
@@ -31,15 +31,8 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
     
     try {
       // First try to use AI service for advanced analysis
-      const aiResponse = await sendChatRequest('openrouter', {
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a specialist in content analysis and marketing. Analyze how well a solution is integrated within content and provide metrics.' 
-          },
-          { 
-            role: 'user', 
-            content: `
+      const aiResponse = await AIServiceController.generate({
+        input: `
               Solution Name: ${selectedSolution.name}
               Solution Features: ${selectedSolution.features.join(', ')}
               Pain Points: ${selectedSolution.painPoints.join(', ')}
@@ -58,11 +51,10 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
               8. Audience Alignment (0-100): How well does the content align with the target audience?
               9. Mentioned Features: List of solution features that are mentioned in the content
               
-              Return your analysis as a JSON object with these metrics.
-            `
-          }
-        ],
-        temperature: 0.7
+              Return your analysis as a JSON object with these metrics.`,
+        use_case: 'strategy',
+        temperature: 0.7,
+        max_tokens: 1500
       });
 
       console.log("[useSolutionAnalysis] AI response:", aiResponse);
@@ -70,9 +62,9 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
       let solutionMetrics: SolutionIntegrationMetrics;
       
       // Try to parse AI response if available
-      if (aiResponse?.choices?.[0]?.message?.content) {
+      if (aiResponse?.content) {
         try {
-          const aiContent = aiResponse.choices[0].message.content;
+          const aiContent = aiResponse.content;
           
           // Try to extract JSON if it's wrapped in backticks or other text
           const jsonMatch = aiContent.match(/```json\s*([\s\S]*?)\s*```/) || 

@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { toast } from 'sonner';
 import { humanizeContent } from '@/services/aiContentDetectionService';
 import { analyzeSerpUsage, integrateSerpItems } from '@/services/serpIntegrationAnalyzer';
@@ -64,15 +64,8 @@ export function useContentOptimization() {
         const allSelectedSuggestions = [...selectedContentSuggestions, ...selectedSolutionSuggestions];
         const suggestionPrompts = allSelectedSuggestions.map(s => `- ${s.title}: ${s.description}`).join('\n');
 
-        const response = await sendChatRequest('openai', {
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert content optimizer. Apply the specified suggestions to improve the content while maintaining its structure and core message.'
-            },
-            {
-              role: 'user',
-              content: `Apply these optimization suggestions to the content:
+        const response = await AIServiceController.generate({
+          input: `Apply these optimization suggestions to the content:
 
 SUGGESTIONS TO APPLY:
 ${suggestionPrompts}
@@ -85,13 +78,14 @@ CONTEXT:
 - Selected Keywords: ${state.selectedKeywords?.join(', ') || 'None'}
 - Solution: ${state.selectedSolution?.name || 'None'}
 
-Rewrite the content implementing all the suggestions while maintaining the same structure and key information.`
-            }
-          ]
+Rewrite the content implementing all the suggestions while maintaining the same structure and key information.`,
+          use_case: 'content_generation',
+          temperature: 0.6,
+          max_tokens: 3000
         });
 
-        if (response?.choices?.[0]?.message?.content) {
-          optimizedContent = response.choices[0].message.content;
+        if (response?.content) {
+          optimizedContent = response.content;
         }
       }
 

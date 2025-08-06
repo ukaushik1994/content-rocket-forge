@@ -1,6 +1,6 @@
 
 import { PromptTemplate, getPromptTemplateById, getPromptTemplatesByType } from './userPreferencesService';
-import { sendChatRequest } from './aiService';
+import AIServiceController from './aiService/AIServiceController';
 import { toast } from 'sonner';
 
 /**
@@ -82,38 +82,22 @@ async function generateWithDefaultPrompt(
     // Try OpenRouter first if available, then fallback to OpenAI
     let response;
     try {
-      response = await sendChatRequest('openrouter', {
-        messages: [
-          { 
-            role: 'system', 
-            content: systemMessage
-          },
-          { 
-            role: 'user', 
-            content: prompt 
-          }
-        ],
+      response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'repurpose',
         temperature: 0.7
       });
     } catch (error) {
       console.log('OpenRouter not available, falling back to OpenAI');
-      response = await sendChatRequest('openai', {
-        messages: [
-          { 
-            role: 'system', 
-            content: systemMessage
-          },
-          { 
-            role: 'user', 
-            content: prompt 
-          }
-        ],
+      response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'repurpose',
         temperature: 0.7
       });
     }
     
-    if (response?.choices?.[0]?.message?.content) {
-      return response.choices[0].message.content;
+    if (response?.content) {
+      return response.content;
     } else {
       toast.error(`Failed to generate ${formatType} content`);
       return null;
@@ -243,40 +227,15 @@ async function generateWithTemplate(
     
     // Try OpenRouter first if available, then fallback to OpenAI
     let response;
-    try {
-      response = await sendChatRequest('openrouter', {
-        messages: [
-          { 
-            role: 'system', 
-            content: systemMessage
-          },
-          { 
-            role: 'user', 
-            content: promptText 
-          }
-        ],
-        temperature: 0.7
-      });
-    } catch (error) {
-      console.log('❌ OpenRouter not available, falling back to OpenAI');
-      response = await sendChatRequest('openai', {
-        messages: [
-          { 
-            role: 'system', 
-            content: systemMessage
-          },
-          { 
-            role: 'user', 
-            content: promptText 
-          }
-        ],
-        temperature: 0.7
-      });
-    }
+    response = await AIServiceController.generate({
+      input: promptText,
+      use_case: 'repurpose',
+      temperature: 0.7
+    });
     
-    if (response?.choices?.[0]?.message?.content) {
+    if (response?.content) {
       console.log(`✅ Content generated successfully using template: ${template.name}`);
-      return response.choices[0].message.content;
+      return response.content;
     } else {
       console.error('❌ Failed to generate content - no response content');
       toast.error('Failed to generate content');

@@ -1,6 +1,6 @@
 
 import { ContentItemType } from '@/contexts/content/types';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AiProvider } from '@/services/aiService/types';
 
 export interface ContentQualityMetrics {
@@ -127,26 +127,18 @@ export async function analyzeContentQuality(
   try {
     const analysisPrompt = createQualityAnalysisPrompt(content, title, targetStyle, expertiseLevel);
     
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert content quality analyst. Analyze content for readability, engagement, SEO, structure, and brand voice compliance. Provide detailed, actionable feedback in JSON format.`
-        },
-        {
-          role: 'user',
-          content: analysisPrompt
-        }
-      ],
+    const response = await AIServiceController.generate({
+      input: analysisPrompt,
+      use_case: 'strategy',
       temperature: 0.3,
-      maxTokens: 2000
+      max_tokens: 2000
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
+    if (!response?.content) {
       throw new Error('No response from AI service');
     }
 
-    return parseQualityAnalysisResponse(response.choices[0].message.content);
+    return parseQualityAnalysisResponse(response.content);
     
   } catch (error) {
     console.error('Error in content quality analysis:', error);

@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import { sendChatMessage, ChatMessage, ChatResponse, ContextualAction } from '@/services/aiService';
+import { ChatMessage, ChatResponse, ContextualAction } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -159,7 +160,17 @@ export const useAIChat = () => {
       conversationHistory.push({ role: 'user', content });
 
       // Get AI response
-      const response = await sendChatMessage(conversationHistory);
+      const aiResponse = await AIServiceController.generate({
+        input: conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n'),
+        use_case: 'chat',
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const response: ChatResponse | null = aiResponse ? {
+        message: aiResponse.content,
+        actions: []
+      } : null;
 
       if (response) {
         const assistantMessage: ConversationMessage = {

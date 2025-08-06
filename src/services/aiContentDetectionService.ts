@@ -1,5 +1,5 @@
 
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AiProvider } from '@/services/aiService/types';
 
 export interface AIDetectionResult {
@@ -17,15 +17,8 @@ export async function detectAIContent(
   provider: AiProvider = 'openai'
 ): Promise<AIDetectionResult | null> {
   try {
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert at detecting AI-written content and providing humanization suggestions. Analyze the content for AI patterns and provide specific recommendations to make it more human-like.`
-        },
-        {
-          role: 'user',
-          content: `Analyze this content for AI writing patterns and provide humanization suggestions:
+    const response = await AIServiceController.generate({
+      input: `Analyze this content for AI writing patterns and provide humanization suggestions:
 
 ${content}
 
@@ -35,18 +28,17 @@ Respond in JSON format:
   "confidence": number (0-100),
   "aiIndicators": ["indicator1", "indicator2"],
   "humanizationSuggestions": ["suggestion1", "suggestion2"]
-}`
-        }
-      ],
+}`,
+      use_case: 'strategy',
       temperature: 0.3,
-      maxTokens: 1000
+      max_tokens: 1000
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
+    if (!response?.content) {
       throw new Error('No response from AI detection service');
     }
 
-    const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
+    const jsonMatch = response.content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No JSON found in AI detection response');
     }
@@ -74,15 +66,8 @@ export async function humanizeContent(
   provider: AiProvider = 'openai'
 ): Promise<string | null> {
   try {
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert content humanizer. Rewrite AI-generated content to make it more natural, engaging, and human-like while preserving all key information and maintaining the same structure.`
-        },
-        {
-          role: 'user',
-          content: `Humanize this content based on these specific suggestions:
+    const response = await AIServiceController.generate({
+      input: `Humanize this content based on these specific suggestions:
 
 SUGGESTIONS:
 ${suggestions.map(s => `- ${s}`).join('\n')}
@@ -90,14 +75,13 @@ ${suggestions.map(s => `- ${s}`).join('\n')}
 CONTENT TO HUMANIZE:
 ${content}
 
-Make it sound more natural and human-written while keeping all the important information and structure intact.`
-        }
-      ],
+Make it sound more natural and human-written while keeping all the important information and structure intact.`,
+      use_case: 'content_generation',
       temperature: 0.7,
-      maxTokens: 3000
+      max_tokens: 3000
     });
 
-    return response?.choices?.[0]?.message?.content || null;
+    return response?.content || null;
   } catch (error) {
     console.error('Error humanizing content:', error);
     return null;

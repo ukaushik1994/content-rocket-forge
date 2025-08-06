@@ -1,5 +1,5 @@
 
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AiProvider } from '@/services/aiService/types';
 
 export interface SerpAnalysisResult {
@@ -39,26 +39,18 @@ export async function analyzeSerpData(
   try {
     const analysisPrompt = createSerpAnalysisPrompt(keyword, competitorData);
     
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert SEO content strategist. Analyze SERP data to identify content gaps, opportunities, and competitive insights. Focus on actionable recommendations for content creation.`
-        },
-        {
-          role: 'user',
-          content: analysisPrompt
-        }
-      ],
+    const response = await AIServiceController.generate({
+      input: analysisPrompt,
+      use_case: 'strategy',
       temperature: 0.3,
-      maxTokens: 2000
+      max_tokens: 2000
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
+    if (!response?.content) {
       throw new Error('No response from SERP analysis');
     }
 
-    return parseSerpAnalysisResponse(response.choices[0].message.content);
+    return parseSerpAnalysisResponse(response.content);
     
   } catch (error) {
     console.error('Error in SERP analysis:', error);
@@ -162,26 +154,18 @@ export async function identifyContentGaps(
   try {
     const gapAnalysisPrompt = createContentGapPrompt(keyword, competitorContent);
     
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are a content strategist specializing in competitive analysis and gap identification. Your goal is to find opportunities where competitors are weak or missing coverage entirely.`
-        },
-        {
-          role: 'user',
-          content: gapAnalysisPrompt
-        }
-      ],
+    const response = await AIServiceController.generate({
+      input: gapAnalysisPrompt,
+      use_case: 'strategy',
       temperature: 0.4,
-      maxTokens: 1500
+      max_tokens: 1500
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
+    if (!response?.content) {
       throw new Error('No response from content gap analysis');
     }
 
-    return parseContentGapResponse(response.choices[0].message.content);
+    return parseContentGapResponse(response.content);
     
   } catch (error) {
     console.error('Error in content gap analysis:', error);

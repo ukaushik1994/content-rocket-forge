@@ -1,6 +1,6 @@
 
 import { ContentItemType } from '@/contexts/content/types';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
 
@@ -48,26 +48,18 @@ export async function analyzeContentForReview(
     
     const analysisPrompt = createReviewAnalysisPrompt(content);
     
-    const response = await sendChatRequest(provider, {
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert content reviewer and editor. Your job is to analyze content for quality, SEO optimization, brand compliance, and readability. Provide detailed, actionable feedback in a structured format.`
-        },
-        {
-          role: 'user',
-          content: analysisPrompt
-        }
-      ],
+    const response = await AIServiceController.generate({
+      input: analysisPrompt,
+      use_case: 'strategy',
       temperature: 0.3,
-      maxTokens: 2000
+      max_tokens: 2000
     });
 
-    if (!response?.choices?.[0]?.message?.content) {
+    if (!response?.content) {
       throw new Error('No response from AI service');
     }
 
-    const analysisText = response.choices[0].message.content;
+    const analysisText = response.content;
     return parseAIAnalysisResponse(analysisText, content);
     
   } catch (error) {
