@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Settings, Sparkles, Brain, Eye, History } from 'lucide-react';
+import { Loader2, CheckCircle2, BarChart3, FileText, Target, Zap, Settings, Sparkles, Brain, Eye, History, Wand2 } from 'lucide-react';
 import { useContentOptimizer } from './useContentOptimizer';
 import { useContentQualityIntegration } from './hooks/useContentQualityIntegration';
 import { EnhancedSerpItemsReference } from './components/EnhancedSerpItemsReference';
@@ -176,23 +176,57 @@ export function EnhancedAutoOptimizeDialog({
           </div>
           
           {/* Quality Overview */}
-          <div className="grid grid-cols-4 gap-4 mt-4 p-4 bg-background/50 rounded-lg border border-border/30">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{completionPercentage}%</div>
-              <div className="text-xs text-muted-foreground">Quality Score</div>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-4 gap-4 p-4 bg-background/50 rounded-lg border border-border/30">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{completionPercentage}%</div>
+                <div className="text-xs text-muted-foreground">Quality Score</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-500">{passedChecks}</div>
+                <div className="text-xs text-muted-foreground">Checks Passed</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-500">{allSuggestions.length}</div>
+                <div className="text-xs text-muted-foreground">Suggestions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-500">{content.split(' ').length}</div>
+                <div className="text-xs text-muted-foreground">Words</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">{passedChecks}</div>
-              <div className="text-xs text-muted-foreground">Checks Passed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-500">{allSuggestions.length}</div>
-              <div className="text-xs text-muted-foreground">Suggestions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">{content.split(' ').length}</div>
-              <div className="text-xs text-muted-foreground">Words</div>
-            </div>
+            
+            {/* Optimization Action Button */}
+            {selectedSuggestions.length > 0 && (
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground">Ready to Optimize</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedSuggestions.length} optimization{selectedSuggestions.length !== 1 ? 's' : ''} selected
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleAdvancedOptimization}
+                    disabled={isOptimizing}
+                    className="ml-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    size="lg"
+                  >
+                    {isOptimizing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                        Optimizing...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4 mr-2" />
+                        Apply {selectedSuggestions.length} Optimization{selectedSuggestions.length !== 1 ? 's' : ''}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </DialogHeader>
         
