@@ -118,7 +118,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         if (result) {
           // Refresh the solutions list
           await fetchSolutions();
+          toast.success('Solution updated successfully');
           setIsDialogOpen(false);
+          setSelectedSolution(null);
+        } else {
+          throw new Error('Failed to update solution');
         }
       } else {
         console.log('Creating new solution');
@@ -128,11 +132,18 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         if (result) {
           // Refresh the solutions list
           await fetchSolutions();
+          toast.success('Solution created successfully');
           setIsDialogOpen(false);
+          setSelectedSolution(null);
+        } else {
+          throw new Error('Failed to create solution');
         }
       }
     } catch (error) {
       console.error('Error in handleSubmitForm:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error(`Save failed: ${errorMessage}`);
+      // Keep dialog open on error so user can retry
     } finally {
       setIsSubmitting(false);
     }

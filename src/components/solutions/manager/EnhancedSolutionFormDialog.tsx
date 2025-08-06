@@ -10,11 +10,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X } from 'lucide-react';
+import { Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { Solution } from '@/contexts/content-builder/types';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { FeaturesTab } from './tabs/FeaturesTab';
 import { ResourcesTab } from './tabs/ResourcesTab';
@@ -42,11 +43,23 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   solution,
   isSubmitting = false
 }) => {
-  const [activeTab, setActiveTab] = useState('basic');
-  const [formData, setFormData] = useState<Partial<EnhancedSolution>>({});
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Use persistent form hook
+  const {
+    formData,
+    activeTab,
+    isDirty,
+    setActiveTab,
+    updateFormData,
+    clearPersistedData,
+    initializeFormData
+  } = useFormPersistence({ 
+    key: solution?.id || 'new-solution',
+    autoSaveInterval: 10000 // 10 seconds
+  });
 
   // Initialize form data when dialog opens or solution changes
   useEffect(() => {
@@ -73,22 +86,21 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         tags: [],
       };
       
-      setFormData(initialData);
+      initializeFormData(initialData);
       setLogoPreview(solution?.logoUrl || null);
       setLogoFile(null);
-      setIsDirty(false);
-      setActiveTab('basic');
+      setSaveError(null);
+      // Don't reset activeTab to preserve user's last position
     }
-  }, [open, solution]);
+  }, [open, solution, initializeFormData]);
 
-  const updateFormData = (updates: Partial<EnhancedSolution>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-    setIsDirty(true);
-  };
+  // updateFormData is now provided by useFormPersistence hook
 
   const handleSubmit = async () => {
+    setSaveError(null);
+    
     if (!formData.name?.trim()) {
-      toast.error("Solution name is required");
+      setSaveError("Solution name is required");
       return;
     }
 
@@ -133,6 +145,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       const validation = solutionService.validateSolutionData(transformedData);
       if (!validation.isValid) {
         console.error('EnhancedSolutionFormDialog: Validation failed:', validation.errors);
+        setSaveError(validation.errors.join(', '));
         validation.errors.forEach(error => toast.error(error));
         return;
       }
@@ -141,15 +154,17 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       
       // Call the parent's onSubmit callback with the transformed data
       if (typeof onSubmit === 'function') {
-        setIsDirty(false);
         await onSubmit(transformedData, logoFile || undefined);
+        // Clear persisted data only on successful save
+        clearPersistedData();
       } else {
         console.warn('onSubmit is not a function:', onSubmit);
-        toast.error("Form submission error - invalid callback");
+        setSaveError("Form submission error - invalid callback");
       }
     } catch (error) {
       console.error("EnhancedSolutionFormDialog: Error submitting solution:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      setSaveError(errorMessage);
       toast.error(`Error saving solution: ${errorMessage}`);
     }
   };
@@ -157,9 +172,11 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   const handleClose = () => {
     if (isDirty && !isSubmitting) {
       if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+        clearPersistedData();
         onOpenChange(false);
       }
     } else {
+      clearPersistedData();
       onOpenChange(false);
     }
   };
@@ -284,6 +301,16 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
             </div>
           </Tabs>
         </div>
+        
+        {/* Error Display */}
+        {saveError && (
+          <div className="flex-shrink-0 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              {saveError}
+            </div>
+          </div>
+        )}
         
         {/* Footer Actions */}
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50">
