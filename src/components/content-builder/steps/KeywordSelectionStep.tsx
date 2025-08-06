@@ -137,7 +137,7 @@ export const KeywordSelectionStep = () => {
   
   return (
     <motion.div 
-      className="min-h-screen w-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
+      className="min-h-screen w-full bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
