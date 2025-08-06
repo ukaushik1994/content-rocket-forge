@@ -82,7 +82,7 @@ class SolutionService {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         console.error('Authentication error:', authError);
-        return { success: false, error: 'You must be logged in to create a solution' };
+        throw new Error('You must be logged in to create a solution');
       }
 
       let logoUrl = null;
@@ -91,7 +91,7 @@ class SolutionService {
       if (logoFile) {
         logoUrl = await this.uploadLogo(logoFile);
         if (!logoUrl) {
-          return { success: false, error: 'Failed to upload logo' };
+          throw new Error('Failed to upload logo');
         }
       }
 
@@ -113,7 +113,7 @@ class SolutionService {
 
       if (error) {
         console.error('Error creating solution:', error);
-        return { success: false, error: `Failed to create solution: ${error.message}` };
+        throw new Error(`Failed to create solution: ${error.message}`);
       }
 
       console.log('Solution created successfully:', data);
@@ -122,7 +122,7 @@ class SolutionService {
     } catch (error) {
       console.error('Service error creating solution:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create solution';
-      return { success: false, error: errorMessage };
+      throw new Error(errorMessage);
     }
   }
 
@@ -132,7 +132,7 @@ class SolutionService {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         console.error('Authentication error:', authError);
-        return { success: false, error: 'You must be logged in to update a solution' };
+        throw new Error('You must be logged in to update a solution');
       }
 
       let logoUrl = undefined;
@@ -141,7 +141,7 @@ class SolutionService {
       if (logoFile) {
         logoUrl = await this.uploadLogo(logoFile);
         if (!logoUrl) {
-          return { success: false, error: 'Failed to upload logo' };
+          throw new Error('Failed to upload logo');
         }
       }
 
@@ -162,7 +162,7 @@ class SolutionService {
 
       if (error) {
         console.error('Error updating solution:', error);
-        return { success: false, error: `Failed to update solution: ${error.message}` };
+        throw new Error(`Failed to update solution: ${error.message}`);
       }
 
       console.log('Solution updated successfully:', data);
@@ -171,7 +171,7 @@ class SolutionService {
     } catch (error) {
       console.error('Service error updating solution:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update solution';
-      return { success: false, error: errorMessage };
+      throw new Error(errorMessage);
     }
   }
 

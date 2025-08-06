@@ -25,26 +25,12 @@ export function useSolutionForm({ addSolution, updateSolution }: UseSolutionForm
     setIsDialogOpen(true);
   };
 
-  const handleSubmitForm = async (formData: {
-    name: string;
-    features: string;
-    useCases: string;
-    painPoints: string;
-    targetAudience: string;
-    externalUrl?: string;
-    resources?: Array<{ title: string; url: string; }>;
-  }, logoFile?: File) => {
+  const handleSubmitForm = async (formData: any, logoFile?: File) => {
     // Validate form data
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       toast.error("Solution name is required");
-      return;
+      throw new Error("Solution name is required");
     }
-    
-    // Helper function to properly split and sanitize string inputs
-    const splitStrings = (str: string) => 
-      str.split(',')
-         .map(s => s.trim())
-         .filter(s => s);
     
     setIsSubmitting(true);
     
@@ -62,7 +48,7 @@ export function useSolutionForm({ addSolution, updateSolution }: UseSolutionForm
           .upload(filePath, logoFile);
           
         if (uploadError) {
-          throw uploadError;
+          throw new Error(`Failed to upload logo: ${uploadError.message}`);
         }
         
         // Get the public URL for the uploaded file
@@ -73,38 +59,27 @@ export function useSolutionForm({ addSolution, updateSolution }: UseSolutionForm
         logoUrl = publicUrl;
       }
       
-      const solutionData = {
-        name: formData.name.trim(),
-        features: splitStrings(formData.features),
-        useCases: splitStrings(formData.useCases),
-        painPoints: splitStrings(formData.painPoints),
-        targetAudience: splitStrings(formData.targetAudience),
-        externalUrl: formData.externalUrl?.trim() || null,
-        resources: formData.resources || [],
-      };
-      
       let success = false;
       
       if (selectedSolution) {
         // Update existing
-        success = await updateSolution(selectedSolution.id, solutionData, logoUrl);
-        if (success) {
-          toast.success(`${formData.name} updated successfully!`);
-        }
+        success = await updateSolution(selectedSolution.id, formData, logoUrl);
       } else {
         // Add new
-        success = await addSolution(solutionData, logoUrl);
-        if (success) {
-          toast.success(`${formData.name} added successfully!`);
-        }
+        success = await addSolution(formData, logoUrl);
       }
       
       if (success) {
         setIsDialogOpen(false);
+        // Success toasts are handled by the parent component
+      } else {
+        throw new Error("Save operation failed");
       }
     } catch (error: any) {
       console.error("Error saving solution:", error);
-      toast.error("An unexpected error occurred while saving the solution");
+      const errorMessage = error?.message || "An unexpected error occurred while saving the solution";
+      toast.error(errorMessage);
+      throw error; // Re-throw to be caught by dialog handler
     } finally {
       setIsSubmitting(false);
     }

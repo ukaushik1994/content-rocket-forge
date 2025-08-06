@@ -101,6 +101,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     
     if (!formData.name?.trim()) {
       setSaveError("Solution name is required");
+      toast.error("Solution name is required");
       return;
     }
 
@@ -147,27 +148,33 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         console.error('EnhancedSolutionFormDialog: Validation failed:', validation.errors);
         setSaveError(validation.errors.join(', '));
         validation.errors.forEach(error => toast.error(error));
-        return;
+        return; // Stay open to allow user to fix errors
       }
 
       console.log('EnhancedSolutionFormDialog: Data validation passed, calling onSubmit');
       
       // Call the parent's onSubmit callback with the transformed data
       if (typeof onSubmit === 'function') {
+        // Wait for the submission to complete successfully
         await onSubmit(transformedData, logoFile || undefined);
-        // Success: clear persisted data and close dialog
+        
+        // Only proceed with cleanup and closing if we reach this point without errors
+        console.log('EnhancedSolutionFormDialog: Submission successful, clearing data and closing');
         clearPersistedData();
         setSaveError(null);
+        toast.success(solution ? 'Solution updated successfully!' : 'Solution created successfully!');
         onOpenChange(false);
       } else {
         console.warn('onSubmit is not a function:', onSubmit);
         setSaveError("Form submission error - invalid callback");
+        toast.error("Form submission error - invalid callback");
       }
     } catch (error) {
       console.error("EnhancedSolutionFormDialog: Error submitting solution:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       setSaveError(errorMessage);
       toast.error(`Error saving solution: ${errorMessage}`);
+      // Dialog stays open so user can retry
     }
   };
 
