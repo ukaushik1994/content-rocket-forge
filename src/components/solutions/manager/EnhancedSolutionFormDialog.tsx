@@ -155,12 +155,11 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         // Wait for the submission to complete successfully
         await onSubmit(transformedData, logoFile || undefined);
         
-        // Only proceed with cleanup and closing if we reach this point without errors
-        console.log('EnhancedSolutionFormDialog: Submission successful, clearing data and closing');
+        // Only proceed with cleanup if we reach this point without errors
+        // Parent will handle dialog closing
+        console.log('EnhancedSolutionFormDialog: Submission successful, clearing dirty state');
         clearDirty();
         setSaveError(null);
-        toast.success(solution ? 'Solution updated successfully!' : 'Solution created successfully!');
-        onOpenChange(false);
       } else {
         console.warn('onSubmit is not a function:', onSubmit);
         setSaveError("Form submission error - invalid callback");

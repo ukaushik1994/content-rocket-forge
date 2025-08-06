@@ -119,11 +119,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
           // Refresh the solutions list
           await fetchSolutions();
           toast.success('Solution updated successfully');
-          // Only close dialog and clear selection on confirmed success
+          // Close dialog and clear selection only on confirmed success
           setIsDialogOpen(false);
           setSelectedSolution(null);
         } else {
-          // Don't close dialog on error - let user retry
+          // Throw error to keep dialog open and let user retry
           throw new Error(result.error || 'Failed to update solution');
         }
       } else {
@@ -135,11 +135,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
           // Refresh the solutions list
           await fetchSolutions();
           toast.success('Solution created successfully');
-          // Only close dialog and clear selection on confirmed success
+          // Close dialog and clear selection only on confirmed success
           setIsDialogOpen(false);
           setSelectedSolution(null);
         } else {
-          // Don't close dialog on error - let user retry
+          // Throw error to keep dialog open and let user retry
           throw new Error(result.error || 'Failed to create solution');
         }
       }
