@@ -5,11 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
-  BookOpen,
-  ListTree,
-  LayoutDashboard, 
-  ShoppingBag, 
-  Newspaper, 
   Loader2,
   ExternalLink,
   Building2,
@@ -33,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { contentFormats } from '@/components/content-repurposing/formats';
 
 // Helper function to safely convert Json to string array
 const jsonToStringArray = (jsonValue: any): string[] => {
@@ -42,13 +38,14 @@ const jsonToStringArray = (jsonValue: any): string[] => {
   return [];
 };
 
-const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = [
-  { value: 'blog', label: 'Blog Post', icon: BookOpen, description: 'Informative, educational content for your blog' },
-  { value: 'glossary', label: 'Glossary', icon: ListTree, description: 'Definitions and explanations of industry terms' },
-  { value: 'landingPage', label: 'Landing Page', icon: LayoutDashboard, description: 'Conversion-focused page for a specific purpose' },
-  { value: 'article', label: 'Article', icon: Newspaper, description: 'In-depth piece on a specific topic' },
-  { value: 'productDescription', label: 'Product Description', icon: ShoppingBag, description: 'Compelling content to showcase your products' }
-];
+// Map content formats to content types for the UI
+const contentTypes: Array<{value: ContentType; label: string; icon: React.ElementType; description: string}> = 
+  contentFormats.map(format => ({
+    value: format.id as ContentType,
+    label: format.name,
+    icon: format.icon,
+    description: format.description
+  }));
 
 export const ContentTypeStep = () => {
   const { state, dispatch } = useContentBuilder();

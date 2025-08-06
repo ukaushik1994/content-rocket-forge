@@ -18,7 +18,7 @@ export const initialState: ContentBuilderState = {
   searchedKeywords: [],
   
   // Content Type
-  contentType: 'article',
+  contentType: 'blog',
   contentFormat: 'long-form',
   contentIntent: 'inform',
   

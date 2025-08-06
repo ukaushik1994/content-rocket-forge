@@ -3,8 +3,8 @@
  * Content-related type definitions
  */
 
-// Content Type Options
-export type ContentType = 'article' | 'blog' | 'landingPage' | 'productDescription' | 'glossary';
+// Content Type Options - synced with template formats
+export type ContentType = 'blog' | 'social-twitter' | 'social-linkedin' | 'social-facebook' | 'social-instagram' | 'script' | 'email' | 'glossary' | 'meme' | 'carousel';
 
 // Content Format Options
 export type ContentFormat = 'long-form' | 'short-form' | 'listicle' | 'how-to' | 'list';

@@ -84,26 +84,61 @@ CATEGORY: ${solution.category}`;
 - Include internal links to solution resources
 - End with a clear call-to-action mentioning the solution`;
 
-      case 'article':
-        return `ARTICLE SPECIFIC GUIDELINES:
-- Provide in-depth analysis using solution data
+      case 'social-twitter':
+        return `TWITTER POST SPECIFIC GUIDELINES:
+- Keep concise and engaging for social media
+- Include relevant hashtags and mentions
+- Reference solution benefits briefly
+- End with a compelling call-to-action`;
+
+      case 'social-linkedin':
+        return `LINKEDIN POST SPECIFIC GUIDELINES:
+- Professional tone and industry insights
 - Include market data and competitive insights where relevant
 - Reference specific metrics and performance indicators
 - Maintain authoritative tone with solution expertise`;
 
-      case 'landingPage':
-        return `LANDING PAGE SPECIFIC GUIDELINES:
-- Include step-by-step processes relevant to the solution
-- Reference technical specifications and requirements
-- Provide practical examples from case studies
-- Include troubleshooting tips based on solution capabilities`;
+      case 'social-facebook':
+        return `FACEBOOK POST SPECIFIC GUIDELINES:
+- Engaging and conversational tone
+- Include visual storytelling elements
+- Reference community benefits and social proof
+- Encourage interaction and sharing`;
 
-      case 'productDescription':
-        return `PRODUCT DESCRIPTION SPECIFIC GUIDELINES:
-- Use competitor analysis data for accurate comparisons
-- Highlight unique differentiators objectively
-- Include pricing model information where relevant
-- Reference specific features and capabilities`;
+      case 'social-instagram':
+        return `INSTAGRAM CAPTION SPECIFIC GUIDELINES:
+- Visual-first approach with compelling captions
+- Use relevant hashtags and trending topics
+- Include storytelling elements and personality
+- Reference solution benefits creatively`;
+
+      case 'script':
+        return `VIDEO/PODCAST SCRIPT SPECIFIC GUIDELINES:
+- Conversational and engaging dialogue
+- Include natural talking points about solution benefits
+- Structure with clear intro, body, and conclusion
+- Add cues for visual elements or demonstrations`;
+
+      case 'email':
+        return `EMAIL NEWSLETTER SPECIFIC GUIDELINES:
+- Personalized and direct communication style
+- Include clear subject line and preview text
+- Structure with scannable sections and clear CTAs
+- Reference solution benefits in context`;
+
+      case 'meme':
+        return `MEME CONTENT SPECIFIC GUIDELINES:
+- Humorous and relatable approach
+- Reference current trends and cultural moments
+- Keep solution mentions light and organic
+- Focus on entertainment value while maintaining brand relevance`;
+
+      case 'carousel':
+        return `CAROUSEL POST SPECIFIC GUIDELINES:
+- Multi-slide storytelling approach
+- Each slide should build on the previous one
+- Include visual cues and slide-specific content
+- End with a strong call-to-action slide`;
 
       default:
         return `GENERAL INTEGRATION GUIDELINES:
