@@ -6,10 +6,10 @@ import { ApiProvider } from '@/services/apiKeyService';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 
 /**
- * Provider priority order - OpenRouter first, then other providers
+ * Provider priority order - OpenRouter first as primary, then fallbacks
  */
 const PROVIDER_PRIORITY: AiProvider[] = [
-  'openrouter',
+  'openrouter',  // Primary provider - prioritized for all operations
   'anthropic', 
   'gemini',
   'mistral',

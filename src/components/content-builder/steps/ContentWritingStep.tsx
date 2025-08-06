@@ -88,16 +88,18 @@ export const ContentWritingStep = () => {
     setShowTitleSelection(false);
     
     try {
-      const generatedContent = await generateAdvancedContent(config, aiProvider);
+      // Prioritize OpenRouter for content generation
+      const primaryProvider = aiProvider === 'openrouter' ? 'openrouter' : aiProvider;
+      const generatedContent = await generateAdvancedContent(config, primaryProvider);
       if (generatedContent) {
         handleContentChange(generatedContent);
-        toast.success('Content generated successfully!');
+        toast.success(`Content generated successfully using ${primaryProvider}!`);
         
         // Automatically generate contextual titles based on the actual content
         await generateTitlesForContent(generatedContent, config);
       }
     } catch (error) {
-      toast.error('Content generation failed');
+      toast.error(`Content generation failed with ${aiProvider}. Please try another provider.`);
     } finally {
       setIsGenerating(false);
     }

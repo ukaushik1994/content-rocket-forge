@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Eye, Edit, FileText, Save, Wand, Sparkles, CheckCircle, Loader2, Badge } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AutoOptimizeDialog } from './optimization/AutoOptimizeDialog';
+import { EnhancedAutoOptimizeDialog } from './optimization/EnhancedAutoOptimizeDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContentOptimizer } from './optimization/useContentOptimizer';
 
@@ -256,7 +256,7 @@ export const ContentReviewCard: React.FC<ContentReviewCardProps> = ({ content })
         </TabsContent>
       </Tabs>
 
-      <AutoOptimizeDialog 
+      <EnhancedAutoOptimizeDialog 
         isOpen={isAutoOptimizeDialogOpen}
         onClose={() => setIsAutoOptimizeDialogOpen(false)}
         content={editedContent} // Use editedContent instead of content to ensure we're optimizing the current version

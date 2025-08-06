@@ -14,6 +14,7 @@ import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { toast } from "sonner";
 import { getApiKey } from '@/services/apiKeyService';
+import { initializeProviderPreferences } from '@/services/providerAvailabilityService';
 
 interface ContentBuilderProps {
   initialKeyword?: string;
@@ -101,21 +102,24 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   const currentStepId = steps[activeStep] ? steps[activeStep].id : -1;
   const canGoNext = activeStep < steps.length - 1 && (currentStepComplete || state.activeStep === 0);
   
-  // Check for SERP API key in settings with better error handling
+  // Initialize AI provider preferences and check for SERP API key
   useEffect(() => {
-    const checkSerpApiKey = async () => {
+    const initializeServices = async () => {
       setApiKeyStatus('checking');
       try {
+        // Initialize provider preferences (prioritizes OpenRouter)
+        await initializeProviderPreferences();
+        
         // Try to get the SERP API key from the API key service
         const serpApiKey = await getApiKey('serp');
         
         if (serpApiKey) {
           // Store the key in localStorage for use by serpApiService
           localStorage.setItem('serp_api_key', serpApiKey);
-          console.log('SERP API key loaded from settings');
+          console.log('🔑 SERP API key loaded from settings');
           setApiKeyStatus('found');
         } else {
-          console.log('No SERP API key found in settings');
+          console.log('⚠️ No SERP API key found in settings');
           
           // Check localStorage as fallback
           const localStorageKey = localStorage.getItem('serp_api_key');
@@ -126,12 +130,12 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
           }
         }
       } catch (error) {
-        console.error('Error checking for SERP API key:', error);
+        console.error('Error initializing services:', error);
         setApiKeyStatus('error');
       }
     };
     
-    checkSerpApiKey();
+    initializeServices();
   }, []);
   
   // Handle next step navigation
@@ -296,6 +300,10 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
                   <span>Mock data mode</span>
                 </div>
               )}
+              <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20 backdrop-blur-sm">
+                <Sparkles className="h-3 w-3 animate-pulse" />
+                <span>OpenRouter Ready</span>
+              </div>
               <div className="text-sm text-muted-foreground px-4 py-1.5 bg-muted/30 rounded-full border border-border/30 backdrop-blur-sm">
                 Step {stepInfo.current} of {stepInfo.total}
               </div>

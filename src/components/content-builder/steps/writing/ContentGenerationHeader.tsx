@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import { formatDistanceToNow } from 'date-fns';
+import { ProviderManager } from '../../provider/ProviderManager';
 
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
@@ -109,6 +110,13 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Provider Manager */}
+          <ProviderManager
+            selectedProvider={aiProvider}
+            onProviderChange={onAiProviderChange}
+            showStatus={true}
+          />
+          
           {/* Auto-save indicator */}
           <div className="text-sm text-muted-foreground flex items-center gap-2">
             {hasUnsavedChanges ? (

@@ -105,7 +105,7 @@ export const OptimizeAndReviewStep = () => {
         if (generatedContent) {
           newGeneratedFormats[contentType] = generatedContent;
         } else {
-          // Fallback to generic generation if no template or generation failed
+          // Fallback to OpenRouter for generic generation if no template or generation failed
           const response = await sendChatRequest('openrouter', {
             messages: [
               { 
