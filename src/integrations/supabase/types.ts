@@ -1974,46 +1974,91 @@ export type Database = {
       }
       solutions: {
         Row: {
+          benefits: Json | null
+          case_studies: Json | null
           category: string | null
+          competitors: Json | null
           created_at: string
+          description: string | null
           external_url: string | null
           features: Json | null
           id: string
+          integrations: Json | null
+          key_differentiators: Json | null
           logo_url: string | null
+          market_data: Json | null
+          metadata: Json | null
+          metrics: Json | null
           name: string
           pain_points: Json | null
+          positioning_statement: string | null
+          pricing_model: Json | null
           resources: Json | null
+          short_description: string | null
+          tags: Json | null
           target_audience: Json | null
+          technical_specs: Json | null
+          unique_value_propositions: Json | null
           updated_at: string
           use_cases: Json | null
           user_id: string
         }
         Insert: {
+          benefits?: Json | null
+          case_studies?: Json | null
           category?: string | null
+          competitors?: Json | null
           created_at?: string
+          description?: string | null
           external_url?: string | null
           features?: Json | null
           id?: string
+          integrations?: Json | null
+          key_differentiators?: Json | null
           logo_url?: string | null
+          market_data?: Json | null
+          metadata?: Json | null
+          metrics?: Json | null
           name: string
           pain_points?: Json | null
+          positioning_statement?: string | null
+          pricing_model?: Json | null
           resources?: Json | null
+          short_description?: string | null
+          tags?: Json | null
           target_audience?: Json | null
+          technical_specs?: Json | null
+          unique_value_propositions?: Json | null
           updated_at?: string
           use_cases?: Json | null
           user_id: string
         }
         Update: {
+          benefits?: Json | null
+          case_studies?: Json | null
           category?: string | null
+          competitors?: Json | null
           created_at?: string
+          description?: string | null
           external_url?: string | null
           features?: Json | null
           id?: string
+          integrations?: Json | null
+          key_differentiators?: Json | null
           logo_url?: string | null
+          market_data?: Json | null
+          metadata?: Json | null
+          metrics?: Json | null
           name?: string
           pain_points?: Json | null
+          positioning_statement?: string | null
+          pricing_model?: Json | null
           resources?: Json | null
+          short_description?: string | null
+          tags?: Json | null
           target_audience?: Json | null
+          technical_specs?: Json | null
+          unique_value_propositions?: Json | null
           updated_at?: string
           use_cases?: Json | null
           user_id?: string

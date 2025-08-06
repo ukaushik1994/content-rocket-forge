@@ -25,6 +25,7 @@ import { TechnicalSpecsTab } from './tabs/TechnicalSpecsTab';
 import { PricingTab } from './tabs/PricingTab';
 import { CaseStudiesTab } from './tabs/CaseStudiesTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
+import { solutionService } from '@/services/solutionService';
 
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
@@ -85,30 +86,22 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     setIsDirty(true);
   };
 
-  const handleSubmit = () => {
-    // Validate required fields
-    if (!formData.name?.trim()) {
-      toast.error("Solution name is required");
-      setActiveTab('basic');
-      return;
+  const handleSubmit = async () => {
+    if (formData.name) {
+      // Validate data before submission
+      const validation = solutionService.validateSolutionData(formData as any);
+      if (!validation.isValid) {
+        validation.errors.forEach(error => toast.error(error));
+        return;
+      }
+
+      try {
+        onSubmit(formData, logoFile || undefined);
+      } catch (error) {
+        console.error('Error submitting solution:', error);
+        toast.error('Failed to save solution');
+      }
     }
-
-    // Convert enhanced data back to the expected format
-    const submitData = {
-      name: formData.name.trim(),
-      category: formData.category || 'Business Solution',
-      features: formData.features?.join(', ') || '',
-      useCases: formData.useCases?.join(', ') || '',
-      painPoints: formData.painPoints?.join(', ') || '',
-      targetAudience: formData.targetAudience?.join(', ') || '',
-      externalUrl: formData.externalUrl?.trim() || '',
-      resources: formData.resources?.map(r => ({
-        title: r.title,
-        url: r.url
-      })) || [],
-    };
-
-    onSubmit(submitData, logoFile || undefined);
   };
 
   const handleClose = () => {
