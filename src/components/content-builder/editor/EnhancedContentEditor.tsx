@@ -81,92 +81,67 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
     return matches.sort((a, b) => a.start - b.start);
   }, [content, serpSelections]);
 
-  // Get color for SERP item type
+  // Get color for SERP item type - improved for dark theme
   const getHighlightColor = (type: string) => {
     const colors = {
-      'people_also_ask': 'bg-blue-500/20 border-blue-500/50',
-      'related_searches': 'bg-green-500/20 border-green-500/50',
-      'headings': 'bg-purple-500/20 border-purple-500/50',
-      'entities': 'bg-orange-500/20 border-orange-500/50',
-      'content_gaps': 'bg-red-500/20 border-red-500/50',
-      'top_results': 'bg-cyan-500/20 border-cyan-500/50'
+      'people_also_ask': 'bg-blue-400/30 text-blue-100 border-blue-400/60',
+      'related_searches': 'bg-green-400/30 text-green-100 border-green-400/60',
+      'headings': 'bg-purple-400/30 text-purple-100 border-purple-400/60',
+      'entities': 'bg-orange-400/30 text-orange-100 border-orange-400/60',
+      'content_gaps': 'bg-red-400/30 text-red-100 border-red-400/60',
+      'top_results': 'bg-cyan-400/30 text-cyan-100 border-cyan-400/60'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-500/20 border-gray-500/50';
+    return colors[type as keyof typeof colors] || 'bg-gray-400/30 text-gray-100 border-gray-400/60';
   };
 
-  // Render content with highlights
-  const renderHighlightedContent = (text: string) => {
+  // Render content with highlights for preview
+  const renderHighlightedMarkdown = (text: string) => {
     if (!highlightMatches.length) {
       return text;
     }
 
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
+    let processedText = text;
+    const sortedMatches = [...highlightMatches].sort((a, b) => b.start - a.start); // Process from end to start
 
-    highlightMatches.forEach((match, index) => {
-      // Add text before highlight
-      if (match.start > lastIndex) {
-        parts.push(text.slice(lastIndex, match.start));
-      }
-
-      // Add highlighted text
+    sortedMatches.forEach((match, index) => {
       const shouldHighlight = !highlightMode || highlightMode === match.type;
       
       if (shouldHighlight) {
-        parts.push(
-          <TooltipProvider key={`highlight-${index}`}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={`inline-block px-1 rounded border ${getHighlightColor(match.type)} cursor-help transition-all duration-200 hover:scale-105`}
-                >
-                  {match.text}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-sm">
-                  <div className="font-semibold mb-1">SERP Match: {match.type.replace(/_/g, ' ')}</div>
-                  <div className="text-muted-foreground text-xs max-w-xs">
-                    {match.serpItem.content.slice(0, 100)}...
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      } else {
-        parts.push(match.text);
+        const beforeText = processedText.slice(0, match.start);
+        const matchText = processedText.slice(match.start, match.end);
+        const afterText = processedText.slice(match.end);
+        
+        const highlightHtml = `<span class="inline-block px-1.5 py-0.5 mx-0.5 rounded-md font-medium transition-all duration-200 hover:scale-105 cursor-help ${getHighlightColor(match.type)}" title="SERP Match: ${match.type.replace(/_/g, ' ')} - ${match.serpItem.content.slice(0, 100)}...">${matchText}</span>`;
+        
+        processedText = beforeText + highlightHtml + afterText;
       }
-
-      lastIndex = match.end;
     });
 
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts;
+    return processedText;
   };
 
   // Simple Markdown to HTML converter with highlights
   const renderMarkdown = (markdown: string) => {
     if (!markdown) return '';
-    let html = markdown;
+    
+    // First apply highlights to the raw markdown
+    const highlightedMarkdown = renderHighlightedMarkdown(markdown);
+    
+    let html = highlightedMarkdown;
 
     // Convert headers
-    html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-    html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-    html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mb-4 text-foreground">$1</h1>');
+    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mb-3 text-foreground">$1</h2>');
+    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-medium mb-2 text-foreground">$1</h3>');
 
     // Convert bold
-    html = html.replace(/\*\*(.*)\*\*/gm, '<strong>$1</strong>');
+    html = html.replace(/\*\*(.*)\*\*/gm, '<strong class="font-semibold">$1</strong>');
 
     // Convert italic
-    html = html.replace(/\*(.*)\*/gm, '<em>$1</em>');
+    html = html.replace(/\*(.*)\*/gm, '<em class="italic">$1</em>');
 
     // Convert paragraphs
-    html = html.split('\n\n').map(p => `<p>${p}</p>`).join('');
+    html = html.split('\n\n').map(p => `<p class="mb-4 text-foreground leading-relaxed">${p}</p>`).join('');
     return html;
   };
 
@@ -222,23 +197,14 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
             </div>
           )}
           
-          <div className="flex-1 relative">
+          <div className="flex-1">
             <Textarea 
               value={content} 
               onChange={handleChange} 
               placeholder="Write your content here..." 
-              className="h-full border-0 focus-visible:ring-0 resize-none p-4 flex-1 absolute inset-0" 
+              className="h-full border-0 focus-visible:ring-0 resize-none p-4" 
               disabled={isLoading}
             />
-            
-            {/* Highlight Overlay */}
-            {highlightMatches.length > 0 && (
-              <div className="absolute inset-0 p-4 pointer-events-none overflow-hidden">
-                <div className="whitespace-pre-wrap text-transparent font-mono text-sm leading-6">
-                  {renderHighlightedContent(content)}
-                </div>
-              </div>
-            )}
           </div>
           
           {/* SERP Integration Info */}
@@ -247,7 +213,7 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Info className="h-3 w-3" />
                 <span>
-                  {highlightMatches.length} SERP integrations found
+                  {highlightMatches.length} SERP integrations found • Switch to Preview to see highlights
                 </span>
                 <div className="flex gap-1 ml-auto">
                   {serpTypes.map(type => {
@@ -276,13 +242,35 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
           <CardContent className="p-4 flex-1">
             <ScrollArea className="h-full">
               <div 
-                className="prose prose-sm max-w-none dark:prose-invert" 
+                className="max-w-none" 
                 dangerouslySetInnerHTML={{
                   __html: renderMarkdown(content)
                 }} 
               />
             </ScrollArea>
           </CardContent>
+          
+          {/* Enhanced SERP Integration Info for Preview */}
+          {highlightMatches.length > 0 && (
+            <div className="px-3 py-2 border-t bg-muted/30">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Info className="h-3 w-3" />
+                <span>
+                  {highlightMatches.length} SERP integrations highlighted above
+                </span>
+                <div className="flex gap-1 ml-auto">
+                  {serpTypes.map(type => {
+                    const count = highlightMatches.filter(m => m.type === type).length;
+                    return (
+                      <Badge key={type} variant="secondary" className={`text-[10px] px-1 py-0 ${getHighlightColor(type)}`}>
+                        {type.replace(/_/g, ' ')}: {count}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </Card>
