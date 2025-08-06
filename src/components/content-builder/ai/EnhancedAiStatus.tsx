@@ -120,9 +120,33 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
     );
   }
 
-  // Hide the component when at least one provider is working
-  if (workingProviders.length > 0) {
-    return null;
+  // Show minimized status when providers are working, hide only if user prefers
+  const showMinimized = workingProviders.length > 0;
+
+  if (showMinimized) {
+    return (
+      <Card className="border-green-500/20 bg-green-950/10">
+        <CardContent className="py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <CheckCircle className="h-4 w-4 mr-2 text-green-400" />
+              <span className="text-sm font-medium">AI Service Ready</span>
+              <Badge className="ml-2 bg-green-600 hover:bg-green-600/80 text-xs">
+                {workingProviders.length} Provider{workingProviders.length > 1 ? 's' : ''}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={checkApiStatus}
+              disabled={isLoading}
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -156,54 +180,29 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
           </Badge>
         </div>
 
-        {/* Working Providers Grid - Only show configured and working providers */}
-        {workingProviders.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {workingProviders.map((provider) => (
-              <div key={provider} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{PROVIDER_NAMES[provider]}</span>
-                  {status[provider]?.testing ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Connected & Working
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Setup Actions - Show when no providers are working */}
-        {workingProviders.length === 0 && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
-            <div className="text-sm">
-              <p className="font-medium">AI Provider Setup Required</p>
-              <p className="text-muted-foreground">
-                Choose from OpenRouter (recommended), Anthropic, or other AI providers for content generation
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.href = '/settings?tab=api'}
-            >
-              <Settings className="h-4 w-4 mr-1" />
-              Configure
-            </Button>
+        <div className="flex items-center justify-between p-3 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
+          <div className="text-sm">
+            <p className="font-medium">AI Provider Setup Required</p>
+            <p className="text-muted-foreground">
+              Configure OpenAI, Anthropic, or other AI providers for content generation
+            </p>
           </div>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/settings?tab=api'}
+          >
+            <Settings className="h-4 w-4 mr-1" />
+            Configure
+          </Button>
+        </div>
 
         {/* Content Generation Capability Indicator */}
         <div className="text-xs text-muted-foreground">
           <p>
             <span className="font-medium">Content Generation:</span>{' '}
-            {workingProviders.length >= 2 ? 'Premium (Multiple Providers)' :
-             workingProviders.length === 1 ? 'Standard (Single Provider)' :
-             'Limited (No AI Providers)'}
+            Limited (No AI Providers)
           </p>
         </div>
       </CardContent>

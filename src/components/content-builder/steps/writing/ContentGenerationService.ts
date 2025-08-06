@@ -4,12 +4,13 @@ import { AiProvider } from '@/services/aiService/types';
 import { Solution, SerpSelection } from '@/contexts/content-builder/types';
 import { sendChatRequest } from '@/services/aiService';
 import { getUserPreference } from '@/services/userPreferencesService';
+import { getBestAvailableProvider } from '@/services/providerAvailabilityService';
 
 /**
  * Generate content using AI with SERP data integration
  */
 export const generateContent = async (
-  aiProvider: AiProvider,
+  preferredProvider: AiProvider | null,
   mainKeyword: string,
   contentTitle: string | null,
   outlineText: string,
@@ -31,6 +32,12 @@ export const generateContent = async (
   }
   
   try {
+    // Get the best available AI provider
+    const aiProvider = preferredProvider || await getBestAvailableProvider();
+    if (!aiProvider) {
+      toast.error('No AI provider is configured. Please set up an API key in Settings.');
+      return false;
+    }
     // Organize SERP selections by type for better prompt structure
     const serpData = organizeSerpSelections(serpSelections);
     
@@ -49,7 +56,7 @@ export const generateContent = async (
     // Enhanced system prompt for better content quality
     const systemPrompt = createEnhancedSystemPrompt();
     
-    // Call the AI API via our service - prioritize OpenRouter
+    // Call the AI API via our service
     console.log(`🚀 Generating content with ${aiProvider}`);
     const chatResponse = await sendChatRequest(aiProvider, {
       messages: [
@@ -57,8 +64,7 @@ export const generateContent = async (
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      maxTokens: 4000,
-      model: aiProvider === 'openrouter' ? 'openai/gpt-3.5-turbo' : undefined
+      maxTokens: 4000
     });
     
     if (chatResponse?.choices?.[0]?.message?.content) {

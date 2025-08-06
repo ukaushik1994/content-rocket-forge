@@ -114,8 +114,7 @@ export function useContentGeneration() {
             { role: 'user', content: prompt }
           ],
           temperature: 0.7,
-          maxTokens: 4000,
-          model: aiProvider === 'openrouter' ? 'openai/gpt-3.5-turbo' : undefined
+          maxTokens: 4000
         });
         
         if (chatResponse?.choices?.[0]?.message?.content) {
