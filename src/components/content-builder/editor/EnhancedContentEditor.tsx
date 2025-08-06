@@ -4,9 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Info } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SerpSelection } from '@/contexts/content-builder/types/serp-types';
 import { Badge } from '@/components/ui/badge';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface EnhancedContentEditorProps {
   content: string;
@@ -23,18 +23,21 @@ interface HighlightMatch {
   serpItem: SerpSelection;
 }
 
-// Extract search terms from SERP items - moved before usage
+// Enhanced search term extraction
 const extractSearchTerms = (item: SerpSelection): string[] => {
   const terms: string[] = [];
   const content = item.content.toLowerCase();
   
-  // Extract key phrases (3+ words)
-  const phrases = content.match(/\b\w+\s+\w+\s+\w+(?:\s+\w+)*\b/g) || [];
-  terms.push(...phrases.slice(0, 3)); // Take first 3 phrases
+  // Extract key phrases (2-4 words)
+  const phrases = content.match(/\b\w+(?:\s+\w+){1,3}\b/g) || [];
+  terms.push(...phrases.slice(0, 5)); // Take first 5 phrases
   
-  // Extract important keywords (longer than 4 characters)
-  const words = content.match(/\b\w{5,}\b/g) || [];
-  terms.push(...words.slice(0, 5)); // Take first 5 words
+  // Extract important keywords (3+ characters, avoid common words)
+  const words = content.match(/\b\w{3,}\b/g) || [];
+  const filteredWords = words.filter(word => 
+    !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'use', 'man', 'new', 'now', 'way', 'may', 'say'].includes(word)
+  );
+  terms.push(...filteredWords.slice(0, 8)); // Take first 8 meaningful words
   
   return [...new Set(terms)]; // Remove duplicates
 };
@@ -81,68 +84,17 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
     return matches.sort((a, b) => a.start - b.start);
   }, [content, serpSelections]);
 
-  // Get color for SERP item type - improved for dark theme
+  // Get color for SERP item type - enhanced visibility
   const getHighlightColor = (type: string) => {
     const colors = {
-      'people_also_ask': 'bg-blue-400/30 text-blue-100 border-blue-400/60',
-      'related_searches': 'bg-green-400/30 text-green-100 border-green-400/60',
-      'headings': 'bg-purple-400/30 text-purple-100 border-purple-400/60',
-      'entities': 'bg-orange-400/30 text-orange-100 border-orange-400/60',
-      'content_gaps': 'bg-red-400/30 text-red-100 border-red-400/60',
-      'top_results': 'bg-cyan-400/30 text-cyan-100 border-cyan-400/60'
+      'people_also_ask': 'bg-blue-500/20 text-blue-900 dark:text-blue-100 border border-blue-400/40',
+      'related_searches': 'bg-green-500/20 text-green-900 dark:text-green-100 border border-green-400/40',
+      'headings': 'bg-purple-500/20 text-purple-900 dark:text-purple-100 border border-purple-400/40',
+      'entities': 'bg-orange-500/20 text-orange-900 dark:text-orange-100 border border-orange-400/40',
+      'content_gaps': 'bg-red-500/20 text-red-900 dark:text-red-100 border border-red-400/40',
+      'top_results': 'bg-cyan-500/20 text-cyan-900 dark:text-cyan-100 border border-cyan-400/40'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-400/30 text-gray-100 border-gray-400/60';
-  };
-
-  // Render content with highlights for preview
-  const renderHighlightedMarkdown = (text: string) => {
-    if (!highlightMatches.length) {
-      return text;
-    }
-
-    let processedText = text;
-    const sortedMatches = [...highlightMatches].sort((a, b) => b.start - a.start); // Process from end to start
-
-    sortedMatches.forEach((match, index) => {
-      const shouldHighlight = !highlightMode || highlightMode === match.type;
-      
-      if (shouldHighlight) {
-        const beforeText = processedText.slice(0, match.start);
-        const matchText = processedText.slice(match.start, match.end);
-        const afterText = processedText.slice(match.end);
-        
-        const highlightHtml = `<span class="inline-block px-1.5 py-0.5 mx-0.5 rounded-md font-medium transition-all duration-200 hover:scale-105 cursor-help ${getHighlightColor(match.type)}" title="SERP Match: ${match.type.replace(/_/g, ' ')} - ${match.serpItem.content.slice(0, 100)}...">${matchText}</span>`;
-        
-        processedText = beforeText + highlightHtml + afterText;
-      }
-    });
-
-    return processedText;
-  };
-
-  // Simple Markdown to HTML converter with highlights
-  const renderMarkdown = (markdown: string) => {
-    if (!markdown) return '';
-    
-    // First apply highlights to the raw markdown
-    const highlightedMarkdown = renderHighlightedMarkdown(markdown);
-    
-    let html = highlightedMarkdown;
-
-    // Convert headers
-    html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mb-4 text-foreground">$1</h1>');
-    html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mb-3 text-foreground">$1</h2>');
-    html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-medium mb-2 text-foreground">$1</h3>');
-
-    // Convert bold
-    html = html.replace(/\*\*(.*)\*\*/gm, '<strong class="font-semibold">$1</strong>');
-
-    // Convert italic
-    html = html.replace(/\*(.*)\*/gm, '<em class="italic">$1</em>');
-
-    // Convert paragraphs
-    html = html.split('\n\n').map(p => `<p class="mb-4 text-foreground leading-relaxed">${p}</p>`).join('');
-    return html;
+    return colors[type as keyof typeof colors] || 'bg-gray-500/20 text-gray-900 dark:text-gray-100 border border-gray-400/40';
   };
 
   // Get unique SERP types for filter buttons
@@ -241,11 +193,10 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
           )}
           <CardContent className="p-4 flex-1">
             <ScrollArea className="h-full">
-              <div 
-                className="max-w-none" 
-                dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(content)
-                }} 
+              <MarkdownRenderer 
+                content={content}
+                matches={highlightMatches}
+                highlightMode={highlightMode}
               />
             </ScrollArea>
           </CardContent>
