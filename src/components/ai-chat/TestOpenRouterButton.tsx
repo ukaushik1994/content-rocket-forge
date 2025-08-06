@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
 export const TestOpenRouterButton = () => {
   const [isTesting, setIsTesting] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
+  const {
+    toast
+  } = useToast();
+  const {
+    user
+  } = useAuth();
   const testOpenRouterConnection = async () => {
     if (!user) {
       toast({
@@ -18,19 +20,23 @@ export const TestOpenRouterButton = () => {
       });
       return;
     }
-
     setIsTesting(true);
     try {
       console.log('🧪 Testing OpenRouter connection...');
-      
+
       // Test the enhanced-ai-chat function directly
-      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
-          messages: [{ role: 'user', content: 'Hello, this is a test message.' }],
+          messages: [{
+            role: 'user',
+            content: 'Hello, this is a test message.'
+          }],
           userId: user.id
         }
       });
-
       if (error) {
         console.error('❌ OpenRouter test failed:', error);
         toast({
@@ -57,15 +63,5 @@ export const TestOpenRouterButton = () => {
       setIsTesting(false);
     }
   };
-
-  return (
-    <Button 
-      onClick={testOpenRouterConnection}
-      disabled={isTesting}
-      variant="outline"
-      size="sm"
-    >
-      {isTesting ? 'Testing...' : 'Test OpenRouter Connection'}
-    </Button>
-  );
+  return;
 };
