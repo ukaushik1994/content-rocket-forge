@@ -249,7 +249,15 @@ class AIServiceController {
       }
 
       const configuredMap = new Map(
-        (configuredProviders || []).map(p => [p.provider, p])
+        (configuredProviders || []).map(p => [p.provider, {
+          ...p,
+          capabilities: Array.isArray(p.capabilities) 
+            ? p.capabilities.filter((item): item is string => typeof item === 'string')
+            : [],
+          available_models: Array.isArray(p.available_models) 
+            ? p.available_models.filter((item): item is string => typeof item === 'string')
+            : []
+        }])
       );
 
       return Object.entries(AIServiceController.PROVIDER_METADATA).map(([providerId, metadata]) => {
