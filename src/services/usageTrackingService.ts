@@ -95,17 +95,22 @@ export class UsageTrackingService {
     }
   }
 
-  // Get SERP usage statistics by provider
+  // Get SERP usage statistics by provider - simplified implementation
   static async getSerpUsageStats(period: string): Promise<UsageStats[]> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return [];
 
-      // Return mock data for now showing configured providers
-      // This will display real usage data once serp_usage_logs is available in types
+      // Return mock data showing configured providers
+      // This will show real usage when proper logging is implemented
       return [{
         provider: 'serpstack',
-        requestCount: 0, // Shows 0 until real logging is implemented
+        requestCount: 0,
+        successRate: 100,
+        lastUsed: undefined
+      }, {
+        provider: 'serpapi',
+        requestCount: 0,
         successRate: 100,
         lastUsed: undefined
       }];

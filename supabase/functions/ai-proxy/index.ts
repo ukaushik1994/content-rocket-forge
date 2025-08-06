@@ -63,6 +63,9 @@ async function handleGenericAIRequest(service: string, endpoint: string, params:
       if (endpoint === 'chat') {
         return await callOpenAI(apiKey, params);
       }
+      if (endpoint === 'test') {
+        return await testOpenAI(apiKey);
+      }
       break;
     case 'anthropic':
       if (endpoint === 'chat') {
@@ -159,8 +162,37 @@ async function callOpenRouter(apiKey: string, params: any) {
   });
 }
 
+async function testOpenAI(apiKey: string) {
+  console.log('🧪 Testing OpenAI API key');
+  
+  const response = await fetch('https://api.openai.com/v1/models', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error(`❌ OpenAI test failed: ${errorData.error?.message || response.statusText}`);
+    throw new Error(`OpenAI API connection failed: ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log(`✅ OpenAI test successful`);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'OpenAI API connection successful',
+    models: data.data?.slice(0, 3) || []
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
 async function callOpenAI(apiKey: string, params: any) {
-  const { model = 'gpt-4o-mini', messages, temperature = 0.7, maxTokens = 2000 } = params;
+  const { model = 'gpt-4.1-2025-04-14', messages, temperature = 0.7, maxTokens = 2000 } = params;
 
   console.log(`📤 OpenAI request: model=${model}, messages=${messages.length}`);
 

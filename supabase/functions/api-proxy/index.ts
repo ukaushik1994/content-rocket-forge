@@ -1871,6 +1871,8 @@ async function handleOpenAIApi(endpoint: string, apiKey: string, params?: any) {
     return await testOpenAIApi(apiKey);
   } else if (endpoint === 'analyze') {
     return await analyzeWithOpenAI(apiKey, params);
+  } else if (endpoint === 'chat') {
+    return await chatWithOpenAI(apiKey, params);
   }
   
   return new Response(
@@ -1973,6 +1975,57 @@ async function testOpenAIApi(apiKey: string) {
       JSON.stringify({ 
         success: false, 
         error: error.message || 'OpenAI API test failed' 
+      }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}
+
+async function chatWithOpenAI(apiKey: string, params: any) {
+  try {
+    console.log('💬 Chat request with OpenAI');
+    
+    const { model = 'gpt-4.1-2025-04-14', messages, temperature = 0.7, maxTokens = 2000 } = params;
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(`❌ OpenAI chat error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`📥 OpenAI chat response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        data: data
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error: any) {
+    console.error('💥 OpenAI chat error:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'OpenAI chat failed' 
       }),
       { 
         status: 400, 
