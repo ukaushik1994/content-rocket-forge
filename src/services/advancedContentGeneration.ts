@@ -88,18 +88,25 @@ Always start with the title as an H1 heading and follow the provided outline str
 
     // Generate content using AI service controller
     console.log(`🚀 Advanced content generation with AI controller`);
+    const aiRequest = {
+      use_case: 'content_generation' as const,
+      input: prompt,
+      temperature: 0.7,
+      max_tokens: Math.max(2000, config.targetLength * 2)
+    };
+    
     const chatResponse = await AIServiceController.generate(
-      'advanced_content_generation',
-      systemPrompt,
-      prompt
+      aiRequest,
+      systemPrompt
     );
     
-    if (!chatResponse?.choices?.[0]?.message?.content) {
+    if (!chatResponse?.content) {
       console.error('❌ AI service returned empty content');
+      console.log('Full response:', chatResponse);
       return null;
     }
 
-    const generatedContent = chatResponse.choices[0].message.content;
+    const generatedContent = chatResponse.content;
 
     console.log('✅ Content generated successfully:', {
       contentLength: generatedContent.length,
