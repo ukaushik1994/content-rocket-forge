@@ -19,13 +19,16 @@ serve(async (req) => {
   }
 
   try {
-    const { service, endpoint, params, apiKey, userId } = await req.json();
+    const { provider, service, endpoint, params, apiKey, userId } = await req.json();
     
-    console.log(`🚀 AI Proxy called for ${service}/${endpoint} by user ${userId}`);
+    // Support both 'provider' and 'service' keys for backward compatibility
+    const selectedProvider = provider || service;
+    
+    console.log(`🚀 AI Proxy called for ${selectedProvider}/${endpoint} by user ${userId}`);
 
-    // If specific service is requested, use it directly
-    if (service && service !== 'auto') {
-      return await handleSpecificService(service, endpoint, params, apiKey);
+    // If specific provider/service is requested, use it directly
+    if (selectedProvider && selectedProvider !== 'auto') {
+      return await handleSpecificService(selectedProvider, endpoint, params, apiKey);
     }
 
     // Auto-selection: Query database for user's providers with priority
@@ -203,7 +206,7 @@ async function testOpenRouter(apiKey: string) {
   console.log(`✅ OpenRouter test successful`);
   
   return new Response(JSON.stringify({
-    success: true,
+    valid: true,
     message: 'OpenRouter API connection successful',
     model: data.model || 'openai/gpt-4o-mini'
   }), {
@@ -266,7 +269,7 @@ async function testOpenAI(apiKey: string) {
   console.log(`✅ OpenAI test successful`);
   
   return new Response(JSON.stringify({
-    success: true,
+    valid: true,
     message: 'OpenAI API connection successful',
     models: data.data?.slice(0, 3) || []
   }), {
@@ -332,7 +335,7 @@ async function testAnthropic(apiKey: string) {
   console.log(`✅ Anthropic test successful`);
   
   return new Response(JSON.stringify({
-    success: true,
+    valid: true,
     message: 'Anthropic API connection successful'
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -420,7 +423,7 @@ async function testGemini(apiKey: string) {
   console.log(`✅ Gemini test successful`);
   
   return new Response(JSON.stringify({
-    success: true,
+    valid: true,
     message: 'Gemini API connection successful'
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -523,7 +526,7 @@ async function testMistral(apiKey: string) {
   console.log(`✅ Mistral test successful`);
   
   return new Response(JSON.stringify({
-    success: true,
+    valid: true,
     message: 'Mistral API connection successful'
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -584,7 +587,7 @@ async function testLMStudio(apiKey: string) {
   console.log(`✅ LM Studio test successful`);
   
   return new Response(JSON.stringify({
-    success: true,
+    valid: true,
     message: 'LM Studio connection successful',
     models: data.data?.slice(0, 3) || []
   }), {
