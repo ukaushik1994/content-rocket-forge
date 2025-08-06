@@ -81,7 +81,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
 
   return (
     <Button
-      variant={action.variant || 'outline'}
+      variant={action.variant === 'primary' ? 'default' : (action.variant || 'outline')}
       size="sm"
       onClick={handleClick}
       disabled={disabled}

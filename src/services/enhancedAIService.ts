@@ -53,7 +53,6 @@ class EnhancedAIService {
       });
 
       console.log('📨 Edge function response:', {
-        status: response.status,
         hasError: !!response.error,
         hasData: !!response.data,
         dataKeys: response.data ? Object.keys(response.data) : []
