@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Brain, Settings, Loader2 } from 'lucide-react';
 import { useOpenRouter } from '@/hooks/useOpenRouter';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { OpenRouterSettings } from '@/components/settings/api/OpenRouterSettings';
 
 interface ModelIndicatorProps {
   onModelChange?: (model: string) => void;
@@ -35,7 +33,6 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
   const { getCurrentModel } = useOpenRouter();
   const [currentModel, setCurrentModel] = useState<string>('openai/gpt-4o-mini');
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -56,33 +53,10 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
     }
   };
 
-  const handleModelChange = async (newModel: string) => {
-    if (!user?.id) return;
-
-    try {
-      setIsUpdating(true);
-      
-      const { error } = await supabase
-        .from('user_llm_keys')
-        .update({ model: newModel })
-        .eq('user_id', user.id)
-        .eq('provider', 'openrouter');
-
-      if (error) throw error;
-
-      setCurrentModel(newModel);
-      onModelChange?.(newModel);
-      setIsOpen(false);
-      
-      const modelInfo = AVAILABLE_MODELS.find(m => m.id === newModel);
-      toast.success(`Model updated to ${modelInfo?.name || newModel}`);
-      
-    } catch (error: any) {
-      console.error('Error updating model:', error);
-      toast.error(`Failed to update model: ${error.message}`);
-    } finally {
-      setIsUpdating(false);
-    }
+  const handleModelChange = () => {
+    // Reload current model when dialog closes
+    loadCurrentModel();
+    onModelChange?.(currentModel);
   };
 
   const getCurrentModelInfo = () => {
@@ -111,8 +85,13 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
         <span className="text-xs text-muted-foreground">Model:</span>
       </div>
       
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) {
+          handleModelChange();
+        }
+      }}>
+        <DialogTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
@@ -121,62 +100,15 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
             {modelInfo.name}
             <Settings className="h-3 w-3 ml-1" />
           </Button>
-        </PopoverTrigger>
+        </DialogTrigger>
         
-        <PopoverContent className="w-80 p-3" align="end">
-          <div className="space-y-3">
-            <div>
-              <h4 className="font-medium text-sm mb-1">Current Model</h4>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {modelInfo.provider}
-                </Badge>
-                <span className="text-sm font-medium">{modelInfo.name}</span>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Change Model</label>
-              <Select 
-                value={currentModel} 
-                onValueChange={handleModelChange}
-                disabled={isUpdating}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {AVAILABLE_MODELS.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{model.name}</span>
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {model.provider}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-              <p className="font-medium mb-1">💡 Model Selection Tips:</p>
-              <ul className="space-y-1">
-                <li>• GPT-4o: Best for complex reasoning and vision</li>
-                <li>• Claude 3: Excellent for creative writing</li>
-                <li>• Gemini 1.5: Great for long contexts and multilingual</li>
-                <li>• GPT-4o Mini: Fast and cost-effective</li>
-                <li>• Mistral/LLaMA: Open-source alternatives</li>
-              </ul>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-      
-      {isUpdating && (
-        <Loader2 className="h-3 w-3 animate-spin text-neon-purple" />
-      )}
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>OpenRouter Settings</DialogTitle>
+          </DialogHeader>
+          <OpenRouterSettings />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
