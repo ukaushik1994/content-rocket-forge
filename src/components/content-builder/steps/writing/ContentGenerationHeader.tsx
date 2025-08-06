@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import { formatDistanceToNow } from 'date-fns';
-import { ProviderManager } from '../../provider/ProviderManager';
+import { SimpleAIServiceIndicator } from '../../ai/SimpleAIServiceIndicator';
 
 interface ContentGenerationHeaderProps {
   isGenerating: boolean;
@@ -23,8 +23,6 @@ interface ContentGenerationHeaderProps {
   handleToggleOutline: () => void;
   showOutline: boolean;
   outlineLength: number;
-  aiProvider: AiProvider;
-  onAiProviderChange: (provider: AiProvider) => void;
   autoSaveTimestamp?: string | null;
   hasUnsavedChanges?: boolean;
   onManualSave?: () => void;
@@ -39,8 +37,6 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
   handleToggleOutline,
   showOutline,
   outlineLength,
-  aiProvider,
-  onAiProviderChange,
   autoSaveTimestamp,
   hasUnsavedChanges,
   onManualSave,
@@ -110,12 +106,8 @@ export const ContentGenerationHeader: React.FC<ContentGenerationHeaderProps> = (
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Provider Manager */}
-          <ProviderManager
-            selectedProvider={aiProvider}
-            onProviderChange={onAiProviderChange}
-            showStatus={true}
-          />
+          {/* AI Service Status */}
+          <SimpleAIServiceIndicator size="md" />
           
           {/* Auto-save indicator */}
           <div className="text-sm text-muted-foreground flex items-center gap-2">

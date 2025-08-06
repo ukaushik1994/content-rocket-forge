@@ -189,8 +189,6 @@ export const ContentWritingStep = () => {
             handleToggleOutline={handleToggleOutline}
             showOutline={showOutline}
             outlineLength={state.outline.length}
-            aiProvider={aiProvider}
-            onAiProviderChange={handleAiProviderChange}
             autoSaveTimestamp={autoSaveTimestamp}
             hasUnsavedChanges={hasUnsavedChanges}
             onManualSave={handleManualSave}

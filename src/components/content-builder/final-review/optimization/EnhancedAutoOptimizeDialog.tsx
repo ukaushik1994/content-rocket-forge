@@ -16,8 +16,7 @@ import { useContentQualityIntegration } from './hooks/useContentQualityIntegrati
 import { EnhancedSerpItemsReference } from './components/EnhancedSerpItemsReference';
 import { EnhancedSuggestionSection } from './components/EnhancedSuggestionSection';
 import { UnifiedSuggestion } from './types';
-import { ProviderManager } from '../../provider/ProviderManager';
-import { AiProvider } from '@/services/aiService/types';
+import { SimpleAIServiceIndicator } from '../../ai/SimpleAIServiceIndicator';
 
 interface EnhancedAutoOptimizeDialogProps {
   isOpen: boolean;
@@ -27,7 +26,6 @@ interface EnhancedAutoOptimizeDialogProps {
 }
 
 interface OptimizationSettings {
-  provider: AiProvider;
   tone: 'professional' | 'casual' | 'technical' | 'friendly' | 'authoritative';
   audience: 'beginner' | 'intermediate' | 'expert' | 'general';
   seoFocus: 'light' | 'moderate' | 'aggressive';
@@ -61,7 +59,6 @@ export function EnhancedAutoOptimizeDialog({
   const [previewContent, setPreviewContent] = useState('');
 
   const [optimizationSettings, setOptimizationSettings] = useState<OptimizationSettings>({
-    provider: 'openrouter',
     tone: 'professional',
     audience: 'general',
     seoFocus: 'moderate',
@@ -131,9 +128,6 @@ export function EnhancedAutoOptimizeDialog({
     setPreviewMode(false);
   };
 
-  const handleProviderChange = (provider: AiProvider) => {
-    setOptimizationSettings(prev => ({ ...prev, provider }));
-  };
 
   const convertToUnified = (suggestions: any[]): UnifiedSuggestion[] => {
     return suggestions.map(s => ({
@@ -168,11 +162,7 @@ export function EnhancedAutoOptimizeDialog({
               </DialogDescription>
             </div>
             
-            <ProviderManager
-              selectedProvider={optimizationSettings.provider}
-              onProviderChange={handleProviderChange}
-              showStatus={true}
-            />
+            <SimpleAIServiceIndicator size="md" />
           </div>
           
           {/* Quality Overview */}
@@ -583,7 +573,7 @@ export function EnhancedAutoOptimizeDialog({
                                 <div className="text-sm font-medium">
                                   {entry.timestamp.toLocaleString()}
                                 </div>
-                                <Badge variant="outline">{entry.settings.provider}</Badge>
+                                <Badge variant="outline">AI Service</Badge>
                               </div>
                               <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                                 <div>Applied: {entry.appliedSuggestions} suggestions</div>
@@ -613,7 +603,7 @@ export function EnhancedAutoOptimizeDialog({
                   {selectedSuggestions.length} of {allSuggestions.length} suggestions selected
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Provider: <span className="font-medium">{optimizationSettings.provider}</span>
+                  <span className="font-medium">AI Service</span>
                 </div>
               </div>
               

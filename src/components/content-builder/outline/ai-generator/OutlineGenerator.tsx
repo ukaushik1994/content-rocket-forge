@@ -213,12 +213,8 @@ export function OutlineGenerator() {
         </div>
         
         <div className="space-y-6">
-          {/* AI Provider Selection */}
-          <AiProviderSelector 
-            aiProvider={aiProvider}
-            setAiProvider={setAiProvider}
-            availableProviders={availableProviders}
-          />
+          {/* AI Service Status */}
+          <AiProviderSelector />
           
           {availableProviders.length === 0 && (
             <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-md text-sm text-amber-200">

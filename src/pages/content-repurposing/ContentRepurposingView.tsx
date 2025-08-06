@@ -120,19 +120,10 @@ const ContentRepurposingView: React.FC<ContentRepurposingViewProps> = memo(({
           <div className="md:col-span-1 space-y-6">
             <ContentDetails content={content} />
             
-            {/* AI Provider Selection */}
+            {/* AI Service Status */}
             <div className="bg-gradient-to-br from-dark-bg via-dark-surface to-dark-bg border border-white/10 backdrop-blur-sm rounded-xl p-4">
-              <h3 className="text-sm font-medium text-white/90 mb-3">AI Provider</h3>
-              <AiProviderSelector 
-                aiProvider={aiProvider}
-                setAiProvider={setAiProvider}
-                availableProviders={availableProviders}
-              />
-              {availableProviders.length === 0 && (
-                <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-md text-sm text-amber-200 mt-3">
-                  No AI provider API keys configured. Please add at least one AI provider API key in Settings.
-                </div>
-              )}
+              <h3 className="text-sm font-medium text-white/90 mb-3">AI Service</h3>
+              <AiProviderSelector />
             </div>
             
             <ContentFormatSelection

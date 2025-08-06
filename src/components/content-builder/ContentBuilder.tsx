@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
 import { Button } from '@/components/ui/button';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { SimpleAIServiceIndicator } from './ai/SimpleAIServiceIndicator';
 
 // Step components
 import { KeywordSelectionStep } from './steps/KeywordSelectionStep';
@@ -305,10 +306,7 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
                   <span>Mock data mode</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20 backdrop-blur-sm">
-                <Sparkles className="h-3 w-3 animate-pulse" />
-                <span>OpenRouter Ready</span>
-              </div>
+              <SimpleAIServiceIndicator size="md" />
               <TemplateStatus 
                 templateCount={templateStatus.templateCount}
                 isLoading={templateStatus.isLoading}
