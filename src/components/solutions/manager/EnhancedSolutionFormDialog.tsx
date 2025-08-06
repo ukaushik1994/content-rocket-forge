@@ -142,14 +142,20 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       }
 
       if (result) {
+        console.log('Solution saved successfully, calling onSubmit with result:', result);
         toast.success(solution?.id ? "Solution updated successfully!" : "Solution created successfully!");
         setIsDirty(false);
-        onOpenChange(false);
-        // Trigger refresh in parent component
+        
+        // Call the parent's onSubmit callback with the result
         if (typeof onSubmit === 'function') {
+          console.log('Calling onSubmit callback with result:', result);
           onSubmit(result, logoFile || undefined);
+        } else {
+          console.warn('onSubmit is not a function:', onSubmit);
+          onOpenChange(false);
         }
       } else {
+        console.error('solutionService returned null/undefined result');
         toast.error("Failed to save solution. Please try again.");
       }
     } catch (error) {

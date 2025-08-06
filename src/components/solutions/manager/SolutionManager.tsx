@@ -6,8 +6,8 @@ import { Solution } from '@/contexts/content-builder/types';
 import { useSolutionsData } from '../hooks/useSolutionsData';
 import { EnhancedSolutionFormDialog } from './EnhancedSolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
-import { useSolutionForm } from './hooks/useSolutionForm';
 import { useDeleteSolution } from './hooks/useDeleteSolution';
+import { solutionService } from '@/services/solutionService';
 import { EmptyState } from './EmptyState';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingState } from './LoadingState';
@@ -30,15 +30,13 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     isLoading, 
     error,
     fetchSolutions,
-    addSolution,
-    updateSolution,
     deleteSolution
   } = useSolutionsData();
-  
-  const solutionForm = useSolutionForm({
-    addSolution,
-    updateSolution
-  });
+
+  // Enhanced form state management
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const deleteHandler = useDeleteSolution({
     deleteSolution
@@ -94,6 +92,51 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const handleSearchChange = (term: string) => {
     setFilterTerm(term);
   };
+
+  // Enhanced form handlers
+  const handleAddNew = () => {
+    setSelectedSolution(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (solution: Solution) => {
+    setSelectedSolution(solution);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmitForm = async (solutionData: any, logoFile?: File) => {
+    console.log('HandleSubmitForm called with:', { solutionData, logoFile });
+    
+    try {
+      setIsSubmitting(true);
+      
+      if (selectedSolution?.id) {
+        console.log('Updating solution with ID:', selectedSolution.id);
+        const result = await solutionService.updateSolution(selectedSolution.id, solutionData, logoFile);
+        console.log('Update result:', result);
+        
+        if (result) {
+          // Refresh the solutions list
+          await fetchSolutions();
+          setIsDialogOpen(false);
+        }
+      } else {
+        console.log('Creating new solution');
+        const result = await solutionService.createSolution(solutionData, logoFile);
+        console.log('Create result:', result);
+        
+        if (result) {
+          // Refresh the solutions list
+          await fetchSolutions();
+          setIsDialogOpen(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleSubmitForm:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   if (isLoading) {
     return <LoadingState />;
@@ -119,24 +162,24 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       
       {/* Main content area */}
       {filteredSolutions.length === 0 ? (
-        <EmptyState searchTerm={filterTerm} onAddNew={solutionForm.handleAddNew} />
+        <EmptyState searchTerm={filterTerm} onAddNew={handleAddNew} />
       ) : (
         <EnhancedSolutionGrid 
           solutions={filteredSolutions}
-          onEdit={solutionForm.handleEdit}
+          onEdit={handleEdit}
           onDelete={deleteHandler.handleDelete}
           onUseInContent={handleUseInContent}
-          onAddNew={solutionForm.handleAddNew}
+          onAddNew={handleAddNew}
         />
       )}
       
       {/* Add/Edit Dialog */}
       <EnhancedSolutionFormDialog
-        open={solutionForm.isDialogOpen}
-        onOpenChange={solutionForm.setIsDialogOpen}
-        onSubmit={solutionForm.handleSubmitForm}
-        solution={solutionForm.selectedSolution}
-        isSubmitting={solutionForm.isSubmitting}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSubmit={handleSubmitForm}
+        solution={selectedSolution}
+        isSubmitting={isSubmitting}
       />
       
       {/* Delete Confirmation Dialog */}
