@@ -71,21 +71,32 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
     console.log('🎯 Modern action clicked:', action);
     
     // Handle content creation actions with navigation
-    if (action.action?.includes('create-') || action.action?.includes('content-')) {
+    if (action.action?.includes('create-') || action.action?.includes('content-') || action.action?.includes('blog-post')) {
       // Navigate to content builder with pre-filled data
       const preloadData = {
-        mainKeyword: action.data?.keyword || action.data?.mainKeyword,
+        mainKeyword: action.data?.keyword || action.data?.mainKeyword || action.label,
         selectedKeywords: action.data?.keywords || [],
         contentType: action.data?.contentType || 'blog-post',
-        contentTitle: action.data?.title,
+        contentTitle: action.data?.title || action.label,
         location: action.data?.location,
         step: action.data?.step || 1,
+        description: action.description,
         ...action.data
       };
 
       navigate('/content', { 
-        state: preloadData 
+        state: { prefilledData: preloadData }
       });
+    } else if (action.action?.includes('keyword-research') || action.action?.includes('research')) {
+      // Navigate to research page with keyword
+      navigate('/research', { 
+        state: { 
+          prefilledKeyword: action.data?.keyword || action.data?.mainKeyword || action.label 
+        }
+      });
+    } else if (action.action?.includes('strategy')) {
+      // Navigate to strategy page
+      navigate('/strategies');
     } else {
       // Handle other actions through the normal flow
       onAction(action.action, action.data);

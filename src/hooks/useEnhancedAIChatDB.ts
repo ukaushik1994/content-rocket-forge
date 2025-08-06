@@ -51,13 +51,35 @@ export const useEnhancedAIChatDB = () => {
       if (error) throw error;
       
       const formattedMessages: EnhancedChatMessage[] = (data || []).map(msg => {
-        // Safely parse attachments to get actions
+        // Safely parse JSON fields
         let actions = undefined;
-        if (msg.attachments && typeof msg.attachments === 'object') {
-          const attachments = msg.attachments as any;
-          if (attachments.actions && Array.isArray(attachments.actions)) {
-            actions = attachments.actions;
+        let visualData = undefined;
+        let progressIndicator = undefined;
+        let workflowContext = undefined;
+        
+        try {
+          // Parse attachments for actions
+          if (msg.attachments && typeof msg.attachments === 'string') {
+            const attachments = JSON.parse(msg.attachments);
+            if (attachments.actions && Array.isArray(attachments.actions)) {
+              actions = attachments.actions;
+            }
+          } else if (msg.function_calls) {
+            actions = typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls;
           }
+          
+          // Parse other JSON fields
+          if (msg.visual_data) {
+            visualData = typeof msg.visual_data === 'string' ? JSON.parse(msg.visual_data) : msg.visual_data;
+          }
+          if (msg.progress_indicator) {
+            progressIndicator = typeof msg.progress_indicator === 'string' ? JSON.parse(msg.progress_indicator) : msg.progress_indicator;
+          }
+          if (msg.workflow_context) {
+            workflowContext = typeof msg.workflow_context === 'string' ? JSON.parse(msg.workflow_context) : msg.workflow_context;
+          }
+        } catch (parseError) {
+          console.warn('Error parsing message data:', parseError);
         }
 
         return {
@@ -65,18 +87,23 @@ export const useEnhancedAIChatDB = () => {
           role: msg.type as 'user' | 'assistant' | 'system',
           content: msg.content,
           timestamp: new Date(msg.created_at),
-          visualData: msg.visual_data as any || undefined,
-          actions: actions,
-          progressIndicator: msg.progress_indicator as any || undefined,
-          workflowContext: msg.workflow_context as any || undefined
+          visualData,
+          actions,
+          progressIndicator,
+          workflowContext
         };
       });
       
       setMessages(formattedMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation messages",
+        variant: "destructive"
+      });
     }
-  }, []);
+  }, [toast]);
 
   // Create new conversation
   const createConversation = useCallback(async (title: string = "New Chat") => {
@@ -98,6 +125,9 @@ export const useEnhancedAIChatDB = () => {
       setActiveConversation(data.id);
       setMessages([]);
       
+      // Reload conversations to ensure they're fresh
+      await loadConversations();
+      
       return data.id;
     } catch (error) {
       console.error('Error creating conversation:', error);
@@ -108,7 +138,7 @@ export const useEnhancedAIChatDB = () => {
       });
       return null;
     }
-  }, [user, toast]);
+  }, [user, toast, loadConversations]);
 
   // Delete conversation
   const deleteConversation = useCallback(async (conversationId: string) => {
@@ -291,6 +321,10 @@ export const useEnhancedAIChatDB = () => {
   useEffect(() => {
     if (user) {
       loadConversations();
+    } else {
+      setConversations([]);
+      setActiveConversation(null);
+      setMessages([]);
     }
   }, [user, loadConversations]);
 

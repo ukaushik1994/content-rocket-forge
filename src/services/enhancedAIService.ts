@@ -27,40 +27,45 @@ class EnhancedAIService {
       
       // Prepare messages for AI
       const messages = conversationHistory.map(msg => ({
-        role: msg.role,
+        role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content
       }));
       messages.push({ role: 'user', content: message });
 
-      // Create the request using Supabase functions
+      // Create the request using enhanced AI chat function
       const response = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
           messages,
           userId,
-          conversationId: `conv_${Date.now()}`,
-          solutions: context.solutions || [],
-          analytics: context.analytics || {},
-          workflowContext: this.workflowContext
+          context: {
+            solutions: context.solutions || [],
+            analytics: context.analytics || {},
+            workflowContext: this.workflowContext
+          }
         }
       });
 
       if (response.error) {
-        throw new Error(response.error.message);
+        console.error('Enhanced AI Chat error:', response.error);
+        throw new Error(response.error.message || 'AI service error');
       }
 
-      // Since we're using supabase.functions.invoke, we need to handle non-streaming for now
       const data = response.data;
       
       // Generate contextual actions based on the conversation
-      const contextualActions = this.generateSmartActions(data?.message || '', message, context);
+      const contextualActions = this.generateSmartActions(
+        data?.content || data?.message || '', 
+        message, 
+        context
+      );
       
       const enhancedMessage: EnhancedChatMessage = {
         id: `enhanced-${Date.now()}`,
         role: 'assistant',
-        content: data?.message || 'Response received',
+        content: data?.content || data?.message || 'Response received',
         timestamp: new Date(),
         actions: contextualActions,
-        visualData: data?.visualData || null,
+        visualData: data?.visualData || data?.visual_data || null,
       };
 
       return enhancedMessage;
