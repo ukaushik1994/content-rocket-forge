@@ -76,14 +76,13 @@ class SolutionService {
     }
   }
 
-  async createSolution(solutionData: SolutionCreateData, logoFile?: File): Promise<any> {
+  async createSolution(solutionData: SolutionCreateData, logoFile?: File): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         console.error('Authentication error:', authError);
-        toast.error('You must be logged in to create a solution');
-        return null;
+        return { success: false, error: 'You must be logged in to create a solution' };
       }
 
       let logoUrl = null;
@@ -92,7 +91,7 @@ class SolutionService {
       if (logoFile) {
         logoUrl = await this.uploadLogo(logoFile);
         if (!logoUrl) {
-          return null; // Upload failed, error already shown
+          return { success: false, error: 'Failed to upload logo' };
         }
       }
 
@@ -114,27 +113,26 @@ class SolutionService {
 
       if (error) {
         console.error('Error creating solution:', error);
-        toast.error(`Failed to create solution: ${error.message}`);
-        return null;
+        return { success: false, error: `Failed to create solution: ${error.message}` };
       }
 
       console.log('Solution created successfully:', data);
-      return this.transformDatabaseToEnhanced([data])[0];
+      const transformedData = this.transformDatabaseToEnhanced([data])[0];
+      return { success: true, data: transformedData };
     } catch (error) {
       console.error('Service error creating solution:', error);
-      toast.error('Failed to create solution');
-      return null;
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create solution';
+      return { success: false, error: errorMessage };
     }
   }
 
-  async updateSolution(id: string, solutionData: Partial<SolutionCreateData>, logoFile?: File): Promise<any> {
+  async updateSolution(id: string, solutionData: Partial<SolutionCreateData>, logoFile?: File): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         console.error('Authentication error:', authError);
-        toast.error('You must be logged in to update a solution');
-        return null;
+        return { success: false, error: 'You must be logged in to update a solution' };
       }
 
       let logoUrl = undefined;
@@ -143,7 +141,7 @@ class SolutionService {
       if (logoFile) {
         logoUrl = await this.uploadLogo(logoFile);
         if (!logoUrl) {
-          return null; // Upload failed, error already shown
+          return { success: false, error: 'Failed to upload logo' };
         }
       }
 
@@ -164,16 +162,16 @@ class SolutionService {
 
       if (error) {
         console.error('Error updating solution:', error);
-        toast.error(`Failed to update solution: ${error.message}`);
-        return null;
+        return { success: false, error: `Failed to update solution: ${error.message}` };
       }
 
       console.log('Solution updated successfully:', data);
-      return this.transformDatabaseToEnhanced([data])[0];
+      const transformedData = this.transformDatabaseToEnhanced([data])[0];
+      return { success: true, data: transformedData };
     } catch (error) {
       console.error('Service error updating solution:', error);
-      toast.error('Failed to update solution');
-      return null;
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update solution';
+      return { success: false, error: errorMessage };
     }
   }
 

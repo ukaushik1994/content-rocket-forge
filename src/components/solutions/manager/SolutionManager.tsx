@@ -115,28 +115,28 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         const result = await solutionService.updateSolution(selectedSolution.id, solutionData, logoFile);
         console.log('Update result:', result);
         
-        if (result) {
+        if (result.success && result.data) {
           // Refresh the solutions list
           await fetchSolutions();
           toast.success('Solution updated successfully');
           setIsDialogOpen(false);
           setSelectedSolution(null);
         } else {
-          throw new Error('Failed to update solution');
+          throw new Error(result.error || 'Failed to update solution');
         }
       } else {
         console.log('Creating new solution');
         const result = await solutionService.createSolution(solutionData, logoFile);
         console.log('Create result:', result);
         
-        if (result) {
+        if (result.success && result.data) {
           // Refresh the solutions list
           await fetchSolutions();
           toast.success('Solution created successfully');
           setIsDialogOpen(false);
           setSelectedSolution(null);
         } else {
-          throw new Error('Failed to create solution');
+          throw new Error(result.error || 'Failed to create solution');
         }
       }
     } catch (error) {

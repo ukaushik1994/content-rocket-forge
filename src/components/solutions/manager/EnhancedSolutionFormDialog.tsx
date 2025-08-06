@@ -155,8 +155,8 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       // Call the parent's onSubmit callback with the transformed data
       if (typeof onSubmit === 'function') {
         await onSubmit(transformedData, logoFile || undefined);
-        // Clear persisted data only on successful save
-        clearPersistedData();
+        // Only clear persisted data if parent indicates success (dialog closes)
+        // clearPersistedData() will be called from handleClose when dialog closes successfully
       } else {
         console.warn('onSubmit is not a function:', onSubmit);
         setSaveError("Form submission error - invalid callback");
@@ -173,10 +173,12 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     if (isDirty && !isSubmitting) {
       if (confirm('You have unsaved changes. Are you sure you want to close?')) {
         clearPersistedData();
+        setSaveError(null);
         onOpenChange(false);
       }
     } else {
       clearPersistedData();
+      setSaveError(null);
       onOpenChange(false);
     }
   };
