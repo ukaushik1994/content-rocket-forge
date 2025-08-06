@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { EnhancedContentEditor } from '../editor/EnhancedContentEditor';
+import { EnhancedContentEditor } from './editor/EnhancedContentEditor';
 import { CollapsibleSerpSidebar } from './writing/CollapsibleSerpSidebar';
 import { toast } from 'sonner';
 import { ContentGenerationHeader } from './writing/ContentGenerationHeader';
@@ -223,9 +223,11 @@ export const ContentWritingStep = () => {
             <div className="flex-1">
               <EnhancedContentEditor
                 content={content}
-                onContentChange={handleContentChange}
-                isLoading={isGenerating}
-                serpSelections={state.serpSelections}
+                onChange={handleContentChange}
+                onSave={handleManualSave}
+                isGenerating={isGenerating}
+                title="Content Editor"
+                className="h-full"
               />
             </div>
             

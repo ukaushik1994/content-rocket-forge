@@ -26,6 +26,9 @@ export async function generateAdvancedContent(
   aiProvider: string = 'openrouter'
 ): Promise<string | null> {
   try {
+    // Import AIServiceController dynamically to avoid circular dependencies
+    const { default: AIServiceController } = await import('@/services/aiService/AIServiceController');
+    
     console.log('🚀 Starting advanced content generation with config:', {
       keyword: config.mainKeyword,
       title: config.title,
