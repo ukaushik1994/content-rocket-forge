@@ -11,14 +11,21 @@ export async function generateContentWithTemplate(
   topic: string,
   additionalContext?: Record<string, string>
 ): Promise<string | null> {
-  // Get the template
-  const template = getPromptTemplateById(templateId);
-  if (!template) {
-    toast.error('Template not found');
+  try {
+    console.log(`🎯 Generating content using template ${templateId} for topic: ${topic}`);
+    
+    const template = getPromptTemplateById(templateId);
+    if (!template) {
+      console.warn(`❌ Template ${templateId} not found, falling back to default prompt`);
+      return null;
+    }
+
+    console.log(`✅ Using custom template: ${template.name} (${template.formatType})`);
+    return await generateWithTemplate(template, topic, additionalContext);
+  } catch (error) {
+    console.error('❌ Error generating content with template:', error);
     return null;
   }
-  
-  return generateWithTemplate(template, topic, additionalContext);
 }
 
 /**
@@ -29,20 +36,35 @@ export async function generateContentByFormatType(
   formatType: string,
   topic: string,
   additionalContext?: Record<string, string>
-): Promise<string | null> {
-  // Get templates for this format type
-  const templates = getPromptTemplatesByType(formatType);
-  
-  if (!templates || templates.length === 0) {
-    // No custom template found, use format-specific default prompts
-    console.log(`No custom template found for ${formatType}, using default prompt`);
-    return generateWithDefaultPrompt(formatType, topic, additionalContext);
+): Promise<{ content: string | null; templateUsed: { name: string; isCustom: boolean } | null }> {
+  try {
+    console.log(`🎯 Generating content for format type: ${formatType}, topic: ${topic}`);
+    
+    // First, try to find a custom template for this format type
+    const customTemplates = getPromptTemplatesByType(formatType);
+    
+    if (customTemplates.length > 0) {
+      // Use the first available template for this format type
+      const template = customTemplates[0];
+      console.log(`✅ Using custom template: ${template.name} for ${formatType}`);
+      const content = await generateWithTemplate(template, topic, additionalContext);
+      return {
+        content,
+        templateUsed: { name: template.name, isCustom: true }
+      };
+    }
+    
+    // If no custom template exists, use the default prompt
+    console.log(`⚠️ No custom template found for ${formatType}, using default prompt`);
+    const content = await generateWithDefaultPrompt(formatType, topic, additionalContext);
+    return {
+      content,
+      templateUsed: { name: `Default ${formatType}`, isCustom: false }
+    };
+  } catch (error) {
+    console.error('❌ Error generating content by format type:', error);
+    return { content: null, templateUsed: null };
   }
-  
-  console.log(`Found custom template for ${formatType}:`, templates[0].name);
-  
-  // Use the first template
-  return generateWithTemplate(templates[0], topic, additionalContext);
 }
 
 /**
@@ -217,7 +239,7 @@ async function generateWithTemplate(
       promptText += structureInfo;
     }
     
-    console.log(`Generating content using custom template: ${template.name}`);
+    console.log(`🚀 Sending request to AI service using template: ${template.name}`);
     
     // Try OpenRouter first if available, then fallback to OpenAI
     let response;
@@ -236,7 +258,7 @@ async function generateWithTemplate(
         temperature: 0.7
       });
     } catch (error) {
-      console.log('OpenRouter not available, falling back to OpenAI');
+      console.log('❌ OpenRouter not available, falling back to OpenAI');
       response = await sendChatRequest('openai', {
         messages: [
           { 
@@ -253,8 +275,10 @@ async function generateWithTemplate(
     }
     
     if (response?.choices?.[0]?.message?.content) {
+      console.log(`✅ Content generated successfully using template: ${template.name}`);
       return response.choices[0].message.content;
     } else {
+      console.error('❌ Failed to generate content - no response content');
       toast.error('Failed to generate content');
       return null;
     }

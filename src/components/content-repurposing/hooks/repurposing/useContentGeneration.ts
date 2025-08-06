@@ -135,7 +135,7 @@ export const useContentGeneration = (content: ContentItemType | null) => {
           );
 
           // Fallback to AI service if template generation fails
-          if (!generatedContent) {
+          if (!generatedContent?.content) {
             console.log(`[useContentGeneration] Template generation failed for ${format.name}, trying AI service with ${aiProvider}`);
             const response = await sendChatRequest(aiProvider, {
               messages: [
@@ -155,14 +155,19 @@ export const useContentGeneration = (content: ContentItemType | null) => {
             });
 
             if (response?.choices?.[0]?.message?.content) {
-              generatedContent = response.choices[0].message.content;
+              generatedContent = { 
+                content: response.choices[0].message.content, 
+                templateUsed: { name: `Default ${format.name}`, isCustom: false } 
+              };
             } else {
               throw new Error(`Failed to generate content for ${format.name}`);
             }
           }
 
-          console.log(`[useContentGeneration] Generated content for ${format.name}:`, generatedContent?.substring(0, 100) + '...');
-          newGeneratedContents[formatId] = generatedContent;
+          console.log(`[useContentGeneration] Generated content for ${format.name}:`, generatedContent?.content?.substring(0, 100) + '...');
+          if (generatedContent?.content) {
+            newGeneratedContents[formatId] = generatedContent.content;
+          }
           toast.success(`${format.name} format generated successfully`);
 
         } catch (formatError) {

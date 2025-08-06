@@ -15,6 +15,8 @@ import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { toast } from "sonner";
 import { getApiKey } from '@/services/apiKeyService';
 import { initializeProviderPreferences } from '@/services/providerAvailabilityService';
+import { useTemplateInitialization } from '@/hooks/useTemplateInitialization';
+import { TemplateStatus } from '@/components/ui/template-indicator';
 
 interface ContentBuilderProps {
   initialKeyword?: string;
@@ -37,6 +39,9 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   const [pendingNavigation, setPendingNavigation] = useState<number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'found' | 'not-found' | 'error'>('checking');
+  
+  // Initialize templates
+  const templateStatus = useTemplateInitialization();
 
   // Check for unsaved changes
   useEffect(() => {
@@ -304,6 +309,11 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
                 <Sparkles className="h-3 w-3 animate-pulse" />
                 <span>OpenRouter Ready</span>
               </div>
+              <TemplateStatus 
+                templateCount={templateStatus.templateCount}
+                isLoading={templateStatus.isLoading}
+                error={templateStatus.error}
+              />
               <div className="text-sm text-muted-foreground px-4 py-1.5 bg-muted/30 rounded-full border border-border/30 backdrop-blur-sm">
                 Step {stepInfo.current} of {stepInfo.total}
               </div>

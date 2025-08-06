@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import FormatOption from './FormatOption';
 import { contentFormats } from '@/components/content-repurposing/formats';
+import { getPromptTemplatesByType } from '@/services/userPreferencesService';
 
 interface FormatGridProps {
   selectedContentTypes: string[];
@@ -19,11 +20,19 @@ export const FormatGrid: React.FC<FormatGridProps> = ({
 }) => {
   // Get template info for a specific format
   const getTemplateInfo = (formatId: string) => {
+    // Check for custom templates first
+    const customTemplates = getPromptTemplatesByType(formatId);
+    if (customTemplates.length > 0) {
+      return `${customTemplates.length} custom template${customTemplates.length > 1 ? 's' : ''} available`;
+    }
+    
+    // Fallback to availableTemplates prop for backwards compatibility
     const templates = availableTemplates[formatId] || [];
     if (templates.length > 0) {
       return `${templates.length} template${templates.length > 1 ? 's' : ''} available`;
     }
-    return 'Default template';
+    
+    return 'Default template will be used';
   };
   
   return (
