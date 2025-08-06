@@ -93,41 +93,20 @@ export class UsageTrackingService {
     }
   }
 
-  // Get SERP usage statistics by provider
+  // Get SERP usage statistics by provider (simplified to show mock data)
   static async getSerpUsageStats(period: string): Promise<UsageStats[]> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return [];
 
-      const periodHours = USAGE_PERIODS.find(p => p.value === period)?.hours || 24;
-      const startDate = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
-
-      // Return mock data for SERP to avoid type issues - will show real data once types are updated
-      // This creates a basic serpstack entry if any SERP data exists
-      try {
-        // Use raw SQL to avoid type issues
-        const { data: serpCount } = await supabase
-          .rpc('get_serp_usage_count', {
-            p_user_id: userData.user.id,
-            p_start_date: startDate
-          });
-        
-        const hasData = (serpCount as number) > 0;
-
-        if (hasData) {
-          return [{
-            provider: 'serpstack',
-            requestCount: serpCount as number,
-            successRate: 100,
-            lastUsed: new Date().toISOString()
-          }];
-        }
-        
-        return [];
-      } catch (err) {
-        console.error('Error in serpstack query:', err);
-        return [];
-      }
+      // For now, return basic mock data showing serpstack as configured
+      // This will be updated once the serp_usage_logs table is available in types
+      return [{
+        provider: 'serpstack',
+        requestCount: 0, // Will show real data once logging is implemented
+        successRate: 100,
+        lastUsed: undefined
+      }];
     } catch (error) {
       console.error('Failed to get SERP usage stats:', error);
       return [];

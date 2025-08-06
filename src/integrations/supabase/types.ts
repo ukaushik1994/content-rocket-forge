@@ -2294,6 +2294,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_serp_usage_count: {
+        Args: { p_user_id: string; p_start_date: string }
+        Returns: number
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string

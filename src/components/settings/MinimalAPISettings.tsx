@@ -332,7 +332,7 @@ export function MinimalAPISettings() {
         </div>
       </div>
 
-      {/* Usage Statistics Section */}
+      {/* Usage Analytics Section */}
       <UsageSection />
 
       {/* Configuration Modal */}
