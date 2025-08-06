@@ -12,6 +12,7 @@ import { getAllApiKeysStatus, testAllApiKeys, ApiKeyStatusResult, ApiKeyStatus }
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AIChatTestModal } from './modals/AIChatTestModal';
 import { SERPTestModal } from './modals/SERPTestModal';
+import { UsageSection } from './UsageSection';
 
 const StatusDot = ({ status }: { status: ApiKeyStatus }) => {
   const colors = {
@@ -330,6 +331,9 @@ export function MinimalAPISettings() {
           </Card>
         </div>
       </div>
+
+      {/* Usage Statistics Section */}
+      <UsageSection />
 
       {/* Configuration Modal */}
       <ConfigurationModal
