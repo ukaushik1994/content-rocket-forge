@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,10 +16,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-// Lazy load the SolutionManager for better performance
-const SolutionManager = lazy(() => import('@/components/solutions/manager').then(module => ({
-  default: module.SolutionManager
-})));
+// Import SolutionManager directly to avoid Router context issues with lazy loading
+import { SolutionManager } from '@/components/solutions/manager';
 
 // Helper function to safely convert Json to string array
 const jsonToStringArray = (jsonValue: any): string[] => {
@@ -370,9 +368,7 @@ const Solutions = () => {
           {/* Solutions Manager */}
           <ContentBuilderProvider>
             <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <Suspense fallback={<LoadingFallback />}>
-                <SolutionManager searchTerm={searchTerm} />
-              </Suspense>
+              <SolutionManager searchTerm={searchTerm} />
             </ErrorBoundary>
           </ContentBuilderProvider>
           
