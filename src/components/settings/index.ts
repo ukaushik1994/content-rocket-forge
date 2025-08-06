@@ -12,6 +12,7 @@ export * from './AdvancedSettings';
 export * from './FormatPromptSettings';
 export * from './AIServiceToggle';
 export * from './ProviderManagement';
+export * from './EnhancedProviderManagement';
 export * from './ServiceStatusDashboard';
 export * from './EnhancedAISettings';
 export * from './MigrationNotification';

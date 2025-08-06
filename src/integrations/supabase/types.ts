@@ -118,39 +118,60 @@ export type Database = {
       ai_service_providers: {
         Row: {
           api_key: string
+          available_models: Json | null
+          capabilities: Json | null
+          category: string | null
           created_at: string
+          description: string | null
           error_message: string | null
+          icon_name: string | null
           id: string
+          is_required: boolean | null
           last_verified: string | null
           preferred_model: string | null
           priority: number
           provider: string
+          setup_url: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           api_key: string
+          available_models?: Json | null
+          capabilities?: Json | null
+          category?: string | null
           created_at?: string
+          description?: string | null
           error_message?: string | null
+          icon_name?: string | null
           id?: string
+          is_required?: boolean | null
           last_verified?: string | null
           preferred_model?: string | null
           priority?: number
           provider: string
+          setup_url?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           api_key?: string
+          available_models?: Json | null
+          capabilities?: Json | null
+          category?: string | null
           created_at?: string
+          description?: string | null
           error_message?: string | null
+          icon_name?: string | null
           id?: string
+          is_required?: boolean | null
           last_verified?: string | null
           preferred_model?: string | null
           priority?: number
           provider?: string
+          setup_url?: string | null
           status?: string
           updated_at?: string
           user_id?: string

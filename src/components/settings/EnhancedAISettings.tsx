@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Zap, BarChart3 } from 'lucide-react';
 import { AIServiceToggle } from './AIServiceToggle';
-import { ProviderManagement } from './ProviderManagement';
+import { EnhancedProviderManagement } from './EnhancedProviderManagement';
 import { MigrationNotification } from './MigrationNotification';
 
 export function EnhancedAISettings() {
@@ -83,7 +83,7 @@ export function EnhancedAISettings() {
         </TabsContent>
 
         <TabsContent value="providers" className="space-y-6">
-          <ProviderManagement />
+          <EnhancedProviderManagement />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">

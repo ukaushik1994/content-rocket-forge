@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings2, Zap, Search, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, Settings2, Zap, Search, MessageSquare, RefreshCw, Loader2, Brain, Binary, Server } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ApiKeyInput } from './api/ApiKeyInput';
 import { DefaultAiProviderSelector } from './api/DefaultAiProviderSelector';
-import { API_PROVIDERS, ApiProvider } from './api/types';
+import AIServiceController, { ProviderInfo } from '@/services/aiService/AIServiceController';
+import { ApiProvider } from './api/types';
 import { getAllApiKeysStatus, testAllApiKeys, ApiKeyStatusResult, ApiKeyStatus } from '@/services/apiKeys';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AIChatTestModal } from './modals/AIChatTestModal';
@@ -153,9 +154,40 @@ export function MinimalAPISettings() {
   const [isAITestModalOpen, setIsAITestModalOpen] = useState(false);
   const [isSERPTestModalOpen, setIsSERPTestModalOpen] = useState(false);
 
+  const [allProviders, setAllProviders] = useState<ProviderInfo[]>([]);
+  
+  // Load providers from AIServiceController
+  useEffect(() => {
+    const loadProviders = async () => {
+      try {
+        const providers = await AIServiceController.getAllProviders();
+        setAllProviders(providers);
+      } catch (error) {
+        console.error('Failed to load providers:', error);
+      }
+    };
+    loadProviders();
+  }, []);
+
   // Separate AI and SERP providers
-  const aiProviders = API_PROVIDERS.filter(p => p.category === 'AI Services');
-  const serpProviders = API_PROVIDERS.filter(p => p.category === 'SEO & Analytics');
+  const aiProviders = allProviders.filter(p => p.category === 'AI Services');
+  const serpProviders = allProviders.filter(p => p.category === 'SEO & Analytics');
+
+  // Convert ProviderInfo to ApiProvider for compatibility
+  const convertToApiProvider = (provider: ProviderInfo): ApiProvider => ({
+    id: provider.id,
+    name: provider.name,
+    description: provider.description,
+    serviceKey: provider.id,
+    icon: provider.icon_name === 'brain' ? Brain : 
+          provider.icon_name === 'message-square' ? MessageSquare :
+          provider.icon_name === 'binary' ? Binary :
+          provider.icon_name === 'server' ? Server : 
+          provider.icon_name === 'search' ? Search : Brain,
+    link: provider.setup_url,
+    required: provider.is_required,
+    category: provider.category
+  });
 
   useEffect(() => {
     const loadProviderStatus = async () => {
@@ -289,7 +321,7 @@ export function MinimalAPISettings() {
                     )}
                   </Button>
                   <Badge variant="secondary">
-                    {allAiProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured').length} configured
+                    {allAiProviders.filter(p => configuredProviders[p.id]?.status !== 'not-configured').length} configured
                   </Badge>
                 </div>
               </div>
@@ -298,10 +330,10 @@ export function MinimalAPISettings() {
               {allAiProviders.map(provider => (
                 <ProviderCard
                   key={provider.id}
-                  provider={provider}
-                  statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
-                  onConfigure={() => handleProviderConfigure(provider)}
-                  onTest={() => handleTestProvider(provider)}
+                  provider={convertToApiProvider(provider)}
+                  statusResult={configuredProviders[provider.id] || { status: 'not-configured' }}
+                  onConfigure={() => handleProviderConfigure(convertToApiProvider(provider))}
+                  onTest={() => handleTestProvider(convertToApiProvider(provider))}
                 />
               ))}
             </CardContent>
@@ -318,7 +350,7 @@ export function MinimalAPISettings() {
                   Search Providers
                 </CardTitle>
                 <Badge variant="secondary">
-                  {allSerpProviders.filter(p => configuredProviders[p.serviceKey]?.status !== 'not-configured').length} configured
+                  {allSerpProviders.filter(p => configuredProviders[p.id]?.status !== 'not-configured').length} configured
                 </Badge>
               </div>
             </CardHeader>
@@ -326,10 +358,10 @@ export function MinimalAPISettings() {
               {allSerpProviders.map(provider => (
                 <ProviderCard
                   key={provider.id}
-                  provider={provider}
-                  statusResult={configuredProviders[provider.serviceKey] || { status: 'not-configured' }}
-                  onConfigure={() => handleProviderConfigure(provider)}
-                  onTest={() => handleTestProvider(provider)}
+                  provider={convertToApiProvider(provider)}
+                  statusResult={configuredProviders[provider.id] || { status: 'not-configured' }}
+                  onConfigure={() => handleProviderConfigure(convertToApiProvider(provider))}
+                  onTest={() => handleTestProvider(convertToApiProvider(provider))}
                 />
               ))}
             </CardContent>
