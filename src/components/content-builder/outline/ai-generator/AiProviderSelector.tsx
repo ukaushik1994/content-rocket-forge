@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ProviderStatusIndicator } from './ProviderStatusIndicator';
+import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
 import { AiProvider } from '@/services/aiService/types';
 
 interface AiProviderSelectorProps {
@@ -30,8 +30,8 @@ export function AiProviderSelector({
   return (
     <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-white/70">Using:</span>
-        <ProviderStatusIndicator selectedProvider={aiProvider} />
+        <span className="text-sm text-white/70">AI Service:</span>
+        <AiServiceStatusIndicator size="sm" />
       </div>
       
       <div className="flex items-center gap-1">

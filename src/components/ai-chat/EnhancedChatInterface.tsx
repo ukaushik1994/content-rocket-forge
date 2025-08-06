@@ -5,14 +5,12 @@ import { EnhancedMessageBubble } from './EnhancedMessageBubble';
 import { EnhancedMessageInput } from './EnhancedMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
-import { TestOpenRouterButton } from './TestOpenRouterButton';
 import { ChatHistorySidebar } from './ChatHistorySidebar';
 import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ModelIndicator } from '@/components/ai/ModelIndicator';
+import { AiServiceStatusIndicator } from '@/components/ai/AiServiceStatusIndicator';
 import { Sparkles, Brain, TrendingUp, Menu, History } from 'lucide-react';
 
 interface EnhancedChatInterfaceProps {
@@ -126,13 +124,9 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <TestOpenRouterButton />
-              <ModelIndicator className="text-xs" />
-              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse" />
-                Online
-              </Badge>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-white/60">AI Service</span>
+              <AiServiceStatusIndicator size="md" />
             </div>
           </div>
         </div>
