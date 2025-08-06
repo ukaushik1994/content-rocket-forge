@@ -45,7 +45,7 @@ export function ProviderManagement() {
 
   const loadProviders = async () => {
     try {
-      const activeProviders = await AIServiceController.getActiveProviders();
+      const activeProviders = await AIServiceController.getInstance().getActiveProviders();
       setProviders(activeProviders);
     } catch (error) {
       console.error('Failed to load providers:', error);
@@ -78,10 +78,10 @@ export function ProviderManagement() {
     try {
       // Update in database
       await Promise.all([
-        AIServiceController.updateProvider(newProviders[targetIndex].id, {
+        AIServiceController.getInstance().updateProvider(newProviders[targetIndex].id, {
           priority: newProviders[targetIndex].priority
         }),
-        AIServiceController.updateProvider(newProviders[currentIndex].id, {
+        AIServiceController.getInstance().updateProvider(newProviders[currentIndex].id, {
           priority: newProviders[currentIndex].priority
         })
       ]);
@@ -96,7 +96,7 @@ export function ProviderManagement() {
   const handleTestProvider = async (provider: Provider) => {
     setTestingProvider(provider.id);
     try {
-      const success = await AIServiceController.testProvider(provider.provider, provider.api_key);
+      const success = await AIServiceController.getInstance().testProvider(provider.provider, provider.api_key);
       if (success) {
         toast.success(`${PROVIDER_INFO[provider.provider]?.name} test successful`);
         // Update provider status
@@ -124,7 +124,7 @@ export function ProviderManagement() {
 
   const handleDeleteProvider = async (providerId: string) => {
     try {
-      await AIServiceController.deleteProvider(providerId);
+      await AIServiceController.getInstance().deleteProvider(providerId);
       setProviders(prev => prev.filter(p => p.id !== providerId));
       toast.success('Provider deleted');
     } catch (error) {
@@ -140,7 +140,7 @@ export function ProviderManagement() {
     try {
       const results = await Promise.allSettled(
         providers.map(provider => 
-          AIServiceController.testProvider(provider.provider, provider.api_key)
+          AIServiceController.getInstance().testProvider(provider.provider, provider.api_key)
             .then(success => ({ id: provider.id, success, provider: provider.provider }))
         )
       );
@@ -185,7 +185,7 @@ export function ProviderManagement() {
   const handleToggleAllProviders = async (enabled: boolean) => {
     try {
       const updates = providers.map(provider => 
-        AIServiceController.updateProvider(provider.id, { status: enabled ? 'active' : 'inactive' })
+        AIServiceController.getInstance().updateProvider(provider.id, { status: enabled ? 'active' : 'inactive' })
       );
       await Promise.all(updates);
       
@@ -373,7 +373,7 @@ function AddProviderForm({ onSuccess }: { onSuccess: () => void }) {
 
     setIsSubmitting(true);
     try {
-      await AIServiceController.addProvider({
+      await AIServiceController.getInstance().addProvider({
         provider,
         api_key: apiKey,
         preferred_model: model || undefined,
