@@ -63,5 +63,14 @@ export const TestOpenRouterButton = () => {
       setIsTesting(false);
     }
   };
-  return;
+  return (
+    <Button 
+      onClick={testOpenRouterConnection}
+      disabled={isTesting}
+      variant="outline"
+      size="sm"
+    >
+      {isTesting ? "Testing..." : "Test OpenRouter"}
+    </Button>
+  );
 };
