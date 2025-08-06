@@ -207,7 +207,13 @@ class AIServiceController {
 
       this.providersCache = (data || []).map(p => ({
         ...p,
-        status: p.status as 'active' | 'inactive' | 'error'
+        status: p.status as 'active' | 'inactive' | 'error',
+        capabilities: Array.isArray(p.capabilities) 
+          ? p.capabilities.filter((item): item is string => typeof item === 'string')
+          : [],
+        available_models: Array.isArray(p.available_models) 
+          ? p.available_models.filter((item): item is string => typeof item === 'string')
+          : []
       }));
       this.lastCacheUpdate = now;
       
