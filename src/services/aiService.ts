@@ -100,57 +100,34 @@ export async function sendChatRequest(
 ): Promise<any> {
   console.log(`🚀 Sending chat request to ${provider}:`, { temperature: params.temperature, model: params.model });
   
+  // Import AIServiceController dynamically to avoid circular imports
+  const { default: AIServiceController } = await import('./aiService/AIServiceController');
+  
   try {
-    // Use the OpenRouter hook for OpenRouter requests
-    if (provider === 'openrouter') {
-      const { data, error } = await supabase.functions.invoke('openrouter-content-generator', {
-        body: {
-          prompt: params.messages.map(m => m.content).join('\n'),
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          model: params.model,
-          temperature: params.temperature || 0.7
-        }
-      });
-      
-      if (error) {
-        console.error('OpenRouter function error:', error);
-        throw new Error(error.message);
-      }
-      
-      return {
-        choices: [{
-          message: {
-            content: data.generatedText
-          }
-        }],
-        usage: data.usage
-      };
-    }
-    
-    // For other providers, use the AI proxy
-    const { data, error } = await supabase.functions.invoke('ai-proxy', {
-      body: {
-        service: provider,
-        endpoint: 'chat',
-        params: {
-          messages: params.messages,
-          model: params.model,
-          temperature: params.temperature || 0.7,
-          maxTokens: params.maxTokens || 4000
-        }
-      }
+    const result = await AIServiceController.generate({
+      input: params.messages.map(m => m.content).join('\n'),
+      use_case: 'chat',
+      temperature: params.temperature,
+      max_tokens: params.maxTokens,
+      model: params.model
     });
-    
-    if (error) {
-      console.error('AI proxy error:', error);
-      throw new Error(error.message);
+
+    if (!result) {
+      return null;
     }
-    
-    return data;
+
+    return {
+      choices: [{
+        message: {
+          content: result.content
+        }
+      }],
+      usage: result.usage
+    };
     
   } catch (error: any) {
     console.error('Chat request failed:', error);
-    toast.error(`Failed to generate content with ${provider}. Please check your API key in Settings.`);
+    toast.error('Failed to generate content. Please check your API configuration in Settings.');
     return null;
   }
 }

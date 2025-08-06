@@ -2,9 +2,7 @@
 import { toast } from 'sonner';
 import { AiProvider } from '@/services/aiService/types';
 import { Solution, SerpSelection } from '@/contexts/content-builder/types';
-import { sendChatRequest } from '@/services/aiService';
-import { getUserPreference } from '@/services/userPreferencesService';
-import { getBestAvailableProvider } from '@/services/providerAvailabilityService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 /**
  * Generate content using AI with SERP data integration
@@ -32,12 +30,6 @@ export const generateContent = async (
   }
   
   try {
-    // Get the best available AI provider
-    const aiProvider = preferredProvider || await getBestAvailableProvider();
-    if (!aiProvider) {
-      toast.error('No AI provider is configured. Please set up an API key in Settings.');
-      return false;
-    }
     // Organize SERP selections by type for better prompt structure
     const serpData = organizeSerpSelections(serpSelections);
     
@@ -53,23 +45,18 @@ export const generateContent = async (
       wordCountLimit
     });
     
-    // Enhanced system prompt for better content quality
-    const systemPrompt = createEnhancedSystemPrompt();
-    
-    // Call the AI API via our service
-    console.log(`🚀 Generating content with ${aiProvider}`);
-    const chatResponse = await sendChatRequest(aiProvider, {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
+    // Use centralized AI service controller
+    console.log('🚀 Generating content with AI Service Controller');
+    const result = await AIServiceController.generate({
+      input: prompt,
+      use_case: 'content_generation',
       temperature: 0.7,
-      maxTokens: 4000
+      max_tokens: 4000
     });
     
-    if (chatResponse?.choices?.[0]?.message?.content) {
+    if (result?.content) {
       // Use the AI-generated content
-      const generatedContent = chatResponse.choices[0].message.content;
+      const generatedContent = result.content;
       
       // If content doesn't start with the title as an H1, add it
       let finalContent = generatedContent;

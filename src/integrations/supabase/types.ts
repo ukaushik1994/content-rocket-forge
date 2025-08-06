@@ -115,6 +115,48 @@ export type Database = {
           },
         ]
       }
+      ai_service_providers: {
+        Row: {
+          api_key: string
+          created_at: string
+          error_message: string | null
+          id: string
+          last_verified: string | null
+          preferred_model: string | null
+          priority: number
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_verified?: string | null
+          preferred_model?: string | null
+          priority?: number
+          provider: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_verified?: string | null
+          preferred_model?: string | null
+          priority?: number
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_workflow_states: {
         Row: {
           conversation_id: string | null
