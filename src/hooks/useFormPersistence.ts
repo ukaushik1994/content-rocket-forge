@@ -73,11 +73,23 @@ export const useFormPersistence = (options: FormPersistenceOptions) => {
   }, [key]);
   
   const initializeFormData = useCallback((initialData: Partial<EnhancedSolution>) => {
-    // Check if we have persisted data that's newer than initial data
+    // Check if we're editing an existing solution (has an ID)
+    const isEditMode = initialData.id || key !== 'new-solution';
+    
+    // For edit mode, always prioritize the actual solution data over cached data
+    if (isEditMode && initialData.id) {
+      console.log('Edit mode detected - using solution data over cached data');
+      setFormData(initialData);
+      setIsDirty(false);
+      setLastSaved(null);
+      return;
+    }
+    
+    // For new solutions, check if we have persisted data
     const saved = localStorage.getItem(`form-${key}`);
     const savedTimestamp = localStorage.getItem(`form-timestamp-${key}`);
     
-    if (saved && savedTimestamp) {
+    if (saved && savedTimestamp && key === 'new-solution') {
       try {
         const parsedData = JSON.parse(saved);
         const savedTime = new Date(savedTimestamp);
@@ -85,6 +97,7 @@ export const useFormPersistence = (options: FormPersistenceOptions) => {
         // If we have recent saved data (less than 1 hour old), use it instead
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
         if (savedTime > oneHourAgo && Object.keys(parsedData).length > 0) {
+          console.log('Using cached new solution data');
           setFormData(parsedData);
           setIsDirty(true);
           setLastSaved(savedTime);
@@ -95,7 +108,7 @@ export const useFormPersistence = (options: FormPersistenceOptions) => {
       }
     }
     
-    // Use initial data if no recent saved data
+    // Use initial data if no recent saved data or in edit mode
     setFormData(initialData);
     setIsDirty(false);
     setLastSaved(null);

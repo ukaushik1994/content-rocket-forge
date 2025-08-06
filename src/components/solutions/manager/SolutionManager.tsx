@@ -119,9 +119,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
           // Refresh the solutions list
           await fetchSolutions();
           toast.success('Solution updated successfully');
+          // Only close dialog and clear selection on confirmed success
           setIsDialogOpen(false);
           setSelectedSolution(null);
         } else {
+          // Don't close dialog on error - let user retry
           throw new Error(result.error || 'Failed to update solution');
         }
       } else {
@@ -133,9 +135,11 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
           // Refresh the solutions list
           await fetchSolutions();
           toast.success('Solution created successfully');
+          // Only close dialog and clear selection on confirmed success
           setIsDialogOpen(false);
           setSelectedSolution(null);
         } else {
+          // Don't close dialog on error - let user retry
           throw new Error(result.error || 'Failed to create solution');
         }
       }
@@ -143,7 +147,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       console.error('Error in handleSubmitForm:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(`Save failed: ${errorMessage}`);
-      // Keep dialog open on error so user can retry
+      // CRITICAL: Dialog stays open on error so user can retry
+      // Do NOT call setIsDialogOpen(false) or setSelectedSolution(null) here
     } finally {
       setIsSubmitting(false);
     }
