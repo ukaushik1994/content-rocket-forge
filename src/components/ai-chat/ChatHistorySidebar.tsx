@@ -1,0 +1,231 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { 
+  MessageSquare, 
+  Search, 
+  Plus, 
+  MoreVertical, 
+  Trash2, 
+  X,
+  History,
+  Settings
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { AIConversation } from '@/hooks/useEnhancedAIChatDB';
+import { formatDistanceToNow } from 'date-fns';
+
+interface ChatHistorySidebarProps {
+  conversations: AIConversation[];
+  activeConversation: string | null;
+  onSelectConversation: (id: string) => void;
+  onCreateConversation: () => void;
+  onDeleteConversation: (id: string) => void;
+  onToggleSidebar: () => void;
+  className?: string;
+}
+
+export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
+  conversations,
+  activeConversation,
+  onSelectConversation,
+  onCreateConversation,
+  onDeleteConversation,
+  onToggleSidebar,
+  className = ""
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sidebarVariants = {
+    hidden: { x: -320, opacity: 0 },
+    visible: { 
+      x: 0, 
+      opacity: 1,
+      transition: { type: "spring", damping: 20, stiffness: 300 }
+    },
+    exit: { 
+      x: -320, 
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: (i: number) => ({
+      opacity: 1,
+      x: 0,
+      transition: {
+        delay: i * 0.05,
+        duration: 0.3
+      }
+    })
+  };
+
+  return (
+    <motion.div 
+      className={`w-80 h-full bg-background/95 backdrop-blur-sm border-r border-white/10 flex flex-col ${className}`}
+      variants={sidebarVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      {/* Header */}
+      <div className="p-4 border-b border-white/10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <History className="h-5 w-5 text-white/70" />
+            <h2 className="text-lg font-semibold text-white">Chat History</h2>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSidebar}
+            className="text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* New Chat Button */}
+        <Button
+          onClick={onCreateConversation}
+          className="w-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 border border-white/20 text-white"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          New Chat
+        </Button>
+      </div>
+
+      {/* Search */}
+      <div className="p-4 border-b border-white/10">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+          <Input
+            placeholder="Search conversations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-purple-500/50"
+          />
+        </div>
+      </div>
+
+      {/* Conversations List */}
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          <AnimatePresence>
+            {filteredConversations.length > 0 ? (
+              filteredConversations.map((conversation, index) => (
+                <motion.div
+                  key={conversation.id}
+                  custom={index}
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Card 
+                    className={`mb-2 p-3 cursor-pointer transition-all duration-200 group border-white/10 hover:border-purple-500/30 ${
+                      activeConversation === conversation.id 
+                        ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-purple-500/50' 
+                        : 'bg-white/5 hover:bg-white/10'
+                    }`}
+                    onClick={() => onSelectConversation(conversation.id)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <MessageSquare className="h-4 w-4 text-white/60 flex-shrink-0" />
+                          <h3 className="text-sm font-medium text-white truncate">
+                            {conversation.title}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-white/50">
+                          {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/20"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-background/90 backdrop-blur-sm border-white/20">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteConversation(conversation.id);
+                            }}
+                            className="text-red-400 focus:text-red-300 focus:bg-red-500/20"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-8"
+              >
+                <MessageSquare className="h-12 w-12 text-white/30 mx-auto mb-3" />
+                <p className="text-white/60 text-sm">
+                  {searchTerm ? 'No conversations found' : 'No conversations yet'}
+                </p>
+                <p className="text-white/40 text-xs mt-1">
+                  {searchTerm ? 'Try a different search term' : 'Start a new chat to begin'}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-white/10">
+        <div className="flex items-center justify-between text-xs text-white/50 mb-3">
+          <span>{conversations.length} conversations</span>
+          <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
+            <div className="w-2 h-2 bg-green-400 rounded-full mr-1" />
+            Synced
+          </Badge>
+        </div>
+        <Button
+          onClick={() => window.open('/ai-settings', '_blank')}
+          variant="ghost"
+          size="sm"
+          className="w-full text-white/60 hover:text-white hover:bg-white/10 text-xs"
+        >
+          <Settings className="h-3 w-3 mr-2" />
+          AI Settings
+        </Button>
+      </div>
+    </motion.div>
+  );
+};

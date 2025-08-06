@@ -6,12 +6,14 @@ import { EnhancedMessageInput } from './EnhancedMessageInput';
 import { EnhancedQuickActions } from './EnhancedQuickActions';
 import { PlatformSummaryCard } from './PlatformSummaryCard';
 import { TestOpenRouterButton } from './TestOpenRouterButton';
-import { useEnhancedAIChat } from '@/hooks/useEnhancedAIChat';
+import { ChatHistorySidebar } from './ChatHistorySidebar';
+import { useEnhancedAIChatDB } from '@/hooks/useEnhancedAIChatDB';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ModelIndicator } from '@/components/ai/ModelIndicator';
-import { Sparkles, Brain, TrendingUp } from 'lucide-react';
+import { Sparkles, Brain, TrendingUp, Menu, History } from 'lucide-react';
 
 interface EnhancedChatInterfaceProps {
   className?: string;
@@ -22,14 +24,20 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
   
   const {
+    conversations,
+    activeConversation,
     messages,
     isLoading,
     isTyping,
+    createConversation,
+    deleteConversation,
     sendMessage,
-    handleAction
-  } = useEnhancedAIChat();
+    handleAction,
+    selectConversation
+  } = useEnhancedAIChatDB();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -70,17 +78,41 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   return (
-    <motion.div 
-      className={`flex flex-col h-full ${className}`}
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
+    <div className={`flex h-full ${className}`}>
+      {/* Chat History Sidebar */}
+      <AnimatePresence>
+        {showSidebar && (
+          <ChatHistorySidebar
+            conversations={conversations}
+            activeConversation={activeConversation}
+            onSelectConversation={selectConversation}
+            onCreateConversation={() => createConversation()}
+            onDeleteConversation={deleteConversation}
+            onToggleSidebar={() => setShowSidebar(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Main Chat Interface */}
+      <motion.div 
+        className="flex flex-col h-full flex-1"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
       {/* Elegant Header */}
       <div className="border-b border-white/10 bg-gradient-to-r from-background/95 to-background/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSidebar(true)}
+                className="text-white/60 hover:text-white hover:bg-white/10"
+              >
+                <History className="h-4 w-4" />
+              </Button>
               <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10">
                 <Brain className="h-5 w-5 text-white" />
               </div>
@@ -219,6 +251,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           </div>
         </div>
       </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };

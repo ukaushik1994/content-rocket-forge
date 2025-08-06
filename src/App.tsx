@@ -21,6 +21,7 @@ import AnswerThePeople from "./pages/research/AnswerThePeople";
 import TopicClusters from "./pages/research/TopicClusters";
 import AioGeo from "./pages/AioGeo";
 import AIChat from "./pages/AIChat";
+import AISettings from "./pages/AISettings";
 import NotFound from "./pages/NotFound";
 import { ContentProvider } from "./contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -54,8 +55,9 @@ const App = () => (
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 
-                {/* AI Chat route */}
+                {/* AI Chat routes */}
                 <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+                <Route path="/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
                 
                 {/* Research routes */}
                 <Route path="/research/content-strategy" element={<ProtectedRoute><ContentStrategy /></ProtectedRoute>} />

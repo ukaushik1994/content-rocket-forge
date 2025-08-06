@@ -73,8 +73,11 @@ export type Database = {
           created_at: string
           function_calls: Json | null
           id: string
+          progress_indicator: Json | null
           status: string
           type: string
+          visual_data: Json | null
+          workflow_context: Json | null
         }
         Insert: {
           attachments?: Json | null
@@ -83,8 +86,11 @@ export type Database = {
           created_at?: string
           function_calls?: Json | null
           id?: string
+          progress_indicator?: Json | null
           status?: string
           type: string
+          visual_data?: Json | null
+          workflow_context?: Json | null
         }
         Update: {
           attachments?: Json | null
@@ -93,8 +99,11 @@ export type Database = {
           created_at?: string
           function_calls?: Json | null
           id?: string
+          progress_indicator?: Json | null
           status?: string
           type?: string
+          visual_data?: Json | null
+          workflow_context?: Json | null
         }
         Relationships: [
           {
@@ -2109,31 +2118,40 @@ export type Database = {
         Row: {
           api_key: string
           created_at: string
+          default_model: string | null
           id: string
           is_active: boolean
           model: string | null
+          preferences: Json | null
           provider: string
           updated_at: string
+          usage_stats: Json | null
           user_id: string
         }
         Insert: {
           api_key: string
           created_at?: string
+          default_model?: string | null
           id?: string
           is_active?: boolean
           model?: string | null
+          preferences?: Json | null
           provider: string
           updated_at?: string
+          usage_stats?: Json | null
           user_id: string
         }
         Update: {
           api_key?: string
           created_at?: string
+          default_model?: string | null
           id?: string
           is_active?: boolean
           model?: string | null
+          preferences?: Json | null
           provider?: string
           updated_at?: string
+          usage_stats?: Json | null
           user_id?: string
         }
         Relationships: []
