@@ -140,7 +140,7 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
           Smart Actions
         </h3>
         
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {actions.map((action, index) => {
             const Icon = getActionIcon(action.action);
             const gradient = getActionGradient(index);
@@ -166,19 +166,19 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
                     {/* Glowing border effect */}
                     <div className="absolute inset-0 rounded-lg border border-transparent bg-gradient-to-r from-white/20 to-white/5 group-hover:from-neon-purple/30 group-hover:to-neon-blue/30 transition-all duration-300" />
                     
-                    <CardContent className="p-6 relative z-10">
+                    <CardContent className="p-4 relative z-10">
                       <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-4 flex-1">
+                        <div className="flex items-start gap-3 flex-1">
                           {/* Icon with gradient background */}
                           <motion.div 
-                            className={`p-3 rounded-xl bg-gradient-to-r ${gradient} bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-300`}
+                            className={`p-2 rounded-xl bg-gradient-to-r ${gradient} bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-300`}
                             whileHover={{ rotate: [0, -5, 5, 0] }}
                             transition={{ duration: 0.3 }}
                           >
-                            <Icon className="h-6 w-6 text-white" />
+                            <Icon className="h-5 w-5 text-white" />
                           </motion.div>
                           
-                          <div className="flex-1 space-y-3">
+                          <div className="flex-1 space-y-2">
                             <h4 className="font-semibold text-white group-hover:text-gradient transition-all duration-300">
                               {action.label}
                             </h4>
@@ -215,10 +215,10 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
                         
                         {/* Action indicator */}
                         <motion.div
-                          className="p-2 rounded-full bg-white/5 group-hover:bg-white/10 transition-all duration-300"
+                          className="p-1.5 rounded-full bg-white/5 group-hover:bg-white/10 transition-all duration-300"
                           whileHover={{ x: 5 }}
                         >
-                          <ArrowRight className="h-4 w-4 text-white/60 group-hover:text-neon-purple transition-colors" />
+                          <ArrowRight className="h-3.5 w-3.5 text-white/60 group-hover:text-neon-purple transition-colors" />
                         </motion.div>
                       </div>
                     </CardContent>
@@ -226,16 +226,16 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
                 ) : (
                   <Button
                     variant="outline"
-                    size="lg"
-                    className="w-full justify-between text-left h-auto p-4 glass-card border-white/10 hover:border-neon-purple/30 group"
+                    size="default"
+                    className="w-full justify-between text-left h-auto p-3 glass-card border-white/10 hover:border-neon-purple/30 group"
                     onClick={() => handleActionClick(action)}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <motion.div 
-                        className={`p-2 rounded-lg bg-gradient-to-r ${gradient} bg-opacity-20`}
+                        className={`p-1.5 rounded-lg bg-gradient-to-r ${gradient} bg-opacity-20`}
                         whileHover={{ scale: 1.1 }}
                       >
-                        <Icon className="h-5 w-5 text-white" />
+                        <Icon className="h-4 w-4 text-white" />
                       </motion.div>
                       
                       <div className="text-left">
@@ -254,7 +254,7 @@ export const ModernActionButtons: React.FC<ModernActionButtonsProps> = ({
                       whileHover={{ x: 5 }}
                       className="text-white/60 group-hover:text-neon-purple transition-colors"
                     >
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </motion.div>
                   </Button>
                 )}
