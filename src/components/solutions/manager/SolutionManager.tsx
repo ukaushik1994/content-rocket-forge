@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Solution } from '@/contexts/content-builder/types';
 import { useSolutionsData } from '../hooks/useSolutionsData';
-import { RebuildSolutionFormDialog } from './core/RebuildSolutionFormDialog';
+import { EnhancedSolutionFormDialog } from './EnhancedSolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
 import { useDeleteSolution } from './hooks/useDeleteSolution';
+import { solutionService } from '@/services/solutionService';
 import { EmptyState } from './EmptyState';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingState } from './LoadingState';
@@ -103,11 +104,54 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     setIsDialogOpen(true);
   };
 
-  const handleFormSuccess = async () => {
-    // Refresh the solutions list after successful save
-    await fetchSolutions();
-    // Clear the selected solution
-    setSelectedSolution(null);
+  const handleSubmitForm = async (solutionData: any, logoFile?: File) => {
+    console.log('HandleSubmitForm called with:', { solutionData, logoFile });
+    
+    try {
+      setIsSubmitting(true);
+      
+      if (selectedSolution?.id) {
+        console.log('Updating solution with ID:', selectedSolution.id);
+        const result = await solutionService.updateSolution(selectedSolution.id, solutionData, logoFile);
+        console.log('Update result:', result);
+        
+        if (result.success && result.data) {
+          // Refresh the solutions list
+          await fetchSolutions();
+          toast.success('Solution updated successfully');
+          // Only close dialog and clear selection on confirmed success
+          setIsDialogOpen(false);
+          setSelectedSolution(null);
+        } else {
+          // Don't close dialog on error - let user retry
+          throw new Error(result.error || 'Failed to update solution');
+        }
+      } else {
+        console.log('Creating new solution');
+        const result = await solutionService.createSolution(solutionData, logoFile);
+        console.log('Create result:', result);
+        
+        if (result.success && result.data) {
+          // Refresh the solutions list
+          await fetchSolutions();
+          toast.success('Solution created successfully');
+          // Only close dialog and clear selection on confirmed success
+          setIsDialogOpen(false);
+          setSelectedSolution(null);
+        } else {
+          // Don't close dialog on error - let user retry
+          throw new Error(result.error || 'Failed to create solution');
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleSubmitForm:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error(`Save failed: ${errorMessage}`);
+      // CRITICAL: Dialog stays open on error so user can retry
+      // Do NOT call setIsDialogOpen(false) or setSelectedSolution(null) here
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   if (isLoading) {
@@ -146,11 +190,12 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       )}
       
       {/* Add/Edit Dialog */}
-      <RebuildSolutionFormDialog
+      <EnhancedSolutionFormDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onSuccess={handleFormSuccess}
+        onSubmit={handleSubmitForm}
         solution={selectedSolution}
+        isSubmitting={isSubmitting}
       />
       
       {/* Delete Confirmation Dialog */}
