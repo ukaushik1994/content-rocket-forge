@@ -1972,6 +1972,36 @@ export type Database = {
         }
         Relationships: []
       }
+      serp_usage_logs: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          operation: string
+          provider: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          operation: string
+          provider: string
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          operation?: string
+          provider?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       solutions: {
         Row: {
           benefits: Json | null
