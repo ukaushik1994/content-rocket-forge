@@ -17,10 +17,11 @@ import { useSolutionFormState } from './SolutionFormState';
 import { solutionDataService } from './SolutionDataService';
 
 // Import all tab components
-import { BasicInfoTab } from '../tabs/BasicInfoTab';
+import { EnhancedBasicInfoTab } from '../tabs/EnhancedBasicInfoTab';
 import { FeaturesTab } from '../tabs/FeaturesTab';
 import { ResourcesTab } from '../tabs/ResourcesTab';
 import { PreviewTab } from '../tabs/PreviewTab';
+import { FormProgressIndicator } from '../components/FormProgressIndicator';
 import { TargetMarketTab } from '../tabs/TargetMarketTab';
 import { CompetitiveAnalysisTab } from '../tabs/CompetitiveAnalysisTab';
 import { TechnicalSpecsTab } from '../tabs/TechnicalSpecsTab';
@@ -209,6 +210,17 @@ export const RebuildSolutionFormDialog: React.FC<RebuildSolutionFormDialogProps>
           </DialogDescription>
         </DialogHeader>
         
+        {/* Progress Indicator */}
+        <div className="mb-4">
+          <FormProgressIndicator
+            formData={formState.data}
+            currentTab={formState.activeTab}
+            lastSaved={formState.lastSaved}
+            isDirty={formState.isDirty}
+            hasErrors={Object.keys(formState.errors).length > 0}
+          />
+        </div>
+        
         <div className="flex-1 overflow-hidden">
           <Tabs 
             value={formState.activeTab} 
@@ -245,13 +257,11 @@ export const RebuildSolutionFormDialog: React.FC<RebuildSolutionFormDialogProps>
                   exit="exit"
                 >
                   <TabsContent value="basic" className="mt-0">
-                    <BasicInfoTab
+                    <EnhancedBasicInfoTab
                       formData={formState.data}
                       updateFormData={formActions.updateData}
-                      logoFile={logoFile}
-                      setLogoFile={setLogoFile}
-                      logoPreview={logoPreview}
-                      setLogoPreview={setLogoPreview}
+                      errors={formState.errors}
+                      onFieldFocus={(field) => formActions.clearError(field)}
                     />
                   </TabsContent>
                   
