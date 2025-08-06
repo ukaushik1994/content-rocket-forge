@@ -172,21 +172,24 @@ export const useSaveContent = () => {
           ...(saveParams.secondaryKeywords || [])
         ].filter(Boolean) as string[];
         
+        // Remove duplicates to prevent constraint violations
+        const uniqueKeywords = [...new Set(allKeywords)];
+        
         // Save any new keywords
         const keywords = [];
-        for (const keyword of allKeywords) {
+        for (const keyword of uniqueKeywords) {
           // Check if keyword exists first
           const { data: existingKeyword } = await supabase
             .from('keywords')
             .select('id')
             .eq('keyword', keyword)
             .eq('user_id', user.user.id)
-            .single();
+            .maybeSingle();
             
           if (existingKeyword) {
             keywords.push(existingKeyword.id);
           } else {
-            // Insert new keyword
+            // Insert new keyword with conflict handling
             const { data: newKeyword, error: keywordError } = await supabase
               .from('keywords')
               .insert({
@@ -194,7 +197,7 @@ export const useSaveContent = () => {
                 user_id: user.user.id
               })
               .select('id')
-              .single();
+              .maybeSingle();
               
             if (!keywordError && newKeyword) {
               keywords.push(newKeyword.id);
@@ -202,16 +205,23 @@ export const useSaveContent = () => {
           }
         }
         
-        // Link keywords to content
+        // Link keywords to content with conflict handling
         if (keywords.length > 0) {
           const contentKeywords = keywords.map(keywordId => ({
             content_id: contentId,
             keyword_id: keywordId
           }));
           
-          await supabase
+          const { error: linkError } = await supabase
             .from('content_keywords')
-            .insert(contentKeywords);
+            .upsert(contentKeywords, { 
+              onConflict: 'content_id,keyword_id',
+              ignoreDuplicates: true 
+            });
+            
+          if (linkError) {
+            console.warn('[useSaveContent] Error linking keywords (non-critical):', linkError);
+          }
         }
       }
       
@@ -314,21 +324,24 @@ export const useSaveContent = () => {
           ...(publishParams.secondaryKeywords || [])
         ].filter(Boolean) as string[];
         
+        // Remove duplicates to prevent constraint violations
+        const uniqueKeywords = [...new Set(allKeywords)];
+        
         // Save any new keywords
         const keywords = [];
-        for (const keyword of allKeywords) {
+        for (const keyword of uniqueKeywords) {
           // Check if keyword exists first
           const { data: existingKeyword } = await supabase
             .from('keywords')
             .select('id')
             .eq('keyword', keyword)
             .eq('user_id', user.user.id)
-            .single();
+            .maybeSingle();
             
           if (existingKeyword) {
             keywords.push(existingKeyword.id);
           } else {
-            // Insert new keyword
+            // Insert new keyword with conflict handling
             const { data: newKeyword, error: keywordError } = await supabase
               .from('keywords')
               .insert({
@@ -336,7 +349,7 @@ export const useSaveContent = () => {
                 user_id: user.user.id
               })
               .select('id')
-              .single();
+              .maybeSingle();
               
             if (!keywordError && newKeyword) {
               keywords.push(newKeyword.id);
@@ -344,16 +357,23 @@ export const useSaveContent = () => {
           }
         }
         
-        // Link keywords to content
+        // Link keywords to content with conflict handling
         if (keywords.length > 0) {
           const contentKeywords = keywords.map(keywordId => ({
             content_id: contentId,
             keyword_id: keywordId
           }));
           
-          await supabase
+          const { error: linkError } = await supabase
             .from('content_keywords')
-            .insert(contentKeywords);
+            .upsert(contentKeywords, { 
+              onConflict: 'content_id,keyword_id',
+              ignoreDuplicates: true 
+            });
+            
+          if (linkError) {
+            console.warn('[useSaveContent] Error linking keywords (non-critical):', linkError);
+          }
         }
       }
       

@@ -121,12 +121,15 @@ async function processKeywords(contentId: string, keywords: string[], userId: st
         keywordId = existingKeyword.id;
       }
       
-      // Create the relationship between content item and keyword
+      // Create the relationship between content item and keyword with conflict handling
       const { error: relationError } = await supabase
         .from('content_keywords')
-        .insert({
+        .upsert({
           content_id: contentId,
           keyword_id: keywordId
+        }, { 
+          onConflict: 'content_id,keyword_id',
+          ignoreDuplicates: true 
         });
         
       if (relationError) throw relationError;
