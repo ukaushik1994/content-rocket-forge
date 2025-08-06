@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
-import { sendChatRequest } from '@/services/aiService';
+import { sendChatRequest } from '@/services/aiService/aiService';
 import { toast } from 'sonner';
 
 interface AIChatTestModalProps {
@@ -36,7 +36,7 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
     try {
       const startTime = Date.now();
       
-      const result = await sendChatRequest(provider, {
+      const result = await sendChatRequest(provider as any, {
         messages: [{ role: 'user', content: testMessage }],
         temperature: 0.7
       });

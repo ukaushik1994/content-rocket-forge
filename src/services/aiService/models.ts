@@ -20,15 +20,6 @@ export const OPENAI_MODELS: AiModelInfo[] = [
     maxTokens: 128000,
     type: 'chat',
     capabilities: ['text', 'vision', 'function-calling']
-  },
-  {
-    id: 'gpt-4.5-preview',
-    provider: 'openai',
-    name: 'GPT-4.5 Preview',
-    description: 'Preview of the very powerful GPT-4.5 model',
-    maxTokens: 128000,
-    type: 'chat',
-    capabilities: ['text', 'function-calling']
   }
 ];
 

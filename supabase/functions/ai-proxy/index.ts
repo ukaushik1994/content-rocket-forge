@@ -192,7 +192,7 @@ async function testOpenAI(apiKey: string) {
 }
 
 async function callOpenAI(apiKey: string, params: any) {
-  const { model = 'gpt-4.1-2025-04-14', messages, temperature = 0.7, maxTokens = 2000 } = params;
+  const { model = 'gpt-4o-mini', messages, temperature = 0.7, maxTokens = 2000 } = params;
 
   console.log(`📤 OpenAI request: model=${model}, messages=${messages.length}`);
 
