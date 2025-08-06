@@ -25,13 +25,26 @@ export const useMetaGenerator = (onGenerateTitles: () => void) => {
     }
     
     try {
+      console.log("[useMetaGenerator] Starting meta generation with AI");
+      
       // First try to use AI service to generate meta information
-      const metaResponse = await AIServiceController.generate({
-        input: `Content Title: ${contentTitle || 'Untitled'}\nMain Keyword: ${mainKeyword}\n\nContent excerpt: ${content.substring(0, 1000)}...\n\nGenerate a meta title (max 60 characters) and meta description (max 160 characters) that are SEO-optimized and include the main keyword.`,
-        use_case: 'title_generation',
-        temperature: 0.7,
-        max_tokens: 500
-      });
+      const metaResponse = await AIServiceController.generate(
+        'title_generation',
+        'You are an expert SEO specialist. Generate a compelling meta title (max 60 characters) and meta description (max 160 characters) that are SEO-optimized and include the main keyword naturally.',
+        `Content Title: ${contentTitle || 'Untitled'}
+Main Keyword: ${mainKeyword}
+
+Content excerpt: ${content.substring(0, 1000)}...
+
+Please generate:
+1. Meta Title: [60 characters max, include main keyword naturally]
+2. Meta Description: [160 characters max, compelling and includes main keyword]
+
+Format your response as:
+Meta Title: [your title here]
+Meta Description: [your description here]`,
+        { temperature: 0.7, maxTokens: 500 }
+      );
 
       if (metaResponse?.content) {
         const aiResponse = metaResponse.content;
@@ -44,13 +57,13 @@ export const useMetaGenerator = (onGenerateTitles: () => void) => {
         // Try to find meta title in the response
         const titleMatch = aiResponse.match(/(?:Meta Title:|Title:)\s*(.*?)(?:\n|$)/i);
         if (titleMatch && titleMatch[1]) {
-          generatedTitle = titleMatch[1].trim();
+          generatedTitle = titleMatch[1].trim().replace(/^["']|["']$/g, '');
         }
         
         // Try to find meta description in the response
         const descMatch = aiResponse.match(/(?:Meta Description:|Description:)\s*(.*?)(?:\n|$)/i);
         if (descMatch && descMatch[1]) {
-          generatedDescription = descMatch[1].trim();
+          generatedDescription = descMatch[1].trim().replace(/^["']|["']$/g, '');
         }
         
         // If we couldn't parse the AI response, use the utility function as fallback
@@ -59,6 +72,14 @@ export const useMetaGenerator = (onGenerateTitles: () => void) => {
           const fallback = generateMetaSuggestions(content, mainKeyword, contentTitle);
           generatedTitle = generatedTitle || fallback.metaTitle;
           generatedDescription = generatedDescription || fallback.metaDescription;
+        }
+        
+        // Ensure title and description don't exceed character limits
+        if (generatedTitle.length > 60) {
+          generatedTitle = generatedTitle.substring(0, 57) + '...';
+        }
+        if (generatedDescription.length > 160) {
+          generatedDescription = generatedDescription.substring(0, 157) + '...';
         }
         
         console.log("[useMetaGenerator] Generated meta:", { generatedTitle, generatedDescription });

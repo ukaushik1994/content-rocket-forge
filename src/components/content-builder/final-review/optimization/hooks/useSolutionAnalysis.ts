@@ -51,18 +51,24 @@ export function useSolutionAnalysis() {
     `;
 
     const solutionResult = await AIServiceController.generate(
-      'solution_analysis',
+      'strategy',
       systemPrompt,
-      userPrompt
+      userPrompt,
+      { temperature: 0.3, maxTokens: 1500 }
     );
     
-    const solutionAnalysisText = solutionResult?.choices?.[0]?.message?.content || '';
+    const solutionAnalysisText = solutionResult?.content || '';
     let solutionAnalysisData = null;
     
     try {
-      const jsonMatch = solutionAnalysisText.match(/{[\s\S]*}/);
+      // Try to extract JSON if it's wrapped in backticks or other text
+      const jsonMatch = solutionAnalysisText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                        solutionAnalysisText.match(/{[\s\S]*}/);
+      
       if (jsonMatch) {
-        solutionAnalysisData = JSON.parse(jsonMatch[0]);
+        const jsonStr = jsonMatch[0].replace(/```json|```/g, '').trim();
+        solutionAnalysisData = JSON.parse(jsonStr);
+        console.log("[useSolutionAnalysis] Parsed AI analysis:", solutionAnalysisData);
       }
     } catch (error) {
       console.error('Error parsing solution analysis result:', error);
