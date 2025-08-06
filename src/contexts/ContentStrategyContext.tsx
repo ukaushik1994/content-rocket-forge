@@ -75,24 +75,38 @@ export const ContentStrategyProvider = ({ children }: { children: ReactNode }) =
 
     try {
       setLoading(true);
-      const [strategiesData, activeStrategy, calendarData, pipelineData, insightsData] = await Promise.all([
+      
+      // Load critical data first (strategies and active strategy)
+      const [strategiesData, activeStrategy] = await Promise.all([
         contentStrategyService.getStrategies(),
-        contentStrategyService.getActiveStrategy(),
-        contentStrategyService.getCalendarItems(),
-        contentStrategyService.getPipelineItems(),
-        contentStrategyService.getInsights()
+        contentStrategyService.getActiveStrategy()
       ]);
 
       setStrategies(strategiesData);
       setCurrentStrategy(activeStrategy);
-      setCalendarItems(calendarData);
-      setPipelineItems(pipelineData);
-      setContentItems([]); // TODO: Load from content service when available
-      setInsights(insightsData);
+      setLoading(false);
+
+      // Load secondary data in background without blocking UI
+      setTimeout(async () => {
+        try {
+          const [calendarData, pipelineData, insightsData] = await Promise.all([
+            contentStrategyService.getCalendarItems(),
+            contentStrategyService.getPipelineItems(),
+            contentStrategyService.getInsights()
+          ]);
+
+          setCalendarItems(calendarData);
+          setPipelineItems(pipelineData);
+          setContentItems([]); // TODO: Load from content service when available
+          setInsights(insightsData);
+        } catch (error: any) {
+          console.error('Error loading secondary data:', error);
+        }
+      }, 100);
+      
     } catch (error: any) {
       console.error('Error loading content strategy data:', error);
       toast.error('Failed to load strategy data');
-    } finally {
       setLoading(false);
     }
   };

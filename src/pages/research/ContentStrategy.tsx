@@ -18,12 +18,10 @@ const ContentStrategy = () => {
         
         <Navbar />
         
-        {/* Enhanced Background */}
+        {/* Optimized Background */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-float"></div>
-          <div className="absolute bottom-20 right-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full filter blur-3xl opacity-40 animate-float" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute bottom-40 left-1/2 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl opacity-30 animate-float" style={{ animationDelay: '4s' }}></div>
-          <div className="futuristic-grid absolute inset-0 opacity-5"></div>
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float"></div>
+          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl opacity-20 will-change-transform transform-gpu animate-float" style={{ animationDelay: '2s' }}></div>
         </div>
         
         <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">

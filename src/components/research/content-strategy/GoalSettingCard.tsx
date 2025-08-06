@@ -12,7 +12,7 @@ import { SerpMetricsDisplay } from './SerpMetricsDisplay';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const GoalSettingCard = () => {
+export const GoalSettingCard = React.memo(() => {
   const { user } = useAuth();
   const { 
     currentStrategy, 
@@ -131,9 +131,9 @@ export const GoalSettingCard = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.8 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <Card className="glass-panel border-white/10 shadow-2xl overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5" />
@@ -278,4 +278,4 @@ export const GoalSettingCard = () => {
       </Card>
     </motion.div>
   );
-};
+});

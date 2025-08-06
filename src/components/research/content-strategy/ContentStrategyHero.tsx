@@ -3,13 +3,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Target, TrendingUp, BarChart3 } from 'lucide-react';
 
-export const ContentStrategyHero = () => {
+export const ContentStrategyHero = React.memo(() => {
   return (
     <div className="text-center space-y-6">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative"
       >
         <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent mb-4">
@@ -21,18 +21,18 @@ export const ContentStrategyHero = () => {
       </motion.div>
       
       <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
         className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
       >
         AI-powered content strategy with SERP analysis, competitor research, and data-driven recommendations
       </motion.p>
       
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.6 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.3 }}
         className="flex items-center justify-center gap-8 text-sm text-muted-foreground"
       >
         <div className="flex items-center gap-2 px-4 py-2 bg-glass rounded-full border border-white/10">
@@ -50,4 +50,4 @@ export const ContentStrategyHero = () => {
       </motion.div>
     </div>
   );
-};
+});

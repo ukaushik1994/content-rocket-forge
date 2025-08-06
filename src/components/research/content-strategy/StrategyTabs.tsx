@@ -11,20 +11,23 @@ import { OpportunityHunter } from './opportunity/OpportunityHunter';
 
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
-export const StrategyTabs = () => {
+export const StrategyTabs = React.memo(() => {
   const { currentStrategy, insights } = useContentStrategy();
   
-  // Find the latest SERP metrics for the current strategy
-  const serpMetrics = insights.find(insight => 
-    insight.keyword === currentStrategy?.main_keyword
-  )?.serp_data || null;
+  // Memoize expensive calculations
+  const serpMetrics = React.useMemo(() => 
+    insights.find(insight => 
+      insight.keyword === currentStrategy?.main_keyword
+    )?.serp_data || null,
+    [insights, currentStrategy?.main_keyword]
+  );
 
-  const goals = {
+  const goals = React.useMemo(() => ({
     monthlyTraffic: currentStrategy?.monthly_traffic_goal?.toString() || '',
     contentPieces: currentStrategy?.content_pieces_per_month?.toString() || '',
     timeline: currentStrategy?.timeline || '3 months',
     mainKeyword: currentStrategy?.main_keyword || ''
-  };
+  }), [currentStrategy]);
 
   return (
     <div className="space-y-6">
@@ -94,4 +97,4 @@ export const StrategyTabs = () => {
       </Tabs>
     </div>
   );
-};
+});

@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Globe, Book } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,21 +14,36 @@ interface NavItemProps {
   active?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({
+const NavItem: React.FC<NavItemProps> = React.memo(({
   to,
   icon,
   label,
   active
 }) => {
-  return <Link to={to} className={cn('relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors', active ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' : 'hover:bg-white/10 text-white/60 hover:text-white')}>
+  return (
+    <Link 
+      to={to} 
+      className={cn(
+        'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+        active ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' : 'hover:bg-white/10 text-white/60 hover:text-white'
+      )}
+    >
       {icon}
       {label}
-      {active && <motion.span layoutId="nav-highlight" transition={{
-      type: "spring",
-      duration: 0.6
-    }} className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" />}
-    </Link>;
-};
+      {active && (
+        <motion.span 
+          layoutId={`nav-highlight-${to}`} // Unique layoutId per item
+          transition={{
+            type: "spring",
+            duration: 0.3,
+            bounce: 0.2
+          }} 
+          className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
+        />
+      )}
+    </Link>
+  );
+});
 
 export default function NavItems() {
   const location = useLocation();
@@ -73,10 +89,11 @@ export default function NavItems() {
             <ChevronDown className="h-3 w-3" />
             {isContentActive && (
               <motion.span 
-                layoutId="nav-highlight" 
+                layoutId="nav-highlight-content"
                 transition={{
                   type: "spring",
-                  duration: 0.6
+                  duration: 0.3,
+                  bounce: 0.2
                 }} 
                 className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
               />
@@ -164,10 +181,11 @@ export default function NavItems() {
             <ChevronDown className="h-3 w-3" />
             {isResearchActive && (
               <motion.span 
-                layoutId="nav-highlight" 
+                layoutId="nav-highlight-research"
                 transition={{
                   type: "spring",
-                  duration: 0.6
+                  duration: 0.3,
+                  bounce: 0.2
                 }} 
                 className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
               />
