@@ -36,6 +36,8 @@ export function ProviderManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [testingAll, setTestingAll] = useState(false);
+  const [bulkEnabled, setBulkEnabled] = useState(true);
 
   useEffect(() => {
     loadProviders();
@@ -131,6 +133,71 @@ export function ProviderManagement() {
     }
   };
 
+  const handleTestAllProviders = async () => {
+    if (providers.length === 0) return;
+    
+    setTestingAll(true);
+    try {
+      const results = await Promise.allSettled(
+        providers.map(provider => 
+          AIServiceController.testProvider(provider.provider, provider.api_key)
+            .then(success => ({ id: provider.id, success, provider: provider.provider }))
+        )
+      );
+
+      let successCount = 0;
+      const updatedProviders = [...providers];
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const { id, success, provider: providerName } = result.value;
+          const providerIndex = updatedProviders.findIndex(p => p.id === id);
+          if (providerIndex !== -1) {
+            if (success) {
+              successCount++;
+              updatedProviders[providerIndex] = {
+                ...updatedProviders[providerIndex],
+                status: 'active',
+                error_message: undefined,
+                last_verified: new Date().toISOString()
+              };
+            } else {
+              updatedProviders[providerIndex] = {
+                ...updatedProviders[providerIndex],
+                status: 'error',
+                error_message: 'Test failed'
+              };
+            }
+          }
+        }
+      });
+
+      setProviders(updatedProviders);
+      toast.success(`Tested ${providers.length} providers. ${successCount} working.`);
+    } catch (error) {
+      console.error('Bulk test failed:', error);
+      toast.error('Failed to test providers');
+    } finally {
+      setTestingAll(false);
+    }
+  };
+
+  const handleToggleAllProviders = async (enabled: boolean) => {
+    try {
+      const updates = providers.map(provider => 
+        AIServiceController.updateProvider(provider.id, { status: enabled ? 'active' : 'inactive' })
+      );
+      await Promise.all(updates);
+      
+      setProviders(prev => prev.map(p => ({ ...p, status: enabled ? 'active' : 'inactive' })));
+      setBulkEnabled(enabled);
+      toast.success(`All providers ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to toggle providers:', error);
+      toast.error('Failed to update providers');
+    }
+  };
+
   const getStatusBadge = (provider: Provider) => {
     switch (provider.status) {
       case 'active':
@@ -156,26 +223,48 @@ export function ProviderManagement() {
             <Settings2 className="h-5 w-5" />
             AI Provider Management
           </CardTitle>
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Provider
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add AI Provider</DialogTitle>
-                <DialogDescription>
-                  Configure a new AI provider with API key and priority.
-                </DialogDescription>
-              </DialogHeader>
-              <AddProviderForm onSuccess={() => {
-                setIsAddModalOpen(false);
-                loadProviders();
-              }} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-2">
+            {providers.length > 0 && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleTestAllProviders}
+                  disabled={testingAll}
+                >
+                  <TestTube className="h-4 w-4 mr-2" />
+                  {testingAll ? 'Testing All...' : 'Test All'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleToggleAllProviders(!bulkEnabled)}
+                >
+                  {bulkEnabled ? 'Disable All' : 'Enable All'}
+                </Button>
+              </>
+            )}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Provider
+                </Button>
+               </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add AI Provider</DialogTitle>
+                  <DialogDescription>
+                    Configure a new AI provider with API key and priority.
+                  </DialogDescription>
+                </DialogHeader>
+                <AddProviderForm onSuccess={() => {
+                  setIsAddModalOpen(false);
+                  loadProviders();
+                }} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

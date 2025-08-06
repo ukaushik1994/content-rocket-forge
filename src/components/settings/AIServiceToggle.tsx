@@ -2,19 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Zap, AlertCircle, CheckCircle, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserPreference, saveUserPreference } from '@/services/userPreferencesService';
 import AIServiceController from '@/services/aiService/AIServiceController';
+import { ServiceStatusDashboard } from './ServiceStatusDashboard';
 
-export function AIServiceToggle() {
+export function AIServiceToggle({ onManageProviders }: { onManageProviders?: () => void }) {
   const [isEnabled, setIsEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [serviceStatus, setServiceStatus] = useState<{
     hasProviders: boolean;
     activeCount: number;
     totalCount: number;
-  }>({ hasProviders: false, activeCount: 0, totalCount: 0 });
+    errorCount: number;
+  }>({ hasProviders: false, activeCount: 0, totalCount: 0, errorCount: 0 });
 
   useEffect(() => {
     loadSettings();
@@ -32,7 +35,8 @@ export function AIServiceToggle() {
       setServiceStatus({
         hasProviders: providers.length > 0,
         activeCount: providers.filter(p => p.status === 'active').length,
-        totalCount: providers.length
+        totalCount: providers.length,
+        errorCount: providers.filter(p => p.status === 'error').length
       });
     } catch (error) {
       console.error('Error loading AI service settings:', error);
@@ -58,6 +62,11 @@ export function AIServiceToggle() {
       console.error('Error toggling AI service:', error);
       toast.error('Failed to update AI service setting');
     }
+  };
+
+  const handleRefreshStatus = () => {
+    loadSettings();
+    toast.info('Refreshing AI service status...');
   };
 
   const getStatusBadge = () => {
@@ -100,27 +109,39 @@ export function AIServiceToggle() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Zap className="h-5 w-5 text-primary" />
-            <div>
-              <CardTitle className="text-lg">AI Service</CardTitle>
-              <CardDescription>
-                Enable or disable all AI-powered features across the platform
-              </CardDescription>
+    <div className="space-y-6">
+      {/* Enhanced Service Status Dashboard */}
+      <ServiceStatusDashboard
+        totalProviders={serviceStatus.totalCount}
+        activeProviders={serviceStatus.activeCount}
+        errorProviders={serviceStatus.errorCount}
+        isServiceEnabled={isEnabled}
+        onRefreshAll={handleRefreshStatus}
+        onToggleService={handleToggle}
+      />
+
+      {/* Legacy Toggle Card - now simplified */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Zap className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle className="text-lg">AI Service Control</CardTitle>
+                <CardDescription>
+                  Master control for all AI-powered features
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {getStatusBadge()}
+              <Switch
+                checked={isEnabled}
+                onCheckedChange={handleToggle}
+              />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {getStatusBadge()}
-            <Switch
-              checked={isEnabled}
-              onCheckedChange={handleToggle}
-            />
-          </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
       <CardContent className="pt-0">
         <div className="space-y-4">
@@ -159,17 +180,27 @@ export function AIServiceToggle() {
           )}
 
           {isEnabled && serviceStatus.hasProviders && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-success/10 border border-success/20 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <CheckCircle className="h-5 w-5 text-success mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-green-900 mb-1">AI Service Active</h4>
-                  <p className="text-sm text-green-700">
+                  <h4 className="font-medium text-success mb-1">AI Service Active</h4>
+                  <p className="text-sm text-success/80">
                     AI features are enabled with {serviceStatus.activeCount} of {serviceStatus.totalCount} providers active. 
                     The system will automatically use the highest priority working provider with fallback support.
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Management Actions */}
+          {onManageProviders && (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={onManageProviders}>
+                <Settings className="h-4 w-4 mr-2" />
+                Manage AI Providers
+              </Button>
             </div>
           )}
 
@@ -182,5 +213,6 @@ export function AIServiceToggle() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
