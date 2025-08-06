@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AIInstructionsInput } from '../AIInstructionsInput';
 import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
@@ -135,33 +135,30 @@ export function OutlineGenerator() {
   };
   
   const generateOutlineWithFallback = async (prompt: string, primaryProvider: AiProvider) => {
-    // Use the centralized service-level fallback instead of component-level fallback
     try {
-      const chatResponse = await sendChatRequest(primaryProvider, {
-        messages: [
-          { role: 'system', content: 'You are an expert content outline creator.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7
+      const response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'outline_generation',
+        temperature: 0.7,
+        max_tokens: 1500
       });
       
-      // If we got a valid response
-      if (chatResponse?.choices?.[0]?.message?.content) {
+      if (response?.content) {
         return {
           success: true,
-          outlineText: chatResponse.choices[0].message.content
+          outlineText: response.content
         };
       } else {
         return {
           success: false,
-          error: `${primaryProvider} API call failed. Please check your API key in Settings.`
+          error: 'AI service failed to generate outline. Please check your configuration.'
         };
       }
     } catch (error) {
-      console.error(`Error with ${primaryProvider}:`, error);
+      console.error('Error generating outline:', error);
       return {
         success: false,
-        error: `${primaryProvider} API call failed. Please check your API key in Settings.`
+        error: 'AI service failed to generate outline. Please check your configuration.'
       };
     }
   };

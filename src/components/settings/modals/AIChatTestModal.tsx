@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
-import { sendChatRequest } from '@/services/aiService/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { toast } from 'sonner';
 
 interface AIChatTestModalProps {
@@ -36,25 +36,26 @@ export function AIChatTestModal({ provider, isOpen, onClose, onTestComplete }: A
     try {
       const startTime = Date.now();
       
-      const result = await sendChatRequest(provider as any, {
-        messages: [{ role: 'user', content: testMessage }],
-        temperature: 0.7
+      const result = await AIServiceController.generate({
+        input: testMessage,
+        use_case: 'chat',
+        temperature: 0.7,
+        max_tokens: 100
       });
 
       const responseTime = Date.now() - startTime;
 
-      if (result && result.choices && result.choices[0]) {
-        const aiResponse = result.choices[0].message.content;
-        setResponse(aiResponse);
+      if (result?.content) {
+        setResponse(result.content);
         setTestSuccess(true);
         setTestComplete(true);
-        toast.success(`✅ ${provider?.charAt(0).toUpperCase() + provider?.slice(1)} test successful! (${responseTime}ms)`);
+        toast.success(`✅ AI service test successful! (${responseTime}ms) Provider: ${result.provider_used || 'Unknown'}`);
         // Notify parent of successful test
         if (onTestComplete && provider) {
           onTestComplete(provider, true);
         }
       } else {
-        throw new Error('No response received');
+        throw new Error('No response received from AI service');
       }
     } catch (error: any) {
       console.error('AI test failed:', error);

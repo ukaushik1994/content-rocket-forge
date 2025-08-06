@@ -1,7 +1,7 @@
 
 // CRUD operations for API keys using the main apiKeyService functions
 import { getApiKey, saveApiKey, deleteApiKey, ApiProvider } from '../apiKeyService';
-import { sendChatRequest } from '../aiService/aiService';
+import AIServiceController from '../aiService/AIServiceController';
 import { searchKeywords } from '../serpApiService';
 import { AiProvider } from '../aiService/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,12 +83,13 @@ async function testApiKeyFunctionality(provider: ApiProvider, skipFallback: bool
     // Test AI providers
     if (['openai', 'anthropic', 'gemini', 'mistral', 'lmstudio', 'openrouter'].includes(provider)) {
       try {
-        const response = await sendChatRequest(provider as AiProvider, {
-          messages: [{ role: 'user', content: 'Test' }],
+        const response = await AIServiceController.generate({
+          input: 'Test',
+          use_case: 'chat',
           temperature: 0.1,
-          maxTokens: 10
-        }, skipFallback);
-        testResult = !!response;
+          max_tokens: 10
+        });
+        testResult = !!response?.content;
         if (!testResult) error = 'No response from AI provider';
       } catch (e: any) {
         error = e.message || 'AI provider test failed';

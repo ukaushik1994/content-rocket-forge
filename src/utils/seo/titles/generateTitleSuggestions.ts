@@ -207,7 +207,7 @@ async function generateEnhancedAITitles(
 ): Promise<string[] | null> {
   try {
     // Dynamic import to avoid circular dependencies
-    const { sendChatRequest } = await import('@/services/aiService');
+    const AIServiceController = (await import('@/services/aiService/AIServiceController')).default;
     const { analyzeContentForTitles } = await import('./enhancedContentAnalysis');
     
     // Analyze content for better context
@@ -268,20 +268,15 @@ ${analysis.contentType === 'educational' ? '- Learning and educational titles' :
 
 Return ONLY 15 titles, one per line, no numbering.`;
 
-    const response = await sendChatRequest('openrouter', {
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are an expert content analyst and SEO copywriter who creates titles that perfectly match actual content value and structure. You avoid generic titles and focus on what the content truly delivers.'
-        },
-        { role: 'user', content: prompt }
-      ],
+    const response = await AIServiceController.generate({
+      input: prompt,
+      use_case: 'title_generation',
       temperature: 0.7,
-      maxTokens: 1000
+      max_tokens: 1000
     });
 
-    if (response?.choices?.[0]?.message?.content) {
-      const titles = response.choices[0].message.content
+    if (response?.content) {
+      const titles = response.content
         .split('\n')
         .map(title => title.trim())
         .filter(title => title.length > 0 && !title.match(/^\d+\./))

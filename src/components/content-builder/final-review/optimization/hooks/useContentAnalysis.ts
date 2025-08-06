@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { OptimizationSuggestion } from '../types';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { toast } from 'sonner';
 
 export function useContentAnalysis() {
@@ -18,15 +18,7 @@ export function useContentAnalysis() {
 
     setIsAnalyzing(true);
     try {
-      const response = await sendChatRequest('openrouter', {
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert content optimizer. Analyze content and provide specific optimization suggestions.'
-          },
-          {
-            role: 'user',
-            content: `Analyze this content and provide optimization suggestions:
+      const prompt = `Analyze this content and provide optimization suggestions:
 
 CONTENT:
 ${content}
@@ -47,13 +39,17 @@ Respond in JSON format:
       "priority": "high|medium|low"
     }
   ]
-}`
-          }
-        ]
+}`;
+
+      const response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'strategy',
+        temperature: 0.7,
+        max_tokens: 1000
       });
 
-      if (response?.choices?.[0]?.message?.content) {
-        const jsonMatch = response.choices[0].message.content.match(/\{[\s\S]*\}/);
+      if (response?.content) {
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const result = JSON.parse(jsonMatch[0]);
           const suggestions = result.suggestions?.map((s: any) => ({

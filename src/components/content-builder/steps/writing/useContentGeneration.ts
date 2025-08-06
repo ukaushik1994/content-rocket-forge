@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { ContentBuilderState, SerpSelection } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { hasApiKey } from '@/services/apiKeys/crud';
@@ -102,89 +102,34 @@ export function useContentGeneration() {
       
       console.info("AI Content Generation prompt:", prompt);
       
-      // Check if fallback is enabled
-      const enableFallback = getUserPreference('enableAiFallback') === true;
+      console.log(`🎯 Generating content with centralized AI service`);
       
-      // Try primary provider first
-      try {
-        console.log(`🎯 Generating content with ${aiProvider}`);
-        const chatResponse = await sendChatRequest(aiProvider, {
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.7,
-          maxTokens: 4000
-        });
+      const response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'content_generation',
+        temperature: 0.7,
+        max_tokens: 4000
+      });
+      
+      if (response?.content) {
+        // Use the AI-generated content
+        const generatedContent = response.content;
         
-        if (chatResponse?.choices?.[0]?.message?.content) {
-          // Use the AI-generated content
-          const generatedContent = chatResponse.choices[0].message.content;
-          
-          // If content doesn't start with the title as an H1, add it
-          let finalContent = generatedContent;
-          const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
-          
-          if (!finalContent.trim().startsWith('#')) {
-            finalContent = `${titleAsH1}\n\n${finalContent}`;
-          }
-          
-          setContent(finalContent);
-          toast.success(`Content generated successfully with ${aiProvider}!`);
-          return true;
-        } else {
-          throw new Error('No content generated from API response');
-        }
-      } catch (error) {
-        console.error(`❌ Error with primary provider ${aiProvider}:`, error);
-        toast.error(`${aiProvider} failed. ${enableFallback ? 'Trying fallback providers...' : 'Please check your API key or try another provider.'}`);
-      }
-      
-      // If primary provider failed and fallback is enabled, try other providers
-      if (enableFallback) {
-        const fallbackProviders = availableProviders.filter(p => p !== aiProvider);
+        // If content doesn't start with the title as an H1, add it
+        let finalContent = generatedContent;
+        const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
         
-        for (const fallbackProvider of fallbackProviders) {
-          try {
-            console.log(`🔄 Primary provider ${aiProvider} failed, trying fallback provider ${fallbackProvider}`);
-            
-            const fallbackResponse = await sendChatRequest(fallbackProvider, {
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: prompt }
-              ],
-              temperature: 0.7,
-              maxTokens: 4000,
-              model: fallbackProvider === 'openrouter' ? 'openai/gpt-3.5-turbo' : undefined
-            });
-            
-            if (fallbackResponse?.choices?.[0]?.message?.content) {
-              // Use the AI-generated content from fallback
-              const generatedContent = fallbackResponse.choices[0].message.content;
-              
-              // If content doesn't start with the title as an H1, add it
-              let finalContent = generatedContent;
-              const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
-              
-              if (!finalContent.trim().startsWith('#')) {
-                finalContent = `${titleAsH1}\n\n${finalContent}`;
-              }
-              
-              setContent(finalContent);
-              toast.success(`✅ Content generated using ${fallbackProvider} as fallback`);
-              return true;
-            }
-          } catch (fallbackError) {
-            console.error(`❌ Fallback provider ${fallbackProvider} also failed:`, fallbackError);
-          }
+        if (!finalContent.trim().startsWith('#')) {
+          finalContent = `${titleAsH1}\n\n${finalContent}`;
         }
+        
+        setContent(finalContent);
+        toast.success(`Content generated successfully using ${response.provider_used || 'AI service'}!`);
+        return true;
+      } else {
+        toast.error('Failed to generate content. Please check your AI service configuration.');
+        return false;
       }
-      
-      // All providers failed or fallback is disabled
-      toast.error(enableFallback
-        ? 'All configured AI providers failed. Please check your API keys in Settings.'
-        : `${aiProvider} API call failed. Enable AI Provider Fallback in Settings or try another provider.`);
-      return false;
       
     } catch (error) {
       console.error('Error generating content:', error);

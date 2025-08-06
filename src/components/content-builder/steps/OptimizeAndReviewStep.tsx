@@ -15,7 +15,7 @@ import {
   generateContentWithTemplate, 
   generateContentByFormatType 
 } from '@/services/contentTemplateService';
-import { sendChatRequest } from '@/services/aiService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 export const OptimizeAndReviewStep = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -105,25 +105,19 @@ export const OptimizeAndReviewStep = () => {
         if (generatedContent?.content) {
           newGeneratedFormats[contentType] = generatedContent.content;
         } else {
-          // Fallback to OpenRouter for generic generation if no template or generation failed
-          const response = await sendChatRequest('openrouter', {
-            messages: [
-              { 
-                role: 'system', 
-                content: 'You are an expert content repurposing specialist. Transform the provided content into the requested format while maintaining its core message and value.' 
-              },
-              { 
-                role: 'user', 
-                content: `Transform this content titled "${state.contentTitle}" for the ${contentType} format.
-                          Content: ${state.content?.substring(0, 1500)}...
-                          
-                          Make it appropriate for the ${contentType} format with all necessary elements.`
-              }
-            ]
+          // Fallback to AI service for generic generation if no template or generation failed
+          const response = await AIServiceController.generate({
+            input: `Transform this content titled "${state.contentTitle}" for the ${contentType} format.
+                    Content: ${state.content?.substring(0, 1500)}...
+                    
+                    Make it appropriate for the ${contentType} format with all necessary elements.`,
+            use_case: 'repurpose',
+            temperature: 0.7,
+            max_tokens: 2000
           });
           
-          if (response?.choices?.[0]?.message?.content) {
-            newGeneratedFormats[contentType] = response.choices[0].message.content;
+          if (response?.content) {
+            newGeneratedFormats[contentType] = response.content;
           } else {
             toast.error(`Failed to generate content for ${contentType} format`);
           }

@@ -49,11 +49,19 @@ class AIServiceController {
    */
   async isAIServiceEnabled(): Promise<boolean> {
     try {
+      // Dynamic import to avoid circular dependency
+      const { getUserPreference } = await import('@/services/userPreferencesService');
+      
+      // Check user preference (default to true if not set)
+      const isEnabled = getUserPreference('enableAiService');
+      if (isEnabled === false) {
+        return false;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
-      // For now, we'll consider AI enabled if any provider is configured
-      // This can be extended to include a global toggle in user preferences
+      // AI is enabled if user hasn't disabled it and at least one provider is configured
       const providers = await this.getActiveProviders();
       return providers.length > 0;
     } catch (error) {
@@ -112,7 +120,16 @@ class AIServiceController {
    * Main generation function that handles fallback logic
    */
   async generate(request: AIGenerateRequest): Promise<AIGenerateResponse | null> {
-    // Check if AI service is enabled
+    // Check if AI service is globally enabled by user preference
+    const { getUserPreference } = await import('@/services/userPreferencesService');
+    const isServiceEnabled = getUserPreference('enableAiService');
+    
+    if (isServiceEnabled === false) {
+      toast.error('AI service is disabled. Enable it in Settings to use AI features.');
+      return null;
+    }
+
+    // Check if any providers are configured
     const isEnabled = await this.isAIServiceEnabled();
     if (!isEnabled) {
       toast.error('AI service is disabled. Please configure API keys in Settings.');
