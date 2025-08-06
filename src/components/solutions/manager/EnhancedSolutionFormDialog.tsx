@@ -92,6 +92,8 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       return;
     }
 
+    console.log('EnhancedSolutionFormDialog: handleSubmit called with formData:', formData);
+
     try {
       // Transform enhanced form data to database format
       const transformedData = {
@@ -125,41 +127,28 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         metadata: formData.metadata || null
       };
 
+      console.log('EnhancedSolutionFormDialog: Transformed data:', transformedData);
+
       // Validate the transformed data
       const validation = solutionService.validateSolutionData(transformedData);
       if (!validation.isValid) {
+        console.error('EnhancedSolutionFormDialog: Validation failed:', validation.errors);
         validation.errors.forEach(error => toast.error(error));
         return;
       }
 
-      let result;
-      if (solution?.id) {
-        // Update existing solution
-        result = await solutionService.updateSolution(solution.id, transformedData, logoFile || undefined);
-      } else {
-        // Create new solution
-        result = await solutionService.createSolution(transformedData, logoFile || undefined);
-      }
-
-      if (result) {
-        console.log('Solution saved successfully, calling onSubmit with result:', result);
-        toast.success(solution?.id ? "Solution updated successfully!" : "Solution created successfully!");
+      console.log('EnhancedSolutionFormDialog: Data validation passed, calling onSubmit');
+      
+      // Call the parent's onSubmit callback with the transformed data
+      if (typeof onSubmit === 'function') {
         setIsDirty(false);
-        
-        // Call the parent's onSubmit callback with the result
-        if (typeof onSubmit === 'function') {
-          console.log('Calling onSubmit callback with result:', result);
-          onSubmit(result, logoFile || undefined);
-        } else {
-          console.warn('onSubmit is not a function:', onSubmit);
-          onOpenChange(false);
-        }
+        await onSubmit(transformedData, logoFile || undefined);
       } else {
-        console.error('solutionService returned null/undefined result');
-        toast.error("Failed to save solution. Please try again.");
+        console.warn('onSubmit is not a function:', onSubmit);
+        toast.error("Form submission error - invalid callback");
       }
     } catch (error) {
-      console.error("Error submitting solution:", error);
+      console.error("EnhancedSolutionFormDialog: Error submitting solution:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       toast.error(`Error saving solution: ${errorMessage}`);
     }

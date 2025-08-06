@@ -78,6 +78,14 @@ class SolutionService {
 
   async createSolution(solutionData: SolutionCreateData, logoFile?: File): Promise<any> {
     try {
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        toast.error('You must be logged in to create a solution');
+        return null;
+      }
+
       let logoUrl = null;
 
       // Upload logo if provided
@@ -92,6 +100,11 @@ class SolutionService {
       if (logoUrl) {
         dbData.logo_url = logoUrl;
       }
+      
+      // Add user_id to the data
+      dbData.user_id = user.id;
+
+      console.log('Creating solution with data:', dbData);
 
       const { data, error } = await supabase
         .from('solutions')
@@ -101,11 +114,11 @@ class SolutionService {
 
       if (error) {
         console.error('Error creating solution:', error);
-        toast.error('Failed to create solution');
+        toast.error(`Failed to create solution: ${error.message}`);
         return null;
       }
 
-      toast.success('Solution created successfully');
+      console.log('Solution created successfully:', data);
       return this.transformDatabaseToEnhanced([data])[0];
     } catch (error) {
       console.error('Service error creating solution:', error);
@@ -116,6 +129,14 @@ class SolutionService {
 
   async updateSolution(id: string, solutionData: Partial<SolutionCreateData>, logoFile?: File): Promise<any> {
     try {
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        toast.error('You must be logged in to update a solution');
+        return null;
+      }
+
       let logoUrl = undefined;
 
       // Upload new logo if provided
@@ -131,20 +152,23 @@ class SolutionService {
         dbData.logo_url = logoUrl;
       }
 
+      console.log('Updating solution with data:', dbData);
+
       const { data, error } = await supabase
         .from('solutions')
         .update(dbData)
         .eq('id', id)
+        .eq('user_id', user.id) // Ensure user can only update their own solutions
         .select()
         .single();
 
       if (error) {
         console.error('Error updating solution:', error);
-        toast.error('Failed to update solution');
+        toast.error(`Failed to update solution: ${error.message}`);
         return null;
       }
 
-      toast.success('Solution updated successfully');
+      console.log('Solution updated successfully:', data);
       return this.transformDatabaseToEnhanced([data])[0];
     } catch (error) {
       console.error('Service error updating solution:', error);
