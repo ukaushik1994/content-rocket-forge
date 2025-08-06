@@ -31,7 +31,24 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, userId, conversationId, solutions, analytics, workflowContext }: EnhancedRequest = await req.json();
+    const body = await req.json();
+    console.log('📨 Received request body:', JSON.stringify(body, null, 2));
+    
+    const { 
+      messages, 
+      userId, 
+      conversationId, 
+      solutions, 
+      analytics, 
+      workflowContext,
+      context 
+    }: EnhancedRequest & { context?: any } = body;
+    
+    // Handle nested context data from frontend
+    const contextData = context || {};
+    const finalSolutions = solutions || contextData.solutions || [];
+    const finalAnalytics = analytics || contextData.analytics || {};
+    const finalWorkflowContext = workflowContext || contextData.workflowContext || {};
     
     console.log('🚀 Processing enhanced AI chat request');
 
@@ -73,9 +90,9 @@ IMPORTANT GUIDELINES:
 
 AVAILABLE USER CONTEXT:`;
 
-    if (solutions && solutions.length > 0) {
+    if (finalSolutions && finalSolutions.length > 0) {
       contextPrompt += `\n\nUSER'S SOLUTIONS:`;
-      solutions.forEach(solution => {
+      finalSolutions.forEach(solution => {
         contextPrompt += `\n- ${solution.name}: ${solution.features?.join(', ') || 'No features listed'}`;
         if (solution.painPoints?.length > 0) {
           contextPrompt += `\n  Pain Points: ${solution.painPoints.join(', ')}`;
@@ -86,19 +103,34 @@ AVAILABLE USER CONTEXT:`;
       });
     }
 
-    if (analytics) {
+    if (finalAnalytics && Object.keys(finalAnalytics).length > 0) {
       contextPrompt += `\n\nCURRENT ANALYTICS:`;
-      contextPrompt += `\n- Content pieces: ${analytics.totalContent || 0}`;
-      contextPrompt += `\n- Published: ${analytics.published || 0}`;
-      contextPrompt += `\n- In review: ${analytics.inReview || 0}`;
-      contextPrompt += `\n- Average SEO Score: ${analytics.avgSeoScore || 0}%`;
-      contextPrompt += `\n- Weekly performance data available: ${analytics.weeklyData ? 'Yes' : 'No'}`;
-      contextPrompt += `\n- Content by type: ${JSON.stringify(analytics.contentByType || {})}`;
-      contextPrompt += `\n- Pipeline by stage: ${JSON.stringify(analytics.pipelineByStage || {})}`;
+      contextPrompt += `\n- Content pieces: ${finalAnalytics.totalContent || 0}`;
+      contextPrompt += `\n- Published: ${finalAnalytics.published || 0}`;
+      contextPrompt += `\n- In review: ${finalAnalytics.inReview || 0}`;
+      contextPrompt += `\n- Average SEO Score: ${finalAnalytics.avgSeoScore || 0}%`;
+      contextPrompt += `\n- Weekly performance data available: ${finalAnalytics.weeklyData ? 'Yes' : 'No'}`;
+      
+      // Safe JSON stringification with fallbacks
+      try {
+        contextPrompt += `\n- Content by type: ${JSON.stringify(finalAnalytics.contentByType || {})}`;
+      } catch (e) {
+        contextPrompt += `\n- Content by type: Not available`;
+      }
+      
+      try {
+        contextPrompt += `\n- Pipeline by stage: ${JSON.stringify(finalAnalytics.pipelineByStage || {})}`;
+      } catch (e) {
+        contextPrompt += `\n- Pipeline by stage: Not available`;
+      }
     }
 
-    if (workflowContext) {
-    contextPrompt += `\n\nWORKFLOW CONTEXT: ${JSON.stringify(workflowContext)}`;
+    if (finalWorkflowContext && Object.keys(finalWorkflowContext).length > 0) {
+      try {
+        contextPrompt += `\n\nWORKFLOW CONTEXT: ${JSON.stringify(finalWorkflowContext)}`;
+      } catch (e) {
+        contextPrompt += `\n\nWORKFLOW CONTEXT: Context available but not serializable`;
+      }
     }
 
     contextPrompt += `\n\nWhen responding:

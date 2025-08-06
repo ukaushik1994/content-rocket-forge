@@ -33,24 +33,43 @@ class EnhancedAIService {
       messages.push({ role: 'user', content: message });
 
       // Create the request using enhanced AI chat function
+      console.log('🚀 Sending request to enhanced-ai-chat with context:', {
+        messagesCount: messages.length,
+        userId,
+        hasContext: !!context,
+        hasSolutions: !!(context?.solutions?.length),
+        hasAnalytics: !!(context?.analytics && Object.keys(context.analytics).length),
+        hasWorkflowContext: !!(this.workflowContext && Object.keys(this.workflowContext).length)
+      });
+
       const response = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
           messages,
           userId,
-          context: {
-            solutions: context.solutions || [],
-            analytics: context.analytics || {},
-            workflowContext: this.workflowContext
-          }
+          solutions: context.solutions || [],
+          analytics: context.analytics || {},
+          workflowContext: this.workflowContext || {}
         }
       });
 
+      console.log('📨 Edge function response:', {
+        status: response.status,
+        hasError: !!response.error,
+        hasData: !!response.data,
+        dataKeys: response.data ? Object.keys(response.data) : []
+      });
+
       if (response.error) {
-        console.error('Enhanced AI Chat error:', response.error);
+        console.error('❌ Enhanced AI Chat error:', response.error);
         throw new Error(response.error.message || 'AI service error');
       }
 
       const data = response.data;
+      
+      if (!data) {
+        console.error('❌ No data received from edge function');
+        throw new Error('No response data from AI service');
+      }
       
       // Generate contextual actions based on the conversation
       const contextualActions = this.generateSmartActions(
@@ -59,14 +78,31 @@ class EnhancedAIService {
         context
       );
       
+      // Merge actions from AI response with generated contextual actions
+      const aiActions = data?.actions || [];
+      const allActions = [...(Array.isArray(aiActions) ? aiActions : []), ...contextualActions];
+      
+      // Deduplicate actions by ID
+      const uniqueActions = allActions.filter((action, index, self) => 
+        index === self.findIndex(a => a.id === action.id)
+      );
+
       const enhancedMessage: EnhancedChatMessage = {
         id: `enhanced-${Date.now()}`,
         role: 'assistant',
-        content: data?.content || data?.message || 'Response received',
+        content: data?.message || data?.content || 'Response received',
         timestamp: new Date(),
-        actions: contextualActions,
+        actions: uniqueActions.slice(0, 6), // Limit to 6 actions
         visualData: data?.visualData || data?.visual_data || null,
+        workflowContext: data?.workflowContext || null
       };
+
+      console.log('✅ Enhanced message created:', {
+        contentLength: enhancedMessage.content.length,
+        actionsCount: enhancedMessage.actions?.length || 0,
+        hasVisualData: !!enhancedMessage.visualData,
+        hasWorkflowContext: !!enhancedMessage.workflowContext
+      });
 
       return enhancedMessage;
     } catch (error) {

@@ -58,14 +58,19 @@ export const useEnhancedAIChatDB = () => {
         let workflowContext = undefined;
         
         try {
-          // Parse attachments for actions
-          if (msg.attachments && typeof msg.attachments === 'string') {
+          // Parse function_calls for actions (preferred) or fallback to attachments
+          if (msg.function_calls) {
+            const parsedFunctionCalls = typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls;
+            if (Array.isArray(parsedFunctionCalls)) {
+              actions = parsedFunctionCalls;
+            } else if (parsedFunctionCalls.actions && Array.isArray(parsedFunctionCalls.actions)) {
+              actions = parsedFunctionCalls.actions;
+            }
+          } else if (msg.attachments && typeof msg.attachments === 'string') {
             const attachments = JSON.parse(msg.attachments);
             if (attachments.actions && Array.isArray(attachments.actions)) {
               actions = attachments.actions;
             }
-          } else if (msg.function_calls) {
-            actions = typeof msg.function_calls === 'string' ? JSON.parse(msg.function_calls) : msg.function_calls;
           }
           
           // Parse other JSON fields
@@ -169,14 +174,20 @@ export const useEnhancedAIChatDB = () => {
   // Save message to database
   const saveMessage = useCallback(async (message: EnhancedChatMessage, conversationId: string) => {
     try {
+      // Ensure message type matches database constraint
+      const validType = message.role === 'user' ? 'user' : 
+                       message.role === 'assistant' ? 'assistant' :
+                       message.role === 'system' ? 'system' : 'assistant';
+
       const messageData = {
         conversation_id: conversationId,
-        type: message.role,
+        type: validType, // Ensure valid type for database constraint
         content: message.content,
         visual_data: message.visualData ? JSON.stringify(message.visualData) : null,
         progress_indicator: message.progressIndicator ? JSON.stringify(message.progressIndicator) : null,
         workflow_context: message.workflowContext ? JSON.stringify(message.workflowContext) : null,
-        attachments: message.actions ? JSON.stringify({ actions: message.actions }) : null
+        function_calls: message.actions ? JSON.stringify(message.actions) : null, // Use function_calls instead of attachments
+        status: 'completed'
       };
 
       const { error } = await supabase
