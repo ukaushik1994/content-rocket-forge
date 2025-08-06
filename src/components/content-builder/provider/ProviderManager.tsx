@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CheckCircle, AlertCircle, Clock, ChevronDown, Settings, Wifi, WifiOff } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
-import { getAvailableProviders, getBestAvailableProvider, getProviderStatus } from '@/services/providerAvailabilityService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 interface ProviderManagerProps {
   selectedProvider: AiProvider;
@@ -32,19 +32,23 @@ export function ProviderManager({
   const loadProviders = async () => {
     setIsLoading(true);
     try {
-      const [available, status] = await Promise.all([
-        getAvailableProviders(),
-        getProviderStatus()
-      ]);
+      const activeProviders = await AIServiceController.getActiveProviders();
+      const available = activeProviders.map(p => p.provider as AiProvider);
+      
+      // Create status map based on provider status
+      const status: Record<AiProvider, boolean> = {} as Record<AiProvider, boolean>;
+      activeProviders.forEach(provider => {
+        status[provider.provider as AiProvider] = provider.status === 'active';
+      });
       
       setAvailableProviders(available);
       setProviderStatus(status);
 
       // Auto-select best provider if none selected or current is unavailable
       if (!selectedProvider || !available.includes(selectedProvider)) {
-        const bestProvider = await getBestAvailableProvider();
-        if (bestProvider) {
-          onProviderChange(bestProvider);
+        if (activeProviders.length > 0) {
+          const bestProvider = activeProviders.sort((a, b) => a.priority - b.priority)[0];
+          onProviderChange(bestProvider.provider as AiProvider);
         }
       }
     } catch (error) {

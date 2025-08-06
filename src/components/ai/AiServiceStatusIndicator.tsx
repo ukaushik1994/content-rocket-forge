@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getUserPreference } from '@/services/userPreferencesService';
-import { getAvailableProviders, getProviderStatus } from '@/services/providerAvailabilityService';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { AiProvider } from '@/services/aiService/types';
 
 interface AiServiceStatusIndicatorProps {
@@ -27,12 +27,12 @@ export function AiServiceStatusIndicator({
   useEffect(() => {
     const checkAiServiceStatus = async () => {
       try {
-        const available = await getAvailableProviders();
-        const status = await getProviderStatus();
-        const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openrouter';
+        const activeProviders = await AIServiceController.getActiveProviders();
+        const workingProviders = activeProviders
+          .filter(p => p.status === 'active')
+          .map(p => p.provider as AiProvider);
         
-        // Check if any providers are working
-        const workingProviders = available.filter(provider => status[provider]);
+        const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider || 'openrouter';
         const isServiceOnline = workingProviders.length > 0;
         
         setAvailableProviders(workingProviders);

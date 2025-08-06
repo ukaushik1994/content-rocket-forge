@@ -4,8 +4,6 @@ import { toast } from 'sonner';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { ContentBuilderState, SerpSelection } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
-import { hasApiKey } from '@/services/apiKeys/crud';
-import { getAvailableProviders, getBestAvailableProvider, initializeProviderPreferences } from '@/services/providerAvailabilityService';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter';
 
@@ -17,22 +15,23 @@ export function useContentGeneration() {
   // Load available providers and the default AI provider from user preferences
   useEffect(() => {
     const loadProviders = async () => {
-      // Initialize provider preferences (upgrades to OpenRouter if available)
-      await initializeProviderPreferences();
-      
-      // Use the new provider availability service
-      const providers = await getAvailableProviders();
-      setAvailableProviders(providers);
-      
-      // Set default provider from preferences or best available (OpenRouter prioritized)
-      const defaultProvider = getUserPreference('defaultAiProvider');
-      if (defaultProvider && providers.includes(defaultProvider)) {
-        setAiProvider(defaultProvider);
-      } else {
-        const bestProvider = await getBestAvailableProvider();
-        if (bestProvider) {
-          setAiProvider(bestProvider);
+      try {
+        // Get active providers from centralized service
+        const activeProviders = await AIServiceController.getActiveProviders();
+        const providerNames = activeProviders.map(p => p.provider as AiProvider);
+        setAvailableProviders(providerNames);
+        
+        // Set default provider from preferences or best available (OpenRouter prioritized)
+        const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
+        if (defaultProvider && providerNames.includes(defaultProvider)) {
+          setAiProvider(defaultProvider);
+        } else if (activeProviders.length > 0) {
+          // Use highest priority provider
+          const bestProvider = activeProviders.sort((a, b) => a.priority - b.priority)[0];
+          setAiProvider(bestProvider.provider as AiProvider);
         }
+      } catch (error) {
+        console.error('Error loading AI providers:', error);
       }
     };
     
@@ -58,10 +57,9 @@ export function useContentGeneration() {
       return false;
     }
     
-    // Make sure the selected provider has a key configured
-    const keyExists = await hasApiKey(aiProvider);
-    if (!keyExists) {
-      toast.error(`No API key configured for ${aiProvider}. Please add your API key in Settings.`);
+    // Check if provider is available and active
+    if (!availableProviders.includes(aiProvider)) {
+      toast.error(`${aiProvider} is not configured or active. Please check your provider settings.`);
       return false;
     }
     

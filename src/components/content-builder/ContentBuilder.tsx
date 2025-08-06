@@ -15,7 +15,7 @@ import { OptimizeAndReviewStep } from './steps/OptimizeAndReviewStep';
 import { SerpAnalysisStep } from './steps/SerpAnalysisStep';
 import { toast } from "sonner";
 import { getApiKey } from '@/services/apiKeyService';
-import { initializeProviderPreferences } from '@/services/providerAvailabilityService';
+import { migrateExistingAPIKeys } from '@/utils/migrateAIProviders';
 import { useTemplateInitialization } from '@/hooks/useTemplateInitialization';
 import { TemplateStatus } from '@/components/ui/template-indicator';
 
@@ -113,8 +113,8 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
     const initializeServices = async () => {
       setApiKeyStatus('checking');
       try {
-        // Initialize provider preferences (prioritizes OpenRouter)
-        await initializeProviderPreferences();
+        // Migrate existing API keys to new system
+        await migrateExistingAPIKeys();
         
         // Try to get the SERP API key from the API key service
         const serpApiKey = await getApiKey('serp');

@@ -8,9 +8,7 @@ import { AIInstructionsInput } from '../AIInstructionsInput';
 import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
 import { getUserPreference } from '@/services/userPreferencesService';
-import { hasApiKey } from '@/services/apiKeys/crud';
 import { AiProvider } from '@/services/aiService/types';
-import { getAvailableProviders, getBestAvailableProvider } from '@/services/providerAvailabilityService';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -30,18 +28,18 @@ export function OutlineGenerator() {
   // Load available providers and default AI provider preference
   useEffect(() => {
     const initProviders = async () => {
-      const providers = await getAvailableProviders();
-      setAvailableProviders(providers);
+      const activeProviders = await AIServiceController.getActiveProviders();
+      const providerNames = activeProviders.map(p => p.provider as AiProvider);
+      setAvailableProviders(providerNames);
       
       // Set default provider from preferences or best available
       const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
-      if (defaultProvider && providers.includes(defaultProvider)) {
+      if (defaultProvider && providerNames.includes(defaultProvider)) {
         setAiProvider(defaultProvider);
-      } else {
-        const bestProvider = await getBestAvailableProvider();
-        if (bestProvider) {
-          setAiProvider(bestProvider);
-        }
+      } else if (activeProviders.length > 0) {
+        // Use highest priority provider
+        const bestProvider = activeProviders.sort((a, b) => a.priority - b.priority)[0];
+        setAiProvider(bestProvider.provider as AiProvider);
       }
     };
     
@@ -70,10 +68,9 @@ export function OutlineGenerator() {
       
       console.info("AI Generation prompt:", outlinePrompt);
       
-      // Make sure the selected provider has a key configured
-      const keyExists = await hasApiKey(aiProvider);
-      if (!keyExists) {
-        toast.error(`No API key configured for ${aiProvider}. Please add your API key in Settings.`);
+      // Check if provider is available and active
+      if (!availableProviders.includes(aiProvider)) {
+        toast.error(`${aiProvider} is not configured or active. Please check your provider settings.`);
         setIsGenerating(false);
         return;
       }

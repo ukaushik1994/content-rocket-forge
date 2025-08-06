@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import { AiProvider } from '@/services/aiService/types';
 import { toast } from 'sonner';
-import { getAvailableProviders, getProviderStatus } from '@/services/providerAvailabilityService';
-import { hasApiKey } from '@/services/apiKeys/crud';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 interface AiProviderStatus {
   configured: boolean;
@@ -50,24 +49,23 @@ export const EnhancedAiStatus: React.FC<EnhancedAiStatusProps> = ({
     console.log('🔍 Starting AI provider status check');
     
     try {
-      // Use the modern provider availability service
-      const availableProviders = await getAvailableProviders();
-      const providerStatus = await getProviderStatus();
+      // Use the centralized AI service
+      const activeProviders = await AIServiceController.getActiveProviders();
       
-      console.log('📊 Available providers:', availableProviders);
-      console.log('📊 Provider status:', providerStatus);
+      console.log('📊 Active providers:', activeProviders);
       
       const newStatus: AiApiStatus = {};
       const working: AiProvider[] = [];
       
       // Process all providers to maintain compatibility with the interface
       for (const provider of AI_PROVIDERS) {
-        const isConfigured = await hasApiKey(provider);
-        const isWorking = providerStatus[provider] || false;
+        const activeProvider = activeProviders.find(p => p.provider === provider);
+        const isConfigured = !!activeProvider;
+        const isWorking = activeProvider?.status === 'active';
         
         newStatus[provider] = {
           configured: isConfigured,
-          working: isWorking,
+          working: isWorking || false,
           testing: false
         };
         

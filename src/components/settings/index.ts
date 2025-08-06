@@ -14,3 +14,4 @@ export * from './AIServiceToggle';
 export * from './ProviderManagement';
 export * from './ServiceStatusDashboard';
 export * from './EnhancedAISettings';
+export * from './MigrationNotification';

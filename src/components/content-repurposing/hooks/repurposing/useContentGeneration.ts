@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useRepurposedContentData } from './useRepurposedContentData';
 import { AiProvider } from '@/services/aiService/types';
-import { getAvailableProviders, getBestAvailableProvider } from '@/services/providerAvailabilityService';
 import { getUserPreference } from '@/services/userPreferencesService';
 
 export const useContentGeneration = (content: ContentItemType | null) => {
@@ -35,18 +34,18 @@ export const useContentGeneration = (content: ContentItemType | null) => {
   useEffect(() => {
     const loadProviders = async () => {
       try {
-        const providers = await getAvailableProviders();
-        setAvailableProviders(providers);
+        const activeProviders = await AIServiceController.getActiveProviders();
+        const providerNames = activeProviders.map(p => p.provider as AiProvider);
+        setAvailableProviders(providerNames);
         
         // Set default provider from preferences or best available
-        const defaultProvider = await getUserPreference('defaultAiProvider') as AiProvider;
-        if (defaultProvider && providers.includes(defaultProvider)) {
+        const defaultProvider = getUserPreference('defaultAiProvider') as AiProvider;
+        if (defaultProvider && providerNames.includes(defaultProvider)) {
           setAiProvider(defaultProvider);
-        } else {
-          const bestProvider = await getBestAvailableProvider();
-          if (bestProvider) {
-            setAiProvider(bestProvider);
-          }
+        } else if (activeProviders.length > 0) {
+          // Use highest priority provider
+          const bestProvider = activeProviders.sort((a, b) => a.priority - b.priority)[0];
+          setAiProvider(bestProvider.provider as AiProvider);
         }
       } catch (error) {
         console.warn('Error loading AI providers:', error);
