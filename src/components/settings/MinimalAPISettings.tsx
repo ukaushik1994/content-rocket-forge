@@ -13,6 +13,8 @@ import { getUserPreference } from '@/services/userPreferencesService';
 import { AIChatTestModal } from './modals/AIChatTestModal';
 import { SERPTestModal } from './modals/SERPTestModal';
 import { UsageSection } from './UsageSection';
+import { AIServiceToggle } from './AIServiceToggle';
+import { ProviderManagement } from './ProviderManagement';
 
 const StatusDot = ({ status }: { status: ApiKeyStatus }) => {
   const colors = {
@@ -237,6 +239,9 @@ export function MinimalAPISettings() {
         <p className="text-muted-foreground mt-2">Manage your API integrations</p>
       </div>
 
+      {/* AI Service Toggle */}
+      <AIServiceToggle />
+
       {/* Default AI Provider Selection */}
       <Card>
         <CardHeader>
@@ -331,6 +336,9 @@ export function MinimalAPISettings() {
           </Card>
         </div>
       </div>
+
+      {/* Provider Management Section */}
+      <ProviderManagement />
 
       {/* Usage Analytics Section */}
       <UsageSection />

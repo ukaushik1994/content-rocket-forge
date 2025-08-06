@@ -119,7 +119,27 @@ class AIServiceController {
   /**
    * Main generation function that handles fallback logic
    */
-  async generate(request: AIGenerateRequest): Promise<AIGenerateResponse | null> {
+  async generate(
+    useCaseOrRequest: string | AIGenerateRequest,
+    systemPrompt?: string,
+    userPrompt?: string,
+    options?: { temperature?: number; maxTokens?: number }
+  ): Promise<any> {
+    // Handle both old and new signatures
+    let request: AIGenerateRequest;
+    
+    if (typeof useCaseOrRequest === 'string') {
+      // New signature: generate(useCase, systemPrompt, userPrompt, options)
+      request = {
+        input: userPrompt || '',
+        use_case: useCaseOrRequest as any,
+        temperature: options?.temperature,
+        max_tokens: options?.maxTokens
+      };
+    } else {
+      // Old signature: generate(request)
+      request = useCaseOrRequest;
+    }
     // Check if AI service is globally enabled by user preference
     const { getUserPreference } = await import('@/services/userPreferencesService');
     const isServiceEnabled = getUserPreference('enableAiService');
@@ -146,7 +166,7 @@ class AIServiceController {
     for (const provider of providers) {
       try {
         console.log(`Attempting to use provider: ${provider.provider}`);
-        const result = await this.callProvider(provider, request);
+        const result = await this.callProvider(provider, request, systemPrompt);
         
         if (result) {
           // Update last_verified timestamp on successful use
@@ -172,11 +192,11 @@ class AIServiceController {
   /**
    * Call a specific provider
    */
-  private async callProvider(provider: AIProvider, request: AIGenerateRequest): Promise<AIGenerateResponse | null> {
+  private async callProvider(provider: AIProvider, request: AIGenerateRequest, customSystemPrompt?: string): Promise<any> {
     const messages = [
       {
         role: 'system' as const,
-        content: this.getSystemPrompt(request.use_case)
+        content: customSystemPrompt || this.getSystemPrompt(request.use_case)
       },
       {
         role: 'user' as const,
@@ -209,12 +229,8 @@ class AIServiceController {
         throw new Error('Invalid response from AI provider');
       }
 
-      return {
-        content: data.choices[0].message.content,
-        provider_used: provider.provider,
-        model_used: model,
-        usage: data.usage
-      };
+      // Return data in original format for compatibility
+      return data;
     } catch (error: any) {
       console.error(`Error calling ${provider.provider}:`, error);
       throw error;
@@ -301,6 +317,82 @@ class AIServiceController {
     } catch (error: any) {
       return { valid: false, error: error.message };
     }
+  }
+
+  /**
+   * Test a provider's connection
+   */
+  async testProvider(provider: string, apiKey: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-proxy', {
+        body: {
+          service: provider,
+          endpoint: 'test',
+          apiKey
+        }
+      });
+
+      if (error) throw error;
+      return data?.success || false;
+    } catch (error) {
+      console.error(`Failed to test ${provider}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Add a new provider
+   */
+  async addProvider(providerData: {
+    provider: string;
+    api_key: string;
+    preferred_model?: string;
+    priority: number;
+  }): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('ai_service_providers')
+      .insert({
+        ...providerData,
+        user_id: user.id,
+        status: 'active'
+      });
+
+    if (error) throw error;
+    this.clearCache();
+  }
+
+  /**
+   * Update a provider
+   */
+  async updateProvider(providerId: string, updates: Partial<{
+    priority: number;
+    preferred_model: string;
+    status: string;
+    error_message: string;
+  }>): Promise<void> {
+    const { error } = await supabase
+      .from('ai_service_providers')
+      .update(updates)
+      .eq('id', providerId);
+
+    if (error) throw error;
+    this.clearCache();
+  }
+
+  /**
+   * Delete a provider
+   */
+  async deleteProvider(providerId: string): Promise<void> {
+    const { error } = await supabase
+      .from('ai_service_providers')
+      .delete()
+      .eq('id', providerId);
+
+    if (error) throw error;
+    this.clearCache();
   }
 
   /**

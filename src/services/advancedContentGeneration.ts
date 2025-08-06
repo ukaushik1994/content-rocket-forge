@@ -1,4 +1,4 @@
-import { sendChatRequest } from './aiService';
+import AIServiceController from './aiService/AIServiceController';
 import { SerpSelection } from '@/contexts/content-builder/types';
 
 export interface ContentGenerationConfig {
@@ -86,16 +86,13 @@ When incorporating SERP research data:
 
 Always start with the title as an H1 heading and follow the provided outline structure. Focus on creating content that readers will find genuinely useful and that search engines will recognize as high-quality.`;
 
-    // Generate content using AI service - prioritize OpenRouter
-    console.log(`🚀 Advanced content generation with ${aiProvider}`);
-    const chatResponse = await sendChatRequest(aiProvider as any, {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      maxTokens: 4000
-    });
+    // Generate content using AI service controller
+    console.log(`🚀 Advanced content generation with AI controller`);
+    const chatResponse = await AIServiceController.generate(
+      'advanced_content_generation',
+      systemPrompt,
+      prompt
+    );
     
     if (!chatResponse?.choices?.[0]?.message?.content) {
       console.error('❌ AI service returned empty content');

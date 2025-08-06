@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,17 +19,22 @@ serve(async (req) => {
   }
 
   try {
-    const { service, endpoint, params, apiKey } = await req.json();
+    const { service, endpoint, params, apiKey, userId } = await req.json();
     
-    console.log(`🚀 AI Proxy called for ${service}/${endpoint}`);
+    console.log(`🚀 AI Proxy called for ${service}/${endpoint} by user ${userId}`);
 
-    // Route to OpenRouter if service is 'openrouter'
-    if (service === 'openrouter') {
-      return await handleOpenRouterRequest(endpoint, params, apiKey);
+    // If specific service is requested, use it directly
+    if (service && service !== 'auto') {
+      return await handleSpecificService(service, endpoint, params, apiKey);
     }
 
-    // Route to other AI services via external APIs
-    return await handleGenericAIRequest(service, endpoint, params, apiKey);
+    // Auto-selection: Query database for user's providers with priority
+    if (userId) {
+      return await handleAutoService(userId, endpoint, params);
+    }
+
+    // Fallback to OpenRouter if no user context
+    return await handleOpenRouterRequest(endpoint, params, apiKey);
 
   } catch (error) {
     console.error('❌ AI Proxy error:', error);
@@ -36,6 +47,118 @@ serve(async (req) => {
     );
   }
 });
+
+async function handleAutoService(userId: string, endpoint: string, params: any) {
+  console.log(`🔍 Auto-selecting AI provider for user ${userId}`);
+  
+  try {
+    // Query user's AI providers ordered by priority
+    const { data: providers, error } = await supabase
+      .from('ai_service_providers')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('priority', { ascending: true });
+
+    if (error) {
+      console.error('❌ Database error:', error);
+      throw new Error('Failed to fetch user providers');
+    }
+
+    if (!providers || providers.length === 0) {
+      console.log('⚠️ No providers configured, falling back to default');
+      throw new Error('No AI providers configured. Please add an API key in settings.');
+    }
+
+    console.log(`📋 Found ${providers.length} providers for user`);
+
+    // Try each provider in priority order
+    for (const provider of providers) {
+      try {
+        console.log(`🔄 Trying provider: ${provider.provider} (priority: ${provider.priority})`);
+        
+        const result = await handleSpecificService(
+          provider.provider, 
+          endpoint, 
+          params, 
+          provider.api_key
+        );
+        
+        // Update last successful use
+        await updateProviderStatus(provider.id, 'active', null);
+        
+        console.log(`✅ Success with ${provider.provider}`);
+        return result;
+        
+      } catch (providerError) {
+        console.error(`❌ ${provider.provider} failed:`, providerError.message);
+        
+        // Update provider status with error
+        await updateProviderStatus(provider.id, 'error', providerError.message);
+        
+        // Continue to next provider
+        continue;
+      }
+    }
+
+    // All providers failed
+    throw new Error('All configured AI providers failed. Please check your API keys.');
+
+  } catch (error) {
+    console.error('💥 Auto-service failed:', error);
+    throw error;
+  }
+}
+
+async function updateProviderStatus(providerId: string, status: string, errorMessage: string | null) {
+  try {
+    await supabase
+      .from('ai_service_providers')
+      .update({
+        status,
+        error_message: errorMessage,
+        last_verified: new Date().toISOString()
+      })
+      .eq('id', providerId);
+  } catch (error) {
+    console.error('Failed to update provider status:', error);
+  }
+}
+
+async function handleSpecificService(service: string, endpoint: string, params: any, apiKey: string) {
+  if (!apiKey) {
+    throw new Error(`${service.toUpperCase()} API key is required`);
+  }
+
+  switch (service) {
+    case 'openrouter':
+      return await handleOpenRouterRequest(endpoint, params, apiKey);
+    case 'openai':
+      if (endpoint === 'chat') return await callOpenAI(apiKey, params);
+      if (endpoint === 'test') return await testOpenAI(apiKey);
+      break;
+    case 'anthropic':
+      if (endpoint === 'chat') return await callAnthropic(apiKey, params);
+      if (endpoint === 'test') return await testAnthropic(apiKey);
+      break;
+    case 'gemini':
+      if (endpoint === 'chat') return await callGemini(apiKey, params);
+      if (endpoint === 'test') return await testGemini(apiKey);
+      break;
+    case 'mistral':
+      if (endpoint === 'chat') return await callMistral(apiKey, params);
+      if (endpoint === 'test') return await testMistral(apiKey);
+      break;
+    case 'lmstudio':
+      if (endpoint === 'chat') return await callLMStudio(apiKey, params);
+      if (endpoint === 'test') return await testLMStudio(apiKey);
+      break;
+    default:
+      throw new Error(`AI provider '${service}' not supported`);
+  }
+  
+  throw new Error(`Endpoint '${endpoint}' not supported for ${service}`);
+}
 
 async function handleOpenRouterRequest(endpoint: string, params: any, apiKey: string) {
   console.log('🔄 Routing to OpenRouter API');
@@ -51,44 +174,7 @@ async function handleOpenRouterRequest(endpoint: string, params: any, apiKey: st
   throw new Error(`OpenRouter endpoint '${endpoint}' not supported`);
 }
 
-async function handleGenericAIRequest(service: string, endpoint: string, params: any, apiKey: string) {
-  console.log(`🔄 Routing to ${service} API`);
-  
-  if (!apiKey) {
-    throw new Error(`${service.toUpperCase()} API key is required`);
-  }
-
-  switch (service) {
-    case 'openai':
-      if (endpoint === 'chat') {
-        return await callOpenAI(apiKey, params);
-      }
-      if (endpoint === 'test') {
-        return await testOpenAI(apiKey);
-      }
-      break;
-    case 'anthropic':
-      if (endpoint === 'chat') {
-        return await callAnthropic(apiKey, params);
-      }
-      break;
-    case 'gemini':
-      if (endpoint === 'chat') {
-        return await callGemini(apiKey, params);
-      }
-      break;
-    case 'mistral':
-      if (endpoint === 'chat') {
-        return await callMistral(apiKey, params);
-      }
-      break;
-    default:
-      throw new Error(`AI provider '${service}' not supported`);
-  }
-  
-  throw new Error(`Endpoint '${endpoint}' not supported for ${service}`);
-}
-
+// OpenRouter implementation
 async function testOpenRouter(apiKey: string) {
   console.log('🧪 Testing OpenRouter API key');
   
@@ -110,7 +196,6 @@ async function testOpenRouter(apiKey: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error(`❌ OpenRouter test failed: ${errorData.error?.message || response.statusText}`);
     throw new Error(`OpenRouter API connection failed: ${errorData.error?.message || response.statusText}`);
   }
 
@@ -149,19 +234,18 @@ async function callOpenRouter(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error(`❌ OpenRouter API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`OpenRouter API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
   console.log(`📥 OpenRouter response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
   
-  // Return OpenAI-compatible format
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 
+// OpenAI implementation
 async function testOpenAI(apiKey: string) {
   console.log('🧪 Testing OpenAI API key');
   
@@ -175,7 +259,6 @@ async function testOpenAI(apiKey: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error(`❌ OpenAI test failed: ${errorData.error?.message || response.statusText}`);
     throw new Error(`OpenAI API connection failed: ${errorData.error?.message || response.statusText}`);
   }
 
@@ -212,15 +295,46 @@ async function callOpenAI(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error(`❌ OpenAI API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
   console.log(`📥 OpenAI response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
   
-  // Return OpenAI-compatible format
   return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
+// Anthropic implementation
+async function testAnthropic(apiKey: string) {
+  console.log('🧪 Testing Anthropic API key');
+  
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Test' }]
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Anthropic API connection failed: ${errorData.error?.message || response.statusText}`);
+  }
+
+  console.log(`✅ Anthropic test successful`);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'Anthropic API connection successful'
+  }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
@@ -233,7 +347,7 @@ async function callAnthropic(apiKey: string, params: any) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01'
     },
@@ -247,7 +361,6 @@ async function callAnthropic(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error(`❌ Anthropic API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`);
   }
 
@@ -280,6 +393,40 @@ async function callAnthropic(apiKey: string, params: any) {
   });
 }
 
+// Gemini implementation
+async function testGemini(apiKey: string) {
+  console.log('🧪 Testing Gemini API key');
+  
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{ text: 'Test' }]
+      }],
+      generationConfig: {
+        maxOutputTokens: 10,
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini API connection failed: ${response.status} ${response.statusText}`);
+  }
+
+  console.log(`✅ Gemini test successful`);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'Gemini API connection successful'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
 async function callGemini(apiKey: string, params: any) {
   const { model = 'gemini-1.5-pro', messages, temperature = 0.7, maxTokens = 2000 } = params;
   
@@ -300,28 +447,8 @@ async function callGemini(apiKey: string, params: any) {
     generationConfig: {
       temperature,
       maxOutputTokens: maxTokens,
-    },
-    safetySettings: [
-      {
-        category: "HARM_CATEGORY_HARASSMENT",
-        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-      },
-      {
-        category: "HARM_CATEGORY_HATE_SPEECH",
-        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-      },
-      {
-        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-      },
-      {
-        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-      }
-    ]
+    }
   };
-
-  console.log(`📤 Gemini request body:`, JSON.stringify(requestBody, null, 2));
 
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
@@ -333,33 +460,14 @@ async function callGemini(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`❌ Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
-    
-    try {
-      const errorData = JSON.parse(errorText);
-      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
-    } catch {
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
-    }
+    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
-  console.log(`📥 Gemini raw response:`, JSON.stringify(data, null, 2));
-  
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
   
   if (!content) {
-    console.error('❌ No content generated by Gemini:', data);
-    
-    // Check for safety filters or other reasons
-    const finishReason = data.candidates?.[0]?.finishReason;
-    if (finishReason === 'SAFETY') {
-      throw new Error('Gemini blocked the response due to safety filters. Please try a different prompt.');
-    } else if (finishReason === 'RECITATION') {
-      throw new Error('Gemini blocked the response due to recitation concerns. Please try a different prompt.');
-    } else {
-      throw new Error(`No content generated by Gemini. Finish reason: ${finishReason || 'unknown'}`);
-    }
+    throw new Error('No content generated by Gemini');
   }
 
   console.log(`📥 Gemini response: ${content.substring(0, 100)}...`);
@@ -390,6 +498,38 @@ async function callGemini(apiKey: string, params: any) {
   });
 }
 
+// Mistral implementation
+async function testMistral(apiKey: string) {
+  console.log('🧪 Testing Mistral API key');
+  
+  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'mistral-small',
+      messages: [{ role: 'user', content: 'Test' }],
+      max_tokens: 10
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Mistral API connection failed: ${errorData.error?.message || response.statusText}`);
+  }
+
+  console.log(`✅ Mistral test successful`);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'Mistral API connection successful'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
 async function callMistral(apiKey: string, params: any) {
   const { model = 'mistral-small', messages, temperature = 0.7, maxTokens = 2000 } = params;
 
@@ -411,14 +551,76 @@ async function callMistral(apiKey: string, params: any) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error(`❌ Mistral API error: ${errorData.error?.message || response.statusText}`);
     throw new Error(`Mistral API error: ${errorData.error?.message || response.statusText}`);
   }
 
   const data = await response.json();
   console.log(`📥 Mistral response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
   
-  // Return OpenAI-compatible format
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
+// LM Studio implementation  
+async function testLMStudio(apiKey: string) {
+  console.log('🧪 Testing LM Studio connection');
+  
+  // LM Studio typically runs on localhost:1234
+  const baseUrl = apiKey || 'http://localhost:1234';
+  
+  const response = await fetch(`${baseUrl}/v1/models`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`LM Studio connection failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log(`✅ LM Studio test successful`);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    message: 'LM Studio connection successful',
+    models: data.data?.slice(0, 3) || []
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
+async function callLMStudio(apiKey: string, params: any) {
+  const { model = 'local-model', messages, temperature = 0.7, maxTokens = 2000 } = params;
+  
+  // LM Studio typically runs on localhost:1234
+  const baseUrl = apiKey || 'http://localhost:1234';
+
+  console.log(`📤 LM Studio request: model=${model}, messages=${messages.length}`);
+
+  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature,
+      max_tokens: maxTokens,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`LM Studio API error: ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log(`📥 LM Studio response: ${data.choices[0]?.message?.content?.substring(0, 100)}...`);
+  
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
