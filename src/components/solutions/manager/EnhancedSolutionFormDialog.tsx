@@ -15,7 +15,7 @@ import { Solution } from '@/contexts/content-builder/types';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useSimpleFormState } from '@/hooks/useSimpleFormState';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { FeaturesTab } from './tabs/FeaturesTab';
 import { ResourcesTab } from './tabs/ResourcesTab';
@@ -47,24 +47,22 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   
-  // Use persistent form hook
+  // Use simple form state
   const {
     formData,
     activeTab,
     isDirty,
     setActiveTab,
     updateFormData,
-    clearPersistedData,
-    initializeFormData
-  } = useFormPersistence({ 
-    key: solution?.id || 'new-solution',
-    autoSaveInterval: 10000 // 10 seconds
-  });
+    resetForm,
+    clearDirty
+  } = useSimpleFormState();
 
   // Initialize form data when dialog opens or solution changes
   useEffect(() => {
     if (open) {
       const initialData: Partial<EnhancedSolution> = {
+        id: solution?.id,
         name: solution?.name || '',
         description: solution?.description || '',
         category: solution?.category || 'Business Solution',
@@ -86,13 +84,12 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         tags: [],
       };
       
-      initializeFormData(initialData);
+      resetForm(initialData);
       setLogoPreview(solution?.logoUrl || null);
       setLogoFile(null);
       setSaveError(null);
-      // Don't reset activeTab to preserve user's last position
     }
-  }, [open, solution, initializeFormData]);
+  }, [open, solution, resetForm]);
 
   // updateFormData is now provided by useFormPersistence hook
 
@@ -160,7 +157,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         
         // Only proceed with cleanup and closing if we reach this point without errors
         console.log('EnhancedSolutionFormDialog: Submission successful, clearing data and closing');
-        clearPersistedData();
+        clearDirty();
         setSaveError(null);
         toast.success(solution ? 'Solution updated successfully!' : 'Solution created successfully!');
         onOpenChange(false);
@@ -194,7 +191,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     }
     
     // Clear data and close
-    clearPersistedData();
+    clearDirty();
     setSaveError(null);
     onOpenChange(false);
   };
