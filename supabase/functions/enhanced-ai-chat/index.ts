@@ -103,23 +103,23 @@ AVAILABLE USER CONTEXT:`;
       });
     }
 
-    if (finalAnalytics && Object.keys(finalAnalytics).length > 0) {
+    if (finalAnalytics && typeof finalAnalytics === 'object' && Object.keys(finalAnalytics).length > 0) {
       contextPrompt += `\n\nCURRENT ANALYTICS:`;
-      contextPrompt += `\n- Content pieces: ${finalAnalytics.totalContent || 0}`;
-      contextPrompt += `\n- Published: ${finalAnalytics.published || 0}`;
-      contextPrompt += `\n- In review: ${finalAnalytics.inReview || 0}`;
-      contextPrompt += `\n- Average SEO Score: ${finalAnalytics.avgSeoScore || 0}%`;
-      contextPrompt += `\n- Weekly performance data available: ${finalAnalytics.weeklyData ? 'Yes' : 'No'}`;
+      contextPrompt += `\n- Content pieces: ${finalAnalytics?.totalContent || 0}`;
+      contextPrompt += `\n- Published: ${finalAnalytics?.published || 0}`;
+      contextPrompt += `\n- In review: ${finalAnalytics?.inReview || 0}`;
+      contextPrompt += `\n- Average SEO Score: ${finalAnalytics?.avgSeoScore || 0}%`;
+      contextPrompt += `\n- Weekly performance data available: ${finalAnalytics?.weeklyData ? 'Yes' : 'No'}`;
       
       // Safe JSON stringification with fallbacks
       try {
-        contextPrompt += `\n- Content by type: ${JSON.stringify(finalAnalytics.contentByType || {})}`;
+        contextPrompt += `\n- Content by type: ${JSON.stringify(finalAnalytics?.contentByType || {})}`;
       } catch (e) {
         contextPrompt += `\n- Content by type: Not available`;
       }
       
       try {
-        contextPrompt += `\n- Pipeline by stage: ${JSON.stringify(finalAnalytics.pipelineByStage || {})}`;
+        contextPrompt += `\n- Pipeline by stage: ${JSON.stringify(finalAnalytics?.pipelineByStage || {})}`;
       } catch (e) {
         contextPrompt += `\n- Pipeline by stage: Not available`;
       }
