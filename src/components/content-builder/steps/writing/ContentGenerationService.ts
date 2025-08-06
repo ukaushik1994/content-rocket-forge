@@ -60,9 +60,8 @@ export const generateContent = async (
       
       // If content doesn't start with the title as an H1, add it
       let finalContent = generatedContent;
-      const titleAsH1 = `# ${contentTitle || `Complete Guide to ${mainKeyword}`}`;
-      
-      if (!finalContent.trim().startsWith('#')) {
+      if (contentTitle && !finalContent.trim().startsWith('#')) {
+        const titleAsH1 = `# ${contentTitle}`;
         finalContent = `${titleAsH1}\n\n${finalContent}`;
       }
       
@@ -132,7 +131,7 @@ const createComprehensivePrompt = ({
   serpData: any;
   wordCountLimit?: number;
 }) => {
-  const title = contentTitle || `Complete Guide to ${mainKeyword}`;
+  const title = contentTitle || `${mainKeyword}: Comprehensive Analysis and Insights`;
   
   let prompt = `Write comprehensive, helpful content for an article with the title: "${title}".
 

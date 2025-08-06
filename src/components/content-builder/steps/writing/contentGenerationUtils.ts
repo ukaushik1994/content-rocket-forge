@@ -13,7 +13,7 @@ export const generateDemoContent = (
 ): string => {
   console.warn('⚠️ Using deprecated demo content generation. Please configure OpenRouter API key for real content generation.');
   // Create a title based on the main keyword if not provided
-  const contentTitle = title || `Complete Guide to ${mainKeyword}`;
+  const contentTitle = title || `${mainKeyword}: Key Insights and Best Practices`;
   
   // Start with the title as an H1
   let content = `# ${contentTitle}\n\n`;

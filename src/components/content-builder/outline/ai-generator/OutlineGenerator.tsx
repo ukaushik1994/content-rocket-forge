@@ -9,6 +9,7 @@ import { AIGenerateButton } from '../AIGenerateButton';
 import { AiProviderSelector } from './AiProviderSelector';
 import { getUserPreference } from '@/services/userPreferencesService';
 import { AiProvider } from '@/services/aiService/types';
+import { generateTitleSuggestions } from '@/utils/seo/titles/generateTitleSuggestions';
 
 export function OutlineGenerator() {
   const { state, dispatch, setAdditionalInstructions } = useContentBuilder();
@@ -82,7 +83,7 @@ export function OutlineGenerator() {
         return;
       }
       
-      processOutlineResult(result.outlineText);
+      await processOutlineResult(result.outlineText);
       
     } catch (error) {
       console.error("Error generating AI outline:", error);
@@ -160,7 +161,7 @@ export function OutlineGenerator() {
     }
   };
   
-  const processOutlineResult = (outlineText: string) => {
+  const processOutlineResult = async (outlineText: string) => {
     // Parse the outline into an array of strings (one per line)
     const outlineArray = outlineText
       .split('\n')
@@ -176,10 +177,9 @@ export function OutlineGenerator() {
     // Update the outline in state
     dispatch({ type: 'SET_OUTLINE', payload: outlineArray });
     
-    // Set a title if none exists
+    // Generate smart title if none exists
     if (!contentTitle) {
-      const suggestedTitle = `Complete Guide to ${mainKeyword}: Everything You Need to Know`;
-      dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
+      await generateAndSetSmartTitle();
     }
     
     // Mark the outline step as completed
@@ -188,6 +188,27 @@ export function OutlineGenerator() {
     toast.success(`AI outline generated with ${outlineArray.length} sections`);
   };
   
+  const generateAndSetSmartTitle = async () => {
+    try {
+      const content = selectedItems.map(item => item.content).join('\n');
+      const titles = await generateTitleSuggestions(
+        content,
+        mainKeyword,
+        selectedKeywords
+      );
+      
+      if (titles.length > 0) {
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: titles[0] });
+        dispatch({ type: 'SET_SUGGESTED_TITLES', payload: titles.slice(1, 6) });
+      }
+    } catch (error) {
+      console.error('Failed to generate smart title:', error);
+      // Only use fallback if absolutely necessary
+      const fallbackTitle = `${mainKeyword} Guide: Key Insights and Strategies`;
+      dispatch({ type: 'SET_CONTENT_TITLE', payload: fallbackTitle });
+    }
+  };
+
   const handleSaveInstructions = () => {
     setAdditionalInstructions(customInstructions);
     toast.success("Instructions saved");
