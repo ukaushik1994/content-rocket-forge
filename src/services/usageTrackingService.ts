@@ -22,12 +22,13 @@ export const USAGE_PERIODS: UsagePeriod[] = [
 ];
 
 export class UsageTrackingService {
-  // Log SERP usage using the RPC function
+  // Log SERP usage - will be implemented when types are available
   static async logSerpUsage(provider: string, operation: string, success: boolean, metadata?: any) {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return;
 
+      // Use existing RPC function for logging
       await supabase.rpc('log_serp_usage', {
         p_user_id: userData.user.id,
         p_provider: provider,
@@ -37,6 +38,7 @@ export class UsageTrackingService {
       });
     } catch (error) {
       console.error('Failed to log SERP usage:', error);
+      // Fail silently - logging is not critical for user experience
     }
   }
 
@@ -93,17 +95,17 @@ export class UsageTrackingService {
     }
   }
 
-  // Get SERP usage statistics by provider (simplified to show mock data)
+  // Get SERP usage statistics by provider
   static async getSerpUsageStats(period: string): Promise<UsageStats[]> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return [];
 
-      // For now, return basic mock data showing serpstack as configured
-      // This will be updated once the serp_usage_logs table is available in types
+      // Return mock data for now showing configured providers
+      // This will display real usage data once serp_usage_logs is available in types
       return [{
         provider: 'serpstack',
-        requestCount: 0, // Will show real data once logging is implemented
+        requestCount: 0, // Shows 0 until real logging is implemented
         successRate: 100,
         lastUsed: undefined
       }];
