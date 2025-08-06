@@ -24,7 +24,7 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true); // Show sidebar by default
   
   const {
     conversations,
@@ -108,10 +108,11 @@ export const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowSidebar(true)}
+                onClick={() => setShowSidebar(!showSidebar)}
                 className="text-white/60 hover:text-white hover:bg-white/10"
               >
                 <History className="h-4 w-4" />
+                <span className="ml-2 hidden sm:inline">Chat History</span>
               </Button>
               <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10">
                 <Brain className="h-5 w-5 text-white" />
