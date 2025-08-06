@@ -36,7 +36,7 @@ const Navbar = () => {
   const userEmail = user?.email || '';
   
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+    <div className="relative bg-background/80 backdrop-blur-md border-b border-white/10">
       <header className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="mr-4 hidden lg:flex">
