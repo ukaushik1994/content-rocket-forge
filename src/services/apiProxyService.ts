@@ -50,6 +50,16 @@ export async function callApiProxy(provider: AllProviders, endpoint: string, par
     }
     
     console.log(`✅ ${provider.toUpperCase()} API call successful`);
+    
+    // Log usage for analytics (async, don't block response)
+    if (endpoint !== 'test') {
+      import('./usageTrackingService').then(({ UsageTrackingService }) => {
+        if (provider === 'serp' || provider === 'serpstack') {
+          UsageTrackingService.logSerpUsage(provider, endpoint, true, params);
+        }
+      }).catch(console.error);
+    }
+    
     return data;
   } catch (error) {
     console.error(`💥 Error calling ${provider} API:`, error);

@@ -2302,6 +2302,16 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      log_serp_usage: {
+        Args: {
+          p_user_id: string
+          p_provider: string
+          p_operation: string
+          p_success: boolean
+          p_metadata?: Json
+        }
+        Returns: undefined
+      }
       migrate_repurposed_content: {
         Args: Record<PropertyKey, never>
         Returns: undefined
