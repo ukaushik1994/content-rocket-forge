@@ -76,7 +76,7 @@ class SolutionService {
     }
   }
 
-  async createSolution(solutionData: SolutionCreateData, logoFile?: File): Promise<boolean> {
+  async createSolution(solutionData: SolutionCreateData, logoFile?: File): Promise<any> {
     try {
       let logoUrl = null;
 
@@ -84,7 +84,7 @@ class SolutionService {
       if (logoFile) {
         logoUrl = await this.uploadLogo(logoFile);
         if (!logoUrl) {
-          return false; // Upload failed, error already shown
+          return null; // Upload failed, error already shown
         }
       }
 
@@ -93,26 +93,28 @@ class SolutionService {
         dbData.logo_url = logoUrl;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('solutions')
-        .insert([dbData]);
+        .insert([dbData])
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating solution:', error);
         toast.error('Failed to create solution');
-        return false;
+        return null;
       }
 
       toast.success('Solution created successfully');
-      return true;
+      return this.transformDatabaseToEnhanced([data])[0];
     } catch (error) {
       console.error('Service error creating solution:', error);
       toast.error('Failed to create solution');
-      return false;
+      return null;
     }
   }
 
-  async updateSolution(id: string, solutionData: Partial<SolutionCreateData>, logoFile?: File): Promise<boolean> {
+  async updateSolution(id: string, solutionData: Partial<SolutionCreateData>, logoFile?: File): Promise<any> {
     try {
       let logoUrl = undefined;
 
@@ -120,7 +122,7 @@ class SolutionService {
       if (logoFile) {
         logoUrl = await this.uploadLogo(logoFile);
         if (!logoUrl) {
-          return false; // Upload failed, error already shown
+          return null; // Upload failed, error already shown
         }
       }
 
@@ -129,23 +131,25 @@ class SolutionService {
         dbData.logo_url = logoUrl;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('solutions')
         .update(dbData)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) {
         console.error('Error updating solution:', error);
         toast.error('Failed to update solution');
-        return false;
+        return null;
       }
 
       toast.success('Solution updated successfully');
-      return true;
+      return this.transformDatabaseToEnhanced([data])[0];
     } catch (error) {
       console.error('Service error updating solution:', error);
       toast.error('Failed to update solution');
-      return false;
+      return null;
     }
   }
 
