@@ -85,7 +85,11 @@ export const OpenRouterSettings = () => {
         setDetectedModel(data.model);
         setAvailableModels(data.availableModels || []);
         if (!selectedModel && data.model) {
-          setSelectedModel(data.model);
+          // Set deepseek r1 as default if available, otherwise use detected model
+          const deepseekModel = data.availableModels?.find((m: ModelInfo) => 
+            m.id.includes('deepseek') && m.id.includes('r1')
+          );
+          setSelectedModel(deepseekModel?.id || data.model);
         }
       }
     } catch (error) {
@@ -129,9 +133,15 @@ export const OpenRouterSettings = () => {
         setDetectedModel(data.model);
         setAvailableModels(data.availableModels || []);
         
-        if (data.model) {
-          setSelectedModel(data.model);
-          toast.success(`✅ Connected! Default model: ${data.model}`);
+        // Set deepseek r1 as default if available, otherwise use detected model
+        const deepseekModel = data.availableModels?.find((m: ModelInfo) => 
+          m.id.includes('deepseek') && m.id.includes('r1')
+        );
+        const defaultModel = deepseekModel?.id || data.model;
+        
+        if (defaultModel) {
+          setSelectedModel(defaultModel);
+          toast.success(`✅ Connected! Default model: ${defaultModel}`);
         } else {
           toast.success('✅ API key verified successfully');
         }
