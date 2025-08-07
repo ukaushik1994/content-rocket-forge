@@ -9,6 +9,7 @@ export * from './document-types';
 export * from './content-types';
 export * from './outline-types';
 export * from './solution-types';
+export * from './enhanced-solution-types';
 export * from './seo-types';
 export * from './state-types';
 export * from './action-types';

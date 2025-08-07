@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
+import { analyzeEnhancedSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 import { toast } from 'sonner';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { SolutionIntegrationMetrics } from '@/contexts/content-builder/types';
@@ -103,26 +103,21 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
     } catch (error) {
       console.error("[useSolutionAnalysis] Error:", error);
       
-      // Fallback to local analyzer
-      console.log("[useSolutionAnalysis] Falling back to local analysis");
-      const localMetrics = analyzeSolutionIntegration(content, selectedSolution);
+      // Fallback to enhanced local analyzer
+      console.log("[useSolutionAnalysis] Falling back to enhanced local analysis");
+      const enhancedMetrics = analyzeEnhancedSolutionIntegration(content, selectedSolution);
       
-      // Convert to the expected metrics format
+      // Use the comprehensive enhanced metrics
       const fallbackMetrics: SolutionIntegrationMetrics = {
-        featureIncorporation: localMetrics.featureIncorporation,
-        positioningScore: localMetrics.positioningScore,
-        painPointsAddressed: [`${localMetrics.painPointsAddressed}% of pain points addressed`],
+        ...enhancedMetrics,
+        painPointsAddressed: [`${enhancedMetrics.painPointsAddressed}% of pain points addressed`],
         ctaEffectiveness: ctaInfo?.ctaCount ? 75 : 25,  // Simple heuristic based on CTA presence
-        overallScore: Math.round((localMetrics.featureIncorporation + localMetrics.positioningScore + localMetrics.painPointsAddressed + localMetrics.audienceAlignment) / 4),
-        mentions: localMetrics.featureIncorporation > 50 ? 'High' : 'Low',
-        audienceAlignment: localMetrics.audienceAlignment,
-        nameMentions: localMetrics.nameMentions,
-        ctaMentions: ctaInfo?.ctaCount || 0,
-        mentionedFeatures: localMetrics.mentionedFeatures || []
+        mentions: enhancedMetrics.featureIncorporation > 50 ? 'High' : 'Low',
+        ctaMentions: ctaInfo?.ctaCount || 0
       };
       
       dispatch({ type: 'SET_SOLUTION_INTEGRATION_METRICS', payload: fallbackMetrics });
-      toast.success('Solution integration analysis completed using local analysis', toastConfig.success);
+      toast.success('Enhanced solution integration analysis completed', toastConfig.success);
     } finally {
       setIsAnalyzing(false);
     }

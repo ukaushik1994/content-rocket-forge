@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { OptimizationSuggestion } from '../types';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import AIServiceController from '@/services/aiService/AIServiceController';
-import { analyzeSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
+import { analyzeEnhancedSolutionIntegration } from '@/utils/seo/solution/analyzeSolutionIntegration';
 
 export function useSolutionAnalysis() {
   const { state } = useContentBuilder();
@@ -16,7 +16,7 @@ export function useSolutionAnalysis() {
       return [];
     }
 
-    const solutionMetrics = analyzeSolutionIntegration(content, state.selectedSolution);
+    const solutionMetrics = analyzeEnhancedSolutionIntegration(content, state.selectedSolution);
     setAnalyzedSolutionIntegration(solutionMetrics);
     
     const systemPrompt = 'You are an expert in product integration for content marketing. Analyze the content and suggest improvements for better product integration.';
@@ -26,16 +26,23 @@ export function useSolutionAnalysis() {
       Solution details:
       - Name: ${state.selectedSolution.name}
       - Features: ${state.selectedSolution.features.join(', ')}
-      ${state.selectedSolution.painPoints ? `- Pain points: ${state.selectedSolution.painPoints.join(', ')}` : ''}
-      ${state.selectedSolution.targetAudience ? `- Target audience: ${state.selectedSolution.targetAudience.join(', ')}` : ''}
+      - Pain points: ${state.selectedSolution.painPoints?.join(', ') || 'None'}
+      - Target audience: ${state.selectedSolution.targetAudience?.join(', ') || 'None'}
+      - Value propositions: ${state.selectedSolution.uniqueValuePropositions?.join(', ') || 'None'}
+      - Key differentiators: ${state.selectedSolution.keyDifferentiators?.join(', ') || 'None'}
+      ${state.selectedSolution.competitors ? `- Competitors: ${state.selectedSolution.competitors.map(c => c.name).join(', ')}` : ''}
       
-      Current integration metrics:
+      Enhanced integration metrics:
       - Feature incorporation: ${solutionMetrics.featureIncorporation}%
       - Name mentions: ${solutionMetrics.nameMentions}
       - Positioning score: ${solutionMetrics.positioningScore}%
-      - Pain points addressed: ${solutionMetrics.painPointsAddressed}%
-      - Audience alignment: ${solutionMetrics.audienceAlignment}%
-      - Mentioned features: ${solutionMetrics.mentionedFeatures.join(', ') || 'None'}
+      - Technical specs integration: ${solutionMetrics.technicalSpecsIntegration}%
+      - Case study references: ${solutionMetrics.caseStudyReferences}
+      - Value proposition coverage: ${solutionMetrics.valuePropositionCoverage}%
+      - Market data integration: ${solutionMetrics.marketDataIntegration}%
+      - Competitor mentions: ${solutionMetrics.competitorMentions}
+      - Use cases covered: ${solutionMetrics.useCasesCovered.join(', ') || 'None'}
+      - Differentiators mentioned: ${solutionMetrics.differentiatorsMentioned.join(', ') || 'None'}
       
       Content:
       ${content}

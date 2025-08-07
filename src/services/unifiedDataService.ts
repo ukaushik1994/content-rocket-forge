@@ -73,7 +73,51 @@ class UnifiedDataService {
       .eq('user_id', userId);
     
     if (error) throw error;
-    return data || [];
+    
+    // Transform database solution to enhanced solution format
+    return (data || []).map(this.transformToEnhancedSolution);
+  }
+
+  private transformToEnhancedSolution(dbSolution: any) {
+    return {
+      id: dbSolution.id,
+      name: dbSolution.name,
+      description: dbSolution.description,
+      features: dbSolution.features || [],
+      useCases: dbSolution.use_cases || [],
+      painPoints: dbSolution.pain_points || [],
+      targetAudience: dbSolution.target_audience || [],
+      category: dbSolution.category || 'Other',
+      logoUrl: dbSolution.logo_url,
+      externalUrl: dbSolution.external_url,
+      resources: (dbSolution.resources || []).map((resource: any, index: number) => ({
+        id: resource.id || `resource-${index}`,
+        title: resource.title,
+        url: resource.url,
+        category: resource.category || 'other',
+        order: index
+      })),
+      tags: dbSolution.tags || [],
+      shortDescription: dbSolution.short_description,
+      benefits: dbSolution.benefits || [],
+      integrations: dbSolution.integrations || [],
+      marketData: dbSolution.market_data,
+      competitors: dbSolution.competitors || [],
+      technicalSpecs: dbSolution.technical_specs,
+      pricing: dbSolution.pricing,
+      caseStudies: dbSolution.case_studies || [],
+      metrics: dbSolution.metrics,
+      uniqueValuePropositions: dbSolution.unique_value_propositions || [],
+      positioningStatement: dbSolution.positioning_statement,
+      keyDifferentiators: dbSolution.key_differentiators || [],
+      metadata: {
+        websiteTitle: dbSolution.website_title,
+        websiteDescription: dbSolution.website_description,
+        favicon: dbSolution.favicon,
+        lastUpdated: dbSolution.updated_at,
+        completeness: dbSolution.completeness
+      }
+    };
   }
 
   private async getUserContent(userId: string) {

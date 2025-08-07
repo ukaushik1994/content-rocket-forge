@@ -7,6 +7,7 @@ import { ContentBuilderStep } from './step-types';
 import { SerpSelection } from './serp-types';
 import { ContentType, ContentFormat, ContentIntent } from './content-types';
 import { Solution, SolutionIntegrationMetrics } from './solution-types';
+import { EnhancedSolution } from './enhanced-solution-types';
 import { OutlineSection } from './outline-types';
 import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
@@ -30,7 +31,7 @@ export interface ContentBuilderState {
   contentIntent: ContentIntent;
   
   // Solutions
-  selectedSolution: Solution | null;
+  selectedSolution: EnhancedSolution | null;
   
   // Titles
   contentTitle: string;

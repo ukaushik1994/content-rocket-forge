@@ -255,7 +255,18 @@ export const ContentTypeStep = () => {
   };
   
   const handleSelectSolution = (solution: Solution) => {
-    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
+    // Convert Solution to EnhancedSolution format
+    const enhancedSolution = {
+      ...solution,
+      resources: solution.resources.map((resource, index) => ({
+        id: `resource-${index}`,
+        title: resource.title,
+        url: resource.url,
+        category: 'other' as const,
+        order: index
+      }))
+    };
+    dispatch({ type: 'SELECT_SOLUTION', payload: enhancedSolution });
     toast.success(`Selected solution: ${solution.name}`);
   };
 

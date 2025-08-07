@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, ExternalLink, Building2 } from 'lucide-react';
-import { Solution } from '@/contexts/content-builder/types';
+import { Solution, EnhancedSolution } from '@/contexts/content-builder/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,7 +23,7 @@ const jsonToStringArray = (jsonValue: any): string[] => {
 export const SolutionSelector = () => {
   const { state, dispatch } = useContentBuilder();
   const { selectedSolution } = state;
-  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -42,7 +42,7 @@ export const SolutionSelector = () => {
       
       if (data) {
         // Transform the data from jsonb columns to the expected format with validation
-        const formattedSolutions: Solution[] = data.map(solution => ({
+        const formattedSolutions: EnhancedSolution[] = data.map(solution => ({
           id: solution.id,
           name: solution.name,
           features: Array.isArray(solution.features) 
@@ -62,14 +62,23 @@ export const SolutionSelector = () => {
           logoUrl: solution.logo_url,
           externalUrl: solution.external_url,
           resources: Array.isArray(solution.resources) 
-            ? solution.resources.map(resource => {
+            ? solution.resources.map((resource, index) => {
                 if (typeof resource === 'object' && resource !== null && 'title' in resource && 'url' in resource) {
                   return {
+                    id: String(resource.id || `resource-${index}`),
                     title: String(resource.title || ''),
-                    url: String(resource.url || '')
+                    url: String(resource.url || ''),
+                    category: String(resource.category || 'other') as any,
+                    order: index
                   };
                 }
-                return { title: '', url: '' };
+                return {
+                  id: `resource-${index}`,
+                  title: '',
+                  url: '',
+                  category: 'other' as const,
+                  order: index
+                };
               }).filter(r => r.title && r.url)
             : []
         }));
@@ -95,7 +104,7 @@ export const SolutionSelector = () => {
     }
   };
 
-  const handleSelectSolution = (solution: Solution) => {
+  const handleSelectSolution = (solution: EnhancedSolution) => {
     dispatch({ type: 'SELECT_SOLUTION', payload: solution });
     toast.success(`Selected solution: ${solution.name}`);
   };

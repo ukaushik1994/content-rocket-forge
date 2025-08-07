@@ -32,5 +32,15 @@ export interface SolutionIntegrationMetrics {
   audienceAlignment: number;
   nameMentions: number;
   ctaMentions: number;
-  mentionedFeatures: string[]; 
+  mentionedFeatures: string[];
+  
+  // Enhanced metrics for comprehensive solution data
+  competitorMentions: number;
+  technicalSpecsIntegration: number;
+  caseStudyReferences: number;
+  pricingModelAlignment: number;
+  valuePropositionCoverage: number;
+  marketDataIntegration: number;
+  useCasesCovered: string[];
+  differentiatorsMentioned: string[];
 }

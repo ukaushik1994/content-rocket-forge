@@ -5,6 +5,7 @@
 
 import { ContentType, ContentFormat, ContentIntent } from './content-types';
 import { Solution, SolutionIntegrationMetrics } from './solution-types';
+import { EnhancedSolution } from './enhanced-solution-types';
 import { SeoImprovement } from './seo-types';
 import { ContentCluster } from './cluster-types';
 import { OutlineSection } from './outline-types';
@@ -40,7 +41,7 @@ export type ContentBuilderAction =
   | { type: 'SET_CONTENT_TYPE'; payload: ContentType }
   | { type: 'SET_CONTENT_FORMAT'; payload: ContentFormat }
   | { type: 'SET_CONTENT_INTENT'; payload: ContentIntent }
-  | { type: 'SELECT_SOLUTION'; payload: Solution | null }
+  | { type: 'SELECT_SOLUTION'; payload: EnhancedSolution | null }
   | { type: 'SET_META_TITLE'; payload: string }
   | { type: 'SET_META_DESCRIPTION'; payload: string }
   | { type: 'SET_DOCUMENT_STRUCTURE'; payload: DocumentStructure }

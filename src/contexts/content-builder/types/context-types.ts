@@ -7,6 +7,7 @@ import { ContentBuilderState } from './state-types';
 import { ContentBuilderAction } from './action-types';
 import { ContentType, ContentFormat, ContentIntent, SaveContentParams } from './content-types';
 import { Solution } from './solution-types';
+import { EnhancedSolution } from './enhanced-solution-types';
 import { OutlineSection } from './outline-types';
 
 // Context Type
