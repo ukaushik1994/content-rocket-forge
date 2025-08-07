@@ -3,7 +3,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import { EnhancedChatInterface } from '@/components/ai-chat/EnhancedChatInterface';
-import { Helmet } from 'react-helmet-async';
 
 const AIChat = () => {
   const containerVariants = {
@@ -16,11 +15,6 @@ const AIChat = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Helmet>
-        <title>AI Chat Assistant | Content Builder</title>
-        <meta name="description" content="AI chat assistant for content strategy, SEO optimization, and performance insights." />
-        <link rel="canonical" href={typeof window !== 'undefined' ? window.location.href : '/ai-chat'} />
-      </Helmet>
       {/* Animated background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-neon-purple/5 via-transparent to-neon-blue/5" />
