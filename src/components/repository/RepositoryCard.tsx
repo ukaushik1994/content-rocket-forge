@@ -102,6 +102,8 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   const wordCount = content.metadata?.wordCount || content.content.split(' ').length;
   const readingTime = Math.ceil(wordCount / 200);
 
+  const solution = (content as any).metadata?.solution || (content as any).metadata?.selectedSolution;
+
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { 
@@ -120,7 +122,34 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       whileTap={{ scale: 0.98 }}
       className="h-full"
     >
-      <Card className="glass-card h-full bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/20 transition-all duration-300 group overflow-hidden">
+      <Card className="relative glass-card h-full bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/20 transition-all duration-300 group overflow-hidden">
+        {/* Solution indicator */}
+        {solution && (
+          <div className="absolute top-2 right-2 z-10 pointer-events-none">
+            {solution.logoUrl ? (
+              <div
+                className="h-7 w-7 rounded-md overflow-hidden bg-background/80 border border-border shadow-sm"
+                title={solution.name || 'Solution'}
+              >
+                <img
+                  src={solution.logoUrl}
+                  alt={`${solution.name || 'Solution'} logo`}
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            ) : solution.name ? (
+              <div
+                className="h-7 w-7 rounded-md bg-muted/60 text-foreground/80 border border-border grid place-items-center text-[10px] font-semibold"
+                title={solution.name}
+              >
+                {solution.name.charAt(0).toUpperCase()}
+              </div>
+            ) : null}
+          </div>
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className={`p-2 rounded-lg bg-gradient-to-r ${colorGradient} text-white shadow-lg`}>
