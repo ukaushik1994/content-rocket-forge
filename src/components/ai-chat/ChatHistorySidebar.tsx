@@ -13,7 +13,9 @@ import {
   Trash2, 
   X,
   History,
-  Settings
+  Settings,
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -44,10 +46,27 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
   className = ""
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [displayLimit, setDisplayLimit] = useState(10);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const filteredConversations = conversations.filter(conv =>
     conv.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const displayedConversations = filteredConversations.slice(0, displayLimit);
+  const hasMoreConversations = filteredConversations.length > displayLimit;
+
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true);
+    await new Promise(resolve => setTimeout(resolve, 300)); // Smooth loading animation
+    setDisplayLimit(prev => prev + 10);
+    setIsLoadingMore(false);
+  };
+
+  // Reset pagination when search term changes
+  React.useEffect(() => {
+    setDisplayLimit(10);
+  }, [searchTerm]);
 
   const sidebarVariants = {
     hidden: { x: -320, opacity: 0 },
@@ -129,7 +148,8 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <AnimatePresence mode="wait">
             {conversations && conversations.length > 0 ? (
               filteredConversations.length > 0 ? (
-                filteredConversations.map((conversation, index) => (
+                <>
+                  {displayedConversations.map((conversation, index) => (
                   <motion.div
                     key={conversation.id}
                     custom={index}
@@ -188,7 +208,36 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
                       </div>
                     </Card>
                   </motion.div>
-                ))
+                  ))}
+                  
+                  {/* Load More Button */}
+                  {hasMoreConversations && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4 px-2"
+                    >
+                      <Button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        variant="ghost"
+                        className="w-full text-white/60 hover:text-white hover:bg-white/10 border border-white/20 hover:border-white/30"
+                      >
+                        {isLoadingMore ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4 mr-2" />
+                            Load More ({filteredConversations.length - displayLimit} remaining)
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
+                  )}
+                </>
               ) : (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -218,7 +267,12 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
       {/* Footer */}
       <div className="p-4 border-t border-white/10">
         <div className="flex items-center justify-between text-xs text-white/50 mb-3">
-          <span>{conversations.length} conversations</span>
+          <span>
+            {filteredConversations.length > 0 
+              ? `${Math.min(displayLimit, filteredConversations.length)} of ${filteredConversations.length} shown`
+              : `${conversations.length} conversations`
+            }
+          </span>
           <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
             <div className="w-2 h-2 bg-green-400 rounded-full mr-1" />
             Synced
