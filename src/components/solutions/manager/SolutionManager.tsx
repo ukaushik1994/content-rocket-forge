@@ -50,7 +50,9 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     setIsLoading(true);
     setError(null);
     try {
+      console.log('Fetching solutions from enhanced service...');
       const solutionsData = await solutionService.getAllSolutions();
+      console.log('Fetched solutions:', solutionsData);
       setSolutions(solutionsData);
     } catch (error: any) {
       console.error('Error fetching solutions:', error);
@@ -135,8 +137,10 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         console.log('Update result:', result);
         
         if (result.success && result.data) {
+          console.log('Update successful, refreshing solutions list');
           // Refresh the solutions list
           await fetchSolutions();
+          console.log('Solutions list refreshed');
           toast.success('Solution updated successfully');
           // Close dialog and clear selection only on confirmed success
           setIsDialogOpen(false);
@@ -151,8 +155,10 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         console.log('Create result:', result);
         
         if (result.success && result.data) {
+          console.log('Create successful, refreshing solutions list');
           // Refresh the solutions list
           await fetchSolutions();
+          console.log('Solutions list refreshed');
           toast.success('Solution created successfully');
           // Close dialog and clear selection only on confirmed success
           setIsDialogOpen(false);

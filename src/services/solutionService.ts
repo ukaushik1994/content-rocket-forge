@@ -165,8 +165,9 @@ class SolutionService {
         throw new Error(`Failed to update solution: ${error.message}`);
       }
 
-      console.log('Solution updated successfully:', data);
+      console.log('Solution updated successfully in database:', data);
       const transformedData = this.transformDatabaseToEnhanced([data])[0];
+      console.log('Transformed data for response:', transformedData);
       return { success: true, data: transformedData };
     } catch (error) {
       console.error('Service error updating solution:', error);
@@ -228,7 +229,8 @@ class SolutionService {
   }
 
   private transformDatabaseToEnhanced(dbSolutions: any[]): EnhancedSolution[] {
-    return dbSolutions.map(solution => ({
+    console.log('Transforming database solutions to enhanced format:', dbSolutions);
+    const transformed = dbSolutions.map(solution => ({
       id: solution.id,
       name: solution.name,
       description: solution.description || '',
@@ -247,7 +249,10 @@ class SolutionService {
       marketData: solution.market_data || {},
       competitors: Array.isArray(solution.competitors) ? solution.competitors : [],
       technicalSpecs: solution.technical_specs || {},
-      pricing: solution.pricing_model || {},
+      pricing: solution.pricing_model || {
+        model: 'subscription',
+        tiers: []
+      },
       caseStudies: Array.isArray(solution.case_studies) ? solution.case_studies : [],
       metrics: solution.metrics || {},
       uniqueValuePropositions: Array.isArray(solution.unique_value_propositions) ? solution.unique_value_propositions : [],
@@ -255,10 +260,13 @@ class SolutionService {
       keyDifferentiators: Array.isArray(solution.key_differentiators) ? solution.key_differentiators : [],
       metadata: solution.metadata || {}
     }));
+    console.log('Transformed solutions:', transformed);
+    return transformed;
   }
 
   private transformEnhancedToDatabase(enhanced: Partial<SolutionCreateData>): any {
-    return {
+    console.log('Transforming enhanced solution to database format:', enhanced);
+    const transformed = {
       name: enhanced.name,
       description: enhanced.description,
       short_description: enhanced.short_description,
@@ -283,6 +291,8 @@ class SolutionService {
       key_differentiators: enhanced.key_differentiators || [],
       metadata: enhanced.metadata || {}
     };
+    console.log('Transformed to database format:', transformed);
+    return transformed;
   }
 
   // Validation helpers

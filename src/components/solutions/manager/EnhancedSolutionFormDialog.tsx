@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, X, AlertCircle } from 'lucide-react';
-import { Solution } from '@/contexts/content-builder/types';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -33,7 +32,7 @@ interface EnhancedSolutionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any, logoFile?: File) => void;
-  solution?: Solution | null;
+  solution?: EnhancedSolution | null;
   isSubmitting?: boolean;
 }
 
@@ -75,40 +74,38 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       
       try {
         if (solution?.id) {
-          // Load fresh data from backend for editing
-          const freshData = await solutionService.getSolutionById(solution.id);
-          if (freshData) {
-            const initialData: Partial<EnhancedSolution> = {
-              id: freshData.id,
-              name: freshData.name || '',
-              description: freshData.description || '',
-              category: freshData.category || 'Business Solution',
-              features: freshData.features || [],
-              useCases: freshData.useCases || [],
-              painPoints: freshData.painPoints || [],
-              targetAudience: freshData.targetAudience || [],
-              externalUrl: freshData.externalUrl || '',
-              resources: freshData.resources || [],
-              shortDescription: freshData.shortDescription || '',
-              benefits: freshData.benefits || [],
-              tags: freshData.tags || [],
-              marketData: freshData.marketData,
-              competitors: freshData.competitors,
-              technicalSpecs: freshData.technicalSpecs,
-              pricing: freshData.pricing,
-              caseStudies: freshData.caseStudies,
-              metrics: freshData.metrics,
-              uniqueValuePropositions: freshData.uniqueValuePropositions,
-              positioningStatement: freshData.positioningStatement,
-              keyDifferentiators: freshData.keyDifferentiators,
-              metadata: freshData.metadata
-            };
-            
-            resetForm(initialData);
-            setLogoPreview(freshData.logoUrl || null);
-          } else {
-            setSaveError('Failed to load solution data');
-          }
+          // Use the passed solution data directly since it's already enhanced
+          const initialData: Partial<EnhancedSolution> = {
+            id: solution.id,
+            name: solution.name || '',
+            description: solution.description || '',
+            category: solution.category || 'Business Solution',
+            features: solution.features || [],
+            useCases: solution.useCases || [],
+            painPoints: solution.painPoints || [],
+            targetAudience: solution.targetAudience || [],
+            externalUrl: solution.externalUrl || '',
+            resources: solution.resources || [],
+            shortDescription: solution.shortDescription || '',
+            benefits: solution.benefits || [],
+            tags: solution.tags || [],
+            marketData: solution.marketData || {},
+            competitors: solution.competitors || [],
+            technicalSpecs: solution.technicalSpecs || {},
+            pricing: solution.pricing || {
+              model: 'subscription',
+              tiers: []
+            },
+            caseStudies: solution.caseStudies || [],
+            metrics: solution.metrics || {},
+            uniqueValuePropositions: solution.uniqueValuePropositions || [],
+            positioningStatement: solution.positioningStatement || '',
+            keyDifferentiators: solution.keyDifferentiators || [],
+            metadata: solution.metadata || {}
+          };
+          
+          resetForm(initialData);
+          setLogoPreview(solution.logoUrl || null);
         } else {
           // New solution - start with empty form
           const initialData: Partial<EnhancedSolution> = {
@@ -260,8 +257,12 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         metadata: formData.metadata
       };
 
+      console.log('Transformed solution data for service:', solutionData);
+
       // Use parent's onSubmit function instead of calling service directly
       await onSubmit(solutionData, logoFile || undefined);
+      
+      console.log('Save completed successfully');
       
       // Clear dirty state and close dialog
       clearDirty();

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +23,7 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
   const [newAudience, setNewAudience] = useState('');
   const [newBenefit, setNewBenefit] = useState('');
 
-  const addItem = (
+  const addItem = useCallback((
     type: 'features' | 'useCases' | 'painPoints' | 'targetAudience' | 'benefits',
     value: string,
     setter: (value: string) => void
@@ -32,16 +32,16 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
     
     const currentItems = formData[type] || [];
     if (!currentItems.includes(value.trim())) {
-    const newData = {
-      [type]: [...currentItems, value.trim()]
-    };
-    console.log(`Adding ${type}:`, newData);
-    updateFormData(newData);
+      const newData = {
+        [type]: [...currentItems, value.trim()]
+      };
+      console.log(`Adding ${type}:`, newData);
+      updateFormData(newData);
     }
     setter('');
-  };
+  }, [formData, updateFormData]);
 
-  const removeItem = (
+  const removeItem = useCallback((
     type: 'features' | 'useCases' | 'painPoints' | 'targetAudience' | 'benefits',
     index: number
   ) => {
@@ -51,7 +51,7 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
     };
     console.log(`Removing ${type}:`, newData);
     updateFormData(newData);
-  };
+  }, [formData, updateFormData]);
 
   const ItemSection = ({ 
     title, 
