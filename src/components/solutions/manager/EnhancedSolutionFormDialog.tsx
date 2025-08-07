@@ -10,38 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Loader2, 
-  Save, 
-  X, 
-  AlertCircle, 
-  MoreHorizontal, 
-  Navigation, 
-  Copy, 
-  Download, 
-  RotateCcw, 
-  Zap,
-  CheckCircle2,
-  Clock,
-  Sparkles,
-  ArrowRight
-} from 'lucide-react';
+import { Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -337,59 +306,6 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     onOpenChange(false);
   };
 
-  // Tab data for navigation
-  const tabData = [
-    { value: 'basic', label: 'Overview', isComplete: !!(formData.name && formData.description) },
-    { value: 'features', label: 'Features', isComplete: !!(formData.features?.length || formData.benefits?.length) },
-    { value: 'market', label: 'Market', isComplete: !!(formData.marketData && Object.keys(formData.marketData).length) },
-    { value: 'technical', label: 'Technical', isComplete: !!(formData.technicalSpecs && Object.keys(formData.technicalSpecs).length) },
-    { value: 'pricing', label: 'Pricing', isComplete: !!(formData.pricing?.tiers?.length) },
-    { value: 'competitors', label: 'Competitors', isComplete: !!(formData.competitors?.length) },
-    { value: 'cases', label: 'Case Studies', isComplete: !!(formData.caseStudies?.length) },
-    { value: 'resources', label: 'Resources', isComplete: !!(formData.resources?.length) },
-    { value: 'analytics', label: 'Analytics', isComplete: !!(formData.metrics && Object.keys(formData.metrics).length) },
-    { value: 'preview', label: 'Preview', isComplete: true }
-  ];
-
-  const currentTabIndex = tabData.findIndex(tab => tab.value === activeTab);
-  const completionPercentage = Math.round((tabData.filter(tab => tab.isComplete).length / tabData.length) * 100);
-
-  // Handlers for enhanced functionality
-  const handleQuickNavigate = (tabValue: string) => {
-    setActiveTab(tabValue);
-  };
-
-  const handleDuplicate = () => {
-    toast.success('Duplicate feature coming soon!');
-  };
-
-  const handleExportJSON = () => {
-    const exportData = {
-      ...formData,
-      exportedAt: new Date().toISOString(),
-      version: '1.0'
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${formData.name || 'solution'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Solution exported to JSON!');
-  };
-
-  const handleResetForm = () => {
-    if (confirm('Are you sure you want to reset all form data? This action cannot be undone.')) {
-      resetForm();
-      toast.success('Form reset successfully');
-    }
-  };
-
-  const handleAutoFill = (type: string) => {
-    toast.success(`Auto-fill ${type} feature coming soon!`);
-  };
-
   const tabVariants = {
     hidden: { opacity: 0, x: 20 },
     visible: { 
@@ -415,138 +331,17 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         }
       }}
     >
-      <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-scale-in floating-particles">
-        {/* Enhanced Header with Progress and Dropdowns */}
-        <div className="flex-shrink-0 relative">
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-neon-blue/5 to-neon-purple/5 animate-gradient-shift bg-300%" />
-          
-          <DialogHeader className="relative z-10 p-6 border-b border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center gap-3"
-                >
-                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-2xl font-bold text-gradient">
-                      {solution ? `Edit ${solution.name}` : 'Create New Solution'}
-                    </DialogTitle>
-                    <DialogDescription className="text-muted-foreground mt-1">
-                      {solution 
-                        ? 'Enhance your business solution with powerful features'
-                        : 'Build a comprehensive solution profile that drives results'}
-                    </DialogDescription>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Enhanced Action Buttons */}
-              <div className="flex items-center gap-2">
-                {/* Quick Navigation Dropdown */}
-                <Select value={activeTab} onValueChange={handleQuickNavigate}>
-                  <SelectTrigger className="w-[200px] glass-card border-white/20 hover:border-primary/30 transition-all">
-                    <Navigation className="h-4 w-4 mr-2 text-primary" />
-                    <SelectValue placeholder="Jump to section" />
-                  </SelectTrigger>
-                  <SelectContent className="glass-panel border-white/20 backdrop-blur-xl">
-                    {tabData.map((tab) => (
-                      <SelectItem key={tab.value} value={tab.value} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>{tab.label}</span>
-                          {tab.isComplete && (
-                            <CheckCircle2 className="h-3 w-3 text-green-400" />
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* More Actions Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="glass-card border-white/20 hover:border-primary/30">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="glass-panel border-white/20 backdrop-blur-xl w-56">
-                    <DropdownMenuLabel className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-primary" />
-                      Quick Actions
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-white/10" />
-                    
-                    <DropdownMenuItem onClick={handleExportJSON} className="hover:bg-white/10">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export JSON
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuItem onClick={handleDuplicate} className="hover:bg-white/10">
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate Solution
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuSeparator className="bg-white/10" />
-                    
-                    <DropdownMenuItem onClick={() => handleAutoFill('template')} className="hover:bg-white/10">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Auto-fill from Template
-                    </DropdownMenuItem>
-                    
-                    <DropdownMenuItem onClick={handleResetForm} className="hover:bg-red-500/10 text-red-400">
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset Form
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Close Button */}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleClose}
-                  className="hover:bg-red-500/20 hover:text-red-400"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Progress Indicator */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Completion Progress
-                </span>
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                  {completionPercentage}% Complete
-                </Badge>
-              </div>
-              <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${completionPercentage}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-primary to-neon-blue rounded-full"
-                />
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                Step {currentTabIndex + 1} of {tabData.length}
-              </div>
-            </motion.div>
-          </DialogHeader>
-        </div>
+      <DialogContent className="glass-panel sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="text-xl">
+            {solution ? `Edit ${solution.name}` : 'Add New Solution'}
+          </DialogTitle>
+          <DialogDescription>
+            {solution 
+              ? 'Update your business solution details below.'
+              : 'Create a comprehensive profile for your business solution.'}
+          </DialogDescription>
+        </DialogHeader>
         
         <div className="flex-1 overflow-hidden">
           {isLoadingData ? (
@@ -558,82 +353,20 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              {/* Enhanced Tab Navigation */}
-              <div className="flex-shrink-0 space-y-3 mb-6">
-                <div className="relative p-1 glass-card rounded-lg border-white/10">
-                  <div className="grid grid-cols-5 gap-1">
-                    {tabData.slice(0, 5).map((tab) => (
-                      <motion.button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={`relative px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
-                          activeTab === tab.value
-                            ? 'text-primary bg-primary/10 border border-primary/20'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                        }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          <span>{tab.label}</span>
-                          {tab.isComplete && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="w-2 h-2 bg-green-400 rounded-full"
-                            />
-                          )}
-                        </div>
-                        {activeTab === tab.value && (
-                          <motion.div
-                            layoutId="activeTab1"
-                            className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-md"
-                            initial={false}
-                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                          />
-                        )}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="relative p-1 glass-card rounded-lg border-white/10">
-                  <div className="grid grid-cols-5 gap-1">
-                    {tabData.slice(5).map((tab) => (
-                      <motion.button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={`relative px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
-                          activeTab === tab.value
-                            ? 'text-primary bg-primary/10 border border-primary/20'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                        }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="flex items-center justify-center gap-2">
-                          <span>{tab.label}</span>
-                          {tab.isComplete && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="w-2 h-2 bg-green-400 rounded-full"
-                            />
-                          )}
-                        </div>
-                        {activeTab === tab.value && (
-                          <motion.div
-                            layoutId="activeTab2"
-                            className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-md"
-                            initial={false}
-                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                          />
-                        )}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
+              <TabsTrigger value="basic">Overview</TabsTrigger>
+              <TabsTrigger value="features">Features</TabsTrigger>
+              <TabsTrigger value="market">Market</TabsTrigger>
+              <TabsTrigger value="technical">Technical</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            </TabsList>
+            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
+              <TabsTrigger value="competitors">Competitors</TabsTrigger>
+              <TabsTrigger value="cases">Case Studies</TabsTrigger>
+              <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+            </TabsList>
             
             <div className="flex-1 overflow-y-auto">
               <AnimatePresence mode="wait">
@@ -703,149 +436,62 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
           )}
         </div>
         
-        {/* Enhanced Error Display */}
+        {/* Error Display */}
         {saveError && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex-shrink-0 glass-card border border-destructive/30 p-4 mx-6 mb-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-1 rounded-full bg-destructive/20">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-destructive">Save Failed</p>
-                <p className="text-xs text-destructive/80 mt-1">{saveError}</p>
-              </div>
+          <div className="flex-shrink-0 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              {saveError}
             </div>
-          </motion.div>
+          </div>
         )}
         
-        {/* Enhanced Footer with Navigation & Actions */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex-shrink-0 glass-card border-t border-white/10 p-6"
-        >
-          <div className="flex items-center justify-between">
-            {/* Left: Status & Navigation */}
-            <div className="flex items-center gap-6">
-              {/* Status Indicators */}
-              <div className="flex items-center gap-4">
-                {isDirty && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20"
-                  >
-                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-amber-500 font-medium">Unsaved changes</span>
-                  </motion.div>
-                )}
-                
-                {solution?.id && (
-                  <AutoSaveStatus
-                    isAutoSaving={isAutoSaving}
-                    lastAutoSave={lastAutoSave}
-                    hasError={autoSaveError}
-                    className="border border-white/10"
-                  />
-                )}
-              </div>
-
-              {/* Quick Navigation */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const prevTab = tabData[currentTabIndex - 1];
-                    if (prevTab) setActiveTab(prevTab.value);
-                  }}
-                  disabled={currentTabIndex === 0}
-                  className="glass-card border-white/10 hover:border-primary/30"
-                >
-                  <ArrowRight className="h-3 w-3 rotate-180" />
-                </Button>
-                
-                <span className="text-xs text-muted-foreground px-2">
-                  {currentTabIndex + 1} / {tabData.length}
-                </span>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const nextTab = tabData[currentTabIndex + 1];
-                    if (nextTab) setActiveTab(nextTab.value);
-                  }}
-                  disabled={currentTabIndex === tabData.length - 1}
-                  className="glass-card border-white/10 hover:border-primary/30"
-                >
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Right: Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClose}
-                disabled={isSubmitting}
-                className="glass-card border-white/20 hover:border-white/30"
-              >
-                Cancel
-              </Button>
-              
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={isSubmitting || isLoadingData || !formData.name?.trim()}
-                  className="min-w-[140px] bg-gradient-to-r from-primary to-neon-blue hover:from-primary/90 hover:to-neon-blue/90 border-0 shadow-lg hover:shadow-primary/25"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Solution
-                      <div className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
-                        ⌘S
-                      </div>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            </div>
+        {/* Footer Actions */}
+        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50">
+          <div className="flex items-center gap-4">
+            {isDirty && (
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                Unsaved changes
+              </span>
+            )}
+            {solution?.id && (
+              <AutoSaveStatus
+                isAutoSaving={isAutoSaving}
+                lastAutoSave={lastAutoSave}
+                hasError={autoSaveError}
+              />
+            )}
           </div>
           
-          {/* Progress Footer */}
-          <div className="mt-4 pt-4 border-t border-white/5">
-            <div className="flex items-center justify-center gap-1">
-              {tabData.map((tab, index) => (
-                <motion.button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`w-8 h-2 rounded-full transition-all duration-300 ${
-                    index === currentTabIndex
-                      ? 'bg-primary shadow-lg shadow-primary/50'
-                      : tab.isComplete
-                      ? 'bg-green-400/60 hover:bg-green-400/80'
-                      : 'bg-muted/30 hover:bg-muted/50'
-                  }`}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                />
-              ))}
-            </div>
+          <div className="flex gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting || isLoadingData || !formData.name?.trim()}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
           </div>
-        </motion.div>
+        </div>
       </DialogContent>
     </Dialog>
   );
