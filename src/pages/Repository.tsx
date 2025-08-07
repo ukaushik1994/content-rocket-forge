@@ -68,6 +68,8 @@ const Repository = () => {
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Helmet>
         <title>Content Repository | Content Platform</title>
+        <meta name="description" content="Content Repository to manage articles, blogs, emails, and more with filters and quick actions." />
+        <link rel="canonical" href={typeof window !== 'undefined' ? window.location.href : '/repository'} />
       </Helmet>
       
       <Navbar />
