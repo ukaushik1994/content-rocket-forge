@@ -9,20 +9,21 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, X, DollarSign, CreditCard, Star, Minus } from 'lucide-react';
 import { EnhancedSolution, PricingModel } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { DropdownWithOther } from '../shared/DropdownWithOther';
 
 interface PricingTabProps {
   formData: Partial<EnhancedSolution>;
   updateFormData: (updates: Partial<EnhancedSolution>) => void;
 }
 
-const PRICING_MODELS = [
+const PRICING_MODELS: Array<{ value: string; label: string }> = [
   { value: 'subscription', label: 'Subscription' },
   { value: 'one-time', label: 'One-time Purchase' },
   { value: 'usage-based', label: 'Usage-based' },
   { value: 'freemium', label: 'Freemium' },
   { value: 'enterprise', label: 'Enterprise' },
   { value: 'custom', label: 'Custom Pricing' }
-] as const;
+];
 
 export const PricingTab: React.FC<PricingTabProps> = ({
   formData,
@@ -34,6 +35,7 @@ export const PricingTab: React.FC<PricingTabProps> = ({
     features: '',
     limitations: ''
   });
+  const [customPricingModel, setCustomPricingModel] = useState('');
 
   const pricing = formData.pricing || {
     model: 'subscription',
@@ -111,24 +113,18 @@ export const PricingTab: React.FC<PricingTabProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="pricing-model">Business Model</Label>
-              <Select 
-                value={pricing.model} 
-                onValueChange={(value: PricingModel['model']) => updatePricing({ model: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRICING_MODELS.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      {model.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <DropdownWithOther
+              id="pricing-model"
+              label="Business Model"
+              placeholder="Select pricing model"
+              options={PRICING_MODELS}
+              value={pricing.model}
+              onValueChange={(value) => updatePricing({ model: value as PricingModel['model'] })}
+              customValue={customPricingModel}
+              onCustomValueChange={setCustomPricingModel}
+              customInputLabel="Specify pricing model"
+              customInputPlaceholder="Enter custom pricing model"
+            />
             
             <div className="space-y-2">
               <Label htmlFor="starting-price">Starting Price</Label>

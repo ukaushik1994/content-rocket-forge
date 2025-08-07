@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, X, Building, Quote, TrendingUp, Trash2 } from 'lucide-react';
 import { EnhancedSolution, CaseStudy } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { DropdownWithOther } from '../shared/DropdownWithOther';
 
 interface CaseStudiesTabProps {
   formData: Partial<EnhancedSolution>;
@@ -28,17 +29,35 @@ export const CaseStudiesTab: React.FC<CaseStudiesTabProps> = ({
     testimonialAuthor: '',
     testimonialPosition: ''
   });
+  const [customIndustry, setCustomIndustry] = useState('');
 
   const caseStudies = formData.caseStudies || [];
 
+  // Industry options
+  const industryOptions = [
+    { value: 'technology', label: 'Technology' },
+    { value: 'financial-services', label: 'Financial Services' },
+    { value: 'healthcare', label: 'Healthcare' },
+    { value: 'manufacturing', label: 'Manufacturing' },
+    { value: 'retail', label: 'Retail & E-commerce' },
+    { value: 'education', label: 'Education' },
+    { value: 'government', label: 'Government' },
+    { value: 'real-estate', label: 'Real Estate' },
+    { value: 'media', label: 'Media & Entertainment' },
+    { value: 'consulting', label: 'Professional Services' }
+  ];
+
   const addCaseStudy = () => {
     if (!newCaseStudy.title.trim() || !newCaseStudy.company.trim()) return;
+
+    // Use custom industry if "Other" is selected
+    const finalIndustry = newCaseStudy.industry === 'Other' ? customIndustry.trim() : newCaseStudy.industry.trim();
 
     const caseStudy: CaseStudy = {
       id: `case-study-${Date.now()}`,
       title: newCaseStudy.title.trim(),
       company: newCaseStudy.company.trim(),
-      industry: newCaseStudy.industry.trim(),
+      industry: finalIndustry,
       challenge: newCaseStudy.challenge.trim(),
       solution: newCaseStudy.solution.trim(),
       results: newCaseStudy.results.split(',').map(r => r.trim()).filter(r => r),
@@ -64,6 +83,7 @@ export const CaseStudiesTab: React.FC<CaseStudiesTabProps> = ({
       testimonialAuthor: '',
       testimonialPosition: ''
     });
+    setCustomIndustry('');
   };
 
   const removeCaseStudy = (id: string) => {
@@ -113,15 +133,18 @@ export const CaseStudiesTab: React.FC<CaseStudiesTabProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="case-industry">Industry</Label>
-            <Input
+            <DropdownWithOther
               id="case-industry"
-              placeholder="e.g., Financial Services"
+              label="Industry"
+              placeholder="Select industry"
+              options={industryOptions}
               value={newCaseStudy.industry}
-              onChange={(e) => setNewCaseStudy(prev => ({ ...prev, industry: e.target.value }))}
+              onValueChange={(value) => setNewCaseStudy(prev => ({ ...prev, industry: value }))}
+              customValue={customIndustry}
+              onCustomValueChange={setCustomIndustry}
+              customInputLabel="Specify industry"
+              customInputPlaceholder="Enter custom industry"
             />
-          </div>
           
           <div className="space-y-2">
             <Label htmlFor="case-challenge">Challenge</Label>

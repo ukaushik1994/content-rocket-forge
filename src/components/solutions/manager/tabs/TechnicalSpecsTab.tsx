@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, Server, Smartphone, Code, Shield, Zap, Clock } from 'lucide-react';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { DropdownWithOther } from '../shared/DropdownWithOther';
 
 interface TechnicalSpecsTabProps {
   formData: Partial<EnhancedSolution>;
@@ -105,6 +106,37 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
   const [newSecurityFeature, setNewSecurityFeature] = useState('');
   const [newPerformanceMetric, setNewPerformanceMetric] = useState('');
 
+  // Platform options
+  const platformOptions = [
+    { value: 'web', label: 'Web Browser' },
+    { value: 'ios', label: 'iOS' },
+    { value: 'android', label: 'Android' },
+    { value: 'windows', label: 'Windows' },
+    { value: 'macos', label: 'macOS' },
+    { value: 'linux', label: 'Linux' },
+    { value: 'api', label: 'API Only' }
+  ];
+
+  // API capability options
+  const apiOptions = [
+    { value: 'rest', label: 'REST API' },
+    { value: 'graphql', label: 'GraphQL' },
+    { value: 'websocket', label: 'WebSocket' },
+    { value: 'webhook', label: 'Webhooks' },
+    { value: 'sdk', label: 'SDK Available' },
+    { value: 'oauth', label: 'OAuth Integration' }
+  ];
+
+  // Security standards options
+  const securityOptions = [
+    { value: 'encryption', label: 'End-to-End Encryption' },
+    { value: 'soc2', label: 'SOC 2 Certified' },
+    { value: 'iso27001', label: 'ISO 27001' },
+    { value: 'gdpr', label: 'GDPR Compliant' },
+    { value: 'hipaa', label: 'HIPAA Compliant' },
+    { value: 'pci', label: 'PCI DSS' }
+  ];
+
   const addTechnicalItem = useCallback((
     field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics',
     value: string,
@@ -157,17 +189,83 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
       />
 
       {/* Supported Platforms */}
-      <TechnicalSection
-        title="Supported Platforms"
-        icon={Smartphone}
-        items={formData.technicalSpecs?.supportedPlatforms || []}
-        field="supportedPlatforms"
-        newValue={newPlatform}
-        setNewValue={setNewPlatform}
-        placeholder="e.g., Web, iOS, Android, Windows, macOS"
-        onAddItem={addTechnicalItem}
-        onRemoveItem={removeTechnicalItem}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            Supported Platforms
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <DropdownWithOther
+              label="Add Platform"
+              placeholder="Select platform"
+              options={platformOptions}
+              value={newPlatform}
+              onValueChange={setNewPlatform}
+              showCustomInput={false}
+            />
+            <Button 
+              type="button" 
+              onClick={() => {
+                if (newPlatform && newPlatform !== 'Other') {
+                  addTechnicalItem('supportedPlatforms', newPlatform, setNewPlatform);
+                }
+              }}
+              disabled={!newPlatform.trim()}
+              className="mt-8"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder="Or add custom platform"
+              value=""
+              onChange={(e) => setNewPlatform(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                  e.preventDefault();
+                  addTechnicalItem('supportedPlatforms', e.currentTarget.value, () => {});
+                  e.currentTarget.value = '';
+                }
+              }}
+            />
+            <Button 
+              type="button" 
+              onClick={(e) => {
+                const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                if (input?.value.trim()) {
+                  addTechnicalItem('supportedPlatforms', input.value, () => {});
+                  input.value = '';
+                }
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {formData.technicalSpecs?.supportedPlatforms && formData.technicalSpecs.supportedPlatforms.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {formData.technicalSpecs.supportedPlatforms.map((platform, index) => (
+                <Badge key={index} variant="secondary" className="flex items-center gap-1 pr-1">
+                  {platform}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => removeTechnicalItem('supportedPlatforms', index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* API Capabilities */}
       <TechnicalSection

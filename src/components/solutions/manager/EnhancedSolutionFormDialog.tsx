@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useSimpleFormState } from '@/hooks/useSimpleFormState';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
@@ -344,7 +345,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         }
       }}
     >
-      <DialogContent className="glass-panel sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl">
             {solution ? `Edit ${solution.name}` : 'Add New Solution'}
@@ -381,15 +382,17 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
               <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
             
-            <div className="flex-1 overflow-y-auto">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  variants={tabVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    variants={tabVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="p-1"
+                  >
                   <TabsContent value="basic" className="mt-0">
                     <BasicInfoTab
                       formData={formData}
@@ -442,8 +445,9 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
                   <TabsContent value="preview" className="mt-0">
                     <PreviewTab formData={formData} logoPreview={logoPreview} />
                   </TabsContent>
-                </motion.div>
-              </AnimatePresence>
+                  </motion.div>
+                </AnimatePresence>
+              </ScrollArea>
             </div>
           </Tabs>
           )}

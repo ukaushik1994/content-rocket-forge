@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, TrendingUp, Users, Clock, Headphones, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Plus, X, BarChart3, TrendingUp, Users, Clock, Headphones, DollarSign } from 'lucide-react';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { DropdownWithOther } from '../shared/DropdownWithOther';
 
 interface AnalyticsTabProps {
   formData: Partial<EnhancedSolution>;
@@ -17,6 +19,8 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
   updateFormData
 }) => {
   const metrics = formData.metrics || {};
+  const [newMetricType, setNewMetricType] = useState('');
+  const [customMetricType, setCustomMetricType] = useState('');
 
   const updateMetrics = (updates: any) => {
     updateFormData({
@@ -26,6 +30,18 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
       }
     });
   };
+
+  // Metric type options
+  const metricTypeOptions = [
+    { value: 'adoption-rate', label: 'Adoption Rate' },
+    { value: 'satisfaction', label: 'Customer Satisfaction' },
+    { value: 'roi', label: 'Return on Investment' },
+    { value: 'implementation-time', label: 'Implementation Time' },
+    { value: 'support-response', label: 'Support Response Time' },
+    { value: 'uptime', label: 'System Uptime' },
+    { value: 'conversion-rate', label: 'Conversion Rate' },
+    { value: 'churn-rate', label: 'Churn Rate' }
+  ];
 
   const MetricCard = ({ 
     title, 
