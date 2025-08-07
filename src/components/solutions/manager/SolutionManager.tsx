@@ -183,6 +183,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         <EnhancedSolutionGrid 
           solutions={filteredSolutions}
           onEdit={handleEdit}
+          onDelete={deleteHandler.handleDelete}
+          onUseInContent={handleUseInContent}
           onAddNew={handleAddNew}
         />
       )}
