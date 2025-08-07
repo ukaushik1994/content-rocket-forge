@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Solution } from '@/contexts/content-builder/types';
-import { EnhancedSolutionCard } from './EnhancedSolutionCard';
+import { SimpleSolutionCard } from './SimpleSolutionCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Shuffle } from 'lucide-react';
@@ -10,16 +10,12 @@ import { PlusCircle, Shuffle } from 'lucide-react';
 interface EnhancedSolutionGridProps {
   solutions: Solution[];
   onEdit: (solution: Solution) => void;
-  onDelete: (solution: Solution) => void;
-  onUseInContent: (solution: Solution) => void;
   onAddNew: () => void;
 }
 
-export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
+export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({ 
   solutions,
   onEdit,
-  onDelete,
-  onUseInContent,
   onAddNew
 }) => {
   const [filter, setFilter] = useState('all');
@@ -75,15 +71,13 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
           initial="hidden"
           animate="visible"
         >
-          {filteredSolutions.map((solution) => (
-            <EnhancedSolutionCard
-              key={solution.id}
-              solution={solution}
-              onEdit={() => onEdit(solution)}
-              onDelete={() => onDelete(solution)}
-              onUseInContent={() => onUseInContent(solution)}
-            />
-          ))}
+        {filteredSolutions.map((solution) => (
+          <SimpleSolutionCard
+            key={solution.id}
+            solution={solution}
+            onEdit={() => onEdit(solution)}
+          />
+        ))}
         </motion.div>
       ) : (
         <EmptySolutionsState onAddNew={onAddNew} />
