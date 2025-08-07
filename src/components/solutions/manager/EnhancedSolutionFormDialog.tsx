@@ -10,9 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, X, AlertCircle, MoreVertical } from 'lucide-react';
+import { Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -333,7 +331,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         }
       }}
     >
-      <DialogContent className="glass-panel sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-enter">
+      <DialogContent className="glass-panel sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl">
             {solution ? `Edit ${solution.name}` : 'Add New Solution'}
@@ -344,46 +342,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
               : 'Create a comprehensive profile for your business solution.'}
           </DialogDescription>
         </DialogHeader>
-
-        {/* Action toolbar - quick navigation and more actions */}
-        <div className="flex items-center justify-between gap-3 px-1 sm:px-0 py-2 border-b border-border/50">
-          <div className="flex items-center gap-2">
-            <Select value={activeTab} onValueChange={setActiveTab}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Jump to section" />
-              </SelectTrigger>
-              <SelectContent className="z-50">
-                <SelectItem value="basic">Overview</SelectItem>
-                <SelectItem value="features">Features</SelectItem>
-                <SelectItem value="market">Market</SelectItem>
-                <SelectItem value="technical">Technical</SelectItem>
-                <SelectItem value="pricing">Pricing</SelectItem>
-                <SelectItem value="competitors">Competitors</SelectItem>
-                <SelectItem value="cases">Case Studies</SelectItem>
-                <SelectItem value="resources">Resources</SelectItem>
-                <SelectItem value="analytics">Analytics</SelectItem>
-                <SelectItem value="preview">Preview</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <MoreVertical className="h-4 w-4" />
-                More
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-50">
-              <DropdownMenuLabel>Quick actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => toast.info('Duplicate coming soon')}>Duplicate</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info('Export coming soon')}>Export JSON</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => toast.info('Delete coming soon')}>Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
+        
         <div className="flex-1 overflow-hidden">
           {isLoadingData ? (
             <div className="flex items-center justify-center h-64">
