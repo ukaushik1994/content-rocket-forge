@@ -13,9 +13,12 @@ export const useSimpleFormState = (options: UseSimpleFormStateOptions = {}) => {
   const updateFormData = useCallback((updates: Partial<EnhancedSolution>) => {
     setFormData(prev => {
       const newData = { ...prev, ...updates };
-      console.log('Form data updated - Previous:', prev);
-      console.log('Form data updated - Updates:', updates);
-      console.log('Form data updated - New:', newData);
+      console.log('Form data updated:', {
+        previous: prev,
+        updates: updates,
+        newData: newData,
+        timestamp: new Date().toISOString()
+      });
       return newData;
     });
     setIsDirty(true);

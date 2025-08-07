@@ -27,6 +27,7 @@ import { PricingTab } from './tabs/PricingTab';
 import { CaseStudiesTab } from './tabs/CaseStudiesTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
 import { solutionService } from '@/services/solutionService';
+import { AutoSaveStatus } from './AutoSaveStatus';
 
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
@@ -49,6 +50,8 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
+  const [autoSaveError, setAutoSaveError] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use simple form state
@@ -143,6 +146,9 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     if (!isDirty || !formData.name?.trim() || !solution?.id || isSubmitting) return;
     
     try {
+      setIsAutoSaving(true);
+      setAutoSaveError(false);
+      
       const solutionData = {
         name: formData.name!,
         description: formData.description || '',
@@ -174,6 +180,9 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       console.log('Auto-saved solution data');
     } catch (error) {
       console.error('Auto-save failed:', error);
+      setAutoSaveError(true);
+    } finally {
+      setIsAutoSaving(false);
     }
   }, [isDirty, formData, solution?.id, isSubmitting, clearDirty]);
 
@@ -437,18 +446,19 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         
         {/* Footer Actions */}
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
             {isDirty && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
                 <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                 Unsaved changes
               </span>
             )}
-            {lastAutoSave && solution?.id && (
-              <span className="flex items-center gap-1 text-xs">
-                <Save className="h-3 w-3 text-green-500" />
-                Auto-saved {lastAutoSave.toLocaleTimeString()}
-              </span>
+            {solution?.id && (
+              <AutoSaveStatus
+                isAutoSaving={isAutoSaving}
+                lastAutoSave={lastAutoSave}
+                hasError={autoSaveError}
+              />
             )}
           </div>
           
