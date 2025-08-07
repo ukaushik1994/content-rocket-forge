@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { Solution } from '@/contexts/content-builder/types';
-import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { useSolutionsData } from '../hooks/useSolutionsData';
 import { EnhancedSolutionFormDialog } from './EnhancedSolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
 import { useDeleteSolution } from './hooks/useDeleteSolution';
@@ -25,41 +25,22 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const { dispatch } = useContentBuilder();
   const [filterTerm, setFilterTerm] = useState(searchTerm);
   
-  // Use enhanced solution service instead of basic hook
-  const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    solutions, 
+    isLoading, 
+    error,
+    fetchSolutions,
+    deleteSolution
+  } = useSolutionsData();
 
   // Enhanced form state management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
+  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const deleteHandler = useDeleteSolution({
-    deleteSolution: async (id: string) => {
-      const success = await solutionService.deleteSolution(id);
-      if (success) {
-        await fetchSolutions();
-      }
-      return success;
-    }
+    deleteSolution
   });
-
-  // Fetch solutions using enhanced service
-  const fetchSolutions = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const solutionsData = await solutionService.getAllSolutions();
-      setSolutions(solutionsData);
-    } catch (error: any) {
-      console.error('Error fetching solutions:', error);
-      setError(error.message || 'Failed to load solutions');
-      toast.error('Failed to load solutions');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Update local filter when search term changes
   useEffect(() => {
@@ -68,7 +49,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   
   useEffect(() => {
     fetchSolutions();
-  }, []);
+  }, [fetchSolutions]);
 
   // Filter solutions based on search term
   const filteredSolutions = solutions.filter(solution => {
@@ -99,7 +80,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   });
 
   // Function to handle using a solution in content
-  const handleUseInContent = (solution: EnhancedSolution) => {
+  const handleUseInContent = (solution: Solution) => {
     // Store the solution in the content builder context
     dispatch({ type: 'SELECT_SOLUTION', payload: solution });
     
@@ -118,7 +99,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (solution: EnhancedSolution) => {
+  const handleEdit = (solution: Solution) => {
     setSelectedSolution(solution);
     setIsDialogOpen(true);
   };
@@ -202,8 +183,6 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         <EnhancedSolutionGrid 
           solutions={filteredSolutions}
           onEdit={handleEdit}
-          onDelete={deleteHandler.handleDelete}
-          onUseInContent={handleUseInContent}
           onAddNew={handleAddNew}
         />
       )}
