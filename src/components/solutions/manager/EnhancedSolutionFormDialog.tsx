@@ -354,12 +354,12 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {solution ? 'Updating...' : 'Creating...'}
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {solution ? 'Update Solution' : 'Create Solution'}
+                  Save
                 </>
               )}
             </Button>
