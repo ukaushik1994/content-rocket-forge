@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -47,6 +47,9 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use simple form state
   const {
@@ -59,40 +62,150 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     clearDirty
   } = useSimpleFormState();
 
-  // Initialize form data when dialog opens or solution changes
+  // Load solution data from backend when dialog opens
   useEffect(() => {
-    if (open) {
-      const initialData: Partial<EnhancedSolution> = {
-        id: solution?.id,
-        name: solution?.name || '',
-        description: solution?.description || '',
-        category: solution?.category || 'Business Solution',
-        features: solution?.features || [],
-        useCases: solution?.useCases || [],
-        painPoints: solution?.painPoints || [],
-        targetAudience: solution?.targetAudience || [],
-        externalUrl: solution?.externalUrl || '',
-        resources: solution?.resources?.map((r, index) => ({
-          id: `resource-${index}`,
-          title: r.title,
-          url: r.url,
-          category: 'other' as const,
-          order: index,
-          isValidated: false
-        })) || [],
-        shortDescription: '',
-        benefits: [],
-        tags: [],
-      };
+    const loadSolutionData = async () => {
+      if (!open) return;
       
-      resetForm(initialData);
-      setLogoPreview(solution?.logoUrl || null);
-      setLogoFile(null);
+      setIsLoadingData(true);
       setSaveError(null);
-    }
-  }, [open, solution, resetForm]);
+      
+      try {
+        if (solution?.id) {
+          // Load fresh data from backend for editing
+          const freshData = await solutionService.getSolutionById(solution.id);
+          if (freshData) {
+            const initialData: Partial<EnhancedSolution> = {
+              id: freshData.id,
+              name: freshData.name || '',
+              description: freshData.description || '',
+              category: freshData.category || 'Business Solution',
+              features: freshData.features || [],
+              useCases: freshData.useCases || [],
+              painPoints: freshData.painPoints || [],
+              targetAudience: freshData.targetAudience || [],
+              externalUrl: freshData.externalUrl || '',
+              resources: freshData.resources || [],
+              shortDescription: freshData.shortDescription || '',
+              benefits: freshData.benefits || [],
+              tags: freshData.tags || [],
+              marketData: freshData.marketData,
+              competitors: freshData.competitors,
+              technicalSpecs: freshData.technicalSpecs,
+              pricing: freshData.pricing,
+              caseStudies: freshData.caseStudies,
+              metrics: freshData.metrics,
+              uniqueValuePropositions: freshData.uniqueValuePropositions,
+              positioningStatement: freshData.positioningStatement,
+              keyDifferentiators: freshData.keyDifferentiators,
+              metadata: freshData.metadata
+            };
+            
+            resetForm(initialData);
+            setLogoPreview(freshData.logoUrl || null);
+          } else {
+            setSaveError('Failed to load solution data');
+          }
+        } else {
+          // New solution - start with empty form
+          const initialData: Partial<EnhancedSolution> = {
+            name: '',
+            description: '',
+            category: 'Business Solution',
+            features: [],
+            useCases: [],
+            painPoints: [],
+            targetAudience: [],
+            externalUrl: '',
+            resources: [],
+            shortDescription: '',
+            benefits: [],
+            tags: [],
+          };
+          resetForm(initialData);
+          setLogoPreview(null);
+        }
+        
+        setLogoFile(null);
+      } catch (error) {
+        console.error('Error loading solution data:', error);
+        setSaveError('Failed to load solution data. Please refresh and try again.');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
 
-  // updateFormData is now provided by useFormPersistence hook
+    loadSolutionData();
+  }, [open, solution?.id, resetForm]);
+
+  // Auto-save functionality
+  const performAutoSave = useCallback(async () => {
+    if (!isDirty || !formData.name?.trim() || !solution?.id || isSubmitting) return;
+    
+    try {
+      const solutionData = {
+        name: formData.name!,
+        description: formData.description || '',
+        category: formData.category!,
+        features: formData.features || [],
+        useCases: formData.useCases || [],
+        painPoints: formData.painPoints || [],
+        targetAudience: formData.targetAudience || [],
+        externalUrl: formData.externalUrl || null,
+        resources: formData.resources || [],
+        shortDescription: formData.shortDescription,
+        benefits: formData.benefits,
+        tags: formData.tags,
+        marketData: formData.marketData,
+        competitors: formData.competitors,
+        technicalSpecs: formData.technicalSpecs,
+        pricing: formData.pricing,
+        caseStudies: formData.caseStudies,
+        metrics: formData.metrics,
+        uniqueValuePropositions: formData.uniqueValuePropositions,
+        positioningStatement: formData.positioningStatement,
+        keyDifferentiators: formData.keyDifferentiators,
+        metadata: formData.metadata
+      };
+
+      await solutionService.updateSolution(solution.id, solutionData);
+      setLastAutoSave(new Date());
+      clearDirty();
+      console.log('Auto-saved solution data');
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  }, [isDirty, formData, solution?.id, isSubmitting, clearDirty]);
+
+  // Set up auto-save timer
+  useEffect(() => {
+    if (isDirty && solution?.id && formData.name?.trim()) {
+      // Clear existing timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      // Set new timeout for 10 seconds
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        performAutoSave();
+      }, 10000);
+    }
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [isDirty, performAutoSave, solution?.id, formData.name]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async () => {
     try {
@@ -220,7 +333,15 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          {isLoadingData ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Loading solution data...</p>
+              </div>
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
               <TabsTrigger value="basic">Overview</TabsTrigger>
               <TabsTrigger value="features">Features</TabsTrigger>
@@ -301,6 +422,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
               </AnimatePresence>
             </div>
           </Tabs>
+          )}
         </div>
         
         {/* Error Display */}
@@ -315,11 +437,17 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         
         {/* Footer Actions */}
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
             {isDirty && (
               <span className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                 Unsaved changes
+              </span>
+            )}
+            {lastAutoSave && solution?.id && (
+              <span className="flex items-center gap-1 text-xs">
+                <Save className="h-3 w-3 text-green-500" />
+                Auto-saved {lastAutoSave.toLocaleTimeString()}
               </span>
             )}
           </div>
@@ -335,7 +463,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting || !formData.name?.trim()}
+              disabled={isSubmitting || isLoadingData || !formData.name?.trim()}
               className="min-w-[120px]"
             >
               {isSubmitting ? (
