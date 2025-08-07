@@ -53,7 +53,7 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
     updateFormData(newData);
   }, [formData, updateFormData]);
 
-  const ItemSection = ({ 
+  const ItemSection = React.useMemo(() => ({ 
     title, 
     icon: Icon, 
     items, 
@@ -132,7 +132,7 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
         )}
       </CardContent>
     </Card>
-  );
+  ), [addItem, removeItem]);
 
   return (
     <div className="space-y-6">
