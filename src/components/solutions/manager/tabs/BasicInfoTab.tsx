@@ -164,6 +164,24 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              {formData.category === 'Other' && (
+                <div className="space-y-2">
+                  <Label htmlFor="customCategory">Specify category</Label>
+                  <Input
+                    id="customCategory"
+                    placeholder="Enter custom category"
+                    value={(formData.metadata as any)?.customCategory || ''}
+                    onChange={(e) =>
+                      updateFormData({
+                        metadata: {
+                          ...(formData.metadata || {}),
+                          customCategory: e.target.value,
+                        } as any,
+                      })
+                    }
+                  />
+                </div>
+              )}
             </div>
           </div>
           

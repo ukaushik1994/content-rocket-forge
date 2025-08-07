@@ -151,10 +151,14 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       setIsAutoSaving(true);
       setAutoSaveError(false);
       
+      const categoryFinal = formData.category === 'Other'
+        ? ((formData.metadata as any)?.customCategory?.trim() || 'Other')
+        : formData.category!;
+      
       const solutionData = {
         name: formData.name!,
         description: formData.description || '',
-        category: formData.category!,
+        category: categoryFinal,
         features: formData.features || [],
         use_cases: formData.useCases || [],
         pain_points: formData.painPoints || [],
@@ -234,14 +238,23 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         return;
       }
 
+      // If user selected Other, require a custom category
+      if (formData.category === 'Other' && !((formData.metadata as any)?.customCategory?.trim())) {
+        setSaveError('Please specify a custom category.');
+        return;
+      }
+
       console.log('Submitting solution data:', formData);
       console.log('Benefits in formData:', formData.benefits);
 
       // Transform data for service
+      const categoryFinal = formData.category === 'Other'
+        ? ((formData.metadata as any)?.customCategory?.trim() || 'Other')
+        : formData.category!;
       const solutionData = {
         name: formData.name!,
         description: formData.description || '',
-        category: formData.category!,
+        category: categoryFinal,
         features: formData.features || [],
         use_cases: formData.useCases || [],
         pain_points: formData.painPoints || [],
@@ -273,7 +286,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       
       // Clear dirty state and close dialog
       clearDirty();
-      onOpenChange(false);
+      // keep dialog open after save
       
     } catch (error) {
       console.error('Form submission error:', error);
@@ -471,7 +484,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
               onClick={handleClose}
               disabled={isSubmitting}
             >
-              Cancel
+              Close
             </Button>
             <Button 
               onClick={handleSubmit} 
