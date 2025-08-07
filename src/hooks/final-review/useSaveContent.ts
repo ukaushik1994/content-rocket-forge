@@ -143,7 +143,39 @@ export const useSaveContent = () => {
         analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
       };
       
-      // Save the content item first with comprehensive metadata
+      // Check for existing content to prevent duplicates
+      const { data: existingContent } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('title', saveParams.title)
+        .eq('user_id', user.user.id)
+        .eq('status', 'draft')
+        .maybeSingle();
+        
+      if (existingContent) {
+        // Update existing content instead of creating duplicate
+        const { data: contentItem, error: contentError } = await supabase
+          .from('content_items')
+          .update({
+            content: saveParams.content,
+            seo_score: state.seoScore || 0,
+            metadata: metadata,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingContent.id)
+          .select()
+          .single();
+          
+        if (contentError || !contentItem) {
+          console.error('[useSaveContent] Error updating content:', contentError);
+          throw new Error(contentError?.message || 'Failed to update content');
+        }
+        
+        console.log('[useSaveContent] Updated existing content:', existingContent.id);
+        return existingContent.id;
+      }
+      
+      // Save new content item with comprehensive metadata
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
         .insert({
@@ -225,10 +257,7 @@ export const useSaveContent = () => {
         }
       }
       
-      // Save using content builder context (legacy)
-      if (saveContentToDraft) {
-        await saveContentToDraft(saveParams);
-      }
+      // Content saved successfully - no need for context save
       
       // Force refresh the content list to make sure it shows up
       console.log('[useSaveContent] Refreshing content after save');
@@ -297,7 +326,38 @@ export const useSaveContent = () => {
         analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
       };
       
-      // Save the content item first with comprehensive metadata
+      // Check for existing published content to prevent duplicates
+      const { data: existingContent } = await supabase
+        .from('content_items')
+        .select('id')
+        .eq('title', publishParams.title)
+        .eq('user_id', user.user.id)
+        .eq('status', 'published')
+        .maybeSingle();
+        
+      if (existingContent) {
+        // Update existing published content instead of creating duplicate
+        const { data: contentItem, error: contentError } = await supabase
+          .from('content_items')
+          .update({
+            content: publishParams.content,
+            seo_score: publishParams.seoScore || 0,
+            metadata: metadata,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingContent.id)
+          .select()
+          .single();
+          
+        if (contentError || !contentItem) {
+          throw new Error(contentError?.message || 'Failed to update published content');
+        }
+        
+        console.log('[useSaveContent] Updated existing published content:', existingContent.id);
+        return existingContent.id;
+      }
+      
+      // Save new published content item with comprehensive metadata
       const { data: contentItem, error: contentError } = await supabase
         .from('content_items')
         .insert({
@@ -377,10 +437,7 @@ export const useSaveContent = () => {
         }
       }
       
-      // Try publishing using content builder context (legacy)
-      if (saveContentToPublished) {
-        await saveContentToPublished(publishParams);
-      }
+      // Content published successfully - no need for context save
       
       // Force refresh the content list
       await refreshContent();
