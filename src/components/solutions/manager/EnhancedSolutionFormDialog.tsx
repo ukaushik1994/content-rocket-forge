@@ -154,27 +154,27 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         description: formData.description || '',
         category: formData.category!,
         features: formData.features || [],
-        useCases: formData.useCases || [],
-        painPoints: formData.painPoints || [],
-        targetAudience: formData.targetAudience || [],
-        externalUrl: formData.externalUrl || null,
+        use_cases: formData.useCases || [],
+        pain_points: formData.painPoints || [],
+        target_audience: formData.targetAudience || [],
+        external_url: formData.externalUrl || null,
         resources: formData.resources || [],
-        shortDescription: formData.shortDescription,
+        short_description: formData.shortDescription,
         benefits: formData.benefits,
         tags: formData.tags,
-        marketData: formData.marketData,
+        market_data: formData.marketData,
         competitors: formData.competitors,
-        technicalSpecs: formData.technicalSpecs,
-        pricing: formData.pricing,
-        caseStudies: formData.caseStudies,
+        technical_specs: formData.technicalSpecs,
+        pricing_model: formData.pricing,
+        case_studies: formData.caseStudies,
         metrics: formData.metrics,
-        uniqueValuePropositions: formData.uniqueValuePropositions,
-        positioningStatement: formData.positioningStatement,
-        keyDifferentiators: formData.keyDifferentiators,
+        unique_value_propositions: formData.uniqueValuePropositions,
+        positioning_statement: formData.positioningStatement,
+        key_differentiators: formData.keyDifferentiators,
         metadata: formData.metadata
       };
 
-      await solutionService.updateSolution(solution.id, solutionData);
+      await onSubmit(solutionData);
       setLastAutoSave(new Date());
       clearDirty();
       console.log('Auto-saved solution data');
@@ -184,7 +184,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     } finally {
       setIsAutoSaving(false);
     }
-  }, [isDirty, formData, solution?.id, isSubmitting, clearDirty]);
+  }, [isDirty, formData, solution?.id, isSubmitting, clearDirty, onSubmit]);
 
   // Set up auto-save timer
   useEffect(() => {
@@ -240,34 +240,28 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         description: formData.description || '',
         category: formData.category!,
         features: formData.features || [],
-        useCases: formData.useCases || [],
-        painPoints: formData.painPoints || [],
-        targetAudience: formData.targetAudience || [],
-        externalUrl: formData.externalUrl || null,
+        use_cases: formData.useCases || [],
+        pain_points: formData.painPoints || [],
+        target_audience: formData.targetAudience || [],
+        external_url: formData.externalUrl || null,
         resources: formData.resources || [],
-        shortDescription: formData.shortDescription,
+        short_description: formData.shortDescription,
         benefits: formData.benefits,
         tags: formData.tags,
-        marketData: formData.marketData,
+        market_data: formData.marketData,
         competitors: formData.competitors,
-        technicalSpecs: formData.technicalSpecs,
-        pricing: formData.pricing,
-        caseStudies: formData.caseStudies,
+        technical_specs: formData.technicalSpecs,
+        pricing_model: formData.pricing,
+        case_studies: formData.caseStudies,
         metrics: formData.metrics,
-        uniqueValuePropositions: formData.uniqueValuePropositions,
-        positioningStatement: formData.positioningStatement,
-        keyDifferentiators: formData.keyDifferentiators,
+        unique_value_propositions: formData.uniqueValuePropositions,
+        positioning_statement: formData.positioningStatement,
+        key_differentiators: formData.keyDifferentiators,
         metadata: formData.metadata
       };
 
-      // Direct save to database via service
-      if (solution?.id) {
-        await solutionService.updateSolution(solution.id, solutionData, logoFile || undefined);
-        toast.success('Solution updated successfully!');
-      } else {
-        await solutionService.createSolution(solutionData, logoFile || undefined);
-        toast.success('Solution created successfully!');
-      }
+      // Use parent's onSubmit function instead of calling service directly
+      await onSubmit(solutionData, logoFile || undefined);
       
       // Clear dirty state and close dialog
       clearDirty();

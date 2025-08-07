@@ -1,17 +1,17 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Solution } from '@/contexts/content-builder/types';
+import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { EnhancedSolutionCard } from './EnhancedSolutionCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Shuffle } from 'lucide-react';
 
 interface EnhancedSolutionGridProps {
-  solutions: Solution[];
-  onEdit: (solution: Solution) => void;
-  onDelete: (solution: Solution) => void;
-  onUseInContent: (solution: Solution) => void;
+  solutions: EnhancedSolution[];
+  onEdit: (solution: EnhancedSolution) => void;
+  onDelete: (solution: EnhancedSolution) => void;
+  onUseInContent: (solution: EnhancedSolution) => void;
   onAddNew: () => void;
 }
 
