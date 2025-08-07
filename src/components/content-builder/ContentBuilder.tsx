@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
+import { useContentBuilder, ContentBuilderProvider } from '@/contexts/content-builder/ContentBuilderContext';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
 import { ContentBuilderSidebar } from './sidebar/ContentBuilderSidebar';
@@ -380,3 +380,12 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
     </div>
   );
 };
+
+// Safe default export that ensures a Provider is present when this component is mounted directly
+export const ContentBuilderWithProvider: React.FC<ContentBuilderProps> = (props) => (
+  <ContentBuilderProvider>
+    <ContentBuilder {...props} />
+  </ContentBuilderProvider>
+);
+
+export default ContentBuilderWithProvider;
