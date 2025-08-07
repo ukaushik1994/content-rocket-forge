@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Server, Smartphone, Code, Shield, Zap, Clock } from 'lucide-react';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { DropdownWithOther } from '../shared/DropdownWithOther';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TechnicalSpecsTabProps {
   formData: Partial<EnhancedSolution>;
@@ -175,7 +175,8 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
   }, [formData.technicalSpecs, updateFormData]);
 
   return (
-    <div className="space-y-6">
+    <ScrollArea className="h-[70vh]">
+      <div className="space-y-6 pr-4">
       {/* System Requirements */}
       <TechnicalSection
         title="System Requirements"
@@ -332,6 +333,7 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ScrollArea>
   );
 };

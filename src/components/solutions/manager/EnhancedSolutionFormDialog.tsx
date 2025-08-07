@@ -28,7 +28,6 @@ import { CaseStudiesTab } from './tabs/CaseStudiesTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
 import { solutionService } from '@/services/solutionService';
 import { AutoSaveStatus } from './AutoSaveStatus';
-import { ErrorBoundary as CommonErrorBoundary } from '@/components/common/ErrorBoundary';
 
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
@@ -346,12 +345,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         }
       }}
     >
-        <DialogContent 
-          className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col"
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-          onPointerDownOutside={(e) => e.preventDefault()}
-        >
+        <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl">
             {solution ? `Edit ${solution.name}` : 'Add New Solution'}
@@ -389,8 +383,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
             </TabsList>
             
             <div className="flex-1 overflow-hidden">
-               <CommonErrorBoundary fallbackTitle="Something went wrong">
-                 <ScrollArea className="h-full">
+              <ScrollArea className="h-full">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -454,8 +447,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
                   </TabsContent>
                   </motion.div>
                 </AnimatePresence>
-                 </ScrollArea>
-               </CommonErrorBoundary>
+              </ScrollArea>
             </div>
           </Tabs>
           )}

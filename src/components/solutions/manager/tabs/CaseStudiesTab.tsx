@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, X, Building, Quote, TrendingUp, Trash2 } from 'lucide-react';
 import { EnhancedSolution, CaseStudy } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { DropdownWithOther } from '../shared/DropdownWithOther';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CaseStudiesTabProps {
   formData: Partial<EnhancedSolution>;
@@ -102,7 +102,8 @@ export const CaseStudiesTab: React.FC<CaseStudiesTabProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <ScrollArea className="h-[70vh]">
+      <div className="space-y-6 pr-4">
       {/* Add New Case Study */}
       <Card>
         <CardHeader>
@@ -333,5 +334,6 @@ export const CaseStudiesTab: React.FC<CaseStudiesTabProps> = ({
         </Card>
       )}
       </div>
+    </ScrollArea>
   );
 };

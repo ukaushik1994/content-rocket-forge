@@ -37,15 +37,16 @@ export const PricingTab: React.FC<PricingTabProps> = ({
   });
   const [customPricingModel, setCustomPricingModel] = useState('');
 
-  const pricing: PricingModel = {
-    model: formData.pricing?.model ?? 'subscription',
-    tiers: formData.pricing?.tiers ?? [],
-    customPricing: formData.pricing?.customPricing ?? false,
-    startingPrice: formData.pricing?.startingPrice,
-    freeTrialDuration: formData.pricing?.freeTrialDuration
-  } as PricingModel;
+  const pricing = formData.pricing || {
+    model: 'subscription',
+    tiers: [],
+    customPricing: false
+  };
 
-  // tiers is always an array via the default above
+  // Ensure tiers is always an array
+  if (!pricing.tiers) {
+    pricing.tiers = [];
+  }
 
   const updatePricing = (updates: Partial<PricingModel>) => {
     updateFormData({

@@ -156,7 +156,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectContent>
                   {SOLUTION_CATEGORIES.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
