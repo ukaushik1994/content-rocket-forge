@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,89 @@ interface TechnicalSpecsTabProps {
   updateFormData: (updates: Partial<EnhancedSolution>) => void;
 }
 
+interface TechnicalSectionProps {
+  title: string;
+  icon: React.ElementType;
+  items: string[];
+  field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics';
+  newValue: string;
+  setNewValue: (value: string) => void;
+  placeholder: string;
+  onAddItem: (field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics', value: string, setter: (value: string) => void) => void;
+  onRemoveItem: (field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics', index: number) => void;
+}
+
+const TechnicalSection = memo<TechnicalSectionProps>(({ 
+  title, 
+  icon: Icon, 
+  items, 
+  field, 
+  newValue, 
+  setNewValue, 
+  placeholder,
+  onAddItem,
+  onRemoveItem
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Icon className="h-5 w-5" />
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <div className="flex gap-2">
+        <Input
+          placeholder={placeholder}
+          value={newValue}
+          onChange={(e) => setNewValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              onAddItem(field, newValue, setNewValue);
+            }
+          }}
+        />
+        <Button 
+          type="button" 
+          onClick={() => onAddItem(field, newValue, setNewValue)}
+          disabled={!newValue.trim()}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      {items.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {items.map((item, index) => (
+            <Badge 
+              key={index} 
+              variant="secondary" 
+              className="flex items-center gap-1 pr-1"
+            >
+              {item}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                onClick={() => onRemoveItem(field, index)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          ))}
+        </div>
+      )}
+      
+      {items.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground">
+          <p className="text-sm">No {title.toLowerCase()} added yet</p>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+));
+
 export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
   formData,
   updateFormData
@@ -22,7 +105,7 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
   const [newSecurityFeature, setNewSecurityFeature] = useState('');
   const [newPerformanceMetric, setNewPerformanceMetric] = useState('');
 
-  const addTechnicalItem = (
+  const addTechnicalItem = useCallback((
     field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics',
     value: string,
     setter: (value: string) => void
@@ -41,9 +124,9 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
       });
     }
     setter('');
-  };
+  }, [formData.technicalSpecs, updateFormData]);
 
-  const removeTechnicalItem = (
+  const removeTechnicalItem = useCallback((
     field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics',
     index: number
   ) => {
@@ -56,84 +139,7 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
         [field]: currentItems.filter((_: any, i: number) => i !== index)
       }
     });
-  };
-
-  const TechnicalSection = ({ 
-    title, 
-    icon: Icon, 
-    items, 
-    field, 
-    newValue, 
-    setNewValue, 
-    placeholder 
-  }: {
-    title: string;
-    icon: React.ElementType;
-    items: string[];
-    field: 'systemRequirements' | 'supportedPlatforms' | 'apiCapabilities' | 'securityFeatures' | 'performanceMetrics';
-    newValue: string;
-    setNewValue: (value: string) => void;
-    placeholder: string;
-  }) => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Icon className="h-5 w-5" />
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder={placeholder}
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addTechnicalItem(field, newValue, setNewValue);
-              }
-            }}
-          />
-          <Button 
-            type="button" 
-            onClick={() => addTechnicalItem(field, newValue, setNewValue)}
-            disabled={!newValue.trim()}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        {items.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {items.map((item, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
-                className="flex items-center gap-1 pr-1"
-              >
-                {item}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                  onClick={() => removeTechnicalItem(field, index)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            ))}
-          </div>
-        )}
-        
-        {items.length === 0 && (
-          <div className="text-center py-6 text-muted-foreground">
-            <p className="text-sm">No {title.toLowerCase()} added yet</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  }, [formData.technicalSpecs, updateFormData]);
 
   return (
     <div className="space-y-6">
@@ -146,6 +152,8 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
         newValue={newRequirement}
         setNewValue={setNewRequirement}
         placeholder="e.g., 4GB RAM minimum, Windows 10 or macOS 10.15"
+        onAddItem={addTechnicalItem}
+        onRemoveItem={removeTechnicalItem}
       />
 
       {/* Supported Platforms */}
@@ -157,6 +165,8 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
         newValue={newPlatform}
         setNewValue={setNewPlatform}
         placeholder="e.g., Web, iOS, Android, Windows, macOS"
+        onAddItem={addTechnicalItem}
+        onRemoveItem={removeTechnicalItem}
       />
 
       {/* API Capabilities */}
@@ -168,6 +178,8 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
         newValue={newApiCapability}
         setNewValue={setNewApiCapability}
         placeholder="e.g., REST API, GraphQL, Webhooks, SDKs available"
+        onAddItem={addTechnicalItem}
+        onRemoveItem={removeTechnicalItem}
       />
 
       {/* Security Features */}
@@ -179,6 +191,8 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
         newValue={newSecurityFeature}
         setNewValue={setNewSecurityFeature}
         placeholder="e.g., End-to-end encryption, SOC 2 certified, GDPR compliant"
+        onAddItem={addTechnicalItem}
+        onRemoveItem={removeTechnicalItem}
       />
 
       {/* Performance Metrics */}
@@ -190,6 +204,8 @@ export const TechnicalSpecsTab: React.FC<TechnicalSpecsTabProps> = ({
         newValue={newPerformanceMetric}
         setNewValue={setNewPerformanceMetric}
         placeholder="e.g., 99.9% uptime, <200ms response time, handles 1M+ requests/day"
+        onAddItem={addTechnicalItem}
+        onRemoveItem={removeTechnicalItem}
       />
 
       {/* Uptime Guarantee */}

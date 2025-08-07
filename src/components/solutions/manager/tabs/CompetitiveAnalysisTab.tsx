@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,7 @@ export const CompetitiveAnalysisTab: React.FC<CompetitiveAnalysisTabProps> = ({
 
   const competitors = formData.competitors || [];
 
-  const addCompetitor = () => {
+  const addCompetitor = useCallback(() => {
     if (!newCompetitor.name.trim()) return;
 
     const competitor: CompetitorInfo = {
@@ -44,23 +44,23 @@ export const CompetitiveAnalysisTab: React.FC<CompetitiveAnalysisTabProps> = ({
     });
 
     setNewCompetitor({ name: '', marketShare: '', pricing: '' });
-  };
+  }, [newCompetitor, competitors, updateFormData]);
 
-  const removeCompetitor = (index: number) => {
+  const removeCompetitor = useCallback((index: number) => {
     updateFormData({
       competitors: competitors.filter((_, i) => i !== index)
     });
-  };
+  }, [competitors, updateFormData]);
 
-  const updateCompetitor = (index: number, updates: Partial<CompetitorInfo>) => {
+  const updateCompetitor = useCallback((index: number, updates: Partial<CompetitorInfo>) => {
     updateFormData({
       competitors: competitors.map((comp, i) => 
         i === index ? { ...comp, ...updates } : comp
       )
     });
-  };
+  }, [competitors, updateFormData]);
 
-  const addCompetitorAttribute = (
+  const addCompetitorAttribute = useCallback((
     competitorIndex: number,
     attribute: 'strengths' | 'weaknesses',
     value: string,
@@ -77,9 +77,9 @@ export const CompetitiveAnalysisTab: React.FC<CompetitiveAnalysisTabProps> = ({
       });
     }
     setter('');
-  };
+  }, [competitors, updateCompetitor]);
 
-  const removeCompetitorAttribute = (
+  const removeCompetitorAttribute = useCallback((
     competitorIndex: number,
     attribute: 'strengths' | 'weaknesses',
     itemIndex: number
@@ -90,7 +90,7 @@ export const CompetitiveAnalysisTab: React.FC<CompetitiveAnalysisTabProps> = ({
     updateCompetitor(competitorIndex, {
       [attribute]: currentItems.filter((_, i) => i !== itemIndex)
     });
-  };
+  }, [competitors, updateCompetitor]);
 
   return (
     <div className="space-y-6">

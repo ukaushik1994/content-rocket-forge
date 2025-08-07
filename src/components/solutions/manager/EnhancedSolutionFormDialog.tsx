@@ -74,38 +74,43 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       
       try {
         if (solution?.id) {
-          // Use the passed solution data directly since it's already enhanced
-          const initialData: Partial<EnhancedSolution> = {
-            id: solution.id,
-            name: solution.name || '',
-            description: solution.description || '',
-            category: solution.category || 'Business Solution',
-            features: solution.features || [],
-            useCases: solution.useCases || [],
-            painPoints: solution.painPoints || [],
-            targetAudience: solution.targetAudience || [],
-            externalUrl: solution.externalUrl || '',
-            resources: solution.resources || [],
-            shortDescription: solution.shortDescription || '',
-            benefits: solution.benefits || [],
-            tags: solution.tags || [],
-            marketData: solution.marketData || {},
-            competitors: solution.competitors || [],
-            technicalSpecs: solution.technicalSpecs || {},
-            pricing: solution.pricing || {
-              model: 'subscription',
-              tiers: []
-            },
-            caseStudies: solution.caseStudies || [],
-            metrics: solution.metrics || {},
-            uniqueValuePropositions: solution.uniqueValuePropositions || [],
-            positioningStatement: solution.positioningStatement || '',
-            keyDifferentiators: solution.keyDifferentiators || [],
-            metadata: solution.metadata || {}
-          };
-          
-          resetForm(initialData);
-          setLogoPreview(solution.logoUrl || null);
+          // Always fetch fresh data from backend for editing to ensure we have the latest saved data
+          const freshData = await solutionService.getSolutionById(solution.id);
+          if (freshData) {
+            const initialData: Partial<EnhancedSolution> = {
+              id: freshData.id,
+              name: freshData.name || '',
+              description: freshData.description || '',
+              category: freshData.category || 'Business Solution',
+              features: freshData.features || [],
+              useCases: freshData.useCases || [],
+              painPoints: freshData.painPoints || [],
+              targetAudience: freshData.targetAudience || [],
+              externalUrl: freshData.externalUrl || '',
+              resources: freshData.resources || [],
+              shortDescription: freshData.shortDescription || '',
+              benefits: freshData.benefits || [],
+              tags: freshData.tags || [],
+              marketData: freshData.marketData || {},
+              competitors: freshData.competitors || [],
+              technicalSpecs: freshData.technicalSpecs || {},
+              pricing: freshData.pricing || {
+                model: 'subscription',
+                tiers: []
+              },
+              caseStudies: freshData.caseStudies || [],
+              metrics: freshData.metrics || {},
+              uniqueValuePropositions: freshData.uniqueValuePropositions || [],
+              positioningStatement: freshData.positioningStatement || '',
+              keyDifferentiators: freshData.keyDifferentiators || [],
+              metadata: freshData.metadata || {}
+            };
+            
+            resetForm(initialData);
+            setLogoPreview(freshData.logoUrl || null);
+          } else {
+            setSaveError('Failed to load solution data');
+          }
         } else {
           // New solution - start with empty form
           const initialData: Partial<EnhancedSolution> = {
@@ -157,7 +162,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         external_url: formData.externalUrl || null,
         resources: formData.resources || [],
         short_description: formData.shortDescription,
-        benefits: formData.benefits,
+        benefits: formData.benefits || [],
         tags: formData.tags,
         market_data: formData.marketData,
         competitors: formData.competitors,
@@ -230,6 +235,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       }
 
       console.log('Submitting solution data:', formData);
+      console.log('Benefits in formData:', formData.benefits);
 
       // Transform data for service
       const solutionData = {
@@ -243,7 +249,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         external_url: formData.externalUrl || null,
         resources: formData.resources || [],
         short_description: formData.shortDescription,
-        benefits: formData.benefits,
+        benefits: formData.benefits || [],
         tags: formData.tags,
         market_data: formData.marketData,
         competitors: formData.competitors,
@@ -258,6 +264,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
       };
 
       console.log('Transformed solution data for service:', solutionData);
+      console.log('Benefits in solutionData:', solutionData.benefits);
 
       // Use parent's onSubmit function instead of calling service directly
       await onSubmit(solutionData, logoFile || undefined);

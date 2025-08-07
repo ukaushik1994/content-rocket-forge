@@ -151,6 +151,7 @@ class SolutionService {
       }
 
       console.log('Updating solution with data:', dbData);
+      console.log('Benefits in dbData:', dbData.benefits);
 
       const { data, error } = await supabase
         .from('solutions')
@@ -166,8 +167,10 @@ class SolutionService {
       }
 
       console.log('Solution updated successfully in database:', data);
+      console.log('Benefits in database response:', data.benefits);
       const transformedData = this.transformDatabaseToEnhanced([data])[0];
       console.log('Transformed data for response:', transformedData);
+      console.log('Benefits in transformed data:', transformedData.benefits);
       return { success: true, data: transformedData };
     } catch (error) {
       console.error('Service error updating solution:', error);
@@ -230,42 +233,46 @@ class SolutionService {
 
   private transformDatabaseToEnhanced(dbSolutions: any[]): EnhancedSolution[] {
     console.log('Transforming database solutions to enhanced format:', dbSolutions);
-    const transformed = dbSolutions.map(solution => ({
-      id: solution.id,
-      name: solution.name,
-      description: solution.description || '',
-      shortDescription: solution.short_description,
-      features: Array.isArray(solution.features) ? solution.features : [],
-      useCases: Array.isArray(solution.use_cases) ? solution.use_cases : [],
-      painPoints: Array.isArray(solution.pain_points) ? solution.pain_points : [],
-      targetAudience: Array.isArray(solution.target_audience) ? solution.target_audience : [],
-      category: solution.category || 'Business Solution',
-      logoUrl: solution.logo_url,
-      externalUrl: solution.external_url,
-      resources: Array.isArray(solution.resources) ? solution.resources : [],
-      tags: Array.isArray(solution.tags) ? solution.tags : [],
-      benefits: Array.isArray(solution.benefits) ? solution.benefits : [],
-      integrations: Array.isArray(solution.integrations) ? solution.integrations : [],
-      marketData: solution.market_data || {},
-      competitors: Array.isArray(solution.competitors) ? solution.competitors : [],
-      technicalSpecs: solution.technical_specs || {},
-      pricing: solution.pricing_model || {
-        model: 'subscription',
-        tiers: []
-      },
-      caseStudies: Array.isArray(solution.case_studies) ? solution.case_studies : [],
-      metrics: solution.metrics || {},
-      uniqueValuePropositions: Array.isArray(solution.unique_value_propositions) ? solution.unique_value_propositions : [],
-      positioningStatement: solution.positioning_statement,
-      keyDifferentiators: Array.isArray(solution.key_differentiators) ? solution.key_differentiators : [],
-      metadata: solution.metadata || {}
-    }));
+    const transformed = dbSolutions.map(solution => {
+      console.log('Processing solution:', solution.id, 'Benefits:', solution.benefits);
+      return {
+        id: solution.id,
+        name: solution.name,
+        description: solution.description || '',
+        shortDescription: solution.short_description,
+        features: Array.isArray(solution.features) ? solution.features : [],
+        useCases: Array.isArray(solution.use_cases) ? solution.use_cases : [],
+        painPoints: Array.isArray(solution.pain_points) ? solution.pain_points : [],
+        targetAudience: Array.isArray(solution.target_audience) ? solution.target_audience : [],
+        category: solution.category || 'Business Solution',
+        logoUrl: solution.logo_url,
+        externalUrl: solution.external_url,
+        resources: Array.isArray(solution.resources) ? solution.resources : [],
+        tags: Array.isArray(solution.tags) ? solution.tags : [],
+        benefits: Array.isArray(solution.benefits) ? solution.benefits : [],
+        integrations: Array.isArray(solution.integrations) ? solution.integrations : [],
+        marketData: solution.market_data || {},
+        competitors: Array.isArray(solution.competitors) ? solution.competitors : [],
+        technicalSpecs: solution.technical_specs || {},
+        pricing: solution.pricing_model || {
+          model: 'subscription',
+          tiers: []
+        },
+        caseStudies: Array.isArray(solution.case_studies) ? solution.case_studies : [],
+        metrics: solution.metrics || {},
+        uniqueValuePropositions: Array.isArray(solution.unique_value_propositions) ? solution.unique_value_propositions : [],
+        positioningStatement: solution.positioning_statement,
+        keyDifferentiators: Array.isArray(solution.key_differentiators) ? solution.key_differentiators : [],
+        metadata: solution.metadata || {}
+      };
+    });
     console.log('Transformed solutions:', transformed);
     return transformed;
   }
 
   private transformEnhancedToDatabase(enhanced: Partial<SolutionCreateData>): any {
     console.log('Transforming enhanced solution to database format:', enhanced);
+    console.log('Benefits in enhanced:', enhanced.benefits);
     const transformed = {
       name: enhanced.name,
       description: enhanced.description,
@@ -292,6 +299,7 @@ class SolutionService {
       metadata: enhanced.metadata || {}
     };
     console.log('Transformed to database format:', transformed);
+    console.log('Benefits in transformed:', transformed.benefits);
     return transformed;
   }
 
