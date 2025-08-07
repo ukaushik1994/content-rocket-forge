@@ -43,6 +43,11 @@ export const PricingTab: React.FC<PricingTabProps> = ({
     customPricing: false
   };
 
+  // Ensure tiers is always an array
+  if (!pricing.tiers) {
+    pricing.tiers = [];
+  }
+
   const updatePricing = (updates: Partial<PricingModel>) => {
     updateFormData({
       pricing: {
@@ -62,22 +67,25 @@ export const PricingTab: React.FC<PricingTabProps> = ({
       limitations: newTier.limitations.split(',').map(l => l.trim()).filter(l => l)
     };
 
+    const currentTiers = pricing.tiers || [];
     updatePricing({
-      tiers: [...pricing.tiers, tier]
+      tiers: [...currentTiers, tier]
     });
 
     setNewTier({ name: '', price: '', features: '', limitations: '' });
   };
 
   const removeTier = (index: number) => {
+    const currentTiers = pricing.tiers || [];
     updatePricing({
-      tiers: pricing.tiers.filter((_, i) => i !== index)
+      tiers: currentTiers.filter((_, i) => i !== index)
     });
   };
 
   const updateTier = (index: number, updates: any) => {
+    const currentTiers = pricing.tiers || [];
     updatePricing({
-      tiers: pricing.tiers.map((tier, i) => 
+      tiers: currentTiers.map((tier, i) => 
         i === index ? { ...tier, ...updates } : tier
       )
     });
@@ -86,19 +94,23 @@ export const PricingTab: React.FC<PricingTabProps> = ({
   const addTierFeature = (tierIndex: number, feature: string) => {
     if (!feature.trim()) return;
     
-    const tier = pricing.tiers[tierIndex];
-    if (!tier.features.includes(feature.trim())) {
+    const currentTiers = pricing.tiers || [];
+    const tier = currentTiers[tierIndex];
+    if (tier && !tier.features.includes(feature.trim())) {
       updateTier(tierIndex, {
-        features: [...tier.features, feature.trim()]
+        features: [...(tier.features || []), feature.trim()]
       });
     }
   };
 
   const removeTierFeature = (tierIndex: number, featureIndex: number) => {
-    const tier = pricing.tiers[tierIndex];
-    updateTier(tierIndex, {
-      features: tier.features.filter((_, i) => i !== featureIndex)
-    });
+    const currentTiers = pricing.tiers || [];
+    const tier = currentTiers[tierIndex];
+    if (tier) {
+      updateTier(tierIndex, {
+        features: (tier.features || []).filter((_, i) => i !== featureIndex)
+      });
+    }
   };
 
   return (
@@ -227,7 +239,7 @@ export const PricingTab: React.FC<PricingTabProps> = ({
       </Card>
 
       {/* Pricing Tiers List */}
-      {pricing.tiers.length > 0 ? (
+      {pricing.tiers && pricing.tiers.length > 0 ? (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Pricing Tiers</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
