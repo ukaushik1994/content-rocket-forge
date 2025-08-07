@@ -134,6 +134,12 @@ export const useSaveContent = () => {
         metaDescription: saveParams.metaDescription,
         outline: saveParams.outline,
         serpSelections: saveParams.serpSelections,
+        // Solution data from content builder
+        selectedSolution: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          logoUrl: state.selectedSolution.logoUrl
+        } : null,
         // Enhanced SERP data - convert to plain objects
         comprehensiveSerpData: comprehensiveSerpData ? JSON.parse(JSON.stringify(comprehensiveSerpData)) : null,
         serpMetrics: comprehensiveSerpData?.serpMetrics ? JSON.parse(JSON.stringify(comprehensiveSerpData.serpMetrics)) : null,
@@ -317,6 +323,12 @@ export const useSaveContent = () => {
         metaDescription: publishParams.metaDescription,
         outline: publishParams.outline,
         serpSelections: publishParams.serpSelections,
+        // Solution data from content builder
+        selectedSolution: state.selectedSolution ? {
+          id: state.selectedSolution.id,
+          name: state.selectedSolution.name,
+          logoUrl: state.selectedSolution.logoUrl
+        } : null,
         // Enhanced SERP data - convert to plain objects
         comprehensiveSerpData: comprehensiveSerpData ? JSON.parse(JSON.stringify(comprehensiveSerpData)) : null,
         serpMetrics: comprehensiveSerpData?.serpMetrics ? JSON.parse(JSON.stringify(comprehensiveSerpData.serpMetrics)) : null,

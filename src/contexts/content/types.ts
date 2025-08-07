@@ -31,6 +31,17 @@ export interface ContentItemType {
     qualityScore?: number;
     readabilityScore?: number;
     engagementScore?: number;
+    // Solution data
+    solution?: {
+      id?: string;
+      name?: string;
+      logoUrl?: string;
+    };
+    selectedSolution?: {
+      id?: string;
+      name?: string;
+      logoUrl?: string;
+    };
     // Glossary-specific metadata
     termCount?: number;
     completedTerms?: number;
