@@ -207,33 +207,121 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         }
       }}
     >
-      <DialogContent className="glass-panel sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-xl">
-            {solution ? `Edit ${solution.name}` : 'Add New Solution'}
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl z-50 flex flex-col">
+        {/* Animated background particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-glow"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }}></div>
+        </div>
+
+        <DialogHeader className="flex-shrink-0 relative z-10">
+          <DialogTitle className="flex items-center justify-between">
+            <motion.div 
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="p-2 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-lg backdrop-blur-sm border border-white/10">
+                <Save className="h-6 w-6 text-primary animate-pulse" />
+              </div>
+              <div>
+                <div className="text-xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  {solution ? `Edit ${solution.name}` : 'Create Solution'}
+                </div>
+                <div className="text-sm text-muted-foreground font-mono">
+                  {solution 
+                    ? 'Update your business solution details'
+                    : 'Build a comprehensive solution profile'}
+                </div>
+              </div>
+            </motion.div>
+            
+            {/* Progress Indicator */}
+            <motion.div 
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              {logoPreview && (
+                <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-primary/20">
+                  <img src={logoPreview} alt="Solution logo" className="w-full h-full object-cover" />
+                </div>
+              )}
+              {isDirty && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-lg">
+                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+                  <span className="text-xs text-amber-200 font-medium">Unsaved</span>
+                </div>
+              )}
+            </motion.div>
           </DialogTitle>
-          <DialogDescription>
-            {solution 
-              ? 'Update your business solution details below.'
-              : 'Create a comprehensive profile for your business solution.'}
-          </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
-              <TabsTrigger value="basic">Overview</TabsTrigger>
-              <TabsTrigger value="features">Features</TabsTrigger>
-              <TabsTrigger value="market">Market</TabsTrigger>
-              <TabsTrigger value="technical">Technical</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing</TabsTrigger>
-            </TabsList>
-            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
-              <TabsTrigger value="competitors">Competitors</TabsTrigger>
-              <TabsTrigger value="cases">Case Studies</TabsTrigger>
-              <TabsTrigger value="resources">Resources</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-sm border border-white/10 p-1 rounded-xl mb-4 flex-shrink-0">
+              <TabsTrigger 
+                value="basic" 
+                className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  Overview
+                </motion.div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="market" 
+                className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Market Intelligence
+                </motion.div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="technical" 
+                className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  Technical & Pricing
+                </motion.div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="cases" 
+                className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  Case Studies & Analytics
+                </motion.div>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="preview" 
+                className="relative flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/10 data-[state=active]:to-white/5 data-[state=active]:border-white/20 transition-all duration-300 rounded-lg group"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  Preview
+                </motion.div>
+              </TabsTrigger>
             </TabsList>
             
             <div className="flex-1 overflow-y-auto">
@@ -244,58 +332,119 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
                   initial="hidden"
                   animate="visible"
                   exit="exit"
+                  className="space-y-6"
                 >
-                  <TabsContent value="basic" className="mt-0">
-                    <BasicInfoTab
-                      formData={formData}
-                      updateFormData={updateFormData}
-                      logoFile={logoFile}
-                      setLogoFile={setLogoFile}
-                      logoPreview={logoPreview}
-                      setLogoPreview={setLogoPreview}
-                    />
+                  {/* Overview Tab - Combines Basic Info and Features */}
+                  <TabsContent value="basic" className="mt-0 space-y-6">
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                          Basic Information
+                        </h3>
+                        <BasicInfoTab
+                          formData={formData}
+                          updateFormData={updateFormData}
+                          logoFile={logoFile}
+                          setLogoFile={setLogoFile}
+                          logoPreview={logoPreview}
+                          setLogoPreview={setLogoPreview}
+                        />
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
+                          Features & Benefits
+                        </h3>
+                        <FeaturesTab
+                          formData={formData}
+                          updateFormData={updateFormData}
+                        />
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                   
-                  <TabsContent value="features" className="mt-0">
-                    <FeaturesTab
-                      formData={formData}
-                      updateFormData={updateFormData}
-                    />
+                  {/* Market Intelligence Tab - Combines Market and Competitors */}
+                  <TabsContent value="market" className="mt-0 space-y-6">
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                          Market Analysis
+                        </h3>
+                        <MarketDataTab formData={formData} updateFormData={updateFormData} />
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                          Competitive Analysis
+                        </h3>
+                        <CompetitiveAnalysisTab formData={formData} updateFormData={updateFormData} />
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                   
-                  <TabsContent value="resources" className="mt-0">
-                    <ResourcesTab
-                      formData={formData}
-                      updateFormData={updateFormData}
-                    />
+                  {/* Technical & Pricing Tab */}
+                  <TabsContent value="technical" className="mt-0 space-y-6">
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                          Technical Specifications
+                        </h3>
+                        <TechnicalSpecsTab formData={formData} updateFormData={updateFormData} />
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                          Pricing Strategy
+                        </h3>
+                        <PricingTab formData={formData} updateFormData={updateFormData} />
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                   
-                  <TabsContent value="market" className="mt-0">
-                    <MarketDataTab formData={formData} updateFormData={updateFormData} />
+                  {/* Case Studies & Analytics Tab */}
+                  <TabsContent value="cases" className="mt-0 space-y-6">
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                          Case Studies
+                        </h3>
+                        <CaseStudiesTab formData={formData} updateFormData={updateFormData} />
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                          Analytics & Metrics
+                        </h3>
+                        <AnalyticsTab formData={formData} updateFormData={updateFormData} />
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                          Resources & Documentation
+                        </h3>
+                        <ResourcesTab
+                          formData={formData}
+                          updateFormData={updateFormData}
+                        />
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                   
-                  <TabsContent value="technical" className="mt-0">
-                    <TechnicalSpecsTab formData={formData} updateFormData={updateFormData} />
-                  </TabsContent>
-                  
-                  <TabsContent value="pricing" className="mt-0">
-                    <PricingTab formData={formData} updateFormData={updateFormData} />
-                  </TabsContent>
-                  
-                  <TabsContent value="competitors" className="mt-0">
-                    <CompetitiveAnalysisTab formData={formData} updateFormData={updateFormData} />
-                  </TabsContent>
-                  
-                  <TabsContent value="cases" className="mt-0">
-                    <CaseStudiesTab formData={formData} updateFormData={updateFormData} />
-                  </TabsContent>
-                  
-                  <TabsContent value="analytics" className="mt-0">
-                    <AnalyticsTab formData={formData} updateFormData={updateFormData} />
-                  </TabsContent>
-                  
+                  {/* Preview Tab */}
                   <TabsContent value="preview" className="mt-0">
-                    <PreviewTab formData={formData} logoPreview={logoPreview} />
+                    <Card className="bg-background/50 backdrop-blur-sm border border-border/30">
+                      <CardContent className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
+                          Solution Preview
+                        </h3>
+                        <PreviewTab formData={formData} logoPreview={logoPreview} />
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                 </motion.div>
               </AnimatePresence>
@@ -305,48 +454,56 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
         
         {/* Error Display */}
         {saveError && (
-          <div className="flex-shrink-0 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <div className="flex items-center gap-2 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              {saveError}
+          <motion.div 
+            className="flex-shrink-0 p-4 bg-gradient-to-r from-destructive/20 to-red-500/20 border border-destructive/30 rounded-lg backdrop-blur-sm relative z-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="flex items-center gap-3 text-sm text-destructive">
+              <AlertCircle className="h-5 w-5 animate-pulse" />
+              <div>
+                <div className="font-medium">Save Error</div>
+                <div className="text-destructive/80">{saveError}</div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         )}
         
         {/* Footer Actions */}
-        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isDirty && (
-              <span className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                Unsaved changes
-              </span>
-            )}
+        <div className="flex-shrink-0 flex justify-between items-center pt-6 border-t border-border/50 backdrop-blur-sm relative z-10">
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="w-2 h-2 bg-primary/40 rounded-full" />
+              <span className="font-mono text-xs">Auto-saved locally</span>
+            </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button 
               type="button" 
               variant="outline" 
               onClick={handleClose}
               disabled={isSubmitting}
+              className="px-6 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/70 hover:border-border"
             >
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
             <Button 
               onClick={handleSubmit} 
               disabled={isSubmitting || !formData.name?.trim()}
-              className="min-w-[120px]"
+              className="min-w-[140px] px-6 bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 border-0 shadow-lg hover:shadow-primary/25 transition-all duration-300"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  <span className="animate-pulse">Saving...</span>
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save
+                  Save Solution
                 </>
               )}
             </Button>
