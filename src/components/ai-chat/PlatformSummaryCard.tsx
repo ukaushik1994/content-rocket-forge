@@ -141,55 +141,7 @@ export const PlatformSummaryCard: React.FC<PlatformSummaryCardProps> = ({ onActi
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="space-y-6">
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {metrics.map((metric, index) => (
-              <motion.div
-                key={metric.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + (index * 0.1), duration: 0.4 }}
-                className="text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-              >
-                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg ${metric.bgColor} mb-3`}>
-                  <metric.icon className={`h-5 w-5 ${metric.color}`} />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">{metric.value}</div>
-                <div className="text-xs text-white/60">{metric.label}</div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-3">
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0"
-              onClick={() => onAction('send:Show me detailed performance analytics')}
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              View Analytics
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-white/5 border-white/20 text-white hover:bg-white/10"
-              onClick={() => onAction('workflow:keyword-optimization')}
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Optimize Content
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-
-          {/* Status Indicator */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/70">
-              Platform health: <span className="text-green-400 font-medium">Excellent</span>
-            </span>
-            <span className="text-white/50">Last updated: Just now</span>
-          </div>
+        <CardContent>
         </CardContent>
 
         {/* Background decoration */}
