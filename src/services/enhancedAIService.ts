@@ -1,6 +1,7 @@
 import { EnhancedChatMessage, VisualData, WorkflowStep } from '@/types/enhancedChat';
 import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 export interface WorkflowContext {
   currentWorkflow?: string;
@@ -22,63 +23,41 @@ class EnhancedAIService {
         return this.createErrorMessage('User authentication required');
       }
 
+      console.log('🤖 Processing enhanced message with AIServiceController:', { message, userId });
+
       // Fetch user context (solutions, analytics, workflow state)
       const context = await this.fetchUserContext(userId);
       
-      // Prepare messages for AI
-      const messages = conversationHistory.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content
-      }));
-      messages.push({ role: 'user', content: message });
+      // Build enhanced system prompt with user context
+      const systemPrompt = this.buildEnhancedSystemPrompt(context, conversationHistory);
 
-      // Create the request using enhanced AI chat function
-      console.log('🚀 Sending request to enhanced-ai-chat with context:', {
-        messagesCount: messages.length,
-        userId,
-        hasContext: !!context,
-        hasSolutions: !!(context?.solutions?.length),
-        hasAnalytics: !!(context?.analytics && Object.keys(context.analytics).length),
-        hasWorkflowContext: !!(this.workflowContext && Object.keys(this.workflowContext).length)
-      });
+      // Use AIServiceController for the actual AI generation
+      const result = await AIServiceController.generate({
+        input: message,
+        use_case: 'chat',
+        temperature: 0.8,
+        max_tokens: 2000
+      }, systemPrompt);
 
-      const response = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: {
-          messages,
-          userId,
-          solutions: context.solutions || [],
-          analytics: context.analytics || {},
-          workflowContext: this.workflowContext || {}
-        }
-      });
-
-      console.log('📨 Edge function response:', {
-        hasError: !!response.error,
-        hasData: !!response.data,
-        dataKeys: response.data ? Object.keys(response.data) : []
-      });
-
-      if (response.error) {
-        console.error('❌ Enhanced AI Chat error:', response.error);
-        throw new Error(response.error.message || 'AI service error');
+      if (!result || !result.content) {
+        console.warn('❌ No response from AI service');
+        return this.createErrorMessage('No response received. Please check your AI provider configuration in Settings.');
       }
 
-      const data = response.data;
-      
-      if (!data) {
-        console.error('❌ No data received from edge function');
-        throw new Error('No response data from AI service');
-      }
-      
+      console.log('✅ Enhanced AI response received from AIServiceController');
+
+      // Parse response for structured data
+      const parsedResponse = this.parseAIResponse(result.content);
+
       // Generate contextual actions based on the conversation
       const contextualActions = this.generateSmartActions(
-        data?.content || data?.message || '', 
+        parsedResponse.message || result.content, 
         message, 
         context
       );
       
       // Merge actions from AI response with generated contextual actions
-      const aiActions = data?.actions || [];
+      const aiActions = parsedResponse.actions || [];
       const allActions = [...(Array.isArray(aiActions) ? aiActions : []), ...contextualActions];
       
       // Deduplicate actions by ID
@@ -89,24 +68,34 @@ class EnhancedAIService {
       const enhancedMessage: EnhancedChatMessage = {
         id: `enhanced-${Date.now()}`,
         role: 'assistant',
-        content: data?.message || data?.content || 'Response received',
+        content: parsedResponse.message || result.content,
         timestamp: new Date(),
         actions: uniqueActions.slice(0, 6), // Limit to 6 actions
-        visualData: data?.visualData || data?.visual_data || null,
-        workflowContext: data?.workflowContext || null
+        visualData: parsedResponse.visualData,
+        workflowContext: {
+          currentWorkflow: this.workflowContext.currentWorkflow,
+          stepData: this.workflowContext.stepData
+        }
       };
 
       console.log('✅ Enhanced message created:', {
         contentLength: enhancedMessage.content.length,
         actionsCount: enhancedMessage.actions?.length || 0,
         hasVisualData: !!enhancedMessage.visualData,
-        hasWorkflowContext: !!enhancedMessage.workflowContext
+        hasWorkflowContext: !!enhancedMessage.workflowContext,
+        providerUsed: result.provider_used,
+        modelUsed: result.model_used
       });
+
+      // Stream update callback
+      if (onStreamUpdate) {
+        onStreamUpdate(enhancedMessage.content);
+      }
 
       return enhancedMessage;
     } catch (error) {
       console.error('Error in processEnhancedMessage:', error);
-      return this.createErrorMessage(error.message || 'Failed to process message');
+      return this.createErrorMessage(error.message || 'Failed to process message. Please check your AI configuration in Settings.');
     }
   }
 
@@ -150,12 +139,104 @@ class EnhancedAIService {
     }
   }
 
+  /**
+   * Build enhanced system prompt with user context and conversation history
+   */
+  private buildEnhancedSystemPrompt(context: any, conversationHistory: EnhancedChatMessage[]): string {
+    // Build conversation context
+    const recentHistory = conversationHistory.slice(-3).map(msg => 
+      `${msg.role}: ${msg.content}`
+    ).join('\n');
+
+    let systemPrompt = `You are an intelligent AI assistant with enhanced capabilities. You can provide structured responses with actions and visual data.
+
+RESPONSE FORMAT: You can optionally include structured data in your responses using JSON blocks:
+- Actions: $$ACTIONS$$ [{"id": "action-id", "type": "button", "label": "Action Label", "action": "navigate:/path"}] $$ACTIONS$$
+- Visual Data: $$VISUAL_DATA$$ {"type": "metrics", "metrics": [{"id": "1", "title": "Title", "value": "Value"}]} $$VISUAL_DATA$$
+
+CONVERSATION CONTEXT:
+${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start of a new conversation.'}
+`;
+
+    // Add user context if available
+    if (context) {
+      if (context.solutions?.length > 0) {
+        systemPrompt += `\n\nUSER'S SOLUTIONS:\n${context.solutions.map((s: any) => `- ${s.name}: ${s.description}`).join('\n')}`;
+      }
+      
+      if (context.analytics && Object.keys(context.analytics).length > 0) {
+        systemPrompt += `\n\nUSER'S ANALYTICS DATA:\n${JSON.stringify(context.analytics, null, 2)}`;
+      }
+    }
+
+    // Add workflow context
+    if (this.workflowContext.currentWorkflow) {
+      systemPrompt += `\n\nCURRENT WORKFLOW: ${this.workflowContext.currentWorkflow}`;
+      if (this.workflowContext.stepData) {
+        systemPrompt += `\nWorkflow Data: ${JSON.stringify(this.workflowContext.stepData, null, 2)}`;
+      }
+    }
+
+    systemPrompt += `\n\nProvide helpful, accurate responses and suggest relevant actions when appropriate.`;
+
+    return systemPrompt;
+  }
+
+  /**
+   * Parse AI response for structured data
+   */
+  private parseAIResponse(content: string): { message: string; actions?: ContextualAction[]; visualData?: VisualData; progressIndicator?: any } {
+    let message = content;
+    let actions: ContextualAction[] | undefined;
+    let visualData: VisualData | undefined;
+    let progressIndicator: any | undefined;
+
+    try {
+      // Extract actions
+      const actionsMatch = content.match(/\$\$ACTIONS\$\$(.*?)\$\$ACTIONS\$\$/s);
+      if (actionsMatch) {
+        actions = JSON.parse(actionsMatch[1].trim());
+        message = message.replace(/\$\$ACTIONS\$\$.*?\$\$ACTIONS\$\$/s, '');
+      }
+
+      // Extract visual data
+      const visualMatch = content.match(/\$\$VISUAL_DATA\$\$(.*?)\$\$VISUAL_DATA\$\$/s);
+      if (visualMatch) {
+        visualData = JSON.parse(visualMatch[1].trim());
+        message = message.replace(/\$\$VISUAL_DATA\$\$.*?\$\$VISUAL_DATA\$\$/s, '');
+      }
+
+      // Extract progress indicator
+      const progressMatch = content.match(/\$\$PROGRESS\$\$(.*?)\$\$PROGRESS\$\$/s);
+      if (progressMatch) {
+        progressIndicator = JSON.parse(progressMatch[1].trim());
+        message = message.replace(/\$\$PROGRESS\$\$.*?\$\$PROGRESS\$\$/s, '');
+      }
+    } catch (error) {
+      console.warn('Failed to parse structured data from AI response:', error);
+    }
+
+    return {
+      message: message.trim(),
+      actions,
+      visualData,
+      progressIndicator
+    };
+  }
+
   private createErrorMessage(errorText: string): EnhancedChatMessage {
     return {
       id: `error-${Date.now()}`,
       role: 'assistant',
       content: `I apologize, but I encountered an error: ${errorText}. Please try again.`,
-      timestamp: new Date()
+      timestamp: new Date(),
+      actions: [{
+        id: 'configure-ai',
+        type: 'button',
+        label: 'Configure AI Settings',
+        action: 'navigate:/settings',
+        variant: 'primary'
+      }]
     };
   }
 
