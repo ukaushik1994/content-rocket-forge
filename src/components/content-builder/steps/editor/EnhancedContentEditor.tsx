@@ -7,6 +7,7 @@ import { Eye, Edit3, Download, Copy, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EnhancedContentEditorProps {
   content: string;
@@ -238,121 +239,123 @@ export const EnhancedContentEditor: React.FC<EnhancedContentEditorProps> = ({
           </Tabs>
         </CardHeader>
         
-        <CardContent className="p-6">
-          <Tabs value={activeTab} className="w-full">
-            <TabsContent value="write" className="mt-0">
-              <div className="relative">
-                <Textarea
-                  ref={textareaRef}
-                  value={content}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  placeholder={isGenerating ? "AI is generating content..." : placeholder}
-                  disabled={isGenerating}
-                  className="min-h-[500px] w-full resize-none border-0 bg-transparent text-base leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0"
-                  style={{ 
-                    fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
-                  }}
-                />
-                
-                {isGenerating && (
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
-                      <span>Generating content...</span>
-                    </div>
-                  </div>
-                )}
+<CardContent className="p-6">
+  <ScrollArea className="max-h-[70vh] pr-2">
+    <Tabs value={activeTab} className="w-full">
+      <TabsContent value="write" className="mt-0">
+        <div className="relative">
+          <Textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => handleContentChange(e.target.value)}
+            placeholder={isGenerating ? "AI is generating content..." : placeholder}
+            disabled={isGenerating}
+            className="min-h-[500px] w-full resize-none border-0 bg-transparent text-base leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0"
+            style={{ 
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+            }}
+          />
+          
+          {isGenerating && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span>Generating content...</span>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="preview" className="mt-0">
-              <div className="min-h-[500px] w-full">
-                {content ? (
-                  <div className="prose prose-gray dark:prose-invert max-w-none">
-                    <ReactMarkdown
-                      components={{
-                        h1: ({ children }) => (
-                          <h1 className="text-2xl font-bold mb-4 text-foreground border-b border-border pb-2">
-                            {children}
-                          </h1>
-                        ),
-                        h2: ({ children }) => (
-                          <h2 className="text-xl font-semibold mb-3 mt-6 text-foreground">
-                            {children}
-                          </h2>
-                        ),
-                        h3: ({ children }) => (
-                          <h3 className="text-lg font-medium mb-2 mt-4 text-foreground">
-                            {children}
-                          </h3>
-                        ),
-                        p: ({ children }) => (
-                          <p className="mb-4 text-muted-foreground leading-relaxed">
-                            {children}
-                          </p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="mb-4 ml-6 list-disc space-y-1 text-muted-foreground">
-                            {children}
-                          </ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="mb-4 ml-6 list-decimal space-y-1 text-muted-foreground">
-                            {children}
-                          </ol>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-muted-foreground">
-                            {children}
-                          </li>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="font-semibold text-foreground">
-                            {children}
-                          </strong>
-                        ),
-                        em: ({ children }) => (
-                          <em className="italic text-muted-foreground">
-                            {children}
-                          </em>
-                        ),
-                        a: ({ children, href }) => (
-                          <a 
-                            href={href} 
-                            className="text-primary hover:underline"
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            {children}
-                          </a>
-                        ),
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">
-                            {children}
-                          </blockquote>
-                        ),
-                        code: ({ children }) => (
-                          <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">
-                            {children}
-                          </code>
-                        ),
-                      }}
+            </div>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="preview" className="mt-0">
+        <div className="min-h-[500px] w-full">
+          {content ? (
+            <div className="prose prose-gray dark:prose-invert max-w-none">
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => (
+                    <h1 className="text-2xl font-bold mb-4 text-foreground border-b border-border pb-2">
+                      {children}
+                    </h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-xl font-semibold mb-3 mt-6 text-foreground">
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-lg font-medium mb-2 mt-4 text-foreground">
+                      {children}
+                    </h3>
+                  ),
+                  p: ({ children }) => (
+                    <p className="mb-4 text-muted-foreground leading-relaxed">
+                      {children}
+                    </p>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="mb-4 ml-6 list-disc space-y-1 text-muted-foreground">
+                      {children}
+                    </ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="mb-4 ml-6 list-decimal space-y-1 text-muted-foreground">
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="text-muted-foreground">
+                      {children}
+                    </li>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-semibold text-foreground">
+                      {children}
+                    </strong>
+                  ),
+                  em: ({ children }) => (
+                    <em className="italic text-muted-foreground">
+                      {children}
+                    </em>
+                  ),
+                  a: ({ children, href }) => (
+                    <a 
+                      href={href} 
+                      className="text-primary hover:underline"
+                      target="_blank" 
+                      rel="noopener noreferrer"
                     >
-                      {content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[500px] text-muted-foreground">
-                    <div className="text-center">
-                      <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>Start writing to see preview</p>
-                    </div>
-                  </div>
-                )}
+                      {children}
+                    </a>
+                  ),
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4">
+                      {children}
+                    </blockquote>
+                  ),
+                  code: ({ children }) => (
+                    <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">
+                      {children}
+                    </code>
+                  ),
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[500px] text-muted-foreground">
+              <div className="text-center">
+                <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Start writing to see preview</p>
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
+            </div>
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
+  </ScrollArea>
+</CardContent>
       </Card>
     </motion.div>
   );
