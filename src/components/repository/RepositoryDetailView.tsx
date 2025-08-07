@@ -1,7 +1,6 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   FileText, 
@@ -10,8 +9,6 @@ import {
   Globe, 
   MessageSquare, 
   Edit, 
-  Calendar,
-  User,
   BarChart3,
   Eye,
   Share,
@@ -33,9 +30,21 @@ export const RepositoryDetailView: React.FC<RepositoryDetailViewProps> = ({
   onClose,
   content
 }) => {
-  const navigate = useNavigate();
-
+  // Wrapper component with no hooks to ensure stable hook order
   if (!content) return null;
+  return (
+    <RepositoryDetailViewBody open={open} onClose={onClose} content={content} />
+  );
+};
+
+interface RepositoryDetailViewBodyProps {
+  open: boolean;
+  onClose: () => void;
+  content: ContentItemType;
+}
+
+const RepositoryDetailViewBody: React.FC<RepositoryDetailViewBodyProps> = ({ open, onClose, content }) => {
+  const navigate = useNavigate();
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
@@ -228,7 +237,7 @@ export const RepositoryDetailView: React.FC<RepositoryDetailViewProps> = ({
             </div>
 
             {/* SEO Information */}
-            {content.metadata?.metaTitle || content.metadata?.metaDescription || content.metadata?.mainKeyword && (
+            {(content.metadata?.metaTitle || content.metadata?.metaDescription || content.metadata?.mainKeyword) && (
               <div className="glass-card p-4 bg-background/40 backdrop-blur-sm border-white/10 rounded-lg">
                 <h3 className="font-semibold text-lg mb-4">SEO</h3>
                 <div className="space-y-3 text-sm">
