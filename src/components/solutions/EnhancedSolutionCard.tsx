@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { CustomBadge } from '@/components/ui/custom-badge';
 import { motion } from 'framer-motion';
 import { BookmarkIcon, CheckCircle, ExternalLink, Target, Trash2, Users, Zap } from 'lucide-react';
-import { Solution } from '@/contexts/content-builder/types';
+import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 
 interface EnhancedSolutionCardProps {
-  solution: Solution;
+  solution: EnhancedSolution;
   onUseInContent: () => void;
   onEdit: () => void;
   onDelete: () => void;
