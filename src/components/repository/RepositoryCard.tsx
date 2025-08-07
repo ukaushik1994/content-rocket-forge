@@ -135,7 +135,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
                   src={solution.logoUrl}
                   alt={`${solution.name || 'Solution'} logo`}
                   className="h-full w-full object-contain"
-                  loading="lazy"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display = 'none';
                   }}
@@ -201,28 +200,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {content.metadata.description}
               </p>
-            )}
-
-            {solution && (
-              <div className="flex items-center gap-2 pt-1">
-                <span className="text-xs text-muted-foreground">For:</span>
-                {solution.logoUrl ? (
-                  <img
-                    src={solution.logoUrl}
-                    alt={`${solution.name || 'Solution'} logo`}
-                    className="h-5 w-5 rounded-sm border border-border object-contain bg-background"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                ) : null}
-                {solution.name && (
-                  <CustomBadge className="text-xs bg-primary/10 text-primary border border-primary/20">
-                    {solution.name}
-                  </CustomBadge>
-                )}
-              </div>
             )}
           </div>
         </CardHeader>
