@@ -2,6 +2,7 @@
 import { ContentBuilderState, ContentBuilderAction } from '../types/index';
 import { OutlineSection } from '../types/outline-types';
 import { ContentType, ContentFormat, ContentIntent } from '../types/content-types';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 export const createContentActions = (
   state: ContentBuilderState, 
@@ -47,20 +48,71 @@ export const createContentActions = (
     dispatch({ type: 'SET_IS_GENERATING', payload: true });
     
     try {
-      // In a real implementation, this would call an AI service
-      // For now we'll simulate content generation with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create comprehensive prompt
+      const outlineText = outline.map((item, index) => `${index + 1}. ${item.title}`).join('\n');
       
-      // Generate placeholder content based on outline
-      const content = generatePlaceholderContent(outline);
-      
-      // Set the generated content
-      dispatch({ type: 'SET_CONTENT', payload: content });
-      
-      // Mark content writing step as completed
-      dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+      let prompt = `Write comprehensive content based on this outline:
+${outlineText}
+
+Main keyword: ${state.mainKeyword}
+Content title: ${state.contentTitle || 'N/A'}
+Additional instructions: ${state.additionalInstructions || 'None'}`;
+
+      // Add solution context if available
+      if (state.selectedSolution) {
+        prompt += `
+
+SOLUTION INTEGRATION:
+Solution: ${state.selectedSolution.name}
+Description: ${state.selectedSolution.description}
+Key Features: ${state.selectedSolution.features.slice(0,5).join(', ')}
+Pain Points: ${state.selectedSolution.painPoints.slice(0,3).join(', ')}
+Target Audience: ${state.selectedSolution.targetAudience.join(', ')}
+Use Cases: ${state.selectedSolution.useCases.slice(0,3).join(', ')}`;
+
+        if (state.selectedSolution.uniqueValuePropositions) {
+          prompt += `
+Value Propositions: ${state.selectedSolution.uniqueValuePropositions.slice(0,3).join(', ')}`;
+        }
+
+        if (state.selectedSolution.keyDifferentiators) {
+          prompt += `
+Key Differentiators: ${state.selectedSolution.keyDifferentiators.slice(0,3).join(', ')}`;
+        }
+
+        prompt += `
+
+Please naturally integrate this solution throughout the content, addressing relevant pain points and highlighting applicable features.`;
+      }
+
+      prompt += `
+
+Requirements:
+- Use Markdown formatting with proper headings
+- Make content engaging and actionable
+- Follow the outline structure
+- Include a compelling introduction and conclusion
+- Optimize for readability and SEO`;
+
+      // Use AI service to generate content
+      const response = await AIServiceController.generate({
+        input: prompt,
+        use_case: 'content_generation',
+        temperature: 0.7,
+        max_tokens: 4000
+      });
+
+      if (response?.content) {
+        dispatch({ type: 'SET_CONTENT', payload: response.content });
+        dispatch({ type: 'MARK_STEP_COMPLETED', payload: 4 });
+      } else {
+        throw new Error('Failed to generate content');
+      }
     } catch (error) {
       console.error('Error generating content:', error);
+      // Fallback to placeholder content
+      const content = generatePlaceholderContent(outline);
+      dispatch({ type: 'SET_CONTENT', payload: content });
     } finally {
       dispatch({ type: 'SET_IS_GENERATING', payload: false });
     }

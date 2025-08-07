@@ -35,7 +35,8 @@ export async function generateContentWithTemplate(
 export async function generateContentByFormatType(
   formatType: string,
   topic: string,
-  additionalContext?: Record<string, string>
+  additionalContext?: Record<string, string>,
+  solutionContext?: any
 ): Promise<{ content: string | null; templateUsed: { name: string; isCustom: boolean } | null }> {
   try {
     console.log(`🎯 Generating content for format type: ${formatType}, topic: ${topic}`);
@@ -47,7 +48,7 @@ export async function generateContentByFormatType(
       // Use the first available template for this format type
       const template = customTemplates[0];
       console.log(`✅ Using custom template: ${template.name} for ${formatType}`);
-      const content = await generateWithTemplate(template, topic, additionalContext);
+      const content = await generateWithTemplate(template, topic, additionalContext, solutionContext);
       return {
         content,
         templateUsed: { name: template.name, isCustom: true }
@@ -56,7 +57,7 @@ export async function generateContentByFormatType(
     
     // If no custom template exists, use the default prompt
     console.log(`⚠️ No custom template found for ${formatType}, using default prompt`);
-    const content = await generateWithDefaultPrompt(formatType, topic, additionalContext);
+    const content = await generateWithDefaultPrompt(formatType, topic, additionalContext, solutionContext);
     return {
       content,
       templateUsed: { name: `Default ${formatType}`, isCustom: false }
@@ -73,11 +74,12 @@ export async function generateContentByFormatType(
 async function generateWithDefaultPrompt(
   formatType: string,
   topic: string,
-  additionalContext?: Record<string, string>
+  additionalContext?: Record<string, string>,
+  solutionContext?: any
 ): Promise<string | null> {
   try {
     // Create default prompt based on format type
-    const { prompt, systemMessage } = createDefaultPrompt(formatType, topic, additionalContext);
+    const { prompt, systemMessage } = createDefaultPrompt(formatType, topic, additionalContext, solutionContext);
     
     // Try OpenRouter first if available, then fallback to OpenAI
     let response;
@@ -115,10 +117,25 @@ async function generateWithDefaultPrompt(
 function createDefaultPrompt(
   formatType: string, 
   topic: string, 
-  additionalContext?: Record<string, string>
+  additionalContext?: Record<string, string>,
+  solutionContext?: any
 ): { prompt: string, systemMessage: string } {
   const content = additionalContext?.content || '';
   const keyword = additionalContext?.keyword || topic;
+  
+  // Add solution context if available
+  let solutionPromptAddition = '';
+  if (solutionContext) {
+    solutionPromptAddition = `
+    
+SOLUTION INTEGRATION:
+Solution: ${solutionContext.name}
+Features: ${solutionContext.features?.slice(0,3).join(', ') || 'N/A'}
+Benefits: ${solutionContext.benefits?.slice(0,3).join(', ') || 'N/A'}
+Target Audience: ${solutionContext.targetAudience?.join(', ') || 'N/A'}
+
+Naturally integrate this solution into the content where relevant.`;
+  }
 
   switch (formatType) {
     case 'meme':
@@ -132,7 +149,7 @@ function createDefaultPrompt(
         Top text: [catchy phrase for the top of the meme]
         Bottom text: [punchline for the bottom of the meme]
         Alternative caption: [single caption alternative]
-        Context explanation: [brief explanation of the joke for those who might not get it]`
+        Context explanation: [brief explanation of the joke for those who might not get it]${solutionPromptAddition}`
       };
       
     case 'carousel':
@@ -157,14 +174,14 @@ function createDefaultPrompt(
         
         Final Slide: [call to action]
         
-        Each slide should have no more than 2-3 sentences. Make it engaging and visual-friendly.`
+        Each slide should have no more than 2-3 sentences. Make it engaging and visual-friendly.${solutionPromptAddition}`
       };
       
     // Handle other format types with their specific structures
     case 'social-twitter':
       return {
         systemMessage: 'You are a Twitter/X specialist who creates engaging tweets within character limits.',
-        prompt: `Create a Twitter/X post (max 280 characters) about "${topic}" based on this content: ${content.substring(0, 300)}...`
+        prompt: `Create a Twitter/X post (max 280 characters) about "${topic}" based on this content: ${content.substring(0, 300)}...${solutionPromptAddition}`
       };
       
     case 'glossary':
@@ -178,7 +195,7 @@ function createDefaultPrompt(
         Definition: [concise definition]
         Usage example: [example of the term in context]
         
-        Include at least 5-8 key terms from the content.`
+        Include at least 5-8 key terms from the content.${solutionPromptAddition}`
       };
       
     default:
@@ -186,7 +203,7 @@ function createDefaultPrompt(
         systemMessage: 'You are an expert content writer who creates high-quality, engaging content.',
         prompt: `Transform this content about "${topic}" for the ${formatType} format.
                 Content: ${content.substring(0, 800)}...
-                Make it appropriate for the ${formatType} format with all necessary elements.`
+                Make it appropriate for the ${formatType} format with all necessary elements.${solutionPromptAddition}`
       };
   }
 }
@@ -197,7 +214,8 @@ function createDefaultPrompt(
 async function generateWithTemplate(
   template: PromptTemplate,
   topic: string,
-  additionalContext?: Record<string, string>
+  additionalContext?: Record<string, string>,
+  solutionContext?: any
 ): Promise<string | null> {
   try {
     // Replace placeholders in the prompt template
@@ -221,6 +239,17 @@ async function generateWithTemplate(
     // Add structure to prompt if available
     if (structureInfo) {
       promptText += structureInfo;
+    }
+
+    // Add solution context if available
+    if (solutionContext) {
+      promptText += `\n\nSOLUTION INTEGRATION:
+Solution: ${solutionContext.name}
+Features: ${solutionContext.features?.slice(0,3).join(', ') || 'N/A'}
+Benefits: ${solutionContext.benefits?.slice(0,3).join(', ') || 'N/A'}
+Target Audience: ${solutionContext.targetAudience?.join(', ') || 'N/A'}
+
+Naturally integrate this solution into the content where relevant.`;
     }
     
     console.log(`🚀 Sending request to AI service using template: ${template.name}`);

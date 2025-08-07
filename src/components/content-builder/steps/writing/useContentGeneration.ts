@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { ContentBuilderState, SerpSelection } from '@/contexts/content-builder/types';
 import { getUserPreference } from '@/services/userPreferencesService';
+import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
 
 type AiProvider = 'openai' | 'anthropic' | 'gemini' | 'mistral' | 'lmstudio' | 'openrouter';
 
@@ -84,8 +85,8 @@ export function useContentGeneration() {
       // Prepare secondary keywords
       const secondaryKeywords = selectedKeywords?.join(', ') || '';
       
-      // Create comprehensive prompt with SERP data
-      const prompt = createComprehensivePrompt({
+      // Create comprehensive prompt with enhanced solution context
+      let prompt = createComprehensivePrompt({
         mainKeyword,
         contentTitle,
         outlineText,
@@ -94,6 +95,17 @@ export function useContentGeneration() {
         additionalInstructions,
         serpData
       });
+
+      // Enhance prompt with solution-aware context if solution is selected
+      if (selectedSolution && state.contentType && state.contentIntent) {
+        prompt = AISolutionIntegrationService.createSolutionAwarePrompt({
+          solution: selectedSolution,
+          contentType: state.contentType,
+          contentIntent: state.contentIntent,
+          targetKeywords: [mainKeyword, ...(selectedKeywords || [])],
+          audience: selectedSolution.targetAudience.join(', ')
+        }, prompt);
+      }
       
       // Enhanced system prompt
       const systemPrompt = createEnhancedSystemPrompt();
@@ -237,8 +249,54 @@ ${serpData.headings.map((h: string, i: number) => `- ${h}`).join('\n')}
   }
 
   if (selectedSolution) {
-    prompt += `\nSOLUTION TO HIGHLIGHT:
-Mention the solution "${selectedSolution.name}" and highlight these features: ${selectedSolution.features.slice(0,3).join(', ')}.
+    prompt += `\nSOLUTION INTEGRATION:
+Solution: ${selectedSolution.name}
+Category: ${selectedSolution.category}
+Key Features: ${selectedSolution.features.slice(0,5).join(', ')}
+Pain Points Addressed: ${selectedSolution.painPoints.slice(0,3).join(', ')}
+Target Audience: ${selectedSolution.targetAudience.join(', ')}
+Use Cases: ${selectedSolution.useCases.slice(0,3).join(', ')}`;
+
+    if (selectedSolution.uniqueValuePropositions) {
+      prompt += `
+Value Propositions: ${selectedSolution.uniqueValuePropositions.slice(0,3).join(', ')}`;
+    }
+
+    if (selectedSolution.keyDifferentiators) {
+      prompt += `
+Key Differentiators: ${selectedSolution.keyDifferentiators.slice(0,3).join(', ')}`;
+    }
+
+    if (selectedSolution.marketData) {
+      prompt += `
+Market Context: ${JSON.stringify(selectedSolution.marketData)}`;
+    }
+
+    if (selectedSolution.technicalSpecs) {
+      prompt += `
+Technical Capabilities: ${JSON.stringify(selectedSolution.technicalSpecs)}`;
+    }
+
+    if (selectedSolution.caseStudies && selectedSolution.caseStudies.length > 0) {
+      prompt += `
+Success Stories: ${selectedSolution.caseStudies.slice(0,2).map(cs => `${cs.company} achieved: ${cs.results.join(', ')}`).join('; ')}`;
+    }
+
+    if (selectedSolution.pricing) {
+      prompt += `
+Pricing Model: ${selectedSolution.pricing.model}`;
+    }
+
+    prompt += `
+
+SOLUTION INTEGRATION REQUIREMENTS:
+- Naturally integrate the solution throughout the content
+- Address specific pain points the solution solves
+- Highlight relevant features and benefits
+- Include appropriate use cases as examples
+- Mention key differentiators when relevant
+- Reference market context or technical capabilities if applicable
+- End with a compelling call-to-action related to the solution
 `;
   }
 
