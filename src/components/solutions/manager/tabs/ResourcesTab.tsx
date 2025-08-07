@@ -149,7 +149,7 @@ export const ResourcesTab: React.FC<ResourcesTabProps> = ({
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border shadow-lg z-50">
                   {RESOURCE_CATEGORIES.map((cat) => {
                     const Icon = getResourceIcon(cat.value);
                     return (

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, X, BarChart3, TrendingUp, Users, Clock, Headphones, DollarSign } from 'lucide-react';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { DropdownWithOther } from '../shared/DropdownWithOther';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 interface AnalyticsTabProps {
   formData: Partial<EnhancedSolution>;
@@ -80,8 +80,7 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
   );
 
   return (
-    <ScrollArea className="h-[70vh]">
-      <div className="space-y-6 pr-4">
+    <div className="space-y-6">
       {/* Key Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <MetricCard
@@ -229,6 +228,5 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
         </CardContent>
       </Card>
       </div>
-    </ScrollArea>
   );
 };
