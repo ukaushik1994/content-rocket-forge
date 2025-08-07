@@ -20,7 +20,7 @@ import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { FeaturesTab } from './tabs/FeaturesTab';
 import { ResourcesTab } from './tabs/ResourcesTab';
 import { PreviewTab } from './tabs/PreviewTab';
-import { TargetMarketTab } from './tabs/TargetMarketTab';
+import { MarketDataTab } from './tabs/MarketDataTab';
 import { CompetitiveAnalysisTab } from './tabs/CompetitiveAnalysisTab';
 import { TechnicalSpecsTab } from './tabs/TechnicalSpecsTab';
 import { PricingTab } from './tabs/PricingTab';
@@ -41,11 +41,12 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   onOpenChange,
   onSubmit,
   solution,
-  isSubmitting = false
+  isSubmitting: parentIsSubmitting = false
 }) => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Use simple form state
   const {
@@ -94,83 +95,69 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   // updateFormData is now provided by useFormPersistence hook
 
   const handleSubmit = async () => {
-    setSaveError(null);
-    
-    if (!formData.name?.trim()) {
-      setSaveError("Solution name is required");
-      toast.error("Solution name is required");
-      return;
-    }
-
-    console.log('EnhancedSolutionFormDialog: handleSubmit called with formData:', formData);
-
     try {
-      // Transform enhanced form data to database format
-      const transformedData = {
-        name: formData.name,
+      setIsSubmitting(true);
+      setSaveError(null);
+
+      // Validate required fields with specific error messages
+      if (!formData.name?.trim()) {
+        setSaveError('Solution name is required');
+        return;
+      }
+
+      if (!formData.category?.trim()) {
+        setSaveError('Solution category is required');
+        return;
+      }
+
+      console.log('Submitting solution data:', formData);
+
+      // Transform data for service
+      const solutionData = {
+        name: formData.name!,
         description: formData.description || '',
-        short_description: formData.shortDescription || '',
-        category: formData.category || 'Business Solution',
-        external_url: formData.externalUrl || null,
+        category: formData.category!,
         features: formData.features || [],
-        use_cases: formData.useCases || [],
-        pain_points: formData.painPoints || [],
-        target_audience: formData.targetAudience || [],
-        benefits: formData.benefits || [],
-        tags: formData.tags || [],
-        unique_value_propositions: formData.uniqueValuePropositions || [],
-        positioning_statement: formData.positioningStatement || '',
-        key_differentiators: formData.keyDifferentiators || [],
-        market_data: formData.marketData || null,
-        competitors: formData.competitors || [],
-        technical_specs: formData.technicalSpecs || null,
-        pricing_model: formData.pricing || null,
-        case_studies: formData.caseStudies || [],
-        metrics: formData.metrics || null,
-        resources: formData.resources?.map((r, index) => ({
-          id: r.id || `resource-${Date.now()}-${index}`,
-          title: r.title,
-          url: r.url,
-          category: r.category,
-          order: r.order || index
-        })) || [],
-        metadata: formData.metadata || null
+        useCases: formData.useCases || [],
+        painPoints: formData.painPoints || [],
+        targetAudience: formData.targetAudience || [],
+        externalUrl: formData.externalUrl || null,
+        resources: formData.resources || [],
+        shortDescription: formData.shortDescription,
+        benefits: formData.benefits,
+        tags: formData.tags,
+        marketData: formData.marketData,
+        competitors: formData.competitors,
+        technicalSpecs: formData.technicalSpecs,
+        pricing: formData.pricing,
+        caseStudies: formData.caseStudies,
+        metrics: formData.metrics,
+        uniqueValuePropositions: formData.uniqueValuePropositions,
+        positioningStatement: formData.positioningStatement,
+        keyDifferentiators: formData.keyDifferentiators,
+        metadata: formData.metadata
       };
 
-      console.log('EnhancedSolutionFormDialog: Transformed data:', transformedData);
-
-      // Validate the transformed data
-      const validation = solutionService.validateSolutionData(transformedData);
-      if (!validation.isValid) {
-        console.error('EnhancedSolutionFormDialog: Validation failed:', validation.errors);
-        setSaveError(validation.errors.join(', '));
-        validation.errors.forEach(error => toast.error(error));
-        return; // Stay open to allow user to fix errors
-      }
-
-      console.log('EnhancedSolutionFormDialog: Data validation passed, calling onSubmit');
-      
-      // Call the parent's onSubmit callback with the transformed data
-      if (typeof onSubmit === 'function') {
-        // Wait for the submission to complete successfully
-        await onSubmit(transformedData, logoFile || undefined);
-        
-        // Only proceed with cleanup if we reach this point without errors
-        // Parent will handle dialog closing
-        console.log('EnhancedSolutionFormDialog: Submission successful, clearing dirty state');
-        clearDirty();
-        setSaveError(null);
+      // Direct save to database via service
+      if (solution?.id) {
+        await solutionService.updateSolution(solution.id, solutionData, logoFile || undefined);
+        toast.success('Solution updated successfully!');
       } else {
-        console.warn('onSubmit is not a function:', onSubmit);
-        setSaveError("Form submission error - invalid callback");
-        toast.error("Form submission error - invalid callback");
+        await solutionService.createSolution(solutionData, logoFile || undefined);
+        toast.success('Solution created successfully!');
       }
+      
+      // Clear dirty state and close dialog
+      clearDirty();
+      onOpenChange(false);
+      
     } catch (error) {
-      console.error("EnhancedSolutionFormDialog: Error submitting solution:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      console.error('Form submission error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save solution. Please try again.';
       setSaveError(errorMessage);
-      toast.error(`Error saving solution: ${errorMessage}`);
-      // Dialog stays open so user can retry
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -284,7 +271,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
                   </TabsContent>
                   
                   <TabsContent value="market" className="mt-0">
-                    <TargetMarketTab formData={formData} updateFormData={updateFormData} />
+                    <MarketDataTab formData={formData} updateFormData={updateFormData} />
                   </TabsContent>
                   
                   <TabsContent value="technical" className="mt-0">

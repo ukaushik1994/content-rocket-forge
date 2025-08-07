@@ -139,7 +139,11 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                 id="name"
                 placeholder="e.g., Enterprise Analytics Dashboard"
                 value={formData.name || ''}
-                onChange={(e) => updateFormData({ name: e.target.value })}
+                onChange={(e) => {
+                  console.log('Name changed:', e.target.value);
+                  updateFormData({ name: e.target.value });
+                }}
+                required
               />
             </div>
             

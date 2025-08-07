@@ -13,7 +13,9 @@ export const useSimpleFormState = (options: UseSimpleFormStateOptions = {}) => {
   const updateFormData = useCallback((updates: Partial<EnhancedSolution>) => {
     setFormData(prev => {
       const newData = { ...prev, ...updates };
-      console.log('Form data updated:', newData);
+      console.log('Form data updated - Previous:', prev);
+      console.log('Form data updated - Updates:', updates);
+      console.log('Form data updated - New:', newData);
       return newData;
     });
     setIsDirty(true);

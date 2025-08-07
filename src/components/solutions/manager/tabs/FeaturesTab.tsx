@@ -32,9 +32,11 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
     
     const currentItems = formData[type] || [];
     if (!currentItems.includes(value.trim())) {
-      updateFormData({
-        [type]: [...currentItems, value.trim()]
-      });
+    const newData = {
+      [type]: [...currentItems, value.trim()]
+    };
+    console.log(`Adding ${type}:`, newData);
+    updateFormData(newData);
     }
     setter('');
   };
@@ -44,9 +46,11 @@ export const FeaturesTab: React.FC<FeaturesTabProps> = ({
     index: number
   ) => {
     const currentItems = formData[type] || [];
-    updateFormData({
+    const newData = {
       [type]: currentItems.filter((_, i) => i !== index)
-    });
+    };
+    console.log(`Removing ${type}:`, newData);
+    updateFormData(newData);
   };
 
   const ItemSection = ({ 
