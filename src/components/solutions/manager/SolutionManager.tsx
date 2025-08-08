@@ -33,8 +33,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   // Enhanced form state management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
+  const [prefilledData, setPrefilledData] = useState<Partial<EnhancedSolution> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const deleteHandler = useDeleteSolution({
     deleteSolution: async (id: string) => {
       const success = await solutionService.deleteSolution(id);
@@ -100,16 +100,36 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     return false;
   });
 
-  // Function to handle using a solution in content
+  // Function to handle Add File -> extract -> AI map -> open Edit with prefill
   const handleUseInContent = (solution: EnhancedSolution) => {
-    // Store the solution in the content builder context
-    dispatch({ type: 'SELECT_SOLUTION', payload: solution });
-    
-    // Navigate to the content builder page
-    toast.success(`${solution.name} selected for content creation`);
-    navigate('/content');
+    // Trigger a hidden file input for PDF/DOCX
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
+        const processing = (async () => {
+          const prefill = await parseSolutionFromFile(file, solution);
+          // Set selection and open dialog with prefilled data
+          setSelectedSolution(solution);
+          setPrefilledData(prefill);
+          setIsDialogOpen(true);
+        })();
+        await (await import('sonner')).toast.promise(processing, {
+          loading: 'Processing file with AI...',
+          success: 'Fields extracted. Review and save.',
+          error: 'Failed to process file. Try another document.'
+        });
+      } catch (e) {
+        console.error('Add File processing failed', e);
+        (await import('sonner')).toast.error('Failed to process file');
+      }
+    };
+    input.click();
   };
-
   const handleSearchChange = (term: string) => {
     setFilterTerm(term);
   };
@@ -217,9 +237,13 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       {/* Add/Edit Dialog */}
       <EnhancedSolutionFormDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setPrefilledData(null);
+        }}
         onSubmit={handleSubmitForm}
         solution={selectedSolution}
+        prefilledData={prefilledData || undefined}
         isSubmitting={isSubmitting}
       />
       

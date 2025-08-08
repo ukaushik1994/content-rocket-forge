@@ -34,6 +34,7 @@ interface EnhancedSolutionFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any, logoFile?: File) => void;
   solution?: EnhancedSolution | null;
+  prefilledData?: Partial<EnhancedSolution>;
   isSubmitting?: boolean;
 }
 
@@ -42,6 +43,7 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   onOpenChange,
   onSubmit,
   solution,
+  prefilledData,
   isSubmitting: parentIsSubmitting = false
 }) => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -65,84 +67,90 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
     clearDirty
   } = useSimpleFormState();
 
-  // Load solution data from backend when dialog opens
-  useEffect(() => {
-    const loadSolutionData = async () => {
-      if (!open) return;
-      
-      setIsLoadingData(true);
-      setSaveError(null);
-      
-      try {
-        if (solution?.id) {
-          // Always fetch fresh data from backend for editing to ensure we have the latest saved data
-          const freshData = await solutionService.getSolutionById(solution.id);
-          if (freshData) {
-            const initialData: Partial<EnhancedSolution> = {
-              id: freshData.id,
-              name: freshData.name || '',
-              description: freshData.description || '',
-              category: freshData.category || 'Business Solution',
-              features: freshData.features || [],
-              useCases: freshData.useCases || [],
-              painPoints: freshData.painPoints || [],
-              targetAudience: freshData.targetAudience || [],
-              externalUrl: freshData.externalUrl || '',
-              resources: freshData.resources || [],
-              shortDescription: freshData.shortDescription || '',
-              benefits: freshData.benefits || [],
-              tags: freshData.tags || [],
-              marketData: freshData.marketData || {},
-              competitors: freshData.competitors || [],
-              technicalSpecs: freshData.technicalSpecs || {},
-              pricing: freshData.pricing || {
-                model: 'subscription',
-                tiers: []
-              },
-              caseStudies: freshData.caseStudies || [],
-              metrics: freshData.metrics || {},
-              uniqueValuePropositions: freshData.uniqueValuePropositions || [],
-              positioningStatement: freshData.positioningStatement || '',
-              keyDifferentiators: freshData.keyDifferentiators || [],
-              metadata: freshData.metadata || {}
-            };
-            
-            resetForm(initialData);
-            setLogoPreview(freshData.logoUrl || null);
-          } else {
-            setSaveError('Failed to load solution data');
-          }
-        } else {
-          // New solution - start with empty form
-          const initialData: Partial<EnhancedSolution> = {
-            name: '',
-            description: '',
-            category: 'Business Solution',
-            features: [],
-            useCases: [],
-            painPoints: [],
-            targetAudience: [],
-            externalUrl: '',
-            resources: [],
-            shortDescription: '',
-            benefits: [],
-            tags: [],
+// Load solution data from backend when dialog opens
+useEffect(() => {
+  const loadSolutionData = async () => {
+    if (!open) return;
+    
+    setIsLoadingData(true);
+    setSaveError(null);
+    
+    try {
+      if (solution?.id) {
+        // Always fetch fresh data from backend for editing to ensure we have the latest saved data
+        const freshData = await solutionService.getSolutionById(solution.id);
+        if (freshData) {
+          let initialData: Partial<EnhancedSolution> = {
+            id: freshData.id,
+            name: freshData.name || '',
+            description: freshData.description || '',
+            category: freshData.category || 'Business Solution',
+            features: freshData.features || [],
+            useCases: freshData.useCases || [],
+            painPoints: freshData.painPoints || [],
+            targetAudience: freshData.targetAudience || [],
+            externalUrl: freshData.externalUrl || '',
+            resources: freshData.resources || [],
+            shortDescription: freshData.shortDescription || '',
+            benefits: freshData.benefits || [],
+            tags: freshData.tags || [],
+            marketData: freshData.marketData || {},
+            competitors: freshData.competitors || [],
+            technicalSpecs: freshData.technicalSpecs || {},
+            pricing: freshData.pricing || {
+              model: 'subscription',
+              tiers: []
+            },
+            caseStudies: freshData.caseStudies || [],
+            metrics: freshData.metrics || {},
+            uniqueValuePropositions: freshData.uniqueValuePropositions || [],
+            positioningStatement: freshData.positioningStatement || '',
+            keyDifferentiators: freshData.keyDifferentiators || [],
+            metadata: freshData.metadata || {}
           };
+          // Apply prefilled overrides if provided
+          if (prefilledData) {
+            initialData = { ...initialData, ...prefilledData };
+          }
           resetForm(initialData);
-          setLogoPreview(null);
+          setLogoPreview(freshData.logoUrl || null);
+        } else {
+          setSaveError('Failed to load solution data');
         }
-        
-        setLogoFile(null);
-      } catch (error) {
-        console.error('Error loading solution data:', error);
-        setSaveError('Failed to load solution data. Please refresh and try again.');
-      } finally {
-        setIsLoadingData(false);
+      } else {
+        // New solution - start with empty form
+        let initialData: Partial<EnhancedSolution> = {
+          name: '',
+          description: '',
+          category: 'Business Solution',
+          features: [],
+          useCases: [],
+          painPoints: [],
+          targetAudience: [],
+          externalUrl: '',
+          resources: [],
+          shortDescription: '',
+          benefits: [],
+          tags: [],
+        };
+        if (prefilledData) {
+          initialData = { ...initialData, ...prefilledData };
+        }
+        resetForm(initialData);
+        setLogoPreview(null);
       }
-    };
+      
+      setLogoFile(null);
+    } catch (error) {
+      console.error('Error loading solution data:', error);
+      setSaveError('Failed to load solution data. Please refresh and try again.');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
-    loadSolutionData();
-  }, [open, solution?.id, resetForm]);
+  loadSolutionData();
+}, [open, solution?.id, resetForm, prefilledData]);
 
   // Auto-save functionality
   const performAutoSave = useCallback(async () => {
