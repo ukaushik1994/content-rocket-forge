@@ -19,6 +19,7 @@ import ContentStrategy from "./pages/research/ContentStrategy";
 import KeywordResearch from "./pages/research/KeywordResearch";
 import AnswerThePeople from "./pages/research/AnswerThePeople";
 import TopicClusters from "./pages/research/TopicClusters";
+import OpportunitiesPage from "./pages/research/Opportunities";
 import AioGeo from "./pages/AioGeo";
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
@@ -64,6 +65,8 @@ const App = () => (
                 <Route path="/research/keyword-research" element={<ProtectedRoute><KeywordResearch /></ProtectedRoute>} />
                 <Route path="/research/answer-the-people" element={<ProtectedRoute><AnswerThePeople /></ProtectedRoute>} />
                 <Route path="/research/topic-clusters" element={<ProtectedRoute><TopicClusters /></ProtectedRoute>} />
+                <Route path="/research/opportunities" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
+                <Route path="/research/opportunity-hunter" element={<Navigate to="/research/opportunities" replace />} />
                 
                 {/* AIO/GEO route */}
                 <Route path="/aio-geo" element={<ProtectedRoute><AioGeo /></ProtectedRoute>} />

@@ -7,10 +7,10 @@ import { ContentPipeline } from './pipeline/ContentPipeline';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
-import { OpportunityHunter } from './opportunity/OpportunityHunter';
+
 
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
-import { Lightbulb, LayoutDashboard, CalendarDays, GitBranch, Target, BarChart2, FileSearch, TrendingUp } from 'lucide-react';
+import { Lightbulb, LayoutDashboard, CalendarDays, GitBranch, BarChart2, FileSearch, TrendingUp } from 'lucide-react';
 
 export const StrategyTabs = React.memo(() => {
   const { currentStrategy, insights, calendarItems, pipelineItems } = useContentStrategy();
@@ -36,11 +36,14 @@ export const StrategyTabs = React.memo(() => {
   }), [calendarItems, pipelineItems]);
 
   const getInitialTab = () => {
+    const allowed = new Set([
+      'strategies','dashboard','calendar','pipeline','performance','content-gaps','progress'
+    ]);
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
-      if (hash) return hash;
+      if (hash && allowed.has(hash)) return hash;
       const stored = localStorage.getItem('cs.activeTab');
-      if (stored) return stored;
+      if (stored && allowed.has(stored)) return stored;
     }
     return 'strategies';
   };
@@ -105,9 +108,9 @@ export const StrategyTabs = React.memo(() => {
           </TabsTrigger>
           <TabsTrigger 
             value="opportunities" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="hidden"
           >
-            <Target className="h-4 w-4" />
+            {/* removed */}
             <span>Opportunities</span>
           </TabsTrigger>
           <TabsTrigger 
@@ -149,9 +152,6 @@ export const StrategyTabs = React.memo(() => {
           <ContentPipeline goals={goals} />
         </TabsContent>
 
-        <TabsContent value="opportunities" forceMount className="animate-fade-in">
-          <OpportunityHunter />
-        </TabsContent>
 
         <TabsContent value="performance" forceMount className="animate-fade-in">
           <ROICalculator goals={goals} serpMetrics={serpMetrics} />

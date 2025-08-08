@@ -61,6 +61,7 @@ export default function NavItems() {
   // Research-related routes
   const researchRoutes = [
     '/research/content-strategy',
+    '/research/opportunities',
     '/research/keyword-research',
     '/research/answer-the-people',
     '/research/topic-clusters'
@@ -215,6 +216,18 @@ export default function NavItems() {
             >
               <Search className="h-4 w-4" />
               Keyword Research
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/opportunities" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/opportunities' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Target className="h-4 w-4" />
+              Opportunities
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

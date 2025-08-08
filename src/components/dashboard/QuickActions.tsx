@@ -43,7 +43,7 @@ const quickActions: QuickAction[] = [
     title: 'View Opportunities',
     description: 'Discover new content opportunities and gaps',
     icon: Eye,
-    route: '/research/opportunity-hunter',
+    route: '/research/opportunities',
     gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
     iconGradient: 'from-emerald-400 to-green-400'
   },
