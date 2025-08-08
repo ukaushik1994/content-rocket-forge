@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Target, TrendingUp, BarChart3 } from 'lucide-react';
+import { Sparkles, Target, TrendingUp, BarChart3, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export const ContentStrategyHero = React.memo(() => {
+export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => void }) => {
   return (
     <div className="text-center space-y-6">
       <motion.div
@@ -28,6 +29,18 @@ export const ContentStrategyHero = React.memo(() => {
       >
         AI-powered content strategy with SERP analysis, competitor research, and data-driven recommendations
       </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.3 }}
+        className="flex items-center justify-center"
+      >
+        <Button size="lg" className="hover-scale" onClick={onCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create New Strategy
+        </Button>
+      </motion.div>
       
       <motion.div
         initial={{ opacity: 0 }}

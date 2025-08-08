@@ -995,6 +995,39 @@ export type Database = {
         }
         Relationships: []
       }
+      content_input_history: {
+        Row: {
+          content_id: string | null
+          created_at: string
+          id: string
+          primary_keyword: string | null
+          used_faqs: Json | null
+          used_headings: Json | null
+          used_titles: Json | null
+          user_id: string
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          primary_keyword?: string | null
+          used_faqs?: Json | null
+          used_headings?: Json | null
+          used_titles?: Json | null
+          user_id: string
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          primary_keyword?: string | null
+          used_faqs?: Json | null
+          used_headings?: Json | null
+          used_titles?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_items: {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_workflow_status"]
@@ -2244,6 +2277,105 @@ export type Database = {
           },
         ]
       }
+      strategy_briefs: {
+        Row: {
+          brief_stub_json: Json | null
+          cluster_id: string
+          id: string
+        }
+        Insert: {
+          brief_stub_json?: Json | null
+          cluster_id: string
+          id?: string
+        }
+        Update: {
+          brief_stub_json?: Json | null
+          cluster_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_briefs_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_calendar: {
+        Row: {
+          cluster_id: string
+          id: string
+          title: string | null
+          type: string | null
+          week: number | null
+        }
+        Insert: {
+          cluster_id: string
+          id?: string
+          title?: string | null
+          type?: string | null
+          week?: number | null
+        }
+        Update: {
+          cluster_id?: string
+          id?: string
+          title?: string | null
+          type?: string | null
+          week?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_calendar_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_clusters: {
+        Row: {
+          asset_mix_json: Json | null
+          edge_note: string | null
+          forecast_best: number | null
+          forecast_cons: number | null
+          id: string
+          name: string
+          priority_score: number | null
+          run_id: string
+        }
+        Insert: {
+          asset_mix_json?: Json | null
+          edge_note?: string | null
+          forecast_best?: number | null
+          forecast_cons?: number | null
+          id?: string
+          name: string
+          priority_score?: number | null
+          run_id: string
+        }
+        Update: {
+          asset_mix_json?: Json | null
+          edge_note?: string | null
+          forecast_best?: number | null
+          forecast_cons?: number | null
+          id?: string
+          name?: string
+          priority_score?: number | null
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_clusters_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_insights: {
         Row: {
           competition_score: number | null
@@ -2303,6 +2435,65 @@ export type Database = {
           },
         ]
       }
+      strategy_keywords: {
+        Row: {
+          cluster_id: string
+          difficulty: number | null
+          forecast_best: number | null
+          forecast_cons: number | null
+          has_ai_overview: boolean | null
+          has_snippet: boolean | null
+          id: string
+          intent: string | null
+          kw: string
+          paa_questions: Json | null
+          priority_score: number | null
+          related_searches: Json | null
+          top_titles: Json | null
+          volume: number | null
+        }
+        Insert: {
+          cluster_id: string
+          difficulty?: number | null
+          forecast_best?: number | null
+          forecast_cons?: number | null
+          has_ai_overview?: boolean | null
+          has_snippet?: boolean | null
+          id?: string
+          intent?: string | null
+          kw: string
+          paa_questions?: Json | null
+          priority_score?: number | null
+          related_searches?: Json | null
+          top_titles?: Json | null
+          volume?: number | null
+        }
+        Update: {
+          cluster_id?: string
+          difficulty?: number | null
+          forecast_best?: number | null
+          forecast_cons?: number | null
+          has_ai_overview?: boolean | null
+          has_snippet?: boolean | null
+          id?: string
+          intent?: string | null
+          kw?: string
+          paa_questions?: Json | null
+          priority_score?: number | null
+          related_searches?: Json | null
+          top_titles?: Json | null
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_keywords_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_logs: {
         Row: {
           action: string
@@ -2326,6 +2517,36 @@ export type Database = {
           id?: string
           metadata?: Json | null
           timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strategy_runs: {
+        Row: {
+          created_at: string
+          id: string
+          language: string | null
+          region: string | null
+          status: string
+          summary_json: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          region?: string | null
+          status?: string
+          summary_json?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          region?: string | null
+          status?: string
+          summary_json?: Json | null
           user_id?: string
         }
         Relationships: []

@@ -7,11 +7,13 @@ import { GoalSettingCard } from '@/components/research/content-strategy/GoalSett
 import { StrategyTabs } from '@/components/research/content-strategy/StrategyTabs';
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
+import { StrategyCreationModal } from '@/components/research/content-strategy/StrategyCreationModal';
 
 const ContentStrategy = () => {
   const canonicalUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/research/content-strategy` 
     : '/research/content-strategy';
+  const [creatorOpen, setCreatorOpen] = useState(false);
   return (
     <ContentStrategyProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
@@ -35,11 +37,14 @@ const ContentStrategy = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            <ContentStrategyHero />
+            <ContentStrategyHero onCreate={() => setCreatorOpen(true)} />
             
             <ContentStrategyContent />
           </motion.div>
         </main>
+        
+        {/* Strategy Creator Modal */}
+        <StrategyCreationModal open={creatorOpen} onOpenChange={setCreatorOpen} />
       </div>
     </ContentStrategyProvider>
   );
