@@ -6,6 +6,7 @@ import { SaveContentParams } from '@/contexts/content-builder/types/content-type
 import { useContent } from '@/contexts/content';
 import { supabase } from '@/integrations/supabase/client';
 import { ComprehensiveSerpData, SerpMetrics, CompetitorAnalysis, RankingOpportunities, SerpSelectionStats } from '@/types/serp-metrics';
+import { useMetadataCapture } from './useMetadataCapture';
 
 /**
  * Hook for managing content saving and publishing functionality
@@ -16,6 +17,7 @@ export const useSaveContent = () => {
   const [isSavedToDraft, setIsSavedToDraft] = useState(false);
   const { refreshContent } = useContent();
   const navigate = useNavigate();
+  const { captureOptimizationMetadata } = useMetadataCapture();
 
   // Helper function to extract comprehensive SERP data
   const extractComprehensiveSerpData = (): ComprehensiveSerpData | null => {
@@ -95,6 +97,9 @@ export const useSaveContent = () => {
       // Extract comprehensive SERP data
       const comprehensiveSerpData = extractComprehensiveSerpData();
       
+      // Capture optimization metadata
+      const optimizationMetadata = await captureOptimizationMetadata(state.content);
+      
       // Prepare content for saving with extended metadata
       const saveParams: SaveContentParams = {
         title: state.contentTitle || state.metaTitle || state.mainKeyword,
@@ -127,26 +132,68 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
-      // Prepare metadata as plain object for JSON storage
+      // Prepare comprehensive metadata with optimization insights
       const metadata = {
         contentType: saveParams.contentType,
         metaTitle: saveParams.metaTitle,
         metaDescription: saveParams.metaDescription,
         outline: saveParams.outline,
         serpSelections: saveParams.serpSelections,
-        // Solution data from content builder
+        
+        // Solution integration data
         selectedSolution: state.selectedSolution ? {
           id: state.selectedSolution.id,
           name: state.selectedSolution.name,
-          logoUrl: state.selectedSolution.logoUrl
+          logoUrl: state.selectedSolution.logoUrl,
+          category: state.selectedSolution.category,
+          features: state.selectedSolution.features,
+          useCases: state.selectedSolution.useCases,
+          painPoints: state.selectedSolution.painPoints,
+          targetAudience: state.selectedSolution.targetAudience
         } : null,
+        
+        // Solution integration metrics (if available)
+        solutionIntegrationMetrics: state.solutionIntegrationMetrics ? 
+          JSON.parse(JSON.stringify(state.solutionIntegrationMetrics)) : null,
+        
+        // SEO and optimization scores
+        seoScore: state.seoScore || 0,
+        seoImprovements: state.seoImprovements ? 
+          JSON.parse(JSON.stringify(state.seoImprovements)) : [],
+        optimizationSkipped: state.optimizationSkipped || false,
+        
         // Enhanced SERP data - convert to plain objects
         comprehensiveSerpData: comprehensiveSerpData ? JSON.parse(JSON.stringify(comprehensiveSerpData)) : null,
         serpMetrics: comprehensiveSerpData?.serpMetrics ? JSON.parse(JSON.stringify(comprehensiveSerpData.serpMetrics)) : null,
         competitorAnalysis: comprehensiveSerpData?.competitorAnalysis ? JSON.parse(JSON.stringify(comprehensiveSerpData.competitorAnalysis)) : null,
         rankingOpportunities: comprehensiveSerpData?.rankingOpportunities ? JSON.parse(JSON.stringify(comprehensiveSerpData.rankingOpportunities)) : null,
         selectionStats: comprehensiveSerpData?.selectionStats ? JSON.parse(JSON.stringify(comprehensiveSerpData.selectionStats)) : null,
-        analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
+        
+        // Keywords and content insights
+        mainKeyword: saveParams.mainKeyword,
+        secondaryKeywords: saveParams.secondaryKeywords,
+        
+        // Document structure and quality
+        documentStructure: state.documentStructure ? 
+          JSON.parse(JSON.stringify(state.documentStructure)) : null,
+          
+        // Content creation metadata
+        contentFormat: state.contentFormat,
+        contentIntent: state.contentIntent,
+        additionalInstructions: state.additionalInstructions,
+        location: state.location,
+        
+        // Timestamps and tracking
+        analysisTimestamp: comprehensiveSerpData?.analysisTimestamp || new Date().toISOString(),
+        lastOptimized: new Date().toISOString(),
+        
+        // Content metrics
+        wordCount: saveParams.content?.split(' ').length || 0,
+        readingTime: Math.ceil((saveParams.content?.split(' ').length || 0) / 200),
+        
+        // Comprehensive optimization metadata
+        optimizationMetadata: optimizationMetadata ? 
+          JSON.parse(JSON.stringify(optimizationMetadata)) : null
       };
       
       // Check for existing content to prevent duplicates
@@ -291,6 +338,9 @@ export const useSaveContent = () => {
       // Extract comprehensive SERP data
       const comprehensiveSerpData = extractComprehensiveSerpData();
       
+      // Capture optimization metadata
+      const optimizationMetadata = await captureOptimizationMetadata(state.content);
+      
       // Prepare content for publishing with extended metadata
       const publishParams: SaveContentParams = {
         title: state.contentTitle || state.metaTitle || state.mainKeyword,
@@ -316,26 +366,69 @@ export const useSaveContent = () => {
         throw new Error('User not authenticated');
       }
       
-      // Prepare metadata as plain object for JSON storage
+      // Prepare comprehensive metadata with optimization insights
       const metadata = {
         contentType: publishParams.contentType,
         metaTitle: publishParams.metaTitle,
         metaDescription: publishParams.metaDescription,
         outline: publishParams.outline,
         serpSelections: publishParams.serpSelections,
-        // Solution data from content builder
+        
+        // Solution integration data
         selectedSolution: state.selectedSolution ? {
           id: state.selectedSolution.id,
           name: state.selectedSolution.name,
-          logoUrl: state.selectedSolution.logoUrl
+          logoUrl: state.selectedSolution.logoUrl,
+          category: state.selectedSolution.category,
+          features: state.selectedSolution.features,
+          useCases: state.selectedSolution.useCases,
+          painPoints: state.selectedSolution.painPoints,
+          targetAudience: state.selectedSolution.targetAudience
         } : null,
+        
+        // Solution integration metrics (if available)
+        solutionIntegrationMetrics: state.solutionIntegrationMetrics ? 
+          JSON.parse(JSON.stringify(state.solutionIntegrationMetrics)) : null,
+        
+        // SEO and optimization scores
+        seoScore: publishParams.seoScore || 0,
+        seoImprovements: state.seoImprovements ? 
+          JSON.parse(JSON.stringify(state.seoImprovements)) : [],
+        optimizationSkipped: state.optimizationSkipped || false,
+        
         // Enhanced SERP data - convert to plain objects
         comprehensiveSerpData: comprehensiveSerpData ? JSON.parse(JSON.stringify(comprehensiveSerpData)) : null,
         serpMetrics: comprehensiveSerpData?.serpMetrics ? JSON.parse(JSON.stringify(comprehensiveSerpData.serpMetrics)) : null,
         competitorAnalysis: comprehensiveSerpData?.competitorAnalysis ? JSON.parse(JSON.stringify(comprehensiveSerpData.competitorAnalysis)) : null,
         rankingOpportunities: comprehensiveSerpData?.rankingOpportunities ? JSON.parse(JSON.stringify(comprehensiveSerpData.rankingOpportunities)) : null,
         selectionStats: comprehensiveSerpData?.selectionStats ? JSON.parse(JSON.stringify(comprehensiveSerpData.selectionStats)) : null,
-        analysisTimestamp: comprehensiveSerpData?.analysisTimestamp
+        
+        // Keywords and content insights
+        mainKeyword: publishParams.mainKeyword,
+        secondaryKeywords: publishParams.secondaryKeywords,
+        
+        // Document structure and quality
+        documentStructure: state.documentStructure ? 
+          JSON.parse(JSON.stringify(state.documentStructure)) : null,
+          
+        // Content creation metadata
+        contentFormat: state.contentFormat,
+        contentIntent: state.contentIntent,
+        additionalInstructions: state.additionalInstructions,
+        location: state.location,
+        
+        // Timestamps and tracking
+        analysisTimestamp: comprehensiveSerpData?.analysisTimestamp || new Date().toISOString(),
+        lastOptimized: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        
+        // Content metrics
+        wordCount: publishParams.content?.split(' ').length || 0,
+        readingTime: Math.ceil((publishParams.content?.split(' ').length || 0) / 200),
+        
+        // Comprehensive optimization metadata
+        optimizationMetadata: optimizationMetadata ? 
+          JSON.parse(JSON.stringify(optimizationMetadata)) : null
       };
       
       // Check for existing published content to prevent duplicates

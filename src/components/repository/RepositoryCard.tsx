@@ -24,6 +24,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import { SolutionIntegrationBadge } from './SolutionIntegrationBadge';
+import { OptimizationBadges } from './OptimizationBadges';
 
 interface RepositoryCardProps {
   content: ContentItemType;
@@ -205,6 +207,9 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Solution Integration Section */}
+          <SolutionIntegrationBadge metadata={content.metadata} />
+
           {/* Content Preview */}
           {content.content_type === 'glossary' && content.metadata ? (
             <div className="space-y-2">
@@ -225,6 +230,9 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
               {content.content.substring(0, 150)}...
             </p>
           )}
+
+          {/* Optimization Badges */}
+          <OptimizationBadges metadata={content.metadata} />
 
           {/* Metrics */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
