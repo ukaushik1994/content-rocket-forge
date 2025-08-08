@@ -42,7 +42,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
   return (
     <div className="space-y-6">
       {/* Filters and view options */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="glass-panel border border-border/60 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <Tabs
           value={filter}
           onValueChange={setFilter}
@@ -56,16 +56,16 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
         </Tabs>
         
         <div className="flex items-center gap-3">
-          <Button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} variant="outline" size="sm">
+          <Button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} variant="outline" size="sm" className="hover:shadow-neon">
             {view === 'grid' ? 'List View' : 'Grid View'}
           </Button>
-          <Button onClick={onAutofillFromDoc} variant="outline">
+          <Button onClick={onAutofillFromDoc} variant="outline" className="hover:shadow-neon">
             <Wand2 className="mr-2 h-4 w-4" />
             Autofill from document
           </Button>
           <Button 
             onClick={onAddNew}
-            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
+            className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple hover:shadow-neon"
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Solution

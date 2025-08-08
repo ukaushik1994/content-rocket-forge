@@ -51,7 +51,7 @@ export const AIAutofillOverlay: React.FC<AIAutofillOverlayProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md border border-border/60 bg-background/90 backdrop-blur-md p-6">
+      <DialogContent className="glass-panel sm:max-w-md p-6 shadow-neon">
         <div className="flex items-center gap-3 mb-4">
           <div className="relative">
             <div className="absolute inset-0 rounded-full blur-md bg-primary/30 animate-pulse" />

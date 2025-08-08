@@ -5,13 +5,217 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, Users, TrendingUp, TrendingDown, DollarSign, Trash2 } from 'lucide-react';
+import { Plus, X, Users, TrendingUp, TrendingDown, DollarSign, Trash2, GripVertical, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { EnhancedSolution, CompetitorInfo } from '@/contexts/content-builder/types/enhanced-solution-types';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface CompetitiveAnalysisTabProps {
   formData: Partial<EnhancedSolution>;
   updateFormData: (updates: Partial<EnhancedSolution>) => void;
 }
+
+// Sortable item for competitor cards
+interface SortableCompetitorCardProps {
+  id: string;
+  competitor: CompetitorInfo;
+  index: number;
+  open: boolean;
+  onToggle: () => void;
+  onRemove: () => void;
+  onUpdate: (updates: Partial<CompetitorInfo>) => void;
+  newStrength: string;
+  setNewStrength: (v: string) => void;
+  newWeakness: string;
+  setNewWeakness: (v: string) => void;
+  addAttr: (attribute: 'strengths' | 'weaknesses', value: string) => void;
+  removeAttr: (attribute: 'strengths' | 'weaknesses', itemIndex: number) => void;
+}
+
+const SortableCompetitorCard: React.FC<SortableCompetitorCardProps> = ({
+  id,
+  competitor,
+  index,
+  open,
+  onToggle,
+  onRemove,
+  onUpdate,
+  newStrength,
+  setNewStrength,
+  newWeakness,
+  setNewWeakness,
+  addAttr,
+  removeAttr,
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="card-glass border border-border/60">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button className="p-1 rounded hover:bg-muted/40 cursor-grab" aria-label="Drag to reorder" {...attributes} {...listeners}>
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <button onClick={onToggle} className="p-1 rounded hover:bg-muted/40" aria-label={open ? 'Collapse' : 'Expand'}>
+              {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              {competitor.name}
+            </CardTitle>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRemove}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+        {(competitor.marketShare || competitor.pricing) && (
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            {competitor.marketShare && (
+              <span className="flex items-center gap-1">
+                <TrendingUp className="h-4 w-4" />
+                Market Share: {competitor.marketShare}
+              </span>
+            )}
+            {competitor.pricing && (
+              <span className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                Pricing: {competitor.pricing}
+              </span>
+            )}
+          </div>
+        )}
+      </CardHeader>
+      {open && (
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Strengths */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Strengths
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add strength"
+                  value={newStrength}
+                  onChange={(e) => setNewStrength(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addAttr('strengths', newStrength);
+                    }
+                  }}
+                />
+                <Button 
+                  size="sm"
+                  onClick={() => addAttr('strengths', newStrength)}
+                  disabled={!newStrength.trim()}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {competitor.strengths && competitor.strengths.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {competitor.strengths.map((strength, strengthIndex) => (
+                    <Badge key={strengthIndex} variant="secondary" className="bg-background/50 backdrop-blur-sm border border-border/60 flex items-center gap-1 pr-1">
+                      {strength}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => removeAttr('strengths', strengthIndex)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Weaknesses */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-destructive" />
+                Weaknesses
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add weakness"
+                  value={newWeakness}
+                  onChange={(e) => setNewWeakness(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addAttr('weaknesses', newWeakness);
+                    }
+                  }}
+                />
+                <Button 
+                  size="sm"
+                  onClick={() => addAttr('weaknesses', newWeakness)}
+                  disabled={!newWeakness.trim()}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {competitor.weaknesses && competitor.weaknesses.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {competitor.weaknesses.map((weakness, weaknessIndex) => (
+                    <Badge key={weaknessIndex} variant="secondary" className="bg-background/50 backdrop-blur-sm border border-border/60 flex items-center gap-1 pr-1">
+                      {weakness}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => removeAttr('weaknesses', weaknessIndex)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Edit Basic Info */}
+          <div className="pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Market Share</Label>
+                <Input
+                  placeholder="e.g., 15%"
+                  value={competitor.marketShare || ''}
+                  onChange={(e) => onUpdate({ marketShare: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Pricing</Label>
+                <Input
+                  placeholder="e.g., $99/month"
+                  value={competitor.pricing || ''}
+                  onChange={(e) => onUpdate({ pricing: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
 
 export const CompetitiveAnalysisTab: React.FC<CompetitiveAnalysisTabProps> = ({
   formData,
@@ -91,6 +295,29 @@ export const CompetitiveAnalysisTab: React.FC<CompetitiveAnalysisTabProps> = ({
       [attribute]: currentItems.filter((_, i) => i !== itemIndex)
     });
   }, [competitors, updateCompetitor]);
+
+  const [query, setQuery] = useState('');
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const displayed = competitors
+    .map((comp, index) => ({ comp, index, id: `comp-${index}` }))
+    .filter(({ comp }) => comp.name.toLowerCase().includes(query.toLowerCase()));
+
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const isOpen = (id: string) => openIds.has(id);
+  const toggleOpen = (id: string) => setOpenIds((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = parseInt(String(active.id).split('-')[1], 10);
+    const newIndex = parseInt(String(over.id).split('-')[1], 10);
+    if (Number.isNaN(oldIndex) || Number.isNaN(newIndex)) return;
+    updateFormData({ competitors: arrayMove(competitors, oldIndex, newIndex) });
+  };
 
   return (
     <div className="space-y-6">
