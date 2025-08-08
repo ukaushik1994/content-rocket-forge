@@ -171,6 +171,22 @@ export const analyzeEnhancedSolutionIntegration = (content: string, solution: En
     marketDataIntegration,
     useCasesCovered,
     differentiatorsMentioned,
+    // Context-aware heuristics (fallback when AI unavailable)
+    contextualRelevance: Math.round(((basicMetrics.audienceAlignment || 0) + (basicMetrics.featureIncorporation || 0) + (valuePropositionCoverage || 0)) / 3),
+    naturalIntegration: (() => {
+      const nm = basicMetrics.nameMentions || 0;
+      if (nm === 0) return 40; // mentioned implicitly or not at all
+      if (nm <= 3) return 85;  // natural frequency
+      if (nm <= 6) return 70;  // borderline promotional
+      return 55;               // likely over-mentioned
+    })(),
+    narrativeCohesion: Math.round(((basicMetrics.positioningScore || 0) + (useCasesCovered.length > 0 ? 70 : 40) + (caseStudyReferences > 0 ? 60 : 40)) / 3),
+    coverageDepth: Math.round(((basicMetrics.featureIncorporation || 0) + (technicalSpecsIntegration || 0) + (valuePropositionCoverage || 0)) / 3),
+    evidence: [],
+    suggestions: [],
+    missingElements: [],
+    references: { caseStudies: [], competitors: [], technicalSpecs: [] },
+    confidence: Math.round((((basicMetrics.audienceAlignment || 0) + (basicMetrics.featureIncorporation || 0) + (valuePropositionCoverage || 0) + (technicalSpecsIntegration || 0)) / 4)),
     // Enhanced overall score calculation
     overallScore: calculateEnhancedOverallScore({
       ...basicMetrics,
@@ -332,5 +348,15 @@ const createEmptyMetrics = (): SolutionIntegrationMetrics => ({
   valuePropositionCoverage: 0,
   marketDataIntegration: 0,
   useCasesCovered: [],
-  differentiatorsMentioned: []
+  differentiatorsMentioned: [],
+  // New context-aware defaults
+  contextualRelevance: 0,
+  naturalIntegration: 0,
+  narrativeCohesion: 0,
+  coverageDepth: 0,
+  evidence: [],
+  suggestions: [],
+  missingElements: [],
+  references: { caseStudies: [], competitors: [], technicalSpecs: [] },
+  confidence: 0
 });
