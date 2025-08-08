@@ -149,24 +149,37 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
                   {content.title}
                 </CardTitle>
                 
-                {/* Solution Chip - Prominent placement */}
+                {/* Highlighted Solution Section */}
                 {solutionInfo && (
-                  <div className="flex items-center gap-2 mb-3 p-2 bg-primary/10 backdrop-blur-sm rounded-lg border border-primary/20">
-                    {solutionInfo.logo ? (
-                      <img 
-                        src={solutionInfo.logo} 
-                        alt={`${solutionInfo.name} logo`}
-                        className="w-5 h-5 rounded object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <Building2 className="w-4 h-4 text-primary" />
-                    )}
-                    <span className="text-sm font-medium text-primary">
-                      For: {solutionInfo.name}
-                    </span>
+                  <div className="relative mb-4 p-4 bg-gradient-to-r from-primary/20 to-neon-blue/20 backdrop-blur-sm rounded-xl border border-primary/30 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-neon-blue/10 rounded-xl opacity-50"></div>
+                    <div className="relative flex items-center gap-3">
+                      {solutionInfo.logo ? (
+                        <div className="p-2 bg-white/90 rounded-lg shadow-md">
+                          <img 
+                            src={solutionInfo.logo} 
+                            alt={`${solutionInfo.name} logo`}
+                            className="w-8 h-8 rounded object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="p-2 bg-primary/20 rounded-lg">
+                          <Building2 className="w-6 h-6 text-primary" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="text-xs font-medium text-primary/80 uppercase tracking-wide mb-1">
+                          Created For
+                        </div>
+                        <div className="font-bold text-primary text-base">
+                          {solutionInfo.name}
+                        </div>
+                      </div>
+                      <div className="w-2 h-2 bg-neon-blue rounded-full animate-pulse"></div>
+                    </div>
                   </div>
                 )}
                 

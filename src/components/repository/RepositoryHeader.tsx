@@ -4,7 +4,12 @@ import { Plus, FileText, BookOpen, Mail, Globe, Edit, MessageSquare } from 'luci
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-export const RepositoryHeader: React.FC = () => {
+interface RepositoryHeaderProps {
+  contentItems?: any[];
+  loading?: boolean;
+}
+
+export const RepositoryHeader: React.FC<RepositoryHeaderProps> = ({ contentItems = [], loading = false }) => {
   const navigate = useNavigate();
 
   const quickActions = [
