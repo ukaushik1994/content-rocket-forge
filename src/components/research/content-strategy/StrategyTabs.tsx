@@ -1,16 +1,14 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StrategySuggestions } from './tabs/StrategySuggestions';
-import { ContentGapsTab } from './tabs/ContentGapsTab';
-import { EditorialCalendar } from './calendar/EditorialCalendar';
-import { ContentPipeline } from './pipeline/ContentPipeline';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
 
 
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
-import { Lightbulb, LayoutDashboard, CalendarDays, GitBranch, BarChart2, FileSearch, TrendingUp } from 'lucide-react';
+import { Lightbulb, LayoutDashboard, BarChart2, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const StrategyTabs = React.memo(() => {
   const { currentStrategy, insights, calendarItems, pipelineItems } = useContentStrategy();
@@ -30,14 +28,11 @@ export const StrategyTabs = React.memo(() => {
     mainKeyword: currentStrategy?.main_keyword || ''
   }), [currentStrategy]);
 
-  const counts = React.useMemo(() => ({
-    calendar: calendarItems?.length || 0,
-    pipeline: pipelineItems?.length || 0,
-  }), [calendarItems, pipelineItems]);
+  // Removed counts for calendar/pipeline as they moved to standalone pages
 
   const getInitialTab = () => {
     const allowed = new Set([
-      'strategies','dashboard','calendar','pipeline','performance','content-gaps','progress'
+      'strategies','dashboard','performance','progress'
     ]);
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
@@ -49,16 +44,30 @@ export const StrategyTabs = React.memo(() => {
   };
 
   const [activeTab, setActiveTab] = React.useState<string>(getInitialTab);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
+      const stored = localStorage.getItem('cs.activeTab') || '';
+      const legacyTabs = new Set(['calendar', 'pipeline', 'content-gaps']);
+      const redirectMap: Record<string, string> = {
+        'calendar': '/research/calendar',
+        'pipeline': '/research/pipeline',
+        'content-gaps': '/research/content-gaps',
+      };
+      const legacy = legacyTabs.has(hash) ? hash : (legacyTabs.has(stored) ? stored : '');
+      if (legacy) {
+        localStorage.removeItem('cs.activeTab');
+        navigate(redirectMap[legacy], { replace: true });
+        return;
+      }
       if (hash && hash !== activeTab) {
         setActiveTab(hash);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigate, activeTab]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -87,45 +96,11 @@ export const StrategyTabs = React.memo(() => {
             <span>Dashboard</span>
           </TabsTrigger>
           <TabsTrigger 
-            value="calendar" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <CalendarDays className="h-4 w-4" />
-            <span>Calendar</span>
-            {counts.calendar > 0 && (
-              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] leading-none text-muted-foreground">{counts.calendar}</span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger 
-            value="pipeline" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <GitBranch className="h-4 w-4" />
-            <span>Pipeline</span>
-            {counts.pipeline > 0 && (
-              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] leading-none text-muted-foreground">{counts.pipeline}</span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger 
-            value="opportunities" 
-            className="hidden"
-          >
-            {/* removed */}
-            <span>Opportunities</span>
-          </TabsTrigger>
-          <TabsTrigger 
             value="performance" 
             className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             <BarChart2 className="h-4 w-4" />
             <span>Performance</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="content-gaps" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <FileSearch className="h-4 w-4" />
-            <span>Content Gaps</span>
           </TabsTrigger>
           <TabsTrigger 
             value="progress" 
@@ -144,22 +119,12 @@ export const StrategyTabs = React.memo(() => {
           <StrategyDashboard goals={goals} />
         </TabsContent>
 
-        <TabsContent value="calendar" forceMount className="animate-fade-in">
-          <EditorialCalendar goals={goals} />
-        </TabsContent>
-
-        <TabsContent value="pipeline" forceMount className="animate-fade-in">
-          <ContentPipeline goals={goals} />
-        </TabsContent>
 
 
         <TabsContent value="performance" forceMount className="animate-fade-in">
           <ROICalculator goals={goals} serpMetrics={serpMetrics} />
         </TabsContent>
 
-        <TabsContent value="content-gaps" forceMount className="animate-fade-in">
-          <ContentGapsTab serpMetrics={serpMetrics} goals={goals} />
-        </TabsContent>
 
         <TabsContent value="progress" forceMount className="animate-fade-in">
           <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
