@@ -5,17 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  TrendingUp, 
-  AlertCircle, 
-  CheckCircle2, 
+import { motion } from 'framer-motion';
+import {
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
   Lightbulb,
   Target,
   Eye,
   FileText,
-  Zap,
   Brain,
   Search,
   BarChart3
@@ -39,17 +37,19 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
   content,
   onApprove,
   onReject,
-  onRequestChanges
+  onRequestChanges,
 }) => {
   const [analysisResult, setAnalysisResult] = useState<SeoAiResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (isOpen && content && !analysisResult) {
+    if (isOpen && content) {
+      setAnalysisResult(null);
       runAnalysis();
     }
-  }, [isOpen, content]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, content?.id]);
 
   const runAnalysis = async () => {
     if (!content) return;
@@ -78,10 +78,14 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
 
   const getIssueIcon = (severity: 'high' | 'medium' | 'low') => {
     switch (severity) {
-      case 'high': return <AlertCircle className="h-4 w-4 text-red-400" />;
-      case 'medium': return <AlertCircle className="h-4 w-4 text-yellow-400" />;
-      case 'low': return <Lightbulb className="h-4 w-4 text-blue-400" />;
-      default: return <AlertCircle className="h-4 w-4" />;
+      case 'high':
+        return <AlertCircle className="h-4 w-4 text-red-400" />;
+      case 'medium':
+        return <AlertCircle className="h-4 w-4 text-yellow-400" />;
+      case 'low':
+        return <Lightbulb className="h-4 w-4 text-blue-400" />;
+      default:
+        return <AlertCircle className="h-4 w-4" />;
     }
   };
 
@@ -89,7 +93,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="max-w-4xl max-h[90vh] overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <Brain className="h-6 w-6 text-primary" />
@@ -99,7 +103,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
 
         <div className="flex-1 overflow-hidden">
           {isAnalyzing ? (
-            <motion.div 
+            <motion.div
               className="flex flex-col items-center justify-center h-96 space-y-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -107,41 +111,20 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
               <motion.div
                 className="relative"
                 animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
               >
                 <div className="absolute inset-0 bg-primary/30 rounded-full blur-lg" />
                 <div className="relative p-6 bg-background/80 rounded-full">
                   <Sparkles className="h-12 w-12 text-primary" />
                 </div>
               </motion.div>
-              
+
               <div className="text-center space-y-3">
                 <h3 className="text-xl font-semibold">Analyzing Content Quality</h3>
-                <p className="text-muted-foreground">AI is evaluating SEO, readability, and content optimization...</p>
+                <p className="text-muted-foreground">
+                  AI is evaluating SEO, readability, and content optimization...
+                </p>
               </div>
-              
-              <motion.div 
-                className="flex justify-center space-x-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                {[0, 1, 2, 3].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-3 h-3 bg-primary rounded-full"
-                    animate={{ 
-                      scale: [1, 1.5, 1],
-                      opacity: [0.3, 1, 0.3]
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      delay: i * 0.2
-                    }}
-                  />
-                ))}
-              </motion.div>
             </motion.div>
           ) : analysisResult ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
@@ -168,7 +151,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                           className={`text-6xl font-bold ${getScoreColor(analysisResult.overallScore)}`}
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 200 }}
+                          transition={{ type: 'spring', stiffness: 200 }}
                         >
                           {analysisResult.overallScore}%
                         </motion.div>
@@ -189,7 +172,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                     {[
                       { label: 'SEO', score: analysisResult.scores.seo, icon: Search },
                       { label: 'Readability', score: analysisResult.scores.readability, icon: Eye },
-                      { label: 'Content Quality', score: analysisResult.scores.quality, icon: FileText }
+                      { label: 'Content Quality', score: analysisResult.scores.quality, icon: FileText },
                     ].map((item, index) => (
                       <motion.div
                         key={item.label}
@@ -204,9 +187,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                                 <item.icon className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium">{item.label}</span>
                               </div>
-                              <span className={`font-bold ${getScoreColor(item.score)}`}>
-                                {item.score}%
-                              </span>
+                              <span className={`font-bold ${getScoreColor(item.score)}`}>{item.score}%</span>
                             </div>
                             <Progress value={item.score} className="h-2" />
                           </CardContent>
@@ -221,27 +202,62 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5" />
-                        SEO Insights
+                        SEO Opportunities & Risks
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {Object.entries(analysisResult.seoInsights).map(([key, value]) => (
-                        <div key={key}>
-                          <div className="flex justify-between mb-2">
-                            <span className="font-medium capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                            <span className={getScoreColor(value)}>{value}%</span>
+                    <CardContent className="space-y-6">
+                      {analysisResult.opportunities && (
+                        <div>
+                          <h4 className="font-medium mb-2">Opportunities</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Internal Links</div>
+                              <ul className="list-disc list-inside text-sm">
+                                {(analysisResult.opportunities.internalLinks || []).map((l, i) => (
+                                  <li key={i}>{l}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Entities to Add</div>
+                              <ul className="list-disc list-inside text-sm">
+                                {(analysisResult.opportunities.entitiesToAdd || []).map((e, i) => (
+                                  <li key={i}>{e}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Questions to Answer</div>
+                              <ul className="list-disc list-inside text-sm">
+                                {(analysisResult.opportunities.questionsToAnswer || []).map((q, i) => (
+                                  <li key={i}>{q}</li>
+                                ))}
+                              </ul>
+                            </div>
                           </div>
-                          <Progress value={value} className="h-2" />
                         </div>
-                      ))}
+                      )}
+
+                      {analysisResult.risks && (
+                        <div>
+                          <h4 className="font-medium mb-2">Risks</h4>
+                          {Object.entries(analysisResult.risks).map(([key, value]) => (
+                            <div key={key} className="mb-3">
+                              <div className="flex justify-between mb-1">
+                                <span className="capitalize">{key}</span>
+                                <span className={getScoreColor((value as number) || 0)}>{(value as number) || 0}%</span>
+                              </div>
+                              <Progress value={(value as number) || 0} className="h-2" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
 
                 <TabsContent value="issues" className="space-y-4">
-                  {analysisResult.issues.map((issue, index) => (
+                  {(analysisResult.issues || []).map((issue, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
@@ -251,15 +267,17 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-start gap-3">
-                            {getIssueIcon(issue.type)}
+                            {getIssueIcon(issue.severity)}
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-medium">{issue.title}</h4>
-                                <Badge variant={issue.impact === 'high' ? 'destructive' : issue.impact === 'medium' ? 'default' : 'secondary'}>
-                                  {issue.impact} impact
+                                <h4 className="font-medium">{issue.message}</h4>
+                                <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'default' : 'secondary'}>
+                                  {issue.severity}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground">{issue.description}</p>
+                              {issue.evidence && (
+                                <p className="text-sm text-muted-foreground">{issue.evidence}</p>
+                              )}
                             </div>
                           </div>
                         </CardContent>
@@ -269,7 +287,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                 </TabsContent>
 
                 <TabsContent value="suggestions" className="space-y-4">
-                  {analysisResult.suggestions.map((suggestion, index) => (
+                  {(analysisResult.recommendations || []).map((rec, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
@@ -282,15 +300,19 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                             <Lightbulb className="h-4 w-4 text-yellow-400 mt-1" />
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-medium">{suggestion.title}</h4>
-                                <Badge variant={suggestion.priority === 'high' ? 'default' : 'secondary'}>
-                                  {suggestion.priority} priority
-                                </Badge>
-                                <Badge variant="outline" className="text-green-400 border-green-400/30">
-                                  {suggestion.estimatedImpact}
-                                </Badge>
+                                <h4 className="font-medium">{rec.action.replace(/_/g, ' ')} · <span className="text-muted-foreground">{rec.target}</span></h4>
+                                {rec.estimatedImpact && (
+                                  <Badge variant="outline" className="text-green-400 border-green-400/30">
+                                    {rec.estimatedImpact}
+                                  </Badge>
+                                )}
                               </div>
-                              <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                              {rec.rationale && (
+                                <p className="text-sm text-muted-foreground mb-2">{rec.rationale}</p>
+                              )}
+                              {rec.snippet && (
+                                <pre className="bg-muted/40 p-3 rounded-md text-xs overflow-x-auto">{`${rec.snippet}`}</pre>
+                              )}
                             </div>
                           </div>
                         </CardContent>
@@ -305,20 +327,16 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
 
         {/* Action Buttons */}
         {analysisResult && (
-          <motion.div 
+          <motion.div
             className="flex gap-3 pt-4 border-t border-border/50"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={onClose} className="flex-1">
               Close
             </Button>
-            
+
             {content.approval_status === 'pending_review' && (
               <>
                 {onRequestChanges && (
@@ -330,7 +348,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                     Request Changes
                   </Button>
                 )}
-                
+
                 {onApprove && (
                   <Button
                     onClick={() => onApprove(content.id)}
