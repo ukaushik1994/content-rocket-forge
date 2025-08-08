@@ -15,6 +15,7 @@ import { EnhancedSolutionGrid } from '../EnhancedSolutionGrid';
 import { HeroSection } from '../HeroSection';
 import { motion } from 'framer-motion';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
+import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
 
 interface SolutionManagerProps {
   searchTerm: string;
@@ -41,6 +42,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const [isAutofillOpen, setIsAutofillOpen] = useState(false);
   const [autofillProgress, setAutofillProgress] = useState(0);
   const [autofillStage, setAutofillStage] = useState<string>('Preparing…');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const { isEnabled, hasProviders, activeProviders, refreshStatus } = useAIServiceStatus();
 
   const deleteHandler = useDeleteSolution({
     deleteSolution: async (id: string) => {
@@ -109,6 +112,10 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
 
   // Function to handle Add File -> extract -> AI map -> open Edit with prefill
   const handleUseInContent = (solution: EnhancedSolution) => {
+    if (isAutofillOpen) {
+      toast.info('Autofill is already in progress.');
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
@@ -116,36 +123,70 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       const file = input.files?.[0];
       if (!file) return;
       try {
+        await refreshStatus();
+        if (!isEnabled) {
+          toast.error('AI service is disabled. Enable it in Settings.');
+          return;
+        }
+        if (!hasProviders || activeProviders === 0) {
+          toast.error('No AI providers configured. Add one in Settings.');
+          return;
+        }
+
         const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
+        const controller = new AbortController();
+        setAbortController(controller);
         setAutofillProgress(0);
         setAutofillStage('Preparing…');
         setIsAutofillOpen(true);
+
         const prefill = await parseSolutionFromFile(file, solution, {
           onProgress: ({ stage, progress }) => {
             if (stage) setAutofillStage(stage);
             if (typeof progress === 'number') setAutofillProgress(progress);
           },
+          signal: controller.signal,
         });
-        setSelectedSolution(solution);
-        setPrefilledData(prefill);
-        setIsDialogOpen(true);
-        toast.success('AI autofill completed. Review and save.');
+
+        const isMeaningful = !!(
+          (prefill as any)?.name?.trim?.() ||
+          (Array.isArray((prefill as any)?.features) && (prefill as any).features.length > 0) ||
+          (Array.isArray((prefill as any)?.useCases) && (prefill as any).useCases.length > 0) ||
+          (prefill as any)?.description?.trim?.()
+        );
+
+        if (!isMeaningful) {
+          toast.info('No structured data could be extracted. Try a different document.');
+        } else {
+          setSelectedSolution(solution);
+          setPrefilledData(prefill);
+          setIsDialogOpen(true);
+          toast.success('AI autofill completed. Review and save.');
+        }
       } catch (e: any) {
-        console.error('Add File processing failed', e);
-        toast.error(e?.message || 'Failed to process file');
+        if (e?.message?.toLowerCase?.().includes('cancel')) {
+          toast.info('Autofill cancelled');
+        } else {
+          console.error('Add File processing failed', e);
+          toast.error(e?.message || 'Failed to process file');
+        }
       } finally {
         setIsAutofillOpen(false);
+        setAbortController(null);
       }
     };
     input.click();
   };
-  
   const handleSearchChange = (term: string) => {
     setFilterTerm(term);
   };
 
   // "Add Solution from Document" flow
   const handleAutofillFromDoc = () => {
+    if (isAutofillOpen) {
+      toast.info('Autofill is already in progress.');
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
@@ -153,25 +194,56 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       const file = input.files?.[0];
       if (!file) return;
       try {
+        await refreshStatus();
+        if (!isEnabled) {
+          toast.error('AI service is disabled. Enable it in Settings.');
+          return;
+        }
+        if (!hasProviders || activeProviders === 0) {
+          toast.error('No AI providers configured. Add one in Settings.');
+          return;
+        }
+
         const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
+        const controller = new AbortController();
+        setAbortController(controller);
         setAutofillProgress(0);
         setAutofillStage('Preparing…');
         setIsAutofillOpen(true);
+
         const prefill = await parseSolutionFromFile(file, undefined, {
           onProgress: ({ stage, progress }) => {
             if (stage) setAutofillStage(stage);
             if (typeof progress === 'number') setAutofillProgress(progress);
           },
+          signal: controller.signal,
         });
-        setSelectedSolution(null); // New solution
-        setPrefilledData(prefill);
-        setIsDialogOpen(true);
-        toast.success('AI autofill completed. Review and save.');
+
+        const isMeaningful = !!(
+          (prefill as any)?.name?.trim?.() ||
+          (Array.isArray((prefill as any)?.features) && (prefill as any).features.length > 0) ||
+          (Array.isArray((prefill as any)?.useCases) && (prefill as any).useCases.length > 0) ||
+          (prefill as any)?.description?.trim?.()
+        );
+
+        if (!isMeaningful) {
+          toast.info('No structured data could be extracted. Try a different document.');
+        } else {
+          setSelectedSolution(null); // New solution
+          setPrefilledData(prefill);
+          setIsDialogOpen(true);
+          toast.success('AI autofill completed. Review and save.');
+        }
       } catch (e: any) {
-        console.error('Add Solution from Document failed', e);
-        toast.error(e?.message || 'Failed to process file');
+        if (e?.message?.toLowerCase?.().includes('cancel')) {
+          toast.info('Autofill cancelled');
+        } else {
+          console.error('Add Solution from Document failed', e);
+          toast.error(e?.message || 'Failed to process file');
+        }
       } finally {
         setIsAutofillOpen(false);
+        setAbortController(null);
       }
     };
     input.click();
@@ -305,7 +377,10 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         open={isAutofillOpen}
         progress={autofillProgress}
         stage={autofillStage}
-        onCancel={() => setIsAutofillOpen(false)}
+        onCancel={() => {
+          abortController?.abort();
+          setIsAutofillOpen(false);
+        }}
       />
     </motion.div>
   );

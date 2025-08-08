@@ -30,7 +30,6 @@ import { solutionService } from '@/services/solutionService';
 import { AutoSaveStatus } from './AutoSaveStatus';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
-import { testAIConnection } from '@/services/aiService';
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -60,6 +59,10 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   const [isAIAutofillOpen, setIsAIAutofillOpen] = useState(false);
   const [aiProgress, setAiProgress] = useState(0);
   const [aiStage, setAiStage] = useState<string>('Preparing AI extraction…');
+  
+  // AI service status and cancellation
+  const { isEnabled, hasProviders, activeProviders, refreshStatus } = useAIServiceStatus();
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   // Use simple form state
   const {
@@ -238,6 +241,10 @@ useEffect(() => {
 
   // AI Autofill inside form
   const handleAutofillFromDoc = () => {
+    if (isAIAutofillOpen) {
+      toast.info('Autofill is already in progress.');
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
@@ -245,24 +252,55 @@ useEffect(() => {
       const file = input.files?.[0];
       if (!file) return;
       try {
+        await refreshStatus();
+        if (!isEnabled) {
+          toast.error('AI service is disabled. Enable it in Settings.');
+          return;
+        }
+        if (!hasProviders || activeProviders === 0) {
+          toast.error('No AI providers configured. Add one in Settings.');
+          return;
+        }
+
         const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
+        const controller = new AbortController();
+        setAbortController(controller);
         setIsAIAutofillOpen(true);
         setAiProgress(0);
         setAiStage('Reading document…');
+
         const prefill = await parseSolutionFromFile(file, formData as EnhancedSolution, {
           onProgress: ({ stage, progress }) => {
             if (stage) setAiStage(stage);
             if (typeof progress === 'number') setAiProgress(progress);
           },
+          signal: controller.signal,
         });
-        // Merge prefill into form
-        updateFormData({ ...(formData as any), ...(prefill as any) });
-        toast.success('Autofill complete. Review the highlighted sections.');
+
+        const isMeaningful = !!(
+          (prefill as any)?.name?.trim?.() ||
+          (Array.isArray((prefill as any)?.features) && (prefill as any).features.length > 0) ||
+          (Array.isArray((prefill as any)?.useCases) && (prefill as any).useCases.length > 0) ||
+          (prefill as any)?.description?.trim?.()
+        );
+
+        if (!isMeaningful) {
+          toast.info('No structured data could be extracted. Try a different document.');
+        } else {
+          // Merge prefill into form
+          updateFormData({ ...(formData as any), ...(prefill as any) });
+          toast.success('Autofill complete. Review the highlighted sections.');
+        }
       } catch (e: any) {
-        console.error('Autofill failed', e);
-        toast.error(e?.message || 'Failed to process file');
+        if (e?.message?.toLowerCase?.().includes('cancel')) {
+          toast.info('Autofill cancelled');
+        } else {
+          console.error('Autofill failed', e);
+          toast.error(e?.message || 'Failed to process file');
+        }
       } finally {
         setIsAIAutofillOpen(false);
+        setAbortController(null);
       }
     };
     input.click();
@@ -413,10 +451,34 @@ useEffect(() => {
         </DialogHeader>
         <div className="flex items-center justify-between mb-2">
           <div />
-          <Button onClick={handleAutofillFromDoc} variant="outline">
-            <Wand2 className="mr-2 h-4 w-4" />
-            Autofill from document
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={async () => {
+                try {
+                  await refreshStatus();
+                  if (!isEnabled) {
+                    toast.error('AI service is disabled. Enable it in Settings.');
+                    return;
+                  }
+                  if (!hasProviders || activeProviders === 0) {
+                    toast.error('No AI providers configured. Add one in Settings.');
+                    return;
+                  }
+                  toast.success(`AI ready: ${activeProviders} provider(s) active`);
+                } catch (e: any) {
+                  toast.error(e?.message || 'Failed to check AI status');
+                }
+              }}
+              variant="outline"
+              disabled={isAIAutofillOpen}
+            >
+              Test AI connection
+            </Button>
+            <Button onClick={handleAutofillFromDoc} variant="outline" disabled={isAIAutofillOpen}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Autofill from document
+            </Button>
+          </div>
         </div>
         {missingInfo.length > 0 && (
           <div className="mb-3 rounded-lg border border-white/10 bg-background/20 backdrop-blur-sm p-3">
@@ -594,7 +656,10 @@ useEffect(() => {
           open={isAIAutofillOpen}
           progress={aiProgress}
           stage={aiStage}
-          onCancel={() => setIsAIAutofillOpen(false)}
+          onCancel={() => {
+            abortController?.abort();
+            setIsAIAutofillOpen(false);
+          }}
         />
       </DialogContent>
     </Dialog>
