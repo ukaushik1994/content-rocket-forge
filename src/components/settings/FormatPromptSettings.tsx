@@ -17,12 +17,14 @@ import {
   updatePromptTemplate,
   getPromptTemplateById
 } from '@/services/userPreferencesService';
+import { logActivity } from '@/services/activityLogger';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function FormatPromptSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeFormatId, setActiveFormatId] = useState("");
   const [editingTemplate, setEditingTemplate] = useState<Partial<PromptTemplate> | null>(null);
-  
+  const { user } = useAuth();
   const handleOpenEditor = (formatId: string) => {
     setActiveFormatId(formatId);
     

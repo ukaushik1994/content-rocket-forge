@@ -91,8 +91,24 @@ export const createApprovalActions = (
           reviewed_at: new Date().toISOString(),
           approval_notes: comments || null
         });
-
-      if (approvalError) throw approvalError;
+      // Activity + alert
+      await logActivity({
+        userId,
+        contentId: id,
+        module: 'approval',
+        action: 'approve',
+        changeSummary: comments ? 'Approved with comments' : 'Approved',
+        notes: comments || undefined,
+        details: { comments }
+      });
+      await pushAlert({
+        userId,
+        title: 'Content approved',
+        message: 'Your content was approved and published.',
+        module: 'approval',
+        severity: 'success',
+        linkUrl: `/content-approval`
+      });
 
       toast.success('Content approved and published successfully', toastConfig.success);
     } catch (error: any) {
@@ -132,6 +148,25 @@ export const createApprovalActions = (
 
       if (approvalError) throw approvalError;
 
+      // Activity + alert
+      await logActivity({
+        userId,
+        contentId: id,
+        module: 'approval',
+        action: 'reject',
+        changeSummary: 'Rejected with feedback',
+        notes: comments,
+        details: { comments }
+      });
+      await pushAlert({
+        userId,
+        title: 'Content rejected',
+        message: 'You rejected the content with feedback.',
+        module: 'approval',
+        severity: 'warning',
+        linkUrl: `/content-approval`
+      });
+
       toast.success('Content rejected with feedback provided', toastConfig.success);
     } catch (error: any) {
       console.error('Error rejecting content:', error);
@@ -170,6 +205,25 @@ export const createApprovalActions = (
 
       if (approvalError) throw approvalError;
 
+      // Activity + alert
+      await logActivity({
+        userId,
+        contentId: id,
+        module: 'approval',
+        action: 'request_changes',
+        changeSummary: 'Requested changes',
+        notes: comments,
+        details: { comments }
+      });
+      await pushAlert({
+        userId,
+        title: 'Changes requested',
+        message: 'You requested changes for this content.',
+        module: 'approval',
+        severity: 'info',
+        linkUrl: `/content-approval`
+      });
+
       toast.success('Change request sent to content author', toastConfig.success);
     } catch (error: any) {
       console.error('Error requesting changes:', error);
@@ -199,6 +253,24 @@ export const createApprovalActions = (
         });
 
       if (error) throw error;
+
+      // Activity + alert
+      await logActivity({
+        userId,
+        contentId: approvalId,
+        module: 'approval',
+        action: 'approval_comment',
+        changeSummary: 'Added approval comment',
+        notes: comment,
+        details: { type }
+      });
+      await pushAlert({
+        userId,
+        title: 'Comment added',
+        message: 'Your approval comment was added.',
+        module: 'approval',
+        severity: 'success'
+      });
 
       toast.success('Comment added successfully', toastConfig.success);
     } catch (error: any) {
@@ -235,6 +307,23 @@ export const createApprovalActions = (
       });
 
       toast.success('Reviewer assigned successfully', toastConfig.success);
+
+      // Activity + alert
+      await logActivity({
+        userId,
+        contentId: contentId,
+        module: 'approval',
+        action: 'assign_reviewer',
+        changeSummary: `Assigned reviewer ${reviewerId}`,
+        details: { reviewerId, dueDate, priority }
+      });
+      await pushAlert({
+        userId,
+        title: 'Reviewer assigned',
+        message: 'You assigned a reviewer to the content.',
+        module: 'approval',
+        severity: 'info'
+      });
     } catch (error: any) {
       console.error('Error assigning reviewer:', error);
       toast.error('Failed to assign reviewer: ' + error.message, toastConfig.error);

@@ -27,6 +27,27 @@ export const NotificationsCenter: React.FC<{ open: boolean; onClose: () => void;
 
   const unreadCount = useMemo(() => alerts.filter(a => (a.status === 'unread') || a.is_read === false).length, [alerts]);
 
+  const handleMarkRead = async (id: string) => {
+    try {
+      await markAlertRead(id);
+      setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: 'read', is_read: true } : a));
+      document.dispatchEvent(new CustomEvent('alerts-updated'));
+    } catch (e) {
+      console.warn('mark read failed', e);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    if (!userId) return;
+    try {
+      await markAllRead(userId);
+      setAlerts(prev => prev.map(a => ({ ...a, status: 'read', is_read: true })));
+      document.dispatchEvent(new CustomEvent('alerts-updated'));
+    } catch (e) {
+      console.warn('mark all read failed', e);
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -40,8 +61,11 @@ export const NotificationsCenter: React.FC<{ open: boolean; onClose: () => void;
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => userId && markAllRead(userId)} className="h-7 px-2 text-xs">
+          <Button variant="ghost" size="sm" onClick={handleMarkAllRead} className="h-7 px-2 text-xs">
             <CheckCheck className="h-3.5 w-3.5 mr-1" /> Mark all read
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => document.dispatchEvent(new CustomEvent('open-feedback'))} className="h-7 px-2 text-xs">
+            Send feedback
           </Button>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
             <X className="h-4 w-4" />
@@ -69,7 +93,7 @@ export const NotificationsCenter: React.FC<{ open: boolean; onClose: () => void;
                     )}
                   </div>
                   {((a.status === 'unread') || a.is_read === false) && (
-                    <Button variant="outline" size="sm" className="h-7" onClick={() => markAlertRead(a.id)}>Mark read</Button>
+                    <Button variant="outline" size="sm" className="h-7" onClick={() => handleMarkRead(a.id)}>Mark read</Button>
                   )}
                 </div>
               </li>

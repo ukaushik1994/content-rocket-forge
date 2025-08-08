@@ -24,6 +24,13 @@ export const NotificationBell: React.FC = () => {
     return () => document.removeEventListener('open-notifications', handler as any);
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+    const refresh = () => fetchAlerts(userId, 20).then(setAlerts);
+    document.addEventListener('alerts-updated', refresh as any);
+    return () => document.removeEventListener('alerts-updated', refresh as any);
+  }, [userId]);
+
   const unreadCount = useMemo(() => alerts.filter(a => (a.status === 'unread') || a.is_read === false).length, [alerts]);
 
   return (

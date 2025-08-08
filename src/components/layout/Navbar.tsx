@@ -5,9 +5,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Menu, X, PanelRight, LogOut, UserCircle, User, MessageSquarePlus, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { toast } from 'sonner';
 import NavItems from './NavItems';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const Navbar = () => {
   const location = useLocation();
@@ -73,16 +73,8 @@ const Navbar = () => {
             <Settings className="h-4 w-4" />
           </Button>
 
-          {/* Feedback button as icon */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full overflow-hidden border border-border"
-            onClick={() => document.dispatchEvent(new CustomEvent('open-feedback'))}
-            title="Feedback"
-          >
-            <MessageSquarePlus className="h-4 w-4" />
-          </Button>
+          {/* Notifications bell replaces Feedback icon */}
+          <NotificationBell />
 
           {/* User profile dropdown - keeping as is */}
           <DropdownMenu>
