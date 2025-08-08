@@ -21,7 +21,7 @@ export function SolutionCard({
   useCases, 
   painPoints, 
   targetAudience, 
-  cta = "Use in Content",
+  cta = "Add File",
   onUseInContent 
 }: SolutionCardProps) {
   return (

@@ -187,7 +187,7 @@ export const EnhancedSolutionCard: React.FC<EnhancedSolutionCardProps> = ({
             className="bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple"
             onClick={onUseInContent}
           >
-            Use in Content
+            Add File
           </Button>
         </CardFooter>
       </Card>
