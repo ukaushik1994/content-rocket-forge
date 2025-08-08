@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -10,7 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, AlertCircle } from 'lucide-react';
+import { Loader2, Save, X, AlertCircle, Wand2 } from 'lucide-react';
 import { EnhancedSolution, EnhancedSolutionResource } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,7 +28,7 @@ import { CaseStudiesTab } from './tabs/CaseStudiesTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
 import { solutionService } from '@/services/solutionService';
 import { AutoSaveStatus } from './AutoSaveStatus';
-
+import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +55,9 @@ export const EnhancedSolutionFormDialog: React.FC<EnhancedSolutionFormDialogProp
   const [autoSaveError, setAutoSaveError] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isAIAutofillOpen, setIsAIAutofillOpen] = useState(false);
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiStage, setAiStage] = useState<string>('Preparing AI extraction…');
   
   // Use simple form state
   const {
@@ -231,6 +234,38 @@ useEffect(() => {
     };
   }, []);
 
+  // AI Autofill inside form
+  const handleAutofillFromDoc = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
+        setIsAIAutofillOpen(true);
+        setAiProgress(0);
+        setAiStage('Reading document…');
+        const prefill = await parseSolutionFromFile(file, formData as EnhancedSolution, {
+          onProgress: ({ stage, progress }) => {
+            if (stage) setAiStage(stage);
+            if (typeof progress === 'number') setAiProgress(progress);
+          },
+        });
+        // Merge prefill into form
+        updateFormData({ ...(formData as any), ...(prefill as any) });
+        toast.success('Autofill complete. Review the highlighted sections.');
+      } catch (e: any) {
+        console.error('Autofill failed', e);
+        toast.error(e?.message || 'Failed to process file');
+      } finally {
+        setIsAIAutofillOpen(false);
+      }
+    };
+    input.click();
+  };
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
@@ -342,6 +377,16 @@ useEffect(() => {
     }
   };
 
+  const missingInfo = useMemo(() => {
+    const items: { key: string; label: string; tab: string }[] = [];
+    if (!formData.name?.trim()) items.push({ key: 'name', label: 'Name', tab: 'basic' });
+    if (!formData.description?.trim()) items.push({ key: 'description', label: 'Description', tab: 'basic' });
+    if (!formData.category?.trim()) items.push({ key: 'category', label: 'Category', tab: 'basic' });
+    if (!formData.features || (Array.isArray(formData.features) && formData.features.length === 0)) items.push({ key: 'features', label: 'At least 1 Feature', tab: 'features' });
+    if (!formData.useCases || (Array.isArray(formData.useCases) && formData.useCases.length === 0)) items.push({ key: 'useCases', label: 'At least 1 Use case', tab: 'features' });
+    return items;
+  }, [formData]);
+
   return (
     <Dialog 
       open={open} 
@@ -364,7 +409,33 @@ useEffect(() => {
               : 'Create a comprehensive profile for your business solution.'}
           </DialogDescription>
         </DialogHeader>
-        
+        <div className="flex items-center justify-between mb-2">
+          <div />
+          <Button onClick={handleAutofillFromDoc} variant="outline">
+            <Wand2 className="mr-2 h-4 w-4" />
+            Autofill from document
+          </Button>
+        </div>
+        {missingInfo.length > 0 && (
+          <div className="mb-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+            <div className="text-sm mb-2">Missing information:</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {missingInfo.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setActiveTab(item.tab)}
+                  className="px-2 py-1 text-xs rounded-md border border-border/60 hover:bg-accent transition-colors"
+                >
+                  {item.label}
+                </button>
+              ))}
+              <div className="ml-auto">
+                <Button size="sm" variant="secondary" onClick={handleSubmit}>Skip and Save</Button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex-1 overflow-hidden">
           {isLoadingData ? (
             <div className="flex items-center justify-center h-64">
@@ -517,6 +588,12 @@ useEffect(() => {
             </Button>
           </div>
         </div>
+        <AIAutofillOverlay
+          open={isAIAutofillOpen}
+          progress={aiProgress}
+          stage={aiStage}
+          onCancel={() => setIsAIAutofillOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   );
