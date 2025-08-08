@@ -265,6 +265,74 @@ export default function NavItems() {
         </DropdownMenuContent>
       </DropdownMenu>
       
+      {/* More Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors h-auto',
+              isMoreActive 
+                ? 'bg-gradient-to-r from-neon-purple to-neon-blue text-white shadow-md' 
+                : 'hover:bg-white/10 text-white/60 hover:text-white'
+            )}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+            More
+            <ChevronDown className="h-3 w-3" />
+            {isMoreActive && (
+              <motion.span 
+                layoutId="nav-highlight-more"
+                transition={{
+                  type: "spring",
+                  duration: 0.3,
+                  bounce: 0.2
+                }} 
+                className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-neon-purple to-neon-blue" 
+              />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52 bg-card border border-white/10 z-50">
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/content-gaps" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/content-gaps' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <FileSearch className="h-4 w-4" />
+              Content Gaps
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/calendar" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/calendar' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <CalendarDays className="h-4 w-4" />
+              Calendar
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/research/pipeline" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/research/pipeline' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <GitBranch className="h-4 w-4" />
+              Pipeline
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
       <NavItem to="/solutions" icon={<Puzzle className="h-4 w-4" />} label="Solutions" active={location.pathname === '/solutions'} />
       <NavItem to="/ai-chat" icon={<MessageSquare className="h-4 w-4" />} label="AI Chat" active={location.pathname === '/ai-chat'} />
       <NavItem to="/aio-geo" icon={<Globe className="h-4 w-4" />} label="AIO/GEO" active={location.pathname === '/aio-geo'} />
