@@ -1265,6 +1265,8 @@ export type Database = {
           created_at: string
           id: string
           primary_keyword: string
+          selected_solution_id: string | null
+          selected_solution_name: string | null
           used_faqs: string[]
           used_headings: string[]
           used_titles: string[]
@@ -1275,6 +1277,8 @@ export type Database = {
           created_at?: string
           id?: string
           primary_keyword: string
+          selected_solution_id?: string | null
+          selected_solution_name?: string | null
           used_faqs?: string[]
           used_headings?: string[]
           used_titles?: string[]
@@ -1285,6 +1289,8 @@ export type Database = {
           created_at?: string
           id?: string
           primary_keyword?: string
+          selected_solution_id?: string | null
+          selected_solution_name?: string | null
           used_faqs?: string[]
           used_headings?: string[]
           used_titles?: string[]
