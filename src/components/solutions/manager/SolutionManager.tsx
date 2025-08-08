@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
-import { Solution } from '@/contexts/content-builder/types';
 import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solution-types';
 import { EnhancedSolutionFormDialog } from './EnhancedSolutionFormDialog';
 import { DeleteSolutionDialog } from './DeleteSolutionDialog';
@@ -22,16 +19,14 @@ interface SolutionManagerProps {
 }
 
 export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) => {
-  // Added for content builder integration
-  const navigate = useNavigate();
-  const { dispatch } = useContentBuilder();
   const [filterTerm, setFilterTerm] = useState(searchTerm);
   
   // Use enhanced solution service instead of basic hook
   const [solutions, setSolutions] = useState<EnhancedSolution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   // Enhanced form state management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
@@ -49,15 +44,21 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     deleteSolution: async (id: string) => {
       const success = await solutionService.deleteSolution(id);
       if (success) {
-        await fetchSolutions();
+        setSolutions(prev => prev.filter(s => s.id !== id));
+        void fetchSolutions({ background: true });
       }
       return success;
     }
   });
 
   // Fetch solutions using enhanced service
-  const fetchSolutions = async () => {
-    setIsLoading(true);
+  const fetchSolutions = async (options?: { background?: boolean }) => {
+    const background = !!options?.background;
+    if (background) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       console.log('Fetching solutions from enhanced service...');
@@ -69,10 +70,14 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
       setError(error.message || 'Failed to load solutions');
       toast.error('Failed to load solutions');
     } finally {
-      setIsLoading(false);
+      if (background) {
+        setIsRefreshing(false);
+      } else {
+        setIsLoading(false);
+        if (isInitialLoading) setIsInitialLoading(false);
+      }
     }
   };
-
   // Update local filter when search term changes
   useEffect(() => {
     setFilterTerm(searchTerm);
@@ -273,8 +278,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         
         if (result.success && result.data) {
           console.log('Update successful, refreshing solutions list');
-          // Refresh the solutions list
-          await fetchSolutions();
+          // Refresh the solutions list in background
+          void fetchSolutions({ background: true });
           console.log('Solutions list refreshed');
           toast.success('Solution updated successfully');
           // Keep dialog open; user closes explicitly via Close button
@@ -291,8 +296,8 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         
         if (result.success && result.data) {
           console.log('Create successful, refreshing solutions list');
-          // Refresh the solutions list
-          await fetchSolutions();
+          // Refresh the solutions list in background
+          void fetchSolutions({ background: true });
           console.log('Solutions list refreshed');
           toast.success('Solution created successfully');
           // Keep dialog open; user closes explicitly via Close button
@@ -314,7 +319,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     }
   };
   
-  if (isLoading) {
+  if (isInitialLoading || isLoading) {
     return <LoadingState />;
   }
   
@@ -347,6 +352,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
           onUseInContent={handleUseInContent}
           onAddNew={handleAddNew}
           onAutofillFromDoc={handleAutofillFromDoc}
+          isRefreshing={isRefreshing}
         />
       )}
       

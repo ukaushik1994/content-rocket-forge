@@ -5,7 +5,7 @@ import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solu
 import { EnhancedSolutionCard } from './EnhancedSolutionCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Shuffle, Wand2 } from 'lucide-react';
+import { Loader2, PlusCircle, Shuffle, Wand2 } from 'lucide-react';
 
 interface EnhancedSolutionGridProps {
   solutions: EnhancedSolution[];
@@ -14,6 +14,7 @@ interface EnhancedSolutionGridProps {
   onUseInContent: (solution: EnhancedSolution) => void;
   onAddNew: () => void;
   onAutofillFromDoc: () => void;
+  isRefreshing?: boolean;
 }
 
 export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
@@ -23,6 +24,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
   onUseInContent,
   onAddNew,
   onAutofillFromDoc,
+  isRefreshing = false,
 }) => {
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState('grid'); // 'grid' or 'list'
@@ -56,6 +58,12 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
         </Tabs>
         
         <div className="flex items-center gap-3">
+          {isRefreshing && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Syncing…</span>
+            </div>
+          )}
           <Button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} variant="outline" size="sm" className="hover:shadow-neon">
             {view === 'grid' ? 'List View' : 'Grid View'}
           </Button>
