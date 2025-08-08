@@ -9,11 +9,16 @@ import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 
 const ContentStrategy = () => {
+  const canonicalUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/research/content-strategy` 
+    : '/research/content-strategy';
   return (
     <ContentStrategyProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
         <Helmet>
-          <title>Content Strategy | Research Platform</title>
+          <title>Content Strategy — Plan, Calendar, Pipeline</title>
+          <meta name="description" content="Content strategy workspace to plan, track, and optimize: strategies, dashboard, calendar, pipeline, opportunities, performance, gaps, progress." />
+          <link rel="canonical" href={canonicalUrl} />
         </Helmet>
         
         <Navbar />
