@@ -5,7 +5,7 @@ import { sendChatRequest, ChatMessage } from '@/services/aiService';
 import * as pdfjsLib from 'pdfjs-dist';
 // Use ?url to get the worker file URL in Vite
 // @ts-ignore - Vite will resolve this URL
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl as any;
 
@@ -25,7 +25,9 @@ async function extractTextFromPdf(file: File): Promise<string> {
 
 async function extractTextFromDocx(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
-  const mammoth = await import('mammoth');
+  // Use browser build of mammoth to avoid Node deps
+  // @ts-ignore
+  const mammoth = await import('mammoth/mammoth.browser');
   const result = await mammoth.extractRawText({ arrayBuffer });
   return (result.value || '').trim();
 }
