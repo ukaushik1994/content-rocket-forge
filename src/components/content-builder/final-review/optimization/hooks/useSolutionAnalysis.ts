@@ -19,28 +19,10 @@ export function useSolutionAnalysis() {
     const solutionMetrics = analyzeEnhancedSolutionIntegration(content, state.selectedSolution);
     setAnalyzedSolutionIntegration(solutionMetrics);
     
-    const systemPrompt = 'You are an expert in product integration for content marketing. Evaluate contextual fit, narrative flow, and audience alignment—not just keywords. Provide actionable, specific improvements.';
+    const systemPrompt = 'You are an expert in product integration for content marketing. Analyze the content and suggest improvements for better product integration.';
     const userPrompt = `
-      Analyze how well the solution "${state.selectedSolution.name}" is CONTEXTUALLY integrated into the content below. Focus on:
-      - Whether the solution is introduced naturally within the narrative
-      - If features map to user pains and use cases in context
-      - CTA relevance and clarity given the content intent
-      - Depth of coverage (features, specs, value props)
-
-      Return ONLY JSON with this shape:
-      {
-        "suggestions": [
-          {
-            "id": string,
-            "type": "solution",
-            "title": string,
-            "description": string,
-            "priority": "high" | "medium" | "low",
-            "evidenceExcerpts": string[]
-          }
-        ]
-      }
-
+      Analyze how well this solution "${state.selectedSolution.name}" is integrated into the content.
+      
       Solution details:
       - Name: ${state.selectedSolution.name}
       - Features: ${state.selectedSolution.features.join(', ')}
@@ -49,9 +31,30 @@ export function useSolutionAnalysis() {
       - Value propositions: ${state.selectedSolution.uniqueValuePropositions?.join(', ') || 'None'}
       - Key differentiators: ${state.selectedSolution.keyDifferentiators?.join(', ') || 'None'}
       ${state.selectedSolution.competitors ? `- Competitors: ${state.selectedSolution.competitors.map(c => c.name).join(', ')}` : ''}
-
+      
+      Enhanced integration metrics:
+      - Feature incorporation: ${solutionMetrics.featureIncorporation}%
+      - Name mentions: ${solutionMetrics.nameMentions}
+      - Positioning score: ${solutionMetrics.positioningScore}%
+      - Technical specs integration: ${solutionMetrics.technicalSpecsIntegration}%
+      - Case study references: ${solutionMetrics.caseStudyReferences}
+      - Value proposition coverage: ${solutionMetrics.valuePropositionCoverage}%
+      - Market data integration: ${solutionMetrics.marketDataIntegration}%
+      - Competitor mentions: ${solutionMetrics.competitorMentions}
+      - Use cases covered: ${solutionMetrics.useCasesCovered.join(', ') || 'None'}
+      - Differentiators mentioned: ${solutionMetrics.differentiatorsMentioned.join(', ') || 'None'}
+      
       Content:
       ${content}
+      
+      Return JSON with an array of specific improvement suggestions. Each suggestion should have:
+      1. id: a unique string
+      2. type: always "solution"
+      3. title: short title for the suggestion
+      4. description: detailed description of what to improve
+      5. priority: "high", "medium", or "low"
+      
+      Format: { "suggestions": [...] }
     `;
 
     const solutionResult = await AIServiceController.generate(

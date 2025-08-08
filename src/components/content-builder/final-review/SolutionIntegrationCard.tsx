@@ -144,45 +144,6 @@ export const SolutionIntegrationCard = ({
               )}
             </div>
 
-            {/* Context-Aware Metrics */}
-            <div className="grid grid-cols-1 gap-3">
-              {/* Contextual Fit */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>Contextual Fit</span>
-                  <span className="font-medium">{metrics.contextualRelevance}%</span>
-                </div>
-                <Progress value={metrics.contextualRelevance} className="h-2" />
-              </div>
-
-              {/* Natural Integration */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>Natural Integration</span>
-                  <span className="font-medium">{metrics.naturalIntegration}%</span>
-                </div>
-                <Progress value={metrics.naturalIntegration} className="h-2" />
-              </div>
-
-              {/* Narrative Cohesion */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>Narrative Cohesion</span>
-                  <span className="font-medium">{metrics.narrativeCohesion}%</span>
-                </div>
-                <Progress value={metrics.narrativeCohesion} className="h-2" />
-              </div>
-
-              {/* Coverage Depth */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>Coverage Depth</span>
-                  <span className="font-medium">{metrics.coverageDepth}%</span>
-                </div>
-                <Progress value={metrics.coverageDepth} className="h-2" />
-              </div>
-            </div>
-
             {/* Feature Mentions */}
             <div>
               <h4 className="text-xs mb-2">Feature Mentions</h4>
@@ -206,33 +167,6 @@ export const SolutionIntegrationCard = ({
                 ))}
               </div>
             </div>
-
-            {/* Evidence (AI) */}
-            {metrics.evidence && metrics.evidence.length > 0 && (
-              <div>
-                <h4 className="text-xs mb-2">AI Evidence</h4>
-                <ul className="space-y-2">
-                  {metrics.evidence.slice(0, 3).map((e, i) => (
-                    <li key={i} className="text-xs text-muted-foreground bg-muted/20 border border-border rounded p-2">
-                      <div className="italic">"{e.excerpt}"</div>
-                      <div className="mt-1">{e.rationale}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Suggestions (AI) */}
-            {metrics.suggestions && metrics.suggestions.length > 0 && (
-              <div>
-                <h4 className="text-xs mb-2">AI Suggestions</h4>
-                <ul className="list-disc pl-4 space-y-1">
-                  {metrics.suggestions.slice(0, 5).map((s, i) => (
-                    <li key={i} className="text-xs text-muted-foreground">{s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
             
             <Button 
               onClick={onAnalyze} 
