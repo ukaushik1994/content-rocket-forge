@@ -51,84 +51,72 @@ export const RepositoryFilters: React.FC<RepositoryFiltersProps> = ({
 
   return (
     <motion.div 
-      className="space-y-6 mb-8"
+      className="space-y-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Enhanced Content Type Filter Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      {/* Content Type Filter Tabs */}
+      <div className="flex flex-wrap gap-2">
         {contentTypeFilters.map((filter, index) => (
           <motion.div
             key={filter.value}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05, duration: 0.4 }}
-            whileHover={{ y: -2, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.4 }}
           >
             <Button
-              variant="outline"
+              variant={selectedContentType === filter.value ? "default" : "outline"}
               onClick={() => onContentTypeChange(filter.value as ContentType | 'all')}
-              className={`glass-button h-auto p-4 flex flex-col items-center gap-2 transition-all duration-300 w-full ${
+              className={`glass-button transition-all duration-300 ${
                 selectedContentType === filter.value 
-                  ? 'bg-gradient-to-r from-primary/20 to-neon-blue/20 border-primary/50 shadow-lg' 
-                  : 'bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/30'
+                  ? 'bg-gradient-to-r from-primary to-neon-blue text-white border-white/20 shadow-lg' 
+                  : 'bg-background/40 backdrop-blur-sm border-white/10 hover:border-white/20'
               }`}
+              size="sm"
             >
-              <filter.icon className={`h-5 w-5 ${
-                selectedContentType === filter.value ? 'text-primary' : filter.color
-              }`} />
-              <div className="text-center">
-                <div className="text-xs font-medium mb-1">{filter.label}</div>
-                <CustomBadge 
-                  className={`text-xs ${
-                    selectedContentType === filter.value
-                      ? 'bg-primary/30 text-primary'
-                      : 'bg-muted/50 text-muted-foreground'
-                  }`}
-                >
-                  {filter.count}
-                </CustomBadge>
-              </div>
+              <filter.icon className={`mr-2 h-4 w-4 ${filter.color}`} />
+              {filter.label}
+              <CustomBadge 
+                className={`ml-2 text-xs ${
+                  selectedContentType === filter.value
+                    ? 'bg-white/20 text-white'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {filter.count}
+              </CustomBadge>
             </Button>
           </motion.div>
         ))}
       </div>
 
-      {/* Enhanced Search and Status Filter */}
+      {/* Search and Status Filter */}
       <motion.div 
         className="flex flex-col sm:flex-row gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
       >
-        {/* Enhanced Search Input */}
+        {/* Search Input */}
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by title, content, tags, or solution..."
+            placeholder="Search content by title, content, or tags..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-12 h-12 glass-input bg-background/50 backdrop-blur-xl border-white/10 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-base"
+            className="pl-10 glass-input bg-background/40 backdrop-blur-sm border-white/10 focus:border-white/20"
           />
         </div>
 
-        {/* Enhanced Status Filter */}
+        {/* Status Filter */}
         <Select value={selectedStatus} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-full sm:w-56 h-12 glass-input bg-background/50 backdrop-blur-xl border-white/10 focus:border-primary/50">
+          <SelectTrigger className="w-full sm:w-48 glass-input bg-background/40 backdrop-blur-sm border-white/10 focus:border-white/20">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
-          <SelectContent className="bg-background/95 backdrop-blur-xl border-white/20">
-            <SelectItem value="all" className="hover:bg-white/10">
-              <div className="flex items-center justify-between w-full">
-                <span>All Status</span>
-                <CustomBadge className="ml-2 bg-primary/20 text-primary">
-                  {contentStats.total}
-                </CustomBadge>
-              </div>
-            </SelectItem>
-            <SelectItem value="draft" className="hover:bg-white/10">
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">
               <div className="flex items-center justify-between w-full">
                 <span>Draft</span>
                 <CustomBadge className="ml-2 bg-yellow-500/20 text-yellow-600">
@@ -136,7 +124,7 @@ export const RepositoryFilters: React.FC<RepositoryFiltersProps> = ({
                 </CustomBadge>
               </div>
             </SelectItem>
-            <SelectItem value="published" className="hover:bg-white/10">
+            <SelectItem value="published">
               <div className="flex items-center justify-between w-full">
                 <span>Published</span>
                 <CustomBadge className="ml-2 bg-green-500/20 text-green-600">
@@ -144,7 +132,7 @@ export const RepositoryFilters: React.FC<RepositoryFiltersProps> = ({
                 </CustomBadge>
               </div>
             </SelectItem>
-            <SelectItem value="archived" className="hover:bg-white/10">
+            <SelectItem value="archived">
               <div className="flex items-center justify-between w-full">
                 <span>Archived</span>
                 <CustomBadge className="ml-2 bg-gray-500/20 text-gray-600">

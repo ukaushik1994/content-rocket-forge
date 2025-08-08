@@ -4,12 +4,7 @@ import { Plus, FileText, BookOpen, Mail, Globe, Edit, MessageSquare } from 'luci
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-interface RepositoryHeaderProps {
-  contentItems?: any[];
-  loading?: boolean;
-}
-
-export const RepositoryHeader: React.FC<RepositoryHeaderProps> = ({ contentItems = [], loading = false }) => {
+export const RepositoryHeader: React.FC = () => {
   const navigate = useNavigate();
 
   const quickActions = [
@@ -79,7 +74,7 @@ export const RepositoryHeader: React.FC<RepositoryHeaderProps> = ({ contentItems
         </div>
         
         <motion.div
-          initial={{ opacity: 0, x: 10 }}
+          initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.6 }}
         >
