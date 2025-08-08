@@ -5,7 +5,7 @@ import { EnhancedSolution } from '@/contexts/content-builder/types/enhanced-solu
 import { EnhancedSolutionCard } from './EnhancedSolutionCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Shuffle } from 'lucide-react';
+import { PlusCircle, Shuffle, Wand2 } from 'lucide-react';
 
 interface EnhancedSolutionGridProps {
   solutions: EnhancedSolution[];
@@ -60,7 +60,7 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
             {view === 'grid' ? 'List View' : 'Grid View'}
           </Button>
           <Button onClick={onAutofillFromDoc} variant="outline">
-            <WandAutofill />
+            <Wand2 className="mr-2 h-4 w-4" />
             Autofill from document
           </Button>
           <Button 

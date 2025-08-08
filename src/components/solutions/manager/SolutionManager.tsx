@@ -139,8 +139,42 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
     };
     input.click();
   };
+  
   const handleSearchChange = (term: string) => {
     setFilterTerm(term);
+  };
+
+  // "Add Solution from Document" flow
+  const handleAutofillFromDoc = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
+        setAutofillProgress(0);
+        setAutofillStage('Preparing…');
+        setIsAutofillOpen(true);
+        const prefill = await parseSolutionFromFile(file, undefined, {
+          onProgress: ({ stage, progress }) => {
+            if (stage) setAutofillStage(stage);
+            if (typeof progress === 'number') setAutofillProgress(progress);
+          },
+        });
+        setSelectedSolution(null); // New solution
+        setPrefilledData(prefill);
+        setIsDialogOpen(true);
+        toast.success('AI autofill completed. Review and save.');
+      } catch (e: any) {
+        console.error('Add Solution from Document failed', e);
+        toast.error(e?.message || 'Failed to process file');
+      } finally {
+        setIsAutofillOpen(false);
+      }
+    };
+    input.click();
   };
 
   // Enhanced form handlers
@@ -240,6 +274,7 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
           onDelete={deleteHandler.handleDelete}
           onUseInContent={handleUseInContent}
           onAddNew={handleAddNew}
+          onAutofillFromDoc={handleAutofillFromDoc}
         />
       )}
       
@@ -263,6 +298,14 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
         onConfirmDelete={deleteHandler.confirmDelete}
         solution={deleteHandler.selectedSolution}
         isSubmitting={deleteHandler.isSubmitting}
+      />
+
+      {/* AI Autofill Overlay */}
+      <AIAutofillOverlay
+        open={isAutofillOpen}
+        progress={autofillProgress}
+        stage={autofillStage}
+        onCancel={() => setIsAutofillOpen(false)}
       />
     </motion.div>
   );
