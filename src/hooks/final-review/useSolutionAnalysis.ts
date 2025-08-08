@@ -32,29 +32,51 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
     try {
       // First try to use AI service for advanced analysis
       const aiResponse = await AIServiceController.generate({
-        input: `
-              Solution Name: ${selectedSolution.name}
-              Solution Features: ${selectedSolution.features.join(', ')}
-              Pain Points: ${selectedSolution.painPoints.join(', ')}
-              Target Audience: ${selectedSolution.targetAudience.join(', ')}
-              
-              Content: ${content.substring(0, 5000)}
-              
-              Analyze how well this solution is integrated within the content and provide the following metrics:
-              1. Feature Incorporation (0-100): What percentage of solution features are incorporated in the content?
-              2. Positioning Score (0-100): How well is the solution positioned in the content?
-              3. Pain Points Addressed: Which pain points are addressed in the content?
-              4. CTA Effectiveness (0-100): How effective are the calls to action for this solution?
-              5. Overall Score (0-100): Overall effectiveness of solution integration
-              6. Number of Solution Name Mentions
-              7. Number of CTA Mentions
-              8. Audience Alignment (0-100): How well does the content align with the target audience?
-              9. Mentioned Features: List of solution features that are mentioned in the content
-              
-              Return your analysis as a JSON object with these metrics.`,
+        input: `You are an expert content strategist. Assess how well the following solution is CONTEXTUALLY integrated into the content. Consider narrative flow, audience fit, and depth – not just keyword hits.
+
+Return ONLY valid JSON matching this schema:
+{
+  "featureIncorporation": number,                 // 0-100
+  "positioningScore": number,                     // 0-100
+  "painPointsAddressed": string[],                // list of addressed pains
+  "ctaEffectiveness": number,                     // 0-100
+  "overallScore": number,                         // 0-100
+  "mentions": number | string,                    // count or descriptor
+  "audienceAlignment": number,                    // 0-100
+  "nameMentions": number,
+  "ctaMentions": number,
+  "mentionedFeatures": string[],
+  "competitorMentions": number,
+  "technicalSpecsIntegration": number,
+  "caseStudyReferences": number,
+  "pricingModelAlignment": number,
+  "valuePropositionCoverage": number,
+  "marketDataIntegration": number,
+  "useCasesCovered": string[],
+  "differentiatorsMentioned": string[],
+  "contextualRelevance": number,                  // 0-100
+  "naturalIntegration": number,                   // 0-100
+  "narrativeCohesion": number,                    // 0-100
+  "coverageDepth": number,                        // 0-100
+  "evidence": [{"excerpt": string, "rationale": string, "metric": string}],
+  "suggestions": string[],
+  "missingElements": string[],
+  "references": {"caseStudies": string[], "competitors": string[], "technicalSpecs": string[]},
+  "confidence": number                             // 0-100
+}
+
+SOLUTION
+Name: ${selectedSolution.name}
+Features: ${selectedSolution.features.join(', ')}
+Pain Points: ${selectedSolution.painPoints.join(', ')}
+Target Audience: ${selectedSolution.targetAudience.join(', ')}
+Unique Value Props: ${selectedSolution.uniqueValuePropositions?.join(', ') || 'N/A'}
+Differentiators: ${selectedSolution.keyDifferentiators?.join(', ') || 'N/A'}
+
+CONTENT (first 5k chars):\n${content.substring(0, 5000)}\n`,
         use_case: 'strategy',
-        temperature: 0.7,
-        max_tokens: 1500
+        temperature: 0.3,
+        max_tokens: 1600
       });
 
       console.log("[useSolutionAnalysis] AI response:", aiResponse);
@@ -73,15 +95,33 @@ export const useSolutionAnalysis = (ctaInfo: any) => {
           if (jsonMatch) {
             const jsonStr = jsonMatch[0].replace(/```json|```/g, '').trim();
             solutionMetrics = JSON.parse(jsonStr);
-            
-            // Ensure we have all required properties
-            if (!solutionMetrics.featureIncorporation || !solutionMetrics.positioningScore) {
-              throw new Error('Incomplete metrics in AI response');
+
+            // Normalize defaults for optional fields and ensure numeric fields
+            solutionMetrics.mentionedFeatures = solutionMetrics.mentionedFeatures || [];
+            solutionMetrics.painPointsAddressed = solutionMetrics.painPointsAddressed || [];
+            solutionMetrics.useCasesCovered = solutionMetrics.useCasesCovered || [];
+            solutionMetrics.differentiatorsMentioned = solutionMetrics.differentiatorsMentioned || [];
+            solutionMetrics.evidence = (solutionMetrics as any).evidence || [];
+            solutionMetrics.suggestions = (solutionMetrics as any).suggestions || [];
+            (solutionMetrics as any).missingElements = (solutionMetrics as any).missingElements || [];
+            (solutionMetrics as any).references = (solutionMetrics as any).references || { caseStudies: [], competitors: [], technicalSpecs: [] };
+            (solutionMetrics as any).contextualRelevance = Number((solutionMetrics as any).contextualRelevance || 0);
+            (solutionMetrics as any).naturalIntegration = Number((solutionMetrics as any).naturalIntegration || 0);
+            (solutionMetrics as any).narrativeCohesion = Number((solutionMetrics as any).narrativeCohesion || 0);
+            (solutionMetrics as any).coverageDepth = Number((solutionMetrics as any).coverageDepth || 0);
+            (solutionMetrics as any).confidence = Number((solutionMetrics as any).confidence || 0);
+
+            if (solutionMetrics.overallScore == null || isNaN(Number(solutionMetrics.overallScore))) {
+              solutionMetrics.overallScore = Math.round(
+                (Number(solutionMetrics.featureIncorporation || 0) +
+                 Number(solutionMetrics.positioningScore || 0) +
+                 Number((solutionMetrics as any).contextualRelevance || 0)) / 3
+              );
             }
-            
-            // Add empty array for mentionedFeatures if not provided
-            if (!solutionMetrics.mentionedFeatures) {
-              solutionMetrics.mentionedFeatures = [];
+
+            // Validate critical fields
+            if (solutionMetrics.featureIncorporation == null || solutionMetrics.positioningScore == null) {
+              throw new Error('Incomplete metrics in AI response');
             }
           } else {
             throw new Error('Could not extract valid JSON from AI response');
