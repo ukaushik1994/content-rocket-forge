@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import { ContentApprovalView } from '@/components/approval/ContentApprovalView';
 import { ContentProvider } from '@/contexts/content';
 import { motion } from 'framer-motion';
-
+import { useContent } from '@/contexts/content'; // Added: import the hook that's being used
 
 const ContentApproval = () => {
   return (
@@ -38,3 +38,4 @@ const ContentApproval = () => {
 };
 
 export default ContentApproval;
+
