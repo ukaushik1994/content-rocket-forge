@@ -67,34 +67,40 @@ const Repository = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
       <Helmet>
-        <title>Content Repository | Content Platform</title>
+        <title>Content Repository | Manage Your Creative Content</title>
+        <meta name="description" content="Organize and manage all your content in one beautiful, solution-integrated platform. Create, edit, and track content across articles, blogs, emails, and more." />
+        <link rel="canonical" href="/repository" />
       </Helmet>
       
       <Navbar />
       
-      {/* Background elements - inspired by glossary builder */}
+      {/* Enhanced background elements */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-pulse"></div>
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neon-blue/10 rounded-full filter blur-3xl opacity-40 animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-neon-purple/10 rounded-full filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-40 left-1/2 w-80 h-80 bg-gradient-to-r from-primary/5 to-neon-blue/5 rounded-full filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl opacity-60 animate-pulse"></div>
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-neon-blue/10 rounded-full filter blur-3xl opacity-50 animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-neon-purple/10 rounded-full filter blur-3xl opacity-40 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-40 left-1/2 w-64 h-64 bg-gradient-to-r from-primary/5 to-neon-blue/5 rounded-full filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
         
-        {/* Futuristic grid pattern */}
-        <div className="futuristic-grid absolute inset-0 opacity-5">
+        {/* Enhanced grid pattern */}
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `
-              linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
+              linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px),
+              radial-gradient(circle at 50% 50%, hsl(var(--neon-blue) / 0.05) 0%, transparent 50%)
             `,
-            backgroundSize: '50px 50px'
+            backgroundSize: '40px 40px, 40px 40px, 200px 200px'
           }}></div>
         </div>
       </div>
       
-      <main className="flex-1 w-full py-8 z-10 relative">
-        <div className="w-full px-6">
-          <div className="glass-panel p-8 rounded-xl border border-white/10 animate-fade-in backdrop-blur-xl bg-background/80">
-            <RepositoryHeader />
+      <main className="flex-1 w-full py-6 z-10 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Hero Header Section */}
+          <RepositoryHeader contentItems={contentItems} loading={loading} />
+          
+          {/* Main Content */}
+          <div className="glass-panel p-6 rounded-2xl border border-white/10 backdrop-blur-xl bg-background/80 shadow-2xl">
             <RepositoryContent 
               onOpenDetailView={handleOpenDetailView}
             />
