@@ -19,6 +19,8 @@ import {
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
+import { analyzeContentItem, analyzeBulk } from '@/services/seoAiService';
+import type { SeoAiResult } from '@/types/seo-ai';
 
 interface ModernContentApprovalProps {
   contentItems: ContentItemType[];
@@ -37,6 +39,7 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
+  const [aiResults, setAiResults] = useState<Record<string, SeoAiResult>>({});
 
   const { 
     updateContentItem, 
@@ -81,29 +84,16 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
 
   const handleAnalyzeAll = async () => {
     if (contentItems.length === 0) return;
-    
     setIsAnalyzingAll(true);
     toast.info('Starting AI analysis for all content items...');
-    
     try {
-      // Simulate AI analysis for all items
       for (const item of contentItems) {
         setAnalyzingItems(prev => new Set(prev).add(item.id));
-        
-        // Simulate AI analysis delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Generate mock AI score
-        const score = Math.floor(Math.random() * 40) + 60; // 60-100
-        setAiScores(prev => ({ ...prev, [item.id]: score }));
-        
-        setAnalyzingItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(item.id);
-          return newSet;
-        });
+        const result = await analyzeContentItem(item);
+        setAiScores(prev => ({ ...prev, [item.id]: result.overallScore }));
+        setAiResults(prev => ({ ...prev, [item.id]: result }));
+        setAnalyzingItems(prev => { const s = new Set(prev); s.delete(item.id); return s; });
       }
-      
       toast.success('AI analysis completed for all content items!');
     } catch (error) {
       toast.error('Failed to complete AI analysis');
@@ -115,15 +105,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
 
   const handleAnalyzeContent = async (content: ContentItemType) => {
     setAnalyzingItems(prev => new Set(prev).add(content.id));
-    
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate mock AI score
-      const score = Math.floor(Math.random() * 40) + 60; // 60-100
-      setAiScores(prev => ({ ...prev, [content.id]: score }));
-      
+      const result = await analyzeContentItem(content);
+      setAiScores(prev => ({ ...prev, [content.id]: result.overallScore }));
+      setAiResults(prev => ({ ...prev, [content.id]: result }));
       toast.success(`AI analysis completed for "${content.title}"`);
     } catch (error) {
       toast.error('Failed to analyze content');

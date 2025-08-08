@@ -21,31 +21,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
-
-interface AnalysisResult {
-  seoScore: number;
-  readabilityScore: number;
-  contentQualityScore: number;
-  overallScore: number;
-  issues: Array<{
-    type: 'warning' | 'error' | 'suggestion';
-    title: string;
-    description: string;
-    impact: 'high' | 'medium' | 'low';
-  }>;
-  suggestions: Array<{
-    title: string;
-    description: string;
-    priority: 'high' | 'medium' | 'low';
-    estimatedImpact: string;
-  }>;
-  seoInsights: {
-    keywordDensity: number;
-    titleOptimization: number;
-    metaDescription: number;
-    headingStructure: number;
-  };
-}
+import type { SeoAiResult } from '@/types/seo-ai';
+import { analyzeContentItem } from '@/services/seoAiService';
 
 interface ContentAnalysisModalProps {
   isOpen: boolean;
@@ -64,7 +41,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
   onReject,
   onRequestChanges
 }) => {
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<SeoAiResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -76,59 +53,15 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
 
   const runAnalysis = async () => {
     if (!content) return;
-    
     setIsAnalyzing(true);
-    
-    // Simulate AI analysis - Replace with actual AI service call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockResult: AnalysisResult = {
-      seoScore: Math.floor(Math.random() * 40) + 60, // 60-100
-      readabilityScore: Math.floor(Math.random() * 30) + 70, // 70-100
-      contentQualityScore: Math.floor(Math.random() * 35) + 65, // 65-100
-      overallScore: 0,
-      issues: [
-        {
-          type: 'warning',
-          title: 'SEO Title Length',
-          description: 'Title is too long for optimal SEO performance',
-          impact: 'medium'
-        },
-        {
-          type: 'suggestion',
-          title: 'Add Internal Links',
-          description: 'Consider adding 2-3 internal links to related content',
-          impact: 'low'
-        }
-      ],
-      suggestions: [
-        {
-          title: 'Optimize Meta Description',
-          description: 'Craft a compelling meta description under 160 characters',
-          priority: 'high',
-          estimatedImpact: '+15% CTR'
-        },
-        {
-          title: 'Improve Readability',
-          description: 'Break up long paragraphs and add subheadings',
-          priority: 'medium',
-          estimatedImpact: '+20% engagement'
-        }
-      ],
-      seoInsights: {
-        keywordDensity: Math.floor(Math.random() * 30) + 70,
-        titleOptimization: Math.floor(Math.random() * 20) + 80,
-        metaDescription: Math.floor(Math.random() * 40) + 60,
-        headingStructure: Math.floor(Math.random() * 25) + 75
-      }
-    };
-
-    mockResult.overallScore = Math.round(
-      (mockResult.seoScore + mockResult.readabilityScore + mockResult.contentQualityScore) / 3
-    );
-
-    setAnalysisResult(mockResult);
-    setIsAnalyzing(false);
+    try {
+      const result = await analyzeContentItem(content);
+      setAnalysisResult(result);
+    } catch (e) {
+      console.error('AI analysis failed', e);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -143,11 +76,11 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
     return 'from-red-500 to-orange-600';
   };
 
-  const getIssueIcon = (type: string) => {
-    switch (type) {
-      case 'error': return <AlertCircle className="h-4 w-4 text-red-400" />;
-      case 'warning': return <AlertCircle className="h-4 w-4 text-yellow-400" />;
-      case 'suggestion': return <Lightbulb className="h-4 w-4 text-blue-400" />;
+  const getIssueIcon = (severity: 'high' | 'medium' | 'low') => {
+    switch (severity) {
+      case 'high': return <AlertCircle className="h-4 w-4 text-red-400" />;
+      case 'medium': return <AlertCircle className="h-4 w-4 text-yellow-400" />;
+      case 'low': return <Lightbulb className="h-4 w-4 text-blue-400" />;
       default: return <AlertCircle className="h-4 w-4" />;
     }
   };
@@ -254,9 +187,9 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                   {/* Score Breakdown */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { label: 'SEO', score: analysisResult.seoScore, icon: Search },
-                      { label: 'Readability', score: analysisResult.readabilityScore, icon: Eye },
-                      { label: 'Content Quality', score: analysisResult.contentQualityScore, icon: FileText }
+                      { label: 'SEO', score: analysisResult.scores.seo, icon: Search },
+                      { label: 'Readability', score: analysisResult.scores.readability, icon: Eye },
+                      { label: 'Content Quality', score: analysisResult.scores.quality, icon: FileText }
                     ].map((item, index) => (
                       <motion.div
                         key={item.label}
