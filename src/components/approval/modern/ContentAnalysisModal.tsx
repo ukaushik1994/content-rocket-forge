@@ -21,6 +21,7 @@ import {
 import { ContentItemType } from '@/contexts/content/types';
 import type { SeoAiResult } from '@/types/seo-ai';
 import { analyzeContentItem } from '@/services/seoAiService';
+import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
 
 interface ContentAnalysisModalProps {
   isOpen: boolean;
@@ -93,7 +94,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h[90vh] overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="w-[95vw] md:w-[90vw] max-w-[1200px] max-h-[90vh] overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <Brain className="h-6 w-6 text-primary" />
@@ -128,14 +129,15 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
             </motion.div>
           ) : analysisResult ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="seo">SEO Analysis</TabsTrigger>
-                <TabsTrigger value="issues">Issues</TabsTrigger>
-                <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
-              </TabsList>
+                <TabsList className="grid w-full grid-cols-5 mb-6">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="seo">SEO Analysis</TabsTrigger>
+                  <TabsTrigger value="issues">Issues</TabsTrigger>
+                  <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+                  <TabsTrigger value="review">Review & Edit</TabsTrigger>
+                </TabsList>
 
-              <div className="h-[500px] overflow-y-auto">
+              <div className="h-[70vh] overflow-y-auto">
                 <TabsContent value="overview" className="space-y-6">
                   {/* Overall Score */}
                   <Card>
@@ -319,14 +321,21 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                       </Card>
                     </motion.div>
                   ))}
-                </TabsContent>
-              </div>
+                 </TabsContent>
+
+                 {/* Review & Edit Tab */}
+                 <TabsContent value="review" className="space-y-4">
+                   <div className="pr-1">
+                     <ContentApprovalEditor content={content} />
+                   </div>
+                 </TabsContent>
+               </div>
             </Tabs>
           ) : null}
         </div>
 
         {/* Action Buttons */}
-        {analysisResult && (
+        {analysisResult && activeTab !== 'review' && (
           <motion.div
             className="flex gap-3 pt-4 border-t border-border/50"
             initial={{ opacity: 0, y: 20 }}
