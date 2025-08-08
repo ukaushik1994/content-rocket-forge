@@ -13,6 +13,7 @@ interface EnhancedSolutionGridProps {
   onDelete: (solution: EnhancedSolution) => void;
   onUseInContent: (solution: EnhancedSolution) => void;
   onAddNew: () => void;
+  onAutofillFromDoc: () => void;
 }
 
 export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
@@ -20,7 +21,8 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
   onEdit,
   onDelete,
   onUseInContent,
-  onAddNew
+  onAddNew,
+  onAutofillFromDoc,
 }) => {
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState('grid'); // 'grid' or 'list'
@@ -56,6 +58,10 @@ export const EnhancedSolutionGrid: React.FC<EnhancedSolutionGridProps> = ({
         <div className="flex items-center gap-3">
           <Button onClick={() => setView(view === 'grid' ? 'list' : 'grid')} variant="outline" size="sm">
             {view === 'grid' ? 'List View' : 'Grid View'}
+          </Button>
+          <Button onClick={onAutofillFromDoc} variant="outline">
+            <WandAutofill />
+            Autofill from document
           </Button>
           <Button 
             onClick={onAddNew}

@@ -14,6 +14,7 @@ import { LoadingState } from './LoadingState';
 import { EnhancedSolutionGrid } from '../EnhancedSolutionGrid';
 import { HeroSection } from '../HeroSection';
 import { motion } from 'framer-motion';
+import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
 
 interface SolutionManagerProps {
   searchTerm: string;
@@ -35,6 +36,12 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
   const [selectedSolution, setSelectedSolution] = useState<EnhancedSolution | null>(null);
   const [prefilledData, setPrefilledData] = useState<Partial<EnhancedSolution> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // AI Autofill overlay state
+  const [isAutofillOpen, setIsAutofillOpen] = useState(false);
+  const [autofillProgress, setAutofillProgress] = useState(0);
+  const [autofillStage, setAutofillStage] = useState<string>('Preparing…');
+
   const deleteHandler = useDeleteSolution({
     deleteSolution: async (id: string) => {
       const success = await solutionService.deleteSolution(id);
@@ -102,30 +109,32 @@ export const SolutionManager: React.FC<SolutionManagerProps> = ({ searchTerm }) 
 
   // Function to handle Add File -> extract -> AI map -> open Edit with prefill
   const handleUseInContent = (solution: EnhancedSolution) => {
-    // Trigger a hidden file input for PDF/DOCX
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword';
+    input.accept = '.pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
       try {
         const { parseSolutionFromFile } = await import('@/services/solutionAutoFillFromFile');
-        const processing = (async () => {
-          const prefill = await parseSolutionFromFile(file, solution);
-          // Set selection and open dialog with prefilled data
-          setSelectedSolution(solution);
-          setPrefilledData(prefill);
-          setIsDialogOpen(true);
-        })();
-        await (await import('sonner')).toast.promise(processing, {
-          loading: 'Processing file with AI...',
-          success: 'Fields extracted. Review and save.',
-          error: 'Failed to process file. Try another document.'
+        setAutofillProgress(0);
+        setAutofillStage('Preparing…');
+        setIsAutofillOpen(true);
+        const prefill = await parseSolutionFromFile(file, solution, {
+          onProgress: ({ stage, progress }) => {
+            if (stage) setAutofillStage(stage);
+            if (typeof progress === 'number') setAutofillProgress(progress);
+          },
         });
-      } catch (e) {
+        setSelectedSolution(solution);
+        setPrefilledData(prefill);
+        setIsDialogOpen(true);
+        toast.success('AI autofill completed. Review and save.');
+      } catch (e: any) {
         console.error('Add File processing failed', e);
-        (await import('sonner')).toast.error('Failed to process file');
+        toast.error(e?.message || 'Failed to process file');
+      } finally {
+        setIsAutofillOpen(false);
       }
     };
     input.click();

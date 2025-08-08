@@ -173,7 +173,14 @@ function normalizePartialEnhancedSolution(data: any): Partial<EnhancedSolution> 
   } as Partial<EnhancedSolution>;
 }
 
-export async function parseSolutionFromFile(file: File, existing?: EnhancedSolution): Promise<Partial<EnhancedSolution>> {
+export async function parseSolutionFromFile(
+  file: File,
+  existing?: EnhancedSolution,
+  options?: { onProgress?: (p: { stage: string; progress?: number; tip?: string }) => void }
+): Promise<Partial<EnhancedSolution>> {
+  const onProgress = options?.onProgress;
+  onProgress?.({ stage: 'validating', progress: 5, tip: 'Checking file type and size…' });
+
   const ext = file.name.split('.').pop()?.toLowerCase();
   const MAX_FILE_SIZE_MB = 15;
   const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -187,6 +194,7 @@ export async function parseSolutionFromFile(file: File, existing?: EnhancedSolut
   }
 
   let extracted = '';
+  onProgress?.({ stage: 'extracting', progress: 15, tip: 'Extracting text from your document…' });
   if (ext === 'pdf') {
     extracted = await extractTextFromPdf(file);
   } else if (ext === 'docx') {
@@ -194,6 +202,8 @@ export async function parseSolutionFromFile(file: File, existing?: EnhancedSolut
   } else {
     extracted = await file.text();
   }
+
+  onProgress?.({ stage: 'sendingToAI', progress: 45, tip: 'Sending content to AI for structured parsing…' });
 
   const system: ChatMessage = {
     role: 'system',
@@ -227,7 +237,11 @@ export async function parseSolutionFromFile(file: File, existing?: EnhancedSolut
   };
 
   const resp = await sendChatRequest('openrouter', { messages: [system, user], temperature: 0.2, maxTokens: 1500 });
+  onProgress?.({ stage: 'parsingResponse', progress: 75, tip: 'Parsing AI response…' });
   const content = resp?.choices?.[0]?.message?.content || '';
   const json = safeJsonFromText(content) || {};
-  return normalizePartialEnhancedSolution(json);
+  onProgress?.({ stage: 'normalizing', progress: 88, tip: 'Normalizing fields to app schema…' });
+  const normalized = normalizePartialEnhancedSolution(json);
+  onProgress?.({ stage: 'complete', progress: 100, tip: 'Autofill complete.' });
+  return normalized;
 }
