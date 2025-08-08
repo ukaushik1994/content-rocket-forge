@@ -398,8 +398,8 @@ useEffect(() => {
         }
       }}
     >
-        <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+        <DialogContent className="glass-panel sm:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col shadow-neon rounded-xl">
+        <DialogHeader className="sticky top-0 z-10 bg-background/60 backdrop-blur-sm border-b border-border/50">
           <DialogTitle className="text-xl">
             {solution ? `Edit ${solution.name}` : 'Add New Solution'}
           </DialogTitle>
@@ -417,7 +417,7 @@ useEffect(() => {
           </Button>
         </div>
         {missingInfo.length > 0 && (
-          <div className="mb-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+          <div className="mb-3 rounded-lg border border-white/10 bg-background/20 backdrop-blur-sm p-3">
             <div className="text-sm mb-2">Missing information:</div>
             <div className="flex flex-wrap items-center gap-2">
               {missingInfo.map((item) => (
@@ -425,7 +425,7 @@ useEffect(() => {
                   key={item.key}
                   type="button"
                   onClick={() => setActiveTab(item.tab)}
-                  className="px-2 py-1 text-xs rounded-md border border-border/60 hover:bg-accent transition-colors"
+                  className="px-2 py-1 text-xs rounded-md bg-background/40 border border-white/10 hover:bg-accent/30 transition-colors"
                 >
                   {item.label}
                 </button>
@@ -446,12 +446,12 @@ useEffect(() => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
-              <TabsTrigger value="basic">Overview</TabsTrigger>
-              <TabsTrigger value="features">Features</TabsTrigger>
-              <TabsTrigger value="market">Market</TabsTrigger>
-              <TabsTrigger value="technical">Technical</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0 bg-background/20 backdrop-blur-sm border border-white/10 rounded-lg">
+              <TabsTrigger value="basic" className="data-[state=active]:bg-neon-purple/20">Overview</TabsTrigger>
+              <TabsTrigger value="features" className="data-[state=active]:bg-neon-purple/20">Features</TabsTrigger>
+              <TabsTrigger value="market" className="data-[state=active]:bg-neon-purple/20">Market</TabsTrigger>
+              <TabsTrigger value="technical" className="data-[state=active]:bg-neon-purple/20">Technical</TabsTrigger>
+              <TabsTrigger value="pricing" className="data-[state=active]:bg-neon-purple/20">Pricing</TabsTrigger>
             </TabsList>
             <TabsList className="grid w-full grid-cols-5 mb-4 flex-shrink-0">
               <TabsTrigger value="competitors">Competitors</TabsTrigger>
@@ -543,7 +543,7 @@ useEffect(() => {
         )}
         
         {/* Footer Actions */}
-        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50">
+        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t border-border/50 bg-background/60 backdrop-blur-sm sticky bottom-0">
           <div className="flex items-center gap-4">
             {isDirty && (
               <span className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -572,7 +572,7 @@ useEffect(() => {
             <Button 
               onClick={handleSubmit} 
               disabled={isSubmitting || isLoadingData || !formData.name?.trim()}
-              className="min-w-[120px]"
+              className="min-w-[120px] bg-gradient-to-r from-neon-purple to-neon-blue hover:from-neon-blue hover:to-neon-purple hover:shadow-neon"
             >
               {isSubmitting ? (
                 <>

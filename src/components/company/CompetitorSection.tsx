@@ -304,7 +304,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="p-6">
+      <Card className="glass-panel p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <Building2 className="h-6 w-6 text-primary" />
@@ -320,7 +320,7 @@ export const CompetitorSection: React.FC<CompetitorSectionProps> = ({ userId }) 
                 Add Competitor
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="glass-panel max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingCompetitor ? 'Edit Competitor' : 'Add New Competitor'}
