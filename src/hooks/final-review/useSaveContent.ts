@@ -87,6 +87,38 @@ export const useSaveContent = () => {
       rawSerpData: state.serpData,
       analysisTimestamp: new Date().toISOString()
     };
+    };
+  // Store reuse metadata for this content to prevent future reuse
+  const recordReuseHistory = async (contentId: string) => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) return;
+
+      const selectedFaqs = state.serpSelections
+        .filter(s => s.selected && (s.type === 'question' || s.type === 'peopleAlsoAsk'))
+        .map(s => s.content);
+      const selectedHeadings = state.serpSelections
+        .filter(s => s.selected && s.type === 'heading')
+        .map(s => s.content);
+      const selectedTitles = [state.contentTitle || state.metaTitle].filter(Boolean) as string[];
+
+      const unique = (arr: string[]) => Array.from(new Set(arr.filter(Boolean)));
+
+      if ((unique(selectedFaqs).length + unique(selectedHeadings).length + unique(selectedTitles).length) === 0) {
+        return;
+      }
+
+      await supabase.from('content_reuse_history').insert({
+        user_id: user.user.id,
+        content_id: contentId,
+        primary_keyword: state.mainKeyword,
+        used_faqs: unique(selectedFaqs),
+        used_headings: unique(selectedHeadings),
+        used_titles: unique(selectedTitles),
+      });
+    } catch (e) {
+      console.warn('[useSaveContent] Failed to record reuse history (non-critical):', e);
+    }
   };
 
   const handleSaveToDraft = async (): Promise<string | null> => {
@@ -225,6 +257,7 @@ export const useSaveContent = () => {
         }
         
         console.log('[useSaveContent] Updated existing content:', existingContent.id);
+        await recordReuseHistory(existingContent.id);
         return existingContent.id;
       }
       
@@ -249,6 +282,7 @@ export const useSaveContent = () => {
       
       const contentId = contentItem.id as string;
       console.log('[useSaveContent] Content saved with comprehensive SERP data, ID:', contentId);
+      await recordReuseHistory(contentId);
       
       // Now save the keywords if any
       if (saveParams.mainKeyword || (saveParams.secondaryKeywords && saveParams.secondaryKeywords.length > 0)) {
@@ -459,6 +493,7 @@ export const useSaveContent = () => {
         }
         
         console.log('[useSaveContent] Updated existing published content:', existingContent.id);
+        await recordReuseHistory(existingContent.id);
         return existingContent.id;
       }
       
@@ -481,6 +516,7 @@ export const useSaveContent = () => {
       }
       
       const contentId = contentItem.id as string;
+      await recordReuseHistory(contentId);
       
       // Now save the keywords if any
       if (publishParams.mainKeyword || (publishParams.secondaryKeywords && publishParams.secondaryKeywords.length > 0)) {

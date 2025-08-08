@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ListPlus, CheckCircle } from 'lucide-react';
@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SelectedItemsSidebarProps } from './types';
 import { SelectedItemsContent } from './SelectedItemsContent';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { checkReuse } from '@/services/reusePreventionService';
 
 export function SelectedItemsSidebar({
   serpSelections,
@@ -15,6 +17,48 @@ export function SelectedItemsSidebar({
   handleToggleSelection
 }: SelectedItemsSidebarProps) {
   const [selectedTab, setSelectedTab] = useState('all');
+  const { state } = useContentBuilder();
+  const [reuseLines, setReuseLines] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    // Build arrays from selected SERP items
+    const selectedFaqs = serpSelections
+      .filter(s => s.selected && (s.type === 'question' || s.type === 'peopleAlsoAsk'))
+      .map(s => s.content);
+    const selectedHeadings = serpSelections
+      .filter(s => s.selected && s.type === 'heading')
+      .map(s => s.content);
+    const selectedTitles = [state.contentTitle || state.metaTitle].filter(Boolean) as string[];
+
+    if (!state.mainKeyword || (selectedFaqs.length + selectedHeadings.length + selectedTitles.length) === 0) {
+      setReuseLines(null);
+      return;
+    }
+
+    let isActive = true;
+    (async () => {
+      const result = await checkReuse(state.mainKeyword, selectedFaqs, selectedHeadings, selectedTitles);
+      if (!isActive || !result || !result.reused) {
+        setReuseLines(null);
+        return;
+      }
+
+      // Build up to 5 concise lines
+      const lines: string[] = [];
+      for (const h of result.matched.headings) {
+        if (lines.length >= 5) break; lines.push(`• Used Heading: "${h}"`);
+      }
+      for (const f of result.matched.faqs) {
+        if (lines.length >= 5) break; lines.push(`• Used FAQ: "${f}"`);
+      }
+      for (const t of result.matched.titles) {
+        if (lines.length >= 5) break; lines.push(`• Used Title: "${t}"`);
+      }
+      setReuseLines(lines.slice(0, 5));
+    })();
+
+    return () => { isActive = false; };
+  }, [serpSelections, totalSelected, state.mainKeyword, state.contentTitle, state.metaTitle]);
   
   return (
     <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10 backdrop-blur-lg shadow-xl sticky top-4 h-[calc(100vh-100px)] flex flex-col">
@@ -57,6 +101,18 @@ export function SelectedItemsSidebar({
               setSelectedTab={setSelectedTab}
             />
           </AnimatePresence>
+
+          {reuseLines && reuseLines.length > 0 && (
+            <div className="mt-3 border border-amber-500/30 rounded-md p-2 bg-amber-500/10">
+              <div className="text-xs font-medium">⚠️ Previously Used Items</div>
+              <ul className="mt-1 text-xs text-muted-foreground space-y-1">
+                {reuseLines.map((line, idx) => (
+                  <li key={idx} className="truncate">{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
         </CardContent>
       </ScrollArea>
     </Card>

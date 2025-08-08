@@ -1259,6 +1259,39 @@ export type Database = {
           },
         ]
       }
+      content_reuse_history: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          primary_keyword: string
+          used_faqs: string[]
+          used_headings: string[]
+          used_titles: string[]
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          primary_keyword: string
+          used_faqs?: string[]
+          used_headings?: string[]
+          used_titles?: string[]
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          primary_keyword?: string
+          used_faqs?: string[]
+          used_headings?: string[]
+          used_titles?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_strategies: {
         Row: {
           brand_voice: string | null
