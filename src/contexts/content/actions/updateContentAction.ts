@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '../types';
 import { toast } from 'sonner';
 import { toastConfig } from './index';
+import { logActivity } from '@/services/activityLogger';
 
 export const createUpdateContentAction = (
   contentItems: ContentItemType[],
@@ -75,6 +76,18 @@ export const createUpdateContentAction = (
           updated_at: new Date().toISOString() 
         } : item)
       );
+
+      // Log activity for continuous learning
+      await logActivity({
+        userId,
+        contentId: id,
+        contentType: existingItem.content_type as any,
+        module: 'editor',
+        action: 'update',
+        changeSummary: `Updated fields: ${Object.keys(updates).join(', ')}`,
+        details: { updates },
+        contentSnapshot: { ...existingItem, ...updates },
+      });
     } catch (error: any) {
       console.error('Error updating content item:', error);
       toast.error(error.message || 'Error updating content', toastConfig.error);

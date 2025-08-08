@@ -596,29 +596,47 @@ export type Database = {
       content_activity_log: {
         Row: {
           action: string
+          change_summary: string | null
           content_id: string | null
+          content_snapshot: Json | null
           content_type: string
           id: string
           metadata: Json | null
+          module: string | null
+          notes: string | null
+          prompt: string | null
           timestamp: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           action: string
+          change_summary?: string | null
           content_id?: string | null
+          content_snapshot?: Json | null
           content_type: string
           id?: string
           metadata?: Json | null
+          module?: string | null
+          notes?: string | null
+          prompt?: string | null
           timestamp?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           action?: string
+          change_summary?: string | null
           content_id?: string | null
+          content_snapshot?: Json | null
           content_type?: string
           id?: string
           metadata?: Json | null
+          module?: string | null
+          notes?: string | null
+          prompt?: string | null
           timestamp?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1355,7 +1373,14 @@ export type Database = {
           expires_at: string | null
           id: string
           is_read: boolean | null
+          link_url: string | null
           message: string
+          metadata: Json
+          module: string | null
+          severity: string
+          status: string
+          title: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1366,7 +1391,14 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_read?: boolean | null
+          link_url?: string | null
           message: string
+          metadata?: Json
+          module?: string | null
+          severity?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1377,7 +1409,14 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_read?: boolean | null
+          link_url?: string | null
           message?: string
+          metadata?: Json
+          module?: string | null
+          severity?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

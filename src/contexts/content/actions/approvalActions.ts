@@ -2,6 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItemType } from '../types';
 import { toast } from 'sonner';
+import { logActivity } from '@/services/activityLogger';
+import { pushAlert } from '@/services/notificationsService';
 
 // Standard toast configuration
 const toastConfig = {
@@ -39,6 +41,24 @@ export const createApprovalActions = (
         });
 
       if (approvalError) throw approvalError;
+      
+      await logActivity({
+        userId,
+        contentId: id,
+        module: 'approval',
+        action: 'submit_for_review',
+        changeSummary: notes ? 'Submitted for review with notes' : 'Submitted for review',
+        notes: notes || undefined,
+        details: { comments: notes }
+      });
+      await pushAlert({
+        userId,
+        title: 'Submitted for review',
+        message: 'Your content was submitted for review.',
+        module: 'approval',
+        severity: 'info',
+        linkUrl: `/content-approval`
+      });
       
       toast.success('Content submitted for review successfully', toastConfig.success);
     } catch (error: any) {
