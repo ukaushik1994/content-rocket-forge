@@ -9,12 +9,13 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl as any;
 
-async function extractTextFromPdf(file: File): Promise<string> {
+async function extractTextFromPdf(file: File, signal?: AbortSignal): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = (pdfjsLib as any).getDocument({ data: new Uint8Array(arrayBuffer) });
   const pdf = await loadingTask.promise;
   let fullText = '';
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    if (signal?.aborted) throw new Error('Operation cancelled');
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
     const pageText = textContent.items.map((item: any) => (item.str ?? '')).join(' ');
@@ -23,12 +24,14 @@ async function extractTextFromPdf(file: File): Promise<string> {
   return fullText.trim();
 }
 
-async function extractTextFromDocx(file: File): Promise<string> {
+async function extractTextFromDocx(file: File, signal?: AbortSignal): Promise<string> {
+  if (signal?.aborted) throw new Error('Operation cancelled');
   const arrayBuffer = await file.arrayBuffer();
   // Use browser build of mammoth to avoid Node deps
   // @ts-ignore
   const mammoth = await import('mammoth/mammoth.browser');
   const result = await mammoth.extractRawText({ arrayBuffer });
+  if (signal?.aborted) throw new Error('Operation cancelled');
   return (result.value || '').trim();
 }
 
@@ -176,10 +179,14 @@ function normalizePartialEnhancedSolution(data: any): Partial<EnhancedSolution> 
 export async function parseSolutionFromFile(
   file: File,
   existing?: EnhancedSolution,
-  options?: { onProgress?: (p: { stage: string; progress?: number; tip?: string }) => void }
+  options?: { onProgress?: (p: { stage: string; progress?: number; tip?: string }) => void; signal?: AbortSignal }
 ): Promise<Partial<EnhancedSolution>> {
   const onProgress = options?.onProgress;
+  const signal = options?.signal;
+  const throwIfAborted = () => { if (signal?.aborted) throw new Error('Operation cancelled'); };
+
   onProgress?.({ stage: 'validating', progress: 5, tip: 'Checking file type and size…' });
+  throwIfAborted();
 
   const ext = file.name.split('.').pop()?.toLowerCase();
   const MAX_FILE_SIZE_MB = 15;
@@ -195,15 +202,18 @@ export async function parseSolutionFromFile(
 
   let extracted = '';
   onProgress?.({ stage: 'extracting', progress: 15, tip: 'Extracting text from your document…' });
+  throwIfAborted();
   if (ext === 'pdf') {
-    extracted = await extractTextFromPdf(file);
+    extracted = await extractTextFromPdf(file, signal);
   } else if (ext === 'docx') {
-    extracted = await extractTextFromDocx(file);
+    extracted = await extractTextFromDocx(file, signal);
   } else {
     extracted = await file.text();
   }
 
+  throwIfAborted();
   onProgress?.({ stage: 'sendingToAI', progress: 45, tip: 'Sending content to AI for structured parsing…' });
+  throwIfAborted();
 
   const system: ChatMessage = {
     role: 'system',
@@ -236,7 +246,9 @@ export async function parseSolutionFromFile(
     ].join('\n')
   };
 
+  throwIfAborted();
   const resp = await sendChatRequest('openrouter', { messages: [system, user], temperature: 0.2, maxTokens: 1500 });
+  throwIfAborted();
   onProgress?.({ stage: 'parsingResponse', progress: 75, tip: 'Parsing AI response…' });
   const content = resp?.choices?.[0]?.message?.content || '';
   const json = safeJsonFromText(content) || {};

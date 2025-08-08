@@ -29,6 +29,8 @@ import { AnalyticsTab } from './tabs/AnalyticsTab';
 import { solutionService } from '@/services/solutionService';
 import { AutoSaveStatus } from './AutoSaveStatus';
 import { AIAutofillOverlay } from '@/components/common/AIAutofillOverlay';
+import { useAIServiceStatus } from '@/hooks/useAIServiceStatus';
+import { testAIConnection } from '@/services/aiService';
 interface EnhancedSolutionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
