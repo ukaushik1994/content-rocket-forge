@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { analyzeKeywordSerp, SerpAnalysisResult } from '@/services/serpApiService';
 import { toast } from 'sonner';
+import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 
 interface StrategyCreationModalProps {
   open: boolean;
@@ -52,6 +53,9 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
   const [reviewReady, setReviewReady] = useState(false);
   const [creating, setCreating] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
+  const { createStrategy } = useContentStrategy();
+  const [plan, setPlan] = useState<any[] | null>(null);
+  const [planSummary, setPlanSummary] = useState<{forecast_best:number; forecast_cons:number; clusters:number; pieces:number} | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -61,6 +65,8 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
       setCancelled(false);
       setAiOutput(null);
       setEnriched({});
+      setPlan(null);
+      setPlanSummary(null);
       setReviewReady(false);
       setCreating(false);
       setRunId(null);
@@ -231,6 +237,10 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
       };
       updateStep('compose', { status: 'success', log: `${planClusters.length} clusters built` });
 
+      // Persist composed data in local state for review
+      setPlan(planClusters);
+      setPlanSummary(summary);
+
       // Save summary to run
       if (runId) {
         await supabase.from('strategy_runs').update({ summary_json: summary }).eq('id', runId);
@@ -255,9 +265,18 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Persist clusters/keywords/calendar/briefs if we have a run id and composed data in summary already
-      // For brevity, persist a compact summary only; detailed persistence could be added similarly per table
-      await supabase.from('strategy_runs').update({ status: 'completed' }).eq('id', runId);
+      // Create the Content Strategy record
+      await createStrategy({
+        name: `Content Strategy — ${new Date().toLocaleDateString()}`,
+        monthly_traffic_goal: planSummary?.forecast_best || undefined,
+        content_pieces_per_month: Math.max(4, Math.min(12, Math.ceil(((planSummary?.pieces ?? 6) / 3)))),
+        timeline: '3 months',
+        main_keyword: aiOutput?.candidate_keywords?.[0]?.kw
+      });
+
+      if (runId) {
+        await supabase.from('strategy_runs').update({ status: 'completed' }).eq('id', runId);
+      }
 
       toast.success('Strategy created');
       onOpenChange(false);
@@ -322,6 +341,26 @@ export const StrategyCreationModal: React.FC<StrategyCreationModalProps> = ({ op
                   <p className="font-medium">Review Summary</p>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">A compact plan is ready. You can create the strategy now and iterate in the Strategy workspace.</p>
+                {planSummary && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
+                      <p className="text-xs text-muted-foreground">Clusters</p>
+                      <p className="text-lg font-semibold">{planSummary.clusters}</p>
+                    </div>
+                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
+                      <p className="text-xs text-muted-foreground">Pieces</p>
+                      <p className="text-lg font-semibold">{planSummary.pieces}</p>
+                    </div>
+                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
+                      <p className="text-xs text-muted-foreground">Forecast (Best)</p>
+                      <p className="text-lg font-semibold">{planSummary.forecast_best}</p>
+                    </div>
+                    <div className="p-3 rounded-md bg-muted/40 border border-white/10">
+                      <p className="text-xs text-muted-foreground">Forecast (Conservative)</p>
+                      <p className="text-lg font-semibold">{planSummary.forecast_cons}</p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-end gap-2">
                   <Button variant="ghost" onClick={() => onOpenChange(false)}>Back</Button>
                   <Button onClick={handleCreate} disabled={creating}>
