@@ -21,7 +21,7 @@ import {
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getScoreLabel, getScoreTextSoftClass } from '@/lib/score';
+import { getScoreLabel, getScoreTextSoftClass, getProgressBgClass } from '@/lib/score';
 
 interface ContentApprovalCardProps {
   content: ContentItemType;
@@ -249,7 +249,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               </div>
               <div className="w-full bg-background/40 rounded-full h-2">
                 <motion.div
-                  className={`h-2 rounded-full ${aiScore >= 80 ? 'bg-green-400' : aiScore >= 60 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                  className={`h-2 rounded-full ${getProgressBgClass(aiScore)}`}
                   initial={{ width: 0 }}
                   animate={{ width: `${aiScore}%` }}
                   transition={{ duration: 1, delay: 0.5 }}
