@@ -75,10 +75,6 @@ export default {
 					dark: 'rgba(0, 0, 0, 0.1)',
 				},
 			},
-			fontFamily: {
-				sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
-				playfair: ['"Playfair Display"', 'serif'],
-			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
