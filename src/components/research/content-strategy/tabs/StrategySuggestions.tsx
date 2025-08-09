@@ -225,39 +225,53 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Content Strategy Center</h2>
-          <p className="text-muted-foreground mt-1">
-            Choose from pre-built templates or use our AI engine to generate custom strategies
-          </p>
+      <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card/60 backdrop-blur p-4 sm:p-6 shadow-neon">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,theme(colors.primary/10),transparent_60%)]" />
+          <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
+          <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-accent/15 blur-3xl" />
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowComparison(true)}
-            className="bg-background/50 border-border/50 hover:bg-muted/50"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Compare Strategies
-          </Button>
-          <Button
-            onClick={() => setShowCustomCreator(true)}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Create Custom Strategy
-          </Button>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
+              <Lightbulb className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-semibold bg-gradient-to-r from-primary to-foreground/80 bg-clip-text text-transparent">
+                Content Strategy Center
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                Choose from templates or use the AI engine to craft a custom strategy
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowComparison(true)}
+              className="rounded-lg bg-background/60 border-border/60 hover:bg-muted/60"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Compare
+            </Button>
+            <Button
+              onClick={() => setShowCustomCreator(true)}
+              className="rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/80 shadow-neon"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Custom Strategy
+            </Button>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="templates" className="flex items-center gap-2">
+        <TabsList className="relative grid w-full grid-cols-2 rounded-full bg-muted/60 p-1 ring-1 ring-border/60">
+          <TabsTrigger value="templates" className="flex items-center gap-2 rounded-full px-4 py-2 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-neon">
             <Target className="w-4 h-4" />
             Strategy Templates
           </TabsTrigger>
-          <TabsTrigger value="engine" className="flex items-center gap-2">
+          <TabsTrigger value="engine" className="flex items-center gap-2 rounded-full px-4 py-2 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-neon">
             <Zap className="w-4 h-4" />
             AI Strategy Engine
           </TabsTrigger>
@@ -266,7 +280,7 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
         <TabsContent value="templates" className="mt-6">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Recommended Strategy Templates</h3>
+              <h3 className="text-lg font-semibold mb-1 bg-gradient-to-r from-primary to-foreground/80 bg-clip-text text-transparent">Recommended Strategy Templates</h3>
               <p className="text-muted-foreground text-sm">
                 Choose from AI-generated templates based on your goals and SERP analysis
               </p>
@@ -279,13 +293,13 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
+                <Card className="group relative overflow-hidden border border-border/60 bg-card/60 backdrop-blur-lg hover:border-primary/40 transition-all hover:shadow-neon">
+                  <CardHeader className="relative">
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           {strategy.title}
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="rounded-full bg-primary/10 text-primary ring-1 ring-primary/30">
                             Score: {Math.round(strategy.score)}
                           </Badge>
                         </CardTitle>
@@ -294,27 +308,28 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
                         </CardDescription>
                       </div>
                     </div>
+                    <div className="pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-center">
+                      <div className="rounded-lg bg-muted/50 p-3 text-center hover-scale">
                         <TrendingUp className="w-5 h-5 mx-auto mb-1 text-primary" />
                         <div className="text-lg font-semibold">{strategy.traffic}</div>
                         <div className="text-xs text-muted-foreground">Est. Traffic</div>
                       </div>
-                      <div className="text-center">
+                      <div className="rounded-lg bg-muted/50 p-3 text-center hover-scale">
                         <Target className="w-5 h-5 mx-auto mb-1 text-primary" />
                         <div className="text-lg font-semibold">{strategy.contentPieces}</div>
                         <div className="text-xs text-muted-foreground">Content Pieces</div>
                       </div>
-                      <div className="text-center">
+                      <div className="rounded-lg bg-muted/50 p-3 text-center hover-scale">
                         <Users className="w-5 h-5 mx-auto mb-1 text-primary" />
                         <Badge variant={strategy.difficulty === 'Low' ? 'default' : strategy.difficulty === 'Medium' ? 'secondary' : 'destructive'}>
                           {strategy.difficulty}
                         </Badge>
                         <div className="text-xs text-muted-foreground">Difficulty</div>
                       </div>
-                      <div className="text-center">
+                      <div className="rounded-lg bg-muted/50 p-3 text-center hover-scale">
                         <Clock className="w-5 h-5 mx-auto mb-1 text-primary" />
                         <div className="text-sm font-semibold">{strategy.timeframe}</div>
                         <div className="text-xs text-muted-foreground">Timeline</div>
@@ -323,7 +338,7 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
 
                     <div className="flex flex-wrap gap-1 mb-4">
                       {strategy.topics.map((topic: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge key={index} variant="outline" className="text-xs bg-muted/50">
                           {topic}
                         </Badge>
                       ))}
@@ -332,7 +347,7 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
                     <Button 
                       onClick={() => handleSelectStrategy(strategy)}
                       disabled={loading === strategy.id}
-                      className="w-full"
+                      className="w-full rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/80 transition-shadow shadow-neon"
                     >
                       {loading === strategy.id ? (
                         <>
@@ -359,7 +374,7 @@ export const StrategySuggestions = ({ serpMetrics, goals }: StrategySuggestionsP
           </div>
         </TabsContent>
 
-        <TabsContent value="engine" className="mt-6">
+        <TabsContent value="engine" className="mt-6 animate-enter">
           <ContentStrategyEngine serpMetrics={serpMetrics} goals={goals} />
         </TabsContent>
       </Tabs>
