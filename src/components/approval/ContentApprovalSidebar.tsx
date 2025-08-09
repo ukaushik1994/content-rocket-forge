@@ -5,9 +5,9 @@ import { ApprovalType } from '@/contexts/content/types';
 import { useApproval } from './context/ApprovalContext';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { ApprovalTimeline } from './ApprovalTimeline';
-
 import { AIReviewAssistant } from './ai/AIReviewAssistant';
 import { SmartApprovalActions } from './ai/SmartApprovalActions';
+import { AnalysisSummary } from './modern/AnalysisSummary';
 
 interface ContentApprovalSidebarProps {
   contentItems: ContentItemType[];
@@ -82,6 +82,9 @@ export const ContentApprovalSidebar: React.FC<ContentApprovalSidebarProps> = ({
           content={selectedContent}
           onRecommendationGenerated={setAiRecommendation}
         />
+
+        {/* Analysis Summary */}
+        <AnalysisSummary content={selectedContent} />
 
         {/* Smart Approval Actions */}
         <SmartApprovalActions
