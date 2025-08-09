@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
-import { ApprovalTimeline } from './ApprovalTimeline';
+
 import { StatusBadge } from './StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { InlineAiEditor } from './ai/InlineAiEditor';
@@ -30,7 +30,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   const [approvalNotes, setApprovalNotes] = useState('');
   const [activeTab, setActiveTab] = useState('edit');
   const [showSidebar, setShowSidebar] = useState(true);
-  const [activeSidebarTab, setActiveSidebarTab] = useState('timeline');
+  const [activeSidebarTab, setActiveSidebarTab] = useState('sections');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(content.title);
   const [titleOpen, setTitleOpen] = useState(false);
@@ -336,7 +336,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
             </div>
 
             <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-4">
+              <TabsList className="w-full grid grid-cols-1">
                 
                 
                 <TabsTrigger value="sections" className="text-xs">
@@ -345,9 +345,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="timeline" className="mt-4">
-                <ApprovalTimeline contentId={content.id} />
-              </TabsContent>
               
               
               <TabsContent value="titles" className="mt-4">
