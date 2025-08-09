@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
 import { ContentAnalysisModal } from './ContentAnalysisModal';
+import { AssignReviewerDialog } from './AssignReviewerDialog';
+import { ApprovalHistoryDialog } from './ApprovalHistoryDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,7 +16,6 @@ import {
   Grid3X3, 
   List,
   SlidersHorizontal,
-  Sparkles
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
@@ -39,6 +40,11 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
   const [aiAnalyzedAt, setAiAnalyzedAt] = useState<Record<string, string>>({});
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<ContentItemType | null>(null);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [historyTarget, setHistoryTarget] = useState<ContentItemType | null>(null);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
   
 
   const { 
@@ -46,7 +52,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     refreshContent,
     approveContent,
     rejectContent,
-    requestChanges 
+    requestChanges,
+    assignReviewer,
+    getApprovalHistory
   } = useContent();
 
   // Calculate statistics
@@ -211,6 +219,18 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     }
   };
 
+  const handleAssign = (content: ContentItemType) => {
+    setAssignTarget(content);
+    setShowAssignDialog(true);
+  };
+
+  const handleViewHistory = async (content: ContentItemType) => {
+    setHistoryTarget(content);
+    const history = await getApprovalHistory(content.id);
+    setHistoryItems(history);
+    setShowHistoryDialog(true);
+  };
+
   return (
     <div className="min-h-screen w-full">
       {/* Hero Section */}
@@ -340,6 +360,8 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                       onReject={handleReject}
                       onRequestChanges={handleRequestChanges}
                       onAnalyzeAI={handleAnalyzeContent}
+                      onAssignReviewer={handleAssign}
+                      onViewHistory={handleViewHistory}
                       aiScore={aiScores[item.id]}
                       isAnalyzing={analyzingItems.has(item.id)}
                       analyzedAt={aiAnalyzedAt[item.id]}
@@ -360,6 +382,27 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         onApprove={handleApprove}
         onReject={handleReject}
         onRequestChanges={handleRequestChanges}
+      />
+
+      {/* Assign Reviewer */}
+      <AssignReviewerDialog
+        open={showAssignDialog}
+        onClose={() => setShowAssignDialog(false)}
+        onSubmit={async ({ reviewerId, dueDate, priority }) => {
+          if (!assignTarget) return;
+          await assignReviewer(assignTarget.id, reviewerId, dueDate, priority);
+          setShowAssignDialog(false);
+          setAssignTarget(null);
+          await refreshContent();
+        }}
+      />
+
+      {/* Approval History */}
+      <ApprovalHistoryDialog
+        open={showHistoryDialog}
+        onClose={() => setShowHistoryDialog(false)}
+        contentTitle={historyTarget?.title}
+        history={historyItems}
       />
     </div>
   );

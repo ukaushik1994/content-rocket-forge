@@ -30,6 +30,8 @@ interface ContentApprovalCardProps {
   onReject?: (id: string, reason: string) => void;
   onRequestChanges?: (id: string, reason: string) => void;
   onAnalyzeAI?: (content: ContentItemType) => void;
+  onAssignReviewer?: (content: ContentItemType) => void;
+  onViewHistory?: (content: ContentItemType) => void;
   aiScore?: number;
   analyzedAt?: string;
   isAnalyzing?: boolean;
@@ -87,6 +89,8 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   onReject,
   onRequestChanges,
   onAnalyzeAI,
+  onAssignReviewer,
+  onViewHistory,
   aiScore,
   analyzedAt,
   isAnalyzing = false
@@ -259,7 +263,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -284,6 +288,29 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               </Button>
             )}
 
+            {onAssignReviewer && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAssignReviewer(content)}
+                className="border-border/50"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Assign
+              </Button>
+            )}
+
+            {onViewHistory && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewHistory(content)}
+                className="text-muted-foreground"
+              >
+                History
+              </Button>
+            )}
+            
             {status === 'pending_review' && onApprove && (
               <Button
                 variant="outline"
