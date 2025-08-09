@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Wand2, Sparkles, MoveHorizontal, FileText, RotateCcw, Loader2 } from 'lucide-react';
 import AIServiceController from '@/services/aiService/AIServiceController';
@@ -14,9 +15,11 @@ interface InlineAiEditorProps {
 export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange, onAiApplied, disabled }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toolbarPos, setToolbarPos] = useState<{ left: number; top: number; placement: 'above' | 'below' } | null>(null);
+  const [userInstruction, setUserInstruction] = useState('');
   const selectedText = useMemo(() => {
     if (!selection) return '';
     return value.slice(selection.start, selection.end);
@@ -91,7 +94,6 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     const containerRect = container.getBoundingClientRect();
 
     let anchorLeft = startOffset.left;
-    // If on same line, center between start and end
     if (Math.abs(endOffset.top - startOffset.top) < 5) {
       anchorLeft = (startOffset.left + endOffset.left) / 2;
     }
@@ -99,18 +101,28 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     const baseLeft = taRect.left - containerRect.left;
     const baseTop = taRect.top - containerRect.top;
 
-    let left = baseLeft + anchorLeft;
-    const top = baseTop + startOffset.top;
+    // Toolbar dimensions (fallbacks if not yet mounted)
+    const tb = toolbarRef.current;
+    const tbWidth = tb?.offsetWidth ?? 220;
+    const tbHeight = tb?.offsetHeight ?? 40;
 
-    // Clamp within container
+    // Compute centered position then clamp by toolbar width
+    let centerX = baseLeft + anchorLeft;
     const padding = 8;
     const containerWidth = containerRect.width;
-    left = Math.max(padding, Math.min(left, containerWidth - padding));
+    const minCenter = padding + tbWidth / 2;
+    const maxCenter = containerWidth - padding - tbWidth / 2;
+    centerX = Math.max(minCenter, Math.min(centerX, maxCenter));
 
-    // Decide placement
-    const placement: 'above' | 'below' = top > 48 ? 'above' : 'below';
+    const anchorY = baseTop + startOffset.top;
+    const containerHeight = containerRect.height;
 
-    setToolbarPos({ left, top, placement });
+    // Decide placement based on available vertical space
+    const canPlaceAbove = anchorY - tbHeight - padding >= padding;
+    const canPlaceBelow = anchorY + tbHeight + padding <= containerHeight - padding;
+    const placement: 'above' | 'below' = canPlaceAbove ? 'above' : canPlaceBelow ? 'below' : (anchorY > containerHeight / 2 ? 'above' : 'below');
+
+    setToolbarPos({ left: centerX, top: anchorY, placement });
   }, [selection]);
 
   const handleScroll = () => {
@@ -134,6 +146,10 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     return () => window.removeEventListener('resize', onResize);
   }, [selection, computeToolbarPosition]);
 
+  useEffect(() => {
+    if (selection) computeToolbarPosition();
+  }, [userInstruction, selection, computeToolbarPosition]);
+
   const runInlineAi = useCallback(async (action: 'rephrase' | 'shorten' | 'expand' | 'fix') => {
     if (!selection || !selectedText) return;
     setIsProcessing(true);
@@ -146,7 +162,8 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
         expand: 'Expand by adding helpful detail while staying on-topic and accurate.',
         fix: 'Fix grammar and punctuation; keep style consistent.'
       } as const;
-      const user = `Action: ${action}\nText:\n${selectedText}`;
+      const instructionText = userInstruction.trim() ? `\nSpecific instructions: ${userInstruction.trim()}` : '';
+      const user = `Action: ${action}${instructionText}\nText:\n${selectedText}`;
       const result = await AIServiceController.generate('content_generation', system, user, { maxTokens: 400, temperature: 0.2 });
       const improved = (result && (result.content || result)) as string;
       if (improved && improved.trim()) {
@@ -155,13 +172,14 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     } finally {
       setIsProcessing(false);
     }
-  }, [selection, selectedText, onAiApplied, value]);
+  }, [selection, selectedText, onAiApplied, value, userInstruction]);
 
   return (
     <div ref={containerRef} className="relative h-full">
       {selection && toolbarPos && (
         <div
-          className="absolute z-10 flex items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 backdrop-blur-sm"
+          ref={toolbarRef}
+          className="absolute z-10 flex flex-wrap items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 backdrop-blur-sm max-w-[92vw]"
           style={{
             left: toolbarPos.left,
             top: toolbarPos.top,
@@ -172,6 +190,14 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
           }}
         >
           <span className="text-[11px] text-white/70 mr-1">AI Assist:</span>
+          <Input
+            value={userInstruction}
+            onChange={(e) => setUserInstruction(e.target.value)}
+            placeholder="Add instruction (optional)"
+            aria-label="Custom AI instruction"
+            className="h-8 w-44 text-xs"
+            disabled={isProcessing || disabled}
+          />
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')}>
             <Sparkles className="h-3 w-3 mr-1 text-neon-purple" /> Rephrase
           </Button>
