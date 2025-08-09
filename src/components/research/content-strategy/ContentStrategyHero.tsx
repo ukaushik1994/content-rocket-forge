@@ -13,7 +13,7 @@ export const ContentStrategyHero = React.memo(({ onCreate }: { onCreate?: () => 
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative"
       >
-        <h1 className="text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent mb-4">
+        <h1 className="font-playfair tracking-tight text-6xl font-extrabold bg-gradient-to-r from-white via-primary/20 to-foreground/60 bg-clip-text text-transparent mb-4">
           Content Strategy
         </h1>
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">

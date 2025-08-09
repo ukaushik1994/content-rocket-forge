@@ -8,6 +8,7 @@ import { StrategyTabs } from '@/components/research/content-strategy/StrategyTab
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 import { StrategyCreationModal } from '@/components/research/content-strategy/StrategyCreationModal';
+import { PageBackground } from '@/components/layout/PageBackground';
 
 const ContentStrategy = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -25,13 +26,10 @@ const ContentStrategy = () => {
         
         <Navbar />
         
-        {/* Optimized Background */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-3xl opacity-30 will-change-transform transform-gpu animate-float" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl opacity-20 will-change-transform transform-gpu animate-float" style={{ animationDelay: '2s' }} />
-        </div>
+        {/* Background FX */}
+        <PageBackground />
         
-        <main className="flex-1 container py-8 z-10 relative max-w-7xl mx-auto">
+        <main className="flex-1 container py-12 z-10 relative max-w-7xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
