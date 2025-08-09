@@ -4,7 +4,7 @@ import { StrategySuggestions } from './tabs/StrategySuggestions';
 import { StrategyDashboard } from './dashboard/StrategyDashboard';
 import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
-
+import { GlassCard } from '@/components/ui/GlassCard';
 
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { Lightbulb, LayoutDashboard, BarChart2, TrendingUp } from 'lucide-react';
@@ -79,57 +79,68 @@ export const StrategyTabs = React.memo(() => {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="w-full overflow-x-auto sticky top-16 z-10 backdrop-blur bg-muted/40 p-1 h-auto">
-          <TabsTrigger 
-            value="strategies" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <Lightbulb className="h-4 w-4" />
-            <span>Strategies</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="dashboard" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            <span>Dashboard</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="performance" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <BarChart2 className="h-4 w-4" />
-            <span>Performance</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="progress" 
-            className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale flex-shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            <TrendingUp className="h-4 w-4" />
-            <span>Progress</span>
-          </TabsTrigger>
-        </TabsList>
+      <GlassCard className="p-4 sm:p-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <div className="flex flex-col gap-6">
+            <div className="w-full overflow-x-auto">
+              <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
+                <TabsTrigger
+                  value="strategies"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  <span>Strategies</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="dashboard"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="performance"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <BarChart2 className="h-4 w-4" />
+                  <span>Performance</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="progress"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Progress</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-        <TabsContent value="strategies" forceMount className="animate-fade-in">
-          <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
-        </TabsContent>
-        
-        <TabsContent value="dashboard" forceMount className="animate-fade-in">
-          <StrategyDashboard goals={goals} />
-        </TabsContent>
+            <TabsContent value="strategies" className="animate-fade-in">
+              <div className="space-y-6">
+                <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
+              </div>
+            </TabsContent>
 
+            <TabsContent value="dashboard" className="animate-fade-in">
+              <div className="space-y-6">
+                <StrategyDashboard goals={goals} />
+              </div>
+            </TabsContent>
 
+            <TabsContent value="performance" className="animate-fade-in">
+              <div className="space-y-6">
+                <ROICalculator goals={goals} serpMetrics={serpMetrics} />
+              </div>
+            </TabsContent>
 
-        <TabsContent value="performance" forceMount className="animate-fade-in">
-          <ROICalculator goals={goals} serpMetrics={serpMetrics} />
-        </TabsContent>
-
-
-        <TabsContent value="progress" forceMount className="animate-fade-in">
-          <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="progress" className="animate-fade-in">
+              <div className="space-y-6">
+                <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </GlassCard>
     </div>
   );
 });
