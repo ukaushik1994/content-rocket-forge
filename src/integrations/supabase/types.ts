@@ -641,6 +641,95 @@ export type Database = {
         }
         Relationships: []
       }
+      content_ai_analyses: {
+        Row: {
+          ai_provider: string | null
+          analysis: Json
+          analyzed_at: string
+          content_id: string
+          created_at: string
+          id: string
+          model: string | null
+          prompt_version: string | null
+          readability_score: number | null
+          reanalyze_count: number
+          seo_score: number | null
+          settings_snapshot: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_provider?: string | null
+          analysis?: Json
+          analyzed_at?: string
+          content_id: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          prompt_version?: string | null
+          readability_score?: number | null
+          reanalyze_count?: number
+          seo_score?: number | null
+          settings_snapshot?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_provider?: string | null
+          analysis?: Json
+          analyzed_at?: string
+          content_id?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          prompt_version?: string | null
+          readability_score?: number | null
+          reanalyze_count?: number
+          seo_score?: number | null
+          settings_snapshot?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_ai_analyses_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_analysis_settings: {
+        Row: {
+          created_at: string
+          id: string
+          prompt_template: string | null
+          scoring_metrics: Json
+          updated_at: string
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prompt_template?: string | null
+          scoring_metrics?: Json
+          updated_at?: string
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prompt_template?: string | null
+          scoring_metrics?: Json
+          updated_at?: string
+          user_id?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       content_analytics: {
         Row: {
           analytics_data: Json | null
