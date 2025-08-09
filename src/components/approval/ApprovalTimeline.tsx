@@ -62,7 +62,7 @@ export const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ contentId })
     if (contentId) {
       loadHistory();
     }
-  }, [contentId, getApprovalHistory]);
+  }, [contentId]);
 
   if (loading) {
     return (

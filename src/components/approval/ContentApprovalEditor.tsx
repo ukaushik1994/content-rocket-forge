@@ -69,8 +69,12 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
     }
   }, [content.keywords, fetchSerpData]);
 
-  // Autosave content and title
+  // Autosave content and title (guarded and stable)
   useEffect(() => {
+    // Only autosave when user has actually changed content or title
+    if (editedContent === content.content && editedTitle === content.title) {
+      return;
+    }
     const handler = setTimeout(async () => {
       try {
         await updateContentItem(content.id, { content: editedContent, title: editedTitle });
@@ -80,7 +84,8 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
       }
     }, 1200);
     return () => clearTimeout(handler);
-  }, [editedContent, editedTitle, content.id, updateContentItem]);
+    // Intentionally omit updateContentItem from deps to avoid identity-change loops
+  }, [editedContent, editedTitle, content.id]);
   
   const handleContentChange = (newContent: string) => {
     setEditedContent(newContent);

@@ -321,7 +321,7 @@ export const createContentActions = (
         }
       }
       
-      toast.success('Content updated successfully', toastConfig.success);
+      // Suppress success toast here to avoid noisy autosave toasts; UI layers will handle user feedback
       
       // Update local state
       setContentItems(prev => 
