@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
@@ -38,7 +38,7 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
-  // removed unused aiResults state
+  
 
   const { 
     updateContentItem, 
@@ -80,6 +80,39 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
 
     return filtered;
   }, [contentItems, statusFilter, searchQuery, sortBy]);
+
+  // Preload existing AI analysis scores for cards
+  useEffect(() => {
+    let isCancelled = false;
+    (async () => {
+      if (contentItems.length === 0) {
+        setAiScores({});
+        return;
+      }
+      try {
+        const entries = await Promise.all(
+          contentItems.map(async (item) => {
+            try {
+              const rec = await contentAiAnalysisService.getExistingAnalysis(item.id);
+              const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? undefined);
+              return [item.id, score] as const;
+            } catch {
+              return [item.id, undefined] as const;
+            }
+          })
+        );
+        if (isCancelled) return;
+        const map: Record<string, number> = {};
+        for (const [id, score] of entries) {
+          if (typeof score === 'number') map[id] = score;
+        }
+        setAiScores(map);
+      } catch (e) {
+        // ignore preload errors
+      }
+    })();
+    return () => { isCancelled = true; };
+  }, [contentItems]);
 
   const handleAnalyzeAll = async () => {
     if (contentItems.length === 0) return;
