@@ -27,7 +27,7 @@ import AioGeo from "./pages/AioGeo";
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
 import NotFound from "./pages/NotFound";
-import { ContentProvider } from "./contexts/content";
+import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
 import { FloatingFeedbackButton } from "./components/feedback/FloatingFeedbackButton";
