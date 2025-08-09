@@ -18,11 +18,12 @@ import {
   X,
   Loader2,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  RefreshCw
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import type { SeoAiResult } from '@/types/seo-ai';
-import { analyzeContentItem } from '@/services/seoAiService';
+import { useContentAnalysis } from '@/hooks/useContentAnalysis';
 import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
 
 interface ContentAnalysisModalProps {
@@ -46,26 +47,27 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
+  const { data, loading, analyzeOnce, reanalyze, refresh } = useContentAnalysis(content?.id);
+
   useEffect(() => {
     if (isOpen && content) {
       setAnalysisResult(null);
-      runAnalysis();
+      setIsAnalyzing(true);
+      (async () => {
+        await refresh();
+        if (!data) {
+          const res = await analyzeOnce(content);
+          if (res?.analysis) {
+            setAnalysisResult(res.analysis as SeoAiResult);
+          }
+        } else if (data?.analysis) {
+          setAnalysisResult(data.analysis as SeoAiResult);
+        }
+        setIsAnalyzing(false);
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, content?.id]);
-
-  const runAnalysis = async () => {
-    if (!content) return;
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeContentItem(content);
-      setAnalysisResult(result);
-    } catch (e) {
-      console.error('AI analysis failed', e);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -179,8 +181,8 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
             {/* Top Bar */}
-            <div className="h-16 border-b border-border bg-card/30 flex items-center px-6">
-              {analysisResult && (
+            <div className="h-16 border-b border-border bg-card/30 flex items-center px-6 justify-between">
+              {analysisResult ? (
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center space-x-2">
                     <Target className="h-4 w-4 text-muted-foreground" />
@@ -190,10 +192,21 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Last analyzed: {new Date().toLocaleDateString()}
+                    Last analyzed: {data?.analyzed_at ? new Date(data.analyzed_at).toLocaleString() : '—'}
                   </div>
                 </div>
-              )}
+              ) : <div />}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => { if (content) { setIsAnalyzing(true); const res = await reanalyze(content); if (res?.analysis) setAnalysisResult(res.analysis as SeoAiResult); setIsAnalyzing(false); } }}
+                  disabled={loading || !content}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reanalyze
+                </Button>
+              </div>
             </div>
 
             {/* Content Area */}
