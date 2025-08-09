@@ -19,8 +19,7 @@ import {
 import { ContentItemType } from '@/contexts/content/types';
 import { useContent } from '@/contexts/content';
 import { toast } from 'sonner';
-import { analyzeContentItem, analyzeBulk } from '@/services/seoAiService';
-import type { SeoAiResult } from '@/types/seo-ai';
+import { contentAiAnalysisService } from '@/services/contentAiAnalysisService';
 
 interface ModernContentApprovalProps {
   contentItems: ContentItemType[];
@@ -39,7 +38,7 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
-  const [aiResults, setAiResults] = useState<Record<string, SeoAiResult>>({});
+  // removed unused aiResults state
 
   const { 
     updateContentItem, 
@@ -89,9 +88,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     try {
       for (const item of contentItems) {
         setAnalyzingItems(prev => new Set(prev).add(item.id));
-        const result = await analyzeContentItem(item);
-        setAiScores(prev => ({ ...prev, [item.id]: result.overallScore }));
-        setAiResults(prev => ({ ...prev, [item.id]: result }));
+        const rec = await contentAiAnalysisService.reanalyze(item);
+        const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? 0);
+        setAiScores(prev => ({ ...prev, [item.id]: score }));
         setAnalyzingItems(prev => { const s = new Set(prev); s.delete(item.id); return s; });
       }
       toast.success('AI analysis completed for all content items!');
@@ -106,9 +105,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const handleAnalyzeContent = async (content: ContentItemType) => {
     setAnalyzingItems(prev => new Set(prev).add(content.id));
     try {
-      const result = await analyzeContentItem(content);
-      setAiScores(prev => ({ ...prev, [content.id]: result.overallScore }));
-      setAiResults(prev => ({ ...prev, [content.id]: result }));
+      const rec = await contentAiAnalysisService.reanalyze(content);
+      const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? 0);
+      setAiScores(prev => ({ ...prev, [content.id]: score }));
       toast.success(`AI analysis completed for "${content.title}"`);
     } catch (error) {
       toast.error('Failed to analyze content');
