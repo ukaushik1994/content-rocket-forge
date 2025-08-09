@@ -25,6 +25,7 @@ import { ContentItemType } from '@/contexts/content/types';
 import type { SeoAiResult } from '@/types/seo-ai';
 import { useContentAnalysis } from '@/hooks/useContentAnalysis';
 import { ContentApprovalEditor } from '@/components/approval/ContentApprovalEditor';
+import { getScoreTextClass, getScoreBgClass } from '@/lib/score';
 
 interface ContentAnalysisModalProps {
   isOpen: boolean;
@@ -69,24 +70,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, content?.id]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 80) return 'bg-green-100 dark:bg-green-900/20';
-    if (score >= 60) return 'bg-yellow-100 dark:bg-yellow-900/20';
-    return 'bg-red-100 dark:bg-red-900/20';
-  };
-
-  const getProgressColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
+// Using shared score helpers from '@/lib/score'
   const getIssueIcon = (severity: 'high' | 'medium' | 'low') => {
     switch (severity) {
       case 'high':
@@ -187,7 +171,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                   <div className="flex items-center space-x-2">
                     <Target className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Overall Score:</span>
-                    <Badge variant="secondary" className={`${getScoreBgColor(analysisResult.overallScore)} ${getScoreColor(analysisResult.overallScore)} border-0`}>
+                    <Badge variant="secondary" className={`${getScoreBgClass(analysisResult.overallScore)} ${getScoreTextClass(analysisResult.overallScore)} border-0`}>
                       {analysisResult.overallScore}%
                     </Badge>
                   </div>
@@ -244,7 +228,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                               </CardTitle>
                             </CardHeader>
                             <CardContent className="text-center">
-                              <div className={`text-6xl font-bold mb-4 ${getScoreColor(analysisResult.overallScore)}`}>
+                              <div className={`text-6xl font-bold mb-4 ${getScoreTextClass(analysisResult.overallScore)}`}>
                                 {analysisResult.overallScore}%
                               </div>
                               <Progress 
@@ -271,7 +255,7 @@ export const ContentAnalysisModal: React.FC<ContentAnalysisModalProps> = ({
                                       <item.icon className="h-4 w-4 text-muted-foreground" />
                                       <span className="text-sm font-medium">{item.label}</span>
                                     </div>
-                                    <span className={`text-xl font-bold ${getScoreColor(item.score)}`}>
+                                    <span className={`text-xl font-bold ${getScoreTextClass(item.score)}`}>
                                       {item.score}%
                                     </span>
                                   </div>

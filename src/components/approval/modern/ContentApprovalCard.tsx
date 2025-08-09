@@ -15,10 +15,13 @@ import {
   FileText,
   Calendar,
   User,
-  Zap
+  Zap,
+  Loader2
 } from 'lucide-react';
 import { ContentItemType } from '@/contexts/content/types';
 import { formatDistanceToNow } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getScoreLabel, getScoreTextSoftClass } from '@/lib/score';
 
 interface ContentApprovalCardProps {
   content: ContentItemType;
@@ -28,6 +31,7 @@ interface ContentApprovalCardProps {
   onRequestChanges?: (id: string, reason: string) => void;
   onAnalyzeAI?: (content: ContentItemType) => void;
   aiScore?: number;
+  analyzedAt?: string;
   isAnalyzing?: boolean;
 }
 
@@ -84,6 +88,7 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   onRequestChanges,
   onAnalyzeAI,
   aiScore,
+  analyzedAt,
   isAnalyzing = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -95,18 +100,11 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
   const wordCount = content.content ? content.content.split(' ').length : 0;
   const readingTime = Math.ceil(wordCount / 200);
   
-  const getAIScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    return 'text-red-400';
-  };
+  const isStale = (typeof analyzedAt === 'string')
+    ? new Date(analyzedAt).getTime() < new Date(content.updated_at).getTime()
+    : false;
 
-  const getAIScoreLabel = (score: number) => {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    return 'Needs Work';
-  };
-
+  const aiLabel = typeof aiScore === 'number' ? getScoreLabel(aiScore) : undefined;
   return (
     <motion.div
       onHoverStart={() => setIsHovered(true)}
@@ -129,10 +127,19 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 ${getAIScoreColor(aiScore)}`}>
-              <Sparkles className="h-3 w-3" />
-              <span className="text-xs font-bold">{aiScore}%</span>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 ${getScoreTextSoftClass(aiScore)}`} aria-label={`AI score ${aiScore}%`}>
+                    <Sparkles className="h-3 w-3" />
+                    <span className="text-xs font-bold">{aiScore}%</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span className="text-xs">AI Score: {aiLabel}</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </motion.div>
         )}
 
@@ -184,6 +191,18 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               <Clock className="h-3 w-3" />
               <span>{readingTime} min read</span>
             </div>
+            {isStale && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="ml-2 h-5 px-2 text-[10px]">STALE</Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span className="text-xs">Analysis is older than the latest content update</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </CardHeader>
 
@@ -224,8 +243,8 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
             >
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-semibold text-primary">AI ANALYSIS</h4>
-                <span className={`text-xs font-bold ${getAIScoreColor(aiScore)}`}>
-                  {getAIScoreLabel(aiScore)}
+                <span className={`text-xs font-bold ${getScoreTextSoftClass(aiScore)}`}>
+                  {aiLabel}
                 </span>
               </div>
               <div className="w-full bg-background/40 rounded-full h-2">
@@ -251,15 +270,17 @@ export const ContentApprovalCard: React.FC<ContentApprovalCardProps> = ({
               Review
             </Button>
             
-            {onAnalyzeAI && !isAnalyzing && (
+            {onAnalyzeAI && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onAnalyzeAI(content)}
                 className="bg-primary/10 hover:bg-primary/20 border-primary/30 text-primary"
+                disabled={isAnalyzing}
+                aria-label="Reanalyze content with AI"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
-                AI
+                {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                Reanalyze
               </Button>
             )}
 

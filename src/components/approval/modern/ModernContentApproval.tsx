@@ -31,13 +31,14 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [selectedContent, setSelectedContent] = useState<ContentItemType | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'updated_at' | 'created_at' | 'title'>('updated_at');
+  const [sortBy, setSortBy] = useState<'updated_at' | 'created_at' | 'title' | 'ai_score' | 'last_analyzed'>('updated_at');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisContent, setAnalysisContent] = useState<ContentItemType | null>(null);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
+  const [aiAnalyzedAt, setAiAnalyzedAt] = useState<Record<string, string>>({});
   
 
   const { 
@@ -75,6 +76,16 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
       if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       }
+      if (sortBy === 'ai_score') {
+        const aScore = aiScores[a.id] ?? -1;
+        const bScore = aiScores[b.id] ?? -1;
+        return bScore - aScore;
+      }
+      if (sortBy === 'last_analyzed') {
+        const aAt = aiAnalyzedAt[a.id] ? new Date(aiAnalyzedAt[a.id]).getTime() : 0;
+        const bAt = aiAnalyzedAt[b.id] ? new Date(aiAnalyzedAt[b.id]).getTime() : 0;
+        return bAt - aAt;
+      }
       return new Date(b[sortBy]).getTime() - new Date(a[sortBy]).getTime();
     });
 
@@ -95,18 +106,22 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
             try {
               const rec = await contentAiAnalysisService.getExistingAnalysis(item.id);
               const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? undefined);
-              return [item.id, score] as const;
+              const analyzedAt = rec?.analyzed_at as string | undefined;
+              return [item.id, score, analyzedAt] as const;
             } catch {
-              return [item.id, undefined] as const;
+              return [item.id, undefined, undefined] as const;
             }
           })
         );
         if (isCancelled) return;
-        const map: Record<string, number> = {};
-        for (const [id, score] of entries) {
-          if (typeof score === 'number') map[id] = score;
+        const scoreMap: Record<string, number> = {};
+        const analyzedAtMap: Record<string, string> = {};
+        for (const [id, score, analyzedAt] of entries) {
+          if (typeof score === 'number') scoreMap[id] = score;
+          if (typeof analyzedAt === 'string') analyzedAtMap[id] = analyzedAt;
         }
-        setAiScores(map);
+        setAiScores(scoreMap);
+        setAiAnalyzedAt(analyzedAtMap);
       } catch (e) {
         // ignore preload errors
       }
@@ -123,7 +138,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         setAnalyzingItems(prev => new Set(prev).add(item.id));
         const rec = await contentAiAnalysisService.reanalyze(item);
         const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? 0);
+        const analyzedAt = (rec?.analyzed_at as string | undefined) ?? new Date().toISOString();
         setAiScores(prev => ({ ...prev, [item.id]: score }));
+        setAiAnalyzedAt(prev => ({ ...prev, [item.id]: analyzedAt }));
         setAnalyzingItems(prev => { const s = new Set(prev); s.delete(item.id); return s; });
       }
       toast.success('AI analysis completed for all content items!');
@@ -140,7 +157,9 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     try {
       const rec = await contentAiAnalysisService.reanalyze(content);
       const score = (rec?.analysis?.overallScore as number | undefined) ?? (rec?.seo_score ?? 0);
+      const analyzedAt = (rec?.analyzed_at as string | undefined) ?? new Date().toISOString();
       setAiScores(prev => ({ ...prev, [content.id]: score }));
+      setAiAnalyzedAt(prev => ({ ...prev, [content.id]: analyzedAt }));
       toast.success(`AI analysis completed for "${content.title}"`);
     } catch (error) {
       toast.error('Failed to analyze content');
@@ -234,6 +253,8 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                       <SelectItem value="updated_at">Last Updated</SelectItem>
                       <SelectItem value="created_at">Created Date</SelectItem>
                       <SelectItem value="title">Title</SelectItem>
+                      <SelectItem value="ai_score">AI Score</SelectItem>
+                      <SelectItem value="last_analyzed">Last Analyzed</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -321,6 +342,7 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                       onAnalyzeAI={handleAnalyzeContent}
                       aiScore={aiScores[item.id]}
                       isAnalyzing={analyzingItems.has(item.id)}
+                      analyzedAt={aiAnalyzedAt[item.id]}
                     />
                   </motion.div>
                 ))}
