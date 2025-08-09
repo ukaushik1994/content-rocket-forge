@@ -79,53 +79,35 @@ export const StrategyTabs = React.memo(() => {
 
   return (
     <div className="space-y-6">
-    <GlassCard className="relative overflow-hidden p-4 sm:p-6 shadow-neon">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,theme(colors.primary/10),transparent_60%)]" />
-        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-      </div>
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
-                <Lightbulb className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-primary to-foreground/80 bg-clip-text text-transparent">
-                  Strategy Workspace
-                </h3>
-                <p className="text-xs text-muted-foreground">Plan, track, and optimize your content strategy</p>
-              </div>
-            </div>
-          </div>
+      <GlassCard className="p-4 sm:p-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <div className="flex flex-col gap-6">
             <div className="w-full overflow-x-auto">
-              <TabsList className="inline-flex min-w-max rounded-full border border-border/60 bg-muted/60 p-1 shadow-inner">
+              <TabsList className="inline-flex min-w-max rounded-lg border border-border/50 bg-muted/50 p-1">
                 <TabsTrigger
                   value="strategies"
-                  className="rounded-full px-4 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 transition-all hover-scale data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-neon data-[state=active]:ring-1 data-[state=active]:ring-primary/40"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
                 >
                   <Lightbulb className="h-4 w-4" />
                   <span>Strategies</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="dashboard"
-                  className="rounded-full px-4 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 transition-all hover-scale data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-neon data-[state=active]:ring-1 data-[state=active]:ring-primary/40"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   <span>Dashboard</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="performance"
-                  className="rounded-full px-4 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 transition-all hover-scale data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-neon data-[state=active]:ring-1 data-[state=active]:ring-primary/40"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
                 >
                   <BarChart2 className="h-4 w-4" />
                   <span>Performance</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="progress"
-                  className="rounded-full px-4 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 transition-all hover-scale data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-neon data-[state=active]:ring-1 data-[state=active]:ring-primary/40"
+                  className="px-3 py-2 text-xs sm:text-sm whitespace-nowrap gap-2 hover-scale data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
                 >
                   <TrendingUp className="h-4 w-4" />
                   <span>Progress</span>
@@ -133,25 +115,25 @@ export const StrategyTabs = React.memo(() => {
               </TabsList>
             </div>
 
-            <TabsContent value="strategies" className="animate-enter">
+            <TabsContent value="strategies" className="animate-fade-in">
               <div className="space-y-6">
                 <StrategySuggestions serpMetrics={serpMetrics} goals={goals} />
               </div>
             </TabsContent>
 
-            <TabsContent value="dashboard" className="animate-enter">
+            <TabsContent value="dashboard" className="animate-fade-in">
               <div className="space-y-6">
                 <StrategyDashboard goals={goals} />
               </div>
             </TabsContent>
 
-            <TabsContent value="performance" className="animate-enter">
+            <TabsContent value="performance" className="animate-fade-in">
               <div className="space-y-6">
                 <ROICalculator goals={goals} serpMetrics={serpMetrics} />
               </div>
             </TabsContent>
 
-            <TabsContent value="progress" className="animate-enter">
+            <TabsContent value="progress" className="animate-fade-in">
               <div className="space-y-6">
                 <StrategyProgressTracker strategy={currentStrategy} goals={goals} />
               </div>
