@@ -51,11 +51,9 @@ export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ childr
     }
   };
 
-  const fetchSerpData = async (keyword: string) => {
+  const fetchSerpData = useCallback(async (keyword: string) => {
     if (!keyword) return;
-    
     setIsFetchingSerp(true);
-    
     try {
       const data = await analyzeKeywordSerp(keyword);
       setSerpData(data);
@@ -65,8 +63,7 @@ export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ childr
     } finally {
       setIsFetchingSerp(false);
     }
-  };
-
+  }, []);
   const findInterLinkingOpportunities = useCallback((content: ContentItemType) => {
     // This would analyze the content and find other content to link to
     console.log('Finding interlinking opportunities for:', content.title);

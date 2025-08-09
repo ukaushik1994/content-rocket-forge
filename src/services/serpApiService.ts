@@ -301,7 +301,9 @@ export const analyzeKeywordSerp = async (
         
         cacheSerpData(keyword, result, provider);
         
-        toast.success(`Retrieved clean ${provider.toUpperCase()} data successfully!`);
+        if (refresh) {
+          toast.success(`Retrieved clean ${provider.toUpperCase()} data successfully!`);
+        }
         return result;
       } else {
         console.warn(`⚠️ ${provider.toUpperCase()} returned empty or invalid data`);
