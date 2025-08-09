@@ -12,7 +12,7 @@ import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
-import { ApprovalSerpSummary } from './serp/ApprovalSerpSummary';
+
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
 import { ApprovalTimeline } from './ApprovalTimeline';
@@ -46,22 +46,8 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
     requestChanges,
     submitForReview
   } = useContent();
-  const {
-    improveContentWithAI,
-    isImproving,
-    serpData,
-    isFetchingSerp,
-    fetchSerpData,
-    generateTitleSuggestions,
-    generateMetadata
-  } = useApproval();
+  const { improveContentWithAI, isImproving } = useApproval();
 
-  // Fetch SERP data on load if we have keywords
-  useEffect(() => {
-    if (content.keywords && content.keywords.length > 0) {
-      fetchSerpData(content.keywords[0]);
-    }
-  }, [content.keywords, fetchSerpData]);
 
   // Autosave content and title (guarded and stable)
   useEffect(() => {
@@ -192,27 +178,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   };
   const handleSectionRegenerated = (updatedContent: string) => {
     setEditedContent(updatedContent);
-  };
-  const handleAddToContent = (content: string, type: string) => {
-    let insertText = '';
-    switch (type) {
-      case 'keyword':
-        insertText = `${content} `;
-        break;
-      case 'question':
-        insertText = `\n\n## ${content}\n\n`;
-        break;
-      case 'heading':
-        insertText = `\n\n## ${content}\n\n`;
-        break;
-      case 'entity':
-        insertText = `${content} `;
-        break;
-      default:
-        insertText = `${content} `;
-    }
-    setEditedContent(prev => prev + insertText);
-    toast.success(`Added ${type} to content`);
   };
   const getActionButtons = () => {
     switch (content.approval_status) {
@@ -373,10 +338,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
             <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
               <TabsList className="w-full grid grid-cols-4">
                 
-                <TabsTrigger value="serp" className="text-xs">
-                  <Search className="h-4 w-4 mr-1" />
-                  SERP
-                </TabsTrigger>
                 
                 <TabsTrigger value="sections" className="text-xs">
                   <Wand className="h-4 w-4 mr-1" />
@@ -388,9 +349,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
                 <ApprovalTimeline contentId={content.id} />
               </TabsContent>
               
-              <TabsContent value="serp" className="mt-4">
-                <ApprovalSerpSummary serpData={serpData} isLoading={isFetchingSerp} mainKeyword={content.keywords?.[0] || 'keyword'} onAddToContent={handleAddToContent} />
-              </TabsContent>
               
               <TabsContent value="titles" className="mt-4">
                 <ApprovalAITitleSuggestions content={content} onSelectTitle={handleTitleSelect} />
