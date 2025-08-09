@@ -36,7 +36,7 @@ export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ childr
     setIsImproving(true);
     try {
       const keyword = content.metadata?.mainKeyword || content.keywords?.[0] || '';
-      const serpSummary = serpData ? JSON.stringify({ summary: serpData.summary || '', top_results: serpData.topResults?.slice(0,3) || [] }) : '';
+      const serpSummary = serpData ? JSON.stringify({ top_results: serpData.topResults?.slice(0,3) || [] }) : '';
 
       const system = 'You are an expert editor. Rewrite the content to be clearer, more concise, and SEO-friendly. Integrate important insights from the SERP summary when helpful. Maintain tone, fix grammar, improve structure, and do not hallucinate facts.';
       const user = `Main keyword: ${keyword}\nSERP context: ${serpSummary}\n\nRewrite and improve this content:\n\n${content.content}`;

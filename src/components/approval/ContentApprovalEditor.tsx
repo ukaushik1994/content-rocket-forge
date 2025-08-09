@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { 
   FileText, CheckCircle, Wand, History, 
-  ThumbsUp, AlertCircle, Search, PanelRight, Clock, Sparkles, RefreshCw, CheckCircle2, AlertCircle as AlertIcon
+  ThumbsUp, AlertCircle, Search, PanelRight, Clock, Sparkles, RefreshCw, CheckCircle2, AlertCircle as AlertIcon, RotateCcw
 } from 'lucide-react';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';

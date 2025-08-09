@@ -103,6 +103,7 @@ export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) =
     }
   };
   
+  const previewSlug = (content.title || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-') || 'your-article';
   return (
     <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10">
       <CardContent className="p-5 space-y-4">
@@ -183,8 +184,8 @@ export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) =
             <div className="mt-2 text-[11px] text-white/60">
               <div className="border border-white/10 rounded-md p-2 bg-white/5">
                 <div className="text-primary/80">{metaTitle || content.title}</div>
-                <div className="text-muted-foreground truncate">https://example.com/{content.slug || 'your-article'}</div>
-                <div className="text-white/80 line-clamp-2">{metaDescription || content.excerpt || ''}</div>
+                <div className="text-muted-foreground truncate">https://example.com/{previewSlug}</div>
+                <div className="text-white/80 line-clamp-2">{metaDescription || content.metadata?.description || ''}</div>
               </div>
             </div>
           </div>

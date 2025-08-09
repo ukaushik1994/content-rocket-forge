@@ -36,29 +36,27 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     onChange(before + newText + after);
   };
 
-  const runInlineAi = useCallback(async (action: 'rephrase' | 'shorten' | 'expand' | 'fix'), () => {
+  const runInlineAi = useCallback(async (action: 'rephrase' | 'shorten' | 'expand' | 'fix') => {
     if (!selection || !selectedText) return;
-    (async () => {
-      setIsProcessing(true);
-      try {
-        onAiApplied?.(value);
-        const system = 'You edit only the provided text. Follow the action strictly and keep meaning. Output plain text without quotes.';
-        const instructionMap = {
-          rephrase: 'Rephrase to improve clarity and flow while preserving meaning.',
-          shorten: 'Shorten to be more concise while preserving key information.',
-          expand: 'Expand by adding helpful detail while staying on-topic and accurate.',
-          fix: 'Fix grammar and punctuation; keep style consistent.'
-        } as const;
-        const user = `Action: ${action}\nText:\n${selectedText}`;
-        const result = await AIServiceController.generate('content_generation', system, user, { maxTokens: 400, temperature: 0.2 });
-        const improved = (result && (result.content || result)) as string;
-        if (improved && improved.trim()) {
-          replaceSelection(improved.trim());
-        }
-      } finally {
-        setIsProcessing(false);
+    setIsProcessing(true);
+    try {
+      onAiApplied?.(value);
+      const system = 'You edit only the provided text. Follow the action strictly and keep meaning. Output plain text without quotes.';
+      const instructionMap = {
+        rephrase: 'Rephrase to improve clarity and flow while preserving meaning.',
+        shorten: 'Shorten to be more concise while preserving key information.',
+        expand: 'Expand by adding helpful detail while staying on-topic and accurate.',
+        fix: 'Fix grammar and punctuation; keep style consistent.'
+      } as const;
+      const user = `Action: ${action}\nText:\n${selectedText}`;
+      const result = await AIServiceController.generate('content_generation', system, user, { maxTokens: 400, temperature: 0.2 });
+      const improved = (result && (result.content || result)) as string;
+      if (improved && improved.trim()) {
+        replaceSelection(improved.trim());
       }
-    })();
+    } finally {
+      setIsProcessing(false);
+    }
   }, [selection, selectedText, onAiApplied, value]);
 
   return (
@@ -66,16 +64,16 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
       {selection && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1">
           <span className="text-[11px] text-white/70 mr-1">AI Assist:</span>
-          <Button size="xs" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')}>
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')}>
             <Sparkles className="h-3 w-3 mr-1 text-neon-purple" /> Rephrase
           </Button>
-          <Button size="xs" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('shorten')}>
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('shorten')}>
             <MoveHorizontal className="h-3 w-3 mr-1" /> Shorten
           </Button>
-          <Button size="xs" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('expand')}>
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('expand')}>
             <Wand2 className="h-3 w-3 mr-1" /> Expand
           </Button>
-          <Button size="xs" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('fix')}>
+          <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('fix')}>
             <FileText className="h-3 w-3 mr-1" /> Fix
           </Button>
           {isProcessing && <Loader2 className="h-3 w-3 ml-1 animate-spin" />}
