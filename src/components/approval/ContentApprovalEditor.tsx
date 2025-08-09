@@ -22,14 +22,18 @@ import { InlineAiEditor } from './ai/InlineAiEditor';
 import { TitleSidebarTile } from './tiles/TitleSidebarTile';
 interface ContentApprovalEditorProps {
   content: ContentItemType;
+  hideToolsToggle?: boolean;
+  defaultShowSidebar?: boolean;
 }
 export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
-  content
+  content,
+  hideToolsToggle = false,
+  defaultShowSidebar = true
 }) => {
   const [editedContent, setEditedContent] = useState(content.content);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [activeTab, setActiveTab] = useState('edit');
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(defaultShowSidebar);
   const [activeSidebarTab, setActiveSidebarTab] = useState('sections');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(content.title);
@@ -257,10 +261,12 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
                   <Wand className="h-4 w-4 text-neon-purple" />
                   {isImproving ? 'Improving...' : 'Improve with AI'}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowSidebar(!showSidebar)} className={`flex items-center gap-1 ${showSidebar ? 'text-neon-blue' : 'text-white/70'} hover:text-white hover:bg-white/10`}>
-                  <PanelRight className="h-4 w-4" />
-                  {showSidebar ? 'Hide Tools' : 'Show Tools'}
-                </Button>
+                {!hideToolsToggle && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowSidebar(!showSidebar)} className={`flex items-center gap-1 ${showSidebar ? 'text-neon-blue' : 'text-white/70'} hover:text-white hover:bg-white/10`}>
+                    <PanelRight className="h-4 w-4" />
+                    {showSidebar ? 'Hide Tools' : 'Show Tools'}
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>

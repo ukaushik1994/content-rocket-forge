@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentApprovalHero } from './ContentApprovalHero';
 import { ContentApprovalCard } from './ContentApprovalCard';
-import { ContentAnalysisModal } from './ContentAnalysisModal';
+import { AIReportModal } from './AIReportModal';
+import { ReviewEditorModal } from './ReviewEditorModal';
 import { AssignReviewerDialog } from './AssignReviewerDialog';
 import { ApprovalHistoryDialog } from './ApprovalHistoryDialog';
 import { Input } from '@/components/ui/input';
@@ -34,8 +35,10 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'updated_at' | 'created_at' | 'title' | 'ai_score' | 'last_analyzed'>('updated_at');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  const [analysisContent, setAnalysisContent] = useState<ContentItemType | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewContent, setReviewContent] = useState<ContentItemType | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportContent, setReportContent] = useState<ContentItemType | null>(null);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [analyzingItems, setAnalyzingItems] = useState<Set<string>>(new Set());
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
@@ -182,8 +185,13 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
   };
 
   const handleViewContent = (content: ContentItemType) => {
-    setAnalysisContent(content);
-    setShowAnalysisModal(true);
+    setReviewContent(content);
+    setShowReviewModal(true);
+  };
+
+  const handleViewReport = (content: ContentItemType) => {
+    setReportContent(content);
+    setShowReportModal(true);
   };
 
   const handleApprove = async (id: string, comments?: string) => {
@@ -356,6 +364,7 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
                     <ContentApprovalCard
                       content={item}
                       onView={handleViewContent}
+                      onViewReport={handleViewReport}
                       onApprove={handleApprove}
                       onReject={handleReject}
                       onRequestChanges={handleRequestChanges}
@@ -374,14 +383,18 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
         </div>
       </div>
 
-      {/* Analysis Modal */}
-      <ContentAnalysisModal
-        isOpen={showAnalysisModal}
-        onClose={() => setShowAnalysisModal(false)}
-        content={analysisContent}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onRequestChanges={handleRequestChanges}
+      {/* Review Editor Modal */}
+      <ReviewEditorModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        content={reviewContent}
+      />
+
+      {/* AI Report Modal */}
+      <AIReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        content={reportContent}
       />
 
       {/* Assign Reviewer */}
