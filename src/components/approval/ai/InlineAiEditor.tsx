@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Wand2, Sparkles, MoveHorizontal, FileText, RotateCcw, Loader2 } from 'lucide-react';
@@ -13,9 +13,7 @@ interface InlineAiEditorProps {
 
 export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange, onAiApplied, disabled }) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
-  const [toolbarPos, setToolbarPos] = useState<{ left: number; top: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const selectedText = useMemo(() => {
@@ -28,64 +26,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     if (!el) return;
     const start = el.selectionStart || 0;
     const end = el.selectionEnd || 0;
-    if (start !== end) {
-      setSelection({ start, end });
-      computeToolbarPosition(start, end);
-    } else {
-      setSelection(null);
-      setToolbarPos(null);
-    }
-  };
-
-  const computeToolbarPosition = (start: number, end: number) => {
-    const el = textareaRef.current;
-    const container = containerRef.current;
-    if (!el || !container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const s = window.getComputedStyle(el);
-
-    const mirror = document.createElement('div');
-    mirror.style.position = 'absolute';
-    mirror.style.visibility = 'hidden';
-    mirror.style.whiteSpace = 'pre-wrap';
-    mirror.style.wordWrap = 'break-word';
-    mirror.style.overflow = 'auto';
-    mirror.style.font = s.font || `${s.fontStyle} ${s.fontVariant} ${s.fontWeight} ${s.fontSize} / ${s.lineHeight} ${s.fontFamily}`;
-    mirror.style.letterSpacing = s.letterSpacing;
-    mirror.style.lineHeight = s.lineHeight;
-    mirror.style.padding = s.padding;
-    mirror.style.border = s.border;
-    mirror.style.boxSizing = s.boxSizing as any;
-    mirror.style.width = el.clientWidth + 'px';
-    mirror.style.height = el.clientHeight + 'px';
-
-    const escapeHtml = (str: string) =>
-      str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\"/g, '&quot;');
-
-    const before = escapeHtml(value.slice(0, start));
-    const middleRaw = value.slice(start, end);
-    const middle = escapeHtml(middleRaw.length ? middleRaw : '\u00a0');
-    const after = escapeHtml(value.slice(end));
-
-    mirror.innerHTML = `${before}<span id="__sel_marker__">${middle}</span>${after}`;
-
-    document.body.appendChild(mirror);
-    mirror.scrollTop = el.scrollTop;
-
-    const marker = mirror.querySelector('#__sel_marker__') as HTMLSpanElement | null;
-    if (marker) {
-      const rect = marker.getBoundingClientRect();
-      const left = rect.left - containerRect.left + rect.width / 2;
-      const top = rect.top - containerRect.top - 8;
-      setToolbarPos({ left, top });
-    }
-
-    document.body.removeChild(mirror);
+    if (start !== end) setSelection({ start, end }); else setSelection(null);
   };
 
   const replaceSelection = (newText: string) => {
@@ -119,12 +60,9 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
   }, [selection, selectedText, onAiApplied, value]);
 
   return (
-    <div className="relative h-full" ref={containerRef}>
+    <div className="relative h-full">
       {selection && (
-        <div
-          className="absolute z-10 flex items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1"
-          style={toolbarPos ? { left: toolbarPos.left, top: toolbarPos.top, transform: 'translate(-50%, -100%)' } : { right: 12, top: 12 }}
-        >
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1">
           <span className="text-[11px] text-white/70 mr-1">AI Assist:</span>
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('rephrase')}>
             <Sparkles className="h-3 w-3 mr-1 text-neon-purple" /> Rephrase
@@ -148,7 +86,6 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
         onSelect={updateSelection}
         onClick={updateSelection}
         onKeyUp={updateSelection}
-        onScroll={updateSelection}
         placeholder="Write your content here..."
         className="min-h-[60vh] border-0 focus-visible:ring-0 resize-none p-4 flex-1 bg-transparent"
         disabled={disabled}
