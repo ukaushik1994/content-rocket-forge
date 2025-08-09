@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { 
   FileText, CheckCircle, Wand, History, 
-  ThumbsUp, AlertCircle, Search, PanelRight, Clock
+  ThumbsUp, AlertCircle, Search, PanelRight, Clock, Sparkles, RefreshCw, CheckCircle2, AlertCircle as AlertIcon
 } from 'lucide-react';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
@@ -23,6 +23,8 @@ import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
 import { ApprovalTimeline } from './ApprovalTimeline';
 import { StatusBadge } from './StatusBadge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { InlineAiEditor } from './ai/InlineAiEditor';
 
 interface ContentApprovalEditorProps {
   content: ContentItemType;
@@ -36,6 +38,12 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
   const [activeSidebarTab, setActiveSidebarTab] = useState('timeline');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(content.title);
+  const [titleOpen, setTitleOpen] = useState(false);
+  const [titleLoading, setTitleLoading] = useState(false);
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [undoContent, setUndoContent] = useState<string | null>(null);
+  const mainKeyword = (content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim();
   
   const { 
     updateContentItem, 
@@ -61,6 +69,19 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
       fetchSerpData(content.keywords[0]);
     }
   }, [content.keywords, fetchSerpData]);
+
+  // Autosave content and title
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      try {
+        await updateContentItem(content.id, { content: editedContent, title: editedTitle });
+        setLastSavedAt(new Date());
+      } catch (e) {
+        console.error('Autosave failed', e);
+      }
+    }, 1200);
+    return () => clearTimeout(handler);
+  }, [editedContent, editedTitle, content.id, updateContentItem]);
   
   const handleContentChange = (newContent: string) => {
     setEditedContent(newContent);
@@ -264,46 +285,101 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10 rounded-xl p-5">
-        <div className="flex-1 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Title</label>
-            <Input
-              value={editedTitle}
-              onChange={handleTitleChange}
-              className="bg-white/5 border-white/10 text-white text-lg font-semibold"
-              placeholder="Content title..."
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={content.approval_status} showIcon={true} />
-            {content.keywords?.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {content.keywords.map((keyword, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30">
-                    {keyword}
-                  </Badge>
-                ))}
+      {/* Compact Title Card */}
+      <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-white/70">Title ({editedTitle.length}/60)</label>
+                {mainKeyword && (
+                  <div className={`text-[10px] ${editedTitle.toLowerCase().includes(mainKeyword.toLowerCase()) ? 'text-green-400' : 'text-amber-400'}`}>
+                    {editedTitle.toLowerCase().includes(mainKeyword.toLowerCase()) ? (
+                      <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Keyword included</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1"><AlertIcon className="h-3 w-3" /> Add keyword</span>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedTitle}
+                  onChange={handleTitleChange}
+                  className="bg-white/5 border-white/10 text-white"
+                  placeholder="Content title..."
+                  maxLength={60}
+                />
+                <Popover open={titleOpen} onOpenChange={setTitleOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="bg-white/5 border-white/10">
+                      <Sparkles className="h-4 w-4 text-neon-purple mr-1" /> AI Suggest
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="text-sm mb-2">Suggestions</div>
+                    <div className="space-y-2">
+                      {titleLoading ? (
+                        <div className="text-xs text-muted-foreground">Loading...</div>
+                      ) : (
+                        titleSuggestions.slice(0,3).map((t,i) => (
+                          <button
+                            key={i}
+                            className="block w-full text-left text-sm p-2 rounded-md hover:bg-accent"
+                            onClick={() => {
+                              const prev = editedTitle;
+                              setEditedTitle(t);
+                              setTitleOpen(false);
+                              toast.success('Title applied', {
+                                action: { label: 'Undo', onClick: () => setEditedTitle(prev) },
+                                duration: 5000
+                              });
+                            }}
+                          >{t}</button>
+                        ))
+                      )}
+                      <Button size="sm" variant="ghost" onClick={async () => {
+                        setTitleLoading(true);
+                        const list = await generateTitleSuggestions(content);
+                        setTitleSuggestions(list);
+                        setTitleLoading(false);
+                      }}>
+                        <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <StatusBadge status={content.approval_status} showIcon={true} />
+                {content.keywords?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {content.keywords.map((keyword, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs bg-neon-purple/20 text-neon-purple border border-neon-purple/30">
+                        {keyword}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleSave} 
+                disabled={isSubmitting}
+                className="bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
+              >
+                <History className="mr-2 h-4 w-4" />
+                Save Draft
+              </Button>
+              {getActionButtons()}
+            </div>
           </div>
-        </div>
-        
-        <div className="flex gap-2 mt-3 md:mt-0">
-          <Button 
-            variant="outline" 
-            onClick={handleSave} 
-            disabled={isSubmitting}
-            className="bg-white/5 border-white/10 hover:bg-white/10 text-white/80"
-          >
-            <History className="mr-2 h-4 w-4" />
-            Save Draft
-          </Button>
-          {getActionButtons()}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
       
-      {/* SEO Metadata Section */}
+      {/* SEO Metadata Section (compact) */}
       <ApprovalMetadata content={content} />
       
       <div className="flex gap-6">
@@ -311,7 +387,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
         <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl flex-1">
           <CardHeader className="pb-2 border-b border-white/10">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-white/80">Content Editor</CardTitle>
+              <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
               <div className="flex gap-2">
                 <Button 
                   variant="ghost" 
@@ -345,9 +421,13 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                 <div className="h-[60vh]">
-                  <ContentEditor
-                    content={editedContent}
-                    onContentChange={handleContentChange}
+                  <InlineAiEditor
+                    value={editedContent}
+                    onChange={handleContentChange}
+                    onAiApplied={(prev) => {
+                      setUndoContent(prev);
+                      setTimeout(() => setUndoContent(null), 5000);
+                    }}
                   />
                 </div>
               </TabsContent>
@@ -370,17 +450,27 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
             </Tabs>
           </CardContent>
           
+          {/* Last saved + undo */}
+          <div className="px-4 py-2 text-[11px] text-white/60 flex items-center justify-between border-t border-white/10">
+            <div>{lastSavedAt ? `Last saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosaving...'}</div>
+            {undoContent && (
+              <button className="text-primary hover:underline" onClick={() => { setEditedContent(undoContent); setUndoContent(null); }}>
+                <span className="inline-flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Undo</span>
+              </button>
+            )}
+          </div>
+          
           <CardFooter className="border-t border-white/10 p-4">
             <div className="w-full space-y-4">
               <div>
                 <h4 className="text-sm font-medium mb-2 text-white/80">
-                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review' 
+                  {(content.approval_status === 'pending_review' || content.approval_status === 'in_review') 
                     ? 'Review Notes & Feedback' 
                     : 'Notes'}
                 </h4>
                 <Textarea 
                   placeholder={
-                    content.approval_status === 'pending_review' || content.approval_status === 'in_review'
+                    (content.approval_status === 'pending_review' || content.approval_status === 'in_review')
                       ? "Provide feedback, suggestions, or reasons for your decision..."
                       : "Add any notes about this content..."
                   }
@@ -393,7 +483,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
               <Alert className="border-amber-600/30 bg-amber-600/10">
                 <FileText className="h-4 w-4 text-amber-500" />
                 <AlertDescription className="text-amber-200">
-                  {content.approval_status === 'pending_review' || content.approval_status === 'in_review'
+                  {(content.approval_status === 'pending_review' || content.approval_status === 'in_review')
                     ? 'Review the content carefully before making your decision. Your feedback will be sent to the content author.'
                     : 'Review and update the content before proceeding. Changes will be saved automatically.'}
                 </AlertDescription>

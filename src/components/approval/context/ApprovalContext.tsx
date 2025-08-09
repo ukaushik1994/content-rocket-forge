@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { ContentItemType } from '@/contexts/content/types';
 import { analyzeKeywordSerp, SerpAnalysisResult } from '@/services/serpApiService';
 import { toast } from 'sonner';
+import AIServiceController from '@/services/aiService/AIServiceController';
 
 interface ApprovalContextType {
   improveContentWithAI: (content: ContentItemType) => Promise<string | null>;
@@ -33,17 +34,17 @@ export const ApprovalProvider: React.FC<{children: React.ReactNode}> = ({ childr
 
   const improveContentWithAI = async (content: ContentItemType): Promise<string | null> => {
     setIsImproving(true);
-    
     try {
-      // This would connect to an AI service in a real app
-      // For now we'll just simulate an improvement
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Here we'd send the content to an AI service and get improved content back
-      const improvedContent = content.content || '';
-      
+      const keyword = content.metadata?.mainKeyword || content.keywords?.[0] || '';
+      const serpSummary = serpData ? JSON.stringify({ summary: serpData.summary || '', top_results: serpData.topResults?.slice(0,3) || [] }) : '';
+
+      const system = 'You are an expert editor. Rewrite the content to be clearer, more concise, and SEO-friendly. Integrate important insights from the SERP summary when helpful. Maintain tone, fix grammar, improve structure, and do not hallucinate facts.';
+      const user = `Main keyword: ${keyword}\nSERP context: ${serpSummary}\n\nRewrite and improve this content:\n\n${content.content}`;
+
+      const result = await AIServiceController.generate('content_generation', system, user, { maxTokens: 1800, temperature: 0.4 });
+      const improved = (result && (result.content || result)) as string;
       setIsImproving(false);
-      return improvedContent;
+      return improved || content.content || '';
     } catch (error) {
       console.error('Error improving content with AI:', error);
       setIsImproving(false);
