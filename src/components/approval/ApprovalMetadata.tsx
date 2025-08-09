@@ -12,9 +12,10 @@ import { useContent } from '@/contexts/content';
 
 interface ApprovalMetadataProps {
   content: ContentItemType;
+  compact?: boolean;
 }
 
-export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) => {
+export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content, compact = false }) => {
   const [metaTitle, setMetaTitle] = useState(content.metadata?.metaTitle || '');
   const [metaDescription, setMetaDescription] = useState(content.metadata?.metaDescription || content.metadata?.description || '');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -106,29 +107,24 @@ export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) =
   const previewSlug = (content.title || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-') || 'your-article';
   return (
     <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-white/10">
-      <CardContent className="p-5 space-y-4">
+      <CardContent className={`space-y-4 ${compact ? 'p-4' : 'p-5'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-indigo-400" />
             <p className="text-sm font-medium">SEO Metadata</p>
           </div>
           <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/5 border-white/10 hover:bg-white/10"
+            variant={compact ? 'ghost' : 'outline'}
+            size={compact ? 'icon' : 'sm'}
+            className={compact ? 'bg-transparent' : 'bg-white/5 border-white/10 hover:bg-white/10'}
             onClick={handleGenerateMetadata}
             disabled={isGenerating}
+            aria-label="Generate SEO metadata"
           >
             {isGenerating ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
-              </>
+              <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
-              <>
-                <Wand2 className="h-4 w-4 mr-2 text-neon-purple" />
-                Generate with AI
-              </>
+              <Wand2 className="h-4 w-4 text-neon-purple" />
             )}
           </Button>
         </div>
@@ -181,13 +177,15 @@ export const ApprovalMetadata: React.FC<ApprovalMetadataProps> = ({ content }) =
                 {optimizingField==='description' ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 text-neon-purple" />}
               </Button>
             </div>
-            <div className="mt-2 text-[11px] text-white/60">
-              <div className="border border-white/10 rounded-md p-2 bg-white/5">
-                <div className="text-primary/80">{metaTitle || content.title}</div>
-                <div className="text-muted-foreground truncate">https://example.com/{previewSlug}</div>
-                <div className="text-white/80 line-clamp-2">{metaDescription || content.metadata?.description || ''}</div>
+            {!compact && (
+              <div className="mt-2 text-[11px] text-white/60">
+                <div className="border border-white/10 rounded-md p-2 bg-white/5">
+                  <div className="text-primary/80">{metaTitle || content.title}</div>
+                  <div className="text-muted-foreground truncate">https://example.com/{previewSlug}</div>
+                  <div className="text-white/80 line-clamp-2">{metaDescription || content.metadata?.description || ''}</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           
           <div className="flex justify-end">

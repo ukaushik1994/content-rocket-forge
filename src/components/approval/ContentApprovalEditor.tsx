@@ -5,14 +5,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useContent } from '@/contexts/content';
-import { ContentEditor } from '@/components/content/ContentEditor';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { 
   FileText, CheckCircle, Wand, History, 
-  ThumbsUp, AlertCircle, Search, PanelRight, Clock, Sparkles, RefreshCw, CheckCircle2, AlertCircle as AlertIcon, RotateCcw
+  ThumbsUp, AlertCircle, Search, PanelRight, Clock, CheckCircle2, AlertCircle as AlertIcon, RotateCcw
 } from 'lucide-react';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
@@ -25,6 +23,7 @@ import { ApprovalTimeline } from './ApprovalTimeline';
 import { StatusBadge } from './StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { InlineAiEditor } from './ai/InlineAiEditor';
+import { TitleSidebarTile } from './tiles/TitleSidebarTile';
 
 interface ContentApprovalEditorProps {
   content: ContentItemType;
@@ -34,7 +33,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
   const [editedContent, setEditedContent] = useState(content.content);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [activeTab, setActiveTab] = useState('edit');
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [activeSidebarTab, setActiveSidebarTab] = useState('timeline');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(content.title);
@@ -302,53 +301,9 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={editedTitle}
-                  onChange={handleTitleChange}
-                  className="bg-white/5 border-white/10 text-white"
-                  placeholder="Content title..."
-                  maxLength={60}
-                />
-                <Popover open={titleOpen} onOpenChange={setTitleOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="bg-white/5 border-white/10">
-                      <Sparkles className="h-4 w-4 text-neon-purple mr-1" /> AI Suggest
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="text-sm mb-2">Suggestions</div>
-                    <div className="space-y-2">
-                      {titleLoading ? (
-                        <div className="text-xs text-muted-foreground">Loading...</div>
-                      ) : (
-                        titleSuggestions.slice(0,3).map((t,i) => (
-                          <button
-                            key={i}
-                            className="block w-full text-left text-sm p-2 rounded-md hover:bg-accent"
-                            onClick={() => {
-                              const prev = editedTitle;
-                              setEditedTitle(t);
-                              setTitleOpen(false);
-                              toast.success('Title applied', {
-                                action: { label: 'Undo', onClick: () => setEditedTitle(prev) },
-                                duration: 5000
-                              });
-                            }}
-                          >{t}</button>
-                        ))
-                      )}
-                      <Button size="sm" variant="ghost" onClick={async () => {
-                        setTitleLoading(true);
-                        const list = await generateTitleSuggestions(content);
-                        setTitleSuggestions(list);
-                        setTitleLoading(false);
-                      }}>
-                        <RefreshCw className="h-3 w-3 mr-1" /> Refresh
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+              <div className="space-y-1">
+                <div className="text-sm text-white/90 truncate" title={editedTitle}>{editedTitle}</div>
+                <div className="text-[11px] text-muted-foreground">Edit the title from the right sidebar.</div>
               </div>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <StatusBadge status={content.approval_status} showIcon={true} />
@@ -378,9 +333,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
           </div>
         </CardContent>
       </Card>
-      
-      {/* SEO Metadata Section (compact) */}
-      <ApprovalMetadata content={content} />
       
       <div className="flex gap-6">
         {/* Main Editor */}
@@ -500,6 +452,16 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({ co
             exit={{ opacity: 0, width: 0 }}
             className="w-80 space-y-4"
           >
+            <div className="space-y-4">
+              <TitleSidebarTile
+                content={content}
+                value={editedTitle}
+                onChange={setEditedTitle}
+                mainKeyword={mainKeyword}
+              />
+              <ApprovalMetadata content={content} compact />
+            </div>
+
             <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
               <TabsList className="w-full grid grid-cols-4">
                 <TabsTrigger value="timeline" className="text-xs">
