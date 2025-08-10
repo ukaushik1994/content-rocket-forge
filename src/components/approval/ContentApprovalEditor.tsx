@@ -88,6 +88,11 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isSubmitting]);
 
+  // Breadcrumb: indicate v2 UI is active
+  useEffect(() => {
+    console.info('Editor UI v2 active');
+  }, []);
+
   const handleContentChange = (newContent: string) => {
     setEditedContent(newContent);
   };
@@ -270,7 +275,10 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
         <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl flex-1">
           <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">New UI</span>
+              </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={handleImproveContent} disabled={isImproving} className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10">
                   <Wand className="h-4 w-4 text-neon-purple" />

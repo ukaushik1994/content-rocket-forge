@@ -140,6 +140,25 @@ export const ModernContentApproval: React.FC<ModernContentApprovalProps> = ({
     return () => { isCancelled = true; };
   }, [contentItems]);
 
+  // Optional: auto-open editor via URL param (?editor=first or ?editor=<id>)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editor = params.get('editor');
+    if (!editor || showReviewModal) return;
+    if (contentItems.length === 0) return;
+
+    if (editor === 'first') {
+      setReviewContent(contentItems[0]);
+      setShowReviewModal(true);
+    } else {
+      const target = contentItems.find((i) => i.id === editor);
+      if (target) {
+        setReviewContent(target);
+        setShowReviewModal(true);
+      }
+    }
+  }, [contentItems, showReviewModal]);
+
   const handleAnalyzeAll = async () => {
     if (contentItems.length === 0) return;
     setIsAnalyzingAll(true);
