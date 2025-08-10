@@ -1,5 +1,6 @@
 import AIServiceController from './aiService/AIServiceController';
 import { SerpSelection } from '@/contexts/content-builder/types';
+import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
 
 export interface ContentGenerationConfig {
   mainKeyword: string;
@@ -10,6 +11,7 @@ export interface ContentGenerationConfig {
   expertiseLevel: string;
   targetLength: number;
   contentType: 'how-to' | 'listicle' | 'comprehensive' | 'general';
+  contentIntent?: 'inform' | 'convert' | 'entertain' | 'educate';
   serpSelections: SerpSelection[];
   selectedSolution: any;
   additionalInstructions: string;
@@ -35,7 +37,18 @@ export async function generateAdvancedContent(
       serpSelectionsCount: config.serpSelections.length,
       selectedItemsCount: config.serpSelections.filter(item => item.selected).length,
       hasOutline: !!config.outline,
-      hasSecondaryKeywords: !!config.secondaryKeywords
+      hasSecondaryKeywords: !!config.secondaryKeywords,
+      additionalInstructionsLength: config.additionalInstructions?.length || 0,
+      hasSolution: !!config.selectedSolution,
+      solutionFieldSummary: config.selectedSolution ? {
+        features: Array.isArray(config.selectedSolution.features) ? config.selectedSolution.features.length : 0,
+        painPoints: Array.isArray(config.selectedSolution.painPoints) ? config.selectedSolution.painPoints.length : 0,
+        useCases: Array.isArray(config.selectedSolution.useCases) ? config.selectedSolution.useCases.length : 0,
+        hasMarketData: !!(config.selectedSolution as any).marketData,
+        hasTechnicalSpecs: !!(config.selectedSolution as any).technicalSpecs,
+        hasCaseStudies: Array.isArray((config.selectedSolution as any).caseStudies) && (config.selectedSolution as any).caseStudies.length > 0,
+        hasPricing: !!(config.selectedSolution as any).pricing,
+      } : null
     });
 
     // Validate that we have selected SERP items
@@ -53,14 +66,36 @@ export async function generateAdvancedContent(
     }
 
     // Build the comprehensive prompt using selected SERP items
-    const prompt = buildAdvancedContentPrompt(config);
+    let prompt = buildAdvancedContentPrompt(config);
+
+    // Optionally append solution-aware guidelines
+    if (config.selectedSolution && config.contentType && config.contentIntent) {
+      const targetKeywords = [
+        config.mainKeyword,
+        ...((config.secondaryKeywords || '').split(',').map(k => k.trim()).filter(Boolean))
+      ];
+
+      prompt = AISolutionIntegrationService.createSolutionAwarePrompt({
+        solution: config.selectedSolution,
+        contentType: config.contentType as any,
+        contentIntent: config.contentIntent as any,
+        targetKeywords,
+        audience: Array.isArray(config.selectedSolution?.targetAudience)
+          ? config.selectedSolution.targetAudience.join(', ')
+          : undefined
+      }, prompt);
+
+      console.log('🧩 Solution-aware guidelines appended to prompt');
+    }
     
     console.log('📝 Generated content prompt length:', prompt.length);
     console.log('🎯 Key prompt elements included:', {
       hasSerpSelections: selectedSerpItems.length > 0,
       hasOutline: prompt.includes('Content Outline'),
       hasSecondaryKeywords: prompt.includes('Secondary Keywords'),
-      hasInstructions: prompt.includes('Additional Instructions')
+      hasInstructions: prompt.includes('Additional Instructions'),
+      hasSolution: !!config.selectedSolution,
+      hasSolutionContext: prompt.includes('SOLUTION CONTEXT') || prompt.includes('Solution Integration')
     });
 
     // Enhanced system prompt that emphasizes SERP integration
@@ -303,9 +338,49 @@ ${secondaryKeywords}
   // Add solution integration
   if (selectedSolution) {
     prompt += `**Solution Integration:**
-Incorporate information about: ${selectedSolution.name}
-${selectedSolution.description}
+Solution: ${selectedSolution.name}
+Category: ${selectedSolution.category}
+Description: ${selectedSolution.description}
+Key Features: ${Array.isArray(selectedSolution.features) ? selectedSolution.features.slice(0,5).join(', ') : ''}
+Pain Points Addressed: ${Array.isArray(selectedSolution.painPoints) ? selectedSolution.painPoints.slice(0,3).join(', ') : ''}
+Target Audience: ${Array.isArray(selectedSolution.targetAudience) ? selectedSolution.targetAudience.join(', ') : ''}
+Use Cases: ${Array.isArray(selectedSolution.useCases) ? selectedSolution.useCases.slice(0,3).join(', ') : ''}`;
 
+    if (selectedSolution.uniqueValuePropositions) {
+      prompt += `
+Value Propositions: ${selectedSolution.uniqueValuePropositions.slice(0,3).join(', ')}`;
+    }
+    if (selectedSolution.keyDifferentiators) {
+      prompt += `
+Key Differentiators: ${selectedSolution.keyDifferentiators.slice(0,3).join(', ')}`;
+    }
+    if (selectedSolution.marketData) {
+      prompt += `
+Market Context: ${JSON.stringify(selectedSolution.marketData)}`;
+    }
+    if (selectedSolution.technicalSpecs) {
+      prompt += `
+Technical Capabilities: ${JSON.stringify(selectedSolution.technicalSpecs)}`;
+    }
+    if (selectedSolution.caseStudies && selectedSolution.caseStudies.length > 0) {
+      prompt += `
+Success Stories: ${selectedSolution.caseStudies.slice(0,2).map((cs: any) => `${cs.company} achieved: ${Array.isArray(cs.results) ? cs.results.join(', ') : ''}`).join('; ')}`;
+    }
+    if (selectedSolution.pricing) {
+      prompt += `
+Pricing Model: ${selectedSolution.pricing.model || ''}`;
+    }
+
+    prompt += `
+
+SOLUTION INTEGRATION REQUIREMENTS:
+- Naturally integrate the solution throughout the content
+- Address specific pain points the solution solves
+- Highlight relevant features and benefits
+- Include appropriate use cases as examples
+- Mention key differentiators when relevant
+- Reference market context or technical capabilities if applicable
+- End with a compelling call-to-action related to the solution
 `;
   }
 

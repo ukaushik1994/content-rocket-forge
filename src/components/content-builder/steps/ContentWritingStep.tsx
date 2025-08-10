@@ -67,15 +67,29 @@ export const ContentWritingStep = () => {
       return;
     }
     
+    
+    // Prepare outline text from state.outline
+    const outlineText = Array.isArray(state.outline)
+      ? state.outline
+          .map((item, index) => {
+            if (typeof item === 'string') return `${index + 1}. ${item}`;
+            if (item && typeof item === 'object' && 'title' in item) return `${index + 1}. ${(item as { title: string }).title}`;
+            return '';
+          })
+          .filter(Boolean)
+          .join('\n')
+      : '';
+
     const config: ContentGenerationConfig = {
       mainKeyword,
       title: state.contentTitle || `${mainKeyword}: Expert Guide`,
-      outline: '',
+      outline: outlineText,
       secondaryKeywords: state.selectedKeywords?.join(', ') || '',
       writingStyle,
       expertiseLevel,
       targetLength: wordCountLimit || 1500,
       contentType,
+      contentIntent: state.contentIntent,
       serpSelections: state.serpSelections || [],
       selectedSolution,
       additionalInstructions,
@@ -83,7 +97,6 @@ export const ContentWritingStep = () => {
       includeCaseStudies,
       includeFAQs
     };
-    
     setIsGenerating(true);
     setShowTitleSelection(false);
     
@@ -132,15 +145,29 @@ export const ContentWritingStep = () => {
       return;
     }
     
+    
+    // Prepare outline text from state.outline for title generation context
+    const outlineText = Array.isArray(state.outline)
+      ? state.outline
+          .map((item, index) => {
+            if (typeof item === 'string') return `${index + 1}. ${item}`;
+            if (item && typeof item === 'object' && 'title' in item) return `${index + 1}. ${(item as { title: string }).title}`;
+            return '';
+          })
+          .filter(Boolean)
+          .join('\n')
+      : '';
+
     const config: ContentGenerationConfig = {
       mainKeyword,
       title: state.contentTitle || `${mainKeyword}: Expert Guide`,
-      outline: '',
+      outline: outlineText,
       secondaryKeywords: state.selectedKeywords?.join(', ') || '',
       writingStyle,
       expertiseLevel,
       targetLength: wordCountLimit || 1500,
       contentType,
+      contentIntent: state.contentIntent,
       serpSelections: state.serpSelections || [],
       selectedSolution,
       additionalInstructions,
