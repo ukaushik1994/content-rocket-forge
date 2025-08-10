@@ -170,7 +170,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
 
     return (
       <motion.div
-        className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3"
+        className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -200,10 +200,10 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
                 getColorGradient(metric.color)
               )} />
               
-              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-6 group-hover:shadow-neon transition-all duration-300">
+              <Card className="relative overflow-hidden glass-panel bg-glass border border-white/10 p-5 md:p-6 min-h-[120px] group-hover:shadow-neon transition-all duration-300">
                 {/* Header with icon */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     {IconComponent ? (
                       <motion.div 
                         className={cn(
@@ -226,7 +226,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
                     )}
                     
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                      <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors duration-200 whitespace-normal break-words leading-snug">
                         {metric.title}
                       </p>
                     </div>
@@ -244,7 +244,7 @@ export const VisualDataRenderer: React.FC<VisualDataRendererProps> = ({ visualDa
                 
                 {/* Value with enhanced styling */}
                 <motion.div 
-                  className="text-3xl font-bold group-hover:text-gradient transition-all duration-300 mb-3"
+                  className="text-2xl md:text-3xl font-bold group-hover:text-gradient transition-all duration-300 mb-3 whitespace-normal break-words leading-tight"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 + 0.3 }}
