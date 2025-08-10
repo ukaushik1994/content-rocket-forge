@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Brain, Zap, Info, CheckCircle } from 'lucide-react';
+import { Brain, Zap, Info, CheckCircle, HelpCircle } from 'lucide-react';
 import { computeAvailableActions } from '@/services/smart-actions/resolver';
 import type { SmartContext, SmartRecommendation, SmartAction } from '@/services/smart-actions/types';
 import { logApprovalAction } from '@/services/smart-actions/logging';
+import { Link } from 'react-router-dom';
 
 interface SmartActionBarProps {
   context: SmartContext;
@@ -165,6 +166,27 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           Reject
         </Button>
       )}
+
+      {/* In-app Help */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Smart Actions help">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 text-sm">
+          <div className="font-medium mb-2">Smart Actions Help</div>
+          <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+            <li>Cmd/Ctrl+Enter: Approve (or Submit if draft)</li>
+            <li>Shift+Cmd/Ctrl+R: Request changes</li>
+            <li>Shift+Cmd/Ctrl+X: Reject</li>
+            <li>Notes required for Request changes/Reject</li>
+          </ul>
+          <div className="mt-3 text-xs">
+            <Link to="/smart-actions/analytics" className="story-link text-primary">View approvals analytics</Link>
+          </div>
+        </PopoverContent>
+      </Popover>
       {/* Confirm Dialog */}
       <AlertDialog open={!!pendingAction} onOpenChange={(open) => !open && closeConfirm()}>
         <AlertDialogContent>
