@@ -273,9 +273,9 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
           
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-gray-900/60">
-                <TabsTrigger value="edit" className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
-                <TabsTrigger value="preview" className="data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
+              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-gray-900/60 h-8 rounded-md">
+                <TabsTrigger value="edit" className="h-8 px-2 text-xs data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
+                <TabsTrigger value="preview" className="h-8 px-2 text-xs data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
               </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">

@@ -25,6 +25,8 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     return value.slice(selection.start, selection.end);
   }, [selection, value]);
 
+  const [lastEdit, setLastEdit] = useState<{ start: number; prevText: string; newText: string } | null>(null);
+
   const updateSelection = () => {
     const el = textareaRef.current;
     if (!el) return;
@@ -156,23 +158,43 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
     try {
       onAiApplied?.(value);
       const system = 'You edit only the provided text. Follow the action strictly and keep meaning. Output plain text without quotes.';
-      const instructionMap = {
-        rephrase: 'Rephrase to improve clarity and flow while preserving meaning.',
-        shorten: 'Shorten to be more concise while preserving key information.',
-        expand: 'Expand by adding helpful detail while staying on-topic and accurate.',
-        fix: 'Fix grammar and punctuation; keep style consistent.'
-      } as const;
       const instructionText = userInstruction.trim() ? `\nSpecific instructions: ${userInstruction.trim()}` : '';
       const user = `Action: ${action}${instructionText}\nText:\n${selectedText}`;
       const result = await AIServiceController.generate('content_generation', system, user, { maxTokens: 400, temperature: 0.2 });
       const improved = (result && (result.content || result)) as string;
       if (improved && improved.trim()) {
-        replaceSelection(improved.trim());
+        const newText = improved.trim();
+        // record last edit for revert
+        setLastEdit({ start: selection.start, prevText: selectedText, newText });
+        const before = value.slice(0, selection.start);
+        const after = value.slice(selection.end);
+        const nextValue = before + newText + after;
+        onChange(nextValue);
+        // update selection to new text range
+        const newEnd = selection.start + newText.length;
+        setSelection({ start: selection.start, end: newEnd });
       }
     } finally {
       setIsProcessing(false);
     }
-  }, [selection, selectedText, onAiApplied, value, userInstruction]);
+  }, [selection, selectedText, onAiApplied, value, userInstruction, onChange]);
+
+  const revertLastEdit = useCallback(() => {
+    if (!lastEdit) return;
+    const { start, prevText, newText } = lastEdit;
+    const currentSlice = value.slice(start, start + newText.length);
+    if (currentSlice !== newText) {
+      setLastEdit(null);
+      return;
+    }
+    const before = value.slice(0, start);
+    const after = value.slice(start + newText.length);
+    const nextValue = before + prevText + after;
+    onChange(nextValue);
+    setSelection({ start, end: start + prevText.length });
+    setLastEdit(null);
+  }, [lastEdit, value, onChange]);
+
 
   return (
     <div ref={containerRef} className="relative h-full">
@@ -209,6 +231,9 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
           </Button>
           <Button size="sm" variant="ghost" disabled={isProcessing || disabled} onClick={() => runInlineAi('fix')}>
             <FileText className="h-3 w-3 mr-1" /> Fix
+          </Button>
+          <Button size="sm" variant="ghost" disabled={!lastEdit || isProcessing || disabled} onClick={revertLastEdit}>
+            <RotateCcw className="h-3 w-3 mr-1" /> Revert
           </Button>
           {isProcessing && <Loader2 className="h-3 w-3 ml-1 animate-spin" />}
         </div>

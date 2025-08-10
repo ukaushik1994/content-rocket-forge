@@ -45,8 +45,8 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           <div className="flex-1 overflow-hidden">
             <ContentApprovalEditor 
               content={content} 
-              hideToolsToggle={true}
-              defaultShowSidebar={false}
+              hideToolsToggle={false}
+              defaultShowSidebar={true}
             />
           </div>
         </div>
