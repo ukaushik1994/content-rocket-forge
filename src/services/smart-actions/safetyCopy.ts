@@ -31,3 +31,15 @@ export function getApprovalSafetyCopy(contentId: string): SafetyCopy | null {
     return null;
   }
 }
+
+export function clearApprovalSafetyCopy(contentId: string) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const map: Record<string, SafetyCopy> = JSON.parse(raw);
+    delete map[contentId];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  } catch (e) {
+    console.warn('Failed to clear safety copy', e);
+  }
+}

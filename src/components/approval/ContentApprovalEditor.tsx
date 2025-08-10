@@ -12,7 +12,7 @@ import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
-import { saveApprovalSafetyCopy } from '@/services/smart-actions/safetyCopy';
+import { saveApprovalSafetyCopy, getApprovalSafetyCopy, clearApprovalSafetyCopy, type SafetyCopy } from '@/services/smart-actions/safetyCopy';
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
@@ -23,6 +23,7 @@ import { InlineAiEditor } from './ai/InlineAiEditor';
 import { TitleSidebarTile } from './tiles/TitleSidebarTile';
 import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
 import { useSmartApprovalRecommendation } from '@/hooks/approval/useSmartApprovalRecommendation';
+import { ApprovalTimeline } from '@/components/approval/ApprovalTimeline';
 interface ContentApprovalEditorProps {
   content: ContentItemType;
   hideToolsToggle?: boolean;
@@ -44,7 +45,11 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   const [titleLoading, setTitleLoading] = useState(false);
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [undoContent, setUndoContent] = useState<string | null>(null);
+const [undoContent, setUndoContent] = useState<string | null>(null);
+const [safetyCopy, setSafetyCopy] = useState<SafetyCopy | null>(null);
+useEffect(() => {
+  setSafetyCopy(getApprovalSafetyCopy(content.id));
+}, [content.id]);
   const mainKeyword = (content.metadata?.mainKeyword || content.keywords?.[0] || '').toString().trim();
   const {
     updateContentItem,
@@ -228,6 +233,28 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   }} transition={{
     duration: 0.3
   }}>
+      {safetyCopy && (
+        <Alert className="mb-3 border-amber-600/30 bg-amber-600/10 animate-fade-in">
+          <FileText className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-200">
+            We found a safety copy from {new Date(safetyCopy.createdAt).toLocaleString()}.
+          </AlertDescription>
+          <div className="mt-2 flex gap-2">
+            <Button size="sm" onClick={() => {
+              setEditedTitle(safetyCopy.title);
+              setEditedContent(safetyCopy.content);
+              if (typeof safetyCopy.notes === 'string') setApprovalNotes(safetyCopy.notes);
+              clearApprovalSafetyCopy(content.id);
+              setSafetyCopy(null);
+              toast.success('Restored from safety copy');
+            }}>Restore</Button>
+            <Button size="sm" variant="ghost" onClick={() => {
+              clearApprovalSafetyCopy(content.id);
+              setSafetyCopy(null);
+            }}>Dismiss</Button>
+          </div>
+        </Alert>
+      )}
       {/* Compact Title Card */}
       <Card className="border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
         <CardContent className="p-4">
@@ -389,6 +416,9 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
               </TabsContent>
             </Tabs>
           </motion.div>}
+      </div>
+      <div className="mt-6">
+        <ApprovalTimeline contentId={content.id} />
       </div>
     </motion.div>;
 };
