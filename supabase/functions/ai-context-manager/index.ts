@@ -86,8 +86,32 @@ serve(async (req) => {
     // Generate contextual suggestions based on current state
     const suggestions = generateContextualSuggestions(context);
 
+    // Derive latest Content Builder context from the most recent content item metadata
+    const latestItem = (contentItems && contentItems.length > 0) ? contentItems[0] : null;
+    const metadata: any = latestItem?.metadata || {};
+    const selectedSerp = Array.isArray(metadata.serpSelections)
+      ? metadata.serpSelections.filter((s: any) => s && (s.selected === true || s.selected === undefined)) // default to included if flag missing
+      : [];
+    const serpSelectionCounts = selectedSerp.reduce((acc: Record<string, number>, s: any) => {
+      const t = s?.type || 'unknown';
+      acc[t] = (acc[t] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const builderContext = {
+      additionalInstructions: metadata.additionalInstructions || '',
+      selectedSolution: metadata.selectedSolution || null,
+      serpSelections: selectedSerp,
+      serpSelectionCounts,
+      contentType: metadata.contentType || null,
+      contentIntent: metadata.contentIntent || null,
+      mainKeyword: metadata.mainKeyword || null,
+      secondaryKeywords: Array.isArray(metadata.secondaryKeywords) ? metadata.secondaryKeywords : (metadata.secondaryKeywords ? [metadata.secondaryKeywords] : [])
+    };
+
     return new Response(JSON.stringify({
       ...context,
+      builderContext,
       suggestions,
       lastUpdated: new Date().toISOString()
     }), {

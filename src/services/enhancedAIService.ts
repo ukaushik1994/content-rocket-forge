@@ -2,7 +2,7 @@ import { EnhancedChatMessage, VisualData, WorkflowStep } from '@/types/enhancedC
 import { ContextualAction } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import AIServiceController from '@/services/aiService/AIServiceController';
-
+import { AISolutionIntegrationService } from '@/services/aiSolutionIntegrationService';
 export interface WorkflowContext {
   currentWorkflow?: string;
   stepData?: Record<string, any>;
@@ -30,6 +30,19 @@ class EnhancedAIService {
       
       // Build enhanced system prompt with user context
       const systemPrompt = this.buildEnhancedSystemPrompt(context, conversationHistory);
+
+      // Debug context inclusion for verification
+      const bc = (context as any)?.builderContext || {};
+      console.debug('🔎 AI Chat Context Inclusion', {
+        serpSelected: Array.isArray(bc.serpSelections) ? bc.serpSelections.length : 0,
+        serpCounts: bc.serpSelectionCounts || {},
+        hasInstructions: !!(bc.additionalInstructions && bc.additionalInstructions.length > 0),
+        instructionsLength: (bc.additionalInstructions || '').length,
+        hasSelectedSolution: !!bc.selectedSolution,
+        contentType: bc.contentType || null,
+        contentIntent: bc.contentIntent || null,
+        mainKeyword: bc.mainKeyword || null
+      });
 
       // Use AIServiceController for the actual AI generation
       const result = await AIServiceController.generate({
@@ -169,6 +182,50 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
       }
     }
 
+    // Include Content Builder context when available
+    const bc = context?.builderContext;
+    if (bc) {
+      // SERP selections
+      if (Array.isArray(bc.serpSelections) && bc.serpSelections.length > 0) {
+        const grouped: Record<string, any[]> = bc.serpSelections.reduce((acc: Record<string, any[]>, item: any) => {
+          const t = item?.type || 'unknown';
+          if (!acc[t]) acc[t] = [];
+          acc[t].push(item);
+          return acc;
+        }, {});
+
+        systemPrompt += `\n\nSERP CONTEXT (selected items):`;
+        for (const [type, items] of Object.entries(grouped)) {
+          const examples = items.slice(0, 5).map((i: any) => `- ${i.content}`).join('\n');
+          systemPrompt += `\n${type.toUpperCase()} (${items.length}):\n${examples}`;
+        }
+      }
+
+      // Additional instructions
+      if (bc.additionalInstructions) {
+        systemPrompt += `\n\nADDITIONAL INSTRUCTIONS:\n${bc.additionalInstructions}`;
+      }
+
+      // Selected solution context
+      if (bc.selectedSolution) {
+        try {
+          const sol = bc.selectedSolution as any;
+          systemPrompt += `\n\nSOLUTION CONTEXT:\n` +
+            `Name: ${sol.name}\n` +
+            (sol.description ? `Description: ${sol.description}\n` : '') +
+            (sol.category ? `Category: ${sol.category}\n` : '') +
+            (Array.isArray(sol.features) && sol.features.length ? `Features: ${sol.features.slice(0,5).join(', ')}\n` : '') +
+            (Array.isArray(sol.painPoints) && sol.painPoints.length ? `Pain Points: ${sol.painPoints.slice(0,5).join(', ')}\n` : '') +
+            (Array.isArray(sol.useCases) && sol.useCases.length ? `Use Cases: ${sol.useCases.slice(0,3).join(', ')}\n` : '') +
+            (Array.isArray(sol.targetAudience) && sol.targetAudience.length ? `Target Audience: ${sol.targetAudience.join(', ')}\n` : '') +
+            (Array.isArray(sol.uniqueValuePropositions) && sol.uniqueValuePropositions.length ? `Value Props: ${sol.uniqueValuePropositions.slice(0,3).join(', ')}\n` : '') +
+            (Array.isArray(sol.keyDifferentiators) && sol.keyDifferentiators.length ? `Differentiators: ${sol.keyDifferentiators.slice(0,3).join(', ')}\n` : '');
+        } catch (_) {
+          // If parsing fails, skip gracefully
+        }
+      }
+    }
+
     // Add workflow context
     if (this.workflowContext.currentWorkflow) {
       systemPrompt += `\n\nCURRENT WORKFLOW: ${this.workflowContext.currentWorkflow}`;
@@ -178,6 +235,29 @@ ${recentHistory ? `Recent conversation:\n${recentHistory}` : 'This is the start 
     }
 
     systemPrompt += `\n\nProvide helpful, accurate responses and suggest relevant actions when appropriate.`;
+
+    // Optionally append solution-aware integration guidelines when all key pieces are present
+    if (bc?.selectedSolution && bc?.contentType && bc?.contentIntent) {
+      const targetKeywords = [bc.mainKeyword, ...((Array.isArray(bc.secondaryKeywords) ? bc.secondaryKeywords : []) as string[])]
+        .filter(Boolean) as string[];
+
+      systemPrompt = AISolutionIntegrationService.createSolutionAwarePrompt({
+        solution: bc.selectedSolution as any,
+        contentType: bc.contentType as any,
+        contentIntent: bc.contentIntent as any,
+        targetKeywords,
+        audience: Array.isArray(bc.selectedSolution?.targetAudience) ? bc.selectedSolution.targetAudience.join(', ') : undefined
+      }, systemPrompt);
+    }
+
+    // Debug what was included
+    try {
+      console.debug('🧩 System prompt inclusions', {
+        includedSerp: !!(bc && bc.serpSelections && bc.serpSelections.length),
+        includedInstructions: !!(bc && bc.additionalInstructions),
+        includedSolution: !!(bc && bc.selectedSolution)
+      });
+    } catch {}
 
     return systemPrompt;
   }
