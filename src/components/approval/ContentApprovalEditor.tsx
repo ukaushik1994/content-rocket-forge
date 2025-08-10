@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { InlineAiEditor } from './ai/InlineAiEditor';
 import { TitleSidebarTile } from './tiles/TitleSidebarTile';
 import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
+import { useSmartApprovalRecommendation } from '@/hooks/approval/useSmartApprovalRecommendation';
 interface ContentApprovalEditorProps {
   content: ContentItemType;
   hideToolsToggle?: boolean;
@@ -52,6 +53,13 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
     submitForReview
   } = useContent();
   const { improveContentWithAI, isImproving } = useApproval();
+  const { recommendation } = useSmartApprovalRecommendation({
+    content,
+    editedContent,
+    editedTitle,
+    mainKeyword,
+    notes: approvalNotes,
+  });
 
 
   // Autosave content and title (guarded and stable)
@@ -269,6 +277,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   context={{ approvalStatus: content.approval_status }}
   disabled={isSubmitting}
   hasNotes={Boolean(approvalNotes.trim())}
+  recommendation={recommendation}
   onApprove={handleApprove}
   onRequestChanges={handleRequestChanges}
   onReject={handleReject}
