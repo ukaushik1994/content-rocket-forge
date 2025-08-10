@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -34,6 +34,13 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
   const mountedAtRef = useRef<number>(Date.now());
   const contentId = context.contentId;
 
+  const recommendedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (recommendation) {
+      recommendedAtRef.current = Date.now();
+    }
+  }, [recommendation]);
+
   const record = async (action: 'approve' | 'request_changes' | 'reject' | 'submit_for_review', accepted: boolean) => {
     const latencyMs = Date.now() - mountedAtRef.current;
     await logApprovalAction({
@@ -65,6 +72,8 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
   };
 
   const canFollow = !!recommendation && available.includes(recommendation.action);
+  const requiresNotes = recommendation?.action === 'request_changes' || recommendation?.action === 'reject';
+  const disabledFollow = !!disabled || (requiresNotes && !hasNotes);
 
   if (available.length === 0) return null;
 
@@ -75,7 +84,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
         <div className="flex items-center gap-2">
           <Button
             onClick={followRecommendation}
-            disabled={!!disabled}
+            disabled={disabledFollow}
             variant="secondary"
             className="inline-flex items-center"
           >
@@ -93,6 +102,16 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
                 <Brain className="h-4 w-4" />
                 <span className="font-medium">Why this recommendation?</span>
                 <Badge variant="outline">{recommendation?.confidence}%</Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span>Model</span>
+                <span>heuristic-v1</span>
+              </div>
+              <div className="text-xs text-muted-foreground mb-2">
+                {(() => {
+                  const secs = recommendedAtRef.current ? Math.max(0, Math.round((Date.now() - recommendedAtRef.current) / 1000)) : 0;
+                  return `Generated ${secs}s ago`;
+                })()}
               </div>
               <p className="text-muted-foreground">{recommendation?.reasoning}</p>
             </PopoverContent>

@@ -212,31 +212,6 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
   const handleSectionRegenerated = (updatedContent: string) => {
     setEditedContent(updatedContent);
   };
-  const getActionButtons = () => {
-    switch (content.approval_status) {
-      case 'draft':
-        return <Button onClick={handleSubmitForReview} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white">
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Submit for Review
-          </Button>;
-      case 'pending_review':
-      case 'in_review':
-        return <div className="flex gap-2">
-            <Button onClick={handleApprove} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 text-white">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Approve & Publish
-            </Button>
-            <Button onClick={handleRequestChanges} disabled={isSubmitting || !approvalNotes.trim()} variant="outline" className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20">
-              Request Changes
-            </Button>
-            <Button onClick={handleReject} disabled={isSubmitting || !approvalNotes.trim()} variant="destructive" className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20">
-              Reject
-            </Button>
-          </div>;
-      default:
-        return null;
-    }
-  };
   return <motion.div className="space-y-6" initial={{
     opacity: 0
   }} animate={{

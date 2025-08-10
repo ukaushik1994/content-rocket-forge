@@ -1,5 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 
+const isLoggingEnabled = (): boolean => {
+  try {
+    const v = localStorage.getItem('smart_actions_logging');
+    return v === null ? true : v === 'true';
+  } catch {
+    return true;
+  }
+};
+
 export async function logApprovalRecommendation(params: {
   contentId?: string;
   action: 'approve' | 'request_changes' | 'reject' | 'submit_for_review';
@@ -7,6 +16,7 @@ export async function logApprovalRecommendation(params: {
   reasoning?: string;
   model?: string;
 }) {
+  if (!isLoggingEnabled()) return;
   try {
     if (!params.contentId) return;
     const { data: { user } } = await supabase.auth.getUser();
@@ -31,6 +41,7 @@ export async function logApprovalAction(params: {
   source?: 'user' | 'ai';
   latencyMs?: number;
 }) {
+  if (!isLoggingEnabled()) return;
   try {
     if (!params.contentId) return;
     const { data: { user } } = await supabase.auth.getUser();
