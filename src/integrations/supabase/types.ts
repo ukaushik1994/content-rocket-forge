@@ -249,6 +249,50 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_actions_log: {
+        Row: {
+          accepted_recommendation: boolean
+          action: string
+          content_id: string
+          created_at: string
+          id: string
+          latency_ms: number | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_recommendation?: boolean
+          action: string
+          content_id: string
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_recommendation?: boolean
+          action?: string
+          content_id?: string
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_actions_log_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_assignments: {
         Row: {
           assigned_at: string | null
@@ -371,6 +415,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "approval_history_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_recommendations: {
+        Row: {
+          action: string
+          confidence: number | null
+          content_id: string
+          created_at: string
+          id: string
+          model: string | null
+          reasoning: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          confidence?: number | null
+          content_id: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          reasoning?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          confidence?: number | null
+          content_id?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          reasoning?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_recommendations_content_id_fkey"
             columns: ["content_id"]
             isOneToOne: false
             referencedRelation: "content_items"

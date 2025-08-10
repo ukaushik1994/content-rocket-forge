@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ContentItemType } from '@/contexts/content/types';
 import type { SmartRecommendation } from '@/services/smart-actions/types';
 import { getSmartRecommendation } from '@/services/aiService/smartApproval';
+import { logApprovalRecommendation } from '@/services/smart-actions/logging';
 
 interface Params {
   content: ContentItemType;
@@ -15,6 +16,7 @@ export function useSmartApprovalRecommendation({ content, editedContent, editedT
   const [recommendation, setRecommendation] = useState<SmartRecommendation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loggedForContentRef = useRef<string | null>(null);
 
   const inputs = useMemo(() => ({
     approvalStatus: content.approval_status,
@@ -37,7 +39,20 @@ export function useSmartApprovalRecommendation({ content, editedContent, editedT
           mainKeyword: inputs.keyword,
           notes: inputs.notes,
         });
-        if (!cancelled) setRecommendation(rec);
+        if (!cancelled) {
+          setRecommendation(rec);
+          // Log only once per content id per hook mount
+          if (loggedForContentRef.current !== content.id) {
+            loggedForContentRef.current = content.id;
+            await logApprovalRecommendation({
+              contentId: content.id,
+              action: rec.action,
+              confidence: rec.confidence,
+              reasoning: rec.reasoning,
+              model: 'heuristic-v1',
+            });
+          }
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || 'Failed to get recommendation');
       } finally {
@@ -45,7 +60,7 @@ export function useSmartApprovalRecommendation({ content, editedContent, editedT
       }
     })();
     return () => { cancelled = true; };
-  }, [inputs]);
+  }, [inputs, content.id]);
 
   const refresh = async () => {
     const rec = await getSmartRecommendation({

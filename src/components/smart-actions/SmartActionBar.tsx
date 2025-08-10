@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Brain, Zap, Info, CheckCircle, AlertCircle } from 'lucide-react';
+import { Brain, Zap, Info, CheckCircle } from 'lucide-react';
 import { computeAvailableActions } from '@/services/smart-actions/resolver';
 import type { SmartContext, SmartRecommendation } from '@/services/smart-actions/types';
+import { logApprovalAction } from '@/services/smart-actions/logging';
 
 interface SmartActionBarProps {
   context: SmartContext;
@@ -30,17 +31,35 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
   onSubmitForReview,
 }) => {
   const available = computeAvailableActions(context);
+  const mountedAtRef = useRef<number>(Date.now());
+  const contentId = context.contentId;
 
-  const followRecommendation = () => {
+  const record = async (action: 'approve' | 'request_changes' | 'reject' | 'submit_for_review', accepted: boolean) => {
+    const latencyMs = Date.now() - mountedAtRef.current;
+    await logApprovalAction({
+      contentId,
+      action,
+      acceptedRecommendation: accepted,
+      source: 'user',
+      latencyMs,
+    });
+  };
+
+  const followRecommendation = async () => {
     if (!recommendation) return;
+    const accepted = true;
     switch (recommendation.action) {
       case 'approve':
+        await record('approve', accepted);
         return onApprove?.();
       case 'request_changes':
+        await record('request_changes', accepted);
         return onRequestChanges?.();
       case 'reject':
+        await record('reject', accepted);
         return onReject?.();
       case 'submit_for_review':
+        await record('submit_for_review', accepted);
         return onSubmitForReview?.();
     }
   };
@@ -84,7 +103,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
       {/* Primary actions (unchanged behavior) */}
       {available.includes('submit_for_review') && (
         <Button
-          onClick={onSubmitForReview}
+          onClick={async () => { await record('submit_for_review', recommendation?.action === 'submit_for_review'); onSubmitForReview?.(); }}
           disabled={!!disabled}
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
@@ -95,7 +114,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
 
       {available.includes('approve') && (
         <Button
-          onClick={onApprove}
+          onClick={async () => { await record('approve', recommendation?.action === 'approve'); onApprove?.(); }}
           disabled={!!disabled}
           className="bg-green-600 hover:bg-green-700 text-white"
         >
@@ -105,7 +124,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
       )}
       {available.includes('request_changes') && (
         <Button
-          onClick={onRequestChanges}
+          onClick={async () => { await record('request_changes', recommendation?.action === 'request_changes'); onRequestChanges?.(); }}
           disabled={!!disabled || !hasNotes}
           variant="outline"
           className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
@@ -115,7 +134,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
       )}
       {available.includes('reject') && (
         <Button
-          onClick={onReject}
+          onClick={async () => { await record('reject', recommendation?.action === 'reject'); onReject?.(); }}
           disabled={!!disabled || !hasNotes}
           variant="destructive"
           className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"

@@ -274,7 +274,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
                 Save Draft
               </Button>
 <SmartActionBar
-  context={{ approvalStatus: content.approval_status }}
+  context={{ approvalStatus: content.approval_status, contentId: content.id }}
   disabled={isSubmitting}
   hasNotes={Boolean(approvalNotes.trim())}
   recommendation={recommendation}
