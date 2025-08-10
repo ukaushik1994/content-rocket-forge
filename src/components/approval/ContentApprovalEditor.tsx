@@ -73,6 +73,21 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
     return () => clearTimeout(handler);
     // Intentionally omit updateContentItem from deps to avoid identity-change loops
   }, [editedContent, editedTitle, content.id]);
+
+  // Keyboard shortcut: Save with Cmd/Ctrl+S
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        if (!isSubmitting) {
+          handleSave();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSubmitting]);
+
   const handleContentChange = (newContent: string) => {
     setEditedContent(newContent);
   };
@@ -253,7 +268,7 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
       <div className="flex gap-6">
         {/* Main Editor */}
         <Card className="relative border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm shadow-xl flex-1">
-          <CardHeader className="pb-2 border-b border-white/10">
+          <CardHeader className="sticky top-0 z-10 pb-2 border-b border-border bg-card/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-white/80">Generated Content</CardTitle>
               <div className="flex gap-2">
@@ -273,9 +288,9 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
           
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-gray-900/60 h-8 rounded-md">
-                <TabsTrigger value="edit" className="h-8 px-2 text-xs data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
-                <TabsTrigger value="preview" className="h-8 px-2 text-xs data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
+              <TabsList className="grid grid-cols-2 mx-4 my-2 bg-card/60 h-7 rounded-md">
+                <TabsTrigger value="edit" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Edit</TabsTrigger>
+                <TabsTrigger value="preview" className="h-7 px-2 text-[11px] data-[state=active]:bg-neon-purple/20 data-[state=active]:text-neon-purple">Preview</TabsTrigger>
               </TabsList>
               
               <TabsContent value="edit" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
@@ -342,9 +357,11 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
             </div>
 
             <Tabs defaultValue={activeSidebarTab} onValueChange={setActiveSidebarTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-1">
-                
-                
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="titles" className="text-xs">
+                  <Wand className="h-4 w-4 mr-1" />
+                  Titles
+                </TabsTrigger>
                 <TabsTrigger value="sections" className="text-xs">
                   <Wand className="h-4 w-4 mr-1" />
                   Sections

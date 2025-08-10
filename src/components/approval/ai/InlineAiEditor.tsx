@@ -201,7 +201,7 @@ export const InlineAiEditor: React.FC<InlineAiEditorProps> = ({ value, onChange,
       {selection && toolbarPos && (
         <div
           ref={toolbarRef}
-          className="absolute z-10 flex flex-wrap items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 backdrop-blur-sm max-w-[92vw]"
+          className="absolute z-10 flex flex-wrap items-center gap-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 backdrop-blur-sm max-w-[92vw] shadow-lg animate-enter"
           style={{
             left: toolbarPos.left,
             top: toolbarPos.top,
