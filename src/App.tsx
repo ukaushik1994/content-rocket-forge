@@ -27,6 +27,7 @@ import AioGeo from "./pages/AioGeo";
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
 import NotFound from "./pages/NotFound";
+import SmartActionsAnalytics from "./pages/SmartActionsAnalytics";
 import { ContentProvider } from "@/contexts/content";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FeedbackProvider } from "./contexts/FeedbackContext";
@@ -77,6 +78,9 @@ const App = () => (
                 
                 {/* AIO/GEO route */}
                 <Route path="/aio-geo" element={<ProtectedRoute><AioGeo /></ProtectedRoute>} />
+
+                {/* Smart Actions Analytics */}
+                <Route path="/smart-actions/analytics" element={<ProtectedRoute><SmartActionsAnalytics /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
