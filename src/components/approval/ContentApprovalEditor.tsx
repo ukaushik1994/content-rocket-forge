@@ -20,6 +20,7 @@ import { StatusBadge } from './StatusBadge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { InlineAiEditor } from './ai/InlineAiEditor';
 import { TitleSidebarTile } from './tiles/TitleSidebarTile';
+import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
 interface ContentApprovalEditorProps {
   content: ContentItemType;
   hideToolsToggle?: boolean;
@@ -264,7 +265,15 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
                 <History className="mr-2 h-4 w-4" />
                 Save Draft
               </Button>
-              {getActionButtons()}
+<SmartActionBar
+  context={{ approvalStatus: content.approval_status }}
+  disabled={isSubmitting}
+  hasNotes={Boolean(approvalNotes.trim())}
+  onApprove={handleApprove}
+  onRequestChanges={handleRequestChanges}
+  onReject={handleReject}
+  onSubmitForReview={handleSubmitForReview}
+/>
             </div>
           </div>
         </CardContent>
