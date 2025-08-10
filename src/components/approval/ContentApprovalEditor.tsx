@@ -12,6 +12,7 @@ import { ApprovalMetadata } from './ApprovalMetadata';
 import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
+import { saveApprovalSafetyCopy } from '@/services/smart-actions/safetyCopy';
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
@@ -128,6 +129,8 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
     }
   };
   const handleApprove = async () => {
+    // safety copy
+    saveApprovalSafetyCopy({ id: content.id, action: 'approve', title: editedTitle, content: editedContent, notes: approvalNotes, createdAt: new Date().toISOString() });
     setIsSubmitting(true);
     try {
       await approveContent(content.id, approvalNotes || undefined);
@@ -148,6 +151,8 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
       toast.error('Please provide a reason for rejection');
       return;
     }
+    // safety copy
+    saveApprovalSafetyCopy({ id: content.id, action: 'reject', title: editedTitle, content: editedContent, notes: approvalNotes, createdAt: new Date().toISOString() });
     setIsSubmitting(true);
     try {
       await rejectContent(content.id, approvalNotes);
@@ -166,6 +171,8 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
       toast.error('Please provide specific change requests');
       return;
     }
+    // safety copy
+    saveApprovalSafetyCopy({ id: content.id, action: 'request_changes', title: editedTitle, content: editedContent, notes: approvalNotes, createdAt: new Date().toISOString() });
     setIsSubmitting(true);
     try {
       await requestChanges(content.id, approvalNotes);
@@ -180,6 +187,8 @@ export const ContentApprovalEditor: React.FC<ContentApprovalEditorProps> = ({
     }
   };
   const handleSubmitForReview = async () => {
+    // safety copy
+    saveApprovalSafetyCopy({ id: content.id, action: 'submit_for_review', title: editedTitle, content: editedContent, notes: approvalNotes, createdAt: new Date().toISOString() });
     setIsSubmitting(true);
     try {
       await submitForReview(content.id, approvalNotes || undefined);

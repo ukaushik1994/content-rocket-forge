@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Brain, Zap, Info, CheckCircle } from 'lucide-react';
 import { computeAvailableActions } from '@/services/smart-actions/resolver';
-import type { SmartContext, SmartRecommendation } from '@/services/smart-actions/types';
+import type { SmartContext, SmartRecommendation, SmartAction } from '@/services/smart-actions/types';
 import { logApprovalAction } from '@/services/smart-actions/logging';
 
 interface SmartActionBarProps {
@@ -41,6 +42,10 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
     }
   }, [recommendation]);
 
+  const [pendingAction, setPendingAction] = useState<{ action: SmartAction; accepted: boolean } | null>(null);
+  const openConfirm = (action: SmartAction, accepted: boolean) => setPendingAction({ action, accepted });
+  const closeConfirm = () => setPendingAction(null);
+
   const record = async (action: 'approve' | 'request_changes' | 'reject' | 'submit_for_review', accepted: boolean) => {
     const latencyMs = Date.now() - mountedAtRef.current;
     await logApprovalAction({
@@ -54,28 +59,23 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
 
   const followRecommendation = async () => {
     if (!recommendation) return;
-    const accepted = true;
-    switch (recommendation.action) {
-      case 'approve':
-        await record('approve', accepted);
-        return onApprove?.();
-      case 'request_changes':
-        await record('request_changes', accepted);
-        return onRequestChanges?.();
-      case 'reject':
-        await record('reject', accepted);
-        return onReject?.();
-      case 'submit_for_review':
-        await record('submit_for_review', accepted);
-        return onSubmitForReview?.();
-    }
+    openConfirm(recommendation.action, true);
   };
+
 
   const canFollow = !!recommendation && available.includes(recommendation.action);
   const requiresNotes = recommendation?.action === 'request_changes' || recommendation?.action === 'reject';
   const disabledFollow = !!disabled || (requiresNotes && !hasNotes);
 
   if (available.length === 0) return null;
+
+  const confirmLabel = pendingAction?.action === 'approve'
+    ? 'Approve & Publish'
+    : pendingAction?.action === 'request_changes'
+    ? 'Request Changes'
+    : pendingAction?.action === 'reject'
+    ? 'Reject'
+    : 'Submit for Review';
 
   return (
     <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
       {/* Primary actions (unchanged behavior) */}
       {available.includes('submit_for_review') && (
         <Button
-          onClick={async () => { await record('submit_for_review', recommendation?.action === 'submit_for_review'); onSubmitForReview?.(); }}
+          onClick={() => openConfirm('submit_for_review', recommendation?.action === 'submit_for_review')}
           disabled={!!disabled}
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
@@ -133,7 +133,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
 
       {available.includes('approve') && (
         <Button
-          onClick={async () => { await record('approve', recommendation?.action === 'approve'); onApprove?.(); }}
+          onClick={() => openConfirm('approve', recommendation?.action === 'approve')}
           disabled={!!disabled}
           className="bg-green-600 hover:bg-green-700 text-white"
         >
@@ -143,7 +143,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
       )}
       {available.includes('request_changes') && (
         <Button
-          onClick={async () => { await record('request_changes', recommendation?.action === 'request_changes'); onRequestChanges?.(); }}
+          onClick={() => openConfirm('request_changes', recommendation?.action === 'request_changes')}
           disabled={!!disabled || !hasNotes}
           variant="outline"
           className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
@@ -153,7 +153,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
       )}
       {available.includes('reject') && (
         <Button
-          onClick={async () => { await record('reject', recommendation?.action === 'reject'); onReject?.(); }}
+          onClick={() => openConfirm('reject', recommendation?.action === 'reject')}
           disabled={!!disabled || !hasNotes}
           variant="destructive"
           className="bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20"
@@ -161,6 +161,48 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           Reject
         </Button>
       )}
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!pendingAction} onOpenChange={(open) => !open && closeConfirm()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingAction?.action === 'approve' && 'Confirm approval'}
+              {pendingAction?.action === 'request_changes' && 'Confirm request for changes'}
+              {pendingAction?.action === 'reject' && 'Confirm rejection'}
+              {pendingAction?.action === 'submit_for_review' && 'Confirm submit for review'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will be recorded. Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeConfirm}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!pendingAction) return;
+                await record(pendingAction.action, pendingAction.accepted);
+                switch (pendingAction.action) {
+                  case 'approve':
+                    onApprove?.();
+                    break;
+                  case 'request_changes':
+                    onRequestChanges?.();
+                    break;
+                  case 'reject':
+                    onReject?.();
+                    break;
+                  case 'submit_for_review':
+                    onSubmitForReview?.();
+                    break;
+                }
+                closeConfirm();
+              }}
+            >
+              {confirmLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
