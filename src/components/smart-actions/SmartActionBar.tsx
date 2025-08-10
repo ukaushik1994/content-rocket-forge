@@ -85,16 +85,17 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
           <Button
             onClick={followRecommendation}
             disabled={disabledFollow}
+            aria-label={recommendation ? `Follow AI: ${recommendation.action.replace('_',' ')} at ${recommendation.confidence}% confidence` : 'Follow AI recommendation'}
             variant="secondary"
             className="inline-flex items-center"
           >
-            <Zap className="mr-2 h-4 w-4" />
+            <Zap className="mr-2 h-4 w-4" aria-hidden="true" />
             Follow AI ({recommendation?.confidence}% )
           </Button>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Info className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Why this recommendation?">
+                <Info className="h-4 w-4" aria-hidden="true" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 text-sm">
@@ -124,9 +125,10 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
         <Button
           onClick={() => openConfirm('submit_for_review', recommendation?.action === 'submit_for_review')}
           disabled={!!disabled}
+          aria-label="Submit content for review"
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
-          <CheckCircle className="mr-2 h-4 w-4" />
+          <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
           Submit for Review
         </Button>
       )}
@@ -135,9 +137,10 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
         <Button
           onClick={() => openConfirm('approve', recommendation?.action === 'approve')}
           disabled={!!disabled}
+          aria-label="Approve and publish content"
           className="bg-green-600 hover:bg-green-700 text-white"
         >
-          <CheckCircle className="mr-2 h-4 w-4" />
+          <CheckCircle className="mr-2 h-4 w-4" aria-hidden="true" />
           Approve & Publish
         </Button>
       )}
@@ -145,6 +148,7 @@ export const SmartActionBar: React.FC<SmartActionBarProps> = ({
         <Button
           onClick={() => openConfirm('request_changes', recommendation?.action === 'request_changes')}
           disabled={!!disabled || !hasNotes}
+          aria-label="Request changes from author"
           variant="outline"
           className="bg-orange-600/10 border-orange-600/30 text-orange-400 hover:bg-orange-600/20"
         >

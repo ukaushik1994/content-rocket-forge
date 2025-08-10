@@ -13,6 +13,8 @@ import { useApproval } from './context/ApprovalContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { saveApprovalSafetyCopy, getApprovalSafetyCopy, clearApprovalSafetyCopy, type SafetyCopy } from '@/services/smart-actions/safetyCopy';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 import { ApprovalAITitleSuggestions } from './ai/ApprovalAITitleSuggestions';
 import { SectionRegenerationTool } from './ai/SectionRegenerationTool';
@@ -67,7 +69,34 @@ useEffect(() => {
     notes: approvalNotes,
   });
 
-
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const id = content.id;
+    queryClient.prefetchQuery({
+      queryKey: ['approval-actions', id],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from('approval_actions_log')
+          .select('id, action, accepted_recommendation, latency_ms, created_at')
+          .eq('content_id', id)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        return data ?? [];
+      },
+    });
+    queryClient.prefetchQuery({
+      queryKey: ['approval-recs', id],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from('approval_recommendations')
+          .select('id, action, confidence, created_at')
+          .eq('content_id', id)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        return data ?? [];
+      },
+    });
+  }, [content.id, queryClient]);
   // Autosave content and title (guarded and stable)
   useEffect(() => {
     // Only autosave when user has actually changed content or title
@@ -89,19 +118,57 @@ useEffect(() => {
     // Intentionally omit updateContentItem from deps to avoid identity-change loops
   }, [editedContent, editedTitle, content.id]);
 
-  // Keyboard shortcut: Save with Cmd/Ctrl+S
+  // Keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')) {
+      const isMeta = e.metaKey || e.ctrlKey;
+      const key = e.key;
+
+      // Save
+      if (isMeta && (key === 's' || key === 'S')) {
+        e.preventDefault();
+        if (!isSubmitting) handleSave();
+        return;
+      }
+
+      // Approve (or Submit when draft)
+      if (isMeta && key === 'Enter') {
         e.preventDefault();
         if (!isSubmitting) {
-          handleSave();
+          if (content.approval_status === 'draft') {
+            handleSubmitForReview();
+          } else {
+            handleApprove();
+          }
         }
+        return;
+      }
+
+      // Request changes
+      if (isMeta && e.shiftKey && (key === 'R' || key === 'r')) {
+        e.preventDefault();
+        if (approvalNotes.trim()) {
+          if (!isSubmitting) handleRequestChanges();
+        } else {
+          toast.error('Please provide specific change requests');
+        }
+        return;
+      }
+
+      // Reject
+      if (isMeta && e.shiftKey && (key === 'X' || key === 'x')) {
+        e.preventDefault();
+        if (approvalNotes.trim()) {
+          if (!isSubmitting) handleReject();
+        } else {
+          toast.error('Please provide a reason for rejection');
+        }
+        return;
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isSubmitting]);
+  }, [isSubmitting, approvalNotes, content.approval_status]);
 
   // Breadcrumb: indicate v2 UI is active
   useEffect(() => {
