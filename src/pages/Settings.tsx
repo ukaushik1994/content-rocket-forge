@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Sparkles } from 'lucide-react';
-import SettingsTopBar from '@/components/settings/SettingsTopBar';
+
 export default function Settings() {
   const { loading } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
@@ -165,10 +165,7 @@ export default function Settings() {
         />
 
         {/* Content container */}
-<div className="relative z-10 container mx-auto px-8 py-16 lg:py-24">
-          <div className="mb-6">
-            <SettingsTopBar />
-          </div>
+        <div className="relative z-10 container mx-auto px-8 py-16 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div 
               variants={itemVariants}

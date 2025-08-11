@@ -15,7 +15,6 @@ export interface PromptTemplate {
 
 interface UserPreferences {
   defaultAiProvider?: 'openrouter' | 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'lmstudio';
-  defaultSerpProvider?: 'serp' | 'serpstack';
   enableAiFallback?: boolean;
   enableAiService?: boolean;
   promptTemplates?: PromptTemplate[];
