@@ -6,8 +6,10 @@ import { useApproval } from './context/ApprovalContext';
 import { ApprovalMetadata } from './ApprovalMetadata';
 import { ApprovalTimeline } from './ApprovalTimeline';
 import { AIReviewAssistant } from './ai/AIReviewAssistant';
-import { SmartApprovalActions } from './ai/SmartApprovalActions';
 import { AnalysisSummary } from './modern/AnalysisSummary';
+import { SmartActionBar } from '@/components/smart-actions/SmartActionBar';
+import { useQueryClient } from '@tanstack/react-query';
+import { prefetchSmartRecommendation } from '@/hooks/approval/useSmartApprovalRecommendation';
 
 interface ContentApprovalSidebarProps {
   contentItems: ContentItemType[];
