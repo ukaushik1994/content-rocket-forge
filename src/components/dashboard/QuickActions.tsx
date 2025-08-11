@@ -10,7 +10,7 @@ import {
   Brain, 
   Swords, 
   BarChart3,
-  Plus,
+  
   ArrowRight,
   Zap,
   TrendingUp
@@ -133,17 +133,7 @@ export const QuickActions = () => {
         <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
           Quick Actions
         </h2>
-        <div className="flex items-center gap-3">
           <TourTrigger variant="inline" size="sm" />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-white/20 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Customize
-          </Button>
-        </div>
       </div>
       
       {/* Actions Grid - Bigger tiles with better spacing */}
