@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { analyzeKeywordSerp } from '@/services/serpApiService';
 
 export interface ContentCluster {
   id: string;
@@ -427,35 +428,12 @@ class ContentStrategyService {
   // SERP Analysis
   async analyzeSERP(keyword: string, location = 'United States'): Promise<any> {
     try {
-      const response = await supabase.functions.invoke('serp-analysis', {
-        body: {
-          keyword,
-          location,
-          language: 'en'
-        }
-      });
-      
-      if (response.error) {
-        throw new Error('SERP analysis failed');
-      }
-      
-      return response.data;
+      const result = await analyzeKeywordSerp(keyword);
+      if (!result) throw new Error('No SERP data');
+      return result;
     } catch (error) {
       console.error('SERP analysis error:', error);
-      // Return mock data for development
-      return {
-        searchVolume: Math.floor(Math.random() * 50000) + 5000,
-        keywordDifficulty: Math.floor(Math.random() * 70) + 20,
-        competitionScore: Math.random() * 0.8 + 0.1,
-        cpc: Math.random() * 3 + 0.5,
-        topResults: Array(5).fill(null).map((_, i) => ({
-          position: i + 1,
-          title: `Top Result ${i + 1} for "${keyword}"`,
-          url: `https://example${i + 1}.com`,
-          snippet: `High-quality content about ${keyword} with detailed information...`
-        })),
-        isMockData: false
-      };
+      throw error;
     }
   }
 

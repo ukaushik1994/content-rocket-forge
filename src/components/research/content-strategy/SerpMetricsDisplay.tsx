@@ -87,14 +87,6 @@ export const SerpMetricsDisplay = ({ metrics }: SerpMetricsDisplayProps) => {
         <div className="text-xs text-gray-500">advertiser competition</div>
       </div>
 
-      {metrics.isMockData && (
-        <div className="col-span-full mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <div className="text-center text-yellow-400 text-sm">
-            ⚠️ This is demo data. Connect your SERP API for real metrics.
-          </div>
-        </div>
-      )}
-
       {/* Top Results Preview */}
       {metrics.topResults && metrics.topResults.length > 0 && (
         <div className="col-span-full mt-4">

@@ -9,6 +9,7 @@ import { Search, Lightbulb, Plus, TrendingUp } from 'lucide-react';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { StrategyWorkflowActions } from '../StrategyWorkflowActions';
 import { toast } from 'sonner';
+import { sendChatRequest } from '@/services/aiService/aiService';
 
 interface ContentGapsTabProps {
   serpMetrics?: any;
@@ -36,17 +37,20 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
     setIsAnalyzing(true);
     try {
       const serpData = await analyzeSERP(keyword);
+      if (!serpData) {
+        throw new Error('No SERP data available');
+      }
       
-      // Generate content gaps based on SERP analysis
-      const gaps = generateContentGaps(serpData);
-      setGapAnalysis({ keyword, gaps, serpData });
+      // Generate content gaps using AI based on SERP analysis
+      const ai = await generateGapsFromAi(serpData);
+      setGapAnalysis({ keyword, gaps: ai.gaps, serpData, opportunityScore: ai.opportunityScore });
       
       // Save the insight
       await saveInsight({
         keyword,
         serp_data: serpData,
-        content_gaps: gaps,
-        opportunity_score: calculateOpportunityScore(gaps),
+        content_gaps: ai.gaps,
+        opportunity_score: ai.opportunityScore ?? undefined,
         last_analyzed: new Date().toISOString()
       });
       
@@ -58,31 +62,23 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
     }
   };
 
-  const generateContentGaps = (serpData: any) => {
-    // Mock implementation - in real app would use AI/analysis
-    const baseGaps = [
-      `How to optimize ${keyword} for beginners`,
-      `Advanced ${keyword} strategies`,
-      `${keyword} vs alternatives comparison`,
-      `Common ${keyword} mistakes to avoid`,
-      `${keyword} best practices 2024`,
-      `Case studies using ${keyword}`,
-      `${keyword} tools and resources`,
-      `${keyword} ROI measurement`
-    ];
-
-    // Add dynamic gaps based on SERP data
-    if (serpData?.topResults) {
-      baseGaps.push(`What ${serpData.topResults.length} top sites miss about ${keyword}`);
+  const generateGapsFromAi = async (serpData: any): Promise<{ gaps: string[]; opportunityScore?: number }> => {
+    const resp = await sendChatRequest('openai', {
+      messages: [
+        { role: 'system', content: 'You are an SEO strategist. Return pure JSON only in the format {"gaps": string[], "opportunity_score": number}.' },
+        { role: 'user', content: `Keyword: ${keyword}\nSummarized SERP data: ${JSON.stringify({ topResults: serpData?.topResults?.slice(0,5), peopleAlsoAsk: serpData?.peopleAlsoAsk?.slice(0,5), relatedSearches: serpData?.relatedSearches?.slice(0,8), entities: serpData?.entities?.slice(0,10) })}\nGenerate 6 concise gap ideas users actually search for.` }
+      ],
+      temperature: 0.2,
+      maxTokens: 800
+    });
+    const content = resp?.choices?.[0]?.message?.content || '{}';
+    try {
+      const parsed = JSON.parse(content);
+      return { gaps: parsed.gaps || [], opportunityScore: parsed.opportunity_score };
+    } catch {
+      return { gaps: [], opportunityScore: undefined };
     }
-
-    return baseGaps.slice(0, 6);
   };
-
-  const calculateOpportunityScore = (gaps: string[]) => {
-    return Math.floor(Math.random() * 40) + 60; // Mock score 60-100
-  };
-
   const toggleGapSelection = (gap: string) => {
     setSelectedGaps(prev => 
       prev.includes(gap) 
@@ -125,7 +121,7 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                   Content Opportunities for "{gapAnalysis.keyword}"
                 </h3>
                 <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                  Opportunity Score: {calculateOpportunityScore(gapAnalysis.gaps)}%
+                  Opportunity Score: {gapAnalysis.opportunityScore != null ? `${Math.round(gapAnalysis.opportunityScore)}%` : '—'}
                 </Badge>
               </div>
 
@@ -149,12 +145,6 @@ export const ContentGapsTab: React.FC<ContentGapsTabProps> = ({ serpMetrics, goa
                             <span className="text-white font-medium">{gap}</span>
                           </div>
                           <div className="flex items-center gap-4 mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              Est. Traffic: {Math.floor(Math.random() * 5000) + 500}/month
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              Difficulty: {Math.floor(Math.random() * 50) + 20}/100
-                            </Badge>
                           </div>
                         </div>
                       </div>

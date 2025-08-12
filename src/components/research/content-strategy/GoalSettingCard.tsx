@@ -72,7 +72,7 @@ export const GoalSettingCard = React.memo(() => {
         opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
       });
       
-      toast.success(data.isMockData ? "Keyword analyzed (demo data)" : "Keyword analyzed successfully!");
+      toast.success("Keyword analyzed successfully!");
       
     } catch (error) {
       console.error('SERP analysis error:', error);

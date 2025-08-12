@@ -89,9 +89,14 @@ async function scanForOpportunities(userId: string, strategiesData?: any) {
     for (const keyword of baseKeywords) {
       if (!keyword) continue
 
-      // Call SERP analysis for each keyword
-      const serpResponse = await supabase.functions.invoke('serp-analysis', {
-        body: { keyword, location: 'United States' }
+      // Call SERP analysis for each keyword using unified API Proxy
+      const serpResponse = await supabase.functions.invoke('api-proxy', {
+        body: { 
+          service: 'serp',
+          endpoint: 'analyze',
+          apiKey: Deno.env.get('SERP_API_KEY') ?? '',
+          params: { keyword, location: 'us', num: 10, device: 'desktop' }
+        }
       })
 
       if (serpResponse.data) {
@@ -145,16 +150,25 @@ async function isViableOpportunity(query: string, settings: any, existingContent
 }
 
 async function createOpportunityRecord(userId: string, strategyId: string, keyword: string, serpData: any, settings: any) {
-  // Calculate opportunity metrics
-  const searchVolume = Math.floor(Math.random() * 5000) + 500 // Mock data
-  const keywordDifficulty = Math.floor(Math.random() * 70) + 10
-  const competitionScore = Math.random() * 0.8 + 0.1
-  const opportunityScore = Math.floor((searchVolume / 100) * (1 - competitionScore) * 100)
+  // Calculate opportunity metrics from SERP data
+  const searchVolume = Number(serpData?.searchVolume) || 0
+  const keywordDifficulty = Number(serpData?.keywordDifficulty) || 0
+  const competitionScore = typeof serpData?.competitionScore === 'number' ? serpData.competitionScore : 0
 
-  // Filter based on user preferences
-  if (searchVolume < settings.min_search_volume || keywordDifficulty > settings.max_keyword_difficulty) {
+  // If we don't have required metrics, skip creating an opportunity
+  if (!searchVolume || !Number.isFinite(keywordDifficulty)) {
     return null
   }
+
+  // Filter based on user preferences
+  if (searchVolume < (settings.min_search_volume ?? 0) || keywordDifficulty > (settings.max_keyword_difficulty ?? 100)) {
+    return null
+  }
+
+  // Compute opportunity score deterministically
+  const ctrBaseline = 0.05 // 5% baseline CTR
+  const estimatedImpressions = Math.round(searchVolume * ctrBaseline)
+  const opportunityScore = Math.max(0, Math.min(1000, Math.round(estimatedImpressions * (1 - competitionScore))))
 
   try {
     const { data, error } = await supabase
@@ -167,8 +181,8 @@ async function createOpportunityRecord(userId: string, strategyId: string, keywo
         keyword_difficulty: keywordDifficulty,
         competition_score: competitionScore,
         opportunity_score: opportunityScore,
-        relevance_score: Math.random() * 0.4 + 0.6, // 0.6-1.0 range
-        content_format: settings.preferred_content_formats[0] || 'blog',
+        relevance_score: Math.max(0, Math.min(1, 1 - competitionScore)),
+        content_format: (settings.preferred_content_formats && settings.preferred_content_formats[0]) || 'blog',
         status: 'new',
         source: 'serp_analysis',
         serp_data: serpData || {},
@@ -180,8 +194,8 @@ async function createOpportunityRecord(userId: string, strategyId: string, keywo
           `How to implement ${keyword}`,
           'Best practices and tips'
         ],
-        is_aio_friendly: Math.random() > 0.5,
-        trend_direction: ['growing', 'stable', 'declining'][Math.floor(Math.random() * 3)],
+        is_aio_friendly: false,
+        trend_direction: 'stable',
         priority: opportunityScore > 500 ? 'high' : opportunityScore > 200 ? 'medium' : 'low'
       })
       .select()
