@@ -30,9 +30,9 @@ interface GenerateParams {
   model?: string;
 }
 
+// Ensure GenerateResult includes optional provider_used/model_used for compatibility
 interface GenerateResult {
   content: string;
-  // Optional fields used by various call sites
   provider_used?: string;
   model_used?: string;
   usage?: {
@@ -323,6 +323,57 @@ class AIServiceController {
     return models[provider] || [];
   }
 
+  /**
+   * Generate content using the best available provider
+   *
+   * Backwards-compatible overloads to support both positional and object params.
+   */
+  static async generate(params: {
+    input: string;
+    use_case: string;
+    temperature?: number;
+    max_tokens?: number;
+    model?: string;
+  }): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string, temperature: number): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string, temperature: number, max_tokens: number): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string, temperature: number, max_tokens: number, model: string): Promise<GenerateResult | null>;
+  static async generate(...args: any[]): Promise<GenerateResult | null> {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Normalize arguments into a single params object
+      let normalized: GenerateParams;
+      if (typeof args[0] === 'string') {
+        const [input, use_case, temperature, max_tokens, model] = args;
+        normalized = { input, use_case, temperature, max_tokens, model };
+      } else {
+        normalized = args[0] as GenerateParams;
+      }
+
+      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          ...normalized,
+          userId: user.id
+        }
+      });
+
+      if (error) {
+        console.error('AI generation error:', error);
+        throw new Error(error.message || 'AI generation failed');
+      }
+
+      return data as GenerateResult;
+    } catch (error) {
+      console.error('Error in generate:', error);
+      throw error;
+    }
+  }
+
   // Update: make addProvider idempotent and show clearer errors
   static async addProvider(params: {
     provider: string;
@@ -493,56 +544,6 @@ class AIServiceController {
   }
 
   /**
-   * Generate content using the best available provider
-   *
-   * Overloads to support legacy callers:
-   * - generate(params)
-   * - generate(input, use_case)
-   * - generate(input, use_case, temperature)
-   * - generate(input, use_case, temperature, max_tokens)
-   * - generate(input, use_case, temperature, max_tokens, model)
-   */
-  static async generate(params: GenerateParams): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string, temperature: number): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string, temperature: number, max_tokens: number): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string, temperature: number, max_tokens: number, model: string): Promise<GenerateResult | null>;
-  static async generate(...args: any[]): Promise<GenerateResult | null> {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Normalize arguments into a single params object
-      let normalized: GenerateParams;
-      if (typeof args[0] === 'string') {
-        const [input, use_case, temperature, max_tokens, model] = args;
-        normalized = { input, use_case, temperature, max_tokens, model };
-      } else {
-        normalized = args[0] as GenerateParams;
-      }
-
-      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
-        body: {
-          ...normalized,
-          userId: user.id
-        }
-      });
-
-      if (error) {
-        console.error('AI generation error:', error);
-        throw new Error(error.message || 'AI generation failed');
-      }
-
-      return data as GenerateResult;
-    } catch (error) {
-      console.error('Error in generate:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Clear provider cache
    */
   static clearCache(): void {
@@ -552,4 +553,3 @@ class AIServiceController {
 }
 
 export default AIServiceController;
-// Note: ProviderInfo interface is already exported above; avoid duplicate re-exports to prevent TS conflicts.
