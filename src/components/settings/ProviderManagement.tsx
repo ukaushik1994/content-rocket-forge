@@ -381,9 +381,9 @@ function AddProviderForm({ onSuccess }: { onSuccess: () => void }) {
       });
       toast.success('Provider added successfully');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to add provider:', error);
-      toast.error('Failed to add provider');
+      toast.error(`Failed to add provider: ${error?.message || 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }

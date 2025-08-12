@@ -1,51 +1,37 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface AIProvider {
-  id: string;
-  provider: string;
-  api_key: string;
-  preferred_model?: string;
-  priority: number;
-  status: 'active' | 'inactive' | 'error';
-  last_verified?: string;
-  error_message?: string;
-  description?: string;
-  setup_url?: string;
-  icon_name?: string;
-  category?: string;
-  capabilities?: string[];
-  available_models?: string[];
-  is_required?: boolean;
-}
+import { AiProvider } from './types';
 
 export interface ProviderInfo {
   id: string;
   name: string;
   description: string;
+  provider: string;
+  status: 'active' | 'error' | 'inactive';
+  priority: number;
+  preferred_model?: string;
+  error_message?: string;
+  last_verified?: string;
+  is_configured: boolean;
+  is_required: boolean;
+  capabilities: string[];
+  setup_url: string;
   icon_name: string;
   category: string;
-  setup_url: string;
-  capabilities: string[];
   available_models: string[];
-  is_required: boolean;
-  status?: 'active' | 'inactive' | 'error';
-  is_configured?: boolean;
-  last_verified?: string;
+  api_key?: string;
 }
 
-export interface AIGenerateRequest {
+interface GenerateParams {
   input: string;
-  use_case: 'title_generation' | 'outline_generation' | 'content_generation' | 'repurpose' | 'chat' | 'strategy';
+  use_case: string;
   temperature?: number;
   max_tokens?: number;
   model?: string;
 }
 
-export interface AIGenerateResponse {
+interface GenerateResult {
   content: string;
-  provider_used: string;
-  model_used: string;
   usage?: {
     prompt_tokens?: number;
     completion_tokens?: number;
@@ -54,142 +40,18 @@ export interface AIGenerateResponse {
 }
 
 class AIServiceController {
-  private static instance: AIServiceController;
-  private providersCache: AIProvider[] = [];
-  private lastCacheUpdate = 0;
-  private readonly CACHE_TTL = 30000; // 30 seconds
-
-  // Provider metadata registry
-  private static readonly PROVIDER_METADATA: Record<string, Omit<ProviderInfo, 'id' | 'status' | 'is_configured' | 'last_verified'>> = {
-    openrouter: {
-      name: 'OpenRouter',
-      description: 'Access multiple AI models through a single API gateway',
-      icon_name: 'brain',
-      category: 'AI Services',
-      setup_url: 'https://openrouter.ai/keys',
-      capabilities: ['chat', 'completion', 'multimodal'],
-      available_models: ['gpt-4.1-2025-04-14', 'claude-opus-4-20250514', 'claude-sonnet-4-20250514'],
-      is_required: false
-    },
-    openai: {
-      name: 'OpenAI',
-      description: 'Advanced AI models for content generation and analysis',
-      icon_name: 'brain',
-      category: 'AI Services',
-      setup_url: 'https://platform.openai.com/api-keys',
-      capabilities: ['chat', 'completion', 'vision', 'embedding'],
-      available_models: ['gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
-      is_required: false
-    },
-    anthropic: {
-      name: 'Anthropic Claude',
-      description: 'Constitutional AI for safe and helpful content creation',
-      icon_name: 'message-square',
-      category: 'AI Services',
-      setup_url: 'https://console.anthropic.com/account/keys',
-      capabilities: ['chat', 'completion', 'vision', 'analysis'],
-      available_models: ['claude-opus-4-20250514', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'],
-      is_required: false
-    },
-    gemini: {
-      name: 'Google Gemini',
-      description: 'Google\'s multimodal AI for diverse content tasks',
-      icon_name: 'brain',
-      category: 'AI Services',
-      setup_url: 'https://aistudio.google.com/app/apikey',
-      capabilities: ['chat', 'completion', 'vision', 'multimodal'],
-      available_models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro-vision'],
-      is_required: false
-    },
-    mistral: {
-      name: 'Mistral AI',
-      description: 'European AI provider with advanced language models',
-      icon_name: 'binary',
-      category: 'AI Services',
-      setup_url: 'https://console.mistral.ai/api-keys/',
-      capabilities: ['chat', 'completion', 'embedding'],
-      available_models: ['mistral-large', 'mistral-medium', 'mistral-small'],
-      is_required: false
-    },
-    lmstudio: {
-      name: 'LM Studio',
-      description: 'Local AI models running on your machine',
-      icon_name: 'server',
-      category: 'AI Services',
-      setup_url: 'https://lmstudio.ai/',
-      capabilities: ['chat', 'completion', 'local'],
-      available_models: ['llama-3.2', 'phi-3', 'codellama'],
-      is_required: false
-    },
-    serp: {
-      name: 'SERP API',
-      description: 'Search Engine Results Page data for SEO analysis',
-      icon_name: 'search',
-      category: 'SEO & Analytics',
-      setup_url: 'https://serpapi.com/manage-api-key',
-      capabilities: ['search', 'seo'],
-      available_models: [],
-      is_required: true
-    },
-    serpstack: {
-      name: 'Serpstack',
-      description: 'Alternative SERP data provider for comprehensive search analysis',
-      icon_name: 'search',
-      category: 'SEO & Analytics',
-      setup_url: 'https://serpstack.com/dashboard',
-      capabilities: ['search', 'seo'],
-      available_models: [],
-      is_required: false
-    }
-  };
-
-  static getInstance(): AIServiceController {
-    if (!AIServiceController.instance) {
-      AIServiceController.instance = new AIServiceController();
-    }
-    return AIServiceController.instance;
-  }
+  private static providerCache: ProviderInfo[] | null = null;
+  private static cacheTimestamp: number = 0;
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   /**
-   * Check if AI service is globally enabled
+   * Get all active providers for the current user
    */
-  async isAIServiceEnabled(): Promise<boolean> {
+  static async getActiveProviders(): Promise<ProviderInfo[]> {
     try {
-      // Dynamic import to avoid circular dependency
-      const { getUserPreference } = await import('@/services/userPreferencesService');
-      
-      // Check user preference (default to true if not set)
-      const isEnabled = getUserPreference('enableAiService');
-      if (isEnabled === false) {
-        return false;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      // AI is enabled if user hasn't disabled it and at least one provider is configured
-      const providers = await this.getActiveProviders();
-      return providers.length > 0;
-    } catch (error) {
-      console.error('Error checking AI service status:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Get active providers sorted by priority
-   */
-  async getActiveProviders(): Promise<AIProvider[]> {
-    const now = Date.now();
-    
-    // Return cached providers if still valid
-    if (this.providersCache.length > 0 && (now - this.lastCacheUpdate) < this.CACHE_TTL) {
-      return this.providersCache;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.warn('User not authenticated for getActiveProviders');
         return [];
       }
 
@@ -201,422 +63,364 @@ class AIServiceController {
         .order('priority', { ascending: true });
 
       if (error) {
-        console.error('Failed to fetch AI providers:', error);
+        console.error('Error fetching active providers:', error);
         return [];
       }
 
-      this.providersCache = (data || []).map(p => ({
-        ...p,
-        status: p.status as 'active' | 'inactive' | 'error',
-        capabilities: Array.isArray(p.capabilities) 
-          ? p.capabilities.filter((item): item is string => typeof item === 'string')
-          : [],
-        available_models: Array.isArray(p.available_models) 
-          ? p.available_models.filter((item): item is string => typeof item === 'string')
-          : []
-      }));
-      this.lastCacheUpdate = now;
-      
-      return this.providersCache;
+      return data?.map(this.mapDatabaseRowToProviderInfo) || [];
     } catch (error) {
-      console.error('Error getting active providers:', error);
+      console.error('Error in getActiveProviders:', error);
       return [];
     }
   }
 
   /**
-   * Get all providers (configured and unconfigured) with metadata
+   * Get all available providers (configured and unconfigured)
    */
-  async getAllProviders(): Promise<ProviderInfo[]> {
+  static async getAllProviders(): Promise<ProviderInfo[]> {
+    const now = Date.now();
+    
+    // Return cached data if still valid
+    if (this.providerCache && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+      return this.providerCache;
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return Object.entries(AIServiceController.PROVIDER_METADATA).map(([id, metadata]) => ({
-          id,
-          ...metadata,
-          status: 'inactive',
-          is_configured: false
-        }));
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.warn('User not authenticated for getAllProviders');
+        return this.getDefaultProviders();
       }
 
-      const { data: configuredProviders, error } = await supabase
+      // Get user's configured providers
+      const { data: userProviders, error } = await supabase
         .from('ai_service_providers')
         .select('*')
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Failed to fetch configured providers:', error);
+        console.error('Error fetching user providers:', error);
+        return this.getDefaultProviders();
       }
 
-      const configuredMap = new Map(
-        (configuredProviders || []).map(p => [p.provider, {
-          ...p,
-          capabilities: Array.isArray(p.capabilities) 
-            ? p.capabilities.filter((item): item is string => typeof item === 'string')
-            : [],
-          available_models: Array.isArray(p.available_models) 
-            ? p.available_models.filter((item): item is string => typeof item === 'string')
-            : []
-        }])
-      );
+      // Merge with default providers
+      const defaultProviders = this.getDefaultProviders();
+      const configuredProviderIds = new Set(userProviders?.map(p => p.provider) || []);
 
-      return Object.entries(AIServiceController.PROVIDER_METADATA).map(([providerId, metadata]) => {
-        const configured = configuredMap.get(providerId);
-        return {
-          id: providerId,
-          ...metadata,
-          status: (configured?.status as 'active' | 'inactive' | 'error') || 'inactive',
-          is_configured: !!configured,
-          last_verified: configured?.last_verified
-        };
-      });
+      const allProviders = [
+        // User's configured providers
+        ...(userProviders?.map(this.mapDatabaseRowToProviderInfo) || []),
+        // Default providers that aren't configured
+        ...defaultProviders.filter(p => !configuredProviderIds.has(p.id))
+      ];
+
+      // Cache the result
+      this.providerCache = allProviders;
+      this.cacheTimestamp = now;
+
+      return allProviders;
     } catch (error) {
-      console.error('Error fetching all providers:', error);
-      return Object.entries(AIServiceController.PROVIDER_METADATA).map(([id, metadata]) => ({
-        id,
-        ...metadata,
+      console.error('Error in getAllProviders:', error);
+      return this.getDefaultProviders();
+    }
+  }
+
+  /**
+   * Get default provider definitions
+   */
+  private static getDefaultProviders(): ProviderInfo[] {
+    return [
+      {
+        id: 'openrouter',
+        name: 'OpenRouter',
+        description: 'Access to multiple AI models through one API',
+        provider: 'openrouter',
         status: 'inactive',
-        is_configured: false
-      }));
-    }
+        priority: 1,
+        is_configured: false,
+        is_required: false,
+        capabilities: ['text-generation', 'chat', 'reasoning'],
+        setup_url: 'https://openrouter.ai/keys',
+        icon_name: 'brain',
+        category: 'ai',
+        available_models: ['gpt-4o-mini', 'claude-3-haiku', 'llama-3.1-8b']
+      },
+      {
+        id: 'anthropic',
+        name: 'Anthropic',
+        description: 'Claude models for reasoning and analysis',
+        provider: 'anthropic',
+        status: 'inactive',
+        priority: 2,
+        is_configured: false,
+        is_required: false,
+        capabilities: ['text-generation', 'chat', 'reasoning'],
+        setup_url: 'https://console.anthropic.com/',
+        icon_name: 'message-square',
+        category: 'ai',
+        available_models: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus']
+      },
+      {
+        id: 'openai',
+        name: 'OpenAI',
+        description: 'GPT models for text generation',
+        provider: 'openai',
+        status: 'inactive',
+        priority: 3,
+        is_configured: false,
+        is_required: false,
+        capabilities: ['text-generation', 'chat', 'reasoning'],
+        setup_url: 'https://platform.openai.com/api-keys',
+        icon_name: 'brain',
+        category: 'ai',
+        available_models: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo']
+      },
+      {
+        id: 'gemini',
+        name: 'Google Gemini',
+        description: 'Google\'s advanced AI models',
+        provider: 'gemini',
+        status: 'inactive',
+        priority: 4,
+        is_configured: false,
+        is_required: false,
+        capabilities: ['text-generation', 'chat', 'reasoning'],
+        setup_url: 'https://makersuite.google.com/app/apikey',
+        icon_name: 'binary',
+        category: 'ai',
+        available_models: ['gemini-pro', 'gemini-pro-vision']
+      },
+      {
+        id: 'mistral',
+        name: 'Mistral AI',
+        description: 'Open and efficient AI models',
+        provider: 'mistral',
+        status: 'inactive',
+        priority: 5,
+        is_configured: false,
+        is_required: false,
+        capabilities: ['text-generation', 'chat'],
+        setup_url: 'https://console.mistral.ai/',
+        icon_name: 'server',
+        category: 'ai',
+        available_models: ['mistral-tiny', 'mistral-small', 'mistral-medium']
+      },
+      {
+        id: 'lmstudio',
+        name: 'LM Studio',
+        description: 'Local AI models via LM Studio',
+        provider: 'lmstudio',
+        status: 'inactive',
+        priority: 6,
+        is_configured: false,
+        is_required: false,
+        capabilities: ['text-generation', 'chat'],
+        setup_url: 'https://lmstudio.ai/',
+        icon_name: 'server',
+        category: 'ai',
+        available_models: []
+      }
+    ];
   }
 
   /**
-   * Get provider metadata by ID
+   * Map database row to ProviderInfo interface
    */
-  getProviderInfo(providerId: string): ProviderInfo | null {
-    const metadata = AIServiceController.PROVIDER_METADATA[providerId];
-    if (!metadata) {
-      return null;
-    }
-
+  private static mapDatabaseRowToProviderInfo(row: any): ProviderInfo {
     return {
-      id: providerId,
-      ...metadata,
-      status: 'inactive',
-      is_configured: false
+      id: row.provider,
+      name: row.name || this.getProviderDisplayName(row.provider),
+      description: row.description || this.getProviderDescription(row.provider),
+      provider: row.provider,
+      status: row.status || 'inactive',
+      priority: row.priority || 999,
+      preferred_model: row.preferred_model,
+      error_message: row.error_message,
+      last_verified: row.last_verified,
+      is_configured: true,
+      is_required: row.is_required || false,
+      capabilities: row.capabilities || this.getProviderCapabilities(row.provider),
+      setup_url: row.setup_url || this.getProviderSetupUrl(row.provider),
+      icon_name: row.icon_name || this.getProviderIcon(row.provider),
+      category: row.category || 'ai',
+      available_models: row.available_models || this.getProviderModels(row.provider),
+      api_key: row.api_key
     };
   }
 
-  /**
-   * Main generation function that handles fallback logic
-   */
-  async generate(
-    useCaseOrRequest: string | AIGenerateRequest,
-    systemPrompt?: string,
-    userPrompt?: string,
-    options?: { temperature?: number; maxTokens?: number }
-  ): Promise<any> {
-    // Handle both old and new signatures
-    let request: AIGenerateRequest;
-    
-    if (typeof useCaseOrRequest === 'string') {
-      // New signature: generate(useCase, systemPrompt, userPrompt, options)
-      request = {
-        input: userPrompt || '',
-        use_case: useCaseOrRequest as any,
-        temperature: options?.temperature,
-        max_tokens: options?.maxTokens
-      };
-    } else {
-      // Old signature: generate(request)
-      request = useCaseOrRequest;
-    }
-    // Check if AI service is globally enabled by user preference
-    const { getUserPreference } = await import('@/services/userPreferencesService');
-    const isServiceEnabled = getUserPreference('enableAiService');
-    
-    if (isServiceEnabled === false) {
-      toast.error('AI service is disabled. Enable it in Settings to use AI features.');
-      return null;
-    }
-
-    const providers = await this.getActiveProviders();
-    if (providers.length === 0) {
-      toast.error('No AI providers configured. Please configure at least one provider in Settings.');
-      return null;
-    }
-
-    const errors: string[] = [];
-
-    // Try each provider in order of priority
-    for (const provider of providers) {
-      try {
-        console.log(`🎯 Attempting to use ${provider.provider} for ${request.use_case}`);
-        
-        const result = await this.callProvider(provider, request, systemPrompt);
-        
-        if (result && result.content) {
-          console.log(`✅ Successfully generated content using ${provider.provider}`);
-          
-          // Update provider status to active if successful
-          await this.updateProviderStatus(provider.id, 'active');
-          
-          return {
-            ...result,
-            provider_used: provider.provider,
-            model_used: provider.preferred_model || this.getDefaultModel(provider.provider)
-          };
-        }
-      } catch (error: any) {
-        console.warn(`❌ Provider ${provider.provider} failed:`, error.message);
-        errors.push(`${provider.provider}: ${error.message}`);
-        
-        // Update provider status to error
-        await this.updateProviderStatus(provider.id, 'error', error.message);
-        
-        continue; // Try next provider
-      }
-    }
-
-    // All providers failed
-    console.error('🚫 All AI providers failed:', errors);
-    toast.error('AI generation failed. All configured providers are currently unavailable.');
-    
-    return null;
-  }
-
-  /**
-   * Call a specific provider
-   */
-  private async callProvider(provider: AIProvider, request: AIGenerateRequest, customSystemPrompt?: string): Promise<any> {
-    try {
-      const systemPrompt = customSystemPrompt || this.getSystemPrompt(request.use_case);
-      
-      const { data, error } = await supabase.functions.invoke('ai-proxy', {
-        body: {
-          provider: provider.provider,
-          endpoint: 'chat',
-          params: {
-            model: request.model || provider.preferred_model || this.getDefaultModel(provider.provider),
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: request.input }
-            ],
-            temperature: request.temperature || 0.7,
-            max_tokens: request.max_tokens || 2000
-          },
-          apiKey: provider.api_key
-        }
-      });
-
-      if (error) {
-        throw new Error(`Edge function error: ${error.message}`);
-      }
-
-      if (!data) {
-        throw new Error('No response from AI proxy');
-      }
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Extract content from response
-      let content = '';
-      if (data.choices && data.choices[0]?.message?.content) {
-        content = data.choices[0].message.content;
-      } else if (data.content) {
-        content = data.content;
-      } else if (typeof data === 'string') {
-        content = data;
-      } else {
-        throw new Error('Unexpected response format from AI provider');
-      }
-
-      return {
-        content,
-        usage: data.usage
-      };
-    } catch (error: any) {
-      console.error(`Error calling ${provider.provider}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update provider status in database
-   */
-  async updateProviderStatus(providerId: string, status: 'active' | 'inactive' | 'error', errorMessage?: string): Promise<void> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('ai_service_providers')
-        .update({ 
-          status, 
-          error_message: errorMessage,
-          last_verified: new Date().toISOString()
-        })
-        .eq('id', providerId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Failed to update provider status:', error);
-      }
-
-      // Clear cache
-      this.clearCache();
-    } catch (error) {
-      console.error('Error updating provider status:', error);
-    }
-  }
-
-  /**
-   * Clear providers cache
-   */
-  clearCache(): void {
-    this.providersCache = [];
-    this.lastCacheUpdate = 0;
-  }
-
-  /**
-   * Get system prompt for specific use case
-   */
-  private getSystemPrompt(useCase: string): string {
-    const prompts = {
-      title_generation: "You are an expert content creator. Generate compelling, SEO-friendly titles that capture attention and accurately represent the content topic.",
-      outline_generation: "You are an expert content strategist. Create detailed, well-structured outlines that provide a clear framework for comprehensive content creation.",
-      content_generation: "You are an expert content writer. Create high-quality, engaging, and informative content that provides value to readers and follows SEO best practices.",
-      repurpose: "You are an expert content repurposing specialist. Transform the given content into the requested format while maintaining key information and adapting the tone appropriately.",
-      chat: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
-      strategy: "You are an expert content strategist. Analyze the given information and provide strategic recommendations for content creation and marketing."
+  private static getProviderDisplayName(provider: string): string {
+    const names: Record<string, string> = {
+      openrouter: 'OpenRouter',
+      anthropic: 'Anthropic',
+      openai: 'OpenAI',
+      gemini: 'Google Gemini',
+      mistral: 'Mistral AI',
+      lmstudio: 'LM Studio'
     };
-
-    return prompts[useCase as keyof typeof prompts] || prompts.chat;
+    return names[provider] || provider;
   }
 
-  /**
-   * Get default model for a provider
-   */
-  getDefaultModel(provider: string): string {
-    const defaults = {
-      openrouter: 'gpt-4.1-2025-04-14',
-      openai: 'gpt-4.1-2025-04-14',
-      anthropic: 'claude-opus-4-20250514',
-      gemini: 'gemini-1.5-pro',
-      mistral: 'mistral-large',
-      lmstudio: 'llama-3.2'
+  private static getProviderDescription(provider: string): string {
+    const descriptions: Record<string, string> = {
+      openrouter: 'Access to multiple AI models through one API',
+      anthropic: 'Claude models for reasoning and analysis',
+      openai: 'GPT models for text generation',
+      gemini: 'Google\'s advanced AI models',
+      mistral: 'Open and efficient AI models',
+      lmstudio: 'Local AI models via LM Studio'
     };
-
-    return defaults[provider as keyof typeof defaults] || 'gpt-4.1-2025-04-14';
+    return descriptions[provider] || 'AI provider';
   }
 
-  /**
-   * Validate provider configuration
-   */
-  async validateProvider(provider: string, apiKey: string, model?: string): Promise<{ valid: boolean; error?: string }> {
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-proxy', {
-        body: {
-          provider,
-          endpoint: 'test',
-          apiKey
-        }
-      });
-
-      if (error) {
-        return { valid: false, error: error.message };
-      }
-
-      if (data && data.valid) {
-        return { valid: true };
-      }
-
-      return { valid: false, error: data?.error || 'Validation failed' };
-    } catch (error: any) {
-      return { valid: false, error: error.message };
-    }
+  private static getProviderCapabilities(provider: string): string[] {
+    const capabilities: Record<string, string[]> = {
+      openrouter: ['text-generation', 'chat', 'reasoning'],
+      anthropic: ['text-generation', 'chat', 'reasoning'],
+      openai: ['text-generation', 'chat', 'reasoning'],
+      gemini: ['text-generation', 'chat', 'reasoning'],
+      mistral: ['text-generation', 'chat'],
+      lmstudio: ['text-generation', 'chat']
+    };
+    return capabilities[provider] || ['text-generation'];
   }
 
-  /**
-   * Test provider connection
-   */
-  async testProvider(provider: string, apiKey: string): Promise<boolean> {
-    const result = await this.validateProvider(provider, apiKey);
-    return result.valid;
+  private static getProviderSetupUrl(provider: string): string {
+    const urls: Record<string, string> = {
+      openrouter: 'https://openrouter.ai/keys',
+      anthropic: 'https://console.anthropic.com/',
+      openai: 'https://platform.openai.com/api-keys',
+      gemini: 'https://makersuite.google.com/app/apikey',
+      mistral: 'https://console.mistral.ai/',
+      lmstudio: 'https://lmstudio.ai/'
+    };
+    return urls[provider] || '#';
   }
 
-  /**
-   * Add a new AI provider with metadata
-   */
-  async addProvider(providerData: {
+  private static getProviderIcon(provider: string): string {
+    const icons: Record<string, string> = {
+      openrouter: 'brain',
+      anthropic: 'message-square',
+      openai: 'brain',
+      gemini: 'binary',
+      mistral: 'server',
+      lmstudio: 'server'
+    };
+    return icons[provider] || 'brain';
+  }
+
+  private static getProviderModels(provider: string): string[] {
+    const models: Record<string, string[]> = {
+      openrouter: ['gpt-4o-mini', 'claude-3-haiku', 'llama-3.1-8b'],
+      anthropic: ['claude-3-haiku', 'claude-3-sonnet', 'claude-3-opus'],
+      openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
+      gemini: ['gemini-pro', 'gemini-pro-vision'],
+      mistral: ['mistral-tiny', 'mistral-small', 'mistral-medium'],
+      lmstudio: []
+    };
+    return models[provider] || [];
+  }
+
+  // Update: make addProvider idempotent and show clearer errors
+  static async addProvider(params: {
     provider: string;
     api_key: string;
     preferred_model?: string;
-    priority: number;
-  }): Promise<void> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+    priority?: number;
+    capabilities?: string[]; // optional passthrough
+    description?: string;    // optional passthrough
+    setup_url?: string;      // optional passthrough
+    icon_name?: string;      // optional passthrough
+    category?: string;       // optional passthrough
+    is_required?: boolean;   // optional passthrough
+    available_models?: string[]; // optional passthrough
+    status?: 'active' | 'inactive' | 'error'; // optional passthrough
+  }) {
+    const provider = params.provider?.trim().toLowerCase();
+    const api_key = params.api_key?.trim();
 
-      const metadata = AIServiceController.PROVIDER_METADATA[providerData.provider];
-      if (!metadata) {
-        throw new Error(`Unknown provider: ${providerData.provider}`);
-      }
-
-      const { error } = await supabase
-        .from('ai_service_providers')
-        .insert({
-          user_id: user.id,
-          provider: providerData.provider,
-          api_key: providerData.api_key,
-          preferred_model: providerData.preferred_model,
-          priority: providerData.priority,
-          status: 'active',
-          description: metadata.description,
-          setup_url: metadata.setup_url,
-          icon_name: metadata.icon_name,
-          category: metadata.category,
-          capabilities: metadata.capabilities,
-          available_models: metadata.available_models,
-          is_required: metadata.is_required
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Clear cache to force refresh
-      this.clearCache();
-    } catch (error) {
-      console.error('Failed to add provider:', error);
-      throw error;
+    if (!provider) {
+      throw new Error('Provider is required');
     }
+    if (!api_key) {
+      throw new Error('API key is required');
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('You must be signed in to add providers');
+    }
+
+    const row = {
+      user_id: user.id,
+      provider,
+      api_key,
+      preferred_model: params.preferred_model || null,
+      priority: params.priority ?? 1,
+      status: params.status ?? 'active',
+      // Optional metadata columns (will be ignored if not present in schema)
+      capabilities: params.capabilities ?? undefined,
+      description: params.description ?? undefined,
+      setup_url: params.setup_url ?? undefined,
+      icon_name: params.icon_name ?? undefined,
+      category: params.category ?? undefined,
+      is_required: params.is_required ?? undefined,
+      available_models: params.available_models ?? undefined,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Use UPSERT on (user_id, provider) to avoid duplicate key errors
+    const { error } = await supabase
+      .from('ai_service_providers')
+      .upsert(row, {
+        onConflict: 'user_id,provider',
+        ignoreDuplicates: false,
+      });
+
+    if (error) {
+      // Bubble up the actual DB error message so UI can show it
+      throw new Error(error.message || 'Failed to save provider');
+    }
+
+    // Clear cache to force refresh
+    this.providerCache = null;
+    this.cacheTimestamp = 0;
+    
+    return true;
   }
 
   /**
    * Update an existing provider
    */
-  async updateProvider(providerId: string, updates: Partial<{
+  static async updateProvider(providerId: string, updates: Partial<{
+    status: string;
     priority: number;
     preferred_model: string;
-    status: string;
-    error_message: string;
+    api_key: string;
   }>): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
         throw new Error('User not authenticated');
       }
 
       const { error } = await supabase
         .from('ai_service_providers')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', providerId)
         .eq('user_id', user.id);
 
       if (error) {
-        throw error;
+        throw new Error(error.message);
       }
 
       // Clear cache
-      this.clearCache();
+      this.providerCache = null;
+      this.cacheTimestamp = 0;
     } catch (error) {
-      console.error('Failed to update provider:', error);
+      console.error('Error updating provider:', error);
       throw error;
     }
   }
@@ -624,10 +428,10 @@ class AIServiceController {
   /**
    * Delete a provider
    */
-  async deleteProvider(providerId: string): Promise<void> {
+  static async deleteProvider(providerId: string): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
         throw new Error('User not authenticated');
       }
 
@@ -638,17 +442,73 @@ class AIServiceController {
         .eq('user_id', user.id);
 
       if (error) {
-        throw error;
+        throw new Error(error.message);
       }
 
       // Clear cache
-      this.clearCache();
+      this.providerCache = null;
+      this.cacheTimestamp = 0;
     } catch (error) {
-      console.error('Failed to delete provider:', error);
+      console.error('Error deleting provider:', error);
       throw error;
     }
   }
+
+  /**
+   * Test a provider's API key
+   */
+  static async testProvider(provider: string, apiKey: string): Promise<boolean> {
+    try {
+      const result = await this.generate({
+        input: 'Test',
+        use_case: 'test',
+        temperature: 0.1,
+        max_tokens: 10
+      });
+      return !!result?.content;
+    } catch (error) {
+      console.error('Provider test failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Generate content using the best available provider
+   */
+  static async generate(params: GenerateParams): Promise<GenerateResult | null> {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+        body: {
+          ...params,
+          userId: user.id
+        }
+      });
+
+      if (error) {
+        console.error('AI generation error:', error);
+        throw new Error(error.message || 'AI generation failed');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in generate:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear provider cache
+   */
+  static clearCache(): void {
+    this.providerCache = null;
+    this.cacheTimestamp = 0;
+  }
 }
 
-// Export singleton instance
-export default AIServiceController.getInstance();
+export default AIServiceController;
+export type { ProviderInfo };

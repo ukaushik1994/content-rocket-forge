@@ -326,9 +326,9 @@ export const EnhancedProviderManagement: React.FC = () => {
 
       toast.success(`${configureProvider.name} configured successfully`);
       await loadProviders();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to configure provider:', error);
-      toast.error('Failed to configure provider');
+      toast.error(`Failed to configure provider: ${error?.message || 'Unknown error'}`);
     }
   };
 
