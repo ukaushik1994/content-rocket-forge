@@ -411,13 +411,6 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 // New AI-first strategy generation (no clusters)
 async function generateAIStrategy(supabase: any, payload: any) {
   const { user_id, goals = {}, location = 'United States' } = payload;
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) {
-    return new Response(
-      JSON.stringify({ error: 'Missing OPENAI_API_KEY secret. Please add it in Supabase secrets.' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
 
   // 1) Fetch minimal user context
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
@@ -426,45 +419,55 @@ async function generateAIStrategy(supabase: any, payload: any) {
     supabase.from('content_items').select('id,title,metadata').eq('user_id', user_id).order('updated_at', { ascending: false }).limit(20),
   ]);
 
-  // 2) Ask AI to propose untapped keywords
-  const keywordPrompt = {
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: 'You are an SEO strategist. Return pure JSON only.' },
-      { role: 'user', content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords. Return JSON: {"keywords":[{"keyword":string,"intent":string}]}.\n\nCompany: ${JSON.stringify(companyInfo || {})}\nSolutions: ${JSON.stringify(solutions || [])}\nRecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}` }
-    ],
-    temperature: 0.3
-  } as const;
-
-  const kwRes = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${openAIApiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(keywordPrompt)
+  // 2) Ask AI (via unified proxy) to propose untapped keywords
+  const kwProxy = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      service: 'openai',
+      endpoint: 'chat',
+      params: {
+        messages: [
+          { role: 'system', content: 'You are an SEO strategist. Return pure JSON only.' },
+          { role: 'user', content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords. Return JSON: {"keywords":[{"keyword":string,"intent":string}]}.\n\nCompany: ${JSON.stringify(companyInfo || {})}\nSolutions: ${JSON.stringify(solutions || [])}\nRecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}` }
+        ],
+        temperature: 0.3,
+        maxTokens: 1200
+      }
+    }
   });
-  const kwJson = await kwRes.json();
-  const kwText = kwJson?.choices?.[0]?.message?.content || '{}';
+
+  if (kwProxy.error) {
+    return new Response(
+      JSON.stringify({ error: kwProxy.error.message || 'AI provider error while proposing keywords' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const kwText = kwProxy.data?.data?.choices?.[0]?.message?.content || '{}';
   let kwList: Array<{ keyword: string; intent?: string }> = [];
   try { kwList = JSON.parse(kwText).keywords || []; } catch { kwList = []; }
-
-  // Fallback if parsing failed
   kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 20);
   if (kwList.length === 0) {
     return new Response(JSON.stringify({ proposals: [], message: 'No keywords proposed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  // 3) Fetch SERP metrics for each keyword (batched)
+  // 3) Fetch SERP metrics for each keyword (via unified SERP proxy)
   const chunk = <T,>(arr: T[], size: number) => arr.reduce((acc: T[][], _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as T[][]);
   const serpMap: Record<string, any> = {};
   for (const group of chunk(kwList, 5)) {
     const results = await Promise.all(group.map(async (k) => {
-      const resp = await supabase.functions.invoke('serp-analysis', { body: { keyword: k.keyword, location, language: 'en' } });
+      const resp = await supabase.functions.invoke('serp-proxy', {
+        body: {
+          endpoint: 'analyze',
+          params: { keyword: k.keyword, location, language: 'en' }
+        }
+      });
       if (resp.error) return { keyword: k.keyword, data: null };
       return { keyword: k.keyword, data: resp.data };
     }));
     for (const r of results) { serpMap[r.keyword] = r.data; }
   }
 
-  // 4) Ask AI to assemble a simple, selectable content strategy (no clusters)
+  // 4) Ask AI (via unified proxy) to assemble the content strategy
   const enriched = kwList.map(k => ({
     keyword: k.keyword,
     intent: k.intent || 'informational',
@@ -476,26 +479,32 @@ async function generateAIStrategy(supabase: any, payload: any) {
     }
   }));
 
-  const strategyPrompt = {
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: 'Return pure JSON only.' },
-      { role: 'user', content: `Create a simple content strategy from these keywords with metrics. Group into 5-8 proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.\n\nGoals: ${JSON.stringify(goals)}\nData: ${JSON.stringify(enriched).slice(0, 12000)}` }
-    ],
-    temperature: 0.2
-  } as const;
-
-  const stratRes = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${openAIApiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(strategyPrompt)
+  const stratProxy = await supabase.functions.invoke('ai-proxy', {
+    body: {
+      service: 'openai',
+      endpoint: 'chat',
+      params: {
+        messages: [
+          { role: 'system', content: 'Return pure JSON only.' },
+          { role: 'user', content: `Create a simple content strategy from these keywords with metrics. Group into 5-8 proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.\n\nGoals: ${JSON.stringify(goals)}\nData: ${JSON.stringify(enriched).slice(0, 12000)}` }
+        ],
+        temperature: 0.2,
+        maxTokens: 2000
+      }
+    }
   });
-  const stratJson = await stratRes.json();
-  const stratText = stratJson?.choices?.[0]?.message?.content || '{}';
+
+  if (stratProxy.error) {
+    return new Response(
+      JSON.stringify({ error: stratProxy.error.message || 'AI provider error while assembling strategy' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const stratText = stratProxy.data?.data?.choices?.[0]?.message?.content || '{}';
   let proposals: any[] = [];
   try { proposals = JSON.parse(stratText).proposals || []; } catch { proposals = []; }
 
-  // Attach serp_data map and estimated_impressions per proposal
   const withSerp = proposals.map((p) => {
     const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
     const estImpr = kws.reduce((sum: number, k: any) => sum + ((serpMap[k.keyword]?.searchVolume || 0) * 0.05), 0);

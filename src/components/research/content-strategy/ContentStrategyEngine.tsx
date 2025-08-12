@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { useToast } from '@/hooks/use-toast';
+import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -31,7 +32,38 @@ export function ContentStrategyEngine({ serpMetrics, goals }: ContentStrategyEng
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const { toast } = useToast();
+const { toast } = useToast();
+
+  // Generation modal state
+  const [showGenModal, setShowGenModal] = useState(false);
+  const [genSteps, setGenSteps] = useState<GenerationStep[]>([
+    { label: 'Preparing company and market context', status: 'pending' },
+    { label: 'Generating candidate keywords (AI)', status: 'pending' },
+    { label: 'Fetching SERP metrics', status: 'pending' },
+    { label: 'Assembling strategy proposals (AI)', status: 'pending' },
+    { label: 'Finalizing', status: 'pending' },
+  ]);
+  const timersRef = useRef<number[]>([] as unknown as number[]);
+
+  const startProgress = () => {
+    setShowGenModal(true);
+    setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i === 0 ? 'active' : 'pending' })));
+    const t1 = window.setTimeout(() => setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i < 1 ? 'done' : i === 1 ? 'active' : 'pending' }))), 600);
+    const t2 = window.setTimeout(() => setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i < 2 ? 'done' : i === 2 ? 'active' : 'pending' }))), 1300);
+    const t3 = window.setTimeout(() => setGenSteps((prev) => prev.map((s, i) => ({ ...s, status: i < 3 ? 'done' : i === 3 ? 'active' : 'pending' }))), 2000);
+    timersRef.current = [t1, t2, t3];
+  };
+
+  const clearTimers = () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [] as unknown as number[];
+  };
+
+  const finishProgress = () => {
+    clearTimers();
+    setGenSteps((prev) => prev.map((s) => ({ ...s, status: 'done' })));
+    window.setTimeout(() => setShowGenModal(false), 700);
+  };
 
   useEffect(() => {
     loadClusters();
@@ -57,12 +89,15 @@ export function ContentStrategyEngine({ serpMetrics, goals }: ContentStrategyEng
 const generateBlueprint = async () => {
   try {
     setGenerating(true);
+    startProgress();
     const result = await contentStrategyService.generateAIStrategy({ goals, location: 'United States' });
     setProposals(result.proposals || []);
     toast({ title: 'Strategy Proposals Ready', description: result.message || 'Select a proposal to continue.' });
+    finishProgress();
   } catch (error) {
     console.error('Error generating AI strategy:', error);
-    toast({ title: 'Error', description: 'Failed to generate AI strategy', variant: 'destructive' });
+    setShowGenModal(false);
+    toast({ title: 'Error', description: (error as any)?.message || 'Failed to generate AI strategy', variant: 'destructive' });
   } finally {
     setGenerating(false);
   }
@@ -479,6 +514,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
     </div>
   </>
 )}
+      <StrategyGenerationModal open={showGenModal} steps={genSteps} onCancel={() => { if (!generating) setShowGenModal(false); }} />
     </div>
   );
 }
