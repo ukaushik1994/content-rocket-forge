@@ -25,8 +25,8 @@ export interface ProviderInfo {
 interface GenerateParams {
   input: string;
   use_case: string;
-  temperature?: number;
-  max_tokens?: number;
+  temperature?: number | string;
+  max_tokens?: number | string;
   model?: string;
 }
 
@@ -326,38 +326,54 @@ class AIServiceController {
   /**
    * Generate content using the best available provider
    *
-   * Backwards-compatible overloads to support both positional and object params.
+   * Tuple-union signature to support both object and positional parameters, with temperature/max_tokens as number|string.
    */
-  static async generate(params: {
-    input: string;
-    use_case: string;
-    temperature?: number;
-    max_tokens?: number;
-    model?: string;
-  }): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string, temperature: number): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string, temperature: number, max_tokens: number): Promise<GenerateResult | null>;
-  static async generate(input: string, use_case: string, temperature: number, max_tokens: number, model: string): Promise<GenerateResult | null>;
-  static async generate(...args: any[]): Promise<GenerateResult | null> {
+  static async generate(
+    ...args:
+      | [GenerateParams]
+      | [string, string]
+      | [string, string, number | string]
+      | [string, string, number | string, number | string]
+      | [string, string, number | string, number | string, string]
+  ): Promise<GenerateResult | null> {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         throw new Error('User not authenticated');
       }
 
-      // Normalize arguments into a single params object
+      // Normalize into a single params object
       let normalized: GenerateParams;
       if (typeof args[0] === 'string') {
-        const [input, use_case, temperature, max_tokens, model] = args;
+        const [input, use_case, temperature, max_tokens, model] = args as [
+          string,
+          string,
+          number | string | undefined,
+          number | string | undefined,
+          string | undefined
+        ];
         normalized = { input, use_case, temperature, max_tokens, model };
       } else {
         normalized = args[0] as GenerateParams;
       }
 
+      // Coerce numeric-like strings to numbers
+      const tempNum =
+        normalized.temperature !== undefined && normalized.temperature !== null
+          ? Number(normalized.temperature as number | string)
+          : undefined;
+      const maxNum =
+        normalized.max_tokens !== undefined && normalized.max_tokens !== null
+          ? Number(normalized.max_tokens as number | string)
+          : undefined;
+
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
-          ...normalized,
+          input: normalized.input,
+          use_case: normalized.use_case,
+          temperature: tempNum,
+          max_tokens: maxNum,
+          model: normalized.model,
           userId: user.id
         }
       });
