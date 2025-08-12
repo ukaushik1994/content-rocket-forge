@@ -6,12 +6,16 @@ import { ROICalculator } from './performance/ROICalculator';
 import { StrategyProgressTracker } from './StrategyProgressTracker';
 import { GlassCard } from '@/components/ui/GlassCard';
 
-import { useContentStrategy } from '@/contexts/ContentStrategyContext';
+import { useContentStrategyOptional } from '@/contexts/ContentStrategyContext';
 import { Lightbulb, LayoutDashboard, BarChart2, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const StrategyTabs = React.memo(() => {
-  const { currentStrategy, insights, calendarItems, pipelineItems } = useContentStrategy();
+  const ctx = useContentStrategyOptional();
+  if (!ctx) {
+    return null;
+  }
+  const { currentStrategy, insights, calendarItems, pipelineItems } = ctx;
   
   // Memoize expensive calculations
   const serpMetrics = React.useMemo(() => 

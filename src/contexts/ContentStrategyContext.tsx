@@ -49,7 +49,7 @@ interface ContentStrategyContextType {
   refreshData: () => Promise<void>;
 }
 
-const ContentStrategyContext = createContext<ContentStrategyContextType | undefined>(undefined);
+export const ContentStrategyContext = createContext<ContentStrategyContextType | undefined>(undefined);
 
 export const ContentStrategyProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
@@ -281,4 +281,8 @@ export const useContentStrategy = () => {
     throw new Error('useContentStrategy must be used within a ContentStrategyProvider');
   }
   return context;
+};
+
+export const useContentStrategyOptional = () => {
+  return useContext(ContentStrategyContext);
 };
