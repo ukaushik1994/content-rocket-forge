@@ -190,10 +190,10 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
       <CardContent className="space-y-4">
         {/* Traffic Estimation */}
         <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg border border-border/30">
-          <TrendingUp className="h-5 w-5 text-green-600" />
+          <TrendingUp className="h-5 w-5 text-primary" />
           <div>
             <div className="text-sm font-medium">Estimated Monthly Traffic</div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-primary">
               {cluster.estimated_traffic.toLocaleString()}
             </div>
           </div>
@@ -217,7 +217,7 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
 
         {/* Timeline */}
         <div className="flex items-center gap-2 text-sm">
-          <Calendar className="h-4 w-4 text-blue-500" />
+          <Calendar className="h-4 w-4 text-primary" />
           <span>Suggested Timeline: {cluster.timeframe_weeks} weeks</span>
         </div>
 
@@ -267,12 +267,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
               <Eye className="h-4 w-4" />
             </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => deleteCluster(cluster.id)}
-              className="text-red-600 hover:text-red-700"
-            >
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => deleteCluster(cluster.id)}
+                className="text-destructive"
+              >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -382,23 +382,23 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{clusters.length}</div>
+              <div className="text-2xl font-bold text-primary">{clusters.length}</div>
               <div className="text-sm text-muted-foreground">Content Clusters</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-primary">
                 {clusters.reduce((sum, c) => sum + c.estimated_traffic, 0).toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground">Est. Monthly Traffic</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-primary">
                 {clusters.reduce((sum, c) => sum + Object.values(c.suggested_assets).reduce((a: number, b: number) => a + b, 0), 0)}
               </div>
               <div className="text-sm text-muted-foreground">Suggested Assets</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-primary">
                 {Math.round(clusters.reduce((sum, c) => sum + c.timeframe_weeks, 0) / clusters.length)}
               </div>
               <div className="text-sm text-muted-foreground">Avg Weeks</div>

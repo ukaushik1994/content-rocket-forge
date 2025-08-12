@@ -555,15 +555,15 @@ class ContentStrategyService {
   getPriorityTagColor(tag: string): string {
     switch (tag) {
       case 'quick_win':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-primary bg-primary/10 border-border';
       case 'high_return':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
+        return 'text-foreground bg-muted/30 border-border';
       case 'evergreen':
-        return 'text-purple-600 bg-purple-50 border-purple-200';
+        return 'text-muted-foreground bg-muted/50 border-border';
       case 'low_priority':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-muted-foreground bg-muted/30 border-border';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-muted-foreground bg-muted/30 border-border';
     }
   }
 
@@ -585,13 +585,13 @@ class ContentStrategyService {
   getStatusColor(status: string): string {
     switch (status) {
       case 'new':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-primary bg-primary/10';
       case 'in_progress':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'text-foreground bg-muted/30';
       case 'published':
-        return 'text-green-600 bg-green-50';
+        return 'text-foreground bg-muted/20';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-muted-foreground bg-muted/30';
     }
   }
 
