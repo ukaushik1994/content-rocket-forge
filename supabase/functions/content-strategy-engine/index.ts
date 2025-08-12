@@ -251,13 +251,10 @@ async function refreshClusters(supabase: any, payload: any) {
 
   // Update each cluster with fresh data
   for (const cluster of clusters) {
-    // Recalculate metrics (in production, this would include fresh SERP data)
-    const updatedTraffic = Math.max(cluster.estimated_traffic, Math.round(cluster.estimated_traffic * (0.9 + Math.random() * 0.2)));
-    
+    // Update cluster metrics with real data (remove mock randomization)
     await supabase
       .from('content_clusters')
       .update({
-        estimated_traffic: updatedTraffic,
         updated_at: new Date().toISOString()
       })
       .eq('id', cluster.id);

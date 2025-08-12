@@ -37,10 +37,10 @@ serve(async (req) => {
 
         if (serpstackData.organic_results) {
           serpData = {
-            searchVolume: Math.floor(Math.random() * 50000) + 5000, // Mock data as SerpStack doesn't provide volume
-            keywordDifficulty: Math.floor(Math.random() * 70) + 20,
-            competitionScore: Math.random() * 0.8 + 0.1,
-            cpc: Math.random() * 3 + 0.5,
+            searchVolume: 0, // SerpStack doesn't provide volume data
+            keywordDifficulty: 0,
+            competitionScore: 0,
+            cpc: 0,
             topResults: serpstackData.organic_results.slice(0, 10).map((result: any, index: number) => ({
               position: index + 1,
               title: result.title,
@@ -57,24 +57,18 @@ serve(async (req) => {
       }
     }
 
-    // Fallback to mock data if no API key or API fails
+    // Return error if no SERP data could be retrieved
     if (!serpData) {
-      serpData = {
-        searchVolume: Math.floor(Math.random() * 50000) + 5000,
-        keywordDifficulty: Math.floor(Math.random() * 70) + 20,
-        competitionScore: Math.random() * 0.8 + 0.1,
-        cpc: Math.random() * 3 + 0.5,
-        topResults: Array(10).fill(null).map((_, i) => ({
-          position: i + 1,
-          title: `Top Result ${i + 1} for "${keyword}"`,
-          url: `https://example${i + 1}.com`,
-          snippet: `High-quality content about ${keyword} with detailed information and insights...`,
-          domain: `example${i + 1}.com`
-        })),
-        totalResults: Math.floor(Math.random() * 1000000) + 100000,
-        isMockData: true,
-        provider: 'mock'
-      }
+      return new Response(
+        JSON.stringify({ 
+          error: 'SERP data unavailable',
+          details: 'Please configure your SERP API key in Settings to get real search data'
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Cache the result
