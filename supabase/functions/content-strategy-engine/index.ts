@@ -420,14 +420,18 @@ async function generateAIStrategy(supabase: any, payload: any) {
   ]);
 
   // 2) Ask AI (via unified proxy) to propose untapped keywords
-  const kwProxy = await supabase.functions.invoke('ai-proxy', {
+  const kwProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      service: 'openai',
+      provider: 'openai',
       endpoint: 'chat',
       params: {
         messages: [
           { role: 'system', content: 'You are an SEO strategist. Return pure JSON only.' },
-          { role: 'user', content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords. Return JSON: {"keywords":[{"keyword":string,"intent":string}]}.\n\nCompany: ${JSON.stringify(companyInfo || {})}\nSolutions: ${JSON.stringify(solutions || [])}\nRecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}` }
+          { role: 'user', content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords. Return JSON: {"keywords":[{"keyword":string,"intent":string}]}.
+
+Company: ${JSON.stringify(companyInfo || {})}
+Solutions: ${JSON.stringify(solutions || [])}
+RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}` }
         ],
         temperature: 0.3,
         maxTokens: 1200
@@ -455,12 +459,13 @@ async function generateAIStrategy(supabase: any, payload: any) {
   const serpMap: Record<string, any> = {};
   for (const group of chunk(kwList, 5)) {
     const results = await Promise.all(group.map(async (k) => {
-      const resp = await supabase.functions.invoke('serp-proxy', {
-        body: {
-          endpoint: 'analyze',
-          params: { keyword: k.keyword, location, language: 'en' }
-        }
-      });
+        const resp = await supabase.functions.invoke('api-proxy', {
+          body: {
+            provider: 'serp',
+            endpoint: 'analyze',
+            params: { keyword: k.keyword, location, language: 'en' }
+          }
+        });
       if (resp.error) return { keyword: k.keyword, data: null };
       return { keyword: k.keyword, data: resp.data };
     }));
@@ -479,14 +484,17 @@ async function generateAIStrategy(supabase: any, payload: any) {
     }
   }));
 
-  const stratProxy = await supabase.functions.invoke('ai-proxy', {
+  const stratProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      service: 'openai',
+      provider: 'openai',
       endpoint: 'chat',
       params: {
         messages: [
           { role: 'system', content: 'Return pure JSON only.' },
-          { role: 'user', content: `Create a simple content strategy from these keywords with metrics. Group into 5-8 proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.\n\nGoals: ${JSON.stringify(goals)}\nData: ${JSON.stringify(enriched).slice(0, 12000)}` }
+          { role: 'user', content: `Create a simple content strategy from these keywords with metrics. Group into 5-8 proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.
+
+Goals: ${JSON.stringify(goals)}
+Data: ${JSON.stringify(enriched).slice(0, 12000)}` }
         ],
         temperature: 0.2,
         maxTokens: 2000
