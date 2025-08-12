@@ -10,10 +10,32 @@ const ContentBuilderPage = () => {
   const location = useLocation();
   const preloadData = location.state;
 
+  // Support handoff from Strategy Engine via sessionStorage
+  let payload: any = null;
+  try {
+    const payloadStr = typeof window !== 'undefined' ? sessionStorage.getItem('contentBuilderPayload') : null;
+    if (payloadStr) {
+      payload = JSON.parse(payloadStr);
+      // Clear after reading to avoid stale reuse
+      sessionStorage.removeItem('contentBuilderPayload');
+    }
+  } catch {}
+
+  // Derive initial props from payload with safe fallbacks
+  const initialKeyword = payload?.primary_keyword || payload?.main_keyword || payload?.keyword || preloadData?.mainKeyword;
+  const selectedKeywords = Array.isArray(payload?.keywords)
+    ? payload.keywords.map((k: any) => (typeof k === 'string' ? k : k.kw || k.keyword)).filter(Boolean)
+    : preloadData?.selectedKeywords;
+  const locationPref = payload?.location || preloadData?.location;
+  const serpData = payload?.serp_data || null;
+  const initialStep = typeof payload?.initial_step === 'number' ? payload.initial_step : preloadData?.step;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
         <title>Content Builder | SEO Platform</title>
+        <meta name="description" content={initialKeyword ? `Build content for ${initialKeyword} with SERP-aware outline and SEO.` : 'AI-powered content builder with SERP analysis and SEO optimization.'} />
+        <link rel="canonical" href={typeof window !== 'undefined' ? `${window.location.origin}/content-builder` : '/content-builder'} />
       </Helmet>
       
       <Navbar />
@@ -21,11 +43,11 @@ const ContentBuilderPage = () => {
       <main className="flex-1 py-8">
         <ContentBuilderProvider>
           <ContentBuilder 
-            initialKeyword={preloadData?.mainKeyword}
-            selectedKeywords={preloadData?.selectedKeywords}
-            location={preloadData?.location}
-            serpData={preloadData?.serpData}
-            initialStep={preloadData?.step}
+            initialKeyword={initialKeyword}
+            selectedKeywords={selectedKeywords}
+            location={locationPref}
+            serpData={serpData}
+            initialStep={initialStep}
           />
         </ContentBuilderProvider>
       </main>
