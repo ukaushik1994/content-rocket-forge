@@ -1,512 +1,437 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Brain, 
-  MessageSquare, 
-  Binary, 
-  Server, 
-  Search, 
-  Plus,
-  Settings,
-  CheckCircle2,
-  AlertCircle,
-  XCircle,
-  RefreshCw,
-  ExternalLink,
-  Trash2,
-  ArrowUp,
-  ArrowDown,
-  TestTube
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertCircle, ArrowUp, ArrowDown, Settings2, TestTube, Plus, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { toast } from 'sonner';
-import AIServiceController, { ProviderInfo } from '@/services/aiService/AIServiceController';
 
 interface Provider {
   id: string;
-  name: string;
-  description: string;
   provider: string;
+  api_key: string;
   status: 'active' | 'error' | 'inactive';
   priority: number;
   preferred_model?: string;
   error_message?: string;
   last_verified?: string;
-  is_configured: boolean;
-  is_required: boolean;
-  capabilities: string[];
-  setup_url: string;
-  icon_name: string;
-  category: string;
-  available_models: string[];
-  api_key: string;
 }
 
-const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  brain: Brain,
-  'message-square': MessageSquare,
-  binary: Binary,
-  server: Server,
-  search: Search
+const PROVIDER_INFO = {
+  openrouter: { name: 'OpenRouter', description: 'Access to multiple AI models through one API' },
+  anthropic: { name: 'Anthropic', description: 'Claude models for reasoning and analysis' },
+  gemini: { name: 'Google Gemini', description: 'Googles advanced AI models' },
+  mistral: { name: 'Mistral AI', description: 'Open and efficient AI models' },
+  openai: { name: 'OpenAI', description: 'GPT models for text generation' },
+  lmstudio: { name: 'LM Studio', description: 'Local AI models via LM Studio' }
 };
 
-interface ProviderCardProps {
-  provider: ProviderInfo;
-  onConfigure: () => void;
-  onTest: () => void;
-  onToggle: () => void;
-  onDelete?: () => void;
-  onPriorityChange?: (direction: 'up' | 'down') => void;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
-}
-
-const ProviderCard: React.FC<ProviderCardProps> = ({
-  provider,
-  onConfigure,
-  onTest,
-  onToggle,
-  onDelete,
-  onPriorityChange,
-  canMoveUp,
-  canMoveDown
-}) => {
-  const IconComponent = ICON_MAP[provider.icon_name] || Brain;
-  
-  const getStatusColor = () => {
-    switch (provider.status) {
-      case 'active': return 'border-green-500/40 bg-green-500/5';
-      case 'error': return 'border-red-500/40 bg-red-500/5';
-      default: return 'border-border/50 bg-background/50';
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (provider.status) {
-      case 'active': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'error': return <XCircle className="h-4 w-4 text-red-500" />;
-      default: return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Card className={`transition-all duration-300 ${getStatusColor()}`}>
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-background/50 border border-border/30">
-                <IconComponent className="h-5 w-5 text-foreground/80" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-sm">{provider.name}</h4>
-                  {provider.is_required && (
-                    <Badge variant="outline" className="text-xs border-primary/30 text-primary">
-                      Required
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {provider.description}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon()}
-              <Switch 
-                checked={provider.is_configured} 
-                onCheckedChange={onToggle}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {provider.category}
-              </Badge>
-              {provider.capabilities.length > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  {provider.capabilities.slice(0, 2).join(', ')}
-                  {provider.capabilities.length > 2 && ` +${provider.capabilities.length - 2}`}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-1">
-              {provider.is_configured && onPriorityChange && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onPriorityChange('up')}
-                    disabled={!canMoveUp}
-                    className="h-7 w-7 p-0"
-                  >
-                    <ArrowUp className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onPriorityChange('down')}
-                    disabled={!canMoveDown}
-                    className="h-7 w-7 p-0"
-                  >
-                    <ArrowDown className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
-              
-              {provider.is_configured && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={onTest}
-                  className="h-7 w-7 p-0"
-                >
-                  <TestTube className="h-3 w-3" />
-                </Button>
-              )}
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onConfigure}
-                className="h-7 text-xs px-2"
-              >
-                {provider.is_configured ? 'Configure' : 'Setup'}
-                <Settings className="h-3 w-3 ml-1" />
-              </Button>
-              
-              {provider.is_configured && onDelete && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={onDelete}
-                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
-
-interface ConfigureProviderDialogProps {
-  provider: ProviderInfo | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: { apiKey: string; model?: string }) => void;
-}
-
-const ConfigureProviderDialog: React.FC<ConfigureProviderDialogProps> = ({
-  provider,
-  isOpen,
-  onClose,
-  onSave
-}) => {
-  const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('');
-
-  const handleSave = () => {
-    if (!apiKey.trim()) {
-      toast.error('API key is required');
-      return;
-    }
-    
-    onSave({ apiKey: apiKey.trim(), model: selectedModel || undefined });
-    setApiKey('');
-    setSelectedModel('');
-    onClose();
-  };
-
-  if (!provider) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {React.createElement(ICON_MAP[provider.icon_name] || Brain, { className: "h-5 w-5" })}
-            Configure {provider.name}
-          </DialogTitle>
-          <DialogDescription>
-            {provider.description}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="api-key">API Key</Label>
-            <Input
-              id="api-key"
-              type="password"
-              placeholder="Enter your API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Get your API key from{' '}
-              <a 
-                href={provider.setup_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-center gap-1"
-              >
-                {provider.name} dashboard
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </p>
-          </div>
-
-          {provider.available_models.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="model">Preferred Model (Optional)</Label>
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {provider.available_models.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              Save Configuration
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const ProviderManagement: React.FC = () => {
-  // Fix state type to match controller return shape
-  const [providers, setProviders] = useState<ProviderInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+export function ProviderManagement() {
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [testingAll, setTestingAll] = useState(false);
+  const [bulkEnabled, setBulkEnabled] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const allProviders = await AIServiceController.getAllProviders();
-      setProviders(allProviders);
-      setLoading(false);
-    };
-    load();
+    loadProviders();
   }, []);
-
-  const [configureProvider, setConfigureProvider] = useState<ProviderInfo | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
 
   const loadProviders = async () => {
     try {
-      setLoading(true);
-      const allProviders = await AIServiceController.getAllProviders();
-      setProviders(allProviders);
+      const activeProviders = await AIServiceController.getActiveProviders();
+      setProviders(activeProviders);
     } catch (error) {
       console.error('Failed to load providers:', error);
-      toast.error('Failed to load providers');
+      toast.error('Failed to load AI providers');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleProviderSave = async (providerData: { apiKey: string; model?: string }) => {
-    if (!configureProvider) return;
+  const handlePriorityChange = async (providerId: string, direction: 'up' | 'down') => {
+    const currentIndex = providers.findIndex(p => p.id === providerId);
+    if (currentIndex === -1) return;
+
+    const newProviders = [...providers];
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (targetIndex < 0 || targetIndex >= newProviders.length) return;
+
+    // Swap priorities
+    const temp = newProviders[currentIndex].priority;
+    newProviders[currentIndex].priority = newProviders[targetIndex].priority;
+    newProviders[targetIndex].priority = temp;
+
+    // Swap positions
+    [newProviders[currentIndex], newProviders[targetIndex]] = 
+    [newProviders[targetIndex], newProviders[currentIndex]];
+
+    setProviders(newProviders);
 
     try {
-      const configuredProviders = providers.filter(p => p.is_configured);
-      const priority = configuredProviders.length + 1;
-
-      await AIServiceController.addProvider({
-        provider: configureProvider.id,
-        api_key: providerData.apiKey,
-        preferred_model: providerData.model,
-        priority
-      });
-
-      toast.success(`${configureProvider.name} configured successfully`);
-      await loadProviders();
-    } catch (error: any) {
-      console.error('Failed to configure provider:', error);
-      toast.error(`Failed to configure provider: ${error?.message || 'Unknown error'}`);
+      // Update in database
+      await Promise.all([
+        AIServiceController.updateProvider(newProviders[targetIndex].id, {
+          priority: newProviders[targetIndex].priority
+        }),
+        AIServiceController.updateProvider(newProviders[currentIndex].id, {
+          priority: newProviders[currentIndex].priority
+        })
+      ]);
+      toast.success('Provider priority updated');
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      toast.error('Failed to update provider priority');
+      loadProviders(); // Reload on error
     }
   };
 
-  const handleProviderTest = async (provider: ProviderInfo) => {
+  const handleTestProvider = async (provider: Provider) => {
+    setTestingProvider(provider.id);
     try {
-      const success = await AIServiceController.testProvider(provider.id, '');
+      const success = await AIServiceController.testProvider(provider.provider, provider.api_key);
       if (success) {
-        toast.success(`${provider.name} is working correctly`);
+        toast.success(`${PROVIDER_INFO[provider.provider]?.name} test successful`);
+        // Update provider status
+        setProviders(prev => prev.map(p => 
+          p.id === provider.id 
+            ? { ...p, status: 'active', error_message: undefined, last_verified: new Date().toISOString() }
+            : p
+        ));
       } else {
-        toast.error(`${provider.name} test failed`);
+        toast.error(`${PROVIDER_INFO[provider.provider]?.name} test failed`);
       }
     } catch (error) {
-      toast.error(`Failed to test ${provider.name}`);
+      console.error('Provider test failed:', error);
+      toast.error(`${PROVIDER_INFO[provider.provider]?.name} test failed: ${error.message}`);
+      // Update provider status with error
+      setProviders(prev => prev.map(p => 
+        p.id === provider.id 
+          ? { ...p, status: 'error', error_message: error.message }
+          : p
+      ));
+    } finally {
+      setTestingProvider(null);
     }
   };
 
-  const handleProviderToggle = async (provider: ProviderInfo) => {
-    if (provider.is_configured) {
-      // Remove provider
-      try {
-        // This would need to be implemented in AIServiceController
-        toast.info('Provider removal not yet implemented');
-      } catch (error) {
-        toast.error('Failed to remove provider');
-      }
-    } else {
-      // Configure provider
-      setConfigureProvider(provider);
+  const handleDeleteProvider = async (providerId: string) => {
+    try {
+      await AIServiceController.deleteProvider(providerId);
+      setProviders(prev => prev.filter(p => p.id !== providerId));
+      toast.success('Provider deleted');
+    } catch (error) {
+      console.error('Failed to delete provider:', error);
+      toast.error('Failed to delete provider');
     }
   };
 
-  const categories = ['all', ...Array.from(new Set(providers.map(p => p.category)))];
-  
-  const filteredProviders = providers.filter(provider => {
-    const matchesSearch = provider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         provider.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'all' || provider.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleTestAllProviders = async () => {
+    if (providers.length === 0) return;
+    
+    setTestingAll(true);
+    try {
+      const results = await Promise.allSettled(
+        providers.map(provider => 
+          AIServiceController.testProvider(provider.provider, provider.api_key)
+            .then(success => ({ id: provider.id, success, provider: provider.provider }))
+        )
+      );
 
-  const configuredProviders = filteredProviders.filter(p => p.is_configured);
-  const availableProviders = filteredProviders.filter(p => !p.is_configured);
+      let successCount = 0;
+      const updatedProviders = [...providers];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-6 w-6 animate-spin" />
-      </div>
-    );
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const { id, success, provider: providerName } = result.value;
+          const providerIndex = updatedProviders.findIndex(p => p.id === id);
+          if (providerIndex !== -1) {
+            if (success) {
+              successCount++;
+              updatedProviders[providerIndex] = {
+                ...updatedProviders[providerIndex],
+                status: 'active',
+                error_message: undefined,
+                last_verified: new Date().toISOString()
+              };
+            } else {
+              updatedProviders[providerIndex] = {
+                ...updatedProviders[providerIndex],
+                status: 'error',
+                error_message: 'Test failed'
+              };
+            }
+          }
+        }
+      });
+
+      setProviders(updatedProviders);
+      toast.success(`Tested ${providers.length} providers. ${successCount} working.`);
+    } catch (error) {
+      console.error('Bulk test failed:', error);
+      toast.error('Failed to test providers');
+    } finally {
+      setTestingAll(false);
+    }
+  };
+
+  const handleToggleAllProviders = async (enabled: boolean) => {
+    try {
+      const updates = providers.map(provider => 
+        AIServiceController.updateProvider(provider.id, { status: enabled ? 'active' : 'inactive' })
+      );
+      await Promise.all(updates);
+      
+      setProviders(prev => prev.map(p => ({ ...p, status: enabled ? 'active' : 'inactive' })));
+      setBulkEnabled(enabled);
+      toast.success(`All providers ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to toggle providers:', error);
+      toast.error('Failed to update providers');
+    }
+  };
+
+  const getStatusBadge = (provider: Provider) => {
+    switch (provider.status) {
+      case 'active':
+        return <Badge variant="default" className="bg-success text-success-foreground">Active</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Error</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">Inactive</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Loading providers...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search and Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Search providers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5" />
+            AI Provider Management
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {providers.length > 0 && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleTestAllProviders}
+                  disabled={testingAll}
+                >
+                  <TestTube className="h-4 w-4 mr-2" />
+                  {testingAll ? 'Testing All...' : 'Test All'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleToggleAllProviders(!bulkEnabled)}
+                >
+                  {bulkEnabled ? 'Disable All' : 'Enable All'}
+                </Button>
+              </>
+            )}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Provider
+                </Button>
+               </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add AI Provider</DialogTitle>
+                  <DialogDescription>
+                    Configure a new AI provider with API key and priority.
+                  </DialogDescription>
+                </DialogHeader>
+                <AddProviderForm onSuccess={() => {
+                  setIsAddModalOpen(false);
+                  loadProviders();
+                }} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        <Button onClick={loadProviders} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {providers.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+            <p>No AI providers configured</p>
+            <p className="text-sm">Add a provider to get started</p>
+          </div>
+        ) : (
+          providers.map((provider, index) => (
+            <motion.div
+              key={provider.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePriorityChange(provider.id, 'up')}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <span className="text-sm font-medium bg-muted px-2 py-1 rounded">
+                          {provider.priority}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePriorityChange(provider.id, 'down')}
+                          disabled={index === providers.length - 1}
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold">
+                          {PROVIDER_INFO[provider.provider]?.name || provider.provider}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {PROVIDER_INFO[provider.provider]?.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getStatusBadge(provider)}
+                          {provider.preferred_model && (
+                            <Badge variant="outline">{provider.preferred_model}</Badge>
+                          )}
+                          {provider.last_verified && (
+                            <span className="text-xs text-muted-foreground">
+                              Last verified: {new Date(provider.last_verified).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        {provider.error_message && (
+                          <p className="text-xs text-destructive mt-1">{provider.error_message}</p>
+                        )}
+                      </div>
+                    </div>
 
-      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          {categories.map(category => (
-            <TabsTrigger key={category} value={category} className="capitalize">
-              {category === 'all' ? 'All' : category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {categories.map(category => (
-          <TabsContent key={category} value={category} className="space-y-6">
-            {/* Configured Providers */}
-            {configuredProviders.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Configured Providers</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <AnimatePresence>
-                    {configuredProviders.map((provider, index) => (
-                      <ProviderCard
-                        key={provider.id}
-                        provider={provider}
-                        onConfigure={() => setConfigureProvider(provider)}
-                        onTest={() => handleProviderTest(provider)}
-                        onToggle={() => handleProviderToggle(provider)}
-                        canMoveUp={index > 0}
-                        canMoveDown={index < configuredProviders.length - 1}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            )}
-
-            {/* Available Providers */}
-            {availableProviders.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Available Providers</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <AnimatePresence>
-                    {availableProviders.map((provider) => (
-                      <ProviderCard
-                        key={provider.id}
-                        provider={provider}
-                        onConfigure={() => setConfigureProvider(provider)}
-                        onTest={() => handleProviderTest(provider)}
-                        onToggle={() => handleProviderToggle(provider)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            )}
-
-            {filteredProviders.length === 0 && (
-              <Card className="border-dashed">
-                <CardContent className="p-8 text-center">
-                  <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-lg font-medium">No providers found</p>
-                  <p className="text-sm text-muted-foreground">
-                    Try adjusting your search or category filters
-                  </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestProvider(provider)}
+                        disabled={testingProvider === provider.id}
+                      >
+                        <TestTube className="h-3 w-3 mr-1" />
+                        {testingProvider === provider.id ? 'Testing...' : 'Test'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteProvider(provider.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
-
-      {/* Configure Provider Dialog */}
-      <ConfigureProviderDialog
-        provider={configureProvider}
-        isOpen={!!configureProvider}
-        onClose={() => setConfigureProvider(null)}
-        onSave={handleProviderSave}
-      />
-    </div>
+            </motion.div>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
-};
+}
 
-export default ProviderManagement;
+function AddProviderForm({ onSuccess }: { onSuccess: () => void }) {
+  const [provider, setProvider] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [model, setModel] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!provider || !apiKey) return;
+
+    setIsSubmitting(true);
+    try {
+      await AIServiceController.addProvider({
+        provider,
+        api_key: apiKey,
+        preferred_model: model || undefined,
+        priority: 999 // Will be adjusted automatically
+      });
+      toast.success('Provider added successfully');
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to add provider:', error);
+      toast.error('Failed to add provider');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="provider">Provider</Label>
+        <Select value={provider} onValueChange={setProvider}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a provider" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(PROVIDER_INFO).map(([key, info]) => (
+              <SelectItem key={key} value={key}>
+                {info.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="apiKey">API Key</Label>
+        <Input
+          id="apiKey"
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Enter API key"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="model">Preferred Model (optional)</Label>
+        <Input
+          id="model"
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          placeholder="e.g., gpt-4o-mini, claude-3-haiku"
+        />
+      </div>
+
+      <Button type="submit" disabled={isSubmitting} className="w-full">
+        {isSubmitting ? 'Adding...' : 'Add Provider'}
+      </Button>
+    </form>
+  );
+}
