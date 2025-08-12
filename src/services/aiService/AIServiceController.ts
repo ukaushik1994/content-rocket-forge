@@ -32,6 +32,9 @@ interface GenerateParams {
 
 interface GenerateResult {
   content: string;
+  // Optional fields used by various call sites
+  provider_used?: string;
+  model_used?: string;
   usage?: {
     prompt_tokens?: number;
     completion_tokens?: number;
@@ -473,18 +476,56 @@ class AIServiceController {
   }
 
   /**
-   * Generate content using the best available provider
+   * Backwards-compatible helper expected by some components.
+   * Returns true if the AI service is enabled and at least one provider is available.
    */
-  static async generate(params: GenerateParams): Promise<GenerateResult | null> {
+  static async isAIServiceEnabled(): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const providers = await this.getAllProviders();
+      return providers.length > 0;
+    } catch (e) {
+      console.warn('isAIServiceEnabled check failed:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Generate content using the best available provider
+   *
+   * Overloads to support legacy callers:
+   * - generate(params)
+   * - generate(input, use_case)
+   * - generate(input, use_case, temperature)
+   * - generate(input, use_case, temperature, max_tokens)
+   * - generate(input, use_case, temperature, max_tokens, model)
+   */
+  static async generate(params: GenerateParams): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string, temperature: number): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string, temperature: number, max_tokens: number): Promise<GenerateResult | null>;
+  static async generate(input: string, use_case: string, temperature: number, max_tokens: number, model: string): Promise<GenerateResult | null>;
+  static async generate(...args: any[]): Promise<GenerateResult | null> {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         throw new Error('User not authenticated');
       }
 
+      // Normalize arguments into a single params object
+      let normalized: GenerateParams;
+      if (typeof args[0] === 'string') {
+        const [input, use_case, temperature, max_tokens, model] = args;
+        normalized = { input, use_case, temperature, max_tokens, model };
+      } else {
+        normalized = args[0] as GenerateParams;
+      }
+
       const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
         body: {
-          ...params,
+          ...normalized,
           userId: user.id
         }
       });
@@ -494,7 +535,7 @@ class AIServiceController {
         throw new Error(error.message || 'AI generation failed');
       }
 
-      return data;
+      return data as GenerateResult;
     } catch (error) {
       console.error('Error in generate:', error);
       throw error;
@@ -511,4 +552,4 @@ class AIServiceController {
 }
 
 export default AIServiceController;
-export type { ProviderInfo };
+// Note: ProviderInfo interface is already exported above; avoid duplicate re-exports to prevent TS conflicts.
