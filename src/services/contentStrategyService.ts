@@ -594,6 +594,24 @@ class ContentStrategyService {
         return 'text-gray-600 bg-gray-50';
     }
   }
+
+  // AI-first strategy proposals (no clusters)
+  async generateAIStrategy(params?: { goals?: any; location?: string }): Promise<{ proposals: any[]; message: string }> {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
+      body: {
+        action: 'generate_ai_strategy',
+        user_id: user.id,
+        goals: params?.goals || {},
+        location: params?.location || 'United States'
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
 }
 
 export const contentStrategyService = new ContentStrategyService();

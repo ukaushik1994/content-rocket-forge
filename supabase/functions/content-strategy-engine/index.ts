@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -53,6 +54,8 @@ Deno.serve(async (req) => {
         return await sendToContentBuilder(supabase, payload)
       case 'calculate_traffic_potential':
         return await calculateTrafficPotential(supabase, payload)
+      case 'generate_ai_strategy':
+        return await generateAIStrategy(supabase, payload)
       default:
         throw new Error(`Unknown action: ${action}`)
     }
@@ -403,4 +406,104 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
     { question: `How much does ${baseTitle} cost?` },
     { question: `Is ${baseTitle} right for my business?` }
   ];
+}
+
+// New AI-first strategy generation (no clusters)
+async function generateAIStrategy(supabase: any, payload: any) {
+  const { user_id, goals = {}, location = 'United States' } = payload;
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) {
+    return new Response(
+      JSON.stringify({ error: 'Missing OPENAI_API_KEY secret. Please add it in Supabase secrets.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // 1) Fetch minimal user context
+  const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
+    supabase.from('solutions').select('*').eq('user_id', user_id).limit(20),
+    supabase.from('company_info').select('*').eq('user_id', user_id).maybeSingle?.() ?? supabase.from('company_info').select('*').eq('user_id', user_id).single(),
+    supabase.from('content_items').select('id,title,metadata').eq('user_id', user_id).order('updated_at', { ascending: false }).limit(20),
+  ]);
+
+  // 2) Ask AI to propose untapped keywords
+  const keywordPrompt = {
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'You are an SEO strategist. Return pure JSON only.' },
+      { role: 'user', content: `Given this company context and solutions, propose 20 high-opportunity, relevant, untapped keywords. Return JSON: {"keywords":[{"keyword":string,"intent":string}]}.\n\nCompany: ${JSON.stringify(companyInfo || {})}\nSolutions: ${JSON.stringify(solutions || [])}\nRecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 15).join('; ')}` }
+    ],
+    temperature: 0.3
+  } as const;
+
+  const kwRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${openAIApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(keywordPrompt)
+  });
+  const kwJson = await kwRes.json();
+  const kwText = kwJson?.choices?.[0]?.message?.content || '{}';
+  let kwList: Array<{ keyword: string; intent?: string }> = [];
+  try { kwList = JSON.parse(kwText).keywords || []; } catch { kwList = []; }
+
+  // Fallback if parsing failed
+  kwList = (kwList || []).filter(k => k && k.keyword).slice(0, 20);
+  if (kwList.length === 0) {
+    return new Response(JSON.stringify({ proposals: [], message: 'No keywords proposed' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+
+  // 3) Fetch SERP metrics for each keyword (batched)
+  const chunk = <T,>(arr: T[], size: number) => arr.reduce((acc: T[][], _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as T[][]);
+  const serpMap: Record<string, any> = {};
+  for (const group of chunk(kwList, 5)) {
+    const results = await Promise.all(group.map(async (k) => {
+      const resp = await supabase.functions.invoke('serp-analysis', { body: { keyword: k.keyword, location, language: 'en' } });
+      if (resp.error) return { keyword: k.keyword, data: null };
+      return { keyword: k.keyword, data: resp.data };
+    }));
+    for (const r of results) { serpMap[r.keyword] = r.data; }
+  }
+
+  // 4) Ask AI to assemble a simple, selectable content strategy (no clusters)
+  const enriched = kwList.map(k => ({
+    keyword: k.keyword,
+    intent: k.intent || 'informational',
+    metrics: {
+      searchVolume: serpMap[k.keyword]?.searchVolume,
+      keywordDifficulty: serpMap[k.keyword]?.keywordDifficulty,
+      cpc: serpMap[k.keyword]?.cpc,
+      competitionScore: serpMap[k.keyword]?.competitionScore
+    }
+  }));
+
+  const strategyPrompt = {
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'Return pure JSON only.' },
+      { role: 'user', content: `Create a simple content strategy from these keywords with metrics. Group into 5-8 proposals. Each proposal must be: {"title":string,"primary_keyword":string,"description":string,"priority_tag":"quick_win"|"high_return"|"evergreen"|"low_priority","keywords":[{"keyword":string}]}. Use baseline CTR 0.05 to estimate impressions from searchVolume. Return {"proposals": Proposal[]}.\n\nGoals: ${JSON.stringify(goals)}\nData: ${JSON.stringify(enriched).slice(0, 12000)}` }
+    ],
+    temperature: 0.2
+  } as const;
+
+  const stratRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${openAIApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(strategyPrompt)
+  });
+  const stratJson = await stratRes.json();
+  const stratText = stratJson?.choices?.[0]?.message?.content || '{}';
+  let proposals: any[] = [];
+  try { proposals = JSON.parse(stratText).proposals || []; } catch { proposals = []; }
+
+  // Attach serp_data map and estimated_impressions per proposal
+  const withSerp = proposals.map((p) => {
+    const kws = (p.keywords || []).map((k: any) => (typeof k === 'string' ? { keyword: k } : k));
+    const estImpr = kws.reduce((sum: number, k: any) => sum + ((serpMap[k.keyword]?.searchVolume || 0) * 0.05), 0);
+    return { ...p, keywords: kws, serp_data: serpMap, estimated_impressions: Math.round(estImpr) };
+  });
+
+  return new Response(
+    JSON.stringify({ success: true, proposals: withSerp, message: `Generated ${withSerp.length} proposals` }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
