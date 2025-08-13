@@ -17,13 +17,19 @@ import {
   Eye,
   Edit,
   Trash2,
-  Target
+  Target,
+  Tag
 } from 'lucide-react';
 import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/services/keywordLibraryService';
-import { KeywordCard } from './KeywordCard';
 import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
 import { KeywordResearchModal } from './KeywordResearchModal';
 import { KeywordBulkActions } from './KeywordBulkActions';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 export const KeywordLibrary: React.FC = () => {
@@ -140,6 +146,13 @@ export const KeywordLibrary: React.FC = () => {
       case 'strategy': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
+  };
+
+  const getDifficultyColor = (difficulty?: number | null) => {
+    if (!difficulty) return 'text-muted-foreground';
+    if (difficulty <= 30) return 'text-green-400';
+    if (difficulty <= 60) return 'text-yellow-400';
+    return 'text-red-400';
   };
 
   const allSelected = keywords.length > 0 && selectedKeywords.size === keywords.length;
@@ -323,75 +336,190 @@ export const KeywordLibrary: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Keywords Grid */}
+        {/* Keywords List */}
         <motion.div
           variants={container}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+          className="mb-8"
         >
-          <AnimatePresence mode="popLayout">
-            {loading ? (
-              // Loading skeletons
-              Array.from({ length: 12 }).map((_, i) => (
-                <motion.div
-                  key={`skeleton-${i}`}
-                  variants={item}
-                  className="animate-pulse"
-                >
-                  <Card className="border-white/10 bg-gradient-to-br from-white/5 to-white/2">
-                    <CardContent className="p-6">
-                      <div className="h-4 bg-white/10 rounded mb-4"></div>
-                      <div className="h-8 bg-white/20 rounded mb-3"></div>
-                      <div className="flex gap-2 mb-4">
-                        <div className="h-6 w-16 bg-white/10 rounded"></div>
-                        <div className="h-6 w-12 bg-white/10 rounded"></div>
-                      </div>
-                      <div className="h-4 bg-white/10 rounded"></div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))
-            ) : keywords.length > 0 ? (
-              keywords.map((keyword) => (
-                <KeywordCard
-                  key={keyword.id}
-                  keyword={keyword}
-                  selected={selectedKeywords.has(keyword.id)}
-                  onSelect={handleSelectKeyword}
-                  onUpdate={loadKeywords}
-                />
-              ))
-            ) : (
-              <motion.div
-                variants={item}
-                className="col-span-full text-center py-12"
-              >
-                <Hash className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No keywords found</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start by researching keywords or sync from your existing sources
-                </p>
-                <div className="flex justify-center gap-3">
-                  <Button
-                    onClick={() => setShowResearchModal(true)}
-                    className="bg-gradient-to-r from-primary to-primary/90"
+          <Card className="border-white/10 bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-md">
+            <CardContent className="p-0">
+              <AnimatePresence mode="popLayout">
+                {loading ? (
+                  // Loading skeletons
+                  <div className="space-y-1">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <motion.div
+                        key={`skeleton-${i}`}
+                        variants={item}
+                        className="animate-pulse border-b border-white/5 last:border-b-0 p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
+                            <div className="w-4 h-4 bg-white/10 rounded"></div>
+                            <div className="w-16 h-6 bg-white/10 rounded"></div>
+                            <div className="w-48 h-6 bg-white/20 rounded"></div>
+                            <div className="w-20 h-5 bg-white/10 rounded"></div>
+                          </div>
+                          <div className="w-24 h-5 bg-white/10 rounded"></div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : keywords.length > 0 ? (
+                  <div className="space-y-0">
+                    {keywords.map((keyword) => (
+                      <motion.div
+                        key={keyword.id}
+                        variants={item}
+                        layout
+                        className={`
+                          border-b border-white/5 last:border-b-0 p-4 
+                          hover:bg-white/5 transition-all duration-200 group
+                          ${selectedKeywords.has(keyword.id) ? 'bg-primary/5 border-primary/20' : ''}
+                        `}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
+                            {/* Checkbox */}
+                            <Checkbox
+                              checked={selectedKeywords.has(keyword.id)}
+                              onCheckedChange={(checked) => handleSelectKeyword(keyword.id, !!checked)}
+                            />
+                            
+                            {/* Source Badge */}
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Tag className="h-3 w-3 text-muted-foreground" />
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${getSourceBadgeColor(keyword.source_type)}`}
+                              >
+                                {keyword.source_type}
+                              </Badge>
+                            </div>
+                            
+                            {/* Keyword Name */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-foreground truncate">
+                                {keyword.keyword}
+                              </h3>
+                            </div>
+                            
+                            {/* Search Volume & Difficulty */}
+                            <div className="flex items-center gap-4 text-sm">
+                              {keyword.search_volume !== null && keyword.search_volume !== undefined && (
+                                <div className="flex items-center gap-1">
+                                  <TrendingUp className="h-4 w-4 text-blue-400" />
+                                  <span className="text-muted-foreground">
+                                    {keyword.search_volume.toLocaleString()}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {keyword.difficulty !== null && keyword.difficulty !== undefined && (
+                                <div className="flex items-center gap-1">
+                                  <div className={`w-2 h-2 rounded-full ${getDifficultyColor(keyword.difficulty).replace('text-', 'bg-')}`} />
+                                  <span className={getDifficultyColor(keyword.difficulty)}>
+                                    {keyword.difficulty}%
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Usage Count */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Usage:</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {keyword.usage_count}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          {/* Date & Actions */}
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(keyword.first_discovered_at).toLocaleDateString()}
+                            </span>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem>
+                                  <Search className="h-4 w-4 mr-2" />
+                                  Research via SERP
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Usage
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Export
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-400">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                        
+                        {keyword.notes && (
+                          <div className="mt-3 ml-8 pt-2 border-t border-white/10">
+                            <p className="text-xs text-muted-foreground">
+                              {keyword.notes}
+                            </p>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <motion.div
+                    variants={item}
+                    className="text-center py-12"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Research Keywords
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleSync}
-                    disabled={syncing}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                    Sync Sources
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    <Tag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No keywords found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Start by researching keywords or sync from your existing sources
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <Button
+                        onClick={() => setShowResearchModal(true)}
+                        className="bg-gradient-to-r from-primary to-primary/90"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Research Keywords
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleSync}
+                        disabled={syncing}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                        Sync Sources
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* Pagination */}
