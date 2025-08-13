@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useContentBuilder } from '@/contexts/ContentBuilderContext';
+import { useContentBuilder } from '@/contexts/content-builder/ContentBuilderContext';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { KeywordSearch } from '../keyword/KeywordSearch';
 import { SelectedKeywords } from '../keyword/SelectedKeywords';
-import { Search, ChevronRight, Sparkles, Loader2, TrendingUp, BarChart3, Eye, Settings, Zap, Rocket } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, Loader2, TrendingUp, BarChart3, Eye, Settings, Zap, Rocket, Target, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EnhancedSerpStatus } from '@/components/content-builder/serp/EnhancedSerpStatus';
 import { EnhancedAiStatus } from '@/components/content-builder/ai/EnhancedAiStatus';
@@ -15,6 +17,9 @@ import { SelectionManagerModal } from './keyword-analysis/SelectionManagerModal'
 import { SelectionSummaryCard } from './keyword-analysis/SelectionSummaryCard';
 import { DataSourceIndicator } from './keyword-analysis/DataSourceIndicator';
 import { CollapsibleRightSidebar } from './keyword-analysis/CollapsibleRightSidebar';
+import { ContentBuilderKeywordLibrary } from '@/components/content-builder/keyword/ContentBuilderKeywordLibrary';
+import { KeywordIntelligencePanel } from '@/components/content-builder/keyword/KeywordIntelligencePanel';
+import { toast } from 'sonner';
 
 interface ApiKeysStatus {
   serpApi: {
@@ -189,23 +194,6 @@ export const KeywordSelectionStep = () => {
           />
         ))}
       </div>
-
-      {/* Progress Indicator */}
-      <motion.div 
-        className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="flex items-center gap-2 px-6 py-3 bg-background/80 backdrop-blur-xl rounded-full border border-border/50">
-          <div className={`w-2 h-2 rounded-full transition-all duration-500 ${!hasSearched ? 'bg-primary' : 'bg-primary/30'}`} />
-          <div className={`w-2 h-2 rounded-full transition-all duration-500 ${hasSearched && !isAnalyzing ? 'bg-primary' : 'bg-primary/30'}`} />
-          <div className={`w-2 h-2 rounded-full transition-all duration-500 ${serpData ? 'bg-primary' : 'bg-primary/30'}`} />
-          <span className="text-xs font-medium text-muted-foreground ml-2">
-            {!hasSearched ? 'Setup' : isAnalyzing ? 'Analyzing' : 'Results'}
-          </span>
-        </div>
-      </motion.div>
 
       <div className="relative z-10 w-full px-6 pt-24 pb-12">
         {/* Hero Search Section */}

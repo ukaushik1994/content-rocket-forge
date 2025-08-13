@@ -1,6 +1,7 @@
 
 import { ContentBuilderState, ContentBuilderAction, SerpSelection } from '../types/index';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { keywordLibraryService } from '@/services/keywordLibraryService';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { transformSerpData, extractAllSelections } from '@/services/serpDataTransformer';
@@ -86,6 +87,26 @@ export const createSerpActions = (
       const serpData = await analyzeKeywordSerp(keyword, forceRefresh);
       
       // Update SERP data in state
+      // Auto-populate keyword library with comprehensive SERP data
+      try {
+        await keywordLibraryService.upsertKeywordWithSerpData(
+          keyword,
+          {
+            searchVolume: serpData.searchVolume,
+            difficulty: serpData.keywordDifficulty,
+            competitionScore: serpData.competitionScore,
+            cpc: (serpData as any).cpc,
+            intent: (serpData as any).intent,
+            dataQuality: serpData.isGoogleData ? 'high' : 'medium',
+            trend: (serpData as any).trend || 'stable'
+          },
+          'content_builder'
+        );
+        console.log('✅ Auto-populated keyword library from Content Builder');
+      } catch (error) {
+        console.error('Failed to auto-populate keyword library:', error);
+      }
+
       dispatch({ type: 'SET_SERP_DATA', payload: serpData });
       
       if (!serpData) {
