@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { analyzeKeywordEnhanced } from './enhancedSerpService';
 
 export interface UnifiedKeyword {
   id: string;
@@ -15,6 +16,14 @@ export interface UnifiedKeyword {
   content_usage: any;
   notes?: string | null;
   is_active: boolean;
+  // Enhanced SERP metadata
+  serp_last_updated?: string | null;
+  competition_score?: number | null;
+  serp_data_quality?: string | null;
+  cpc?: number | null;
+  trend_direction?: string | null;
+  intent?: string | null;
+  seasonality?: boolean | null;
 }
 
 export interface KeywordUsageLog {
@@ -37,9 +46,10 @@ export interface KeywordFilters {
   has_usage?: boolean;
   date_from?: string;
   date_to?: string;
-  sort_by?: 'keyword' | 'search_volume' | 'difficulty' | 'usage_count' | 'first_discovered_at';
+  sort_by?: 'keyword' | 'search_volume' | 'difficulty' | 'usage_count' | 'first_discovered_at' | 'serp_last_updated';
   sort_order?: 'asc' | 'desc';
   show_duplicates_only?: boolean;
+  data_freshness?: 'fresh' | 'stale' | 'any';
 }
 
 interface UpsertKeywordData {
@@ -49,6 +59,13 @@ interface UpsertKeywordData {
   source_type?: string;
   source_id?: string | null;
   notes?: string | null;
+  // Enhanced SERP data
+  competition_score?: number | null;
+  serp_data_quality?: string | null;
+  cpc?: number | null;
+  trend_direction?: string | null;
+  intent?: string | null;
+  seasonality?: boolean | null;
 }
 
 interface DuplicateKeyword {
@@ -121,9 +138,20 @@ class KeywordLibraryService {
         query = query.lte('first_discovered_at', filters.date_to);
       }
 
+      // Data freshness filter
+      if (filters.data_freshness) {
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        if (filters.data_freshness === 'fresh') {
+          query = query.gte('serp_last_updated', oneDayAgo.toISOString());
+        } else if (filters.data_freshness === 'stale') {
+          query = query.or(`serp_last_updated.is.null,serp_last_updated.lt.${oneDayAgo.toISOString()}`);
+        }
+      }
+
       // Filter for duplicates only
       if (filters.show_duplicates_only) {
-        // Get keywords that appear more than once
         const { data: duplicateKeywords } = await supabase
           .from('unified_keywords')
           .select('keyword')
@@ -140,7 +168,6 @@ class KeywordLibraryService {
           if (duplicates.length > 0) {
             query = query.in('keyword', duplicates);
           } else {
-            // No duplicates found, return empty result
             return {
               keywords: [],
               total: 0,
@@ -193,7 +220,15 @@ class KeywordLibraryService {
           source_id: keywordData.source_id,
           notes: keywordData.notes,
           user_id: user.id,
-          last_updated_at: new Date().toISOString()
+          last_updated_at: new Date().toISOString(),
+          // Enhanced SERP data
+          competition_score: keywordData.competition_score,
+          serp_data_quality: keywordData.serp_data_quality,
+          cpc: keywordData.cpc,
+          trend_direction: keywordData.trend_direction,
+          intent: keywordData.intent,
+          seasonality: keywordData.seasonality,
+          serp_last_updated: keywordData.search_volume || keywordData.difficulty || keywordData.competition_score ? new Date().toISOString() : null
         })
         .select()
         .single();
@@ -204,6 +239,114 @@ class KeywordLibraryService {
       console.error('Error upserting keyword:', error);
       throw error;
     }
+  }
+
+  // Intelligent SERP integration with research module
+  async upsertKeywordWithSerpData(keyword: string, serpData?: any, sourceType = 'serp'): Promise<UnifiedKeyword> {
+    try {
+      const keywordData: UpsertKeywordData = {
+        keyword,
+        source_type: sourceType,
+      };
+
+      // Extract SERP metrics if available
+      if (serpData) {
+        keywordData.search_volume = serpData.searchVolume || serpData.search_volume;
+        keywordData.difficulty = serpData.keywordDifficulty || serpData.difficulty;
+        keywordData.competition_score = serpData.competitionScore || serpData.competition_score;
+        keywordData.cpc = serpData.cpc;
+        keywordData.intent = serpData.intent;
+        keywordData.trend_direction = serpData.trend || 'stable';
+        keywordData.serp_data_quality = serpData.dataQuality || 'medium';
+        keywordData.seasonality = serpData.seasonality || false;
+      }
+
+      return await this.upsertKeyword(keywordData);
+    } catch (error) {
+      console.error('Error upserting keyword with SERP data:', error);
+      throw error;
+    }
+  }
+
+  // Refresh SERP metrics for individual keyword
+  async refreshKeywordMetrics(keywordId: string): Promise<UnifiedKeyword> {
+    try {
+      const { data: keyword, error } = await supabase
+        .from('unified_keywords')
+        .select('*')
+        .eq('id', keywordId)
+        .single();
+
+      if (error || !keyword) throw new Error('Keyword not found');
+
+      // Fetch fresh SERP data
+      const serpData = await analyzeKeywordEnhanced(keyword.keyword, 'us', true);
+      
+      if (serpData) {
+        const updatedKeyword = await this.upsertKeywordWithSerpData(
+          keyword.keyword, 
+          serpData,
+          keyword.source_type
+        );
+        
+        toast.success('Keyword metrics refreshed successfully');
+        return updatedKeyword;
+      } else {
+        throw new Error('Failed to fetch SERP data');
+      }
+    } catch (error) {
+      console.error('Error refreshing keyword metrics:', error);
+      toast.error('Failed to refresh keyword metrics');
+      throw error;
+    }
+  }
+
+  // Batch refresh for stale keywords
+  async refreshStaleKeywords(): Promise<number> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
+      // Get keywords with stale SERP data (older than 24 hours or null)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const { data: staleKeywords, error } = await supabase
+        .from('unified_keywords')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .or(`serp_last_updated.is.null,serp_last_updated.lt.${oneDayAgo.toISOString()}`)
+        .limit(10); // Limit to avoid rate limiting
+
+      if (error) throw error;
+
+      let refreshedCount = 0;
+      for (const keyword of staleKeywords || []) {
+        try {
+          await this.refreshKeywordMetrics(keyword.id);
+          refreshedCount++;
+        } catch (error) {
+          console.error(`Failed to refresh keyword ${keyword.keyword}:`, error);
+        }
+      }
+
+      toast.success(`Refreshed ${refreshedCount} keyword metrics`);
+      return refreshedCount;
+    } catch (error) {
+      console.error('Error refreshing stale keywords:', error);
+      toast.error('Failed to refresh stale keywords');
+      throw error;
+    }
+  }
+
+  // Calculate data freshness
+  getDataFreshness(keyword: UnifiedKeyword): 'fresh' | 'stale' | 'unknown' {
+    if (!keyword.serp_last_updated) return 'unknown';
+    
+    const lastUpdated = new Date(keyword.serp_last_updated);
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    return lastUpdated > oneDayAgo ? 'fresh' : 'stale';
   }
 
   async trackKeywordUsage(

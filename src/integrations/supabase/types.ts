@@ -2765,47 +2765,68 @@ export type Database = {
       }
       unified_keywords: {
         Row: {
+          competition_score: number | null
           content_usage: Json
+          cpc: number | null
           difficulty: number | null
           first_discovered_at: string
           id: string
+          intent: string | null
           is_active: boolean
           keyword: string
           last_updated_at: string
           notes: string | null
           search_volume: number | null
+          seasonality: boolean | null
+          serp_data_quality: string | null
+          serp_last_updated: string | null
           source_id: string | null
           source_type: string
+          trend_direction: string | null
           usage_count: number
           user_id: string
         }
         Insert: {
+          competition_score?: number | null
           content_usage?: Json
+          cpc?: number | null
           difficulty?: number | null
           first_discovered_at?: string
           id?: string
+          intent?: string | null
           is_active?: boolean
           keyword: string
           last_updated_at?: string
           notes?: string | null
           search_volume?: number | null
+          seasonality?: boolean | null
+          serp_data_quality?: string | null
+          serp_last_updated?: string | null
           source_id?: string | null
           source_type: string
+          trend_direction?: string | null
           usage_count?: number
           user_id: string
         }
         Update: {
+          competition_score?: number | null
           content_usage?: Json
+          cpc?: number | null
           difficulty?: number | null
           first_discovered_at?: string
           id?: string
+          intent?: string | null
           is_active?: boolean
           keyword?: string
           last_updated_at?: string
           notes?: string | null
           search_volume?: number | null
+          seasonality?: boolean | null
+          serp_data_quality?: string | null
+          serp_last_updated?: string | null
           source_id?: string | null
           source_type?: string
+          trend_direction?: string | null
           usage_count?: number
           user_id?: string
         }
