@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { analyzeKeywordEnhanced } from './enhancedSerpService';
+import { enhancedSerpService } from './enhancedSerpService';
 
 export interface UnifiedKeyword {
   id: string;
@@ -280,7 +280,7 @@ class KeywordLibraryService {
       if (error || !keyword) throw new Error('Keyword not found');
 
       // Fetch fresh SERP data
-      const serpData = await analyzeKeywordEnhanced(keyword.keyword, 'us', true);
+      const serpData = await enhancedSerpService.analyzeKeywordEnhanced(keyword.keyword, 'us', true);
       
       if (serpData) {
         const updatedKeyword = await this.upsertKeywordWithSerpData(

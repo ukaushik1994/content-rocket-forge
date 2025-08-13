@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { keywordLibraryService } from './keywordLibraryService';
 
 export interface EnhancedSerpResult {
   keyword: string;
@@ -188,25 +187,6 @@ export async function analyzeKeywordEnhanced(
         updated_at: new Date().toISOString()
       });
 
-    // Auto-populate keyword library with SERP metrics
-    try {
-      const { keywordLibraryService } = await import('./keywordLibraryService');
-      if (data) {
-        const serpMetrics = {
-          searchVolume: data.searchVolume,
-          difficulty: data.keywordDifficulty,
-          competitionScore: data.competitionScore,
-          dataQuality: data.dataQuality
-        };
-        await keywordLibraryService.upsertKeywordWithSerpData(
-          keyword, 
-          serpMetrics, 
-          'serp'
-        );
-      }
-    } catch (error) {
-      console.error('Error updating keyword library:', error);
-    }
     
     console.log('✅ Enhanced SERP analysis complete');
     return data as EnhancedSerpResult;
@@ -247,3 +227,9 @@ export function getSerpSection(data: EnhancedSerpResult, section: string): any[]
       return [];
   }
 }
+
+// Create a service object for backward compatibility
+export const enhancedSerpService = {
+  analyzeKeywordEnhanced,
+  getSerpSection
+};
