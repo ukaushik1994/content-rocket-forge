@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   History, 
   Clock, 
-  Key, 
+  Hash, 
   FileText,
   Archive,
   Trash2,
@@ -219,7 +219,7 @@ export function StrategySessionManager({ onStrategyGenerated, goals }: StrategyS
                               {session.proposals_count} proposals
                             </span>
                             <span className="flex items-center gap-1">
-                              <Key className="h-3 w-3" />
+                              <Hash className="h-3 w-3" />
                               {session.keywords_used.length} keywords used
                             </span>
                           </div>
