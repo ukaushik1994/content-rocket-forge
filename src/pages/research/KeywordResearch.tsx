@@ -16,6 +16,8 @@ import { SerpResultsDisplay } from '@/components/research/keyword/SerpResultsDis
 import { KeywordMetrics } from '@/components/research/keyword/KeywordMetrics';
 import { ContentOpportunities } from '@/components/research/keyword/ContentOpportunities';
 import { KeywordClusters } from '@/components/research/keyword/KeywordClusters';
+import { EmbeddedKeywordLibrary } from '@/components/research/keyword/EmbeddedKeywordLibrary';
+import { keywordLibraryService } from '@/services/keywordLibraryService';
 
 const KeywordResearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +27,7 @@ const KeywordResearch = () => {
   const [analysisStep, setAnalysisStep] = useState(0);
   const [selectedKeywords, setSelectedKeywords] = useState([]);
   const [realTimeData, setRealTimeData] = useState(false);
+  const [libraryRefreshTrigger, setLibraryRefreshTrigger] = useState(0);
   const navigate = useNavigate();
 
   const steps = ['Search', 'SERP Analysis', 'Content Intelligence', 'Content Creation'];
@@ -102,14 +105,39 @@ const KeywordResearch = () => {
     toast.success("🚀 Launching Content Builder with SERP insights!");
   };
 
-  const handleSaveKeyword = (keyword) => {
-    if (!savedKeywords.find(k => k.keyword === keyword.keyword)) {
-      setSavedKeywords([...savedKeywords, keyword]);
-      toast.success("📌 Keyword saved to your research library!");
-    } else {
-      toast.info("This keyword is already in your saved list");
+  const handleSaveKeyword = async (keyword) => {
+    try {
+      await keywordLibraryService.upsertKeyword({
+        keyword: keyword.keyword || searchTerm,
+        search_volume: keyword.searchVolume || serpData?.searchVolume,
+        difficulty: keyword.difficulty || serpData?.difficulty
+      });
+      
+      // Refresh the embedded library
+      setLibraryRefreshTrigger(prev => prev + 1);
+      
+      // Add to local saved keywords for immediate UI feedback
+      if (!savedKeywords.find(k => k.keyword === keyword.keyword)) {
+        setSavedKeywords([...savedKeywords, keyword]);
+      }
+      
+      toast.success("📌 Keyword saved to your library!");
+    } catch (error) {
+      toast.error("Failed to save keyword");
+      console.error('Error saving keyword:', error);
     }
   };
+
+  // Auto-save researched keywords
+  useEffect(() => {
+    if (serpData && searchTerm) {
+      handleSaveKeyword({
+        keyword: searchTerm,
+        searchVolume: serpData.searchVolume,
+        difficulty: serpData.difficulty
+      });
+    }
+  }, [serpData, searchTerm]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -444,6 +472,18 @@ const KeywordResearch = () => {
               </Card>
             </motion.div>
           )}
+
+          {/* Embedded Keyword Library */}
+          <motion.div variants={itemVariants}>
+            <EmbeddedKeywordLibrary 
+              refreshTrigger={libraryRefreshTrigger}
+              onKeywordSelect={(keyword) => {
+                setSearchTerm(keyword.keyword);
+                toast.info(`Selected keyword: ${keyword.keyword}`);
+              }}
+              className="mt-8"
+            />
+          </motion.div>
         </motion.div>
       </main>
     </div>

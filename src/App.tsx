@@ -23,7 +23,7 @@ import OpportunitiesPage from "./pages/research/Opportunities";
 import ContentGapsPage from "./pages/research/ContentGaps";
 import CalendarPage from "./pages/research/Calendar";
 import PipelinePage from "./pages/research/Pipeline";
-import KeywordLibraryPage from "./pages/KeywordLibrary";
+
 import AioGeo from "./pages/AioGeo";
 import AIChat from "./pages/AIChat";
 import AISettings from "./pages/AISettings";
@@ -75,10 +75,9 @@ const App = () => (
                   <Route path="/research/opportunities" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
                   <Route path="/research/opportunity-hunter" element={<Navigate to="/research/opportunities" replace />} />
                   
-                  <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
-                  <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-                  <Route path="/research/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
-                  <Route path="/keywords" element={<ProtectedRoute><KeywordLibraryPage /></ProtectedRoute>} />
+                   <Route path="/research/content-gaps" element={<ProtectedRoute><ContentGapsPage /></ProtectedRoute>} />
+                   <Route path="/research/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+                   <Route path="/research/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
                   
                   {/* AIO/GEO route */}
                   <Route path="/aio-geo" element={<ProtectedRoute><AioGeo /></ProtectedRoute>} />
