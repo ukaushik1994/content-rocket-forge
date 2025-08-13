@@ -420,9 +420,10 @@ async function generateAIStrategy(supabase: any, payload: any) {
   ]);
 
   // 2) Ask AI (via unified proxy) to propose untapped keywords
+  console.log('🤖 Calling OpenAI to generate keywords...');
   const kwProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      provider: 'openai',
+      service: 'openai',
       endpoint: 'chat',
       params: {
         messages: [
@@ -440,9 +441,11 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
   });
 
   if (kwProxy.error) {
+    console.error('❌ Failed to generate keywords:', kwProxy.error);
+    const errorMessage = kwProxy.error?.message || kwProxy.error || 'AI service error';
     return new Response(
-      JSON.stringify({ error: kwProxy.error.message || 'AI provider error while proposing keywords' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: `Failed to generate strategy: ${errorMessage}` }),
+      { status: 500, headers: corsHeaders }
     );
   }
 
@@ -457,16 +460,20 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
   // 3) Fetch SERP metrics for each keyword (via unified SERP proxy)
   const chunk = <T,>(arr: T[], size: number) => arr.reduce((acc: T[][], _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as T[][]);
   const serpMap: Record<string, any> = {};
+  console.log('🔍 Fetching SERP data for keywords...');
   for (const group of chunk(kwList, 5)) {
     const results = await Promise.all(group.map(async (k) => {
         const resp = await supabase.functions.invoke('api-proxy', {
           body: {
-            provider: 'serp',
+            service: 'serp',
             endpoint: 'analyze',
             params: { keyword: k.keyword, location, language: 'en' }
           }
         });
-      if (resp.error) return { keyword: k.keyword, data: null };
+      if (resp.error) {
+        console.warn(`⚠️ SERP error for "${k.keyword}":`, resp.error);
+        return { keyword: k.keyword, data: null };
+      }
       return { keyword: k.keyword, data: resp.data };
     }));
     for (const r of results) { serpMap[r.keyword] = r.data; }
@@ -484,9 +491,10 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
     }
   }));
 
+  console.log('🎯 Generating content strategy from enriched data...');
   const stratProxy = await supabase.functions.invoke('api-proxy', {
     body: {
-      provider: 'openai',
+      service: 'openai',
       endpoint: 'chat',
       params: {
         messages: [
@@ -503,9 +511,11 @@ Data: ${JSON.stringify(enriched).slice(0, 12000)}` }
   });
 
   if (stratProxy.error) {
+    console.error('❌ Failed to generate final strategy:', stratProxy.error);
+    const errorMessage = stratProxy.error?.message || stratProxy.error || 'Strategy generation failed';
     return new Response(
-      JSON.stringify({ error: stratProxy.error.message || 'AI provider error while assembling strategy' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: `Failed to generate final strategy: ${errorMessage}` }),
+      { status: 500, headers: corsHeaders }
     );
   }
 
