@@ -146,7 +146,7 @@ export const KeywordLibrary: React.FC = () => {
   const someSelected = selectedKeywords.size > 0 && selectedKeywords.size < keywords.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
+    <div className="bg-gradient-to-br from-background via-background/95 to-primary/5">
       <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <motion.div
