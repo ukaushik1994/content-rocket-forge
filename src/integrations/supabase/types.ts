@@ -1758,6 +1758,41 @@ export type Database = {
           },
         ]
       }
+      keyword_usage_log: {
+        Row: {
+          content_id: string | null
+          content_type: string
+          created_at: string
+          id: string
+          unified_keyword_id: string
+          usage_type: string
+        }
+        Insert: {
+          content_id?: string | null
+          content_type: string
+          created_at?: string
+          id?: string
+          unified_keyword_id: string
+          usage_type: string
+        }
+        Update: {
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          unified_keyword_id?: string
+          usage_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_usage_log_unified_keyword_id_fkey"
+            columns: ["unified_keyword_id"]
+            isOneToOne: false
+            referencedRelation: "unified_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keywords: {
         Row: {
           created_at: string
@@ -2724,6 +2759,54 @@ export type Database = {
           region?: string | null
           status?: string
           summary_json?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      unified_keywords: {
+        Row: {
+          content_usage: Json
+          difficulty: number | null
+          first_discovered_at: string
+          id: string
+          is_active: boolean
+          keyword: string
+          last_updated_at: string
+          notes: string | null
+          search_volume: number | null
+          source_id: string | null
+          source_type: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          content_usage?: Json
+          difficulty?: number | null
+          first_discovered_at?: string
+          id?: string
+          is_active?: boolean
+          keyword: string
+          last_updated_at?: string
+          notes?: string | null
+          search_volume?: number | null
+          source_id?: string | null
+          source_type: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          content_usage?: Json
+          difficulty?: number | null
+          first_discovered_at?: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          last_updated_at?: string
+          notes?: string | null
+          search_volume?: number | null
+          source_id?: string | null
+          source_type?: string
+          usage_count?: number
           user_id?: string
         }
         Relationships: []
