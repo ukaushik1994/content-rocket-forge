@@ -178,6 +178,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_strategies: {
+        Row: {
+          created_at: string
+          description: string | null
+          goals: Json
+          id: string
+          keywords: string[]
+          proposals: Json
+          serp_data: Json | null
+          session_metadata: Json
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          goals?: Json
+          id?: string
+          keywords?: string[]
+          proposals?: Json
+          serp_data?: Json | null
+          session_metadata?: Json
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          goals?: Json
+          id?: string
+          keywords?: string[]
+          proposals?: Json
+          serp_data?: Json | null
+          session_metadata?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_workflow_states: {
         Row: {
           conversation_id: string | null

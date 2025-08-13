@@ -69,32 +69,68 @@ class AIStrategyService {
       ...data.session_metadata
     };
 
-    // Temporarily disabled until ai_strategies table is available in types
-    // This will be enabled once the migration is applied and types are updated
-    const strategy = {
-      id: sessionId,
-      user_id: user.id,
-      title: data.title,
-      description: data.description,
-      goals: data.goals,
-      generated_at: new Date().toISOString(),
-      keywords: data.keywords,
-      proposals: data.proposals,
-      serp_data: data.serp_data,
-      status: 'active' as const,
-      session_metadata: sessionMetadata,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    console.log('Strategy would be saved:', strategy);
-    return strategy as AIStrategy;
+    try {
+      console.log('💾 Saving AI strategy to database');
+      
+      const { data: savedStrategy, error } = await supabase
+        .from('ai_strategies')
+        .insert({
+          user_id: user.id,
+          title: data.title,
+          description: data.description,
+          goals: data.goals,
+          proposals: data.proposals,
+          serp_data: data.serp_data,
+          keywords: data.keywords,
+          session_metadata: sessionMetadata,
+          status: 'active'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Database error saving strategy:', error);
+        throw error;
+      }
+      
+      console.log('✅ Strategy saved successfully to database');
+      
+      // Return with generated_at for compatibility
+      return {
+        ...savedStrategy,
+        generated_at: savedStrategy.created_at
+      } as AIStrategy;
+    } catch (error) {
+      console.error('Failed to save AI strategy:', error);
+      throw error;
+    }
   }
 
   async getStrategies(): Promise<AIStrategy[]> {
-    // For now, return empty array since table doesn't exist yet in types
-    // This will be populated once the migration is applied
-    return [];
+    try {
+      console.log('📊 Getting AI strategies from database');
+      
+      const { data: strategies, error } = await supabase
+        .from('ai_strategies')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Database error fetching strategies:', error);
+        throw error;
+      }
+      
+      console.log('✅ Retrieved strategies:', strategies?.length || 0);
+      
+      // Add generated_at for compatibility
+      return (strategies || []).map(strategy => ({
+        ...strategy,
+        generated_at: strategy.created_at
+      })) as AIStrategy[];
+    } catch (error) {
+      console.error('Failed to fetch AI strategies:', error);
+      return [];
+    }
   }
 
   async getStrategySessions(): Promise<StrategySession[]> {
@@ -188,13 +224,45 @@ class AIStrategyService {
   }
 
   async archiveStrategy(strategyId: string): Promise<void> {
-    // Temporarily disabled until table is available in types
-    console.log('Archive strategy:', strategyId);
+    try {
+      console.log('📦 Archiving strategy:', strategyId);
+      
+      const { error } = await supabase
+        .from('ai_strategies')
+        .update({ status: 'archived' })
+        .eq('id', strategyId);
+      
+      if (error) {
+        console.error('Database error archiving strategy:', error);
+        throw error;
+      }
+      
+      console.log('✅ Strategy archived successfully');
+    } catch (error) {
+      console.error('Failed to archive strategy:', error);
+      throw error;
+    }
   }
 
   async deleteStrategy(strategyId: string): Promise<void> {
-    // Temporarily disabled until table is available in types
-    console.log('Delete strategy:', strategyId);
+    try {
+      console.log('🗑️ Deleting strategy:', strategyId);
+      
+      const { error } = await supabase
+        .from('ai_strategies')
+        .delete()
+        .eq('id', strategyId);
+      
+      if (error) {
+        console.error('Database error deleting strategy:', error);
+        throw error;
+      }
+      
+      console.log('✅ Strategy deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete strategy:', error);
+      throw error;
+    }
   }
 
   // Content Builder integration
