@@ -8,6 +8,8 @@ import { StrategyTabs } from '@/components/research/content-strategy/StrategyTab
 import { ContentStrategyProvider } from '@/contexts/ContentStrategyContext';
 import { motion } from 'framer-motion';
 import { StrategyCreationModal } from '@/components/research/content-strategy/StrategyCreationModal';
+import { SimpleAIServiceIndicator } from '@/components/content-builder/ai/SimpleAIServiceIndicator';
+import { SimpleSerpServiceIndicator } from '@/components/content-builder/ai/SimpleSerpServiceIndicator';
 
 const ContentStrategy = () => {
   const canonicalUrl = typeof window !== 'undefined' 
@@ -24,6 +26,14 @@ const ContentStrategy = () => {
         </Helmet>
         
         <Navbar />
+        
+        {/* Service Status Indicators */}
+        <div className="relative z-20 flex justify-center pt-4 pb-2">
+          <div className="flex items-center gap-4 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-sm">
+            <SimpleAIServiceIndicator size="sm" />
+            <SimpleSerpServiceIndicator size="sm" />
+          </div>
+        </div>
         
         {/* Optimized Background */}
         <div className="absolute inset-0 z-0">
