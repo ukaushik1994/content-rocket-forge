@@ -410,7 +410,7 @@ function generateFAQSuggestions(clusterName: string): Array<{ question: string; 
 
 // New AI-first strategy generation (no clusters)
 async function generateAIStrategy(supabase: any, payload: any) {
-  const { user_id, goals = {}, location = 'United States' } = payload;
+  const { user_id, goals = {}, location = 'United States', api_keys = {} } = payload;
 
   // 1) Fetch minimal user context
   const [{ data: solutions }, { data: companyInfo }, { data: recentContent }] = await Promise.all([
@@ -425,6 +425,7 @@ async function generateAIStrategy(supabase: any, payload: any) {
     body: {
       service: 'openai',
       endpoint: 'chat',
+      apiKey: api_keys.openai,
       params: {
         messages: [
           { role: 'system', content: 'You are an SEO strategist. Return pure JSON only.' },
@@ -467,6 +468,7 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
           body: {
             service: 'serp',
             endpoint: 'analyze',
+            apiKey: api_keys.serp,
             params: { keyword: k.keyword, location, language: 'en' }
           }
         });
@@ -496,6 +498,7 @@ RecentContentTitles: ${(recentContent || []).map((c: any) => c.title).slice(0, 1
     body: {
       service: 'openai',
       endpoint: 'chat',
+      apiKey: api_keys.openai,
       params: {
         messages: [
           { role: 'system', content: 'Return pure JSON only.' },

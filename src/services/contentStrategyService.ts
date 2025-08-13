@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AIServiceController from '@/services/aiService/AIServiceController';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
+import { getApiKey } from '@/services/apiKeyService';
 
 export interface ContentCluster {
   id: string;
@@ -581,12 +582,29 @@ class ContentStrategyService {
 
     console.log('🚀 Generating AI strategy with params:', params);
 
+    // Get user's API keys
+    const openaiKey = await getApiKey('openai');
+    const serpKey = await getApiKey('serp');
+
+    // Check for required API keys
+    if (!openaiKey) {
+      throw new Error('OpenAI API key not configured. Please add your OpenAI API key in Settings > API Settings.');
+    }
+
+    if (!serpKey) {
+      throw new Error('SERP API key not configured. Please add your SERP API key in Settings > API Settings.');
+    }
+
     const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
       body: {
         action: 'generate_ai_strategy',
         user_id: user.id,
         goals: params?.goals || {},
-        location: params?.location || 'United States'
+        location: params?.location || 'United States',
+        api_keys: {
+          openai: openaiKey,
+          serp: serpKey
+        }
       }
     });
 
