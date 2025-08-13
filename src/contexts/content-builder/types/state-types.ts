@@ -77,4 +77,15 @@ export interface ContentBuilderState {
 
   // Location (for geo-targeted content)
   location: string;
+
+  // Strategy Source (when coming from AI Strategy)
+  strategySource: {
+    proposal_id: string;
+    priority_tag: string;
+    estimated_impressions: number;
+    meta_suggestions?: {
+      title: string;
+      description: string;
+    };
+  } | null;
 }

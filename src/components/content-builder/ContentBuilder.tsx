@@ -25,6 +25,17 @@ interface ContentBuilderProps {
   location?: string;
   serpData?: any;
   initialStep?: number;
+  strategyContext?: {
+    proposal_id: string;
+    priority_tag: string;
+    estimated_impressions: number;
+  } | null;
+  metaSuggestions?: {
+    title: string;
+    description: string;
+  } | null;
+  suggestedTitle?: string | null;
+  suggestedOutline?: string[] | null;
 }
 
 export const ContentBuilder: React.FC<ContentBuilderProps> = ({
@@ -32,7 +43,11 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
   selectedKeywords,
   location,
   serpData,
-  initialStep
+  initialStep,
+  strategyContext,
+  metaSuggestions,
+  suggestedTitle,
+  suggestedOutline
 }) => {
   const { state, dispatch, navigateToStep, addSerpSelections } = useContentBuilder();
   const { activeStep, steps, content } = state;
@@ -70,9 +85,9 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
     }
   }, [addSerpSelections]);
 
-  // Initialize with preloaded data
+  // Initialize with preloaded data and strategy context
   useEffect(() => {
-    if (initialKeyword || selectedKeywords || location || serpData || initialStep !== undefined) {
+    if (initialKeyword || selectedKeywords || location || serpData || initialStep !== undefined || strategyContext) {
       dispatch({
         type: 'LOAD_PRELOADED_DATA',
         payload: {
@@ -80,9 +95,20 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
           selectedKeywords,
           location,
           serpData,
-          step: initialStep
+          step: initialStep,
+          strategySource: strategyContext
         }
       });
+
+      // Auto-populate title and meta data from strategy
+      if (suggestedTitle) {
+        dispatch({ type: 'SET_CONTENT_TITLE', payload: suggestedTitle });
+      }
+      
+      if (metaSuggestions) {
+        dispatch({ type: 'SET_META_TITLE', payload: metaSuggestions.title });
+        dispatch({ type: 'SET_META_DESCRIPTION', payload: metaSuggestions.description });
+      }
 
       // Mark previous steps as completed if starting at a later step
       if (initialStep !== undefined && initialStep > 0) {
@@ -95,8 +121,13 @@ export const ContentBuilder: React.FC<ContentBuilderProps> = ({
           dispatch({ type: 'MARK_STEP_COMPLETED', payload: 2 });
         }
       }
+
+      // If coming from strategy, mark keyword selection as complete
+      if (strategyContext && initialKeyword) {
+        dispatch({ type: 'MARK_STEP_COMPLETED', payload: 0 });
+      }
     }
-  }, [initialKeyword, selectedKeywords, location, serpData, initialStep, dispatch]);
+  }, [initialKeyword, selectedKeywords, location, serpData, initialStep, strategyContext, metaSuggestions, suggestedTitle, dispatch]);
 
   // Calculate progress percentage
   const visibleSteps = steps.filter(step => step.id !== 2); // Exclude SERP Analysis step

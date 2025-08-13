@@ -20,6 +20,7 @@ import {
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
+import { StrategySessionManager } from './StrategySessionManager';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -149,17 +150,16 @@ const generateBlueprint = async () => {
 };
 
 // Direct handoff to Content Builder for a proposal
-const sendProposalToContentBuilder = (proposal: any) => {
+const sendProposalToContentBuilder = async (proposal: any) => {
   try {
-    const payload = {
-      source: 'ai_strategy',
-      primary_keyword: proposal.primary_keyword,
-      keywords: (proposal.keywords || []).map((k: any) => (typeof k === 'string' ? k : k.keyword)).filter(Boolean),
-      serp_data: proposal.serp_data || null,
-      initial_step: 0
-    };
+    const { aiStrategyService } = await import('@/services/aiStrategyService');
+    const payload = await aiStrategyService.prepareContentBuilderPayload(proposal);
+    
     sessionStorage.setItem('contentBuilderPayload', JSON.stringify(payload));
-    toast({ title: 'Sent to Content Builder', description: proposal.title || proposal.primary_keyword });
+    toast({ 
+      title: 'Sent to Content Builder', 
+      description: `${proposal.title || proposal.primary_keyword} with complete strategy context` 
+    });
     window.location.href = '/content-builder?source=strategy';
   } catch (e) {
     console.error('Proposal handoff error:', e);
@@ -372,6 +372,12 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
           </Button>
         </div>
       </div>
+
+      {/* Strategy Session Manager */}
+      <StrategySessionManager 
+        onStrategyGenerated={setProposals} 
+        goals={goals}
+      />
 
 {/* AI Strategy Proposals */}
 {proposals.length > 0 ? (

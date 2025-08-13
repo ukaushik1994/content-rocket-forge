@@ -29,6 +29,12 @@ const ContentBuilderPage = () => {
   const locationPref = payload?.location || preloadData?.location;
   const serpData = payload?.serp_data || null;
   const initialStep = typeof payload?.initial_step === 'number' ? payload.initial_step : preloadData?.step;
+  
+  // Enhanced strategy context handling
+  const strategyContext = payload?.strategy_context || null;
+  const metaSuggestions = payload?.meta_suggestions || null;
+  const suggestedTitle = payload?.title || null;
+  const suggestedOutline = payload?.outline || null;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -48,6 +54,10 @@ const ContentBuilderPage = () => {
             location={locationPref}
             serpData={serpData}
             initialStep={initialStep}
+            strategyContext={strategyContext}
+            metaSuggestions={metaSuggestions}
+            suggestedTitle={suggestedTitle}
+            suggestedOutline={suggestedOutline}
           />
         </ContentBuilderProvider>
       </main>

@@ -68,5 +68,8 @@ export const initialState: ContentBuilderState = {
   additionalInstructions: '',
 
   // Location
-  location: ''
+  location: '',
+
+  // Strategy Source
+  strategySource: null
 };

@@ -282,7 +282,7 @@ export const contentBuilderReducer = (
       };
 
     case 'LOAD_PRELOADED_DATA': {
-      const { mainKeyword, selectedKeywords, location, serpData, step } = action.payload;
+      const { mainKeyword, selectedKeywords, location, serpData, step, strategySource } = action.payload;
       return {
         ...state,
         ...(mainKeyword && { mainKeyword }),
@@ -290,6 +290,7 @@ export const contentBuilderReducer = (
         ...(location && { location }),
         ...(serpData && { serpData }),
         ...(step !== undefined && { activeStep: step }),
+        ...(strategySource && { strategySource }),
         steps: state.steps.map((s, index) => ({
           ...s,
           completed: index < (step || 0),
