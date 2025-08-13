@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import AIServiceController from '@/services/aiService/AIServiceController';
 import { analyzeKeywordSerp } from '@/services/serpApiService';
 
 export interface ContentCluster {
@@ -573,22 +574,71 @@ class ContentStrategyService {
     }
   }
 
-  // AI-first strategy proposals (no clusters)
+  // AI-first strategy proposals using the same services as content builder
   async generateAIStrategy(params?: { goals?: any; location?: string }): Promise<{ proposals: any[]; message: string }> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase.functions.invoke('content-strategy-engine', {
-      body: {
-        action: 'generate_ai_strategy',
-        user_id: user.id,
-        goals: params?.goals || {},
-        location: params?.location || 'United States'
-      }
-    });
+    try {
+      // Generate strategy using AIServiceController directly
+      const strategyPrompt = `Create 3-5 content strategy proposals based on these goals: ${JSON.stringify(params?.goals || {})}. 
+      Location: ${params?.location || 'United States'}
+      
+      Return a JSON object with:
+      {
+        "proposals": [
+          {
+            "id": "unique-id",
+            "title": "Strategy Name",
+            "description": "Brief description",
+            "keywords": ["keyword1", "keyword2"],
+            "contentTypes": ["blog", "article"],
+            "timeline": "3 months",
+            "estimatedTraffic": 1000,
+            "difficulty": "medium",
+            "score": 85
+          }
+        ],
+        "message": "Generated 5 strategies"
+      }`;
 
-    if (error) throw error;
-    return data;
+      const response = await AIServiceController.generate({
+        input: strategyPrompt,
+        use_case: 'strategy',
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const parsedResponse = JSON.parse(response.content);
+      
+      // Analyze keywords for each proposal using SERP service
+      const enrichedProposals = await Promise.all(
+        parsedResponse.proposals.map(async (proposal: any) => {
+          if (proposal.keywords && proposal.keywords.length > 0) {
+            try {
+              const serpData = await analyzeKeywordSerp(proposal.keywords[0]);
+              if (serpData) {
+                proposal.serpData = serpData;
+                proposal.searchVolume = serpData.searchVolume || 0;
+                proposal.difficulty = serpData.keywordDifficulty || proposal.difficulty;
+              }
+            } catch (error) {
+              console.warn(`SERP analysis failed for ${proposal.keywords[0]}:`, error);
+            }
+          }
+          return proposal;
+        })
+      );
+
+      return {
+        proposals: enrichedProposals,
+        message: parsedResponse.message || `Generated ${enrichedProposals.length} strategy proposals`
+      };
+
+    } catch (error) {
+      console.error('AI Strategy generation error:', error);
+      throw new Error(`Failed to generate strategy: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }
 
