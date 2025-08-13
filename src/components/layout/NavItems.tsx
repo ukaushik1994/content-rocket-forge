@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Globe, Book, CalendarDays, GitBranch, FileSearch, MoreHorizontal } from 'lucide-react';
+import { Home, FileText, BarChart3, Puzzle, CheckCircle, Repeat, ChevronDown, Search, Target, Users, Network, MessageSquare, Globe, Book, CalendarDays, GitBranch, FileSearch, MoreHorizontal, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -71,7 +71,8 @@ export default function NavItems() {
   const moreRoutes = [
     '/research/content-gaps',
     '/research/calendar',
-    '/research/pipeline'
+    '/research/pipeline',
+    '/keywords'
   ];
   
   const isContentActive = contentRoutes.includes(location.pathname);
@@ -316,6 +317,18 @@ export default function NavItems() {
             >
               <CalendarDays className="h-4 w-4" />
               Calendar
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link 
+              to="/keywords" 
+              className={cn(
+                'flex items-center gap-2 w-full cursor-pointer',
+                location.pathname === '/keywords' && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Hash className="h-4 w-4" />
+              Keyword Library
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
