@@ -50,13 +50,15 @@ const ContentStrategy = () => {
   );
 };
 
-const ContentStrategyContent = () => {
+const ContentStrategyContent = React.memo(() => {
   return (
     <>
       <GoalSettingCard />
       <StrategyTabs />
     </>
   );
-};
+});
+
+ContentStrategyContent.displayName = 'ContentStrategyContent';
 
 export default ContentStrategy;
