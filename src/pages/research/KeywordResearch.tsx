@@ -16,7 +16,8 @@ import { SerpResultsDisplay } from '@/components/research/keyword/SerpResultsDis
 import { KeywordMetrics } from '@/components/research/keyword/KeywordMetrics';
 import { ContentOpportunities } from '@/components/research/keyword/ContentOpportunities';
 import { KeywordClusters } from '@/components/research/keyword/KeywordClusters';
-import { EmbeddedKeywordLibrary } from '@/components/research/keyword/EmbeddedKeywordLibrary';
+import { EnhancedEmbeddedKeywordLibrary } from '@/components/research/keyword/EnhancedEmbeddedKeywordLibrary';
+import { SerpDataPopulator } from '@/components/research/keyword/SerpDataPopulator';
 import { keywordLibraryService } from '@/services/keywordLibraryService';
 
 const KeywordResearch = () => {
@@ -107,11 +108,20 @@ const KeywordResearch = () => {
 
   const handleSaveKeyword = async (keyword) => {
     try {
-      await keywordLibraryService.upsertKeyword({
-        keyword: keyword.keyword || searchTerm,
-        search_volume: keyword.searchVolume || serpData?.searchVolume,
-        difficulty: keyword.difficulty || serpData?.difficulty
-      });
+      // Use the enhanced keyword library service for SERP data integration
+      await keywordLibraryService.upsertKeywordWithSerpData(
+        keyword.keyword || searchTerm,
+        {
+          searchVolume: keyword.searchVolume || serpData?.searchVolume,
+          difficulty: keyword.difficulty || serpData?.difficulty,
+          competitionScore: serpData?.competitionScore,
+          cpc: serpData?.cpc,
+          intent: serpData?.intent,
+          trend: serpData?.trend,
+          dataQuality: realTimeData ? 'high' : 'medium'
+        },
+        'research'
+      );
       
       // Refresh the embedded library
       setLibraryRefreshTrigger(prev => prev + 1);
@@ -121,14 +131,14 @@ const KeywordResearch = () => {
         setSavedKeywords([...savedKeywords, keyword]);
       }
       
-      toast.success("📌 Keyword saved to your library!");
+      toast.success("📌 Keyword saved to your library with SERP metrics!");
     } catch (error) {
       toast.error("Failed to save keyword");
       console.error('Error saving keyword:', error);
     }
   };
 
-  // Auto-save researched keywords
+  // Auto-save researched keywords with enhanced SERP data
   useEffect(() => {
     if (serpData && searchTerm) {
       handleSaveKeyword({
@@ -475,7 +485,7 @@ const KeywordResearch = () => {
 
           {/* Embedded Keyword Library */}
           <motion.div variants={itemVariants}>
-            <EmbeddedKeywordLibrary 
+            <EnhancedEmbeddedKeywordLibrary 
               refreshTrigger={libraryRefreshTrigger}
               onKeywordSelect={(keyword) => {
                 setSearchTerm(keyword.keyword);
@@ -484,6 +494,14 @@ const KeywordResearch = () => {
               className="mt-8"
             />
           </motion.div>
+
+          {/* Auto-population bridge between research and library */}
+          <SerpDataPopulator
+            serpData={serpData}
+            mainKeyword={searchTerm}
+            enabled={!!serpData}
+            onPopulationComplete={() => setLibraryRefreshTrigger(prev => prev + 1)}
+          />
         </motion.div>
       </main>
     </div>
