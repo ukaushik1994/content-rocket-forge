@@ -39,6 +39,7 @@ export interface KeywordFilters {
   date_to?: string;
   sort_by?: 'keyword' | 'search_volume' | 'difficulty' | 'usage_count' | 'first_discovered_at';
   sort_order?: 'asc' | 'desc';
+  show_duplicates_only?: boolean;
 }
 
 interface UpsertKeywordData {
@@ -48,6 +49,13 @@ interface UpsertKeywordData {
   source_type?: string;
   source_id?: string | null;
   notes?: string | null;
+}
+
+interface DuplicateKeyword {
+  keyword: string;
+  instances: UnifiedKeyword[];
+  totalUsage: number;
+  sources: string[];
 }
 
 interface BulkUpdateData {
@@ -111,6 +119,36 @@ class KeywordLibraryService {
 
       if (filters.date_to) {
         query = query.lte('first_discovered_at', filters.date_to);
+      }
+
+      // Filter for duplicates only
+      if (filters.show_duplicates_only) {
+        // Get keywords that appear more than once
+        const { data: duplicateKeywords } = await supabase
+          .from('unified_keywords')
+          .select('keyword')
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+        
+        if (duplicateKeywords) {
+          const keywordCounts = duplicateKeywords.reduce((acc: Record<string, number>, item) => {
+            acc[item.keyword] = (acc[item.keyword] || 0) + 1;
+            return acc;
+          }, {});
+          
+          const duplicates = Object.keys(keywordCounts).filter(keyword => keywordCounts[keyword] > 1);
+          if (duplicates.length > 0) {
+            query = query.in('keyword', duplicates);
+          } else {
+            // No duplicates found, return empty result
+            return {
+              keywords: [],
+              total: 0,
+              page,
+              totalPages: 0
+            };
+          }
+        }
       }
 
       // Apply sorting
@@ -368,6 +406,142 @@ class KeywordLibraryService {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  // Find duplicate keywords
+  async findDuplicates(): Promise<DuplicateKeyword[]> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
+      const { data: keywords, error } = await supabase
+        .from('unified_keywords')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('keyword');
+
+      if (error) throw error;
+
+      // Group keywords by name
+      const grouped = (keywords || []).reduce((acc: Record<string, UnifiedKeyword[]>, keyword) => {
+        const key = keyword.keyword.toLowerCase().trim();
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(keyword as UnifiedKeyword);
+        return acc;
+      }, {});
+
+      // Find duplicates (more than one instance)
+      const duplicates: DuplicateKeyword[] = Object.entries(grouped)
+        .filter(([_, instances]) => instances.length > 1)
+        .map(([keyword, instances]) => ({
+          keyword,
+          instances,
+          totalUsage: instances.reduce((sum, instance) => sum + instance.usage_count, 0),
+          sources: [...new Set(instances.map(instance => instance.source_type))]
+        }));
+
+      return duplicates;
+    } catch (error) {
+      console.error('Error finding duplicates:', error);
+      return [];
+    }
+  }
+
+  // Merge duplicate keywords
+  async mergeDuplicates(duplicateKeyword: DuplicateKeyword, keepInstance: UnifiedKeyword): Promise<void> {
+    try {
+      const instancesToRemove = duplicateKeyword.instances.filter(instance => instance.id !== keepInstance.id);
+      
+      // Update the kept instance with combined data
+      const combinedUsage = duplicateKeyword.totalUsage;
+      const combinedNotes = duplicateKeyword.instances
+        .map(instance => instance.notes)
+        .filter(Boolean)
+        .join('; ');
+
+      await supabase
+        .from('unified_keywords')
+        .update({
+          usage_count: combinedUsage,
+          notes: combinedNotes || keepInstance.notes,
+          last_updated_at: new Date().toISOString()
+        })
+        .eq('id', keepInstance.id);
+
+      // Remove duplicate instances
+      await this.deleteKeywords(instancesToRemove.map(instance => instance.id));
+      
+      toast.success('Duplicates merged successfully');
+    } catch (error) {
+      console.error('Error merging duplicates:', error);
+      toast.error('Failed to merge duplicates');
+      throw error;
+    }
+  }
+
+  // Get keyword usage details with content and solution info
+  async getDetailedKeywordUsage(keywordId: string): Promise<any> {
+    try {
+      // Get usage logs first
+      const { data: usageLogs, error: usageError } = await supabase
+        .from('keyword_usage_log')
+        .select('*')
+        .eq('unified_keyword_id', keywordId)
+        .order('created_at', { ascending: false });
+
+      if (usageError) throw usageError;
+
+      // For each usage log, fetch the related content
+      const usageWithDetails = await Promise.all(
+        (usageLogs || []).map(async (usage) => {
+          let contentDetails = null;
+          let solutionMapping = null;
+
+          if (usage.content_id) {
+            if (usage.content_type === 'content_item') {
+              const { data: contentItem } = await supabase
+                .from('content_items')
+                .select('id, title, status, content_type, metadata')
+                .eq('id', usage.content_id)
+                .single();
+              
+              if (contentItem) {
+                contentDetails = contentItem;
+                if (contentItem.metadata && typeof contentItem.metadata === 'object') {
+                  const metadata = contentItem.metadata as any;
+                  if (metadata.solution_mapping) {
+                    solutionMapping = metadata.solution_mapping;
+                  }
+                }
+              }
+            } else if (usage.content_type === 'glossary_term') {
+              const { data: glossaryTerm } = await supabase
+                .from('glossary_terms')
+                .select('id, term, glossary_id')
+                .eq('id', usage.content_id)
+                .single();
+              
+              if (glossaryTerm) {
+                contentDetails = glossaryTerm;
+              }
+            }
+          }
+
+          return {
+            ...usage,
+            content_items: usage.content_type === 'content_item' ? contentDetails : null,
+            glossary_terms: usage.content_type === 'glossary_term' ? contentDetails : null,
+            solution_mapping: solutionMapping
+          };
+        })
+      );
+
+      return usageWithDetails;
+    } catch (error) {
+      console.error('Error fetching detailed keyword usage:', error);
+      return [];
+    }
   }
 }
 

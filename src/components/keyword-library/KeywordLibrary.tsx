@@ -18,12 +18,17 @@ import {
   Edit,
   Trash2,
   Target,
-  Tag
+  Tag,
+  Users,
+  AlertTriangle,
+  Layers
 } from 'lucide-react';
 import { keywordLibraryService, UnifiedKeyword, KeywordFilters } from '@/services/keywordLibraryService';
 import { KeywordFilters as KeywordFiltersComponent } from './KeywordFilters';
 import { KeywordResearchModal } from './KeywordResearchModal';
 import { KeywordBulkActions } from './KeywordBulkActions';
+import { DuplicateManager } from './DuplicateManager';
+import { KeywordUsageDetail } from './KeywordUsageDetail';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +45,8 @@ export const KeywordLibrary: React.FC = () => {
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [showResearchModal, setShowResearchModal] = useState(false);
+  const [showDuplicateManager, setShowDuplicateManager] = useState(false);
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -62,12 +69,16 @@ export const KeywordLibrary: React.FC = () => {
 
   useEffect(() => {
     loadKeywords();
-  }, [filters, currentPage, searchTerm]);
+  }, [filters, currentPage, searchTerm, showDuplicatesOnly]);
 
   const loadKeywords = async () => {
     try {
       setLoading(true);
-      const searchFilters = searchTerm ? { ...filters, search: searchTerm } : filters;
+      const searchFilters = { 
+        ...filters, 
+        ...(searchTerm && { search: searchTerm }),
+        ...(showDuplicatesOnly && { show_duplicates_only: true })
+      };
       const result = await keywordLibraryService.getKeywords(searchFilters, currentPage, 50);
       
       setKeywords(result.keywords);
@@ -183,6 +194,29 @@ export const KeywordLibrary: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDuplicateManager(true)}
+                className="border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-600"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Find Duplicates
+              </Button>
+              
+              <Button
+                variant={showDuplicatesOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
+                className={showDuplicatesOnly 
+                  ? "bg-yellow-500 hover:bg-yellow-600 text-black" 
+                  : "border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-600"
+                }
+              >
+                <Layers className="h-4 w-4 mr-2" />
+                {showDuplicatesOnly ? 'Show All' : 'Duplicates Only'}
+              </Button>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -427,12 +461,13 @@ export const KeywordLibrary: React.FC = () => {
                               )}
                             </div>
                             
-                            {/* Usage Count */}
+                            {/* Usage Count with Details */}
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">Usage:</span>
-                              <Badge variant="secondary" className="text-xs">
-                                {keyword.usage_count}
-                              </Badge>
+                              <KeywordUsageDetail 
+                                keywordId={keyword.id}
+                                usageCount={keyword.usage_count}
+                              />
                             </div>
                           </div>
                           
@@ -571,6 +606,13 @@ export const KeywordLibrary: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Duplicate Manager */}
+      <DuplicateManager
+        open={showDuplicateManager}
+        onClose={() => setShowDuplicateManager(false)}
+        onSuccess={loadKeywords}
+      />
 
       {/* Research Modal */}
       <KeywordResearchModal
