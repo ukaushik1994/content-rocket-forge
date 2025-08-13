@@ -90,14 +90,38 @@ const generateBlueprint = async () => {
   try {
     setGenerating(true);
     startProgress();
-    const result = await contentStrategyService.generateAIStrategy({ goals, location: 'United States' });
+    
+    console.log('🚀 Starting AI strategy generation with goals:', goals);
+    
+    const result = await contentStrategyService.generateAIStrategy({ 
+      goals: goals || {}, 
+      location: 'United States' 
+    });
+    
+    console.log('✅ Strategy generation result:', result);
+    
     setProposals(result.proposals || []);
-    toast({ title: 'Strategy Proposals Ready', description: result.message || 'Select a proposal to continue.' });
+    
+    toast({ 
+      title: 'Strategy Proposals Ready', 
+      description: result.message || 'Select a proposal to continue.' 
+    });
+    
     finishProgress();
   } catch (error) {
-    console.error('Error generating AI strategy:', error);
+    console.error('❌ Error generating AI strategy:', error);
+    clearTimers();
     setShowGenModal(false);
-    toast({ title: 'Error', description: (error as any)?.message || 'Failed to generate AI strategy', variant: 'destructive' });
+    
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate AI strategy';
+    
+    toast({ 
+      title: 'Strategy Generation Failed', 
+      description: errorMessage.includes('API key') 
+        ? 'Please configure your OpenAI and SERP API keys in Settings'
+        : errorMessage,
+      variant: 'destructive' 
+    });
   } finally {
     setGenerating(false);
   }
