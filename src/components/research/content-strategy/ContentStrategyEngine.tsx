@@ -340,23 +340,35 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Content Strategy Engine</h2>
-          <p className="text-muted-foreground">
-            AI-powered strategic content planning with competitive intelligence
-          </p>
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 border border-white/10 p-6 mb-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 blur-xl" />
+        <div className="relative flex items-center justify-between">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+              Content Strategy Engine
+            </h2>
+            <p className="text-white/60 text-lg">
+              AI-powered strategic content planning with competitive intelligence
+            </p>
+          </div>
+          
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Button
+              onClick={generateBlueprint}
+              disabled={generating}
+              className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg px-6 py-3 text-base"
+              size="lg"
+            >
+              <Lightbulb className="h-5 w-5" />
+              {generating ? 'Generating Strategy...' : 'Generate AI Strategy'}
+            </Button>
+          </motion.div>
         </div>
-        
-        <Button
-          onClick={generateBlueprint}
-          disabled={generating}
-          className="gap-2"
-        >
-          <Lightbulb className="h-4 w-4" />
-          {generating ? 'Generating...' : 'Generate Strategy'}
-        </Button>
       </div>
 
       {/* Strategy Session Manager */}
@@ -518,27 +530,49 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="h-96 animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="h-4 bg-muted rounded"></div>
-                        <div className="h-3 bg-muted rounded w-3/4"></div>
-                        <div className="h-20 bg-muted rounded"></div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <Card className="h-96 bg-white/5 border-white/10">
+                      <CardContent className="p-6">
+                        <div className="space-y-4 animate-pulse">
+                          <div className="h-4 bg-white/10 rounded"></div>
+                          <div className="h-3 bg-white/10 rounded w-3/4"></div>
+                          <div className="h-20 bg-white/10 rounded"></div>
+                          <div className="space-y-2">
+                            <div className="h-3 bg-white/10 rounded"></div>
+                            <div className="h-3 bg-white/10 rounded w-2/3"></div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 ))}
               </div>
             ) : proposals.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
                 {proposals.map((proposal, idx) => (
-                  <ProposalCard 
+                  <motion.div
                     key={proposal.primary_keyword || idx}
-                    proposal={proposal}
-                    onSendToBuilder={sendProposalToContentBuilder}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <ProposalCard 
+                      proposal={proposal}
+                      onSendToBuilder={sendProposalToContentBuilder}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             ) : clusters.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="space-y-4">
@@ -555,11 +589,23 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {clusters.map((cluster) => (
-                  <ClusterCard key={cluster.id} cluster={cluster} />
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
+                {clusters.map((cluster, idx) => (
+                  <motion.div
+                    key={cluster.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <ClusterCard cluster={cluster} />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 

@@ -13,6 +13,7 @@ import {
   Plus,
   RefreshCw
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { aiStrategyService, AIStrategy, StrategySession } from '@/services/aiStrategyService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -147,89 +148,116 @@ export function StrategySessionManager({ onStrategyGenerated, goals }: StrategyS
   };
 
   return (
-    <Card>
+    <Card className="bg-white/5 border-white/10">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <History className="h-5 w-5 text-purple-400" />
               Strategy Sessions
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-white/60">
               Manage your AI-generated content strategies and avoid keyword duplication
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={loading}
-            className="gap-2"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadData}
+              disabled={loading}
+              className="gap-2 border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </motion.div>
         </div>
       </CardHeader>
 
       <CardContent>
         <Tabs defaultValue="sessions" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="sessions">Sessions Overview</TabsTrigger>
-            <TabsTrigger value="detailed">Detailed View</TabsTrigger>
+          <TabsList className="bg-white/10 border-white/20">
+            <TabsTrigger 
+              value="sessions"
+              className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70"
+            >
+              Sessions Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="detailed"
+              className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/70"
+            >
+              Detailed View
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="sessions" className="space-y-4">
             {sessions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No strategy sessions found</p>
-                <p className="text-sm">Generate your first AI strategy to get started</p>
+              <div className="text-center py-8">
+                <History className="h-12 w-12 mx-auto mb-4 text-white/40" />
+                <p className="text-white/60">No strategy sessions found</p>
+                <p className="text-sm text-white/40">Generate your first AI strategy to get started</p>
               </div>
             ) : (
               <div className="grid gap-4">
-                {sessions.map((session) => (
-                  <Card key={session.session_id} className="border border-border/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
+                {sessions.map((session, idx) => (
+                  <motion.div
+                    key={session.session_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-orange-400" />
+                              <span className="font-medium text-white">
+                                {formatDate(session.generated_at)}
+                              </span>
+                              <Badge 
+                                variant="outline" 
+                                className="text-xs text-white/80 border-white/20 bg-white/10"
+                              >
+                                {session.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-white/60">
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-3 w-3 text-blue-400" />
+                                {session.proposals_count} proposals
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Hash className="h-3 w-3 text-green-400" />
+                                {session.keywords_used.length} keywords used
+                              </span>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {formatDate(session.generated_at)}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {session.status}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {session.proposals_count} proposals
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Hash className="h-3 w-3" />
-                              {session.keywords_used.length} keywords used
-                            </span>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                const strategy = strategies.find(s => 
+                                  s.session_metadata?.session_id === session.session_id
+                                );
+                                if (strategy) loadStrategyProposals(strategy);
+                              }}
+                              className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+                            >
+                              Load
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const strategy = strategies.find(s => 
-                                s.session_metadata?.session_id === session.session_id
-                              );
-                              if (strategy) loadStrategyProposals(strategy);
-                            }}
-                          >
-                            Load
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -237,85 +265,95 @@ export function StrategySessionManager({ onStrategyGenerated, goals }: StrategyS
 
           <TabsContent value="detailed" className="space-y-4">
             {strategies.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No strategies found</p>
-                <p className="text-sm">Generate your first AI strategy to get started</p>
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-white/40" />
+                <p className="text-white/60">No strategies found</p>
+                <p className="text-sm text-white/40">Generate your first AI strategy to get started</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {strategies.map((strategy) => (
-                  <Card key={strategy.id} className="border border-border/50">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{strategy.title}</CardTitle>
-                          <CardDescription>
-                            {strategy.description || 'No description provided'}
-                          </CardDescription>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {strategy.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <div className="font-medium text-primary">
-                            {strategy.proposals.length}
+                {strategies.map((strategy, idx) => (
+                  <motion.div
+                    key={strategy.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                  >
+                    <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-lg text-white">{strategy.title}</CardTitle>
+                            <CardDescription className="text-white/60">
+                              {strategy.description || 'No description provided'}
+                            </CardDescription>
                           </div>
-                          <div className="text-muted-foreground">Proposals</div>
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs text-white/80 border-white/20 bg-white/10"
+                          >
+                            {strategy.status}
+                          </Badge>
                         </div>
-                        <div>
-                          <div className="font-medium text-primary">
-                            {strategy.keywords.length}
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="text-center p-3 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg border border-white/10">
+                            <div className="font-medium text-white text-xl">
+                              {strategy.proposals.length}
+                            </div>
+                            <div className="text-white/60">Proposals</div>
                           </div>
-                          <div className="text-muted-foreground">Keywords</div>
-                        </div>
-                        <div>
-                          <div className="font-medium text-primary">
-                            {formatDate(strategy.generated_at).split(',')[0]}
+                          <div className="text-center p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-white/10">
+                            <div className="font-medium text-white text-xl">
+                              {strategy.keywords.length}
+                            </div>
+                            <div className="text-white/60">Keywords</div>
                           </div>
-                          <div className="text-muted-foreground">Generated</div>
+                          <div className="text-center p-3 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border border-white/10">
+                            <div className="font-medium text-white text-xl">
+                              {formatDate(strategy.generated_at).split(',')[0]}
+                            </div>
+                            <div className="text-white/60">Generated</div>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => loadStrategyProposals(strategy)}
-                          className="gap-2"
-                        >
-                          <FileText className="h-4 w-4" />
-                          Load Proposals
-                        </Button>
-                        
-                        <div className="flex gap-1">
+                        <div className="flex items-center justify-between pt-2 border-t border-white/20">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => archiveStrategy(strategy.id)}
-                            className="gap-2"
+                            onClick={() => loadStrategyProposals(strategy)}
+                            className="gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-white/20 text-white hover:bg-white/10"
                           >
-                            <Archive className="h-4 w-4" />
-                            Archive
+                            <FileText className="h-4 w-4" />
+                            Load Proposals
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteStrategy(strategy.id)}
-                            className="text-destructive gap-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </Button>
+                          
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => archiveStrategy(strategy.id)}
+                              className="gap-2 border-white/20 text-white/80 hover:bg-white/10"
+                            >
+                              <Archive className="h-4 w-4" />
+                              Archive
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteStrategy(strategy.id)}
+                              className="gap-2 border-red-400/30 text-red-400 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 ))}
               </div>
             )}
