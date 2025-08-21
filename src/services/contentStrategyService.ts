@@ -583,8 +583,18 @@ class ContentStrategyService {
     console.log('🚀 Generating AI strategy with params:', params);
 
     // Get user's API keys
+    console.log('🔍 Retrieving API keys...');
     const openaiKey = await getApiKey('openai');
     const serpKey = await getApiKey('serp');
+
+    console.log('🔑 API keys retrieved:', {
+      hasOpenaiKey: !!openaiKey,
+      openaiKeyLength: openaiKey?.length || 0,
+      openaiKeyPrefix: openaiKey?.substring(0, 10) + '...',
+      hasSerpKey: !!serpKey,
+      serpKeyLength: serpKey?.length || 0,
+      serpKeyPrefix: serpKey?.substring(0, 10) + '...'
+    });
 
     // Check for required API keys
     if (!openaiKey) {
