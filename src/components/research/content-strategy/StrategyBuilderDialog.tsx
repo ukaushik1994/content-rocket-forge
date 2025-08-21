@@ -9,9 +9,11 @@ import { toast } from '@/hooks/use-toast';
 import { DialogSolutionSelector } from './dialog/DialogSolutionSelector';
 import { DialogOutlineGenerator } from './dialog/DialogOutlineGenerator';
 import { DialogContentGenerator } from './dialog/DialogContentGenerator';
-import { DialogContentSaver } from './dialog/DialogContentSaver';
-import { ContentBuilderProvider } from '@/contexts/ContentBuilderContext';
+import { StrategyContentSaver } from './dialog/StrategyContentSaver';
+import { ContentBuilderProvider, useContentBuilder } from '@/contexts/ContentBuilderContext';
 import { EnhancedSolution } from '@/contexts/content-builder/types';
+import { SerpAnalysisStep } from '@/components/content-builder/steps/SerpAnalysisStep';
+import { SaveStep } from '@/components/content-builder/steps/save/SaveStep';
 
 interface StrategyBuilderDialogProps {
   open: boolean;
@@ -21,10 +23,30 @@ interface StrategyBuilderDialogProps {
 
 const STEPS = [
   { id: 0, title: 'Select Solution', icon: Send, description: 'Choose the solution to feature' },
-  { id: 1, title: 'Generate Outline', icon: Sparkles, description: 'Create content structure' },
-  { id: 2, title: 'Generate Content', icon: FileText, description: 'Create the content' },
-  { id: 3, title: 'Save Content', icon: Save, description: 'Save to repository' }
+  { id: 1, title: 'SERP Analysis', icon: Sparkles, description: 'Analyze search results' },
+  { id: 2, title: 'Generate Outline', icon: Sparkles, description: 'Create content structure' },
+  { id: 3, title: 'Generate Content', icon: FileText, description: 'Create the content' },
+  { id: 4, title: 'Save Content', icon: Save, description: 'Save to repository' }
 ];
+
+// Content initialization component to set up context
+function StrategyContentInit({ proposal }: { proposal: any }) {
+  const { setMainKeyword, setContentTitle } = useContentBuilder();
+  
+  useEffect(() => {
+    if (proposal) {
+      // Initialize content builder context with strategy data
+      if (proposal.primary_keyword) {
+        setMainKeyword(proposal.primary_keyword);
+      }
+      if (proposal.title) {
+        setContentTitle(proposal.title);
+      }
+    }
+  }, [proposal, setMainKeyword, setContentTitle]);
+  
+  return null;
+}
 
 export function StrategyBuilderDialog({ open, onOpenChange, proposal }: StrategyBuilderDialogProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -48,8 +70,9 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
     switch (step) {
       case 0: return true; // Always can access solution selection
       case 1: return !!selectedSolution; // Need solution selected
-      case 2: return !!selectedSolution && generatedOutline.length > 0; // Need solution and outline
-      case 3: return !!selectedSolution && generatedOutline.length > 0 && !!generatedContent; // Need everything
+      case 2: return !!selectedSolution; // Need solution for SERP analysis
+      case 3: return !!selectedSolution && generatedOutline.length > 0; // Need solution and outline
+      case 4: return !!selectedSolution && generatedOutline.length > 0 && !!generatedContent; // Need everything
       default: return false;
     }
   };
@@ -102,7 +125,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
         </DialogHeader>
 
         {/* Step Navigation */}
-        <div className="flex-shrink-0 grid grid-cols-4 gap-2 mb-6">
+        <div className="flex-shrink-0 grid grid-cols-5 gap-2 mb-6">
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStep;
@@ -146,6 +169,8 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
         {/* Step Content */}
         <div className="flex-1 overflow-y-auto">
           <ContentBuilderProvider>
+            <StrategyContentInit proposal={proposal} />
+            
             {currentStep === 0 && (
               <DialogSolutionSelector
                 selectedSolution={selectedSolution}
@@ -155,6 +180,12 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
             )}
             
             {currentStep === 1 && (
+              <div className="h-full">
+                <SerpAnalysisStep />
+              </div>
+            )}
+            
+            {currentStep === 2 && (
               <DialogOutlineGenerator
                 proposal={proposal}
                 selectedSolution={selectedSolution}
@@ -163,7 +194,7 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
               />
             )}
 
-            {currentStep === 2 && (
+            {currentStep === 3 && (
               <DialogContentGenerator
                 proposal={proposal}
                 selectedSolution={selectedSolution}
@@ -175,8 +206,8 @@ export function StrategyBuilderDialog({ open, onOpenChange, proposal }: Strategy
               />
             )}
 
-            {currentStep === 3 && (
-              <DialogContentSaver
+            {currentStep === 4 && (
+              <StrategyContentSaver
                 proposal={proposal}
                 selectedSolution={selectedSolution}
                 outline={generatedOutline}
