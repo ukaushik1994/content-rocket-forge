@@ -5,11 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Target, Sparkles, TrendingUp, Search, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Target, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { SerpMetricsDisplay } from './SerpMetricsDisplay';
-import { GoalProgressIndicator } from './GoalProgressIndicator';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,71 +17,18 @@ export const GoalSettingCard = React.memo(() => {
     currentStrategy, 
     createStrategy, 
     updateStrategy, 
-    analyzeSERP, 
-    saveInsight,
     loading 
   } = useContentStrategy();
-  
-  const ctx = useContentStrategy();
 
-  const [goals, setGoals] = useState({
-    monthlyTraffic: '',
-    contentPieces: '',
-    timeline: '3 months',
-    mainKeyword: ''
-  });
-  
-  const [serpMetrics, setSerpMetrics] = useState<any>(null);
+  const [monthlyTraffic, setMonthlyTraffic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Load current strategy data
   useEffect(() => {
     if (currentStrategy) {
-      setGoals({
-        monthlyTraffic: currentStrategy.monthly_traffic_goal?.toString() || '',
-        contentPieces: currentStrategy.content_pieces_per_month?.toString() || '',
-        timeline: currentStrategy.timeline || '3 months',
-        mainKeyword: currentStrategy.main_keyword || ''
-      });
+      setMonthlyTraffic(currentStrategy.monthly_traffic_goal?.toString() || '');
     }
   }, [currentStrategy]);
-
-  const handleAnalyzeKeyword = async () => {
-    if (!goals.mainKeyword.trim()) {
-      toast.error("Please enter a main keyword to analyze");
-      return;
-    }
-    
-    if (!user) {
-      toast.error("Please log in to analyze keywords");
-      return;
-    }
-    
-    setIsGenerating(true);
-    
-    try {
-      const data = await analyzeSERP(goals.mainKeyword);
-      setSerpMetrics(data);
-      
-      // Save the insight to database
-      await saveInsight({
-        keyword: goals.mainKeyword,
-        search_volume: data.searchVolume,
-        keyword_difficulty: data.keywordDifficulty,
-        competition_score: data.competitionScore,
-        serp_data: data,
-        opportunity_score: Math.floor((100 - data.keywordDifficulty) * (data.searchVolume / 10000))
-      });
-      
-      toast.success("Keyword analyzed successfully!");
-      
-    } catch (error) {
-      console.error('SERP analysis error:', error);
-      toast.error('Failed to analyze keyword');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleSaveStrategy = async () => {
     if (!user) {
@@ -91,8 +36,8 @@ export const GoalSettingCard = React.memo(() => {
       return;
     }
 
-    if (!goals.monthlyTraffic || !goals.contentPieces) {
-      toast.error("Please fill in your traffic and content goals");
+    if (!monthlyTraffic) {
+      toast.error("Please enter your monthly traffic goal");
       return;
     }
     
@@ -100,11 +45,8 @@ export const GoalSettingCard = React.memo(() => {
     
     try {
       const strategyData = {
-        name: `Content Strategy - ${goals.mainKeyword || 'General'}`,
-        monthly_traffic_goal: parseInt(goals.monthlyTraffic) || null,
-        content_pieces_per_month: parseInt(goals.contentPieces) || null,
-        timeline: goals.timeline,
-        main_keyword: goals.mainKeyword || null
+        name: `Content Strategy - Traffic Goal`,
+        monthly_traffic_goal: parseInt(monthlyTraffic) || null
       };
 
       if (currentStrategy) {
@@ -113,16 +55,10 @@ export const GoalSettingCard = React.memo(() => {
         await createStrategy(strategyData);
       }
       
-      // Auto-generate AI proposals based on goals after saving strategy
-      const { generateGoalBasedProposals } = ctx || {};
-      if (generateGoalBasedProposals && goals.contentPieces) {
-        toast.success('Strategy saved! Generating AI proposals to match your goals...');
-        setTimeout(() => {
-          generateGoalBasedProposals(goals);
-        }, 500);
-      }
+      toast.success('Traffic goal saved successfully!');
     } catch (error) {
       console.error('Strategy save error:', error);
+      toast.error('Failed to save strategy');
     } finally {
       setIsGenerating(false);
     }
@@ -156,7 +92,7 @@ export const GoalSettingCard = React.memo(() => {
               <Target className="h-6 w-6 text-primary" />
             </div>
             <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-              Strategy Goals & SERP Analysis
+              Set Your Traffic Goal
             </span>
             <Badge variant="outline" className="text-primary border-primary ml-auto">
               {currentStrategy ? 'Active Strategy' : 'New Strategy'}
@@ -165,106 +101,29 @@ export const GoalSettingCard = React.memo(() => {
         </CardHeader>
         
         <CardContent className="relative z-10 space-y-8">
-          {/* Keyword Analysis Section */}
-          <div className="space-y-4">
+          {/* Traffic Goal Section */}
+          <div className="space-y-6">
             <div className="flex items-center gap-2 mb-4">
-              <Search className="h-5 w-5 text-blue-400" />
-              <Label className="text-base font-medium">Main Keyword Analysis</Label>
+              <Target className="h-5 w-5 text-primary" />
+              <Label className="text-base font-medium">Monthly Traffic Goal</Label>
             </div>
             
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Input
-                  placeholder="Enter your main keyword (e.g., content marketing)"
-                  value={goals.mainKeyword}
-                  onChange={(e) => setGoals({...goals, mainKeyword: e.target.value})}
-                  className="bg-glass border-white/10 h-12 text-base focus:border-primary transition-all"
-                />
-              </div>
-              <Button 
-                onClick={handleAnalyzeKeyword} 
-                disabled={isGenerating || !goals.mainKeyword.trim()}
-                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Analyze
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* SERP Metrics Display */}
-          {serpMetrics && (
-            <SerpMetricsDisplay metrics={serpMetrics} />
-          )}
-
-          {/* Goal Progress Indicator */}
-          {currentStrategy && goals.contentPieces && (
-            <GoalProgressIndicator goals={goals} />
-          )}
-
-          {/* Goals Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Target className="h-5 w-5 text-purple-400" />
-              <Label className="text-base font-medium">Content Goals</Label>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="max-w-md mx-auto">
               <motion.div 
                 className="space-y-3"
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
-                <Label htmlFor="traffic" className="text-base font-medium">Monthly Traffic Goal</Label>
                 <Input
                   id="traffic"
                   placeholder="e.g., 50,000"
-                  value={goals.monthlyTraffic}
-                  onChange={(e) => setGoals({...goals, monthlyTraffic: e.target.value})}
-                  className="bg-glass border-white/10 h-12 text-base focus:border-primary transition-all"
+                  value={monthlyTraffic}
+                  onChange={(e) => setMonthlyTraffic(e.target.value)}
+                  className="bg-glass border-white/10 h-12 text-base focus:border-primary transition-all text-center text-lg"
                 />
-              </motion.div>
-              
-              <motion.div 
-                className="space-y-3"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Label htmlFor="content" className="text-base font-medium">Content Pieces per Month</Label>
-                <Input
-                  id="content"
-                  placeholder="e.g., 8"
-                  value={goals.contentPieces}
-                  onChange={(e) => setGoals({...goals, contentPieces: e.target.value})}
-                  className="bg-glass border-white/10 h-12 text-base focus:border-purple-400 transition-all"
-                />
-              </motion.div>
-              
-              <motion.div 
-                className="space-y-3"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Label htmlFor="timeline" className="text-base font-medium">Timeline</Label>
-                <select 
-                  className="w-full px-4 py-3 bg-glass border border-white/10 rounded-md text-white h-12 text-base focus:border-green-400 transition-all"
-                  value={goals.timeline}
-                  onChange={(e) => setGoals({...goals, timeline: e.target.value})}
-                >
-                  <option value="1 month">1 month</option>
-                  <option value="3 months">3 months</option>
-                  <option value="6 months">6 months</option>
-                  <option value="12 months">12 months</option>
-                </select>
+                <p className="text-sm text-white/60 text-center">
+                  Enter your desired monthly traffic goal
+                </p>
               </motion.div>
             </div>
           </div>
@@ -286,28 +145,27 @@ export const GoalSettingCard = React.memo(() => {
               ) : (
                 <>
                   <Target className="h-5 w-5 mr-2" />
-                  {currentStrategy ? 'Update Strategy' : 'Save Strategy & Generate AI Proposals'}
+                  {currentStrategy ? 'Update Traffic Goal' : 'Save Traffic Goal'}
                 </>
               )}
             </Button>
             
-            {/* Strategy Action Status */}
-            {!isGenerating && goals.contentPieces && (
+            {/* Strategy Status */}
+            {!isGenerating && monthlyTraffic && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center"
+                className="text-center mt-4"
               >
-                {!currentStrategy ? (
-                  <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>Save your goals to unlock AI proposal generation</span>
-                  </div>
-                ) : (
+                {currentStrategy ? (
                   <div className="flex items-center justify-center gap-2 text-green-400 text-sm">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Strategy saved! AI proposals will generate automatically</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <span>Traffic goal saved successfully</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Ready to save your traffic goal</span>
                   </div>
                 )}
               </motion.div>
