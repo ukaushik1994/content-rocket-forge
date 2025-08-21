@@ -195,7 +195,7 @@ export const KeywordSelectionStep = () => {
         ))}
       </div>
 
-      <div className="relative z-10 w-full min-h-screen px-0">
+      <div className="relative z-10 w-full px-6 pt-24 pb-12">
         {/* Hero Search Section */}
         <motion.div 
           className="text-center mb-16 relative"
@@ -232,7 +232,7 @@ export const KeywordSelectionStep = () => {
             </motion.h1>
             
             <motion.p 
-              className="text-xl text-muted-foreground w-full mb-12 leading-relaxed px-6"
+              className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -243,7 +243,7 @@ export const KeywordSelectionStep = () => {
 
             {/* Enhanced Search Input */}
             <motion.div 
-              className="w-full relative px-6"
+              className="max-w-2xl mx-auto relative"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
