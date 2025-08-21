@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Target, Sparkles, TrendingUp, Search } from 'lucide-react';
+import { Target, Sparkles, TrendingUp, Search, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SerpMetricsDisplay } from './SerpMetricsDisplay';
+import { GoalProgressIndicator } from './GoalProgressIndicator';
 import { useContentStrategy } from '@/contexts/ContentStrategyContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -205,6 +206,11 @@ export const GoalSettingCard = React.memo(() => {
             <SerpMetricsDisplay metrics={serpMetrics} />
           )}
 
+          {/* Goal Progress Indicator */}
+          {currentStrategy && goals.contentPieces && (
+            <GoalProgressIndicator goals={goals} />
+          )}
+
           {/* Goals Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
@@ -279,11 +285,33 @@ export const GoalSettingCard = React.memo(() => {
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  {currentStrategy ? 'Update Strategy' : 'Save Strategy'}
+                  <Target className="h-5 w-5 mr-2" />
+                  {currentStrategy ? 'Update Strategy' : 'Save Strategy & Generate AI Proposals'}
                 </>
               )}
             </Button>
+            
+            {/* Strategy Action Status */}
+            {!isGenerating && goals.contentPieces && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center"
+              >
+                {!currentStrategy ? (
+                  <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Save your goals to unlock AI proposal generation</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-green-400 text-sm">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Strategy saved! AI proposals will generate automatically</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
+                )}
+              </motion.div>
+            )}
           </motion.div>
         </CardContent>
       </Card>

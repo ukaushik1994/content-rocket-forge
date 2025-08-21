@@ -16,7 +16,8 @@ import {
   Lightbulb,
   Trash2,
   Eye,
-  FileText
+  FileText,
+  AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { contentStrategyService, ContentCluster } from '@/services/contentStrategyService';
@@ -27,6 +28,7 @@ import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationMod
 import { StrategySessionManager } from './StrategySessionManager';
 import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 import { ProposalCard } from './ProposalCard';
+import { ProposalSelectionTracker } from './ProposalSelectionTracker';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -45,11 +47,38 @@ export const ContentStrategyEngine = ({ serpMetrics, goals }: ContentStrategyEng
   const [loadingMore, setLoadingMore] = useState(false);
   const { toast } = useToast();
 
-  // Sync with context
+  // Sync with context and calculate metrics
   useEffect(() => {
     setProposals(aiProposals);
     setSelected(selectedProposals);
   }, [aiProposals, selectedProposals]);
+
+  // Calculate selection metrics
+  const targetCount = parseInt(goals?.contentPieces) || 0;
+  const selectedCount = Object.values(selected).filter(Boolean).length;
+  const targetTraffic = parseInt(goals?.monthlyTraffic) || 0;
+  const estimatedTraffic = proposals
+    .filter((_, index) => selected[index])
+    .reduce((sum, proposal) => {
+      const primaryKw = proposal.primary_keyword;
+      const metrics = proposal.serp_data?.[primaryKw] || {};
+      const est = proposal.estimated_impressions ?? Math.round((metrics.searchVolume || 0) * 0.05);
+      return sum + est;
+    }, 0);
+
+  const handleSelectAllProposals = () => {
+    const newSelected = proposals.reduce((acc, _, index) => {
+      acc[index] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setSelected(newSelected);
+    setSelectedProposals(newSelected);
+  };
+
+  const handleClearSelection = () => {
+    setSelected({});
+    setSelectedProposals({});
+  };
 
   // Generation modal state
   const [showGenModal, setShowGenModal] = useState(false);
@@ -447,6 +476,44 @@ const sendToContentBuilder = async (cluster: ContentCluster) => {
 
   return (
     <div className="space-y-6">
+      {/* No Goals Warning */}
+      {!goals?.contentPieces && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="bg-yellow-500/10 border-yellow-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-400" />
+                <div>
+                  <h3 className="text-yellow-400 font-medium">Set Your Goals First</h3>
+                  <p className="text-yellow-400/80 text-sm">
+                    Configure your content goals in the section above to generate targeted AI proposals.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Proposal Selection Tracker */}
+      {proposals.length > 0 && targetCount > 0 && (
+        <ProposalSelectionTracker
+          totalProposals={proposals.length}
+          selectedCount={selectedCount}
+          targetCount={targetCount}
+          estimatedTraffic={estimatedTraffic}
+          targetTraffic={targetTraffic}
+          onSelectAll={handleSelectAllProposals}
+          onClearSelection={handleClearSelection}
+          onLoadMore={loadMoreProposals}
+          loadingMore={loadingMore}
+        />
+      )}
+
       {/* Enhanced Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-green-500/10 border border-white/10 p-6 mb-6">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 blur-xl" />
