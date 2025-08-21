@@ -21,6 +21,7 @@ import { contentStrategyService, ContentCluster } from '@/services/contentStrate
 import { useToast } from '@/hooks/use-toast';
 import { StrategyGenerationModal, GenerationStep } from './StrategyGenerationModal';
 import { StrategySessionManager } from './StrategySessionManager';
+import { StrategyBuilderDialog } from './StrategyBuilderDialog';
 
 interface ContentStrategyEngineProps {
   serpMetrics?: any;
@@ -149,22 +150,14 @@ const generateBlueprint = async () => {
     }
 };
 
-// Direct handoff to Content Builder for a proposal
+// Strategy Builder Dialog state
+const [showStrategyBuilder, setShowStrategyBuilder] = useState(false);
+const [selectedProposal, setSelectedProposal] = useState<any>(null);
+
+// Direct handoff to Strategy Builder Dialog for a proposal
 const sendProposalToContentBuilder = async (proposal: any) => {
-  try {
-    const { aiStrategyService } = await import('@/services/aiStrategyService');
-    const payload = await aiStrategyService.prepareContentBuilderPayload(proposal);
-    
-    sessionStorage.setItem('contentBuilderPayload', JSON.stringify(payload));
-    toast({ 
-      title: 'Sent to Content Builder', 
-      description: `${proposal.title || proposal.primary_keyword} with complete strategy context` 
-    });
-    window.location.href = '/content-builder?source=strategy';
-  } catch (e) {
-    console.error('Proposal handoff error:', e);
-    toast({ title: 'Error', description: 'Failed to open Content Builder', variant: 'destructive' });
-  }
+  setSelectedProposal(proposal);
+  setShowStrategyBuilder(true);
 };
 
 const sendToContentBuilder = async (cluster: ContentCluster) => {
